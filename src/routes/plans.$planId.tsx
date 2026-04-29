@@ -72,6 +72,24 @@ function PlanEditor() {
 
   const exportPdf = async () => {
     if (!client || !plan) return;
+    let logoDataUrl: string | null = null;
+    if (profile?.logo_url) {
+      try {
+        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(profile.logo_url, 600);
+        if (signed?.signedUrl) {
+          const res = await fetch(signed.signedUrl);
+          const blob = await res.blob();
+          logoDataUrl = await new Promise<string | null>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(blob);
+          });
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     await generatePlanPdf(
       { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
       data,
@@ -81,7 +99,7 @@ function PlanEditor() {
         tagline: profile?.tagline,
         contact_email: profile?.contact_email,
         contact_phone: profile?.contact_phone,
-        logo_url: profile?.logo_url,
+        logo_data_url: logoDataUrl,
       }
     );
   };
