@@ -33,7 +33,7 @@ function PlanEditor() {
     void (async () => {
       const { data: p } = await supabase.from("workout_plans").select("*").eq("id", planId).single();
       setPlan(p);
-      setData(p?.plan_data ?? { weeks: [] });
+      setData((p?.plan_data as unknown as PlanData) ?? { weeks: [] });
       if (p?.client_id) {
         const { data: c } = await supabase.from("clients").select("*").eq("id", p.client_id).single();
         setClient(c);
