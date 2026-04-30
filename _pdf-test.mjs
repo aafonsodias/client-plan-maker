@@ -60,4 +60,6 @@ const plan = { weeks: [{ week_number: 1, focus: "Foundation week — shoulder sa
 const meta = { title: "André Periquito Afonso Dias – 1 Week Plan", summary: "Foundation week balancing shoulder rehabilitation, hybrid conditioning, and a return-to-training framework after 4 weeks off.", client_name: "André Periquito Afonso Dias", duration_weeks: 1 };
 const branding = { business_name: "André Periquito", full_name: "André Periquito", tagline: "Hybrid coaching · evidence-based programming", contact_email: "aafonsodias@gmail.com", contact_phone: null };
 
-await generatePlanPdf(meta, plan, branding);
+try { await generatePlanPdf(meta, plan, branding);
+
+} catch(e) { console.error("ERR:", e); }
