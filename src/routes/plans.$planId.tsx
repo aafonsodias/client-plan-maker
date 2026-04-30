@@ -65,7 +65,7 @@ function PlanEditor() {
       }
       try {
         const list = (await listSessions({ data: { plan_id: planId } })) as SessionRow[];
-        setSessions(list);
+        setSessions(Array.isArray(list) ? list : []);
       } catch { /* ignore */ }
     })();
   }, [user, planId]);
@@ -73,7 +73,7 @@ function PlanEditor() {
   const reloadSessions = async () => {
     try {
       const list = (await listSessions({ data: { plan_id: planId } })) as SessionRow[];
-      setSessions(list);
+      setSessions(Array.isArray(list) ? list : []);
     } catch { /* ignore */ }
   };
 
@@ -414,6 +414,7 @@ type LogEntry = {
 };
 
 function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: string; sessions: SessionRow[]; reload: () => void }) {
+  const safeSessions = Array.isArray(sessions) ? sessions : [];
   const firstWeek = plan.weeks[0]?.week_number ?? 1;
   const firstDay = plan.weeks[0]?.days[0]?.day_label ?? "Day 1";
   const [weekNum, setWeekNum] = useState<number>(firstWeek);
@@ -539,11 +540,11 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           <History className="h-3.5 w-3.5" /> Past sessions
         </p>
-        {sessions.length === 0 ? (
+        {safeSessions.length === 0 ? (
           <p className="text-sm text-muted-foreground">No sessions logged yet.</p>
         ) : (
           <ul className="divide-y divide-border text-sm">
-            {sessions.map((s) => (
+            {safeSessions.map((s) => (
               <li key={s.id} className="flex items-center justify-between py-1.5">
                 <span>
                   <span className="font-semibold">{s.session_date}</span>
