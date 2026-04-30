@@ -27,11 +27,13 @@ function timeAgo(iso: string | null): string {
 export function IntakeLinkPanel({
   clientId,
   clientFirstName,
+  clientPhone,
   intake,
   onChange,
 }: {
   clientId: string;
   clientFirstName: string;
+  clientPhone?: string | null;
   intake: IntakeFields;
   onChange: (fields: Partial<IntakeFields>) => void;
 }) {
@@ -67,6 +69,8 @@ export function IntakeLinkPanel({
   const waMsg = encodeURIComponent(
     `Hi ${clientFirstName}, please fill this short intake before our first session: ${url}`
   );
+  const waPhone = (clientPhone ?? "").replace(/[^\d]/g, "");
+  const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
   const mailSubj = encodeURIComponent("Your intake form for our first session");
   const mailBody = encodeURIComponent(
     `Hi ${clientFirstName}, please fill this short intake before our first session: ${url}`
@@ -141,8 +145,8 @@ export function IntakeLinkPanel({
           <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
         </Button>
         <Button size="sm" variant="outline" asChild>
-          <a href={`https://wa.me/?text=${waMsg}`} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> Send via WhatsApp
+          <a href={waUrl} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> {waPhone ? "WhatsApp client" : "Send via WhatsApp"}
           </a>
         </Button>
         <Button size="sm" variant="outline" asChild>
