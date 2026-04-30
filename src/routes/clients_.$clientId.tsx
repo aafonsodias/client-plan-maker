@@ -871,10 +871,24 @@ function ClientDetail() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button onClick={generate} disabled={busy} size="lg">
-              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Generate plan draft
-            </Button>
+            {parqYes ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={generate} disabled={busy} size="lg">
+                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate low-intensity plan draft
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-xs">
+                  PAR-Q+ flags detected — defaulting to low-intensity prescription. You can override after generation.
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button onClick={generate} disabled={busy} size="lg">
+                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate plan draft
+              </Button>
+            )}
           </div>
         </section>
       </div>
