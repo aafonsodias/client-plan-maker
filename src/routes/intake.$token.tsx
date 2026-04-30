@@ -23,6 +23,25 @@ const READINESS = [
   { id: "maintenance", label: "Keeping it going" },
 ];
 
+const PARQ_QUESTIONS: { key: "q1"|"q2"|"q3"|"q4"|"q5"|"q6"|"q7"; text: string }[] = [
+  { key: "q1", text: "Has a doctor ever said you have a heart condition or that you should only do physical activity recommended by a doctor?" },
+  { key: "q2", text: "Do you feel pain in your chest when you do physical activity?" },
+  { key: "q3", text: "In the past month, have you had chest pain when you were not doing physical activity?" },
+  { key: "q4", text: "Do you lose your balance because of dizziness or do you ever lose consciousness?" },
+  { key: "q5", text: "Do you have a bone or joint problem that could be made worse by a change in your physical activity?" },
+  { key: "q6", text: "Is your doctor currently prescribing drugs for blood pressure or a heart condition?" },
+  { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
+];
+
+const MED_FLAGS = [
+  "Beta-blockers",
+  "Blood pressure meds",
+  "Diabetes / insulin",
+  "Anticoagulants",
+  "Anti-inflammatories",
+  "Other",
+];
+
 type FormState = {
   smart_specific: string;
   smart_measurable: string;
@@ -49,6 +68,10 @@ type FormState = {
   ext_processed_food: number;
   ext_alcohol_units_week: string;
   nutrition_habits: string;
+  // Safety
+  parq: Record<"q1"|"q2"|"q3"|"q4"|"q5"|"q6"|"q7", boolean | null>;
+  medications: string;
+  med_flags: string[];
 };
 
 const EMPTY: FormState = {
@@ -59,6 +82,9 @@ const EMPTY: FormState = {
   sleep_quality: 7, stress_level: 5,
   ext_hours_seated: "", ext_daily_steps: "", ext_job_type: "", energy_levels: "", recovery_capacity: "",
   ext_meals_per_day: "", ext_water_l_per_day: "", ext_processed_food: 2, ext_alcohol_units_week: "", nutrition_habits: "",
+  parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
+  medications: "",
+  med_flags: [],
 };
 
 function fromAssessment(a: any | null): FormState {
@@ -91,10 +117,15 @@ function fromAssessment(a: any | null): FormState {
     ext_processed_food: ext.ext_processed_food ?? 2,
     ext_alcohol_units_week: ext.ext_alcohol_units_week?.toString() ?? "",
     nutrition_habits: a.nutrition_habits ?? "",
+    parq: ext.parq ?? EMPTY.parq,
+    medications: a.medications ?? "",
+    med_flags: a.med_flags ?? [],
   };
 }
 
 function toPayload(f: FormState): { fields: Record<string, any>; sections: string[] } {
+  const parqAnswered = Object.values(f.parq).every((v) => v === true || v === false);
+  const parqHasYes = Object.values(f.parq).some((v) => v === true);
   return {
     fields: {
       smart_specific: f.smart_specific || null,
@@ -114,6 +145,10 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       energy_levels: f.energy_levels || null,
       recovery_capacity: f.recovery_capacity || null,
       nutrition_habits: f.nutrition_habits || null,
+      // Clinical safety
+      parq_passed: parqAnswered ? !parqHasYes : null,
+      medications: f.medications || null,
+      med_flags: f.med_flags,
       extended: {
         smart_extra: f.smart_extra || null,
         ext_hours_seated: f.ext_hours_seated ? Number(f.ext_hours_seated) : null,
@@ -123,9 +158,10 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
         ext_water_l_per_day: f.ext_water_l_per_day ? Number(f.ext_water_l_per_day) : null,
         ext_processed_food: f.ext_processed_food,
         ext_alcohol_units_week: f.ext_alcohol_units_week ? Number(f.ext_alcohol_units_week) : null,
+        parq: f.parq,
       },
     },
-    sections: ["smart_goal", "readiness", "training", "lifestyle", "nutrition"],
+    sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
   };
 }
 
@@ -267,8 +303,69 @@ function IntakePage() {
         </p>
 
         <div className="mt-10 space-y-10">
+          {/* SAFETY — PAR-Q+ */}
+          <Section number={1} title="A few health questions (PAR-Q+)">
+            <p className="-mt-2 text-xs text-muted-foreground">
+              These help your trainer build a plan that's safe for you. Answer honestly — there are no wrong answers.
+            </p>
+            <div className="space-y-3">
+              {PARQ_QUESTIONS.map((q) => (
+                <div key={q.key} className="rounded-lg border border-border bg-background/40 p-3">
+                  <p className="text-sm">{q.text}</p>
+                  <div className="mt-2 flex gap-2">
+                    {([
+                      { v: false, label: "No" },
+                      { v: true, label: "Yes" },
+                    ] as const).map((opt) => {
+                      const on = form.parq[q.key] === opt.v;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => setForm({ ...form, parq: { ...form.parq, [q.key]: opt.v } })}
+                          className={`rounded-full border px-4 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                        >{opt.label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {Object.values(form.parq).some((v) => v === true) && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Thanks for being honest. Your trainer will review these answers and may suggest a doctor's check before starting harder sessions.
+              </div>
+            )}
+            <Field label="Are you taking any medication regularly?" optional>
+              <Textarea
+                rows={2}
+                value={form.medications}
+                placeholder="e.g. blood pressure meds, insulin, painkillers…"
+                onChange={(e) => setForm({ ...form, medications: e.target.value })}
+              />
+            </Field>
+            <Field label="Any of these apply?" optional>
+              <div className="flex flex-wrap gap-2">
+                {MED_FLAGS.map((m) => {
+                  const on = form.med_flags.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setForm({
+                        ...form,
+                        med_flags: on ? form.med_flags.filter((x) => x !== m) : [...form.med_flags, m],
+                      })}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
+                    >{m}</button>
+                  );
+                })}
+              </div>
+            </Field>
+          </Section>
+
           {/* SMART GOAL */}
-          <Section number={1} title="Your goal">
+          <Section number={2} title="Your goal">
             <Field label="What do you want to achieve?">
               <Textarea value={form.smart_specific} onChange={(e) => setForm({ ...form, smart_specific: e.target.value })} placeholder="e.g. lose 5kg, run a 10k, get stronger…" rows={3} />
             </Field>
@@ -284,7 +381,7 @@ function IntakePage() {
           </Section>
 
           {/* READINESS */}
-          <Section number={2} title="How ready do you feel right now?">
+          <Section number={3} title="How ready do you feel right now?">
             <div className="flex flex-wrap gap-2">
               {READINESS.map((r) => (
                 <button
@@ -300,7 +397,7 @@ function IntakePage() {
           </Section>
 
           {/* TRAINING SETUP */}
-          <Section number={3} title="Training setup">
+          <Section number={4} title="Training setup">
             <Field label="Have you trained before?">
               <Pills options={["Beginner", "Intermediate", "Advanced"]} value={form.experience_level} onChange={(v) => setForm({ ...form, experience_level: v })} />
             </Field>
@@ -343,7 +440,7 @@ function IntakePage() {
           </Section>
 
           {/* LIFESTYLE */}
-          <Section number={4} title="Lifestyle">
+          <Section number={5} title="Lifestyle">
             <SliderField label="How well do you sleep on average?" value={form.sleep_quality} min={1} max={10} onChange={(v) => setForm({ ...form, sleep_quality: v })} legend="1 = poorly · 10 = excellent" />
             <SliderField label="How stressed do you feel day-to-day?" value={form.stress_level} min={1} max={10} onChange={(v) => setForm({ ...form, stress_level: v })} legend="1 = calm · 10 = overwhelmed" />
             <Field label="How many hours do you sit per day?">
@@ -364,7 +461,7 @@ function IntakePage() {
           </Section>
 
           {/* NUTRITION */}
-          <Section number={5} title="Nutrition">
+          <Section number={6} title="Nutrition">
             <Field label="How many meals do you eat per day?">
               <Input inputMode="numeric" value={form.ext_meals_per_day} onChange={(e) => setForm({ ...form, ext_meals_per_day: e.target.value })} />
             </Field>

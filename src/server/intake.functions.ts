@@ -125,10 +125,12 @@ const ALLOWED_FIELDS = [
   "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
   "sleep_quality", "stress_level", "nutrition_habits",
   "energy_levels", "recovery_capacity",
+  // Clinical safety
+  "parq_passed", "acsm_risk_category", "medications", "med_flags",
   "extended",
 ] as const;
 
-const PROVENANCE_SECTIONS = ["smart_goal", "readiness", "training", "lifestyle", "nutrition"] as const;
+const PROVENANCE_SECTIONS = ["smart_goal", "readiness", "training", "lifestyle", "nutrition", "safety"] as const;
 
 const saveSchema = z.object({
   token: z.string().uuid(),

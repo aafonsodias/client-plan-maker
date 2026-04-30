@@ -350,6 +350,8 @@ function ClientDetail() {
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
+  const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
+  const [safetyOverride, setSafetyOverride] = useState(false);
 
   // Auto-save state
   const [hydrated, setHydrated] = useState(false);
@@ -554,7 +556,6 @@ function ClientDetail() {
 
   const generate = async () => {
     if (!user || !client) return;
-    if (parqHasYes(assessment.parq) && !confirm("PAR-Q+ flagged a potential risk. Recommend physician clearance before training. Continue anyway?")) return;
     setBusy(true);
     setProgressStep(1);
     try {
@@ -1042,24 +1043,68 @@ function ClientDetail() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            {parqYes ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button onClick={generate} disabled={busy} size="lg">
-                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate low-intensity plan draft
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-xs">
-                  PAR-Q+ flags detected — defaulting to low-intensity prescription. You can override after generation.
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button onClick={generate} disabled={busy} size="lg">
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate plan draft
-              </Button>
-            )}
+            {(() => {
+              const isHigh = riskCategory === "high";
+              const blocked = parqYes || isHigh;
+              if (blocked) {
+                return (
+                  <AlertDialog open={safetyDialogOpen} onOpenChange={(o) => { setSafetyDialogOpen(o); if (!o) setSafetyOverride(false); }}>
+                    <AlertDialogTrigger asChild>
+                      <Button disabled={busy} size="lg" variant="destructive">
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+                        Safety review required
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Clinical safety check</AlertDialogTitle>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-3 text-sm">
+                            <p>This client triggered the safety gate:</p>
+                            <ul className="list-disc space-y-1 pl-5 text-xs">
+                              {parqYes && <li>PAR-Q+ flagged one or more risk markers.</li>}
+                              {isHigh && <li>ACSM risk stratification is <span className="font-semibold text-destructive">High</span>.</li>}
+                              {(assessment.med_flags?.length ?? 0) > 0 && (
+                                <li>Medication flags: {assessment.med_flags.join(", ")}.</li>
+                              )}
+                            </ul>
+                            <p>
+                              The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.
+                            </p>
+                            <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-background/40 p-3">
+                              <input
+                                type="checkbox"
+                                checked={safetyOverride}
+                                onChange={(e) => setSafetyOverride(e.target.checked)}
+                                className="mt-0.5 h-4 w-4 accent-accent"
+                              />
+                              <span className="text-xs">
+                                I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.
+                              </span>
+                            </label>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={!safetyOverride}
+                          onClick={() => { setSafetyDialogOpen(false); void generate(); }}
+                        >
+                          Generate conservative draft
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                );
+              }
+              return (
+                <Button onClick={generate} disabled={busy} size="lg">
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate plan draft
+                </Button>
+              );
+            })()}
           </div>
         </section>
       </div>
