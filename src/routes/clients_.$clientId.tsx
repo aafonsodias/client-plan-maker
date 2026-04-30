@@ -15,6 +15,8 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { useClientPhases } from "@/hooks/use-client-phases";
+import { ClientPhasePill } from "@/components/ClientPhasePill";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: () => (
