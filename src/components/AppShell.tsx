@@ -74,7 +74,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   key={n.to}
                   to={n.to}
                   className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${
-                    active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:text-foreground"
+                    active ? "bg-secondary text-secondary-foreground" : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                   }`}
                 >
                   <n.icon className="h-4 w-4" /> {n.label}
