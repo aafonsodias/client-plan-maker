@@ -63,7 +63,7 @@ function Landing() {
               <HeroPlanMockup />
             </div>
             <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
-              Built on PAR-Q+, ACSM risk stratification, and the 8 years of programming I wish I'd had a tool for.
+              Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach.
             </p>
           </div>
         </div>
