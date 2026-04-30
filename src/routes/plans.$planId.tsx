@@ -11,12 +11,12 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
-  Share2, Copy, RefreshCw, History, Eye,
+  Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { generatePlanPdf, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
+import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Server fns are reserved for the public client-log endpoints.
 
