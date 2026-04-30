@@ -334,12 +334,67 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_plan_days: {
+        Row: {
+          content: Json
+          created_at: string
+          day_label: string | null
+          day_number: number
+          focus: string | null
+          id: string
+          plan_id: string
+          rationale: string | null
+          status: string
+          trainer_id: string
+          updated_at: string
+          week_number: number
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          day_label?: string | null
+          day_number: number
+          focus?: string | null
+          id?: string
+          plan_id: string
+          rationale?: string | null
+          status?: string
+          trainer_id: string
+          updated_at?: string
+          week_number: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          day_label?: string | null
+          day_number?: number
+          focus?: string | null
+          id?: string
+          plan_id?: string
+          rationale?: string | null
+          status?: string
+          trainer_id?: string
+          updated_at?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_plan_days_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workout_plans: {
         Row: {
           assessment_id: string | null
           client_id: string
           created_at: string
           duration_weeks: number | null
+          generation_meta: Json
+          generation_status: string
           id: string
           plan_data: Json
           share_token: string | null
@@ -355,6 +410,8 @@ export type Database = {
           client_id: string
           created_at?: string
           duration_weeks?: number | null
+          generation_meta?: Json
+          generation_status?: string
           id?: string
           plan_data?: Json
           share_token?: string | null
@@ -370,6 +427,8 @@ export type Database = {
           client_id?: string
           created_at?: string
           duration_weeks?: number | null
+          generation_meta?: Json
+          generation_status?: string
           id?: string
           plan_data?: Json
           share_token?: string | null
