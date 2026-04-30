@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, ArrowRight, Trash2 } from "lucide-react";
+import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -55,6 +56,7 @@ function Clients() {
     const { error } = await supabase.from("clients").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Client added");
+    void markOnboardingStep(user.id, "add_client");
     setOpen(false);
     setForm({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
     void load();

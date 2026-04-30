@@ -18,6 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
+import { markOnboardingStep } from "@/components/OnboardingChecklist";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Server fns are reserved for the public client-log endpoints.
 
