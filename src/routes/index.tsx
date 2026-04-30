@@ -354,9 +354,9 @@ function ProgressionMockup() {
       <p className="text-xs uppercase tracking-widest text-muted-foreground">Back Squat — 6 weeks of work</p>
       <div className="mt-5">
         <svg viewBox={`0 0 ${w} ${h + 8}`} className="w-full" preserveAspectRatio="none">
-          <path d={path} fill="none" stroke="hsl(var(--accent))" strokeOpacity="0.5" strokeWidth="1.5" />
+          <path d={path} fill="none" stroke="var(--accent)" strokeOpacity="0.5" strokeWidth="1.5" />
           {points.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="3" fill="hsl(var(--background))" stroke="hsl(var(--accent))" strokeWidth="1.5" />
+            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--background)" stroke="var(--accent)" strokeWidth="1.5" />
           ))}
         </svg>
         <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground/60">
