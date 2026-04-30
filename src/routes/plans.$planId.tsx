@@ -181,7 +181,14 @@ function PlanEditor() {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <ShareDialog planId={planId} initialToken={plan.share_token} onChange={(t) => setPlan({ ...plan, share_token: t })} />
+          <ShareDialog
+            planId={planId}
+            initialToken={plan.share_token}
+            onChange={(t) => setPlan({ ...plan, share_token: t })}
+            clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+            clientPhone={client.phone ?? null}
+            planTitle={plan.title}
+          />
           <Button
             variant="ghost"
             size="sm"
@@ -817,13 +824,38 @@ function FieldStack({ label, children, className = "" }: { label: string; childr
 
 /* ─────────── Share dialog ─────────── */
 
-function ShareDialog({ planId, initialToken, onChange }: { planId: string; initialToken: string | null; onChange: (t: string | null) => void }) {
+function ShareDialog({
+  planId,
+  initialToken,
+  onChange,
+  clientFirstName,
+  clientPhone,
+  planTitle,
+}: {
+  planId: string;
+  initialToken: string | null;
+  onChange: (t: string | null) => void;
+  clientFirstName: string;
+  clientPhone: string | null;
+  planTitle: string;
+}) {
   const [token, setToken] = useState<string | null>(initialToken);
   const [busy, setBusy] = useState(false);
   const ensureFn = useServerFn(ensureShareToken);
   const revokeFn = useServerFn(revokeShareToken);
 
   const url = token ? `${window.location.origin}/log/${token}` : null;
+  const waMsg = url
+    ? encodeURIComponent(
+        `Hi ${clientFirstName}, here's your training plan "${planTitle}". Tap to log each session: ${url}`
+      )
+    : "";
+  const waPhone = (clientPhone ?? "").replace(/[^\d]/g, "");
+  const waUrl = url
+    ? waPhone
+      ? `https://wa.me/${waPhone}?text=${waMsg}`
+      : `https://wa.me/?text=${waMsg}`
+    : "#";
 
   const enable = async (rotate = false) => {
     setBusy(true);
@@ -868,6 +900,12 @@ function ShareDialog({ planId, initialToken, onChange }: { planId: string; initi
               <Input readOnly value={url} className="font-mono text-xs" />
               <Button onClick={copy} variant="outline"><Copy className="h-4 w-4" /></Button>
             </div>
+            <Button asChild variant="outline" className="w-full">
+              <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {waPhone ? `Send to ${clientFirstName} on WhatsApp` : "Send via WhatsApp"}
+              </a>
+            </Button>
             <div className="flex justify-between">
               <Button variant="ghost" size="sm" onClick={() => enable(true)} disabled={busy}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Rotate
