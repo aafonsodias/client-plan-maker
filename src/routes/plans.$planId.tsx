@@ -762,6 +762,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const [notes, setNotes] = useState("");
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [saving, setSaving] = useState(false);
+  const [rewards, setRewards] = useState<Record<string, number>>({});
 
   const week = plan.weeks.find((w) => w.week_number === weekNum) ?? plan.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
@@ -788,9 +789,17 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const updateSet = (i: number, si: number, k: keyof SetLog, v: string) => {
     const copy = [...entries];
     const sets = [...copy[i].sets];
+    const prev = sets[si];
+    const wasComplete = !!(prev.reps && prev.weight);
     sets[si] = { ...sets[si], [k]: v };
+    const nowComplete = !!(sets[si].reps && sets[si].weight);
     copy[i] = { ...copy[i], sets };
     setEntries(copy);
+    if (!wasComplete && nowComplete) {
+      const key = `${i}-${si}`;
+      setRewards((r) => ({ ...r, [key]: Date.now() }));
+      setTimeout(() => setRewards((r) => { const { [key]: _, ...rest } = r; return rest; }), 700);
+    }
   };
   const addSet = (i: number) => {
     const copy = [...entries];
@@ -915,8 +924,15 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
             </div>
             <div className="space-y-1">
               {e.sets.map((st, si) => (
-                <div key={si} className="grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5">
-                  <span className="text-center text-xs font-bold text-foreground0">{si + 1}</span>
+                <div
+                  key={si}
+                  className={`grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5 rounded transition-all ${
+                    rewards[`${i}-${si}`] ? "animate-scale-in bg-accent/15 ring-1 ring-accent/40" : ""
+                  }`}
+                >
+                  <span className="text-center text-xs font-bold text-foreground0">
+                    {rewards[`${i}-${si}`] ? <Heart className="mx-auto h-3.5 w-3.5 fill-accent text-accent" /> : si + 1}
+                  </span>
                   <input
                     inputMode="numeric"
                     value={st.reps}
