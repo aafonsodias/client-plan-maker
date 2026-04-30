@@ -343,6 +343,7 @@ export type Database = {
           id: string
           plan_data: Json
           share_token: string | null
+          share_token_expires_at: string | null
           status: string
           summary: string | null
           title: string
@@ -357,6 +358,7 @@ export type Database = {
           id?: string
           plan_data?: Json
           share_token?: string | null
+          share_token_expires_at?: string | null
           status?: string
           summary?: string | null
           title?: string
@@ -371,6 +373,7 @@ export type Database = {
           id?: string
           plan_data?: Json
           share_token?: string | null
+          share_token_expires_at?: string | null
           status?: string
           summary?: string | null
           title?: string
@@ -452,7 +455,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_intake_branding: {
+        Args: { _token: string }
+        Returns: {
+          business_name: string
+          full_name: string
+          logo_url: string
+          primary_color: string
+          tagline: string
+        }[]
+      }
     }
     Enums: {
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
