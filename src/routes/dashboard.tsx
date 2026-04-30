@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Sparkles } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { useClientPhases } from "@/hooks/use-client-phases";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/dashboard")({
   component: () => (
@@ -19,13 +21,14 @@ function Dashboard() {
   const { user } = useAuth();
   const [clients, setClients] = useState<number>(0);
   const [plans, setPlans] = useState<number>(0);
+  const [clientIds, setClientIds] = useState<string[]>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ count: c }, { count: p }, { data: r }] = await Promise.all([
-        supabase.from("clients").select("id", { count: "exact", head: true }),
+      const [{ data: clientRows }, { count: p }, { data: r }] = await Promise.all([
+        supabase.from("clients").select("id"),
         supabase.from("workout_plans").select("id", { count: "exact", head: true }),
         supabase
           .from("workout_plans")
@@ -33,11 +36,25 @@ function Dashboard() {
           .order("updated_at", { ascending: false })
           .limit(5),
       ]);
-      setClients(c ?? 0);
+      const ids = (clientRows ?? []).map((c: any) => c.id);
+      setClientIds(ids);
+      setClients(ids.length);
       setPlans(p ?? 0);
       setRecent((r as any) ?? []);
     })();
   }, [user]);
+
+  const phases = useClientPhases(useMemo(() => clientIds, [clientIds]));
+  const counts = useMemo(() => {
+    const c = { active: 0, idle: 0, ready: 0, onboarding: 0 };
+    Object.values(phases).forEach((p) => {
+      if (p.kind === "active") c.active++;
+      else if (p.kind === "idle") c.idle++;
+      else if (p.kind === "ready") c.ready++;
+      else if (p.kind === "onboarding" || p.kind === "assessment") c.onboarding++;
+    });
+    return c;
+  }, [phases]);
 
   return (
     <div className="space-y-10">
@@ -48,11 +65,31 @@ function Dashboard() {
           <h1 className="mt-1 text-4xl font-light tracking-tight">Your training studio</h1>
         </div>
         <Button asChild>
-          <Link to="/clients">
+          <Link to="/clients" search={{ filter: "all" }}>
             <Plus className="mr-2 h-4 w-4" /> New client
           </Link>
         </Button>
       </div>
+
+      {clients > 0 && (
+        <div className="flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
+          {[
+            { id: "active", label: `${counts.active} active` },
+            { id: "ready", label: `${counts.ready} ready for plan` },
+            { id: "idle", label: `${counts.idle} idle` },
+            { id: "onboarding", label: `${counts.onboarding} onboarding` },
+          ].map((seg) => (
+            <Link
+              key={seg.id}
+              to="/clients"
+              search={{ filter: seg.id }}
+              className="rounded-full bg-secondary px-3 py-1 text-muted-foreground transition hover:text-foreground"
+            >
+              {seg.label}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard icon={Users} label="Clients" value={clients} to="/clients" />
@@ -67,7 +104,7 @@ function Dashboard() {
             <p className="font-medium">No plans yet</p>
             <p className="mt-1 text-sm text-muted-foreground">Add a client and run an assessment to draft your first plan.</p>
             <Button asChild className="mt-4">
-              <Link to="/clients">Add a client</Link>
+              <Link to="/clients" search={{ filter: "all" }}>Add a client</Link>
             </Button>
           </div>
         ) : (
