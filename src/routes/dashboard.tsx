@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Sparkles } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { useMemo } from "react";
 
@@ -95,6 +96,8 @@ function Dashboard() {
         <StatCard icon={Users} label="Clients" value={clients} to="/clients" />
         <StatCard icon={FileText} label="Plans created" value={plans} to="/plans" />
       </div>
+
+      <DropoffAlerts />
 
       <section>
         <h2 className="mb-4 text-lg font-bold">Recent plans</h2>
