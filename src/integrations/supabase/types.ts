@@ -465,6 +465,7 @@ export type Database = {
           tagline: string
         }[]
       }
+      has_active_access: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
