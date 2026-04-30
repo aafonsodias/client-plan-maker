@@ -158,7 +158,7 @@ function ClientDetail() {
         <Link to="/clients" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> All clients
         </Link>
-        <h1 className="mt-2 text-4xl font-black tracking-tight">{client.full_name}</h1>
+        <h1 className="mt-2 text-4xl font-light tracking-tight">{client.full_name}</h1>
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
       </div>
 

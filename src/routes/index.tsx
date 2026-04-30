@@ -41,7 +41,7 @@ function Landing() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
               <Sparkles className="h-3 w-3" /> AI-assisted workout drafting
             </div>
-            <h1 className="text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl">
+            <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
               Build client workout plans
               <span className="block text-accent">in 90 seconds.</span>
             </h1>
@@ -65,7 +65,7 @@ function Landing() {
 
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="mb-12 max-w-2xl text-4xl font-black tracking-tight">
+        <h2 className="mb-12 max-w-2xl text-4xl font-light tracking-tight">
           Built for trainers who'd rather coach than copy-paste spreadsheets.
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
@@ -92,7 +92,7 @@ function Landing() {
             className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-40 blur-3xl"
             style={{ background: "var(--gradient-accent)" }}
           />
-          <h2 className="relative max-w-2xl text-4xl font-black tracking-tight">
+          <h2 className="relative max-w-2xl text-4xl font-light tracking-tight">
             Stop writing plans at midnight.
           </h2>
           <p className="relative mt-4 max-w-xl text-white/70">
