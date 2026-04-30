@@ -262,6 +262,7 @@ function ClientDetail() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
+  const generateWeekFn = useServerFn(generatePlanWeek);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
