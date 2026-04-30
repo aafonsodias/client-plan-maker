@@ -158,6 +158,8 @@ function computeRisk(risk: any): string {
   if (risk.family_cvd) n++;
   if (risk.smoking === "current") n++;
   if (risk.sedentary) n++;
+  // Muscular/athletic build is intentionally excluded: BMI overestimates adiposity
+  // in resistance-trained individuals (Ode 2007; Provencher 2018, NFL Combine).
   if (risk.bmi_category === "obese" || risk.bmi_category === "overweight") n++;
   if (risk.dyslipidemia) n++;
   if (risk.prediabetes) n++;
@@ -790,7 +792,7 @@ function ClientDetail() {
               </div>
               <Toggle label="Sedentary (<150 min/week MVPA)" value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
               <div className="space-y-1">
-                <LabelWithHelp label="BMI category" hint="Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30." />
+                <LabelWithHelp label="BMI category" hint="Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30. Use 'Muscular' when BMI ≥25 but body-fat % is within athletic range (♂ ≤17%, ♀ ≤24%) — BMI overestimates adiposity in resistance-trained individuals." />
                 <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
                   <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
                   <SelectContent>
@@ -798,6 +800,7 @@ function ClientDetail() {
                     <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="overweight">Overweight</SelectItem>
                     <SelectItem value="obese">Obese</SelectItem>
+                    <SelectItem value="muscular">Muscular (athletic build)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
