@@ -614,26 +614,32 @@ function ClientDetail() {
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sections</p>
-            {SECTIONS.map((s) => (
+            {sectionStatus.map((s) => (
               <a
                 key={s.id}
                 href={`#sec-${s.id}`}
                 onClick={() => setActiveSection(s.id)}
-                className={`block rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {s.label}
+                <span>{s.label}</span>
+                {s.complete && <Check className="h-3 w-3 text-accent" />}
               </a>
             ))}
           </nav>
         </aside>
 
         <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Assessment</h2>
-            <div className="flex items-center gap-3">
-              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
-              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">ACSM-aligned</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-bold shrink-0">Assessment</h2>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
+                <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
+                Section {sectionNumber} of {totalSections} · {pct}% complete · ~{minutesLeft} min left
+              </span>
             </div>
+            <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
           </div>
 
           {/* PAR-Q+ */}
