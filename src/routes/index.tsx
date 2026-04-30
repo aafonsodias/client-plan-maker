@@ -281,7 +281,7 @@ function HeroPlanMockup() {
               </span>
               <span className="flex-1 truncate text-sm font-medium text-foreground">{r.name}</span>
               <span className="font-mono text-xs text-muted-foreground">{r.sets}</span>
-              {r.note && <span className="hidden text-[11px] text-muted-foreground/80 lg:inline">{r.note}</span>}
+              {r.note && <span className="font-mono text-[11px] text-muted-foreground/80">{r.note}</span>}
             </div>
             {r.sub && (
               <p className="ml-[4.25rem] mt-0.5 text-[11px] italic text-muted-foreground/70">{r.sub}</p>
