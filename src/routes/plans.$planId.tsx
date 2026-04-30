@@ -703,7 +703,7 @@ function ShareDialog({ planId, initialToken, onChange }: { planId: string; initi
 type SetLog = { reps: string; weight: string };
 type LogEntry = {
   exercise_name: string;
-  planned: { sets: string; reps: string; rest: string; notes: string };
+  planned: { sets: string; reps: string; rest: string; notes: string; rpe?: string; tempo?: string; technique_cues?: string };
   sets: SetLog[];
   notes: string;
 };
@@ -736,7 +736,10 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         const n = parsePlannedSets(e.sets ?? "");
         return {
           exercise_name: e.name,
-          planned: { sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "" },
+          planned: {
+            sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "",
+            rpe: e.rpe ?? "", tempo: e.tempo ?? "", technique_cues: e.technique_cues ?? "",
+          },
           sets: Array.from({ length: n }, () => ({ reps: "", weight: "" })),
           notes: "",
         };
@@ -855,8 +858,13 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
               </h3>
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-accent">
                 Planned · {e.planned.sets || "—"} × {e.planned.reps || "—"} · {e.planned.rest || "—"}
+                {e.planned.rpe ? ` · RPE ${e.planned.rpe}` : ""}
+                {e.planned.tempo ? ` · Tempo ${e.planned.tempo}` : ""}
               </span>
             </div>
+            {e.planned.technique_cues && (
+              <p className="mb-1 text-[11px] italic text-muted-foreground/80">{e.planned.technique_cues}</p>
+            )}
             {e.planned.notes && (
               <p className="mb-1.5 text-[11px] italic text-accent/70">{e.planned.notes}</p>
             )}
