@@ -50,22 +50,22 @@ function SessionHistory() {
   }, [highlight, sessions.length]);
 
   return (
-    <div className="min-h-screen -m-4 sm:-m-6 lg:-m-8 bg-[#0f0f0f] p-4 sm:p-6 lg:p-8 text-zinc-100">
+    <div className="min-h-screen -m-4 sm:-m-6 lg:-m-8 bg-background p-4 sm:p-6 lg:p-8 text-foreground">
       <div className="mx-auto max-w-3xl space-y-4">
-        <Link to="/plans/$planId" params={{ planId }} className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-100">
+        <Link to="/plans/$planId" params={{ planId }} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3 w-3" /> Back to plan
         </Link>
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
             <History className="h-5 w-5 text-accent" /> Session history
           </h1>
-          <p className="text-sm text-zinc-400">{plan?.title ?? ""}</p>
+          <p className="text-sm text-muted-foreground">{plan?.title ?? ""}</p>
         </div>
 
         {loading ? (
-          <p className="text-sm text-zinc-500">Loading…</p>
+          <p className="text-sm text-foreground0">Loading…</p>
         ) : sessions.length === 0 ? (
-          <p className="text-sm text-zinc-500">No sessions logged yet.</p>
+          <p className="text-sm text-foreground0">No sessions logged yet.</p>
         ) : (
           <ul className="space-y-2">
             {sessions.map((s) => {
@@ -74,14 +74,14 @@ function SessionHistory() {
                 <li
                   key={s.id}
                   id={`session-${s.id}`}
-                  className={`rounded-lg border bg-[#1a1a1a] p-3 transition ${
-                    isHighlighted ? "border-accent animate-lime-pulse" : "border-zinc-800"
+                  className={`rounded-lg border bg-card p-3 transition ${
+                    isHighlighted ? "border-accent animate-lime-pulse" : "border-border"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold tracking-tight">{s.session_date}</p>
-                      <p className="text-xs text-zinc-400">
+                      <p className="text-xs text-muted-foreground">
                         Week {s.week_number} · {s.day_label} ·{" "}
                         <span className="uppercase tracking-widest text-[10px]">{s.logged_by}</span>
                       </p>
@@ -91,21 +91,21 @@ function SessionHistory() {
                     </span>
                   </div>
                   {s.session_notes && (
-                    <p className="mt-2 text-sm text-zinc-300">{s.session_notes}</p>
+                    <p className="mt-2 text-sm text-foreground/90">{s.session_notes}</p>
                   )}
                   {Array.isArray(s.entries) && s.entries.length > 0 && (
-                    <ul className="mt-2 divide-y divide-zinc-800 text-xs">
+                    <ul className="mt-2 divide-y divide-border text-xs">
                       {s.entries.map((entry: any, idx: number) => (
                         <li key={idx} className="py-1.5">
-                          <p className="font-semibold text-zinc-100">{entry.exercise_name || "(unnamed)"}</p>
+                          <p className="font-semibold text-foreground">{entry.exercise_name || "(unnamed)"}</p>
                           {Array.isArray(entry.sets) && entry.sets.length > 0 ? (
-                            <p className="text-zinc-400">
+                            <p className="text-muted-foreground">
                               {entry.sets
                                 .map((st: any, i: number) => `Set ${i + 1}: ${st.reps || "—"} × ${st.weight || "—"}`)
                                 .join("  ·  ")}
                             </p>
                           ) : entry.actual ? (
-                            <p className="text-zinc-400">
+                            <p className="text-muted-foreground">
                               {entry.actual.sets || "—"} × {entry.actual.reps || "—"} @ {entry.actual.weight || "—"}
                             </p>
                           ) : null}
