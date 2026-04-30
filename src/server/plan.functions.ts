@@ -171,7 +171,28 @@ const PlanSchema = {
 export const generatePlanDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Billing gate: trial OR paid subscription required to generate plans.
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: sub } = await supabaseAdmin
+      .from("subscribers")
+      .select("subscribed, current_period_end, trial_end")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const now = Date.now();
+    const trialActive = !!(sub?.trial_end && new Date(sub.trial_end).getTime() > now);
+    const subActive =
+      !!sub?.subscribed &&
+      (!sub?.current_period_end || new Date(sub.current_period_end).getTime() > now);
+    if (!trialActive && !subActive) {
+      return {
+        ok: false as const,
+        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        billingRequired: true as const,
+      };
+    }
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { ok: false as const, error: "AI gateway is not configured." };
