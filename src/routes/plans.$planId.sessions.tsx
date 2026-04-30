@@ -56,7 +56,7 @@ function SessionHistory() {
           <ArrowLeft className="h-3 w-3" /> Back to plan
         </Link>
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+          <h1 className="flex items-center gap-2 text-3xl font-light tracking-tight">
             <History className="h-5 w-5 text-accent" /> Session history
           </h1>
           <p className="text-sm text-muted-foreground">{plan?.title ?? ""}</p>
@@ -86,7 +86,7 @@ function SessionHistory() {
                         <span className="uppercase tracking-widest text-[10px]">{s.logged_by}</span>
                       </p>
                     </div>
-                    <span className="rounded bg-accent px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-accent-foreground">
+                    <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
                       {Array.isArray(s.entries) ? s.entries.length : 0} ex
                     </span>
                   </div>
