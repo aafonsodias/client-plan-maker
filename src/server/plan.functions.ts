@@ -46,6 +46,25 @@ const BANNED_RATIONALE_PHRASES = [
   "targets multiple muscles",
 ];
 
+// Concrete-anchor keywords. A rationale must include either a digit or one of
+// these tokens (case-insensitive, word-boundary) to be considered grounded in
+// real client data instead of a generic motivational sentence.
+const ANCHOR_KEYWORDS = [
+  "injury",
+  "limitation",
+  "history",
+  "recovery",
+  "equipment",
+  "screen",
+  "score",
+  "rom",
+  "mobility",
+  "pain",
+  "previous",
+  "client",
+];
+const ANCHOR_REGEX = new RegExp(`\\b(${ANCHOR_KEYWORDS.join("|")})\\b`, "i");
+
 function parseRpe(rpe: string): number | null {
   const m = String(rpe ?? "").match(/(\d+(?:\.\d+)?)/g);
   if (!m || m.length === 0) return null;
@@ -101,6 +120,12 @@ export function validateExercises(
       const hits = BANNED_RATIONALE_PHRASES.filter((p) => lower.includes(p));
       if (hits.length) {
         warnings.push(`exercise[${i}] (${ex.name}): rationale uses banned generic phrasing: ${hits.join(", ")}`);
+      }
+      // Concrete client anchor: at least one digit OR one anchor keyword.
+      const hasNumber = /\d/.test(r);
+      const hasKeyword = ANCHOR_REGEX.test(r);
+      if (!hasNumber && !hasKeyword) {
+        warnings.push(`exercise[${i}] (${ex.name}): Rationale must include a concrete client anchor (number or specific constraint)`);
       }
     }
     if (!ex.cue || !ex.cue.trim()) {
