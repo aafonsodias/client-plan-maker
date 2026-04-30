@@ -428,6 +428,40 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
 
+  // Capture per-section field signatures the first time we hydrate so we can
+  // detect when the trainer edits a section that was filled by the client.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (Object.keys(sectionSnapshotRef.current).length > 0) return;
+    const snap: Record<string, string> = {};
+    for (const section of Object.keys(PROV_SECTION_FIELDS)) {
+      snap[section] = sectionSignature(assessment, section);
+    }
+    sectionSnapshotRef.current = snap;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  // Detect trainer edits: when a client-submitted section's signature changes
+  // after hydration, flip its provenance to "trainer-edited".
+  useEffect(() => {
+    if (!hydrated) return;
+    const prov = (assessment.provenance ?? {}) as Record<string, "client" | "trainer-edited">;
+    let next: Record<string, "client" | "trainer-edited"> | null = null;
+    for (const section of Object.keys(PROV_SECTION_FIELDS)) {
+      if (prov[section] !== "client") continue;
+      const sig = sectionSignature(assessment, section);
+      const baseline = sectionSnapshotRef.current[section];
+      if (baseline !== undefined && sig !== baseline) {
+        if (!next) next = { ...prov };
+        next[section] = "trainer-edited";
+      }
+    }
+    if (next) {
+      setAssessment((a: any) => ({ ...a, provenance: next }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment, hydrated]);
+
   // Tick relative time display once a minute
   useEffect(() => {
     const id = setInterval(() => setRelTick((t) => t + 1), 30_000);
