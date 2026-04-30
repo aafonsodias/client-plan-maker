@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
