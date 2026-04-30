@@ -94,11 +94,9 @@ export const loadIntake = createServerFn({ method: "POST" })
     }
 
     const [{ data: profile }, { data: assessment }] = await Promise.all([
-      supabaseAdmin
-        .from("profiles")
-        .select("business_name, full_name, logo_url, primary_color")
-        .eq("user_id", client.trainer_id)
-        .maybeSingle(),
+      // Use the locked-down RPC instead of reading the profiles table directly.
+      // The RPC only returns branding-safe fields (no contact_email/phone).
+      supabaseAdmin.rpc("get_intake_branding", { _token: data.token }).maybeSingle(),
       supabaseAdmin
         .from("assessments")
         .select("*")
@@ -110,7 +108,7 @@ export const loadIntake = createServerFn({ method: "POST" })
     return {
       status: "valid",
       client: { id: client.id, first_name: firstName },
-      trainer: profile ?? { business_name: null, full_name: null, logo_url: null, primary_color: null },
+      trainer: (profile as any) ?? { business_name: null, full_name: null, logo_url: null, primary_color: null, tagline: null },
       assessment: assessment ?? null,
     };
   });
@@ -188,7 +186,10 @@ export const saveIntake = createServerFn({ method: "POST" })
         .from("assessments")
         .update(cleaned as any)
         .eq("id", existing.id);
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("[intake] update assessment failed", error);
+        throw new Error("Could not save your answers. Please try again.");
+      }
     } else {
       const { error } = await supabaseAdmin
         .from("assessments")
@@ -197,7 +198,10 @@ export const saveIntake = createServerFn({ method: "POST" })
           trainer_id: client.trainer_id,
           ...cleaned,
         } as any);
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("[intake] insert assessment failed", error);
+        throw new Error("Could not save your answers. Please try again.");
+      }
     }
 
     if (data.submit) {
