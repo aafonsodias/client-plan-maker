@@ -135,9 +135,9 @@ const PlanSchema = {
 export const generatePlanDraft = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return { ok: false as const, error: "AI is not configured." };
+      return { ok: false as const, error: "Anthropic API key is not configured." };
     }
 
     const sys = `You are an expert strength coach and movement specialist designing PROFESSIONAL-GRADE, periodized programs for serious trainers and their clients. Every program must be HOLISTIC (training + recovery + lifestyle) and STRUCTURED (every session has a complete arc, not just a list of lifts).
@@ -233,46 +233,42 @@ Performance markers:
 Plan length: ${data.duration_weeks} weeks.`;
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          messages: [
-            { role: "system", content: sys },
-            { role: "user", content: user },
-          ],
+          model: "claude-sonnet-4-5",
+          max_tokens: 16000,
+          system: sys,
+          messages: [{ role: "user", content: user }],
           tools: [
             {
-              type: "function",
-              function: {
-                name: "emit_workout_plan",
-                description: "Emit the structured workout plan",
-                parameters: PlanSchema,
-              },
+              name: "emit_workout_plan",
+              description: "Emit the structured workout plan",
+              input_schema: PlanSchema,
             },
           ],
-          tool_choice: { type: "function", function: { name: "emit_workout_plan" } },
+          tool_choice: { type: "tool", name: "emit_workout_plan" },
         }),
       });
 
-      if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
-      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Add credits in Lovable Cloud." };
+      if (res.status === 429) return { ok: false as const, error: "Anthropic rate limit reached. Try again in a moment." };
+      if (res.status === 401) return { ok: false as const, error: "Invalid Anthropic API key." };
       if (!res.ok) {
         const t = await res.text();
-        console.error("AI gateway error", res.status, t);
+        console.error("Anthropic API error", res.status, t);
         return { ok: false as const, error: `AI request failed (${res.status}).` };
       }
 
       const json = await res.json();
-      const call = json?.choices?.[0]?.message?.tool_calls?.[0];
-      const args = call?.function?.arguments;
+      const toolUse = json?.content?.find((b: any) => b.type === "tool_use");
+      const args = toolUse?.input;
       if (!args) return { ok: false as const, error: "AI returned no plan." };
-      const parsed = typeof args === "string" ? JSON.parse(args) : args;
-      return { ok: true as const, plan: parsed };
+      return { ok: true as const, plan: args };
     } catch (err) {
       console.error("Plan draft failed", err);
       return { ok: false as const, error: "Failed to generate plan." };
