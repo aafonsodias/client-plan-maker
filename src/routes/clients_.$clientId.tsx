@@ -586,6 +586,22 @@ function ClientDetail() {
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
 
+  // Section completion + progress
+  const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
+  const completedCount = sectionStatus.filter((s) => s.complete).length;
+  const totalSections = SECTIONS.length;
+  const pct = Math.round((completedCount / totalSections) * 100);
+  const minutesLeft = Math.max(1, Math.round((totalSections - completedCount) * 0.6));
+  const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
+  const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
+
+  const trainingSummary = [
+    assessment.training_days_per_week ? `${assessment.training_days_per_week}×/week` : null,
+    assessment.session_duration_minutes ? `${assessment.session_duration_minutes} min` : null,
+    assessment.training_location || null,
+    assessment.experience_level || null,
+  ].filter(Boolean).join(", ");
+
   return (
     <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
