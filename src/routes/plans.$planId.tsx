@@ -479,6 +479,103 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Quick plan-vs-actual marker for a day. One click writes a workout_sessions
+ * row with status=done|partial|missed and empty entries — the trainer can
+ * always open Log mode later to add detail. Re-clicking the same status
+ * removes the latest mark for that day.
+ */
+function DayQuickMark({
+  planId,
+  weekNumber,
+  dayLabel,
+  sessions,
+  reload,
+}: {
+  planId: string;
+  weekNumber: number;
+  dayLabel: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  // Latest session for this exact day cell
+  const latest = sessions
+    .filter((s) => s.week_number === weekNumber && s.day_label === dayLabel)
+    .sort((a, b) => b.session_date.localeCompare(a.session_date))[0];
+
+  const current = (latest?.status ?? null) as "done" | "partial" | "missed" | null;
+
+  const mark = async (status: "done" | "partial" | "missed") => {
+    setBusy(true);
+    try {
+      // Toggle off if clicking the same status that's already set
+      if (current === status && latest) {
+        const { error } = await supabase.from("workout_sessions").delete().eq("id", latest.id);
+        if (error) throw error;
+        toast.success("Mark cleared");
+      } else {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: u } = await supabase.auth.getUser();
+        const trainerId = u.user?.id;
+        if (!trainerId) throw new Error("Not authenticated");
+        const { error } = await supabase.from("workout_sessions").insert({
+          plan_id: planId,
+          trainer_id: trainerId,
+          week_number: weekNumber,
+          day_label: dayLabel,
+          session_date: today,
+          status,
+          entries: [],
+          logged_by: "trainer",
+        });
+        if (error) throw error;
+        toast.success(
+          status === "done" ? "Marked done" : status === "partial" ? "Marked partial" : "Marked missed",
+        );
+      }
+      await reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to mark");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const btn = (
+    val: "done" | "partial" | "missed",
+    Icon: typeof Check,
+    label: string,
+    activeClass: string,
+  ) => {
+    const active = current === val;
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => mark(val)}
+        title={active ? `${label} — click to clear` : label}
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
+          active
+            ? activeClass
+            : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    );
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      {btn("done", Check, "Done", "border-emerald-500/40 bg-emerald-500/15 text-emerald-600")}
+      {btn("partial", MinusCircle, "Partial", "border-amber-500/40 bg-amber-500/15 text-amber-600")}
+      {btn("missed", XCircle, "Missed", "border-rose-500/40 bg-rose-500/15 text-rose-600")}
+    </div>
+  );
+}
+
 function SectionView({ title, items, accent = false }: { title: string; items?: SectionItem[]; accent?: boolean }) {
   if (!items || items.length === 0) return null;
   return (
