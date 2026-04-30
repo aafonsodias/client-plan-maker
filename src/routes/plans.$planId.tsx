@@ -199,6 +199,27 @@ function PlanEditor() {
         )}
       </div>
 
+      {/* Legacy plan: prompt regeneration */}
+      {data.weeks.length > 0 && isLegacyPlan(data) && client && (
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">This plan uses the old Forge structure.</p>
+            <p className="mt-0.5 text-muted-foreground">
+              Regenerate from {client.full_name}'s assessment to get the full session arc — warmup, activation,
+              dynamic prep, main work, cooldown and an optional finisher — plus muscle tags, RPE and tempo on every exercise.
+            </p>
+          </div>
+          <Link
+            to="/clients/$clientId"
+            params={{ clientId: client.id }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
+          >
+            <Sparkles className="h-3 w-3" /> Regenerate
+          </Link>
+        </div>
+      )}
+
       {/* Mode tabs */}
       <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
