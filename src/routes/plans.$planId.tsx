@@ -534,6 +534,7 @@ function DayQuickMark({
         toast.success(
           status === "done" ? "Marked done" : status === "partial" ? "Marked partial" : "Marked missed",
         );
+        void markOnboardingStep(trainerId, "log_session");
       }
       await reload();
     } catch (e: any) {
