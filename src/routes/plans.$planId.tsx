@@ -21,8 +21,9 @@ import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
+import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
-// Server fns are reserved for the public client-log endpoints.
+// Share-token mutations go through server fns so token + expiry stay in sync.
 
 export const Route = createFileRoute("/plans/$planId")({
   component: () => (
@@ -819,36 +820,24 @@ function FieldStack({ label, children, className = "" }: { label: string; childr
 function ShareDialog({ planId, initialToken, onChange }: { planId: string; initialToken: string | null; onChange: (t: string | null) => void }) {
   const [token, setToken] = useState<string | null>(initialToken);
   const [busy, setBusy] = useState(false);
+  const ensureFn = useServerFn(ensureShareToken);
+  const revokeFn = useServerFn(revokeShareToken);
 
   const url = token ? `${window.location.origin}/log/${token}` : null;
 
   const enable = async (rotate = false) => {
     setBusy(true);
     try {
-      // If a token already exists and we're not rotating, just reuse it.
-      if (token && !rotate) {
-        toast.success("Share link ready");
-        return;
-      }
-      const newToken = crypto.randomUUID();
-      const { error } = await supabase
-        .from("workout_plans")
-        .update({ share_token: newToken })
-        .eq("id", planId);
-      if (error) throw error;
-      setToken(newToken);
-      onChange(newToken);
+      const res = await ensureFn({ data: { plan_id: planId, rotate } });
+      setToken(res.share_token);
+      onChange(res.share_token);
       toast.success(rotate ? "Link rotated" : "Share link ready");
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
   };
   const revoke = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from("workout_plans")
-        .update({ share_token: null })
-        .eq("id", planId);
-      if (error) throw error;
+      await revokeFn({ data: { plan_id: planId } });
       setToken(null); onChange(null);
       toast.success("Link revoked");
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
