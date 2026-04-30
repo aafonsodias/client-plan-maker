@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Users, Zap, ArrowRight } from "lucide-react";
+import { FileText, Sparkles, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
@@ -35,18 +35,18 @@ function Landing() {
           className="absolute -right-32 top-20 -z-10 h-96 w-96 rounded-full opacity-30 blur-3xl"
           style={{ background: "var(--gradient-accent)" }}
         />
-        <div className="mx-auto max-w-6xl px-6 py-24 text-foreground sm:py-32">
-          <div className="max-w-3xl">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
+          <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
               <Sparkles className="h-3 w-3" /> AI-assisted workout drafting
             </div>
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
-              Build client workout plans
-              <span className="block text-accent">in 90 seconds.</span>
+              Stop writing plans
+              <span className="block text-accent">at midnight.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
-              Run a structured intake, let AI draft a personalized program, edit it your way, and export
-              a branded PDF your clients will actually open.
+              Run a structured intake, let AI draft a personalized program in 90 seconds, and export a
+              branded PDF your clients will actually open.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -59,6 +59,7 @@ function Landing() {
               </Button>
             </div>
           </div>
+          <HeroPlanMockup />
         </div>
       </section>
 
@@ -69,6 +70,51 @@ function Landing() {
           <h2 className="mt-2 text-4xl font-light tracking-tight">From intake to PDF in four moves.</h2>
         </div>
         <HowItWorksAnimation />
+      </section>
+
+      {/* Credibility — built on the science */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-12 max-w-2xl">
+          <h2 className="text-4xl font-light tracking-tight">Built on the science you already trust.</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">
+            Forge isn't just AI on top of a chat box. The intake follows the protocols you learned in
+            your certification — so the output is defensible, not generic.
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { icon: ClipboardCheck, title: "PAR-Q+ screening", desc: "Pre-participation health screen with cardiovascular, metabolic, and renal risk flags built in." },
+            { icon: ShieldCheck, title: "ACSM risk stratification", desc: "Low / moderate / high categorization to guide intensity prescription safely from session one." },
+            { icon: RefreshCw, title: "Prochaska stages of change", desc: "Behaviour-change readiness mapped to coaching tone and progression speed for each client." },
+          ].map((c) => (
+            <div key={c.title} className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:shadow-[var(--shadow-elegant)]">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
+                <c.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mb-2 text-lg font-medium tracking-tight">{c.title}</h3>
+              <p className="text-sm font-light text-muted-foreground">{c.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Logging / history — beyond the PDF */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-12 max-w-2xl">
+          <h2 className="text-4xl font-light tracking-tight">The plan doesn't end at the PDF.</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">
+            Log every set, track every session. Forge keeps the history so you and the client see the
+            work pile up.
+          </p>
+        </div>
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div className="space-y-8 text-lg font-light">
+            <p>Per-set logging — weight, reps, RPE</p>
+            <p>Full session history per client</p>
+            <p>Progression visible at a glance</p>
+          </div>
+          <SetLogMockup />
+        </div>
       </section>
 
       {/* Features */}
@@ -95,15 +141,15 @@ function Landing() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-foreground sm:px-16">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-center text-foreground sm:px-16">
           <div
             className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-25 blur-3xl"
             style={{ background: "var(--gradient-accent)" }}
           />
-          <h2 className="relative max-w-2xl text-4xl font-light tracking-tight">
-            Stop writing plans at midnight.
+          <h2 className="relative mx-auto max-w-2xl text-4xl font-light tracking-tight">
+            Your next client plan, before your next coffee.
           </h2>
-          <p className="relative mt-4 max-w-xl font-light text-muted-foreground">
+          <p className="relative mx-auto mt-4 max-w-xl font-light text-muted-foreground">
             Join trainers building better programs in less time.
           </p>
           <Button asChild size="lg" className="relative mt-8">
