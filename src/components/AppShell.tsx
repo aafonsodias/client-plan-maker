@@ -1,7 +1,8 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Home, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Home, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { useEffect, type ReactNode } from "react";
 
 export function AppShell({ children, back }: { children: ReactNode; back?: { to: string; label?: string } }) {
@@ -28,8 +29,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Dumbbell className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+              <Logo className="h-5 w-5" />
             </div>
             <span>FORGE</span>
           </Link>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, FileText, Sparkles, Users, Zap, ArrowRight } from "lucide-react";
+import { FileText, Sparkles, Users, Zap, ArrowRight } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -13,8 +14,8 @@ function Landing() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Dumbbell className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+              <Logo className="h-5 w-5" />
             </div>
             <span className="text-lg">FORGEPLAN</span>
           </Link>

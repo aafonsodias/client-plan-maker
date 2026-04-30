@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
-import { Save, Dumbbell } from "lucide-react";
+import { Save } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { getSharedPlan, saveClientSession } from "@/server/sessions.functions";
 import type { PlanData } from "@/lib/pdf";
 
@@ -64,7 +65,7 @@ function ClientLogPage() {
   if (done) return (
     <Centered>
       <div className="space-y-3 text-center">
-        <Dumbbell className="mx-auto h-10 w-10 text-accent" />
+        <Logo className="mx-auto h-12 w-12" />
         <h1 className="text-2xl font-bold">Session logged 💪</h1>
         <p className="text-muted-foreground">Thanks — your trainer can see it now.</p>
         <Button onClick={() => setDone(false)}>Log another session</Button>
