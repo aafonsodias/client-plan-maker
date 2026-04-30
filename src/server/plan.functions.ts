@@ -383,18 +383,34 @@ SESSION STRUCTURE — every day MUST include these sections in this exact order:
 SECTION ITEM SHAPE — every item in warmup / activation / dynamic_stretches / cooldown / finisher uses { name, duration, notes }. Use empty strings ("") for fields you don't need (never omit the keys). Keep notes short and concrete (a single cue or rep target).
 
 EXERCISE SHAPE — every exercise in the main work MUST populate ALL of these:
-- name
-- sets, reps, rest (concrete: "3", "8-10", "90s")
-- primary_muscles      — array of primary movers (e.g. ["quadriceps", "glutes"])
-- secondary_muscles    — array of synergists/stabilizers (e.g. ["hamstrings", "core"])
-- rpe                  — target RPE on the 1–10 scale, calibrated to experience:
-    * beginner → 6–7
-    * intermediate → 7–8
-    * advanced → 8–9 (with deload weeks at 6)
-- tempo                — 4-digit tempo notation eccentric-pause-concentric-pause, e.g. "3-1-1-0", "2-0-X-0", "4-2-1-0"
-- technique_cues       — 1–2 short technique cues focused on JOINT CENTRALIZATION, PAUSE AT PEAK STRETCH, and BREATHING PATTERN. Examples: "Brace and exhale on press; ribs stacked over pelvis." or "Pause 1s in the deepest stretch; drive knees out, big toe planted."
-- equipment            — array listing only the equipment used (must be a subset of available_equipment)
-- notes                — programming/substitution context only (e.g. "Drop 10% on week 3 if bar speed slows"). Empty string if nothing to add.
+- name, sets, reps, rest (concrete: "3", "8-10", "90s")
+- primary_muscles[]    — array of primary movers (e.g. ["quadriceps", "glutes"])
+- secondary_muscles[]  — array of synergists/stabilizers
+- rpe — beginner 6–7, intermediate 7–8, advanced 8–9 (deload at 6)
+- tempo — 4-digit eccentric-pause-concentric-pause (e.g. "3-1-1-0", "2-0-X-0")
+- technique_cues — legacy field; repeat the same value as 'cue' for backward compat
+- cue — ONE short technical cue (≤80 chars) on joint centralization, peak-stretch pause, or breathing.
+- rationale — ONE sentence (≤140 chars). MUST be PHASE-CONSISTENT and tie BOTH the day's focus AND a concrete client data point.
+    * Hypertrophy phase → TENSION / VOLUME / STIMULUS / time-under-tension / stretch-mediated growth.
+    * Strength phase    → FORCE PRODUCTION / LOAD / NEURAL DEMAND / intent / bar speed.
+    * Endurance phase   → FATIGUE RESISTANCE / work capacity / repeat-effort tolerance.
+    Mixing vocabularies across phases is a HARD FAIL.
+    BANNED phrasings: "build strength", "great for hypertrophy", "compound movement", "works the whole body", "balanced exercise", "core lift", "fundamental movement", "improves overall fitness", "good warmup", "targets multiple muscles".
+- superset_id — null OR a short tag ("A1"/"A2", "B1"/"B2") when paired. STRICT:
+    * EXACTLY 2 exercises share the same tag (never 1, never 3+).
+    * Paired exercises MUST be consecutive in the array.
+    * Max 2–3 supersets per session.
+    * NEVER on a main lift in a STRENGTH-phase day (main = heaviest compound at session start). Hypertrophy/endurance may pair main lifts.
+- variant — null OR short modifier ("incline", "deficit", "paused", "tempo", "1.25-rep", "pin"). Plain bench → null.
+- optional — boolean. true ONLY for the LAST 1–2 exercises AND RPE ≤ 7 AND a low-priority accessory the client may skip on a hard day. NEVER true for: main lifts, anything in a superset, RPE ≥ 8, primers, or correctives tied to a flagged screen item. <4 working exercises → all false.
+- equipment[] — subset of available_equipment.
+- notes — programming/substitution context only. Empty string if none.
+
+SELF-CHECK BEFORE EMITTING THE TOOL CALL:
+  1. Every rationale uses phase-consistent vocabulary AND cites a concrete client data point. No banned phrasings.
+  2. Every superset_id tag appears EXACTLY twice and consecutively. No tag on a strength-phase main lift.
+  3. optional=true count ≤ 2, only in the last 2 slots, all RPE ≤ 7, none in supersets, none main lifts.
+  Fix violations BEFORE calling emit_workout_plan.
 
 HOLISTIC PERSONALIZATION — you MUST use ALL of the following to calibrate the program (do not just use goal + equipment):
 - Sleep quality (1–10): low → reduce volume, easier sessions early in the week, fewer CNS-demanding lifts, lower RPE caps.
