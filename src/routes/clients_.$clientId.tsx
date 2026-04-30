@@ -319,6 +319,8 @@ function ClientDetail() {
   const [busy, setBusy] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
   const [activeSection, setActiveSection] = useState("parq");
+  const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
+  const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
 
   // Auto-save state
   const [hydrated, setHydrated] = useState(false);
