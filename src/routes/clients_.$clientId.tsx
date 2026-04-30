@@ -53,6 +53,29 @@ function parqFlagCount(parq: Record<string, boolean | null>): number {
   return Object.values(parq ?? {}).filter((v) => v === true).length;
 }
 
+// Section -> assessment field keys used to compute a signature for edit detection.
+const PROV_SECTION_FIELDS: Record<string, string[]> = {
+  smart_goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal"],
+  readiness: ["readiness_stage"],
+  training: [
+    "experience_level", "training_days_per_week", "session_duration_minutes",
+    "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
+  ],
+  lifestyle: [
+    "sleep_quality", "stress_level", "ext_hours_seated", "ext_daily_steps",
+    "ext_job_type", "energy_levels", "recovery_capacity",
+  ],
+  nutrition: [
+    "ext_meals_per_day", "ext_alcohol_units_week", "ext_processed_food_freq",
+    "ext_water_l_per_day", "nutrition_habits",
+  ],
+};
+
+function sectionSignature(assessment: any, section: string): string {
+  const fields = PROV_SECTION_FIELDS[section] ?? [];
+  return JSON.stringify(fields.map((f) => assessment?.[f] ?? null));
+}
+
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
@@ -210,6 +233,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
       mob_knee: assessment.ext_mob_knee,
       cardio_test: assessment.ext_cardio_test,
       cardio_value: assessment.ext_cardio_value,
+      provenance: assessment.provenance ?? {},
     },
   };
 }
@@ -316,6 +340,8 @@ function ClientDetail() {
     // Performance markers
     resting_heart_rate: "",
     cardio_capacity: "",
+    // Per-section provenance: "client" (filled via intake) or "trainer-edited"
+    provenance: {} as Record<string, "client" | "trainer-edited">,
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
@@ -333,6 +359,8 @@ function ClientDetail() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightSaveRef = useRef<Promise<void> | null>(null);
   const skipNextAutosaveRef = useRef(true);
+  // Snapshot of section field signatures captured at hydration, used to detect trainer edits to client-submitted sections.
+  const sectionSnapshotRef = useRef<Record<string, string>>({});
   const lsKey = `forge_assessment_draft_${clientId}`;
 
   useEffect(() => {
@@ -368,6 +396,7 @@ function ClientDetail() {
           ext_cardio_test: ext.cardio_test ?? "untested",
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
+          provenance: (ext.provenance as Record<string, "client" | "trainer-edited">) ?? {},
         });
       }
       // Check localStorage backup; prefer it if newer
@@ -398,6 +427,40 @@ function ClientDetail() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
+
+  // Capture per-section field signatures the first time we hydrate so we can
+  // detect when the trainer edits a section that was filled by the client.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (Object.keys(sectionSnapshotRef.current).length > 0) return;
+    const snap: Record<string, string> = {};
+    for (const section of Object.keys(PROV_SECTION_FIELDS)) {
+      snap[section] = sectionSignature(assessment, section);
+    }
+    sectionSnapshotRef.current = snap;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
+
+  // Detect trainer edits: when a client-submitted section's signature changes
+  // after hydration, flip its provenance to "trainer-edited".
+  useEffect(() => {
+    if (!hydrated) return;
+    const prov = (assessment.provenance ?? {}) as Record<string, "client" | "trainer-edited">;
+    let next: Record<string, "client" | "trainer-edited"> | null = null;
+    for (const section of Object.keys(PROV_SECTION_FIELDS)) {
+      if (prov[section] !== "client") continue;
+      const sig = sectionSignature(assessment, section);
+      const baseline = sectionSnapshotRef.current[section];
+      if (baseline !== undefined && sig !== baseline) {
+        if (!next) next = { ...prov };
+        next[section] = "trainer-edited";
+      }
+    }
+    if (next) {
+      setAssessment((a: any) => ({ ...a, provenance: next }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment, hydrated]);
 
   // Tick relative time display once a minute
   useEffect(() => {
@@ -774,7 +837,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* SMART goal */}
-          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound." complete={isSectionComplete("goal", assessment)} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={`✓ Goal logged: ${String(assessment.smart_specific ?? "").slice(0, 40)}`} /> : null}>
+          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound." complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={`✓ Goal logged: ${String(assessment.smart_specific ?? "").slice(0, 40)}`} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Specific outcome" value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder="e.g. Squat 1.5×BW for 5 reps" hint="What concrete result?" className="sm:col-span-2" />
               <Field label="Measurable target" value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder="e.g. 120kg @ BW80kg" hint="Number you'll measure." />
@@ -784,7 +847,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Readiness */}
-          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach." defaultCollapsed complete={isSectionComplete("readiness", assessment)}>
+          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach." defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
             <div className="flex flex-wrap gap-1.5">
               {[
                 ["precontemplation", "Pre-contemplation"],
@@ -806,7 +869,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training setup (existing) */}
-          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints." complete={isSectionComplete("training", assessment)} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={`✓ Setup: ${trainingSummary}`} /> : null}>
+          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints." complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={`✓ Setup: ${trainingSummary}`} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label="Experience level" hint="Beginner = <1y consistent · Intermediate = 1–3y · Advanced = 3y+." />
@@ -843,7 +906,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators." defaultCollapsed complete={isSectionComplete("lifestyle", assessment)}>
+          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators." defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Sleep (1–10)" type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint="Subjective average sleep quality this past month." />
               <Field label="Stress (1–10)" type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint="Perceived overall stress." />
@@ -856,7 +919,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions." defaultCollapsed complete={isSectionComplete("nutrition", assessment)}>
+          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions." defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Meals / day" type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
               <Field label="Alcohol units / week" type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint="UK unit ≈ 10 ml ethanol." />
@@ -1040,6 +1103,8 @@ function SectionBlock({
   defaultCollapsed = false,
   complete = false,
   footer,
+  provenance,
+  reviewed = false,
 }: {
   id: string;
   title: string;
@@ -1048,10 +1113,28 @@ function SectionBlock({
   defaultCollapsed?: boolean;
   complete?: boolean;
   footer?: React.ReactNode;
+  provenance?: "client" | "trainer-edited";
+  reviewed?: boolean;
 }) {
   const [open, setOpen] = useState(!defaultCollapsed);
+  // Provenance border + tag styling
+  const hasProv = provenance === "client" || provenance === "trainer-edited";
+  const borderClass = hasProv
+    ? reviewed
+      ? "border-l-[3px] border-l-accent/30"
+      : "border-l-[3px] border-l-accent"
+    : "";
+  let tagText = "";
+  let tagClass = "";
+  if (provenance === "client") {
+    tagText = "Client-submitted";
+    tagClass = reviewed ? "text-muted-foreground/70" : "text-accent/90";
+  } else if (provenance === "trainer-edited") {
+    tagText = "Edited by you";
+    tagClass = "text-muted-foreground/70";
+  }
   return (
-    <div id={`sec-${id}`} className="scroll-mt-20 rounded-xl border border-border bg-background/40 p-3">
+    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl border border-border bg-background/40 p-3 ${borderClass}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -1076,6 +1159,11 @@ function SectionBlock({
             </TooltipTrigger>
             <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
           </Tooltip>
+        )}
+        {tagText && (
+          <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider ${tagClass}`}>
+            {tagText}
+          </span>
         )}
       </button>
       {open && (
