@@ -569,23 +569,33 @@ function ClientDetail() {
           {/* PAR-Q+ */}
           <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance.">
             <ul className="space-y-1.5">
-              {PARQ_QUESTIONS.map((q, idx) => (
-                <li key={q.key} className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 p-2">
-                  <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
-                  <YesNo value={(assessment.parq as any)[q.key]} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
-                </li>
-              ))}
+              {PARQ_QUESTIONS.map((q, idx) => {
+                const value = (assessment.parq as any)[q.key];
+                const flagged = value === true;
+                return (
+                  <li
+                    key={q.key}
+                    className={`rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
+                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
+                    </div>
+                    {flagged && (
+                      <div className="mt-2 flex animate-fade-in items-start gap-2 rounded-md border border-accent/30 bg-accent/5 p-2 text-[11px] text-muted-foreground">
+                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                        <span>{PARQ_RATIONALE[q.key]}</span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
-            {parqYes && (
-              <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>One or more 'Yes' responses. Recommend physician clearance before initiating training.</span>
-              </div>
-            )}
           </SectionBlock>
 
           {/* Risk stratification */}
           <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high.">
+            <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
