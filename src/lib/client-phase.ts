@@ -108,6 +108,8 @@ export function phasePillClasses(kind: PhaseKind): string {
   switch (kind) {
     case "onboarding":
       return `${base} bg-secondary text-muted-foreground`;
+    case "intake_sent":
+      return `${base} bg-accent/10 text-accent/90 border border-accent/30`;
     case "assessment":
       return `${base} bg-accent/15 text-accent/90`;
     case "ready":
