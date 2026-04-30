@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import andreFounder from "@/assets/andre-founder.png";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -144,9 +145,12 @@ function Landing() {
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="grid items-start gap-10 md:grid-cols-[30%_1fr]">
           <div className="flex justify-center md:justify-start">
-            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-foreground text-background sm:h-40 sm:w-40">
-              <span className="font-serif text-4xl tracking-wide sm:text-5xl">AD</span>
-            </div>
+            <img
+              src={andreFounder}
+              alt="André, founder of Forge"
+              className="h-[120px] w-[120px] rounded-full border border-muted-foreground/30 object-cover object-[center_top] md:h-[160px] md:w-[160px]"
+              style={{ boxShadow: "0 0 24px rgba(212, 175, 89, 0.08)" }}
+            />
           </div>
           <div>
             <h2 className="text-[32px] font-light leading-tight tracking-tight">Why I built Forge</h2>
