@@ -34,6 +34,47 @@ function ClientDetail() {
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
+    // PAR-Q+ pre-screening
+    parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
+    // Risk stratification
+    risk: {
+      family_cvd: false, smoking: "never", sedentary: false, bmi_category: "",
+      dyslipidemia: false, prediabetes: false, hypertension: false,
+    },
+    // Anthropometry
+    waist_cm: "",
+    hip_cm: "",
+    body_fat_pct: "",
+    body_fat_method: "",
+    // Meds
+    medications: "",
+    med_flags: [] as string[],
+    // SMART
+    smart_specific: "",
+    smart_measurable: "",
+    smart_deadline: "",
+    // Readiness to change
+    readiness_stage: "",
+    // New lifestyle replacements
+    ext_hours_seated: "",
+    ext_daily_steps: "",
+    ext_job_type: "",
+    // Nutrition replacements
+    ext_meals_per_day: "",
+    ext_alcohol_units_week: "",
+    ext_processed_food_freq: "",
+    ext_water_l_per_day: "",
+    // Anatomical mobility checklist (1-5 scores)
+    ext_mob_shoulder: "",
+    ext_mob_hip: "",
+    ext_mob_ankle: "",
+    ext_mob_thoracic: "",
+    ext_mob_wrist: "",
+    ext_mob_knee: "",
+    // Cardio test
+    ext_cardio_test: "untested",
+    ext_cardio_value: "",
+    // existing
     primary_goal: "",
     experience_level: "",
     training_days_per_week: 3,
@@ -76,6 +117,7 @@ function ClientDetail() {
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  const [activeSection, setActiveSection] = useState("parq");
 
   useEffect(() => {
     if (!user) return;
@@ -83,7 +125,32 @@ function ClientDetail() {
       const { data: c } = await supabase.from("clients").select("*").eq("id", clientId).single();
       setClient(c);
       const { data: a } = await supabase.from("assessments").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (a) setAssessment({ ...assessment, ...a, available_equipment: a.available_equipment ?? [] });
+      if (a) {
+        const ext = (a.extended ?? {}) as Record<string, any>;
+        setAssessment((prev: any) => ({
+          ...prev,
+          ...a,
+          available_equipment: a.available_equipment ?? [],
+          parq: ext.parq ?? prev.parq,
+          risk: ext.risk ?? prev.risk,
+          ext_hours_seated: ext.hours_seated ?? "",
+          ext_daily_steps: ext.daily_steps ?? "",
+          ext_job_type: ext.job_type ?? "",
+          ext_meals_per_day: ext.meals_per_day ?? "",
+          ext_alcohol_units_week: ext.alcohol_units_week ?? "",
+          ext_processed_food_freq: ext.processed_food_freq ?? "",
+          ext_water_l_per_day: ext.water_l_per_day ?? "",
+          ext_mob_shoulder: ext.mob_shoulder ?? "",
+          ext_mob_hip: ext.mob_hip ?? "",
+          ext_mob_ankle: ext.mob_ankle ?? "",
+          ext_mob_thoracic: ext.mob_thoracic ?? "",
+          ext_mob_wrist: ext.mob_wrist ?? "",
+          ext_mob_knee: ext.mob_knee ?? "",
+          ext_cardio_test: ext.cardio_test ?? "untested",
+          ext_cardio_value: ext.cardio_value ?? "",
+          med_flags: a.med_flags ?? [],
+        }));
+      }
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
     })();
