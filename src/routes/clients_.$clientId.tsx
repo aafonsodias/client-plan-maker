@@ -603,7 +603,7 @@ function ClientDetail() {
       setProgressStep(2);
 
       const clientPayload = {
-        full_name: client.full_name,
+        full_name: client?.full_name ?? "Client",
         age: client.age,
         sex: client.sex,
         height_cm: client.height_cm ? Number(client.height_cm) : null,
@@ -675,55 +675,51 @@ function ClientDetail() {
       const errors: string[] = [];
       let completed = doneSet.size;
 
-      await Promise.all(
-        todo.map(async (cell) => {
-          const key = `${cell.w}-${cell.d}`;
-          setDayProgress((prev) => ({ ...prev, [key]: "running" }));
-          // Retry up to 3 times with exponential backoff to absorb
-          // transient gateway hiccups (429 / 5xx / network) on a single day.
-          let lastErr = "unknown";
-          let success = false;
-          for (let attempt = 1; attempt <= 3 && !success; attempt++) {
-            try {
-              const r: any = await generateDayFn({
-                data: {
-                  plan_id: planId,
-                  client: clientPayload,
-                  assessment: assessmentPayload,
-                  duration_weeks: planDuration,
-                  week_number: cell.w,
-                  day_number: cell.d,
-                  days_per_week: planDaysPerWeek,
-                },
-              });
-              if (r?.ok) {
-                success = true;
-                setDayProgress((prev) => ({ ...prev, [key]: "done" }));
-                completed += 1;
-                setProgressTotals({ done: completed, total: grid.length });
-                break;
-              }
-              if (r?.billingRequired) {
-                billingHit = r;
-                lastErr = r?.error ?? "billing required";
-                break; // don't retry billing failures
-              }
+      for (const cell of todo) {
+        const key = `${cell.w}-${cell.d}`;
+        setDayProgress((prev) => ({ ...prev, [key]: "running" }));
+        let lastErr = "unknown";
+        let success = false;
+        for (let attempt = 1; attempt <= 2 && !success; attempt++) {
+          try {
+            const r: any = await generateDayFn({
+              data: {
+                plan_id: planId,
+                client: clientPayload,
+                assessment: assessmentPayload,
+                duration_weeks: planDuration,
+                week_number: cell.w,
+                day_number: cell.d,
+                days_per_week: planDaysPerWeek,
+              },
+            });
+            if (r?.ok) {
+              success = true;
+              setDayProgress((prev) => ({ ...prev, [key]: "done" }));
+              completed += 1;
+              setProgressTotals({ done: completed, total: grid.length });
+            } else if (r?.billingRequired) {
+              billingHit = r;
+              lastErr = r?.error ?? "billing required";
+              break;
+            } else {
               lastErr = r?.error ?? "unknown";
-            } catch (e: any) {
-              lastErr = e?.message ?? "failed";
             }
-            if (attempt < 3) {
-              // 800ms, 1600ms backoff with small jitter
-              const delay = 800 * attempt + Math.floor(Math.random() * 250);
-              await new Promise((res) => setTimeout(res, delay));
-            }
+          } catch (e: any) {
+            lastErr = e?.message ?? "failed";
           }
-          if (!success) {
-            errors.push(`W${cell.w}D${cell.d}: ${lastErr}`);
-            setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+          if (!success && attempt < 2) {
+            await new Promise((res) => setTimeout(res, 2000));
           }
-        })
-      );
+        }
+        if (!success && !billingHit) {
+          errors.push(`W${cell.w}D${cell.d}: ${lastErr}`);
+          setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+        }
+        if (billingHit) break;
+        // 1.5s pause between days to avoid Anthropic rate limits
+        await new Promise((res) => setTimeout(res, 1500));
+      }
 
       if (billingHit) {
         toast.error(billingHit.error || "Subscription required");
