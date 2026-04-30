@@ -37,6 +37,26 @@ export const Route = createRootRoute({
       { property: "og:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      // Defense-in-depth: CSP via meta tag.
+      // Allows Supabase REST/Realtime, OpenAI/Anthropic/Lovable AI gateway, Google OAuth,
+      // and inline styles needed by Tailwind. frame-ancestors must be set as HTTP header
+      // (not effective via meta) — handled separately at the edge.
+      {
+        httpEquiv: "Content-Security-Policy",
+        content: [
+          "default-src 'self'",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data:",
+          "style-src 'self' 'unsafe-inline'",
+          "script-src 'self' 'unsafe-inline'",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.app https://*.lovable.app https://api.openai.com https://api.anthropic.com",
+          "frame-ancestors 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join("; "),
+      },
+      { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
     ],
     links: [
       {

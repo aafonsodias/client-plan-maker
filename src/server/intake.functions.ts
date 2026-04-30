@@ -130,6 +130,42 @@ const ALLOWED_FIELDS = [
 
 const PROVENANCE_SECTIONS = ["smart_goal", "readiness", "training", "lifestyle", "nutrition", "safety"] as const;
 
+// Per-field schemas. Validates VALUES, not just keys (defends against
+// oversized payloads / wrong types reaching the DB via service-role).
+const shortText = z.string().trim().max(500);
+const longText = z.string().trim().max(4000);
+const intRange = (min: number, max: number) =>
+  z.number().int().min(min).max(max);
+const stringArray = z.array(z.string().trim().max(120)).max(50);
+const extendedSchema = z
+  .record(z.string().max(60), z.union([z.string().max(2000), z.number(), z.boolean(), z.null()]))
+  .refine((o) => Object.keys(o).length <= 50, "extended too large");
+
+const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
+  smart_specific: longText,
+  smart_measurable: shortText,
+  smart_deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  readiness_stage: z.enum(["precontemplation", "contemplation", "preparation", "action", "maintenance"]),
+  experience_level: shortText,
+  training_days_per_week: intRange(0, 14),
+  session_duration_minutes: intRange(5, 240),
+  training_location: shortText,
+  available_equipment: stringArray,
+  injuries: longText,
+  medical_conditions: longText,
+  preferences: longText,
+  sleep_quality: intRange(1, 10),
+  stress_level: intRange(1, 10),
+  nutrition_habits: longText,
+  energy_levels: shortText,
+  recovery_capacity: shortText,
+  parq_passed: z.boolean(),
+  acsm_risk_category: z.enum(["low", "moderate", "high"]),
+  medications: longText,
+  med_flags: stringArray,
+  extended: extendedSchema,
+};
+
 const saveSchema = z.object({
   token: z.string().uuid(),
   fields: z.record(z.string(), z.any()),
@@ -155,10 +191,23 @@ export const saveIntake = createServerFn({ method: "POST" })
     const expired = !client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date();
     if (expired) throw new Error("This link has expired.");
 
-    // Filter incoming fields by whitelist
+    // Filter incoming fields by whitelist + validate value types per field.
     const cleaned: Record<string, any> = {};
     for (const k of Object.keys(data.fields)) {
-      if ((ALLOWED_FIELDS as readonly string[]).includes(k)) cleaned[k] = data.fields[k];
+      if (!(ALLOWED_FIELDS as readonly string[]).includes(k)) continue;
+      const raw = data.fields[k];
+      // Allow explicit null (clears value).
+      if (raw === null || raw === undefined || raw === "") {
+        cleaned[k] = null;
+        continue;
+      }
+      const schema = FIELD_SCHEMAS[k];
+      if (!schema) continue; // shouldn't happen — whitelist & schemas align.
+      const parsed = schema.safeParse(raw);
+      if (!parsed.success) {
+        throw new Error(`Invalid value for "${k}".`);
+      }
+      cleaned[k] = parsed.data;
     }
 
     // Load existing assessment to merge extended.provenance
