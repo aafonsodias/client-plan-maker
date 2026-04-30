@@ -195,6 +195,10 @@ export type Database = {
           full_name: string
           height_cm: number | null
           id: string
+          intake_status: Database["public"]["Enums"]["intake_status"]
+          intake_submitted_at: string | null
+          intake_token: string | null
+          intake_token_expires_at: string | null
           notes: string | null
           phone: string | null
           sex: string | null
@@ -209,6 +213,10 @@ export type Database = {
           full_name: string
           height_cm?: number | null
           id?: string
+          intake_status?: Database["public"]["Enums"]["intake_status"]
+          intake_submitted_at?: string | null
+          intake_token?: string | null
+          intake_token_expires_at?: string | null
           notes?: string | null
           phone?: string | null
           sex?: string | null
@@ -223,6 +231,10 @@ export type Database = {
           full_name?: string
           height_cm?: number | null
           id?: string
+          intake_status?: Database["public"]["Enums"]["intake_status"]
+          intake_submitted_at?: string | null
+          intake_token?: string | null
+          intake_token_expires_at?: string | null
           notes?: string | null
           phone?: string | null
           sex?: string | null
@@ -440,7 +452,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -567,6 +579,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
+    },
   },
 } as const

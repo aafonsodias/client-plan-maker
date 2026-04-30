@@ -12,7 +12,7 @@ export function useClientPhases(clientIds: string[]): Record<string, ClientPhase
     void (async () => {
       // Need height/weight from clients for "risk" required check
       const [{ data: clientsData }, { data: assessments }, { data: plans }] = await Promise.all([
-        supabase.from("clients").select("id, height_cm, weight_kg").in("id", clientIds),
+        supabase.from("clients").select("id, height_cm, weight_kg, intake_status").in("id", clientIds),
         supabase.from("assessments").select("*").in("client_id", clientIds),
         supabase
           .from("workout_plans")
@@ -21,8 +21,8 @@ export function useClientPhases(clientIds: string[]): Record<string, ClientPhase
           .order("updated_at", { ascending: false }),
       ]);
 
-      const clientsById = new Map<string, { height_cm: number | null; weight_kg: number | null }>();
-      (clientsData ?? []).forEach((c: any) => clientsById.set(c.id, { height_cm: c.height_cm, weight_kg: c.weight_kg }));
+      const clientsById = new Map<string, { height_cm: number | null; weight_kg: number | null; intake_status: any }>();
+      (clientsData ?? []).forEach((c: any) => clientsById.set(c.id, { height_cm: c.height_cm, weight_kg: c.weight_kg, intake_status: c.intake_status }));
 
       const assessmentByClient = new Map<string, any>();
       (assessments ?? []).forEach((a: any) => {
@@ -67,6 +67,7 @@ export function useClientPhases(clientIds: string[]): Record<string, ClientPhase
           latestPlan: plan,
           latestSessionDate: ses?.latest ?? null,
           currentWeek: ses?.maxWeek ?? null,
+          intakeStatus: c?.intake_status ?? null,
         });
       }
       if (!cancelled) setPhases(out);

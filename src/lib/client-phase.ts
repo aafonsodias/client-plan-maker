@@ -2,6 +2,7 @@
 
 export type ClientPhase =
   | { kind: "onboarding"; label: string }
+  | { kind: "intake_sent"; label: string }
   | { kind: "assessment"; label: string }
   | { kind: "ready"; label: string }
   | { kind: "active"; label: string; block: number }
@@ -64,6 +65,7 @@ export type PhaseInputs = {
   latestPlan: { id: string; status: string; duration_weeks: number | null; updated_at: string } | null;
   latestSessionDate: string | null; // ISO date string
   currentWeek: number | null;       // max(week_number) across sessions of latest plan
+  intakeStatus?: "not_sent" | "sent" | "opened" | "submitted" | "reviewed" | null;
 };
 
 export function derivePhase(input: PhaseInputs): ClientPhase {
@@ -87,6 +89,9 @@ export function derivePhase(input: PhaseInputs): ClientPhase {
   if (isAssessmentTouched(assessment)) {
     return { kind: "assessment", label: "Assessment in progress" };
   }
+  if (input.intakeStatus === "sent" || input.intakeStatus === "opened") {
+    return { kind: "intake_sent", label: "Intake sent — awaiting client" };
+  }
   return { kind: "onboarding", label: "Onboarding" };
 }
 
@@ -103,6 +108,8 @@ export function phasePillClasses(kind: PhaseKind): string {
   switch (kind) {
     case "onboarding":
       return `${base} bg-secondary text-muted-foreground`;
+    case "intake_sent":
+      return `${base} bg-accent/10 text-accent/90 border border-accent/30`;
     case "assessment":
       return `${base} bg-accent/15 text-accent/90`;
     case "ready":
