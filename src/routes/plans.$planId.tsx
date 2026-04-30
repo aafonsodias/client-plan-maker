@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2, Settings as SettingsIcon, Lock, LockOpen } from "lucide-react";
 import { generatePlanPdf, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
 
 export const Route = createFileRoute("/plans/$planId")({
@@ -25,6 +25,7 @@ function PlanEditor() {
   const [plan, setPlan] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [data, setData] = useState<PlanData>({ weeks: [] });
   const [saving, setSaving] = useState(false);
 
@@ -40,6 +41,10 @@ function PlanEditor() {
       }
       const { data: pr } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       setProfile(pr);
+      if (pr?.logo_url) {
+        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(pr.logo_url, 3600);
+        setLogoUrl(signed?.signedUrl ?? null);
+      }
     })();
   }, [user, planId]);
 
@@ -53,9 +58,14 @@ function PlanEditor() {
     if (error) return toast.error(error.message);
     if (extra.status) {
       setPlan({ ...plan, ...extra });
-      toast.success("Plan finalized");
+      toast.success(extra.status === "finalized" ? "Plan finalized" : "Plan unlocked — back to draft");
     } else {
-      toast.success("Saved");
+      toast.success("Plan saved", {
+        description: client ? `View ${client.full_name}'s profile` : undefined,
+        action: client
+          ? { label: "Open client", onClick: () => { window.location.href = `/clients/${client.id}`; } }
+          : undefined,
+      });
     }
   };
 
