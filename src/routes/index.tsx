@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
@@ -37,9 +37,6 @@ function Landing() {
         />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
-              <Sparkles className="h-3 w-3" /> AI-assisted workout drafting
-            </div>
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
               Stop writing plans
               <span className="block text-accent">at midnight.</span>
@@ -51,7 +48,7 @@ function Landing() {
             <div className="mt-10 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link to="/auth">
-                  Start building plans <ArrowRight className="ml-2 h-4 w-4" />
+                  Draft your first plan <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -61,8 +58,8 @@ function Landing() {
           </div>
           <div className="flex flex-col items-center">
             <HeroPlanMockup />
-            <p className="mt-4 hidden text-center text-xs uppercase tracking-[0.25em] text-muted-foreground md:block">
-              Periodized · Personalized · Ready in seconds
+            <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
+              Built on PAR-Q+, ACSM risk stratification, and the 8 years of programming I wish I'd had a tool for.
             </p>
           </div>
         </div>
