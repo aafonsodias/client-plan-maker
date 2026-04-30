@@ -1298,7 +1298,14 @@ function RegenerateWithFeedbackDialog({
           previous_plan: skeleton,
         },
       });
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        if ((result as any).billingRequired) {
+          toast.error(result.error);
+          navigate({ to: "/billing" });
+          return;
+        }
+        throw new Error(result.error);
+      }
 
       // Persist new plan_data + title/summary
       const newWeeks = result.plan.weeks ?? [];
