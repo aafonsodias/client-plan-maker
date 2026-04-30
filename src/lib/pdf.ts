@@ -195,6 +195,15 @@ function setDraw(doc: jsPDF, c: [number, number, number]) {
 }
 
 // ---------- Main ----------
+/**
+ * Compact-luxury booklet. Design rules:
+ *  - 1-week plan should fit ~3-5 pages (1 cover-overview + ~1 page/session).
+ *  - No charSpace, no per-letter "tracking" hacks (root cause of kerning artifacts).
+ *  - No decorative ghost numbers. No standalone week-divider pages. No empty log grid.
+ *  - MAIN WORK rendered as a dense table, not as 150pt cards. Stat columns measured.
+ *  - Warmup/Activation/Cooldown rendered as single-line bullets (no rationale fluff).
+ *  - Adaptive theme: dark logo → light page, light logo → dark page.
+ */
 export async function generatePlanPdf(
   meta: PdfMeta,
   plan: PlanData,
@@ -203,7 +212,7 @@ export async function generatePlanPdf(
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const M = 64; // generous editorial margins
+  const M = 54;
 
   // Resolve logo + theme
   let logoData = branding.logo_data_url ?? null;
@@ -212,290 +221,285 @@ export async function generatePlanPdf(
   let theme: Theme = LIGHT_THEME;
   if (logoData) {
     const lum = await computeLogoLuminance(logoData);
-    // dark logo  -> light page  | light logo -> dark page
     if (lum != null && lum >= 0.55) theme = DARK_THEME;
     else theme = LIGHT_THEME;
   }
+
+  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
 
   const paintPage = () => {
     setFill(doc, theme.bg);
     doc.rect(0, 0, W, H, "F");
   };
 
-  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
+  /** Truncate string to fit a given px width at the current font. Adds ellipsis if cut. */
+  const fitText = (s: string, maxW: number): string => {
+    if (doc.getTextWidth(s) <= maxW) return s;
+    let lo = 0, hi = s.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      if (doc.getTextWidth(s.slice(0, mid) + "…") <= maxW) lo = mid;
+      else hi = mid - 1;
+    }
+    return s.slice(0, lo) + "…";
+  };
 
-  // Tiny brand strip + page number painted on every page after cover
-  const paintChrome = (pageLabel: string) => {
+  let y = M;
+  let pageHeader = "";
+
+  const drawHeader = () => {
+    if (!pageHeader) return;
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
-    doc.text(brand, M, 32);
-    doc.text(pageLabel.toUpperCase(), W - M, 32, { align: "right" });
+    doc.text(brand, M, 30);
+    doc.text(pageHeader, W - M, 30, { align: "right" });
     setDraw(doc, theme.rule);
-    doc.setLineWidth(0.4);
-    doc.line(M, 40, W - M, 40);
+    doc.setLineWidth(0.3);
+    doc.line(M, 36, W - M, 36);
+  };
+
+  const drawFooter = (pageIdx: number, total: number) => {
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    const left = [branding.business_name, branding.contact_email].filter(Boolean).join("  ·  ");
+    if (left) doc.text(left, M, H - 22);
+    doc.text(`${pageIdx} / ${total}`, W - M, H - 22, { align: "right" });
+  };
+
+  const newPage = (header: string) => {
+    doc.addPage();
+    paintPage();
+    pageHeader = header;
+    drawHeader();
+    y = M + 8;
+  };
+
+  const ensureSpace = (need: number, header: string) => {
+    if (y + need > H - M - 30) newPage(header);
   };
 
   paintPage();
 
-  let y = M;
-  let currentChrome = "";
-
-  const ensureSpace = (need: number) => {
-    if (y + need > H - M - 36) {
-      doc.addPage();
-      paintPage();
-      if (currentChrome) paintChrome(currentChrome);
-      y = M;
-    }
-  };
-
   // ============================================================
-  // COVER PAGE
+  // PAGE 1 — COVER + OVERVIEW (combined, no waste)
   // ============================================================
+  const headerBandH = 110;
+  setFill(doc, theme.bannerBg);
+  doc.rect(0, 0, W, headerBandH, "F");
+
   if (logoData) {
     try {
-      doc.addImage(logoData, "PNG", M, M, 64, 64, undefined, "FAST");
-    } catch {
-      /* ignore */
-    }
+      doc.addImage(logoData, "PNG", M, 30, 50, 50, undefined, "FAST");
+    } catch { /* ignore */ }
   }
-
-  setText(doc, theme.inkMuted);
+  const brandX = logoData ? M + 64 : M;
+  setText(doc, theme.bannerInk);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text(brand, W - M, M + 18, { align: "right" });
+  doc.setFontSize(10);
+  doc.text(brand, brandX, 50);
   if (branding.tagline) {
+    setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(branding.tagline, W - M, M + 32, { align: "right" });
+    doc.text(fitText(branding.tagline, W / 2 - brandX), brandX, 64);
   }
 
-  // Hero block — pushed down for breathing room
-  const heroTop = M + 200;
-
-  // Massive ghost mark behind the title
-  setText(doc, theme.inkGhost);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(220);
-  doc.text("01", W - M + 10, heroTop + 110, { align: "right" });
-
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.text("TRAINING PROGRAM", M, heroTop);
-
-  setText(doc, theme.ink);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(38);
-  const titleLines = doc.splitTextToSize(meta.title, W - M * 2);
-  doc.text(titleLines, M, heroTop + 40);
-
-  setDraw(doc, theme.accent);
-  doc.setLineWidth(2.5);
-  const ruleY = heroTop + 40 + titleLines.length * 36 + 16;
-  doc.line(M, ruleY, M + 80, ruleY);
-  doc.setLineWidth(0.5);
-
-  const metaTop = ruleY + 44;
+  // Right side: client + duration meta in band
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.text("PREPARED FOR", M, metaTop);
-  doc.text("DURATION", M + 240, metaTop);
-  doc.text("WEEKS", M + 380, metaTop);
+  doc.text("PREPARED FOR", W - M, 50, { align: "right" });
+  setText(doc, theme.bannerInk);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(fitText(meta.client_name, 240), W - M, 68, { align: "right" });
+
+  // Accent rule under header band
+  setDraw(doc, theme.accent);
+  doc.setLineWidth(2);
+  doc.line(0, headerBandH, W, headerBandH);
+  doc.setLineWidth(0.5);
+
+  y = headerBandH + 36;
+
+  // Title
+  setText(doc, theme.inkMuted);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("TRAINING PROGRAM", M, y);
+  y += 16;
 
   setText(doc, theme.ink);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text(meta.client_name, M, metaTop + 22);
-  doc.text(meta.duration_weeks ? `${meta.duration_weeks} wks` : "—", M + 240, metaTop + 22);
-  doc.text(`${plan.weeks?.length ?? 0}`, M + 380, metaTop + 22);
+  doc.setFontSize(28);
+  const titleLines = doc.splitTextToSize(meta.title, W - M * 2);
+  doc.text(titleLines, M, y + 4);
+  y += titleLines.length * 30 + 8;
 
+  setDraw(doc, theme.accent);
+  doc.setLineWidth(2);
+  doc.line(M, y, M + 48, y);
+  doc.setLineWidth(0.5);
+  y += 22;
+
+  // Summary (single paragraph) — kept compact
   if (meta.summary) {
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(meta.summary, W - M * 2 - 20);
-    doc.text(lines, M, metaTop + 80);
+    doc.setFontSize(10);
+    const sumLines = doc.splitTextToSize(meta.summary, W - M * 2);
+    doc.text(sumLines, M, y);
+    y += sumLines.length * 13 + 12;
   }
 
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  const coverFooter = [branding.contact_email, branding.contact_phone].filter(Boolean).join("  ·  ");
-  if (coverFooter) doc.text(coverFooter, M, H - M);
-  setDraw(doc, theme.accent);
-  doc.setLineWidth(2);
-  doc.line(M, H - M - 14, M + 24, H - M - 14);
-  doc.setLineWidth(0.5);
-
-  // ============================================================
-  // WEEK + DAY PAGES
-  // ============================================================
-  for (const week of plan.weeks ?? []) {
-    // ----- Week divider page (full page, editorial) -----
-    doc.addPage();
-    paintPage();
-    currentChrome = `Week ${week.week_number}`;
-    paintChrome(currentChrome);
-    y = M;
-
-    // Massive ghost week number, centered vertically
-    setText(doc, theme.inkGhost);
+  // Meta strip — 4 small KPIs
+  const totalSessions = (plan.weeks ?? []).reduce((acc, w) => acc + (w.days?.length ?? 0), 0);
+  const totalExercises = (plan.weeks ?? []).reduce(
+    (a, w) => a + (w.days ?? []).reduce((b, d) => b + (d.exercises?.length ?? 0), 0), 0,
+  );
+  const sessionsPerWeek = plan.weeks?.length ? Math.round(totalSessions / plan.weeks.length) : 0;
+  const kpis: [string, string][] = [
+    ["DURATION", meta.duration_weeks ? `${meta.duration_weeks} wk` : `${plan.weeks?.length ?? 0} wk`],
+    ["SESSIONS / WK", String(sessionsPerWeek)],
+    ["TOTAL SESSIONS", String(totalSessions)],
+    ["EXERCISES", String(totalExercises)],
+  ];
+  const kpiW = (W - M * 2 - 8 * (kpis.length - 1)) / kpis.length;
+  for (let i = 0; i < kpis.length; i++) {
+    const x = M + i * (kpiW + 8);
+    setFill(doc, theme.bgSubtle);
+    doc.rect(x, y, kpiW, 50, "F");
+    setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(380);
-    doc.text(String(week.week_number).padStart(2, "0"), W / 2, H / 2 + 90, { align: "center" });
+    doc.setFontSize(6.5);
+    doc.text(kpis[i][0], x + 10, y + 14);
+    setText(doc, theme.ink);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(kpis[i][1], x + 10, y + 38);
+  }
+  y += 50 + 24;
 
-    // Top label
+  // Plan-at-a-glance: list every session as one line
+  setText(doc, theme.inkMuted);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.text("PLAN AT A GLANCE", M, y);
+  y += 6;
+  setDraw(doc, theme.rule);
+  doc.setLineWidth(0.3);
+  doc.line(M, y, W - M, y);
+  y += 12;
+
+  for (const week of plan.weeks ?? []) {
+    if (y + 16 > H - M - 30) break; // overview never spills past page 1
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("PHASE", M, M + 80);
-
-    setText(doc, theme.ink);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    const focus = (week.focus || "Training week").toUpperCase();
-    const focusW = doc.splitTextToSize(focus, W - M * 2);
-    doc.text(focusW, M, M + 110);
-
-    // Accent rule
-    setDraw(doc, theme.accent);
-    doc.setLineWidth(2.5);
-    const wRuleY = M + 110 + focusW.length * 28 + 18;
-    doc.line(M, wRuleY, M + 80, wRuleY);
-    doc.setLineWidth(0.5);
-
-    if (week.rationale) {
-      setText(doc, theme.inkMuted);
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(11);
-      const lines = doc.splitTextToSize(week.rationale, W * 0.55);
-      doc.text(lines, M, wRuleY + 28);
+    doc.text(`WEEK ${week.week_number}`, M, y);
+    if (week.focus) {
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(week.focus, W - M * 2 - 60), M + 60, y);
     }
+    y += 14;
+    for (let di = 0; di < (week.days ?? []).length; di++) {
+      if (y + 14 > H - M - 30) break;
+      const d = week.days[di];
+      const num = String(di + 1).padStart(2, "0");
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text(num, M + 8, y);
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.text(fitText(d.day_label || `Day ${di + 1}`, 110), M + 32, y);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(d.focus || "—", W - M - (M + 156) - 40), M + 156, y);
+      const ex = (d.exercises?.length ?? 0);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text(`${ex} ex`, W - M, y, { align: "right" });
+      y += 13;
+    }
+    y += 6;
+  }
 
-    // Days summary at bottom
-    setText(doc, theme.inkMuted);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.text(`${(week.days ?? []).length} SESSIONS`, M, H - M);
-
+  // ============================================================
+  // SESSION PAGES — 1 per session (target)
+  // ============================================================
+  for (const week of plan.weeks ?? []) {
     for (let di = 0; di < (week.days ?? []).length; di++) {
       const day = week.days[di];
+      newPage(`W${week.week_number} · DAY ${di + 1}`);
 
-      // Each day starts on a fresh page
-      doc.addPage();
-      paintPage();
-      currentChrome = `Week ${week.week_number} · Day ${di + 1}`;
-      paintChrome(currentChrome);
-      y = M;
-
-      // ===== LEVEL 1: Session header =====
-      // Huge ghost day number behind everything
-      setText(doc, theme.inkGhost);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(150);
-      doc.text(String(di + 1).padStart(2, "0"), W - M + 8, y + 120, { align: "right" });
-
-      // Tiny eyebrow label
+      // ---- Session header (compact) ----
       setText(doc, theme.inkMuted);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text(`SESSION ${String(di + 1).padStart(2, "0")}  ·  ${day.day_label.toUpperCase()}`, M, y + 14);
+      doc.text(`DAY ${di + 1}  ·  ${(day.day_label || "").toUpperCase()}`, M, y);
+      y += 16;
 
-      // Bold session title
       setText(doc, theme.ink);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(30);
-      const focusLines = doc.splitTextToSize(day.focus || "Session", W - M * 2 - 120);
-      doc.text(focusLines, M, y + 48);
-      y += 48 + focusLines.length * 32 + 6;
+      doc.setFontSize(18);
+      const focusLines = doc.splitTextToSize(day.focus || "Session", W - M * 2);
+      doc.text(focusLines, M, y + 4);
+      y += focusLines.length * 20 + 6;
 
       setDraw(doc, theme.accent);
-      doc.setLineWidth(2.5);
-      doc.line(M, y, M + 80, y);
+      doc.setLineWidth(2);
+      doc.line(M, y, M + 36, y);
       doc.setLineWidth(0.5);
-      y += 22;
+      y += 14;
 
+      // Optional intent — single short line, NOT a full paragraph
       if (day.rationale) {
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "italic");
-        doc.setFontSize(10.5);
-        const lines = doc.splitTextToSize(day.rationale, W - M * 2 - 80);
-        doc.text(lines, M, y);
-        y += lines.length * 14 + 24;
-      } else {
-        y += 8;
+        doc.setFontSize(9);
+        // First sentence only — keep page 1 of session compact
+        const firstSentence = (day.rationale.match(/^[^.!?]{8,200}[.!?]/)?.[0] ?? day.rationale)
+          .trim();
+        const intentLines = doc.splitTextToSize(firstSentence, W - M * 2);
+        // Cap at 2 lines max
+        const capped = intentLines.slice(0, 2);
+        doc.text(capped, M, y);
+        y += capped.length * 12 + 10;
       }
 
-      // ===== LEVEL 2 (low): warmup / cooldown / activation / dynamic / cardio =====
+      // ---- Light sections (warmup / activation / dyn / cardio / cooldown / finisher) ----
       const renderLightSection = (title: string, items?: SectionItem[]) => {
         if (!items || items.length === 0) return;
-        ensureSpace(60);
-
-        // Dashed rule + small muted label
-        setDraw(doc, theme.rule);
-        doc.setLineDashPattern([1.5, 2.5], 0);
-        doc.setLineWidth(0.4);
-        doc.line(M, y, W - M, y);
-        doc.setLineDashPattern([], 0);
-        y += 14;
+        ensureSpace(28 + items.length * 13, pageHeader);
 
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(7.5);
-        // letter-spacing fake via splitting
-        doc.text(title.toUpperCase().split("").join(" "), M, y);
-        y += 16;
-
-        const twoCol = items.length >= 3;
-        const colW = twoCol ? (W - M * 2 - 20) / 2 : W - M * 2;
-        let col = 0;
-        let rowY = y;
-        let maxRowY = y;
-
-        setText(doc, theme.ink);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+        doc.setFontSize(7);
+        doc.text(title.toUpperCase(), M, y);
+        setDraw(doc, theme.rule);
+        doc.setLineWidth(0.3);
+        doc.line(M + 80, y - 3, W - M, y - 3);
+        y += 12;
 
         for (const it of items) {
-          const x = M + col * (colW + 20);
-          const label = it.duration ? `${it.name}  ·  ${it.duration}` : it.name;
-          const labelLines = doc.splitTextToSize(label, colW);
-          const noteLines = it.notes ? doc.splitTextToSize(it.notes, colW) : [];
-          const blockH = labelLines.length * 12 + (noteLines.length ? noteLines.length * 11 + 2 : 0) + 8;
-
-          if (rowY + blockH > H - M - 36) {
-            doc.addPage();
-            paintPage();
-            if (currentChrome) paintChrome(currentChrome);
-            y = M;
-            rowY = y;
-            maxRowY = y;
-          }
-
+          ensureSpace(14, pageHeader);
           setText(doc, theme.ink);
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(10);
-          doc.text(labelLines, x, rowY + 10);
-          let inner = rowY + 10 + labelLines.length * 12;
-          if (noteLines.length) {
-            setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(8.5);
-            doc.text(noteLines, x, inner);
-            inner += noteLines.length * 11;
-          }
-          maxRowY = Math.max(maxRowY, inner + 10);
-          if (twoCol) {
-            col = 1 - col;
-            if (col === 0) rowY = maxRowY;
-          } else {
-            rowY = maxRowY;
-          }
+          doc.setFontSize(9.5);
+          const dur = it.duration ? `   ·   ${it.duration}` : "";
+          const line = fitText(`${it.name}${dur}`, W - M * 2 - 4);
+          doc.text(`•  ${line}`, M, y);
+          y += 13;
         }
-        y = maxRowY + 14;
+        y += 8;
       };
 
       renderLightSection("Warmup", day.warmup);
@@ -503,253 +507,170 @@ export async function generatePlanPdf(
       renderLightSection("Dynamic stretches", day.dynamic_stretches);
       renderLightSection("Cardio", day.cardio);
 
-      // ===== LEVEL 2 (high): MAIN WORK =====
+      // ---- MAIN WORK (dense table) ----
       if ((day.exercises ?? []).length > 0) {
-        ensureSpace(80);
+        ensureSpace(60, pageHeader);
 
-        // Strong amber vertical bar + heavy label
+        // Section banner — flat, single line
         setFill(doc, theme.accent);
-        doc.rect(M, y - 2, 4, 22, "F");
+        doc.rect(M, y - 1, 3, 16, "F");
         setText(doc, theme.ink);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.text("MAIN WORK", M + 16, y + 14);
+        doc.setFontSize(10);
+        doc.text("MAIN WORK", M + 12, y + 11);
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
-        doc.text(
-          `${day.exercises.length} exercise${day.exercises.length === 1 ? "" : "s"}`,
-          W - M,
-          y + 14,
-          { align: "right" },
-        );
-        y += 34;
+        doc.text(`${day.exercises.length} exercises`, W - M, y + 11, { align: "right" });
+        y += 22;
+
+        // Column geometry
+        const colNumX = M;
+        const colNumW = 22;
+        const colExX = colNumX + colNumW;
+        // Reserve right side for stat block
+        const statTotalW = 220;
+        const statColW = statTotalW / 5; // SETS REPS REST RPE TEMPO
+        const statStartX = W - M - statTotalW;
+        const colExW = statStartX - colExX - 8;
+
+        // Table header
+        setText(doc, theme.inkMuted);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.5);
+        doc.text("#", colNumX + 4, y);
+        doc.text("EXERCISE", colExX, y);
+        const statLabels = ["SETS", "REPS", "REST", "RPE", "TEMPO"];
+        for (let i = 0; i < statLabels.length; i++) {
+          doc.text(statLabels[i], statStartX + i * statColW + statColW / 2, y, { align: "center" });
+        }
+        y += 4;
+        setDraw(doc, theme.rule);
+        doc.setLineWidth(0.4);
+        doc.line(M, y, W - M, y);
+        y += 10;
+
+        let lastSuperset: string | null | undefined = undefined;
 
         for (let i = 0; i < day.exercises.length; i++) {
           const ex = day.exercises[i];
 
-          // ===== LEVEL 3: Exercise card — V2 tight (lateral ghost + bottom stat row) =====
-          const ghostNum = String(i + 1).padStart(2, "0");
-          const cardLeft = M;
-          const cardRight = W - M;
-          const cardW = cardRight - cardLeft;
-
-          // Cue / rationale split (legacy compat)
-          const rawCue = ex.cue ?? "";
-          const rawRationale = ex.rationale ?? "";
-          const techCues = ex.technique_cues ?? "";
-          let cueText = rawCue || "";
-          let rationaleText = rawRationale || "";
-          if (!cueText && techCues) {
-            const m = techCues.trim().match(/^([^.!?\n]{4,140}[.!?])\s*(.*)$/);
-            if (m) {
-              cueText = m[1].trim();
-              if (!rationaleText) rationaleText = (m[2] || "").trim();
-            } else {
-              cueText = techCues.slice(0, 100);
-              if (!rationaleText && techCues.length > 100) rationaleText = techCues;
-            }
+          // Cue extraction — keep it as ONE coaching line
+          let cueText = (ex.cue ?? "").trim();
+          if (!cueText && ex.technique_cues) {
+            const m = ex.technique_cues.trim().match(/^([^.!?\n]{4,160}[.!?])/);
+            cueText = (m?.[1] ?? ex.technique_cues.slice(0, 140)).trim();
           }
+          if (!cueText && ex.notes) cueText = ex.notes.trim();
 
-          const muscles = [
-            ...(ex.primary_muscles ?? []),
-            ...((ex.secondary_muscles ?? []).map((m) => `(${m})`)),
-          ].join(" · ");
-
-          // Layout: lateral ghost gutter on the left, content occupies remainder, stats sit in a compact bottom row.
-          const gutterW = 44;            // tighter than v1 (was effectively 64)
-          const padX = 16;               // inner horizontal padding
-          const padTop = 16;             // tightened from 22
-          const padBottom = 14;          // tightened from 22
-          const statRowH = 34;           // compact bottom row
-          const statRowGap = 12;         // breathing room between content and stats
-          const nameX = cardLeft + gutterW + padX;
-          const contentRight = cardRight - padX;
-          const contentW = contentRight - nameX;
-
-          // Pre-measure with the actual fonts (critical to avoid overflow)
+          // Pre-measure exercise name (bold 10) and cue (normal 8.5)
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(14);
-          const nameLines = doc.splitTextToSize(ex.name, contentW);
-
+          doc.setFontSize(10);
+          const nameLines = doc.splitTextToSize(ex.name, colExW);
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(10.25);
-          const cueLines = cueText ? doc.splitTextToSize(cueText, contentW) : [];
+          doc.setFontSize(8.5);
+          const cueLines = cueText ? doc.splitTextToSize(cueText, colExW).slice(0, 2) : [];
 
-          doc.setFont("helvetica", "italic");
-          doc.setFontSize(8.75);
-          const ratLines = rationaleText ? doc.splitTextToSize(rationaleText, contentW) : [];
+          const rowH =
+            6 + // top pad
+            nameLines.length * 12 +
+            (cueLines.length ? 2 + cueLines.length * 10 : 0) +
+            10; // bottom pad
 
-          // Vertical rhythm — tight but breathable
-          let contentH = padTop + nameLines.length * 17;
-          if (muscles) contentH += 12;
-          if (cueLines.length) contentH += 8 + cueLines.length * 12.5;
-          if (ratLines.length) contentH += 6 + ratLines.length * 11;
-          contentH += statRowGap + statRowH + padBottom;
-          const finalH = Math.max(contentH, 96);
+          ensureSpace(rowH + 4, pageHeader);
 
-          ensureSpace(finalH + 8);
+          // Superset bracket label change
+          if (ex.superset_id && ex.superset_id !== lastSuperset) {
+            ensureSpace(14 + rowH, pageHeader);
+            setText(doc, theme.accent);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(6.5);
+            doc.text(`SUPERSET ${String(ex.superset_id).toUpperCase()}`, colExX, y + 2);
+            y += 8;
+          }
+          lastSuperset = ex.superset_id ?? null;
 
-          // Card surface — very subtle
-          setFill(doc, theme.bgSubtle);
-          doc.rect(cardLeft, y, cardW, finalH, "F");
+          const rowTop = y;
 
-          // Hairline top + bottom rules for elegance
-          setDraw(doc, theme.rule);
-          doc.setLineWidth(0.4);
-          doc.line(cardLeft, y, cardRight, y);
-          doc.line(cardLeft, y + finalH, cardRight, y + finalH);
-
-          // Superset → strong amber left border
+          // Superset left rule — amber, full row height
           if (ex.superset_id) {
             setFill(doc, theme.accent);
-            doc.rect(cardLeft, y, 5, finalH, "F");
+            doc.rect(M - 4, rowTop, 2, rowH, "F");
           }
 
-          // Optional → dashed accent top edge
-          if (ex.optional) {
-            setDraw(doc, theme.accent);
-            doc.setLineDashPattern([2, 2.5], 0);
-            doc.setLineWidth(0.8);
-            doc.line(cardLeft, y, cardRight, y);
-            doc.setLineDashPattern([], 0);
-            doc.setLineWidth(0.4);
-          }
-
-          // Lateral ghost number — left gutter, no overlap with content
-          setText(doc, theme.inkGhost);
+          // Number
+          setText(doc, theme.inkMuted);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(56);
-          doc.text(ghostNum, cardLeft + gutterW - 6, y + finalH / 2 + 18, { align: "right" });
+          doc.setFontSize(9);
+          doc.text(String(i + 1).padStart(2, "0"), colNumX + 4, rowTop + 14);
 
-          // Exercise name
+          // Name
           setText(doc, theme.ink);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(14);
-          let textY = y + padTop + 4;
-          doc.text(nameLines, nameX, textY);
-          textY += nameLines.length * 17;
+          doc.setFontSize(10);
+          doc.text(nameLines, colExX, rowTop + 14);
+          let textY = rowTop + 14 + nameLines.length * 12;
 
-          // Chips line: variant / superset / optional
-          const chips: string[] = [];
-          if (ex.variant) chips.push(ex.variant);
-          if (ex.superset_id) chips.push(`Superset ${ex.superset_id}`);
-          if (ex.optional) chips.push("Optional");
-          if (chips.length) {
-            setText(doc, ex.optional ? theme.accent : theme.inkMuted);
+          // Optional pill (inline, no dashed border)
+          if (ex.optional) {
+            setText(doc, theme.accent);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(6.75);
-            doc.text(chips.join("   ·   ").toUpperCase(), nameX, textY - 5);
+            doc.setFontSize(6.5);
+            const pillW = doc.getTextWidth("OPT") + 10;
+            // place after name line 1 — to the right of last name line
+            const lastNameW = doc.getTextWidth(nameLines[nameLines.length - 1]);
+            // use 2-letter pill; we draw at end of first line for clarity
+            setDraw(doc, theme.accent);
+            doc.setLineWidth(0.6);
+            doc.roundedRect(
+              colExX + lastNameW + 6,
+              rowTop + 6,
+              pillW,
+              11,
+              2,
+              2,
+              "S",
+            );
+            doc.text("OPT", colExX + lastNameW + 6 + 5, rowTop + 14);
           }
 
-          // Muscles
-          if (muscles) {
-            setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(8.25);
-            doc.text(muscles, nameX, textY + 6);
-            textY += 12;
-          }
-
-          // Coaching cue
+          // Cue (single short line, muted)
           if (cueLines.length) {
-            textY += 8;
-            setText(doc, theme.ink);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10.25);
-            doc.text(cueLines, nameX, textY);
-            textY += cueLines.length * 12.5;
-          }
-
-          // Rationale
-          if (ratLines.length) {
-            textY += 6;
             setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "italic");
-            doc.setFontSize(8.75);
-            doc.text(ratLines, nameX, textY);
-            textY += ratLines.length * 11;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.text(cueLines, colExX, textY + 2);
+            textY += 2 + cueLines.length * 10;
           }
 
-          // ===== Bottom stat row — no borders, just labels + big values, hairline above =====
+          // Stats — measured per cell, fit-or-truncate
           const rpeNum = ex.rpe ? parseFloat(String(ex.rpe).replace(/[^\d.]/g, "")) : NaN;
           const rpeHigh = !Number.isNaN(rpeNum) && rpeNum >= 8;
-
-          const statRowY = y + finalH - padBottom - statRowH;
-          // hairline above the stat row
-          setDraw(doc, theme.rule);
-          doc.setLineWidth(0.3);
-          doc.line(nameX, statRowY, contentRight, statRowY);
-
-          const stats: Array<[string, string, boolean]> = [
-            ["SETS", String(ex.sets ?? "—"), false],
-            ["REPS", String(ex.reps ?? "—"), false],
-            ["REST", String(ex.rest ?? "—"), false],
+          const stats: Array<[string, boolean]> = [
+            [String(ex.sets ?? "—"), false],
+            [String(ex.reps ?? "—"), false],
+            [String(ex.rest ?? "—"), false],
+            [String(ex.rpe ?? "—"), rpeHigh],
+            [String(ex.tempo ?? "—"), false],
           ];
-          if (ex.rpe) stats.push(["RPE", String(ex.rpe), rpeHigh]);
-          if (ex.tempo) stats.push(["TEMPO", String(ex.tempo), false]);
-
-          const colW = (contentRight - nameX) / stats.length;
           for (let s = 0; s < stats.length; s++) {
-            const [label, val, hot] = stats[s];
-            const cx = nameX + s * colW;
-            // subtle vertical hairline divider between cells (skip first)
-            if (s > 0) {
-              setDraw(doc, theme.rule);
-              doc.setLineWidth(0.3);
-              doc.line(cx, statRowY + 6, cx, statRowY + statRowH - 4);
-            }
-            setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(6.75);
-            doc.text(label, cx + 8, statRowY + 13);
+            const [val, hot] = stats[s];
+            const cx = statStartX + s * statColW + statColW / 2;
             setText(doc, hot ? theme.accent : theme.ink);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(14);
-            doc.text(val, cx + 8, statRowY + 30);
+            doc.setFontSize(10);
+            const fitVal = fitText(val, statColW - 8);
+            doc.text(fitVal, cx, rowTop + 14, { align: "center" });
           }
 
-          // Legacy notes fallback (only if we had no cue/rationale at all)
-          if (ex.notes && !cueText && !rationaleText) {
-            const noteLines = doc.splitTextToSize(ex.notes, contentW);
-            setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(8.75);
-            doc.text(noteLines, nameX, textY + 4);
-          }
+          // Bottom hairline divider
+          setDraw(doc, theme.rule);
+          doc.setLineWidth(0.25);
+          doc.line(M, rowTop + rowH - 2, W - M, rowTop + rowH - 2);
 
-          y += finalH + 8;
+          y = rowTop + rowH;
         }
-
-        // ===== LEVEL 4: Manual log grid — dotted, restrained =====
-        ensureSpace(70);
-        y += 12;
-        setText(doc, theme.inkMuted);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7);
-        doc.text("L O G", M, y + 8);
-
-        const logRows = ["SET", "REPS", "WEIGHT"];
-        const logCols = 5;
-        const logLeft = M + 60;
-        const logW = W - M - logLeft;
-        const cellW = logW / logCols;
-        setDraw(doc, theme.rule);
-        doc.setLineWidth(0.3);
-        doc.setLineDashPattern([0.8, 1.6], 0);
-        for (let r = 0; r < logRows.length; r++) {
-          const ry = y + r * 16;
-          setText(doc, theme.inkMuted);
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(6.5);
-          doc.text(logRows[r], M, ry + 8);
-          for (let c = 0; c < logCols; c++) {
-            const cx = logLeft + c * cellW;
-            doc.line(cx + 4, ry + 10, cx + cellW - 8, ry + 10);
-          }
-        }
-        doc.setLineDashPattern([], 0);
-        y += logRows.length * 16 + 10;
+        y += 8;
       }
 
       renderLightSection("Cooldown", day.cooldown);
@@ -759,27 +680,11 @@ export async function generatePlanPdf(
     }
   }
 
-  // ============================================================
-  // FOOTERS — every page except cover
-  // ============================================================
+  // ---- Footers on every page ----
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    if (i === 1) continue;
-    setText(doc, theme.inkMuted);
-    setDraw(doc, theme.rule);
-    doc.setLineWidth(0.3);
-    doc.line(M, H - 38, W - M, H - 38);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    const footer = [branding.business_name, branding.contact_email, branding.contact_phone]
-      .filter(Boolean)
-      .join("  ·  ");
-    if (footer) doc.text(footer, M, H - 22);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${String(i).padStart(2, "0")} / ${String(pageCount).padStart(2, "0")}`, W - M, H - 22, {
-      align: "right",
-    });
+    drawFooter(i, pageCount);
   }
 
   doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}.pdf`);
