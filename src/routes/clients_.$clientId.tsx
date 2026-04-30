@@ -572,12 +572,22 @@ function ClientDetail() {
     setAssessment({ ...assessment, available_equipment: has ? assessment.available_equipment.filter((x: string) => x !== e) : [...assessment.available_equipment, e] });
   };
 
-  const generate = async () => {
+  // =============================================================================
+  // generate — RESUMABLE per-day plan generation.
+  // 1) Save the assessment.
+  // 2) Create (or reuse) an in-progress workout_plans row.
+  // 3) Fan out one call per (week, day) in parallel; each call writes its day
+  //    to workout_plan_days immediately. UI updates as days land.
+  // 4) Finalize: assemble plan_data and mark plan complete.
+  // If `resumePlanId` is provided, we skip already-generated days.
+  // =============================================================================
+  const generate = async (resumePlanId?: string | null) => {
     if (!user || !client) return;
     setBusy(true);
     setProgressStep(1);
+    setDayProgress({});
+    setResumablePlan(null);
     try {
-      // Make sure any pending auto-save has flushed
       await flushPendingSave();
       const payload = buildAssessmentPayload(assessment, user.id, clientId);
       let assessmentId: string | null = assessment.id ?? null;
@@ -591,7 +601,6 @@ function ClientDetail() {
       void markOnboardingStep(user.id, "run_assessment");
       setProgressStep(2);
 
-      // Fan out one call per week in parallel — much faster + dodges per-call upstream timeouts.
       const clientPayload = {
         full_name: client.full_name,
         age: client.age,
@@ -601,81 +610,176 @@ function ClientDetail() {
       };
       const assessmentPayload = { ...payload, secondary_goals: null };
 
-      const weekResults = await Promise.all(
-        Array.from({ length: duration }, (_, i) =>
-          generateWeekFn({
-            data: {
-              client: clientPayload,
-              assessment: assessmentPayload,
-              duration_weeks: duration,
-              week_number: i + 1,
-            },
+      const daysPerWeek = Math.max(1, Math.min(7, Number(assessment.training_days_per_week) || 3));
+      const totalDays = duration * daysPerWeek;
+
+      // Resolve plan_id: either resume an existing in-progress plan, or create one.
+      let planId: string;
+      let planDuration = duration;
+      let planDaysPerWeek = daysPerWeek;
+      if (resumePlanId) {
+        const { data: existing, error: exErr } = await supabase
+          .from("workout_plans")
+          .select("id, duration_weeks, generation_meta")
+          .eq("id", resumePlanId)
+          .maybeSingle();
+        if (exErr || !existing) throw new Error("Could not load the in-progress plan.");
+        planId = existing.id;
+        planDuration = existing.duration_weeks ?? duration;
+        planDaysPerWeek = (existing.generation_meta as any)?.days_per_week ?? daysPerWeek;
+      } else {
+        const { data: planRow, error: planErr } = await supabase
+          .from("workout_plans")
+          .insert({
+            trainer_id: user.id,
+            client_id: clientId,
+            assessment_id: assessmentId,
+            title: `${client.full_name} – ${duration}-Week Plan`,
+            duration_weeks: duration,
+            status: "draft",
+            generation_status: "in_progress",
+            generation_meta: { days_per_week: daysPerWeek, started_at: new Date().toISOString() },
+            plan_data: { weeks: [] },
           })
-        )
+          .select("id")
+          .single();
+        if (planErr) throw planErr;
+        planId = planRow!.id;
+      }
+
+      // Build the full grid + mark already-done days.
+      const grid: Array<{ w: number; d: number }> = [];
+      for (let w = 1; w <= planDuration; w++) {
+        for (let d = 1; d <= planDaysPerWeek; d++) grid.push({ w, d });
+      }
+
+      const { data: existingDays } = await supabase
+        .from("workout_plan_days")
+        .select("week_number, day_number")
+        .eq("plan_id", planId);
+      const doneSet = new Set((existingDays ?? []).map((r: any) => `${r.week_number}-${r.day_number}`));
+
+      const initial: Record<string, "pending" | "running" | "done" | "error"> = {};
+      for (const cell of grid) {
+        const key = `${cell.w}-${cell.d}`;
+        initial[key] = doneSet.has(key) ? "done" : "pending";
+      }
+      setDayProgress(initial);
+      setProgressTotals({ done: doneSet.size, total: grid.length });
+
+      const todo = grid.filter((c) => !doneSet.has(`${c.w}-${c.d}`));
+
+      // Fire all remaining (week, day) calls in parallel and update UI as each lands.
+      let billingHit: any = null;
+      const errors: string[] = [];
+      let completed = doneSet.size;
+
+      await Promise.all(
+        todo.map(async (cell) => {
+          const key = `${cell.w}-${cell.d}`;
+          setDayProgress((prev) => ({ ...prev, [key]: "running" }));
+          try {
+            const r: any = await generateDayFn({
+              data: {
+                plan_id: planId,
+                client: clientPayload,
+                assessment: assessmentPayload,
+                duration_weeks: planDuration,
+                week_number: cell.w,
+                day_number: cell.d,
+                days_per_week: planDaysPerWeek,
+              },
+            });
+            if (!r?.ok) {
+              if (r?.billingRequired) billingHit = r;
+              errors.push(`W${cell.w}D${cell.d}: ${r?.error ?? "unknown"}`);
+              setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+            } else {
+              setDayProgress((prev) => ({ ...prev, [key]: "done" }));
+              completed += 1;
+              setProgressTotals({ done: completed, total: grid.length });
+            }
+          } catch (e: any) {
+            errors.push(`W${cell.w}D${cell.d}: ${e?.message ?? "failed"}`);
+            setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+          }
+        })
       );
 
-      // Surface billing gate or first hard failure.
-      const billingFail = weekResults.find((r: any) => !r.ok && r.billingRequired);
-      if (billingFail) {
-        toast.error((billingFail as any).error);
+      if (billingHit) {
+        toast.error(billingHit.error || "Subscription required");
         navigate({ to: "/billing" });
         return;
       }
-      const firstFail = weekResults.find((r: any) => !r.ok);
-      if (firstFail) throw new Error((firstFail as any).error || "Plan generation failed");
+      if (errors.length) {
+        toast.error(`${errors.length} day(s) failed. Tap "Continue" to retry the missing ones.`);
+        // Refresh resumable banner; leave plan in_progress.
+        await detectResumablePlan();
+        return;
+      }
 
-      const weeks = weekResults
-        .map((r: any) => r.week)
-        .filter(Boolean)
-        .sort((a: any, b: any) => a.week_number - b.week_number);
-      const firstOk = weekResults[0] as any;
-      const result = {
-        ok: true as const,
-        plan: {
-          title: firstOk?.title || "",
-          summary: firstOk?.summary || "",
-          weeks,
-        },
-      };
       setProgressStep(3);
-
-      const { data: plan, error } = await supabase
-        .from("workout_plans")
-        .insert({
-          trainer_id: user.id,
-          client_id: clientId,
-          assessment_id: assessmentId,
-          title: result.plan.title || `${client.full_name} – ${duration}-Week Plan`,
-          summary: result.plan.summary || null,
-          duration_weeks: duration,
-          status: "draft",
-          plan_data: { weeks: result.plan.weeks ?? [] },
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
+      const fin: any = await finalizePlanFn({ data: { plan_id: planId } });
+      if (!fin?.ok) throw new Error(fin?.error ?? "Failed to finalize plan");
       setProgressStep(4);
 
       toast.success("Draft generated");
       void markOnboardingStep(user.id, "generate_plan");
-      // If this client already had a prior plan, treat this as a re-assessment / iteration.
       try {
         const { count: priorPlans } = await supabase
           .from("workout_plans")
           .select("id", { count: "exact", head: true })
           .eq("client_id", clientId);
-        if ((priorPlans ?? 0) > 1) {
-          void markOnboardingStep(user.id, "reassess");
-        }
+        if ((priorPlans ?? 0) > 1) void markOnboardingStep(user.id, "reassess");
       } catch {}
       try { localStorage.removeItem(lsKey); } catch {}
-      navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
+      navigate({ to: "/plans/$planId", params: { planId } });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to generate plan");
+      await detectResumablePlan();
     } finally {
       setBusy(false);
       setProgressStep(0);
     }
+  };
+
+  // Detect any in-progress plan for this client and surface a resume banner.
+  const detectResumablePlan = async () => {
+    if (!user) return;
+    const { data: pl } = await supabase
+      .from("workout_plans")
+      .select("id, title, duration_weeks, generation_meta, generation_status")
+      .eq("client_id", clientId)
+      .eq("generation_status", "in_progress")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!pl) {
+      setResumablePlan(null);
+      return;
+    }
+    const dpw = (pl.generation_meta as any)?.days_per_week ?? 3;
+    const total = (pl.duration_weeks ?? 0) * dpw;
+    const { count } = await supabase
+      .from("workout_plan_days")
+      .select("id", { count: "exact", head: true })
+      .eq("plan_id", pl.id);
+    setResumablePlan({
+      id: pl.id,
+      title: pl.title,
+      duration_weeks: pl.duration_weeks ?? 0,
+      days_per_week: dpw,
+      completed: count ?? 0,
+      total,
+    });
+  };
+
+  // Discard an in-progress plan and start over.
+  const discardResumable = async () => {
+    if (!resumablePlan) return;
+    await supabase.from("workout_plans").delete().eq("id", resumablePlan.id);
+    setResumablePlan(null);
+    toast.success("Previous draft discarded.");
   };
 
   const discardDraft = () => {
