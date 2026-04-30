@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
+import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -58,6 +59,11 @@ const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   path: '/clients/$clientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlansPlanIdSessionsRoute = PlansPlanIdSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => PlansPlanIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,7 +73,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/log/$token': typeof LogTokenRoute
-  '/plans/$planId': typeof PlansPlanIdRoute
+  '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +84,8 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/log/$token': typeof LogTokenRoute
-  '/plans/$planId': typeof PlansPlanIdRoute
+  '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +96,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/clients_/$clientId': typeof ClientsClientIdRoute
   '/log/$token': typeof LogTokenRoute
-  '/plans/$planId': typeof PlansPlanIdRoute
+  '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/$planId/sessions'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/$planId/sessions'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/clients_/$clientId'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/$planId/sessions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,7 +143,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ClientsClientIdRoute: typeof ClientsClientIdRoute
   LogTokenRoute: typeof LogTokenRoute
-  PlansPlanIdRoute: typeof PlansPlanIdRoute
+  PlansPlanIdRoute: typeof PlansPlanIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -192,8 +204,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientsClientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plans/$planId/sessions': {
+      id: '/plans/$planId/sessions'
+      path: '/sessions'
+      fullPath: '/plans/$planId/sessions'
+      preLoaderRoute: typeof PlansPlanIdSessionsRouteImport
+      parentRoute: typeof PlansPlanIdRoute
+    }
   }
 }
+
+interface PlansPlanIdRouteChildren {
+  PlansPlanIdSessionsRoute: typeof PlansPlanIdSessionsRoute
+}
+
+const PlansPlanIdRouteChildren: PlansPlanIdRouteChildren = {
+  PlansPlanIdSessionsRoute: PlansPlanIdSessionsRoute,
+}
+
+const PlansPlanIdRouteWithChildren = PlansPlanIdRoute._addFileChildren(
+  PlansPlanIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -203,7 +234,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ClientsClientIdRoute: ClientsClientIdRoute,
   LogTokenRoute: LogTokenRoute,
-  PlansPlanIdRoute: PlansPlanIdRoute,
+  PlansPlanIdRoute: PlansPlanIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
