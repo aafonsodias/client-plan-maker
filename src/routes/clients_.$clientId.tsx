@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,93 @@ function computeRisk(risk: any): string {
   if (n >= 4) return "high";
   return "low";
 }
+
+function buildAssessmentPayload(assessment: any, userId: string, clientId: string) {
+  return {
+    trainer_id: userId,
+    client_id: clientId,
+    primary_goal: assessment.primary_goal || null,
+    experience_level: assessment.experience_level || null,
+    training_days_per_week: assessment.training_days_per_week ? Number(assessment.training_days_per_week) : null,
+    session_duration_minutes: assessment.session_duration_minutes ? Number(assessment.session_duration_minutes) : null,
+    available_equipment: assessment.available_equipment,
+    training_location: assessment.training_location || null,
+    injuries: assessment.injuries || null,
+    medical_conditions: assessment.medical_conditions || null,
+    preferences: assessment.preferences || null,
+    sleep_quality: assessment.sleep_quality ? Number(assessment.sleep_quality) : null,
+    stress_level: assessment.stress_level ? Number(assessment.stress_level) : null,
+    nutrition_habits: assessment.nutrition_habits || null,
+    hydration_glasses_per_day: assessment.hydration_glasses_per_day ? Number(assessment.hydration_glasses_per_day) : null,
+    mobility_limitations: assessment.mobility_limitations || null,
+    energy_levels: assessment.energy_levels || null,
+    recovery_capacity: assessment.recovery_capacity || null,
+    lifestyle: assessment.lifestyle || null,
+    standing_posture_notes: assessment.standing_posture_notes || null,
+    known_imbalances: assessment.known_imbalances || null,
+    dominant_side: assessment.dominant_side || null,
+    squat_depth_score: assessment.squat_depth_score ? Number(assessment.squat_depth_score) : null,
+    squat_depth_note: assessment.squat_depth_note || null,
+    overhead_reach_score: assessment.overhead_reach_score ? Number(assessment.overhead_reach_score) : null,
+    overhead_reach_note: assessment.overhead_reach_note || null,
+    hip_hinge_score: assessment.hip_hinge_score ? Number(assessment.hip_hinge_score) : null,
+    hip_hinge_note: assessment.hip_hinge_note || null,
+    single_leg_balance_score: assessment.single_leg_balance_score ? Number(assessment.single_leg_balance_score) : null,
+    single_leg_balance_note: assessment.single_leg_balance_note || null,
+    years_training: assessment.years_training !== "" && assessment.years_training != null ? Number(assessment.years_training) : null,
+    previous_program_style: assessment.previous_program_style || null,
+    max_lifts: assessment.max_lifts || null,
+    resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
+    cardio_capacity: assessment.cardio_capacity || null,
+    parq_passed: !parqHasYes(assessment.parq),
+    acsm_risk_category: computeRisk(assessment.risk),
+    waist_cm: assessment.waist_cm ? Number(assessment.waist_cm) : null,
+    hip_cm: assessment.hip_cm ? Number(assessment.hip_cm) : null,
+    body_fat_pct: assessment.body_fat_pct ? Number(assessment.body_fat_pct) : null,
+    body_fat_method: assessment.body_fat_method || null,
+    smart_specific: assessment.smart_specific || null,
+    smart_measurable: assessment.smart_measurable || null,
+    smart_deadline: assessment.smart_deadline || null,
+    readiness_stage: assessment.readiness_stage || null,
+    medications: assessment.medications || null,
+    med_flags: assessment.med_flags ?? [],
+    extended: {
+      parq: assessment.parq,
+      risk: assessment.risk,
+      hours_seated: assessment.ext_hours_seated,
+      daily_steps: assessment.ext_daily_steps,
+      job_type: assessment.ext_job_type,
+      meals_per_day: assessment.ext_meals_per_day,
+      alcohol_units_week: assessment.ext_alcohol_units_week,
+      processed_food_freq: assessment.ext_processed_food_freq,
+      water_l_per_day: assessment.ext_water_l_per_day,
+      mob_shoulder: assessment.ext_mob_shoulder,
+      mob_hip: assessment.ext_mob_hip,
+      mob_ankle: assessment.ext_mob_ankle,
+      mob_thoracic: assessment.ext_mob_thoracic,
+      mob_wrist: assessment.ext_mob_wrist,
+      mob_knee: assessment.ext_mob_knee,
+      cardio_test: assessment.ext_cardio_test,
+      cardio_value: assessment.ext_cardio_value,
+    },
+  };
+}
+
+function formatRelative(ts: number | null): string {
+  if (!ts) return "";
+  const diff = Math.max(0, Date.now() - ts);
+  const s = Math.floor(diff / 1000);
+  if (s < 5) return "just now";
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+type SaveStatus = "idle" | "saving" | "saved" | "offline";
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
@@ -165,15 +252,28 @@ function ClientDetail() {
   const [progressStep, setProgressStep] = useState(0);
   const [activeSection, setActiveSection] = useState("parq");
 
+  // Auto-save state
+  const [hydrated, setHydrated] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [, setRelTick] = useState(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightSaveRef = useRef<Promise<void> | null>(null);
+  const skipNextAutosaveRef = useRef(true);
+  const lsKey = `forge_assessment_draft_${clientId}`;
+
   useEffect(() => {
     if (!user) return;
     void (async () => {
       const { data: c } = await supabase.from("clients").select("*").eq("id", clientId).single();
       setClient(c);
       const { data: a } = await supabase.from("assessments").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      let dbState: any = null;
+      let dbTs = 0;
       if (a) {
         const ext = (a.extended ?? {}) as Record<string, any>;
-        setAssessment((prev: any) => ({
+        dbTs = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+        dbState = (prev: any) => ({
           ...prev,
           ...a,
           available_equipment: a.available_equipment ?? [],
@@ -195,13 +295,121 @@ function ClientDetail() {
           ext_cardio_test: ext.cardio_test ?? "untested",
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
-        }));
+        });
       }
+      // Check localStorage backup; prefer it if newer
+      let lsState: any = null;
+      let lsTs = 0;
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(lsKey) : null;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.assessment && typeof parsed.savedAt === "number") {
+            lsState = parsed.assessment;
+            lsTs = parsed.savedAt;
+          }
+        }
+      } catch {}
+
+      if (lsState && lsTs >= dbTs) {
+        setAssessment((prev: any) => ({ ...prev, ...lsState }));
+        setLastSavedAt(lsTs);
+      } else if (dbState) {
+        setAssessment(dbState);
+        setLastSavedAt(dbTs || Date.now());
+      }
+
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      setHydrated(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
+
+  // Tick relative time display once a minute
+  useEffect(() => {
+    const id = setInterval(() => setRelTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Debounced auto-save on every assessment change
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    // Persist to localStorage immediately as a backup
+    const ts = Date.now();
+    try {
+      localStorage.setItem(lsKey, JSON.stringify({ savedAt: ts, assessment }));
+    } catch {}
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const promise = (async () => {
+        setSaveStatus("saving");
+        try {
+          const payload = buildAssessmentPayload(assessment, user.id, clientId);
+          if (assessment.id) {
+            const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
+            if (error) throw error;
+          } else {
+            const { data, error } = await supabase.from("assessments").insert(payload).select("id").single();
+            if (error) throw error;
+            if (data?.id) {
+              skipNextAutosaveRef.current = true;
+              setAssessment((a: any) => ({ ...a, id: data.id }));
+            }
+          }
+          setLastSavedAt(Date.now());
+          setSaveStatus("saved");
+        } catch (err) {
+          console.warn("Auto-save to cloud failed, kept local backup", err);
+          setSaveStatus("offline");
+        } finally {
+          inFlightSaveRef.current = null;
+        }
+      })();
+      inFlightSaveRef.current = promise;
+    }, 1500);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment, hydrated, user, clientId]);
+
+  const flushPendingSave = async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    if (!user || !hydrated) return;
+    setSaveStatus("saving");
+    try {
+      const payload = buildAssessmentPayload(assessment, user.id, clientId);
+      if (assessment.id) {
+        const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("assessments").insert(payload).select("id").single();
+        if (error) throw error;
+        if (data?.id) {
+          skipNextAutosaveRef.current = true;
+          setAssessment((a: any) => ({ ...a, id: data.id }));
+        }
+      }
+      setLastSavedAt(Date.now());
+      setSaveStatus("saved");
+    } catch (err) {
+      console.warn("Flush save failed", err);
+      setSaveStatus("offline");
+    }
+    if (inFlightSaveRef.current) {
+      try { await inFlightSaveRef.current; } catch {}
+    }
+  };
 
   const toggleEq = (e: string) => {
     const has = assessment.available_equipment.includes(e);
@@ -214,77 +422,9 @@ function ClientDetail() {
     setBusy(true);
     setProgressStep(1);
     try {
-      // upsert assessment
-      const payload = {
-        trainer_id: user.id,
-        client_id: clientId,
-        primary_goal: assessment.primary_goal || null,
-        experience_level: assessment.experience_level || null,
-        training_days_per_week: assessment.training_days_per_week ? Number(assessment.training_days_per_week) : null,
-        session_duration_minutes: assessment.session_duration_minutes ? Number(assessment.session_duration_minutes) : null,
-        available_equipment: assessment.available_equipment,
-        training_location: assessment.training_location || null,
-        injuries: assessment.injuries || null,
-        medical_conditions: assessment.medical_conditions || null,
-        preferences: assessment.preferences || null,
-        sleep_quality: assessment.sleep_quality ? Number(assessment.sleep_quality) : null,
-        stress_level: assessment.stress_level ? Number(assessment.stress_level) : null,
-        nutrition_habits: assessment.nutrition_habits || null,
-        hydration_glasses_per_day: assessment.hydration_glasses_per_day ? Number(assessment.hydration_glasses_per_day) : null,
-        mobility_limitations: assessment.mobility_limitations || null,
-        energy_levels: assessment.energy_levels || null,
-        recovery_capacity: assessment.recovery_capacity || null,
-        lifestyle: assessment.lifestyle || null,
-        standing_posture_notes: assessment.standing_posture_notes || null,
-        known_imbalances: assessment.known_imbalances || null,
-        dominant_side: assessment.dominant_side || null,
-        squat_depth_score: assessment.squat_depth_score ? Number(assessment.squat_depth_score) : null,
-        squat_depth_note: assessment.squat_depth_note || null,
-        overhead_reach_score: assessment.overhead_reach_score ? Number(assessment.overhead_reach_score) : null,
-        overhead_reach_note: assessment.overhead_reach_note || null,
-        hip_hinge_score: assessment.hip_hinge_score ? Number(assessment.hip_hinge_score) : null,
-        hip_hinge_note: assessment.hip_hinge_note || null,
-        single_leg_balance_score: assessment.single_leg_balance_score ? Number(assessment.single_leg_balance_score) : null,
-        single_leg_balance_note: assessment.single_leg_balance_note || null,
-        years_training: assessment.years_training !== "" && assessment.years_training != null ? Number(assessment.years_training) : null,
-        previous_program_style: assessment.previous_program_style || null,
-        max_lifts: assessment.max_lifts || null,
-        resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
-        cardio_capacity: assessment.cardio_capacity || null,
-        // ACSM additions (column-backed)
-        parq_passed: !parqHasYes(assessment.parq),
-        acsm_risk_category: computeRisk(assessment.risk),
-        waist_cm: assessment.waist_cm ? Number(assessment.waist_cm) : null,
-        hip_cm: assessment.hip_cm ? Number(assessment.hip_cm) : null,
-        body_fat_pct: assessment.body_fat_pct ? Number(assessment.body_fat_pct) : null,
-        body_fat_method: assessment.body_fat_method || null,
-        smart_specific: assessment.smart_specific || null,
-        smart_measurable: assessment.smart_measurable || null,
-        smart_deadline: assessment.smart_deadline || null,
-        readiness_stage: assessment.readiness_stage || null,
-        medications: assessment.medications || null,
-        med_flags: assessment.med_flags ?? [],
-        // Everything else lives in JSONB
-        extended: {
-          parq: assessment.parq,
-          risk: assessment.risk,
-          hours_seated: assessment.ext_hours_seated,
-          daily_steps: assessment.ext_daily_steps,
-          job_type: assessment.ext_job_type,
-          meals_per_day: assessment.ext_meals_per_day,
-          alcohol_units_week: assessment.ext_alcohol_units_week,
-          processed_food_freq: assessment.ext_processed_food_freq,
-          water_l_per_day: assessment.ext_water_l_per_day,
-          mob_shoulder: assessment.ext_mob_shoulder,
-          mob_hip: assessment.ext_mob_hip,
-          mob_ankle: assessment.ext_mob_ankle,
-          mob_thoracic: assessment.ext_mob_thoracic,
-          mob_wrist: assessment.ext_mob_wrist,
-          mob_knee: assessment.ext_mob_knee,
-          cardio_test: assessment.ext_cardio_test,
-          cardio_value: assessment.ext_cardio_value,
-        },
-      };
+      // Make sure any pending auto-save has flushed
+      await flushPendingSave();
+      const payload = buildAssessmentPayload(assessment, user.id, clientId);
       let assessmentId: string | null = assessment.id ?? null;
       if (assessmentId) {
         await supabase.from("assessments").update(payload).eq("id", assessmentId);
@@ -335,6 +475,7 @@ function ClientDetail() {
 
       toast.success("Draft generated");
       void markOnboardingStep(user.id, "generate_plan");
+      try { localStorage.removeItem(lsKey); } catch {}
       navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to generate plan");
@@ -405,7 +546,10 @@ function ClientDetail() {
         <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold">Assessment</h2>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">ACSM-aligned</span>
+            <div className="flex items-center gap-3">
+              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">ACSM-aligned</span>
+            </div>
           </div>
 
           {/* PAR-Q+ */}
@@ -943,4 +1087,32 @@ function GenerationProgress({ step }: { step: number }) {
       </div>
     </div>
   );
+}
+function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: number | null }) {
+  const base = "inline-flex items-center gap-1.5 font-mono text-[10px] tabular-nums";
+  if (status === "saving") {
+    return (
+      <span className={`${base} text-accent`}>
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+        Saving…
+      </span>
+    );
+  }
+  if (status === "offline") {
+    return (
+      <span className={`${base} text-accent`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+        Offline — saved locally
+      </span>
+    );
+  }
+  if (status === "saved" || lastSavedAt) {
+    return (
+      <span className={`${base} text-muted-foreground/70`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+        Saved · {formatRelative(lastSavedAt)}
+      </span>
+    );
+  }
+  return null;
 }
