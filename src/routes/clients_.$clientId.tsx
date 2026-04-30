@@ -618,6 +618,18 @@ function ClientDetail() {
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
       </div>
 
+      <IntakeLinkPanel
+        clientId={client.id}
+        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+        intake={{
+          intake_token: client.intake_token ?? null,
+          intake_token_expires_at: client.intake_token_expires_at ?? null,
+          intake_status: client.intake_status ?? "not_sent",
+          intake_submitted_at: client.intake_submitted_at ?? null,
+        }}
+        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+      />
+
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
