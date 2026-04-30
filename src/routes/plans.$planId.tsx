@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { useServerFn } from "@tanstack/react-start";
+import { generatePlanDraft } from "@/server/plan.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Server fns are reserved for the public client-log endpoints.
 
