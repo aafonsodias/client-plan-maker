@@ -149,72 +149,88 @@ EXERCISE SHAPE — every exercise MUST populate ALL of:
 - primary_muscles[], secondary_muscles[]
 - rpe (beginner 6–7, intermediate 7–8, advanced 8–9)
 - tempo (4-digit eccentric-pause-concentric-pause, e.g. "3-1-1-0")
-- technique_cues (legacy field — repeat the same value as 'cue' for backward compat)
-- cue — ONE short technical cue (≤80 chars). Joint centralization,
-  pause at peak stretch, or breathing. Example:
-  "Brace ribs over pelvis, exhale on press."
-- rationale — ONE sentence (≤140 chars). MUST be PHASE-CONSISTENT and
-  tie BOTH the day's focus AND a concrete client data point
-  (movement screen score, imbalance, equipment limit, recovery, history).
+- cue — ONE short technical cue (≤80 chars).
+  Focus: joint centralization, stability, breathing, or stretch control.
+  Example: "Brace ribs over pelvis, exhale on press."
+- technique_cues — legacy field. MUST be identical to \`cue\`.
+- rationale — ONE sentence (≤140 chars). MUST:
+    1) match the CURRENT PHASE (see below),
+    2) reference the DAY focus,
+    3) include a CONCRETE client anchor.
+  HARD REQUIREMENT: rationale MUST include at least one of:
+    - a number (e.g. "3/5", "low score")
+    - OR a concrete constraint (injury, equipment, recovery, limitation).
+  If not → rewrite.
 
-  PHASE-CONSISTENT VOCABULARY (the week/day focus dictates which lens):
-    * Hypertrophy phase → talk about TENSION, VOLUME, STIMULUS, time-
-      under-tension, mechanical tension at lengthened position,
-      stretch-mediated growth.
-    * Strength phase → talk about FORCE PRODUCTION, LOAD, NEURAL
-      DEMAND, intent, bar speed, motor unit recruitment, specificity.
-    * Endurance / conditioning phase → talk about FATIGUE RESISTANCE,
-      work capacity, repeat-effort tolerance, aerobic/anaerobic system.
-    Mixing vocabularies across phases is a HARD FAIL.
+  PHASE-CONSISTENT VOCABULARY (STRICT):
+    Hypertrophy → tension, volume, stimulus, time-under-tension,
+      stretch-mediated growth, lengthened position
+    Strength → force production, load, neural demand,
+      bar speed, intent, motor unit recruitment
+    Endurance → fatigue resistance, work capacity,
+      repeat-effort tolerance, aerobic/anaerobic demand
+  HARD RULE: DO NOT mix vocabularies across phases.
 
-  BANNED GENERIC PHRASINGS (auto-reject — rewrite if you wrote one):
+  BANNED (auto-rewrite if used):
     "build strength", "great for hypertrophy", "compound movement",
     "works the whole body", "balanced exercise", "core lift",
-    "fundamental movement", "improves overall fitness", "good warmup",
+    "fundamental movement", "improves overall fitness",
     "targets multiple muscles".
 
   GOOD examples:
-    Hypertrophy day: "Stretch-biased quad volume — knee-friendly per
-      client's 3/5 squat screen; deep ROM maximises tension at length."
-    Strength day:    "Top-end force expression — client's history of
-      sumo pulls + 4/5 hinge screen supports heavy ME work today."
-    Endurance day:   "Repeat-effort capacity — low cardio_capacity
-      score; sled pushes build local fatigue resistance without spinal load."
+    Hypertrophy: "Stretch-biased quad volume — 3/5 squat screen; deep ROM increases tension at length."
+    Strength:    "High force output — strong hinge history supports heavy loading with intent."
+    Endurance:   "Repeat-effort demand — low cardio score; builds local fatigue resistance safely."
 
-- superset_id — null OR a short tag ("A1"/"A2", "B1"/"B2") when this
-  exercise is paired in a superset. STRICT RULES:
-    * EXACTLY 2 exercises share the same superset_id (never 1, never 3+).
-    * Paired exercises MUST be consecutive in the exercises array.
-    * Max 2–3 supersets per session (so max 4–6 paired exercises).
-    * NEVER assign a superset_id to a main lift in a STRENGTH phase day
-      (main = the heaviest compound at the start of the session).
-      Hypertrophy and endurance phases may pair main lifts.
-    * If unpaired → null. Do NOT invent solo "supersets".
+- superset_id — null OR a short tag ("A", "B", "C"). RULES:
+    * Each superset_id can appear ONLY twice in the entire session
+    * MUST be consecutive in the list
+    * Max 3 supersets per session (6 exercises total paired)
+    * If unpaired → null
+    * Strength phase: main lift MUST NOT be in a superset
 
-- variant — null OR a short modifier ("incline", "deficit", "paused",
-  "tempo", "1.25-rep", "pin", "bottoms-up") when the exercise is a
-  deliberate variation of a base lift. Plain bench press → null.
-  Paused bench press → "paused". Do not stuff equipment into variant.
+- variant — null OR a short modifier
+  ("incline", "paused", "tempo", "deficit", "1.25-rep", etc.).
+  Do NOT include equipment here.
 
-- optional — boolean. STRICT RULES:
-    * true ONLY for the LAST 1–2 exercises in the session AND only when
-      RPE ≤ 7 AND the exercise is a low-priority accessory or finisher
-      add-on the client may skip on a hard day.
-    * NEVER true for: main lifts, anything in a superset, anything with
-      RPE ≥ 8, primers, or correctives tied to a flagged screen item.
-    * If a session has fewer than 4 working exercises → all false.
+- optional — boolean. RULES:
+    * true ONLY if: low-priority accessory or finisher AND RPE ≤ 7
+    * Max 2 per session
+    * SHOULD be near end of session
+    * NEVER: main lift, inside supersets, corrective tied to a limitation
 
-- equipment[] (subset of available_equipment)
-- notes (programming context, "" if none)
+- equipment[] — MUST be subset of available_equipment
+- notes — programming context or ""
 
-SELF-CHECK BEFORE EMITTING THE TOOL CALL:
-  1. Re-read every rationale. Phase-consistent vocabulary? Cites a
-     concrete client data point? If not, rewrite.
-  2. Count superset_id groups. Each tag appears EXACTLY twice and
-     consecutively. Strength-phase main lift has superset_id = null.
-  3. Count optional=true. ≤2 per session, all in the last 2 slots,
-     all RPE ≤7, none in supersets, none main lifts.
-  Fix violations BEFORE calling emit_workout_*.
+----------------------------------------
+STRUCTURAL LOGIC (IMPORTANT)
+
+1. The session is ordered:
+   primer → main lift → secondary → accessories → optional
+2. The MAIN LIFT is:
+   the FIRST exercise in the session with RPE ≥ 8.
+   If none → the first exercise in the list.
+3. Supersets are ONLY for:
+   accessories or secondary work (except hypertrophy phases)
+4. Do NOT force supersets or optional exercises if not needed.
+
+----------------------------------------
+QUALITY CONTROL — BEFORE EMITTING
+
+Check ALL:
+1. Rationale: phase-consistent vocabulary? references real client data?
+   not generic? contains number or concrete constraint?
+2. Supersets: each tag exactly twice; exercises consecutive;
+   max 3 groups; no main lift in superset during strength phase.
+3. Optional: ≤ 2 exercises; RPE ≤ 7; not main lift; not in superset.
+4. Cue: short, technical, actionable.
+
+If ANY rule fails → FIX before output.
+
+----------------------------------------
+OUTPUT FORMAT
+
+Return structured JSON only via tool call. No explanations. No extra text.
 
 PERSONALIZATION — calibrate to sleep, stress, hydration, nutrition, mobility limits, energy, recovery capacity, lifestyle, posture, imbalances, dominant side, movement screen scores (≤2 → regress/substitute), training history, RHR, cardio_capacity.
 
