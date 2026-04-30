@@ -15,9 +15,11 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/billing")({
   component: BillingPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    checkout: search.checkout as "success" | "cancelled" | undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { checkout?: "success" | "cancelled" } => {
+    const c = search.checkout;
+    if (c === "success" || c === "cancelled") return { checkout: c };
+    return {};
+  },
 });
 
 type Access = {
