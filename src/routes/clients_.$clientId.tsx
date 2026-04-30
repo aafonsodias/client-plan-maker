@@ -613,6 +613,16 @@ function ClientDetail() {
 
       toast.success("Draft generated");
       void markOnboardingStep(user.id, "generate_plan");
+      // If this client already had a prior plan, treat this as a re-assessment / iteration.
+      try {
+        const { count: priorPlans } = await supabase
+          .from("workout_plans")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId);
+        if ((priorPlans ?? 0) > 1) {
+          void markOnboardingStep(user.id, "reassess");
+        }
+      } catch {}
       try { localStorage.removeItem(lsKey); } catch {}
       navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
     } catch (e: any) {
