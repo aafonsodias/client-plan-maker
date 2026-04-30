@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronRight, MessageCircle } from "lucide-react";
 
 /**
  * Drop-off radar.
@@ -17,6 +17,7 @@ const IDLE_DAYS = 10;
 type Drift = {
   client_id: string;
   client_name: string;
+  client_phone: string | null;
   plan_id: string;
   plan_title: string;
   last_session_date: string | null;
@@ -37,7 +38,7 @@ export function DropoffAlerts() {
       // toward retention; drafts are still being authored so we ignore them).
       const { data: plans } = await supabase
         .from("workout_plans")
-        .select("id, title, status, client_id, created_at, client:clients(full_name)")
+        .select("id, title, status, client_id, created_at, client:clients(full_name, phone)")
         .neq("status", "draft");
 
       const planIds = (plans ?? []).map((p) => p.id);
@@ -70,6 +71,7 @@ export function DropoffAlerts() {
           out.push({
             client_id: p.client_id,
             client_name: (p.client as any)?.full_name ?? "—",
+            client_phone: (p.client as any)?.phone ?? null,
             plan_id: p.id,
             plan_title: p.title,
             last_session_date: last,
@@ -101,36 +103,67 @@ export function DropoffAlerts() {
       </div>
       <div className="overflow-hidden rounded-2xl border border-amber-500/30 bg-card">
         {drifts.map((d) => (
-          <Link
-            key={d.client_id}
-            to="/clients/$clientId"
-            params={{ clientId: d.client_id }}
-            className="flex items-center justify-between gap-3 border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold">{d.client_name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {d.plan_title} ·{" "}
-                {d.last_session_date
-                  ? `last logged ${d.last_session_date}`
-                  : "no sessions logged yet"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                  d.days_idle >= 21
-                    ? "bg-rose-500/15 text-rose-600"
-                    : "bg-amber-500/15 text-amber-600"
-                }`}
-              >
-                {d.days_idle} days idle
-              </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </Link>
+          <DriftRow key={d.client_id} drift={d} />
         ))}
       </div>
     </section>
+  );
+}
+
+function DriftRow({ drift: d }: { drift: Drift }) {
+  const firstName = d.client_name.split(" ")[0] || "there";
+  const lastBit = d.last_session_date
+    ? `Your last logged session was ${d.days_idle} days ago`
+    : `It's been ${d.days_idle} days since we set up your plan`;
+  const msg = encodeURIComponent(
+    `Hi ${firstName} 👋 ${lastBit}. Just checking in — how are you feeling? Anything getting in the way of training this week?`
+  );
+  const phone = (d.client_phone ?? "").replace(/[^\d]/g, "");
+  const waUrl = phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`;
+
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50">
+      <Link
+        to="/clients/$clientId"
+        params={{ clientId: d.client_id }}
+        className="min-w-0 flex-1"
+      >
+        <p className="truncate font-semibold">{d.client_name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {d.plan_title} ·{" "}
+          {d.last_session_date
+            ? `last logged ${d.last_session_date}`
+            : "no sessions logged yet"}
+        </p>
+      </Link>
+      <div className="flex items-center gap-2 shrink-0">
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+            d.days_idle >= 21
+              ? "bg-rose-500/15 text-rose-600"
+              : "bg-amber-500/15 text-amber-600"
+          }`}
+        >
+          {d.days_idle}d idle
+        </span>
+        <a
+          href={waUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-600 transition hover:bg-emerald-500/20"
+          title={phone ? `WhatsApp ${firstName}` : "Open WhatsApp (no number on file)"}
+        >
+          <MessageCircle className="h-3 w-3" /> Check in
+        </a>
+        <Link
+          to="/clients/$clientId"
+          params={{ clientId: d.client_id }}
+          className="text-muted-foreground"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
   );
 }
