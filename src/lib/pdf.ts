@@ -155,28 +155,28 @@ type Theme = {
 
 const LIGHT_THEME: Theme = {
   mode: "light",
-  bg: [255, 255, 255],
-  bgSubtle: [246, 244, 240],
-  ink: [18, 20, 24],
-  inkMuted: [110, 110, 115],
-  inkGhost: [225, 222, 215],
-  rule: [222, 218, 210],
+  bg: [252, 251, 248],         // warm cream, not stark white
+  bgSubtle: [246, 244, 238],
+  ink: [16, 18, 22],
+  inkMuted: [120, 118, 112],
+  inkGhost: [232, 229, 222],   // very soft for huge numbers
+  rule: [220, 216, 208],
   accent: [232, 165, 71], // FORGE amber
-  bannerBg: [248, 246, 242],
-  bannerInk: [18, 20, 24],
+  bannerBg: [246, 244, 238],
+  bannerInk: [16, 18, 22],
 };
 
 const DARK_THEME: Theme = {
   mode: "dark",
-  bg: [16, 17, 21],
-  bgSubtle: [28, 30, 35],
-  ink: [240, 235, 226],
-  inkMuted: [150, 148, 142],
-  inkGhost: [55, 55, 60],
-  rule: [55, 55, 60],
+  bg: [14, 15, 19],
+  bgSubtle: [24, 26, 31],
+  ink: [242, 238, 230],
+  inkMuted: [148, 146, 140],
+  inkGhost: [44, 46, 52],
+  rule: [50, 52, 58],
   accent: [232, 165, 71],
-  bannerBg: [22, 23, 28],
-  bannerInk: [240, 235, 226],
+  bannerBg: [20, 22, 27],
+  bannerInk: [242, 238, 230],
 };
 
 // ---------- Drawing helpers ----------
@@ -203,7 +203,7 @@ export async function generatePlanPdf(
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const M = 56;
+  const M = 64; // generous editorial margins
 
   // Resolve logo + theme
   let logoData = branding.logo_data_url ?? null;
@@ -212,55 +212,74 @@ export async function generatePlanPdf(
   let theme: Theme = LIGHT_THEME;
   if (logoData) {
     const lum = await computeLogoLuminance(logoData);
-    // dark logo (lum < 0.45)  -> light page
-    // light logo (lum >= 0.55) -> dark page
-    // ambiguous (0.45..0.55)  -> default light (safer print)
+    // dark logo  -> light page  | light logo -> dark page
     if (lum != null && lum >= 0.55) theme = DARK_THEME;
     else theme = LIGHT_THEME;
   }
 
-  // Page background painter — invoked at the start of every new page
   const paintPage = () => {
     setFill(doc, theme.bg);
     doc.rect(0, 0, W, H, "F");
   };
 
+  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
+
+  // Tiny brand strip + page number painted on every page after cover
+  const paintChrome = (pageLabel: string) => {
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(brand, M, 32);
+    doc.text(pageLabel.toUpperCase(), W - M, 32, { align: "right" });
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.4);
+    doc.line(M, 40, W - M, 40);
+  };
+
   paintPage();
 
   let y = M;
+  let currentChrome = "";
 
   const ensureSpace = (need: number) => {
-    if (y + need > H - M - 24) {
+    if (y + need > H - M - 36) {
       doc.addPage();
       paintPage();
+      if (currentChrome) paintChrome(currentChrome);
       y = M;
     }
   };
 
-  // ----- Cover page -----
-  // Logo top-left
+  // ============================================================
+  // COVER PAGE
+  // ============================================================
   if (logoData) {
     try {
-      doc.addImage(logoData, "PNG", M, M, 56, 56, undefined, "FAST");
+      doc.addImage(logoData, "PNG", M, M, 64, 64, undefined, "FAST");
     } catch {
       /* ignore */
     }
   }
 
-  // Brand stamp top-right
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
-  doc.text(brand, W - M, M + 14, { align: "right" });
+  doc.text(brand, W - M, M + 18, { align: "right" });
   if (branding.tagline) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(branding.tagline, W - M, M + 26, { align: "right" });
+    doc.text(branding.tagline, W - M, M + 32, { align: "right" });
   }
 
-  // Hero block
-  const heroTop = M + 140;
+  // Hero block — pushed down for breathing room
+  const heroTop = M + 200;
+
+  // Massive ghost mark behind the title
+  setText(doc, theme.inkGhost);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(220);
+  doc.text("01", W - M + 10, heroTop + 110, { align: "right" });
+
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
@@ -268,160 +287,168 @@ export async function generatePlanPdf(
 
   setText(doc, theme.ink);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(34);
+  doc.setFontSize(38);
   const titleLines = doc.splitTextToSize(meta.title, W - M * 2);
-  doc.text(titleLines, M, heroTop + 36);
+  doc.text(titleLines, M, heroTop + 40);
 
-  // Accent rule
   setDraw(doc, theme.accent);
-  doc.setLineWidth(2);
-  doc.line(M, heroTop + 36 + titleLines.length * 32 + 8, M + 60, heroTop + 36 + titleLines.length * 32 + 8);
+  doc.setLineWidth(2.5);
+  const ruleY = heroTop + 40 + titleLines.length * 36 + 16;
+  doc.line(M, ruleY, M + 80, ruleY);
   doc.setLineWidth(0.5);
 
-  // Client + meta
-  const metaTop = heroTop + 36 + titleLines.length * 32 + 36;
+  const metaTop = ruleY + 44;
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
   doc.text("PREPARED FOR", M, metaTop);
-  doc.text("DURATION", M + 220, metaTop);
-  doc.text("PHASES", M + 360, metaTop);
+  doc.text("DURATION", M + 240, metaTop);
+  doc.text("WEEKS", M + 380, metaTop);
 
   setText(doc, theme.ink);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(meta.client_name, M, metaTop + 18);
-  doc.text(meta.duration_weeks ? `${meta.duration_weeks} weeks` : "—", M + 220, metaTop + 18);
-  doc.text(`${plan.weeks?.length ?? 0}`, M + 360, metaTop + 18);
+  doc.setFontSize(15);
+  doc.text(meta.client_name, M, metaTop + 22);
+  doc.text(meta.duration_weeks ? `${meta.duration_weeks} wks` : "—", M + 240, metaTop + 22);
+  doc.text(`${plan.weeks?.length ?? 0}`, M + 380, metaTop + 22);
 
-  // Summary
   if (meta.summary) {
     setText(doc, theme.inkMuted);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const lines = doc.splitTextToSize(meta.summary, W - M * 2);
-    doc.text(lines, M, metaTop + 60);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(11);
+    const lines = doc.splitTextToSize(meta.summary, W - M * 2 - 20);
+    doc.text(lines, M, metaTop + 80);
   }
 
-  // Footer signature on cover
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   const coverFooter = [branding.contact_email, branding.contact_phone].filter(Boolean).join("  ·  ");
   if (coverFooter) doc.text(coverFooter, M, H - M);
+  setDraw(doc, theme.accent);
+  doc.setLineWidth(2);
+  doc.line(M, H - M - 14, M + 24, H - M - 14);
+  doc.setLineWidth(0.5);
 
-  // ----- Day pages -----
+  // ============================================================
+  // WEEK + DAY PAGES
+  // ============================================================
   for (const week of plan.weeks ?? []) {
-    // Week divider page header (inline, no separate page)
+    // ----- Week divider page (full page, editorial) -----
     doc.addPage();
     paintPage();
+    currentChrome = `Week ${week.week_number}`;
+    paintChrome(currentChrome);
     y = M;
 
-    // Week banner — minimal: small label + huge ghost number
+    // Massive ghost week number, centered vertically
+    setText(doc, theme.inkGhost);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(380);
+    doc.text(String(week.week_number).padStart(2, "0"), W / 2, H / 2 + 90, { align: "center" });
+
+    // Top label
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text(`WEEK ${String(week.week_number).padStart(2, "0")}`, M, y + 8);
+    doc.text("PHASE", M, M + 80);
 
     setText(doc, theme.ink);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
+    doc.setFontSize(28);
     const focus = (week.focus || "Training week").toUpperCase();
-    doc.text(focus, M, y + 36);
-
-    // Ghost week number
-    setText(doc, theme.inkGhost);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(140);
-    doc.text(String(week.week_number), W - M, y + 110, { align: "right" });
-
-    setText(doc, theme.ink);
-    y += 140;
+    const focusW = doc.splitTextToSize(focus, W - M * 2);
+    doc.text(focusW, M, M + 110);
 
     // Accent rule
     setDraw(doc, theme.accent);
-    doc.setLineWidth(2);
-    doc.line(M, y, M + 60, y);
+    doc.setLineWidth(2.5);
+    const wRuleY = M + 110 + focusW.length * 28 + 18;
+    doc.line(M, wRuleY, M + 80, wRuleY);
     doc.setLineWidth(0.5);
-    y += 18;
 
     if (week.rationale) {
       setText(doc, theme.inkMuted);
       doc.setFont("helvetica", "italic");
-      doc.setFontSize(10);
-      const lines = doc.splitTextToSize(week.rationale, W - M * 2);
-      doc.text(lines, M, y);
-      y += lines.length * 13 + 12;
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(week.rationale, W * 0.55);
+      doc.text(lines, M, wRuleY + 28);
     }
+
+    // Days summary at bottom
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(`${(week.days ?? []).length} SESSIONS`, M, H - M);
 
     for (let di = 0; di < (week.days ?? []).length; di++) {
       const day = week.days[di];
 
-      // Each day starts on a fresh page for that booklet feel
+      // Each day starts on a fresh page
       doc.addPage();
       paintPage();
+      currentChrome = `Week ${week.week_number} · Day ${di + 1}`;
+      paintChrome(currentChrome);
       y = M;
 
-      // Top brand strip
+      // ===== LEVEL 1: Session header =====
+      // Huge ghost day number behind everything
+      setText(doc, theme.inkGhost);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(150);
+      doc.text(String(di + 1).padStart(2, "0"), W - M + 8, y + 120, { align: "right" });
+
+      // Tiny eyebrow label
       setText(doc, theme.inkMuted);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text(`${brand}  ·  WEEK ${week.week_number}`, M, M - 16);
-      doc.text(meta.client_name.toUpperCase(), W - M, M - 16, { align: "right" });
+      doc.text(`SESSION ${String(di + 1).padStart(2, "0")}  ·  ${day.day_label.toUpperCase()}`, M, y + 14);
 
-      // Ghost day number
-      setText(doc, theme.inkGhost);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(120);
-      doc.text(String(di + 1).padStart(2, "0"), W - M, y + 90, { align: "right" });
-
-      // Day label
-      setText(doc, theme.inkMuted);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.text(day.day_label.toUpperCase(), M, y + 8);
-
+      // Bold session title
       setText(doc, theme.ink);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(26);
-      const focusLines = doc.splitTextToSize(day.focus || "Session", W - M * 2 - 100);
-      doc.text(focusLines, M, y + 36);
-      y += 36 + focusLines.length * 26 + 4;
+      doc.setFontSize(30);
+      const focusLines = doc.splitTextToSize(day.focus || "Session", W - M * 2 - 120);
+      doc.text(focusLines, M, y + 48);
+      y += 48 + focusLines.length * 32 + 6;
 
       setDraw(doc, theme.accent);
-      doc.setLineWidth(2);
-      doc.line(M, y, M + 60, y);
+      doc.setLineWidth(2.5);
+      doc.line(M, y, M + 80, y);
       doc.setLineWidth(0.5);
-      y += 18;
+      y += 22;
 
       if (day.rationale) {
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "italic");
-        doc.setFontSize(10);
-        const lines = doc.splitTextToSize(day.rationale, W - M * 2);
+        doc.setFontSize(10.5);
+        const lines = doc.splitTextToSize(day.rationale, W - M * 2 - 80);
         doc.text(lines, M, y);
-        y += lines.length * 13 + 14;
+        y += lines.length * 14 + 24;
+      } else {
+        y += 8;
       }
 
-      // ---- Section renderer for warmup/cooldown/etc (low importance, dashed) ----
+      // ===== LEVEL 2 (low): warmup / cooldown / activation / dynamic / cardio =====
       const renderLightSection = (title: string, items?: SectionItem[]) => {
         if (!items || items.length === 0) return;
-        ensureSpace(40);
+        ensureSpace(60);
 
-        // Dashed rule + label
+        // Dashed rule + small muted label
         setDraw(doc, theme.rule);
-        doc.setLineDashPattern([2, 2], 0);
+        doc.setLineDashPattern([1.5, 2.5], 0);
+        doc.setLineWidth(0.4);
         doc.line(M, y, W - M, y);
         doc.setLineDashPattern([], 0);
-        y += 10;
+        y += 14;
 
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(8);
-        doc.text(title.toUpperCase(), M, y);
-        y += 12;
+        doc.setFontSize(7.5);
+        // letter-spacing fake via splitting
+        doc.text(title.toUpperCase().split("").join(" "), M, y);
+        y += 16;
 
-        // Two-column layout when ≥3 items
         const twoCol = items.length >= 3;
         const colW = twoCol ? (W - M * 2 - 20) / 2 : W - M * 2;
         let col = 0;
@@ -439,27 +466,28 @@ export async function generatePlanPdf(
           const noteLines = it.notes ? doc.splitTextToSize(it.notes, colW) : [];
           const blockH = labelLines.length * 12 + (noteLines.length ? noteLines.length * 11 + 2 : 0) + 8;
 
-          if (rowY + blockH > H - M - 24) {
+          if (rowY + blockH > H - M - 36) {
             doc.addPage();
             paintPage();
+            if (currentChrome) paintChrome(currentChrome);
             y = M;
             rowY = y;
             maxRowY = y;
           }
 
           setText(doc, theme.ink);
-          doc.setFont("helvetica", "bold");
+          doc.setFont("helvetica", "normal");
           doc.setFontSize(10);
           doc.text(labelLines, x, rowY + 10);
           let inner = rowY + 10 + labelLines.length * 12;
           if (noteLines.length) {
             setText(doc, theme.inkMuted);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8.5);
             doc.text(noteLines, x, inner);
             inner += noteLines.length * 11;
           }
-          maxRowY = Math.max(maxRowY, inner + 8);
+          maxRowY = Math.max(maxRowY, inner + 10);
           if (twoCol) {
             col = 1 - col;
             if (col === 0) rowY = maxRowY;
@@ -467,7 +495,7 @@ export async function generatePlanPdf(
             rowY = maxRowY;
           }
         }
-        y = maxRowY + 6;
+        y = maxRowY + 14;
       };
 
       renderLightSection("Warmup", day.warmup);
@@ -475,32 +503,42 @@ export async function generatePlanPdf(
       renderLightSection("Dynamic stretches", day.dynamic_stretches);
       renderLightSection("Cardio", day.cardio);
 
-      // ---- MAIN WORK ----
+      // ===== LEVEL 2 (high): MAIN WORK =====
       if ((day.exercises ?? []).length > 0) {
-        ensureSpace(40);
+        ensureSpace(80);
 
-        // Solid accent bar + label (high importance)
+        // Strong amber vertical bar + heavy label
         setFill(doc, theme.accent);
-        doc.rect(M, y, 28, 3, "F");
+        doc.rect(M, y - 2, 4, 22, "F");
         setText(doc, theme.ink);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.text("MAIN WORK", M + 36, y + 4);
-        y += 18;
+        doc.setFontSize(11);
+        doc.text("MAIN WORK", M + 16, y + 14);
+        setText(doc, theme.inkMuted);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(
+          `${day.exercises.length} exercise${day.exercises.length === 1 ? "" : "s"}`,
+          W - M,
+          y + 14,
+          { align: "right" },
+        );
+        y += 34;
 
         for (let i = 0; i < day.exercises.length; i++) {
           const ex = day.exercises[i];
 
-          // Pre-compute layout
+          // ===== LEVEL 3: Exercise card =====
           const ghostNum = String(i + 1).padStart(2, "0");
           const cardLeft = M;
           const cardRight = W - M;
           const cardW = cardRight - cardLeft;
-          const statBoxW = 70;
-          const statBoxH = 36;
-          const statsX = cardRight - statBoxW * 3 - 8;
+          const statBoxW = 72;
+          const statBoxH = 44;
+          const statGap = 6;
+          const statsX = cardRight - (statBoxW * 3 + statGap * 2) - 16;
 
-          // Cue + rationale split (compat with legacy technique_cues)
+          // Cue / rationale split (legacy compat)
           const rawCue = ex.cue ?? "";
           const rawRationale = ex.rationale ?? "";
           const techCues = ex.technique_cues ?? "";
@@ -522,168 +560,184 @@ export async function generatePlanPdf(
             ...((ex.secondary_muscles ?? []).map((m) => `(${m})`)),
           ].join(" · ");
 
-          // Estimate height
-          const nameLines = doc.splitTextToSize(ex.name, statsX - cardLeft - 50);
-          const cueLines = cueText ? doc.splitTextToSize(cueText, cardW - 16) : [];
-          const ratLines = rationaleText ? doc.splitTextToSize(rationaleText, cardW - 16) : [];
-          const cardH =
-            18 + // top padding
-            nameLines.length * 18 +
-            (muscles ? 14 : 0) +
-            (cueLines.length ? cueLines.length * 12 + 8 : 0) +
-            (ratLines.length ? ratLines.length * 11 + 6 : 0) +
-            18; // bottom padding
-          const finalH = Math.max(cardH, statBoxH + 36);
+          const nameX = cardLeft + 64;
+          const textRight = statsX - 16;
+          const nameLines = doc.splitTextToSize(ex.name, textRight - nameX);
+          const cueWidth = textRight - nameX;
+          const cueLines = cueText ? doc.splitTextToSize(cueText, cueWidth) : [];
+          const ratLines = rationaleText ? doc.splitTextToSize(rationaleText, cueWidth) : [];
 
-          ensureSpace(finalH + 8);
+          const topPad = 22;
+          const bottomPad = 22;
+          let contentH = topPad + nameLines.length * 18;
+          if (muscles) contentH += 14;
+          if (cueLines.length) contentH += 10 + cueLines.length * 13;
+          if (ratLines.length) contentH += 8 + ratLines.length * 12;
+          contentH += bottomPad;
+          const finalH = Math.max(contentH, statBoxH + 36);
 
-          // Card background (subtle)
+          ensureSpace(finalH + 14);
+
+          // Card surface — very subtle
           setFill(doc, theme.bgSubtle);
           doc.rect(cardLeft, y, cardW, finalH, "F");
 
-          // Superset accent left border
+          // Hairline top + bottom rules for elegance
+          setDraw(doc, theme.rule);
+          doc.setLineWidth(0.4);
+          doc.line(cardLeft, y, cardRight, y);
+          doc.line(cardLeft, y + finalH, cardRight, y + finalH);
+
+          // Superset → strong amber border (Level 2 visual link)
           if (ex.superset_id) {
             setFill(doc, theme.accent);
-            doc.rect(cardLeft, y, 3, finalH, "F");
+            doc.rect(cardLeft, y, 4, finalH, "F");
           }
 
-          // Optional flag — small dashed top border
+          // Optional → soft accent border + pill rendered later
           if (ex.optional) {
-            setDraw(doc, theme.inkMuted);
-            doc.setLineDashPattern([2, 2], 0);
-            doc.line(cardLeft + 8, y + 4, cardLeft + 60, y + 4);
+            setDraw(doc, theme.accent);
+            doc.setLineDashPattern([2, 2.5], 0);
+            doc.setLineWidth(0.8);
+            doc.line(cardLeft, y, cardRight, y);
             doc.setLineDashPattern([], 0);
+            doc.setLineWidth(0.4);
           }
 
-          // Ghost exercise number
+          // Ghost exercise number — large, behind name, low opacity feel
           setText(doc, theme.inkGhost);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(40);
-          doc.text(ghostNum, cardLeft + 14, y + finalH - 12);
+          doc.setFontSize(54);
+          doc.text(ghostNum, cardLeft + 14, y + finalH - 16);
 
-          // Name
+          // Exercise name — bold, primary
           setText(doc, theme.ink);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(14);
-          const nameX = cardLeft + 56;
-          let textY = y + 24;
+          doc.setFontSize(15);
+          let textY = y + topPad + 4;
           doc.text(nameLines, nameX, textY);
           textY += nameLines.length * 18;
 
-          // Variant + superset chip line
+          // Chips: variant / superset / optional
           const chips: string[] = [];
           if (ex.variant) chips.push(ex.variant);
           if (ex.superset_id) chips.push(`Superset ${ex.superset_id}`);
           if (ex.optional) chips.push("Optional");
           if (chips.length) {
-            setText(doc, theme.inkMuted);
+            setText(doc, ex.optional ? theme.accent : theme.inkMuted);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(7);
-            doc.text(chips.join("  ·  ").toUpperCase(), nameX, textY - 4);
+            doc.text(chips.join("   ·   ").toUpperCase(), nameX, textY - 4);
           }
 
-          // Muscles
+          // Muscles — light caption
           if (muscles) {
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
+            doc.setFontSize(8.5);
             doc.text(muscles, nameX, textY + 8);
             textY += 14;
           }
 
-          // Cue (action — non-italic, slightly darker)
+          // Coaching cue — strong, actionable, non-italic
           if (cueLines.length) {
-            textY += 6;
+            textY += 10;
             setText(doc, theme.ink);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
+            doc.setFontSize(10.5);
             doc.text(cueLines, nameX, textY);
-            textY += cueLines.length * 12;
+            textY += cueLines.length * 13;
           }
 
-          // Rationale (italic, muted)
+          // Rationale — italic muted secondary
           if (ratLines.length) {
-            textY += 4;
+            textY += 8;
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "italic");
             doc.setFontSize(9);
             doc.text(ratLines, nameX, textY);
-            textY += ratLines.length * 11;
+            textY += ratLines.length * 12;
           }
 
-          // Stats: Sets / Reps / Rest in three boxes top-right
-          const statTop = y + 12;
+          // Stat boxes — three clean cells, top-right
+          const statTop = y + 16;
           const stats: Array<[string, string]> = [
             ["SETS", String(ex.sets ?? "—")],
             ["REPS", String(ex.reps ?? "—")],
             ["REST", String(ex.rest ?? "—")],
           ];
-          if (ex.rpe) stats.push(["RPE", String(ex.rpe)]);
-          if (ex.tempo) stats.push(["TEMPO", String(ex.tempo)]);
 
-          // Render up to 3 visible boxes; if RPE/tempo present, prefer Sets/Reps/Rest then a row beneath
-          const main = stats.slice(0, 3);
-          const extra = stats.slice(3, 5);
+          const rpeNum = ex.rpe ? parseFloat(String(ex.rpe).replace(/[^\d.]/g, "")) : NaN;
+          const rpeHigh = !Number.isNaN(rpeNum) && rpeNum >= 8;
 
-          for (let s = 0; s < main.length; s++) {
-            const [label, val] = main[s];
-            const bx = statsX + s * statBoxW;
-            // Box border (subtle)
+          for (let s = 0; s < stats.length; s++) {
+            const [label, val] = stats[s];
+            const bx = statsX + s * (statBoxW + statGap);
             setDraw(doc, theme.rule);
             doc.setLineWidth(0.5);
-            doc.rect(bx, statTop, statBoxW - 6, statBoxH);
+            doc.rect(bx, statTop, statBoxW, statBoxH);
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "bold");
             doc.setFontSize(7);
-            doc.text(label, bx + 6, statTop + 11);
+            doc.text(label, bx + 8, statTop + 13);
             setText(doc, theme.ink);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(13);
-            doc.text(val, bx + 6, statTop + 28);
-          }
-          if (extra.length) {
-            const exTop = statTop + statBoxH + 4;
-            for (let s = 0; s < extra.length; s++) {
-              const [label, val] = extra[s];
-              const bx = statsX + s * statBoxW;
-              setText(doc, theme.inkMuted);
-              doc.setFont("helvetica", "bold");
-              doc.setFontSize(7);
-              doc.text(`${label}  ${val}`, bx + 2, exTop + 8);
-            }
+            doc.setFontSize(15);
+            doc.text(val, bx + 8, statTop + 34);
           }
 
-          // Notes (legacy)
+          // RPE / TEMPO row beneath the stats — minimal text
+          const meta2: string[] = [];
+          if (ex.rpe) meta2.push(`RPE ${ex.rpe}${rpeHigh ? "  ●" : ""}`);
+          if (ex.tempo) meta2.push(`TEMPO ${ex.tempo}`);
+          if (meta2.length) {
+            setText(doc, rpeHigh ? theme.accent : theme.inkMuted);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(7);
+            doc.text(meta2.join("    "), statsX, statTop + statBoxH + 12);
+          }
+
+          // Legacy notes fallback
           if (ex.notes && !cueText && !rationaleText) {
-            const noteLines = doc.splitTextToSize(ex.notes, cardW - 16);
+            const noteLines = doc.splitTextToSize(ex.notes, cueWidth);
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "normal");
             doc.setFontSize(9);
             doc.text(noteLines, nameX, textY + 6);
           }
 
-          y += finalH + 8;
+          y += finalH + 10;
         }
 
-        // Log grid hint — minimal weight × reps row for manual entry
-        ensureSpace(50);
-        y += 4;
+        // ===== LEVEL 4: Manual log grid — dotted, restrained =====
+        ensureSpace(70);
+        y += 12;
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
-        doc.text("LOG", M, y + 8);
+        doc.text("L O G", M, y + 8);
+
+        const logRows = ["SET", "REPS", "WEIGHT"];
+        const logCols = 5;
+        const logLeft = M + 60;
+        const logW = W - M - logLeft;
+        const cellW = logW / logCols;
         setDraw(doc, theme.rule);
-        doc.setLineWidth(0.5);
-        const cellW = (W - M * 2 - 30) / 5;
-        for (let s = 0; s < 5; s++) {
-          const x = M + 30 + s * cellW;
-          doc.line(x, y + 22, x + cellW - 6, y + 22);
+        doc.setLineWidth(0.3);
+        doc.setLineDashPattern([0.8, 1.6], 0);
+        for (let r = 0; r < logRows.length; r++) {
+          const ry = y + r * 16;
           setText(doc, theme.inkMuted);
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(7);
-          doc.text(`SET ${s + 1}`, x, y + 18);
+          doc.setFontSize(6.5);
+          doc.text(logRows[r], M, ry + 8);
+          for (let c = 0; c < logCols; c++) {
+            const cx = logLeft + c * cellW;
+            doc.line(cx + 4, ry + 10, cx + cellW - 8, ry + 10);
+          }
         }
-        y += 32;
+        doc.setLineDashPattern([], 0);
+        y += logRows.length * 16 + 10;
       }
 
       renderLightSection("Cooldown", day.cooldown);
@@ -693,18 +747,27 @@ export async function generatePlanPdf(
     }
   }
 
-  // ----- Footer on every page -----
+  // ============================================================
+  // FOOTERS — every page except cover
+  // ============================================================
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    if (i === 1) continue;
     setText(doc, theme.inkMuted);
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, H - 38, W - M, H - 38);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     const footer = [branding.business_name, branding.contact_email, branding.contact_phone]
       .filter(Boolean)
       .join("  ·  ");
-    if (footer && i > 1) doc.text(footer, M, H - 24);
-    doc.text(`${i} / ${pageCount}`, W - M, H - 24, { align: "right" });
+    if (footer) doc.text(footer, M, H - 22);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${String(i).padStart(2, "0")} / ${String(pageCount).padStart(2, "0")}`, W - M, H - 22, {
+      align: "right",
+    });
   }
 
   doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}.pdf`);
