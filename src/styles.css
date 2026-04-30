@@ -147,3 +147,12 @@
     color: var(--color-foreground);
   }
 }
+
+@keyframes lime-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.88 0.2 130 / 0.7); }
+  50% { box-shadow: 0 0 0 10px oklch(0.88 0.2 130 / 0); }
+}
+
+.animate-lime-pulse {
+  animation: lime-pulse 1.2s ease-out 3;
+}
