@@ -114,7 +114,7 @@
   --secondary-foreground: oklch(0.93 0 0);
   --muted: oklch(0.21 0.018 255);
   --muted-foreground: oklch(0.55 0.025 255);   /* #6b7a99 secondary text */
-  --accent: oklch(0.74 0.085 75);              /* #c9a96e warm amber */
+  --accent: oklch(0.78 0.155 70);              /* #E8A547 warm amber — Whoop/Arc'teryx */
   --accent-foreground: oklch(0.15 0.01 255);
   --destructive: oklch(0.55 0.15 27);
   --destructive-foreground: oklch(0.97 0 0);
