@@ -317,6 +317,8 @@ function ClientDetail() {
     // Performance markers
     resting_heart_rate: "",
     cardio_capacity: "",
+    // Per-section provenance: "client" (filled via intake) or "trainer-edited"
+    provenance: {} as Record<string, "client" | "trainer-edited">,
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
