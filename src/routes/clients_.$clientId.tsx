@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -66,6 +66,60 @@ const SECTIONS = [
   { id: "history", label: "Training history" },
   { id: "performance", label: "Performance" },
 ];
+
+// Optional sections render collapsed by default and count as complete
+// the moment any of their fields is touched.
+const OPTIONAL_SECTIONS = new Set([
+  "anthro", "meds", "readiness", "lifestyle", "nutrition",
+  "posture", "screen", "history", "performance",
+]);
+
+function hasVal(v: any): boolean {
+  if (v == null) return false;
+  if (typeof v === "string") return v.trim() !== "";
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+
+function isSectionComplete(id: string, a: any): boolean {
+  switch (id) {
+    case "parq":
+      return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
+    case "risk":
+      return hasVal(a.risk?.bmi_category);
+    case "anthro":
+      return hasVal(a.waist_cm) || hasVal(a.hip_cm) || hasVal(a.body_fat_pct) || hasVal(a.body_fat_method);
+    case "meds":
+      return hasVal(a.medications) || (a.med_flags?.length ?? 0) > 0;
+    case "goal":
+      return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
+    case "readiness":
+      return hasVal(a.readiness_stage);
+    case "training":
+      return hasVal(a.experience_level) && hasVal(a.training_days_per_week) &&
+             hasVal(a.session_duration_minutes) && (a.available_equipment?.length ?? 0) > 0;
+    case "lifestyle":
+      return hasVal(a.sleep_quality) || hasVal(a.stress_level) || hasVal(a.ext_hours_seated) ||
+             hasVal(a.ext_daily_steps) || hasVal(a.ext_job_type);
+    case "nutrition":
+      return hasVal(a.ext_meals_per_day) || hasVal(a.ext_water_l_per_day) ||
+             hasVal(a.ext_alcohol_units_week) || hasVal(a.nutrition_habits);
+    case "mobility":
+      return ["ext_mob_shoulder","ext_mob_hip","ext_mob_ankle","ext_mob_thoracic","ext_mob_wrist","ext_mob_knee"]
+        .every((k) => hasVal(a[k]));
+    case "posture":
+      return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
+    case "screen":
+      return hasVal(a.squat_depth_score) || hasVal(a.overhead_reach_score) ||
+             hasVal(a.hip_hinge_score) || hasVal(a.single_leg_balance_score);
+    case "history":
+      return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
+    case "performance":
+      return hasVal(a.resting_heart_rate) || a.ext_cardio_test !== "untested";
+    default:
+      return false;
+  }
+}
 
 function parqHasYes(parq: Record<string, boolean | null>): boolean {
   return Object.values(parq ?? {}).some((v) => v === true);
@@ -265,6 +319,8 @@ function ClientDetail() {
   const [busy, setBusy] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
   const [activeSection, setActiveSection] = useState("parq");
+  const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
+  const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
 
   // Auto-save state
   const [hydrated, setHydrated] = useState(false);
@@ -532,6 +588,22 @@ function ClientDetail() {
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
 
+  // Section completion + progress
+  const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
+  const completedCount = sectionStatus.filter((s) => s.complete).length;
+  const totalSections = SECTIONS.length;
+  const pct = Math.round((completedCount / totalSections) * 100);
+  const minutesLeft = Math.max(1, Math.round((totalSections - completedCount) * 0.6));
+  const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
+  const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
+
+  const trainingSummary = [
+    assessment.training_days_per_week ? `${assessment.training_days_per_week}×/week` : null,
+    assessment.session_duration_minutes ? `${assessment.session_duration_minutes} min` : null,
+    assessment.training_location || null,
+    assessment.experience_level || null,
+  ].filter(Boolean).join(", ");
+
   return (
     <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
@@ -544,30 +616,36 @@ function ClientDetail() {
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sections</p>
-            {SECTIONS.map((s) => (
+            {sectionStatus.map((s) => (
               <a
                 key={s.id}
                 href={`#sec-${s.id}`}
                 onClick={() => setActiveSection(s.id)}
-                className={`block rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {s.label}
+                <span>{s.label}</span>
+                {s.complete && <Check className="h-3 w-3 text-accent" />}
               </a>
             ))}
           </nav>
         </aside>
 
         <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">Assessment</h2>
-            <div className="flex items-center gap-3">
-              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
-              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">ACSM-aligned</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-bold shrink-0">Assessment</h2>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
+                <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+              </div>
+              <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
+                Section {sectionNumber} of {totalSections} · {pct}% complete · ~{minutesLeft} min left
+              </span>
             </div>
+            <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
           </div>
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance.">
+          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance." complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? "✓ Pre-screening complete. 0 flags." : `✓ Pre-screening complete. ${parqFlagCount(assessment.parq)} flags — guidance below`} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_QUESTIONS.map((q, idx) => {
                 const value = (assessment.parq as any)[q.key];
@@ -594,7 +672,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Risk stratification */}
-          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high.">
+          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high." complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={`✓ ACSM Risk: ${riskCategory.toUpperCase()}`} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
@@ -632,7 +710,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" title="Anthropometry" hint="Body composition baseline. Waist-to-hip ratio is computed automatically.">
+          <SectionBlock id="anthro" title="Anthropometry" hint="Body composition baseline. Waist-to-hip ratio is computed automatically." defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Waist (cm)" type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint="Measure at narrowest point above the hip bone, exhale." />
               <Field label="Hip (cm)" type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint="Measure at the widest part of the buttocks." />
@@ -658,7 +736,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Medications */}
-          <SectionBlock id="meds" title="Medication & supplements" hint="Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution.">
+          <SectionBlock id="meds" title="Medication & supplements" hint="Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution." defaultCollapsed complete={isSectionComplete("meds", assessment)}>
             <TextField label="Free text (medications, supplements, dosage)" value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {["Beta-blocker", "Statin", "Anticoagulant"].map((flag) => {
@@ -678,7 +756,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* SMART goal */}
-          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound.">
+          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound." complete={isSectionComplete("goal", assessment)} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={`✓ Goal logged: ${String(assessment.smart_specific ?? "").slice(0, 40)}`} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Specific outcome" value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder="e.g. Squat 1.5×BW for 5 reps" hint="What concrete result?" className="sm:col-span-2" />
               <Field label="Measurable target" value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder="e.g. 120kg @ BW80kg" hint="Number you'll measure." />
@@ -688,7 +766,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Readiness */}
-          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach.">
+          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach." defaultCollapsed complete={isSectionComplete("readiness", assessment)}>
             <div className="flex flex-wrap gap-1.5">
               {[
                 ["precontemplation", "Pre-contemplation"],
@@ -710,7 +788,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training setup (existing) */}
-          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints.">
+          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints." complete={isSectionComplete("training", assessment)} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={`✓ Setup: ${trainingSummary}`} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label="Experience level" hint="Beginner = <1y consistent · Intermediate = 1–3y · Advanced = 3y+." />
@@ -747,7 +825,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators.">
+          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators." defaultCollapsed complete={isSectionComplete("lifestyle", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Sleep (1–10)" type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint="Subjective average sleep quality this past month." />
               <Field label="Stress (1–10)" type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint="Perceived overall stress." />
@@ -760,19 +838,25 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions.">
+          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions." defaultCollapsed complete={isSectionComplete("nutrition", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Meals / day" type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
               <Field label="Alcohol units / week" type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint="UK unit ≈ 10 ml ethanol." />
               <Field label="Processed food frequency (1–5)" type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint="1 = rare · 5 = most meals." />
               <Field label="Water (L / day)" type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
-              <Field label="Hydration (glasses, legacy)" type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
+              {showAdvancedNutrition && (
+                <Field label="Hydration (glasses, legacy)" type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
+              )}
               <TextField label="Notes (allergies, dietary pattern)" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
             </div>
+            <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+              {showAdvancedNutrition ? "Hide advanced fields" : "Show advanced fields"}
+            </button>
           </SectionBlock>
 
           {/* Mobility checklist */}
           <SectionBlock id="mobility" title="Mobility — anatomical (1–5)" hint="Score each region: 1 = severely restricted, 5 = full pain-free range.">
+            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {[
                 ["ext_mob_shoulder", "Shoulder"],
@@ -789,7 +873,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Posture */}
-          <SectionBlock id="posture" title="Posture & alignment" hint="Standing posture and known asymmetries.">
+          <SectionBlock id="posture" title="Posture & alignment" hint="Standing posture and known asymmetries." defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
               <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
@@ -808,7 +892,8 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Movement screen */}
-          <SectionBlock id="screen" title="Movement screen" hint="Functional pattern quality. 1 = restricted → 5 = controlled full range.">
+          <SectionBlock id="screen" title="Movement screen" hint="Functional pattern quality. 1 = restricted → 5 = controlled full range." defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
               <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
@@ -818,7 +903,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training history */}
-          <SectionBlock id="history" title="Training history" hint="Prior exposure shapes starting loads and progression rates.">
+          <SectionBlock id="history" title="Training history" hint="Prior exposure shapes starting loads and progression rates." defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
               <Field label="Previous program style" placeholder="PPL, 5/3/1…" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
@@ -827,7 +912,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Performance */}
-          <SectionBlock id="performance" title="Performance markers" hint="Cardiovascular and conditioning baseline.">
+          <SectionBlock id="performance" title="Performance markers" hint="Cardiovascular and conditioning baseline." defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint="Measured first thing AM, supine." />
               <div className="space-y-1">
@@ -845,8 +930,13 @@ function ClientDetail() {
               {assessment.ext_cardio_test !== "untested" && (
                 <Field label="Test result" value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint="Distance, time, or VO₂ estimate." />
               )}
-              <TextField label="Cardio context (legacy free text)" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+              {showAdvancedPerformance && (
+                <TextField label="Cardio context (legacy free text)" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+              )}
             </div>
+            <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+              {showAdvancedPerformance ? "Hide advanced fields" : "Show advanced fields"}
+            </button>
           </SectionBlock>
 
           {busy && <GenerationProgress step={progressStep} />}
@@ -924,23 +1014,58 @@ function ClientDetail() {
   );
 }
 
-function SectionBlock({ id, title, hint, children }: { id: string; title: string; hint?: string; children: React.ReactNode }) {
+function SectionBlock({
+  id,
+  title,
+  hint,
+  children,
+  defaultCollapsed = false,
+  complete = false,
+  footer,
+}: {
+  id: string;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+  defaultCollapsed?: boolean;
+  complete?: boolean;
+  footer?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!defaultCollapsed);
   return (
     <div id={`sec-${id}`} className="scroll-mt-20 rounded-xl border border-border bg-background/40 p-3">
-      <div className="mb-2 flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="mb-2 flex w-full items-center gap-1.5 text-left"
+        aria-expanded={open}
+      >
+        {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
         <h3 className="text-xs font-bold uppercase tracking-widest text-accent">{title}</h3>
+        {complete && <Check className="h-3 w-3 text-accent" />}
         {hint && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask">
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => e.stopPropagation()}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Why we ask"
+              >
                 <Info className="h-3 w-3" />
-              </button>
+              </span>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
           </Tooltip>
         )}
-      </div>
-      {children}
+      </button>
+      {open && (
+        <>
+          {children}
+          {footer}
+        </>
+      )}
     </div>
   );
 }
@@ -1168,6 +1293,14 @@ function ParqFlagSummary({ count }: { count: number }) {
           Plan generation will default to low-intensity. Override available.
         </span>
       )}
+    </div>
+  );
+}
+
+function CompletionStrip({ text }: { text: string }) {
+  return (
+    <div className="mt-3 animate-fade-in border-l-2 border-accent/40 bg-accent/5 px-2 py-1 text-[12px] opacity-80">
+      {text}
     </div>
   );
 }

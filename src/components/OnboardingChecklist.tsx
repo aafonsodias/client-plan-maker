@@ -89,7 +89,7 @@ export function OnboardingChecklist() {
           <Button variant="ghost" size="sm" onClick={() => void dismiss(false)}>
             <X className="mr-1 h-4 w-4" /> Remind me later
           </Button>
-          <Button size="sm" onClick={() => void dismiss(true)}>Skip for good</Button>
+          <Button size="sm" onClick={() => void dismiss(true)}>I've got it</Button>
         </div>
       </DialogContent>
     </Dialog>
