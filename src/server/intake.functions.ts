@@ -184,7 +184,7 @@ export const saveIntake = createServerFn({ method: "POST" })
     if (existing) {
       const { error } = await supabaseAdmin
         .from("assessments")
-        .update(cleaned)
+        .update(cleaned as any)
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
     } else {
@@ -194,7 +194,7 @@ export const saveIntake = createServerFn({ method: "POST" })
           client_id: client.id,
           trainer_id: client.trainer_id,
           ...cleaned,
-        });
+        } as any);
       if (error) throw new Error(error.message);
     }
 
