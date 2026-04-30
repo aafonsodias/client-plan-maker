@@ -65,7 +65,7 @@ const tokenSchema = z.object({ token: z.string().uuid() });
 export type IntakeContext = {
   status: "valid" | "expired" | "submitted";
   client?: { id: string; first_name: string };
-  trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null };
+  trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null; tagline?: string | null };
   assessment?: any | null;
   submittedAt?: string | null;
 };
