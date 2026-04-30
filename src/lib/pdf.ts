@@ -155,28 +155,28 @@ type Theme = {
 
 const LIGHT_THEME: Theme = {
   mode: "light",
-  bg: [255, 255, 255],
-  bgSubtle: [246, 244, 240],
-  ink: [18, 20, 24],
-  inkMuted: [110, 110, 115],
-  inkGhost: [225, 222, 215],
-  rule: [222, 218, 210],
+  bg: [252, 251, 248],         // warm cream, not stark white
+  bgSubtle: [246, 244, 238],
+  ink: [16, 18, 22],
+  inkMuted: [120, 118, 112],
+  inkGhost: [232, 229, 222],   // very soft for huge numbers
+  rule: [220, 216, 208],
   accent: [232, 165, 71], // FORGE amber
-  bannerBg: [248, 246, 242],
-  bannerInk: [18, 20, 24],
+  bannerBg: [246, 244, 238],
+  bannerInk: [16, 18, 22],
 };
 
 const DARK_THEME: Theme = {
   mode: "dark",
-  bg: [16, 17, 21],
-  bgSubtle: [28, 30, 35],
-  ink: [240, 235, 226],
-  inkMuted: [150, 148, 142],
-  inkGhost: [55, 55, 60],
-  rule: [55, 55, 60],
+  bg: [14, 15, 19],
+  bgSubtle: [24, 26, 31],
+  ink: [242, 238, 230],
+  inkMuted: [148, 146, 140],
+  inkGhost: [44, 46, 52],
+  rule: [50, 52, 58],
   accent: [232, 165, 71],
-  bannerBg: [22, 23, 28],
-  bannerInk: [240, 235, 226],
+  bannerBg: [20, 22, 27],
+  bannerInk: [242, 238, 230],
 };
 
 // ---------- Drawing helpers ----------
