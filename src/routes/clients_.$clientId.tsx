@@ -1421,7 +1421,7 @@ function GenerationProgress({ step }: { step: number }) {
   return (
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with Claude Sonnet
+        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5
       </div>
       <ul className="space-y-1.5">
         {steps.map((s) => {
