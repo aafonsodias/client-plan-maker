@@ -5,15 +5,9 @@ globalThis.window = dom.window; globalThis.document = dom.window.document;
 globalThis.Image = dom.window.Image; globalThis.HTMLImageElement = dom.window.HTMLImageElement;
 globalThis.FileReader = dom.window.FileReader;
 const jsPDFmod = await import("jspdf");
-// Capture last created jsPDF instance
-let lastDoc = null;
-const Orig = jsPDFmod.default;
-const Wrapped = function(...a){ const inst = new Orig(...a); lastDoc = inst; return inst; };
-Wrapped.prototype = Orig.prototype;
-// Replace default export
-jsPDFmod.default = Wrapped;
-// Also intercept save on prototype
-Orig.prototype.save = function(){ const buf = Buffer.from(this.output("arraybuffer")); fs.writeFileSync("/tmp/out.pdf", buf); console.log("wrote", buf.length); };
+const proto = jsPDFmod.default.prototype;
+// save() in node is undefined; add one that writes to disk
+proto.save = function(){ const buf = Buffer.from(this.output("arraybuffer")); fs.writeFileSync("/tmp/out.pdf", buf); console.log("wrote", buf.length); };
 const { generatePlanPdf } = await import("./src/lib/pdf.ts");
 const day = (i) => ({
   day_label: ["Day 1","Day 2","Day 3","Day 4","Day 5","Day 6"][i],
@@ -41,8 +35,3 @@ await generatePlanPdf(
   plan,
   { business_name:"André Periquito", full_name:"André Periquito", tagline:"Hybrid coaching · evidence-based programming", contact_email:"aafonsodias@gmail.com" }
 );
-if (lastDoc && !fs.existsSync("/tmp/out.pdf")) {
-  const buf = Buffer.from(lastDoc.output("arraybuffer"));
-  fs.writeFileSync("/tmp/out.pdf", buf);
-  console.log("wrote (fallback)", buf.length);
-}
