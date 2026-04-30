@@ -675,3 +675,249 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       return { ok: false as const, error: `Failed to generate week ${week_number}.` };
     }
   });
+
+// =============================================================================
+// generatePlanDay — generates ONE day at a time and persists it immediately to
+// workout_plan_days so the flow is fully resumable.
+// =============================================================================
+const SingleDayPlanSchema = {
+  type: "object",
+  properties: {
+    day: WeekDaySchema,
+  },
+  required: ["day"],
+  additionalProperties: false,
+} as const;
+
+export const generatePlanDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DayInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Billing gate.
+    const { data: sub } = await supabaseAdmin
+      .from("subscribers")
+      .select("subscribed, current_period_end, trial_end")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const now = Date.now();
+    const trialActive = !!(sub?.trial_end && new Date(sub.trial_end).getTime() > now);
+    const subActive =
+      !!sub?.subscribed &&
+      (!sub?.current_period_end || new Date(sub.current_period_end).getTime() > now);
+    if (!trialActive && !subActive) {
+      return {
+        ok: false as const,
+        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        billingRequired: true as const,
+      };
+    }
+
+    // Verify the plan belongs to this trainer.
+    const { data: planRow, error: planErr } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, trainer_id")
+      .eq("id", data.plan_id)
+      .maybeSingle();
+    if (planErr || !planRow || planRow.trainer_id !== userId) {
+      return { ok: false as const, error: "Plan not found." };
+    }
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
+
+    const { week_number, day_number, days_per_week, duration_weeks } = data;
+    const safetyBlock = buildSafetyBlock(data.assessment);
+
+    const sys = `You are an expert strength coach generating ONE TRAINING DAY (day ${day_number} of ${days_per_week}, in week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}
+
+${SHARED_PROGRAM_RULES}
+
+DAY CONTEXT — calibrate the day for its slot:
+- Day position in the week determines focus split (e.g. push/pull/legs, upper/lower, full-body — choose what fits training_days_per_week=${days_per_week} and the goal).
+- Week ${week_number} of ${duration_weeks}: early weeks introduce patterns at slightly lower RPE; middle weeks accumulate volume; final week of a 4-week block is deload OR peak.
+- The day's 'rationale' MUST reference both its week position and the client's data (sleep / stress / movement screen / etc.).
+
+Return ONLY structured JSON via the emit_workout_day tool — emit exactly one 'day' object.`;
+
+    const userMsg =
+      buildClientContextBlock(data.client, data.assessment, duration_weeks) +
+      `\n\nGENERATE: week ${week_number} of ${duration_weeks}, day ${day_number} of ${days_per_week}.` +
+      buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
+
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-5",
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: userMsg },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "emit_workout_day",
+                description: "Emit one training day",
+                parameters: SingleDayPlanSchema,
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "emit_workout_day" } },
+        }),
+      });
+
+      if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
+      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("AI gateway error (day)", week_number, day_number, res.status, t);
+        let upstream = t;
+        try {
+          const parsed = JSON.parse(t);
+          upstream = parsed?.error?.message ?? parsed?.message ?? t;
+        } catch {}
+        return { ok: false as const, error: `AI request failed (${res.status}): ${String(upstream).slice(0, 300)}` };
+      }
+
+      const json = await res.json();
+      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+      const argsRaw = toolCall?.function?.arguments;
+      if (!argsRaw) {
+        console.error("AI returned no tool call (day)", week_number, day_number);
+        return { ok: false as const, error: `AI returned no day ${week_number}/${day_number}.` };
+      }
+      let args: any;
+      try {
+        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+      } catch (e) {
+        console.error("Failed to parse day JSON", week_number, day_number, e);
+        return { ok: false as const, error: `AI returned malformed day ${week_number}/${day_number}.` };
+      }
+
+      const day = args?.day;
+      if (!day) return { ok: false as const, error: "AI returned empty day." };
+
+      // Persist immediately (upsert to allow regenerate).
+      const { error: upsertErr } = await supabaseAdmin
+        .from("workout_plan_days")
+        .upsert(
+          {
+            plan_id: data.plan_id,
+            trainer_id: userId,
+            week_number,
+            day_number,
+            day_label: day.day_label ?? `Day ${day_number}`,
+            focus: day.focus ?? null,
+            rationale: day.rationale ?? null,
+            content: day,
+            status: "done",
+          },
+          { onConflict: "plan_id,week_number,day_number" }
+        );
+      if (upsertErr) {
+        console.error("Failed to persist day", upsertErr);
+        return { ok: false as const, error: `Saved generation but failed to store day ${week_number}/${day_number}.` };
+      }
+
+      return { ok: true as const, day, week_number, day_number };
+    } catch (err) {
+      console.error("Plan day failed", week_number, day_number, err);
+      return { ok: false as const, error: `Failed to generate day ${week_number}/${day_number}.` };
+    }
+  });
+
+// =============================================================================
+// getPlanProgress — list which (week, day) pairs already exist for a plan.
+// =============================================================================
+export const getPlanProgress = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ plan_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("workout_plan_days")
+      .select("week_number, day_number, day_label, focus, rationale, content, updated_at")
+      .eq("plan_id", data.plan_id)
+      .eq("trainer_id", userId)
+      .order("week_number", { ascending: true })
+      .order("day_number", { ascending: true });
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const, days: rows ?? [] };
+  });
+
+// =============================================================================
+// finalizePlanGeneration — assemble all stored days into plan_data and mark
+// the plan complete.
+// =============================================================================
+export const finalizePlanGeneration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      plan_id: z.string().uuid(),
+      title: z.string().optional(),
+      summary: z.string().optional(),
+    }).parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: planRow } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, trainer_id, duration_weeks, generation_meta, title, summary")
+      .eq("id", data.plan_id)
+      .maybeSingle();
+    if (!planRow || planRow.trainer_id !== userId) {
+      return { ok: false as const, error: "Plan not found." };
+    }
+
+    const { data: dayRows, error } = await supabaseAdmin
+      .from("workout_plan_days")
+      .select("week_number, day_number, content")
+      .eq("plan_id", data.plan_id)
+      .order("week_number", { ascending: true })
+      .order("day_number", { ascending: true });
+    if (error) return { ok: false as const, error: error.message };
+
+    const meta: any = planRow.generation_meta ?? {};
+    const weekFocus: Record<string, { focus?: string; rationale?: string }> = meta.week_focus ?? {};
+
+    // Group into weeks.
+    const weekMap = new Map<number, any[]>();
+    for (const r of dayRows ?? []) {
+      const arr = weekMap.get(r.week_number) ?? [];
+      arr.push(r.content);
+      weekMap.set(r.week_number, arr);
+    }
+    const weeks = Array.from(weekMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([week_number, days]) => ({
+        week_number,
+        focus: weekFocus[String(week_number)]?.focus ?? `Week ${week_number}`,
+        rationale: weekFocus[String(week_number)]?.rationale ?? "",
+        days,
+      }));
+
+    const { error: updErr } = await supabaseAdmin
+      .from("workout_plans")
+      .update({
+        plan_data: { weeks },
+        title: data.title || planRow.title,
+        summary: data.summary || planRow.summary,
+        generation_status: "complete",
+        status: "draft",
+      })
+      .eq("id", data.plan_id);
+    if (updErr) return { ok: false as const, error: updErr.message };
+
+    return { ok: true as const };
+  });
