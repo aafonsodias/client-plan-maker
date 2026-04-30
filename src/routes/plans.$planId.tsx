@@ -332,6 +332,14 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+      <div className="mb-3 -mt-1">
+        <Input
+          value={week.rationale ?? ""}
+          onChange={(e) => onChange({ ...week, rationale: e.target.value })}
+          placeholder="Why this block now? (e.g. accumulation phase — sleep 8/10, no deload yet)"
+          className="h-7 border-dashed bg-transparent text-xs italic text-muted-foreground placeholder:text-muted-foreground/50"
+        />
+      </div>
       <div className="space-y-3">
         {week.days.map((d, di) => (
           <DayBlock key={di} day={d} onChange={(nd) => updateDay(di, nd)} onRemove={() => removeDay(di)} />
