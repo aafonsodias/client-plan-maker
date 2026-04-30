@@ -371,169 +371,345 @@ function ClientDetail() {
 
   if (!client) return <p className="text-muted-foreground">Loading…</p>;
 
+  const parqYes = parqHasYes(assessment.parq);
+  const riskCategory = computeRisk(assessment.risk);
+  const whr = assessment.waist_cm && assessment.hip_cm
+    ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
+    : "—";
+
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-light tracking-tight">{client.full_name}</h1>
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
       </div>
 
-      <section className="rounded-2xl border border-border bg-card p-4">
-        <h2 className="mb-3 text-base font-bold">Assessment</h2>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Field label="Primary goal" placeholder="e.g. Build muscle, lose fat" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
-          <div className="space-y-1">
-            <Label>Experience level</Label>
-            <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-              <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Field label="Training days / week" type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-          <Field label="Session length (minutes)" type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-          <Field label="Training location" placeholder="Home, gym…" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
-          <Field label="Plan length (weeks)" type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
-        </div>
+      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+        <aside className="hidden lg:block">
+          <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
+            <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sections</p>
+            {SECTIONS.map((s) => (
+              <a
+                key={s.id}
+                href={`#sec-${s.id}`}
+                onClick={() => setActiveSection(s.id)}
+                className={`block rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {s.label}
+              </a>
+            ))}
+          </nav>
+        </aside>
 
-        <div className="mt-3">
-          <Label className="text-xs">Available equipment</Label>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {EQUIPMENT.map((eq) => {
-              const on = assessment.available_equipment.includes(eq);
-              return (
+        <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold">Assessment</h2>
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">ACSM-aligned</span>
+          </div>
+
+          {/* PAR-Q+ */}
+          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance.">
+            <ul className="space-y-1.5">
+              {PARQ_QUESTIONS.map((q, idx) => (
+                <li key={q.key} className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 p-2">
+                  <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
+                  <YesNo value={(assessment.parq as any)[q.key]} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
+                </li>
+              ))}
+            </ul>
+            {parqYes && (
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>One or more 'Yes' responses. Recommend physician clearance before initiating training.</span>
+              </div>
+            )}
+          </SectionBlock>
+
+          {/* Risk stratification */}
+          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
+              <div className="space-y-1">
+                <LabelWithHelp label="Smoking" hint="Current smokers carry highest CVD risk." />
+                <Select value={assessment.risk.smoking} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">Never</SelectItem>
+                    <SelectItem value="former">Former</SelectItem>
+                    <SelectItem value="current">Current</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Toggle label="Sedentary (<150 min/week MVPA)" value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
+              <div className="space-y-1">
+                <LabelWithHelp label="BMI category" hint="Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30." />
+                <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="underweight">Underweight</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="overweight">Overweight</SelectItem>
+                    <SelectItem value="obese">Obese</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Toggle label="Dyslipidemia" value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
+              <Toggle label="Pre-diabetes" value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
+              <Toggle label="Hypertension" value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
+            </div>
+            <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${riskCategory === "high" ? "bg-destructive/15 text-destructive" : riskCategory === "moderate" ? "bg-accent/15 text-accent" : "bg-secondary text-secondary-foreground"}`}>
+              ACSM risk: {riskCategory}
+            </div>
+          </SectionBlock>
+
+          {/* Anthropometry */}
+          <SectionBlock id="anthro" title="Anthropometry" hint="Body composition baseline. Waist-to-hip ratio is computed automatically.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Waist (cm)" type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint="Measure at narrowest point above the hip bone, exhale." />
+              <Field label="Hip (cm)" type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint="Measure at the widest part of the buttocks." />
+              <div className="space-y-1">
+                <Label className="text-xs">Waist-to-hip ratio</Label>
+                <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
+              </div>
+              <Field label="Body fat %" type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint="Optional. Use the same method over time for trend." />
+              <div className="space-y-1 sm:col-span-2">
+                <LabelWithHelp label="Body fat method" hint="Calipers, bioimpedance, DEXA, etc." />
+                <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="calipers">Skinfold calipers</SelectItem>
+                    <SelectItem value="bia">Bioimpedance (BIA)</SelectItem>
+                    <SelectItem value="dexa">DEXA</SelectItem>
+                    <SelectItem value="bodpod">BodPod</SelectItem>
+                    <SelectItem value="visual">Visual estimate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </SectionBlock>
+
+          {/* Medications */}
+          <SectionBlock id="meds" title="Medication & supplements" hint="Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution.">
+            <TextField label="Free text (medications, supplements, dosage)" value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {["Beta-blocker", "Statin", "Anticoagulant"].map((flag) => {
+                const on = assessment.med_flags.includes(flag);
+                return (
+                  <button
+                    key={flag}
+                    type="button"
+                    onClick={() => setAssessment({ ...assessment, med_flags: on ? assessment.med_flags.filter((f: string) => f !== flag) : [...assessment.med_flags, flag] })}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-background hover:bg-secondary"}`}
+                  >
+                    {on && "⚑ "}{flag}
+                  </button>
+                );
+              })}
+            </div>
+          </SectionBlock>
+
+          {/* SMART goal */}
+          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Specific outcome" value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder="e.g. Squat 1.5×BW for 5 reps" hint="What concrete result?" className="sm:col-span-2" />
+              <Field label="Measurable target" value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder="e.g. 120kg @ BW80kg" hint="Number you'll measure." />
+              <Field label="Deadline" type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint="Realistic completion date." />
+              <TextField label="Goal context (optional)" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
+            </div>
+          </SectionBlock>
+
+          {/* Readiness */}
+          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach.">
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                ["precontemplation", "Pre-contemplation"],
+                ["contemplation", "Contemplation"],
+                ["preparation", "Preparation"],
+                ["action", "Action"],
+                ["maintenance", "Maintenance"],
+              ].map(([v, l]) => (
                 <button
-                  key={eq}
+                  key={v}
                   type="button"
-                  onClick={() => toggleEq(eq)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                    on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-secondary"
-                  }`}
+                  onClick={() => setAssessment({ ...assessment, readiness_stage: v })}
+                  className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${assessment.readiness_stage === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}
                 >
-                  {eq}
+                  {l}
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <TextField label="Injuries" value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
-          <TextField label="Medical conditions" value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-          <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
-        </div>
-
-        {/* Holistic / lifestyle factors */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Lifestyle &amp; recovery</h3>
-
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field
-              label="Sleep (1–10)"
-              type="number"
-              value={String(assessment.sleep_quality ?? "")}
-              onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })}
-            />
-            <Field
-              label="Stress (1–10)"
-              type="number"
-              value={String(assessment.stress_level ?? "")}
-              onChange={(v) => setAssessment({ ...assessment, stress_level: v })}
-            />
-            <Field
-              label="Hydration (glasses / day)"
-              type="number"
-              value={String(assessment.hydration_glasses_per_day ?? "")}
-              onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })}
-            />
-            <div className="space-y-1">
-              <Label>Lifestyle</Label>
-              <Select value={assessment.lifestyle ?? ""} onValueChange={(v) => setAssessment({ ...assessment, lifestyle: v })}>
-                <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sedentary">Sedentary</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="very_active">Very active</SelectItem>
-                </SelectContent>
-              </Select>
+              ))}
             </div>
-            <TextField label="Nutrition habits" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} />
-            <TextField label="Mobility limitations" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} />
-            <TextField label="Energy through day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
-            <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
-          </div>
-        </div>
+          </SectionBlock>
 
-        {/* Posture & alignment */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Posture &amp; alignment</h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
-            <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
-            <div className="space-y-1">
-              <Label>Dominant side</Label>
-              <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
-                <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="right">Right</SelectItem>
-                  <SelectItem value="left">Left</SelectItem>
-                  <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Training setup (existing) */}
+          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <LabelWithHelp label="Experience level" hint="Beginner = <1y consistent · Intermediate = 1–3y · Advanced = 3y+." />
+                <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Field label="Training days / week" type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label="Session length (min)" type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              <Field label="Training location" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+              <Field label="Plan length (weeks)" type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
+            <div className="mt-3">
+              <Label className="text-xs">Available equipment</Label>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {EQUIPMENT.map((eq) => {
+                  const on = assessment.available_equipment.includes(eq);
+                  return (
+                    <button key={eq} type="button" onClick={() => toggleEq(eq)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{eq}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <TextField label="Injuries" value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              <TextField label="Medical conditions" value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
+              <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
+            </div>
+          </SectionBlock>
+
+          {/* Lifestyle (rebuilt) */}
+          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Sleep (1–10)" type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint="Subjective average sleep quality this past month." />
+              <Field label="Stress (1–10)" type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint="Perceived overall stress." />
+              <Field label="Hours seated / day" type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint="Total sitting time including work + commute." />
+              <Field label="Daily steps (if known)" type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint="From wearable if available." />
+              <Field label="Job type" value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder="desk, manual, mixed…" />
+              <TextField label="Energy through day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+              <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+            </div>
+          </SectionBlock>
+
+          {/* Nutrition (rebuilt) */}
+          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Meals / day" type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
+              <Field label="Alcohol units / week" type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint="UK unit ≈ 10 ml ethanol." />
+              <Field label="Processed food frequency (1–5)" type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint="1 = rare · 5 = most meals." />
+              <Field label="Water (L / day)" type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
+              <Field label="Hydration (glasses, legacy)" type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
+              <TextField label="Notes (allergies, dietary pattern)" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
+            </div>
+          </SectionBlock>
+
+          {/* Mobility checklist */}
+          <SectionBlock id="mobility" title="Mobility — anatomical (1–5)" hint="Score each region: 1 = severely restricted, 5 = full pain-free range.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                ["ext_mob_shoulder", "Shoulder"],
+                ["ext_mob_hip", "Hip"],
+                ["ext_mob_ankle", "Ankle"],
+                ["ext_mob_thoracic", "Thoracic spine"],
+                ["ext_mob_wrist", "Wrist"],
+                ["ext_mob_knee", "Knee"],
+              ].map(([key, label]) => (
+                <ScoreRow key={key} label={label} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
+              ))}
+            </div>
+            <TextField label="Notes (specific limitations, pain triggers)" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
+          </SectionBlock>
+
+          {/* Posture */}
+          <SectionBlock id="posture" title="Posture & alignment" hint="Standing posture and known asymmetries.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
+              <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+              <div className="space-y-1">
+                <Label className="text-xs">Dominant side</Label>
+                <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
+                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="right">Right</SelectItem>
+                    <SelectItem value="left">Left</SelectItem>
+                    <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </SectionBlock>
+
+          {/* Movement screen */}
+          <SectionBlock id="screen" title="Movement screen" hint="Functional pattern quality. 1 = restricted → 5 = controlled full range.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
+              <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
+              <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
+              <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+            </div>
+          </SectionBlock>
+
+          {/* Training history */}
+          <SectionBlock id="history" title="Training history" hint="Prior exposure shapes starting loads and progression rates.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <Field label="Previous program style" placeholder="PPL, 5/3/1…" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+              <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
+            </div>
+          </SectionBlock>
+
+          {/* Performance */}
+          <SectionBlock id="performance" title="Performance markers" hint="Cardiovascular and conditioning baseline.">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint="Measured first thing AM, supine." />
+              <div className="space-y-1">
+                <LabelWithHelp label="Cardio test" hint="Pick a standard test or 'untested'." />
+                <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="untested">Untested</SelectItem>
+                    <SelectItem value="cooper">Cooper 12-min run (m)</SelectItem>
+                    <SelectItem value="rockport">Rockport 1-mile walk (min:sec)</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {assessment.ext_cardio_test !== "untested" && (
+                <Field label="Test result" value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint="Distance, time, or VO₂ estimate." />
+              )}
+              <TextField label="Cardio context (legacy free text)" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+            </div>
+          </SectionBlock>
+
+          {busy && <GenerationProgress step={progressStep} />}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="lg" disabled={busy}>
+                  <Eraser className="mr-2 h-4 w-4" /> Discard draft
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Discard assessment draft?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Clears all fields above. Saved assessments stay in the database until next save.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={discardDraft}>Discard</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button onClick={generate} disabled={busy} size="lg">
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              Generate plan draft
+            </Button>
           </div>
-        </div>
-
-        {/* Movement screen */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Movement screen <span className="font-normal text-muted-foreground normal-case tracking-normal">— 1 restricted → 5 full range</span></h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note}
-              onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })}
-              onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
-            <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note}
-              onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })}
-              onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
-            <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note}
-              onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })}
-              onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
-            <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note}
-              onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })}
-              onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
-          </div>
-        </div>
-
-        {/* Training history */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Training history</h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
-            <Field label="Previous program style" placeholder="e.g. PPL, 5/3/1" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-            <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
-          </div>
-        </div>
-
-        {/* Performance markers */}
-        <div className="mt-5">
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Performance markers</h3>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} />
-            <Field label="Cardio capacity" placeholder="e.g. 5km in 28min" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} />
-          </div>
-        </div>
-
-        {busy && <GenerationProgress step={progressStep} />}
-
-        <div className="mt-4 flex justify-end">
-          <Button onClick={generate} disabled={busy} size="lg">
-            {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Generate plan draft
-          </Button>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section>
         <h2 className="mb-4 text-lg font-bold">Plans</h2>
