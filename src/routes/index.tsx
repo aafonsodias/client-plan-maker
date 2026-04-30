@@ -156,21 +156,15 @@ function Landing() {
             <h2 className="text-[32px] font-light leading-tight tracking-tight">Why I built Forge</h2>
             <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
               <p>
-                I'm a personal trainer in Lisbon. For over a decade — through gyms in Lisbon and Luanda,
-                online clients, and a Master's in Exercise and Health from FMH — I've written client plans
-                on weekends, copied them across spreadsheets, and exported the same Word template a thousand
-                times. The work that mattered — actually coaching people — kept getting pushed to whatever
-                time was left.
+                I'm a personal trainer in Lisbon with a Master's in Exercise and Health. For the last 15
+                years, I've spent my evenings doing admin that had nothing to do with coaching: writing
+                plans, formatting PDFs, copying across spreadsheets. The actual work — helping people move
+                better and feel stronger — kept getting squeezed into whatever time was left.
               </p>
               <p>
-                Forge is the tool I wished existed. The intake follows what I learned in my certification
-                and Master's — PAR-Q+, ACSM risk stratification, Prochaska — because lazy intake makes
-                lazy plans. The AI draft is a starting point, not the final word: every plan is yours to
-                edit before it leaves your hands.
-              </p>
-              <p>
-                If you train clients and lose evenings to admin, this is for you. If you'd rather coach
-                than format, this is for you.
+                Forge does the repetitive parts so you don't have to. The intake is solid (PAR-Q+, ACSM
+                risk stratification, Prochaska), so the AI output is defensible. You edit it, you own it,
+                you send it. No admin theatre. Just coaching.
               </p>
             </div>
             <p className="mt-6 text-sm italic text-muted-foreground/70">
