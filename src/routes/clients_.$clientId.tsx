@@ -298,6 +298,70 @@ function ClientDetail() {
           </div>
         </div>
 
+        {/* Posture & alignment */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Posture &amp; alignment</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Static observations that inform exercise selection and corrective work.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
+            <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+            <div className="space-y-1.5">
+              <Label>Dominant side</Label>
+              <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
+                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Movement screen */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Movement screen</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Score 1 (severely restricted) to 5 (full, controlled range). Add a brief note for compensations.</p>
+          <div className="space-y-4">
+            <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note}
+              onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
+            <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note}
+              onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
+            <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note}
+              onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
+            <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note}
+              onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+          </div>
+        </div>
+
+        {/* Training history */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Training history</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Background context to set realistic volume and progression rates.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Years training" type="number" placeholder="e.g. 3" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+            <Field label="Previous program style" placeholder="e.g. PPL, 5/3/1, CrossFit, bodybuilding split" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+          </div>
+          <div className="mt-4">
+            <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} />
+          </div>
+        </div>
+
+        {/* Performance markers */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Performance markers</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Baseline measurements to track and to calibrate cardio prescription.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Resting heart rate (bpm)" type="number" placeholder="e.g. 62" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} />
+            <Field label="Current cardio capacity" placeholder="e.g. 5km in 28min, can hold zone 2 for 40min" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} />
+          </div>
+        </div>
+
         <div className="mt-6 flex justify-end">
           <Button onClick={generate} disabled={busy} size="lg">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
