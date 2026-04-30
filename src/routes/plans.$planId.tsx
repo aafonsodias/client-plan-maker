@@ -147,6 +147,7 @@ function PlanEditor() {
         logo_data_url: logoDataUrl,
       }
     );
+    if (user) { void markOnboardingStep(user.id, "export_pdf"); }
   };
 
   if (!plan) return <p className="text-muted-foreground">Loading…</p>;
