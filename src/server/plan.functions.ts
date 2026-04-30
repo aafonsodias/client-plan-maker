@@ -172,9 +172,9 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
-      return { ok: false as const, error: "Anthropic API key is not configured." };
+      return { ok: false as const, error: "AI gateway is not configured." };
     }
 
     const parqYes = data.assessment.parq_passed === false;
