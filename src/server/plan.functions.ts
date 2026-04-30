@@ -172,9 +172,9 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
-      return { ok: false as const, error: "Anthropic API key is not configured." };
+      return { ok: false as const, error: "AI gateway is not configured." };
     }
 
     const parqYes = data.assessment.parq_passed === false;
@@ -364,41 +364,58 @@ ${prevSkeleton}`;
     }
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
-          max_tokens: 16000,
-          system: sys,
-          messages: [{ role: "user", content: user + feedbackBlock }],
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: user + feedbackBlock },
+          ],
           tools: [
             {
-              name: "emit_workout_plan",
-              description: "Emit the structured workout plan",
-              input_schema: PlanSchema,
+              type: "function",
+              function: {
+                name: "emit_workout_plan",
+                description: "Emit the structured workout plan",
+                parameters: PlanSchema,
+              },
             },
           ],
-          tool_choice: { type: "tool", name: "emit_workout_plan" },
+          tool_choice: { type: "function", function: { name: "emit_workout_plan" } },
         }),
       });
 
-      if (res.status === 429) return { ok: false as const, error: "Anthropic rate limit reached. Try again in a moment." };
-      if (res.status === 401) return { ok: false as const, error: "Invalid Anthropic API key." };
+      if (res.status === 429) {
+        return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
+      }
+      if (res.status === 402) {
+        return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
+      }
       if (!res.ok) {
         const t = await res.text();
-        console.error("Anthropic API error", res.status, t);
+        console.error("AI gateway error", res.status, t);
         return { ok: false as const, error: `AI request failed (${res.status}).` };
       }
 
       const json = await res.json();
-      const toolUse = json?.content?.find((b: any) => b.type === "tool_use");
-      const args = toolUse?.input;
-      if (!args) return { ok: false as const, error: "AI returned no plan." };
+      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+      const argsRaw = toolCall?.function?.arguments;
+      if (!argsRaw) {
+        console.error("AI returned no tool call", JSON.stringify(json).slice(0, 1000));
+        return { ok: false as const, error: "AI returned no plan." };
+      }
+      let args: any;
+      try {
+        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+      } catch (e) {
+        console.error("Failed to parse plan JSON", e);
+        return { ok: false as const, error: "AI returned malformed plan." };
+      }
       return { ok: true as const, plan: args };
     } catch (err) {
       console.error("Plan draft failed", err);
