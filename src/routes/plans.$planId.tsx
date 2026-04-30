@@ -501,6 +501,14 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+      <div className="mb-2">
+        <Input
+          value={day.rationale ?? ""}
+          onChange={(e) => onChange({ ...day, rationale: e.target.value })}
+          placeholder="Why this session shape? (e.g. hinge after 48h CNS recovery; hip hinge 3/5 → RDL not deadlift)"
+          className="h-6 border-dashed bg-transparent text-[11px] italic text-muted-foreground placeholder:text-muted-foreground/50"
+        />
+      </div>
 
       <SectionEditor title="Warmup" items={day.warmup ?? []} onChange={(it) => setSection("warmup", it)} placeholder="e.g. Rower" />
       <SectionEditor title="Activation" items={day.activation ?? []} onChange={(it) => setSection("activation", it)} placeholder="e.g. Glute bridge" />
