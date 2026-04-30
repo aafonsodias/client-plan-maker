@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Dumbbell className="h-4 w-4" />
             </div>
-            <span>ROOTPLAN</span>
+            <span>FORGE</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => {
