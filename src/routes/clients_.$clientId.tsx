@@ -369,6 +369,7 @@ function ClientDetail() {
           ext_cardio_test: ext.cardio_test ?? "untested",
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
+          provenance: (ext.provenance as Record<string, "client" | "trainer-edited">) ?? {},
         });
       }
       // Check localStorage backup; prefer it if newer
