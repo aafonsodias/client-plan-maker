@@ -1,0 +1,209 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const TOKEN_TTL_DAYS = 14;
+
+function newExpiry(): string {
+  return new Date(Date.now() + TOKEN_TTL_DAYS * 86400_000).toISOString();
+}
+
+/* ─────────────── Trainer-side: generate / regenerate ─────────────── */
+
+export const generateIntakeToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { clientId: string }) => z.object({ clientId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const expires = newExpiry();
+    // Use admin to set the new token; verify ownership in the WHERE.
+    const { data: row, error } = await supabaseAdmin
+      .from("clients")
+      .update({
+        intake_token: crypto.randomUUID(),
+        intake_token_expires_at: expires,
+        intake_status: "sent",
+        intake_submitted_at: null,
+      })
+      .eq("id", data.clientId)
+      .eq("trainer_id", userId)
+      .select("intake_token, intake_token_expires_at, intake_status")
+      .single();
+    if (error || !row) throw new Error("Could not generate intake link.");
+    return row;
+  });
+
+export const markIntakeReviewed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { clientId: string }) => z.object({ clientId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { error } = await supabaseAdmin
+      .from("clients")
+      .update({ intake_status: "reviewed" })
+      .eq("id", data.clientId)
+      .eq("trainer_id", userId);
+    if (error) throw new Error("Could not mark reviewed.");
+    return { ok: true };
+  });
+
+/* ─────────────── Public: validate token + load form context ─────────────── */
+
+// Very small in-memory rate limiter (per-process). Best-effort only.
+const hits = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(key: string, max = 30, windowMs = 60_000) {
+  const now = Date.now();
+  const cur = hits.get(key);
+  if (!cur || cur.resetAt < now) { hits.set(key, { count: 1, resetAt: now + windowMs }); return; }
+  cur.count += 1;
+  if (cur.count > max) throw new Error("Too many requests. Please try again in a minute.");
+}
+
+const tokenSchema = z.object({ token: z.string().uuid() });
+
+export type IntakeContext = {
+  status: "valid" | "expired" | "submitted";
+  client?: { id: string; first_name: string };
+  trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null };
+  assessment?: any | null;
+  submittedAt?: string | null;
+};
+
+export const loadIntake = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string }) => tokenSchema.parse(d))
+  .handler(async ({ data }): Promise<IntakeContext> => {
+    rateLimit(`load:${data.token}`);
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, full_name, trainer_id, intake_token_expires_at, intake_status, intake_submitted_at")
+      .eq("intake_token", data.token)
+      .maybeSingle();
+    if (!client) return { status: "expired" };
+    const expired = !client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date();
+    if (expired && client.intake_status !== "submitted" && client.intake_status !== "reviewed") {
+      return { status: "expired" };
+    }
+    if (client.intake_status === "submitted" || client.intake_status === "reviewed") {
+      return { status: "submitted", submittedAt: client.intake_submitted_at };
+    }
+
+    // Mark as opened (one-time)
+    if (client.intake_status === "sent" || client.intake_status === "not_sent") {
+      await supabaseAdmin.from("clients").update({ intake_status: "opened" }).eq("id", client.id);
+    }
+
+    const [{ data: profile }, { data: assessment }] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("business_name, full_name, logo_url, primary_color")
+        .eq("user_id", client.trainer_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("assessments")
+        .select("*")
+        .eq("client_id", client.id)
+        .maybeSingle(),
+    ]);
+
+    const firstName = (client.full_name ?? "").split(" ")[0] || "there";
+    return {
+      status: "valid",
+      client: { id: client.id, first_name: firstName },
+      trainer: profile ?? { business_name: null, full_name: null, logo_url: null, primary_color: null },
+      assessment: assessment ?? null,
+    };
+  });
+
+/* ─────────────── Public: save draft + submit ─────────────── */
+
+// Whitelist of assessment columns the public client may write to.
+const ALLOWED_FIELDS = [
+  "smart_specific", "smart_measurable", "smart_deadline",
+  "readiness_stage",
+  "experience_level", "training_days_per_week", "session_duration_minutes",
+  "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
+  "sleep_quality", "stress_level", "nutrition_habits",
+  "energy_levels", "recovery_capacity",
+  "extended",
+] as const;
+
+const PROVENANCE_SECTIONS = ["smart_goal", "readiness", "training", "lifestyle", "nutrition"] as const;
+
+const saveSchema = z.object({
+  token: z.string().uuid(),
+  fields: z.record(z.string(), z.any()),
+  // sections the client filled this save — used to mark provenance
+  sections: z.array(z.enum(PROVENANCE_SECTIONS)).default([]),
+  submit: z.boolean().default(false),
+});
+
+export const saveIntake = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => saveSchema.parse(d))
+  .handler(async ({ data }) => {
+    rateLimit(`save:${data.token}`, 60, 60_000);
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id, intake_token_expires_at, intake_status")
+      .eq("intake_token", data.token)
+      .maybeSingle();
+    if (!client) throw new Error("This link is no longer valid.");
+    if (client.intake_status === "reviewed" || client.intake_status === "submitted") {
+      throw new Error("Already submitted.");
+    }
+    const expired = !client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date();
+    if (expired) throw new Error("This link has expired.");
+
+    // Filter incoming fields by whitelist
+    const cleaned: Record<string, any> = {};
+    for (const k of Object.keys(data.fields)) {
+      if ((ALLOWED_FIELDS as readonly string[]).includes(k)) cleaned[k] = data.fields[k];
+    }
+
+    // Load existing assessment to merge extended.provenance
+    const { data: existing } = await supabaseAdmin
+      .from("assessments")
+      .select("id, extended")
+      .eq("client_id", client.id)
+      .maybeSingle();
+
+    const prevExtended = (existing?.extended as Record<string, any>) ?? {};
+    const prevProv = (prevExtended.provenance as Record<string, "client" | "trainer-edited">) ?? {};
+    const nextProv = { ...prevProv };
+    for (const section of data.sections) {
+      // Only mark sections as 'client' if not already trainer-edited
+      if (nextProv[section] !== "trainer-edited") nextProv[section] = "client";
+    }
+
+    // Merge any incoming extended (e.g. ext_hours_seated, ext_water_l_per_day, ext_meals_per_day)
+    const incomingExtended = (cleaned.extended as Record<string, any>) ?? {};
+    const mergedExtended = { ...prevExtended, ...incomingExtended, provenance: nextProv };
+    cleaned.extended = mergedExtended;
+
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from("assessments")
+        .update(cleaned)
+        .eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("assessments")
+        .insert({
+          client_id: client.id,
+          trainer_id: client.trainer_id,
+          ...cleaned,
+        });
+      if (error) throw new Error(error.message);
+    }
+
+    if (data.submit) {
+      await supabaseAdmin
+        .from("clients")
+        .update({ intake_status: "submitted", intake_submitted_at: new Date().toISOString() })
+        .eq("id", client.id);
+    }
+
+    return { ok: true, submitted: data.submit };
+  });
