@@ -48,6 +48,26 @@ function ClientDetail() {
     energy_levels: "",
     recovery_capacity: "",
     lifestyle: "",
+    // Posture & alignment
+    standing_posture_notes: "",
+    known_imbalances: "",
+    dominant_side: "",
+    // Movement screen (1-5 + note)
+    squat_depth_score: "",
+    squat_depth_note: "",
+    overhead_reach_score: "",
+    overhead_reach_note: "",
+    hip_hinge_score: "",
+    hip_hinge_note: "",
+    single_leg_balance_score: "",
+    single_leg_balance_note: "",
+    // Training history
+    years_training: "",
+    previous_program_style: "",
+    max_lifts: "",
+    // Performance markers
+    resting_heart_rate: "",
+    cardio_capacity: "",
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
@@ -96,6 +116,22 @@ function ClientDetail() {
         energy_levels: assessment.energy_levels || null,
         recovery_capacity: assessment.recovery_capacity || null,
         lifestyle: assessment.lifestyle || null,
+        standing_posture_notes: assessment.standing_posture_notes || null,
+        known_imbalances: assessment.known_imbalances || null,
+        dominant_side: assessment.dominant_side || null,
+        squat_depth_score: assessment.squat_depth_score ? Number(assessment.squat_depth_score) : null,
+        squat_depth_note: assessment.squat_depth_note || null,
+        overhead_reach_score: assessment.overhead_reach_score ? Number(assessment.overhead_reach_score) : null,
+        overhead_reach_note: assessment.overhead_reach_note || null,
+        hip_hinge_score: assessment.hip_hinge_score ? Number(assessment.hip_hinge_score) : null,
+        hip_hinge_note: assessment.hip_hinge_note || null,
+        single_leg_balance_score: assessment.single_leg_balance_score ? Number(assessment.single_leg_balance_score) : null,
+        single_leg_balance_note: assessment.single_leg_balance_note || null,
+        years_training: assessment.years_training !== "" && assessment.years_training != null ? Number(assessment.years_training) : null,
+        previous_program_style: assessment.previous_program_style || null,
+        max_lifts: assessment.max_lifts || null,
+        resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
+        cardio_capacity: assessment.cardio_capacity || null,
       };
       let assessmentId: string | null = assessment.id ?? null;
       if (assessmentId) {
@@ -262,6 +298,70 @@ function ClientDetail() {
           </div>
         </div>
 
+        {/* Posture & alignment */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Posture &amp; alignment</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Static observations that inform exercise selection and corrective work.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
+            <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+            <div className="space-y-1.5">
+              <Label>Dominant side</Label>
+              <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
+                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="right">Right</SelectItem>
+                  <SelectItem value="left">Left</SelectItem>
+                  <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Movement screen */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Movement screen</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Score 1 (severely restricted) to 5 (full, controlled range). Add a brief note for compensations.</p>
+          <div className="space-y-4">
+            <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note}
+              onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
+            <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note}
+              onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
+            <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note}
+              onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
+            <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note}
+              onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })}
+              onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+          </div>
+        </div>
+
+        {/* Training history */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Training history</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Background context to set realistic volume and progression rates.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Years training" type="number" placeholder="e.g. 3" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+            <Field label="Previous program style" placeholder="e.g. PPL, 5/3/1, CrossFit, bodybuilding split" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+          </div>
+          <div className="mt-4">
+            <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} />
+          </div>
+        </div>
+
+        {/* Performance markers */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Performance markers</h3>
+          <p className="mb-4 text-xs text-muted-foreground">Baseline measurements to track and to calibrate cardio prescription.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Resting heart rate (bpm)" type="number" placeholder="e.g. 62" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} />
+            <Field label="Current cardio capacity" placeholder="e.g. 5km in 28min, can hold zone 2 for 40min" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} />
+          </div>
+        </div>
+
         <div className="mt-6 flex justify-end">
           <Button onClick={generate} disabled={busy} size="lg">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
@@ -315,6 +415,51 @@ function TextField({ label, value, onChange }: { label: string; value: string; o
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <Textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
+    </div>
+  );
+}
+
+function ScreenItem({
+  label, score, note, onScore, onNote,
+}: {
+  label: string;
+  score: string | number | null;
+  note: string | null;
+  onScore: (v: string) => void;
+  onNote: (v: string) => void;
+}) {
+  const current = score == null ? "" : String(score);
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="text-sm">{label}</Label>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const active = current === String(n);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onScore(active ? "" : String(n))}
+                className={`h-7 w-7 rounded-md border text-xs font-medium transition ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label={`${label} score ${n}`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <Input
+        className="mt-2 h-8 text-xs"
+        placeholder="Optional note (e.g. knee caves at depth)"
+        value={note ?? ""}
+        onChange={(e) => onNote(e.target.value)}
+      />
     </div>
   );
 }
