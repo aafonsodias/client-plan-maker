@@ -59,7 +59,12 @@ function Landing() {
               </Button>
             </div>
           </div>
-          <HeroPlanMockup />
+          <div className="flex flex-col items-center">
+            <HeroPlanMockup />
+            <p className="mt-4 hidden text-center text-xs uppercase tracking-[0.25em] text-muted-foreground md:block">
+              Periodized · Personalized · Ready in seconds
+            </p>
+          </div>
         </div>
       </section>
 
@@ -216,7 +221,7 @@ function HowItWorksAnimation() {
 function FloatCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`relative hidden overflow-hidden rounded-2xl border border-border bg-card/80 p-6 shadow-[var(--shadow-elegant)] md:block ${className}`}
+      className={`relative hidden overflow-hidden rounded-2xl border border-border bg-card/90 p-6 shadow-[var(--shadow-elegant)] md:block ${className}`}
       style={{ animation: "forge-float 4s ease-in-out infinite" }}
     >
       {children}
@@ -233,12 +238,12 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 function HeroPlanMockup() {
   type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
   const rows: Row[] = [
-    { badge: "WARM-UP", tone: "warmup", name: "Hip Airplane", sets: "2 × 6/side" },
+    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat (light)", sets: "2 × 8" },
     { badge: "MAIN", tone: "main", name: "Back Squat", sets: "4 × 6", note: "@ RPE 7", sub: "Rest 2:30 · tempo 3-1-X" },
-    { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7" },
-    { badge: "ACCESSORY", tone: "accessory", name: "Walking Lunge", sets: "3 × 10/leg" },
-    { badge: "ACCESSORY", tone: "accessory", name: "Leg Curl", sets: "3 × 12", note: "@ RPE 8" },
-    { badge: "FINISHER", tone: "finisher", name: "Calf Raise", sets: "3 × 15" },
+    { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7", sub: "Rest 2:00 · controlled eccentric" },
+    { badge: "ACCESSORY", tone: "accessory", name: "Step-Up", sets: "3 × 10/leg" },
+    { badge: "ACCESSORY", tone: "accessory", name: "Leg Curl", sets: "3 × 12", note: "@ RPE 7" },
+    { badge: "FINISHER", tone: "finisher", name: "KB Swing", sets: "3 × 15" },
   ];
   const badgeClass = (t: Row["tone"]) => {
     switch (t) {
@@ -255,12 +260,11 @@ function HeroPlanMockup() {
         style={{ background: "var(--gradient-accent)" }}
       />
       {/* Client header */}
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
-        <span>MARIA S. · WEEK 3 OF 8</span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--accent)]" />
-          ACTIVE
+      <div className="flex items-center gap-2.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-medium text-accent">
+          M
         </span>
+        <span>Maria S. · Block 2 · Strength</span>
       </div>
       {/* Session title */}
       <div className="mt-3">
@@ -290,7 +294,7 @@ function HeroPlanMockup() {
       <div className="mt-4 h-px bg-border" />
       <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
         <span>FORGE</span>
-        <span className="normal-case tracking-normal">Generated in 87s</span>
+        <span className="normal-case tracking-normal">Personalized for Maria</span>
       </div>
     </FloatCard>
   );
