@@ -59,7 +59,12 @@ function Landing() {
               </Button>
             </div>
           </div>
-          <HeroPlanMockup />
+          <div className="flex flex-col items-center">
+            <HeroPlanMockup />
+            <p className="mt-4 hidden text-center text-xs uppercase tracking-[0.25em] text-muted-foreground md:block">
+              Periodized · Personalized · Ready in seconds
+            </p>
+          </div>
         </div>
       </section>
 
