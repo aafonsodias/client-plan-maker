@@ -61,7 +61,7 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
           <Logo className="h-9 w-9" />
-          <span className="text-xl">FORGEPLAN</span>
+          <span className="text-xl">FORGE</span>
         </Link>
         <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)]">
           <Tabs defaultValue="signin">

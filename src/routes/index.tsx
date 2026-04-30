@@ -15,7 +15,7 @@ function Landing() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
             <Logo className="h-8 w-8" />
-            <span className="text-lg">FORGEPLAN</span>
+            <span className="text-lg">FORGE</span>
           </Link>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
@@ -55,11 +55,20 @@ function Landing() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="#features">See how it works</a>
+                <a href="#how-it-works">See how it works</a>
               </Button>
             </div>
           </div>
         </div>
+      </section>
+
+      {/* How it works — animated mock */}
+      <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">How it works</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">From intake to PDF in four moves.</h2>
+        </div>
+        <HowItWorksAnimation />
       </section>
 
       {/* Features */}
@@ -104,8 +113,56 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} ForgePlan
+        © {new Date().getFullYear()} Forge
       </footer>
+    </div>
+  );
+}
+
+function HowItWorksAnimation() {
+  const steps = [
+    { label: "Add client", desc: "Capture demographics in seconds." },
+    { label: "Run assessment", desc: "PAR-Q+, risk, mobility, goals." },
+    { label: "Generate plan", desc: "AI drafts a periodized program." },
+    { label: "Export PDF", desc: "Branded, sent in one click." },
+  ];
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
+      <div
+        className="absolute -right-32 top-0 h-72 w-72 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <div className="relative grid gap-4 sm:grid-cols-4">
+        {steps.map((s, i) => (
+          <div
+            key={s.label}
+            className="group relative rounded-2xl border border-border bg-background/40 p-5 transition hover:border-accent/40"
+            style={{ animation: `fade-in 0.6s ease-out ${i * 150}ms both` }}
+          >
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-xs font-semibold text-accent">
+              {i + 1}
+            </div>
+            <p className="font-medium">{s.label}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{s.desc}</p>
+            {i < steps.length - 1 && (
+              <div className="absolute right-0 top-1/2 hidden h-px w-6 translate-x-full bg-gradient-to-r from-accent/60 to-transparent sm:block" />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="relative mt-8 h-2 overflow-hidden rounded-full bg-secondary/60">
+        <div
+          className="h-full w-1/3 rounded-full bg-accent"
+          style={{ animation: "slide-progress 4s ease-in-out infinite" }}
+        />
+      </div>
+      <style>{`
+        @keyframes slide-progress {
+          0% { transform: translateX(-100%); }
+          50% { transform: translateX(150%); }
+          100% { transform: translateX(350%); }
+        }
+      `}</style>
     </div>
   );
 }
