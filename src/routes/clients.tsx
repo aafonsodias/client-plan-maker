@@ -19,7 +19,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/clients")({
-  validateSearch: (s: Record<string, unknown>) => ({ filter: (s.filter as string) || "all" }),
+  validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
+    filter: typeof s.filter === "string" ? s.filter : undefined,
+  }),
   component: () => (
     <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
       <Clients />
@@ -31,7 +33,8 @@ type Client = { id: string; full_name: string; email: string | null; age: number
 
 function Clients() {
   const { user } = useAuth();
-  const { filter } = Route.useSearch();
+  const search = Route.useSearch();
+  const filter = search.filter ?? "all";
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
