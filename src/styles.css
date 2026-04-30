@@ -59,6 +59,44 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ── FORGE design system tokens ──
+   * Added in parallel to the shadcn tokens above. Do NOT replace shadcn
+   * tokens — they're used across the rest of the app. These FORGE tokens
+   * are consumed by the new Plan View / LOG / PDF surfaces only.
+   * Utilities generated: bg-canvas, bg-surface, text-ink-primary,
+   * text-cue, font-display, etc.
+   */
+  --color-canvas: var(--forge-canvas);
+  --color-surface: var(--forge-surface);
+  --color-subtle: var(--forge-subtle);
+  --color-pill: var(--forge-pill);
+  --color-ink-primary: var(--forge-ink-primary);
+  --color-ink-secondary: var(--forge-ink-secondary);
+  --color-ink-tertiary: var(--forge-ink-tertiary);
+  --color-ink-quiet: var(--forge-ink-quiet);
+  --color-forge-accent: var(--forge-accent);
+  --color-forge-accent-soft: var(--forge-accent-soft);
+  --color-line: var(--forge-line);
+  --color-edge: var(--forge-edge);
+  --color-warning: var(--forge-warning);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --text-micro: 10px;
+  --text-micro--line-height: 14px;
+  --text-meta: 11px;
+  --text-meta--line-height: 16px;
+  --text-cue: 14px;
+  --text-cue--line-height: 22px;
+  --text-stat: 18px;
+  --text-stat--line-height: 20px;
+  --text-exer: 17px;
+  --text-exer--line-height: 24px;
+  --text-day: 22px;
+  --text-day--line-height: 28px;
 }
 
 :root {
@@ -100,6 +138,22 @@
   --sidebar-accent-foreground: oklch(0.93 0 0);
   --sidebar-border: oklch(0.24 0.02 255);
   --sidebar-ring: oklch(0.74 0.085 75 / 0.5);
+
+  /* FORGE palette — exact hex from the master spec (§2). Defined as
+   * raw values so they don't drift with theme switches. */
+  --forge-canvas: #0F0F0F;
+  --forge-surface: #1A1A1A;
+  --forge-subtle: #161616;
+  --forge-pill: #242422;
+  --forge-ink-primary: #F5F0E8;
+  --forge-ink-secondary: #A8A29A;
+  --forge-ink-tertiary: #6B675F;
+  --forge-ink-quiet: #3A3833;
+  --forge-accent: #D4A574;
+  --forge-accent-soft: rgb(212 165 116 / 0.12);
+  --forge-line: #2A2826;
+  --forge-edge: #3D3A35;
+  --forge-warning: #C97B5C;
 }
 
 .dark {
