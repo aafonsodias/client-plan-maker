@@ -1,0 +1,2 @@
+ALTER TABLE public.backup_workout_plans_20260430 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.backup_workout_plan_days_20260430 ENABLE ROW LEVEL SECURITY;
