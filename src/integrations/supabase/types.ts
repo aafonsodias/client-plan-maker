@@ -17,78 +17,126 @@ export type Database = {
       assessments: {
         Row: {
           available_equipment: string[] | null
+          cardio_capacity: string | null
           client_id: string
           created_at: string
+          dominant_side: string | null
           energy_levels: string | null
           experience_level: string | null
+          hip_hinge_note: string | null
+          hip_hinge_score: number | null
           hydration_glasses_per_day: number | null
           id: string
           injuries: string | null
+          known_imbalances: string | null
           lifestyle: string | null
+          max_lifts: string | null
           medical_conditions: string | null
           mobility_limitations: string | null
           nutrition_habits: string | null
+          overhead_reach_note: string | null
+          overhead_reach_score: number | null
           preferences: string | null
+          previous_program_style: string | null
           primary_goal: string | null
           recovery_capacity: string | null
+          resting_heart_rate: number | null
           secondary_goals: string[] | null
           session_duration_minutes: number | null
+          single_leg_balance_note: string | null
+          single_leg_balance_score: number | null
           sleep_quality: number | null
+          squat_depth_note: string | null
+          squat_depth_score: number | null
+          standing_posture_notes: string | null
           stress_level: number | null
           trainer_id: string
           training_days_per_week: number | null
           training_location: string | null
           updated_at: string
+          years_training: number | null
         }
         Insert: {
           available_equipment?: string[] | null
+          cardio_capacity?: string | null
           client_id: string
           created_at?: string
+          dominant_side?: string | null
           energy_levels?: string | null
           experience_level?: string | null
+          hip_hinge_note?: string | null
+          hip_hinge_score?: number | null
           hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          known_imbalances?: string | null
           lifestyle?: string | null
+          max_lifts?: string | null
           medical_conditions?: string | null
           mobility_limitations?: string | null
           nutrition_habits?: string | null
+          overhead_reach_note?: string | null
+          overhead_reach_score?: number | null
           preferences?: string | null
+          previous_program_style?: string | null
           primary_goal?: string | null
           recovery_capacity?: string | null
+          resting_heart_rate?: number | null
           secondary_goals?: string[] | null
           session_duration_minutes?: number | null
+          single_leg_balance_note?: string | null
+          single_leg_balance_score?: number | null
           sleep_quality?: number | null
+          squat_depth_note?: string | null
+          squat_depth_score?: number | null
+          standing_posture_notes?: string | null
           stress_level?: number | null
           trainer_id: string
           training_days_per_week?: number | null
           training_location?: string | null
           updated_at?: string
+          years_training?: number | null
         }
         Update: {
           available_equipment?: string[] | null
+          cardio_capacity?: string | null
           client_id?: string
           created_at?: string
+          dominant_side?: string | null
           energy_levels?: string | null
           experience_level?: string | null
+          hip_hinge_note?: string | null
+          hip_hinge_score?: number | null
           hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          known_imbalances?: string | null
           lifestyle?: string | null
+          max_lifts?: string | null
           medical_conditions?: string | null
           mobility_limitations?: string | null
           nutrition_habits?: string | null
+          overhead_reach_note?: string | null
+          overhead_reach_score?: number | null
           preferences?: string | null
+          previous_program_style?: string | null
           primary_goal?: string | null
           recovery_capacity?: string | null
+          resting_heart_rate?: number | null
           secondary_goals?: string[] | null
           session_duration_minutes?: number | null
+          single_leg_balance_note?: string | null
+          single_leg_balance_score?: number | null
           sleep_quality?: number | null
+          squat_depth_note?: string | null
+          squat_depth_score?: number | null
+          standing_posture_notes?: string | null
           stress_level?: number | null
           trainer_id?: string
           training_days_per_week?: number | null
           training_location?: string | null
           updated_at?: string
+          years_training?: number | null
         }
         Relationships: [
           {
