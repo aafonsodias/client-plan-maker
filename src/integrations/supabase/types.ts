@@ -446,6 +446,7 @@ export type Database = {
           status: string
           trainer_id: string
           updated_at: string
+          validation_meta: Json
           week_number: number
         }
         Insert: {
@@ -460,6 +461,7 @@ export type Database = {
           status?: string
           trainer_id: string
           updated_at?: string
+          validation_meta?: Json
           week_number: number
         }
         Update: {
@@ -474,6 +476,7 @@ export type Database = {
           status?: string
           trainer_id?: string
           updated_at?: string
+          validation_meta?: Json
           week_number?: number
         }
         Relationships: [
