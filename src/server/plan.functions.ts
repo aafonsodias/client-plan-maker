@@ -533,3 +533,119 @@ ${prevSkeleton}`;
       return { ok: false as const, error: "Failed to generate plan." };
     }
   });
+// =============================================================================
+// generatePlanWeek — generates a SINGLE WEEK to dodge upstream timeouts.
+// Client fans out one call per week in parallel and merges results.
+// Week 1 also returns title + summary; later weeks only return the week object.
+// =============================================================================
+export const generatePlanWeek = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => WeekInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: sub } = await supabaseAdmin
+      .from("subscribers")
+      .select("subscribed, current_period_end, trial_end")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const now = Date.now();
+    const trialActive = !!(sub?.trial_end && new Date(sub.trial_end).getTime() > now);
+    const subActive =
+      !!sub?.subscribed &&
+      (!sub?.current_period_end || new Date(sub.current_period_end).getTime() > now);
+    if (!trialActive && !subActive) {
+      return {
+        ok: false as const,
+        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        billingRequired: true as const,
+      };
+    }
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
+
+    const { week_number, duration_weeks } = data;
+    const isFirstWeek = week_number === 1;
+
+    const safetyBlock = buildSafetyBlock(data.assessment);
+    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}
+
+${SHARED_PROGRAM_RULES}
+
+WEEK FOCUS — this is week ${week_number} of ${duration_weeks}. Calibrate volume/intensity for this week's place in the block:
+- Early weeks: introduce patterns, slightly lower RPE, build technique.
+- Middle weeks: accumulation, higher volume.
+- Final week of a 4-week block: deload OR peak (choose based on goal).
+The week's 'focus' and 'rationale' MUST reference its position in the ${duration_weeks}-week block.
+
+${isFirstWeek
+  ? "BECAUSE THIS IS WEEK 1, also emit a 'title' (concise, e.g. 'Hypertrophy Foundation – 4 Weeks') and a 'summary' (2–4 sentences explaining WHY this program: holistic reasoning, what was modulated for recovery/lifestyle, what was substituted for movement screen / mobility limits, any nutrition/recovery cue worth flagging)."
+  : "Emit a placeholder empty string for 'title' and 'summary' — the orchestrator only uses them from week 1."}
+
+Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 'week' object with week_number = ${week_number}.`;
+
+    const userMsg =
+      buildClientContextBlock(data.client, data.assessment, duration_weeks) +
+      `\n\nGENERATE: week ${week_number} of ${duration_weeks}.` +
+      buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
+
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: userMsg },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "emit_workout_week",
+                description: "Emit one week of the workout plan",
+                parameters: SingleWeekPlanSchema,
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "emit_workout_week" } },
+        }),
+      });
+
+      if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
+      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("AI gateway error (week)", week_number, res.status, t);
+        return { ok: false as const, error: `AI request failed (${res.status}).` };
+      }
+
+      const json = await res.json();
+      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+      const argsRaw = toolCall?.function?.arguments;
+      if (!argsRaw) {
+        console.error("AI returned no tool call (week)", week_number, JSON.stringify(json).slice(0, 1000));
+        return { ok: false as const, error: `AI returned no week ${week_number}.` };
+      }
+      let args: any;
+      try {
+        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+      } catch (e) {
+        console.error("Failed to parse week JSON", week_number, e);
+        return { ok: false as const, error: `AI returned malformed week ${week_number}.` };
+      }
+      // Defensive: force the requested week_number.
+      if (args?.week) args.week.week_number = week_number;
+      return {
+        ok: true as const,
+        week: args.week,
+        title: isFirstWeek ? (args.title ?? "") : "",
+        summary: isFirstWeek ? (args.summary ?? "") : "",
+      };
+    } catch (err) {
+      console.error("Plan week failed", week_number, err);
+      return { ok: false as const, error: `Failed to generate week ${week_number}.` };
+    }
+  });
