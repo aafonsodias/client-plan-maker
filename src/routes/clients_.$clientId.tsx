@@ -210,6 +210,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
       mob_knee: assessment.ext_mob_knee,
       cardio_test: assessment.ext_cardio_test,
       cardio_value: assessment.ext_cardio_value,
+      provenance: assessment.provenance ?? {},
     },
   };
 }
