@@ -213,6 +213,7 @@ export type Database = {
           duration_weeks: number | null
           id: string
           plan_data: Json
+          share_token: string | null
           status: string
           summary: string | null
           title: string
@@ -226,6 +227,7 @@ export type Database = {
           duration_weeks?: number | null
           id?: string
           plan_data?: Json
+          share_token?: string | null
           status?: string
           summary?: string | null
           title?: string
@@ -239,6 +241,7 @@ export type Database = {
           duration_weeks?: number | null
           id?: string
           plan_data?: Json
+          share_token?: string | null
           status?: string
           summary?: string | null
           title?: string
@@ -258,6 +261,56 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workout_sessions: {
+        Row: {
+          created_at: string
+          day_label: string
+          entries: Json
+          id: string
+          logged_by: string
+          plan_id: string
+          session_date: string
+          session_notes: string | null
+          trainer_id: string
+          updated_at: string
+          week_number: number
+        }
+        Insert: {
+          created_at?: string
+          day_label: string
+          entries?: Json
+          id?: string
+          logged_by?: string
+          plan_id: string
+          session_date?: string
+          session_notes?: string | null
+          trainer_id: string
+          updated_at?: string
+          week_number: number
+        }
+        Update: {
+          created_at?: string
+          day_label?: string
+          entries?: Json
+          id?: string
+          logged_by?: string
+          plan_id?: string
+          session_date?: string
+          session_notes?: string | null
+          trainer_id?: string
+          updated_at?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_sessions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
             referencedColumns: ["id"]
           },
         ]
