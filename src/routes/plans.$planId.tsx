@@ -185,8 +185,8 @@ function PlanEditor() {
             planId={planId}
             initialToken={plan.share_token}
             onChange={(t) => setPlan({ ...plan, share_token: t })}
-            clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-            clientPhone={client.phone ?? null}
+            clientFirstName={(client?.full_name ?? "there").split(" ")[0]}
+            clientPhone={client?.phone ?? null}
             planTitle={plan.title}
           />
           <Button
@@ -253,7 +253,7 @@ function PlanEditor() {
           <div className="flex-1">
             <p className="font-semibold text-foreground">This plan uses the old Forge structure.</p>
             <p className="mt-0.5 text-muted-foreground">
-              Regenerate from {client.full_name}'s assessment to get the full session arc — warmup, activation,
+              Regenerate from {client?.full_name ?? "client"}'s assessment to get the full session arc — warmup, activation,
               dynamic prep, main work, cooldown and an optional finisher — plus muscle tags, RPE and tempo on every exercise.
             </p>
           </div>
