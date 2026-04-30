@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const InputSchema = z.object({
   client: z.object({
@@ -48,6 +49,12 @@ const InputSchema = z.object({
     // Performance markers
     resting_heart_rate: z.number().min(20).max(220).nullable().optional(),
     cardio_capacity: z.string().nullable().optional(),
+    // Clinical safety
+    parq_passed: z.boolean().nullable().optional(),
+    acsm_risk_category: z.string().nullable().optional(),
+    medications: z.string().nullable().optional(),
+    med_flags: z.array(z.string()).nullable().optional(),
+    safety_override: z.boolean().nullable().optional(),
   }),
   duration_weeks: z.number().min(1).max(16).default(4),
 });
@@ -134,6 +141,7 @@ const PlanSchema = {
 } as const;
 
 export const generatePlanDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }) => {
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -141,7 +149,52 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Anthropic API key is not configured." };
     }
 
-    const sys = `You are an expert strength coach and movement specialist designing PROFESSIONAL-GRADE, periodized programs for serious trainers and their clients. Every program must be HOLISTIC (training + recovery + lifestyle) and STRUCTURED (every session has a complete arc, not just a list of lifts).
+    const parqYes = data.assessment.parq_passed === false;
+    const risk = (data.assessment.acsm_risk_category ?? "low").toLowerCase();
+    const isHighRisk = risk === "high";
+    const isModerateRisk = risk === "moderate";
+    const medFlags = data.assessment.med_flags ?? [];
+    const onBetaBlockers = medFlags.some((m) => /beta.?blocker/i.test(m));
+    const onBPMeds = medFlags.some((m) => /blood pressure|hyperten/i.test(m));
+    const onAnticoag = medFlags.some((m) => /anticoag/i.test(m));
+    const onDiabetesMeds = medFlags.some((m) => /diabet|insulin/i.test(m));
+
+    const safetyConstraints: string[] = [];
+    if (isHighRisk || parqYes) {
+      safetyConstraints.push(
+        "ATTENTION: Client is HIGH RISK or has PAR-Q+ flags. Cap intensity at RPE 6 across all sessions for the first 2 weeks. Avoid Valsalva, max-effort lifts, plyometrics, sprints, and unsupported overhead loading. Prefer machine-based or supported variations. Begin every session with a longer (8–10 min) warm-up. The plan summary MUST start with: 'Conservative starting prescription due to clinical risk markers — review with the client's physician before progressing intensity.'"
+      );
+    } else if (isModerateRisk) {
+      safetyConstraints.push(
+        "Client is MODERATE RISK. Cap intensity at RPE 7–8 in the first week and progress conservatively. Avoid max-effort 1RM testing in the first 4 weeks."
+      );
+    }
+    if (onBetaBlockers) {
+      safetyConstraints.push(
+        "Client is on beta-blockers — heart-rate response is BLUNTED and unreliable. Do NOT use HR-based zones for cardio prescription. Use Borg RPE (6–20) or category RPE (1–10) only. Recommend RPE 11–13 for steady-state and RPE 14–16 for harder intervals."
+      );
+    }
+    if (onBPMeds && !onBetaBlockers) {
+      safetyConstraints.push(
+        "Client is on blood-pressure medication. Avoid rapid postural changes and prolonged isometric / Valsalva loading. Add a 2-min seated cool-down after each session to prevent post-exercise hypotension."
+      );
+    }
+    if (onAnticoag) {
+      safetyConstraints.push(
+        "Client is on anticoagulants. Avoid contact, ballistic, or fall-risk drills. Bias to controlled, low-impact, low-risk movement patterns."
+      );
+    }
+    if (onDiabetesMeds) {
+      safetyConstraints.push(
+        "Client is on diabetes medication / insulin. Schedule sessions 1–2 h after a meal, include a brief carbohydrate cue in the summary, and avoid very long fasted sessions."
+      );
+    }
+
+    const safetyBlock = safetyConstraints.length
+      ? `\n\nCLINICAL SAFETY CONSTRAINTS — these OVERRIDE every other instruction below:\n- ${safetyConstraints.join("\n- ")}`
+      : "";
+
+    const sys = `You are an expert strength coach and movement specialist designing PROFESSIONAL-GRADE, periodized programs for serious trainers and their clients. Every program must be HOLISTIC (training + recovery + lifestyle) and STRUCTURED (every session has a complete arc, not just a list of lifts).${safetyBlock}
 
 HARD RULES
 - Use ONLY equipment listed in available_equipment. If a piece is missing, substitute.
@@ -231,6 +284,12 @@ Training history:
 Performance markers:
 - Resting heart rate (bpm): ${data.assessment.resting_heart_rate ?? "—"}
 - Cardio capacity: ${data.assessment.cardio_capacity ?? "—"}
+
+Clinical safety:
+- PAR-Q+ passed: ${data.assessment.parq_passed === null || data.assessment.parq_passed === undefined ? "—" : data.assessment.parq_passed ? "yes" : "NO (one or more flags)"}
+- ACSM risk category: ${data.assessment.acsm_risk_category ?? "—"}
+- Medications: ${data.assessment.medications ?? "—"}
+- Med flags: ${(data.assessment.med_flags ?? []).join(", ") || "—"}
 
 Plan length: ${data.duration_weeks} weeks.`;
 
