@@ -577,31 +577,52 @@ function ClientDetail() {
       void markOnboardingStep(user.id, "run_assessment");
       setProgressStep(2);
 
-      const result = await generateFn({
-        data: {
-          client: {
-            full_name: client.full_name,
-            age: client.age,
-            sex: client.sex,
-            height_cm: client.height_cm ? Number(client.height_cm) : null,
-            weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
-          },
-          assessment: {
-            ...payload,
-            secondary_goals: null,
-          },
-          duration_weeks: duration,
-        },
-      });
+      // Fan out one call per week in parallel — much faster + dodges per-call upstream timeouts.
+      const clientPayload = {
+        full_name: client.full_name,
+        age: client.age,
+        sex: client.sex,
+        height_cm: client.height_cm ? Number(client.height_cm) : null,
+        weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
+      };
+      const assessmentPayload = { ...payload, secondary_goals: null };
 
-      if (!result.ok) {
-        if ((result as any).billingRequired) {
-          toast.error(result.error);
-          navigate({ to: "/billing" });
-          return;
-        }
-        throw new Error(result.error);
+      const weekResults = await Promise.all(
+        Array.from({ length: duration }, (_, i) =>
+          generateWeekFn({
+            data: {
+              client: clientPayload,
+              assessment: assessmentPayload,
+              duration_weeks: duration,
+              week_number: i + 1,
+            },
+          })
+        )
+      );
+
+      // Surface billing gate or first hard failure.
+      const billingFail = weekResults.find((r: any) => !r.ok && r.billingRequired);
+      if (billingFail) {
+        toast.error((billingFail as any).error);
+        navigate({ to: "/billing" });
+        return;
       }
+      const firstFail = weekResults.find((r: any) => !r.ok);
+      if (firstFail) throw new Error((firstFail as any).error || "Plan generation failed");
+
+      const weeks = weekResults
+        .map((r: any) => r.week)
+        .filter(Boolean)
+        .sort((a: any, b: any) => a.week_number - b.week_number);
+      const firstOk = weekResults[0] as any;
+      const result = {
+        ok: true as const,
+        plan: {
+          title: firstOk?.title || "",
+          summary: firstOk?.summary || "",
+          weeks,
+        },
+      };
       setProgressStep(3);
 
       const { data: plan, error } = await supabase
