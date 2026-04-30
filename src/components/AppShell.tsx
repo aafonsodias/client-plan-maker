@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useEffect, useState, type ReactNode } from "react";
-import { getAccessStatus } from "@/server/billing.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppShell({ children, back }: { children: ReactNode; back?: { to: string; label?: string } }) {
   const { user, loading, signOut } = useAuth();
@@ -23,9 +23,29 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
   useEffect(() => {
     if (!user) return;
-    getAccessStatus()
-      .then((r) => setAccess(r))
-      .catch(() => {});
+    let cancelled = false;
+    (async () => {
+      const { data: row } = await supabase
+        .from("subscribers")
+        .select("subscribed, subscription_status, trial_end, current_period_end")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const now = Date.now();
+      const trialActive = !!(row?.trial_end && new Date(row.trial_end).getTime() > now);
+      const subActive =
+        !!row?.subscribed &&
+        (!row?.current_period_end || new Date(row.current_period_end).getTime() > now);
+      const hasAccess = trialActive || subActive;
+      const trialDaysLeft =
+        trialActive && row?.trial_end
+          ? Math.max(0, Math.ceil((new Date(row.trial_end).getTime() - now) / 86400000))
+          : null;
+      setAccess({ hasAccess, trialActive, trialDaysLeft, subscribed: !!row?.subscribed });
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   if (loading || !user) {

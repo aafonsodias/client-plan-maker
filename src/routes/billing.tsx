@@ -7,8 +7,9 @@ import {
   createCheckout,
   customerPortal,
   checkSubscription,
-  getAccessStatus,
 } from "@/server/billing.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,15 +32,41 @@ type Access = {
 function BillingPage() {
   const { checkout } = Route.useSearch();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const checkoutFn = useServerFn(createCheckout);
   const portalFn = useServerFn(customerPortal);
   const refreshFn = useServerFn(checkSubscription);
-  const accessFn = useServerFn(getAccessStatus);
   const [access, setAccess] = useState<Access | null>(null);
   const [busy, setBusy] = useState<"checkout" | "portal" | "refresh" | null>(null);
 
+  const loadAccess = async (): Promise<Access | null> => {
+    if (!user) return null;
+    const { data: row } = await supabase
+      .from("subscribers")
+      .select("subscribed, subscription_status, trial_end, current_period_end")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const now = Date.now();
+    const trialActive = !!(row?.trial_end && new Date(row.trial_end).getTime() > now);
+    const subActive =
+      !!row?.subscribed &&
+      (!row?.current_period_end || new Date(row.current_period_end).getTime() > now);
+    return {
+      hasAccess: trialActive || subActive,
+      trialActive,
+      trialDaysLeft:
+        trialActive && row?.trial_end
+          ? Math.max(0, Math.ceil((new Date(row.trial_end).getTime() - now) / 86400000))
+          : null,
+      subscribed: !!row?.subscribed,
+      subscriptionStatus: row?.subscription_status ?? null,
+      currentPeriodEnd: row?.current_period_end ?? null,
+    };
+  };
+
   // On mount: if returning from Stripe, force a re-sync. Otherwise just read.
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     (async () => {
       try {
@@ -47,8 +74,8 @@ function BillingPage() {
           await refreshFn();
           toast.success("Welcome to Forge Pro!");
         }
-        const a = await accessFn();
-        if (!cancelled) setAccess(a as Access);
+        const a = await loadAccess();
+        if (!cancelled) setAccess(a);
       } catch (e: any) {
         toast.error(e?.message ?? "Failed to load billing");
       }
@@ -57,7 +84,7 @@ function BillingPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const handleSubscribe = async () => {
     setBusy("checkout");
@@ -85,8 +112,8 @@ function BillingPage() {
     setBusy("refresh");
     try {
       await refreshFn();
-      const a = await accessFn();
-      setAccess(a as Access);
+      const a = await loadAccess();
+      setAccess(a);
       toast.success("Subscription refreshed");
     } catch (e: any) {
       toast.error(e?.message ?? "Refresh failed");
