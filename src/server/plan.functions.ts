@@ -1184,7 +1184,7 @@ export const getPlanProgress = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("workout_plan_days")
-      .select("week_number, day_number, day_label, focus, rationale, content, updated_at")
+      .select("week_number, day_number, day_label, focus, rationale, content, validation_meta, updated_at")
       .eq("plan_id", data.plan_id)
       .eq("trainer_id", userId)
       .order("week_number", { ascending: true })
@@ -1221,7 +1221,7 @@ export const finalizePlanGeneration = createServerFn({ method: "POST" })
 
     const { data: dayRows, error } = await supabaseAdmin
       .from("workout_plan_days")
-      .select("week_number, day_number, content")
+      .select("week_number, day_number, content, validation_meta")
       .eq("plan_id", data.plan_id)
       .order("week_number", { ascending: true })
       .order("day_number", { ascending: true });
@@ -1246,6 +1246,37 @@ export const finalizePlanGeneration = createServerFn({ method: "POST" })
         days,
       }));
 
+    // Aggregate per-day validation telemetry into a plan-level summary.
+    let totalCostUsd = 0;
+    const verdictCounts: Record<string, number> = {};
+    const allUnresolved: any[] = [];
+    let escalations = 0;
+    for (const r of dayRows ?? []) {
+      const vm: any = r.validation_meta ?? {};
+      totalCostUsd += Number(vm.total_cost_usd ?? 0);
+      const v = String(vm.final_verdict ?? "unknown");
+      verdictCounts[v] = (verdictCounts[v] ?? 0) + 1;
+      if (Array.isArray(vm.unresolved_issues) && vm.unresolved_issues.length) {
+        for (const i of vm.unresolved_issues) {
+          allUnresolved.push({ week: r.week_number, day: r.day_number, ...i });
+        }
+      }
+      if (Array.isArray(vm.call_log) && vm.call_log.some((c: any) => String(c.pass).startsWith("escalate"))) {
+        escalations += 1;
+      }
+    }
+    const newGenMeta = {
+      ...meta,
+      validation: {
+        version: 1,
+        total_cost_usd: Number(totalCostUsd.toFixed(6)),
+        verdict_counts: verdictCounts,
+        unresolved_issues: allUnresolved,
+        escalated_days: escalations,
+        finalized_at: new Date().toISOString(),
+      },
+    };
+
     const { error: updErr } = await supabaseAdmin
       .from("workout_plans")
       .update({
@@ -1254,9 +1285,208 @@ export const finalizePlanGeneration = createServerFn({ method: "POST" })
         summary: data.summary || planRow.summary,
         generation_status: "complete",
         status: "draft",
+        generation_meta: newGenMeta,
       })
       .eq("id", data.plan_id);
     if (updErr) return { ok: false as const, error: updErr.message };
 
     return { ok: true as const };
   });
+
+// =============================================================================
+// escalatePlanDay — re-run a single day with the smartest model (Sonnet 4.5)
+// when the trainer is unhappy with the Haiku output. Re-uses the critic so we
+// can record an escalation verdict alongside the original generator pass.
+// Telemetry rolls up into validation_meta with pass tags "escalate-*".
+// =============================================================================
+const EscalateInputSchema = z.object({
+  plan_id: z.string().uuid(),
+  client: z.object({
+    full_name: z.string(),
+    age: z.number().nullable().optional(),
+    sex: z.string().nullable().optional(),
+    height_cm: z.number().nullable().optional(),
+    weight_kg: z.number().nullable().optional(),
+  }),
+  assessment: z.any(),
+  duration_weeks: z.number().min(1).max(16),
+  week_number: z.number().min(1).max(16),
+  day_number: z.number().min(1).max(7),
+  days_per_week: z.number().min(1).max(7),
+});
+
+export const escalatePlanDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => EscalateInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Billing gate (same as generatePlanDay).
+    const { data: sub } = await supabaseAdmin
+      .from("subscribers")
+      .select("subscribed, current_period_end, trial_end")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const now = Date.now();
+    const trialActive = !!(sub?.trial_end && new Date(sub.trial_end).getTime() > now);
+    const subActive =
+      !!sub?.subscribed &&
+      (!sub?.current_period_end || new Date(sub.current_period_end).getTime() > now);
+    if (!trialActive && !subActive) {
+      return {
+        ok: false as const,
+        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        billingRequired: true as const,
+      };
+    }
+
+    // Verify plan ownership + load existing day for telemetry continuity.
+    const { data: planRow } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, trainer_id")
+      .eq("id", data.plan_id)
+      .maybeSingle();
+    if (!planRow || planRow.trainer_id !== userId) {
+      return { ok: false as const, error: "Plan not found." };
+    }
+    const { data: existingRow } = await supabaseAdmin
+      .from("workout_plan_days")
+      .select("validation_meta")
+      .eq("plan_id", data.plan_id)
+      .eq("week_number", data.week_number)
+      .eq("day_number", data.day_number)
+      .maybeSingle();
+    const previousMeta: any = existingRow?.validation_meta ?? {};
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
+
+    const { week_number, day_number, days_per_week, duration_weeks } = data;
+    const ESCALATE_MODEL: AnthropicModelId = "claude-sonnet-4-5-20250929";
+    const safetyBlock = buildSafetyBlock(data.assessment);
+    const sys = `You are an expert strength coach generating ONE TRAINING DAY (day ${day_number} of ${days_per_week}, in week ${week_number} of ${duration_weeks}). A previous draft was unsatisfactory — produce a clean, professional-grade replacement. Be HOLISTIC and STRUCTURED.${safetyBlock}
+
+${SHARED_PROGRAM_RULES}
+
+Return ONLY structured JSON via the emit_workout_day tool — emit exactly one 'day' object.`;
+
+    const userMsg =
+      buildClientContextBlock(data.client, data.assessment, duration_weeks) +
+      `\n\nGENERATE: week ${week_number} of ${duration_weeks}, day ${day_number} of ${days_per_week}.`;
+
+    const t0 = Date.now();
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ESCALATE_MODEL,
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_day",
+            description: "Emit one training day",
+            input_schema: SingleDayPlanSchema,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_day" },
+      }),
+    });
+
+    if (!res.ok) {
+      const t = await res.text();
+      console.error("[escalate] anthropic error", res.status, t.slice(0, 400));
+      return { ok: false as const, error: `Escalation failed (${res.status}).` };
+    }
+    const json = await res.json();
+    const usage = json?.usage;
+    const elapsed = Date.now() - t0;
+    const toolUse = json?.content?.find((b: any) => b.type === "tool_use");
+    const day = toolUse?.input?.day;
+    if (!day) {
+      return { ok: false as const, error: "Escalation returned no day." };
+    }
+    const generateTel: CallTelemetry = makeTelemetry(ESCALATE_MODEL, "escalate-generate", usage, elapsed, true);
+
+    const programmaticWarnings = validateExercises(day?.exercises, {
+      day_label: day?.day_label,
+      focus: day?.focus,
+    });
+    const critic = await criticDay({
+      apiKey,
+      model: ESCALATE_MODEL,
+      pass: "escalate-critic",
+      client: data.client,
+      assessment: data.assessment,
+      duration_weeks,
+      week_number,
+      day_number,
+      days_per_week,
+      day,
+      programmatic_warnings: programmaticWarnings,
+    });
+
+    const callLog: CallTelemetry[] = [
+      ...(Array.isArray(previousMeta.call_log) ? (previousMeta.call_log as CallTelemetry[]) : []),
+      generateTel,
+      critic.telemetry,
+    ];
+    const totalCostUsd = callLog.reduce((s, c) => s + (c.cost_usd || 0), 0);
+
+    const finalVerdict = critic.ok ? critic.verdict.verdict : "skipped";
+    const unresolvedIssues = critic.ok
+      ? critic.verdict.issues.filter((i) => i.severity === "blocker" || i.severity === "major")
+      : [];
+
+    const validation_meta = {
+      ...previousMeta,
+      version: 1,
+      final_verdict: finalVerdict,
+      critic_summary: critic.ok ? critic.verdict.summary : previousMeta.critic_summary ?? "",
+      unresolved_issues: unresolvedIssues,
+      programmatic_warnings: programmaticWarnings,
+      repair_attempted: previousMeta.repair_attempted ?? false,
+      escalated: true,
+      escalated_at: new Date().toISOString(),
+      total_cost_usd: Number(totalCostUsd.toFixed(6)),
+      call_log: callLog,
+      completed_at: new Date().toISOString(),
+    };
+
+    const { error: upsertErr } = await supabaseAdmin
+      .from("workout_plan_days")
+      .upsert(
+        {
+          plan_id: data.plan_id,
+          trainer_id: userId,
+          week_number,
+          day_number,
+          day_label: day.day_label ?? `Day ${day_number}`,
+          focus: day.focus ?? null,
+          rationale: day.rationale ?? null,
+          content: day,
+          status: "done",
+          validation_meta,
+        },
+        { onConflict: "plan_id,week_number,day_number" }
+      );
+    if (upsertErr) return { ok: false as const, error: `Saved escalation but failed to store day.` };
+
+    return {
+      ok: true as const,
+      day,
+      week_number,
+      day_number,
+      validationWarnings: programmaticWarnings,
+      validation_meta,
+    };
+  });
+
+// Re-export so the cost helper is bundle-included whenever this module is.
+void computeCallCostUsd;
