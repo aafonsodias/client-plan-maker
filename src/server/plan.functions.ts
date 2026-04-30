@@ -591,6 +591,24 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
+      const requestBody = {
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_week",
+            description: "Emit one week of the workout plan",
+            input_schema: SingleWeekPlanSchema,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_week" },
+      };
+      console.log(
+        `[plan.week ${week_number}] Anthropic request — model=${requestBody.model}, sys=${sys.length}c, user=${userMsg.length}c, tool_keys=${Object.keys(SingleWeekPlanSchema.properties ?? {}).join(",")}`
+      );
+
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -598,20 +616,7 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
           "anthropic-version": "2023-06-01",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 8000,
-          system: sys,
-          messages: [{ role: "user", content: userMsg }],
-          tools: [
-            {
-              name: "emit_workout_week",
-              description: "Emit one week of the workout plan",
-              input_schema: SingleWeekPlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_week" },
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (res.status === 429) return { ok: false as const, error: "Claude rate limit reached. Try again in a moment." };
@@ -621,7 +626,13 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       if (!res.ok) {
         const t = await res.text();
         console.error("Anthropic error (week)", week_number, res.status, t);
-        return { ok: false as const, error: `Claude request failed (${res.status}).` };
+        // Surface the upstream message so the toast is actionable instead of a generic 400.
+        let upstream = t;
+        try {
+          const parsed = JSON.parse(t);
+          upstream = parsed?.error?.message ?? parsed?.message ?? t;
+        } catch {}
+        return { ok: false as const, error: `Claude request failed (${res.status}): ${String(upstream).slice(0, 400)}` };
       }
 
       const json = await res.json();
