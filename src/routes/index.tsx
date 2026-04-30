@@ -4,12 +4,18 @@ import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshC
 import { Logo } from "@/components/Logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   component: Landing,
 });
 
 function Landing() {
+  const { user } = useAuth();
+  const signedIn = !!user;
+  const primaryCtaTo = signedIn ? "/dashboard" : "/auth";
+  const primaryCtaLabel = signedIn ? "Open dashboard" : "Draft your first plan";
+  const closingCtaLabel = signedIn ? "Open dashboard" : "Create your account";
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -20,12 +26,20 @@ function Landing() {
             <span className="text-lg">FORGE</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">Sign in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/auth">Start free</Link>
-            </Button>
+            {signedIn ? (
+              <Button asChild size="sm">
+                <Link to="/dashboard">Go to dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/auth">Sign in</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/auth">Start free</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -49,8 +63,8 @@ function Landing() {
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link to="/auth">
-                  Draft your first plan <ArrowRight className="ml-2 h-4 w-4" />
+                <Link to={primaryCtaTo}>
+                  {primaryCtaLabel} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -254,7 +268,7 @@ function Landing() {
           </p>
           <div className="relative mt-8 flex justify-center">
             <Button asChild size="lg">
-              <Link to="/auth">Create your account</Link>
+              <Link to={primaryCtaTo}>{closingCtaLabel}</Link>
             </Button>
           </div>
         </div>
