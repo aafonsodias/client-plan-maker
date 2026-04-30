@@ -8,6 +8,166 @@ import {
   SHARED_PROGRAM_RULES,
 } from "./plan.server";
 
+// ============================================================================
+// Output validation — Zod + structural rules.
+// validateExercises returns warnings (non-blocking). Callers persist warnings
+// in generation_meta so the trainer/UI can surface them without blocking
+// generation on a soft drift from the AI.
+// ============================================================================
+const ExerciseOutputSchema = z.object({
+  name: z.string().min(1),
+  sets: z.string(),
+  reps: z.string(),
+  rest: z.string(),
+  notes: z.string(),
+  primary_muscles: z.array(z.string()),
+  secondary_muscles: z.array(z.string()),
+  rpe: z.string(),
+  tempo: z.string(),
+  technique_cues: z.string(),
+  cue: z.string(),
+  rationale: z.string(),
+  superset_id: z.string().nullable(),
+  variant: z.string().nullable(),
+  optional: z.boolean(),
+  equipment: z.array(z.string()),
+});
+
+const BANNED_RATIONALE_PHRASES = [
+  "build strength",
+  "great for hypertrophy",
+  "compound movement",
+  "works the whole body",
+  "balanced exercise",
+  "core lift",
+  "fundamental movement",
+  "improves overall fitness",
+  "good warmup",
+  "targets multiple muscles",
+];
+
+function parseRpe(rpe: string): number | null {
+  const m = String(rpe ?? "").match(/(\d+(?:\.\d+)?)/g);
+  if (!m || m.length === 0) return null;
+  // Use the highest number in the range (e.g. "7-8" → 8) as the RPE ceiling.
+  return Math.max(...m.map((n) => parseFloat(n)));
+}
+
+function detectPhase(focus: string | undefined | null): "hypertrophy" | "strength" | "endurance" | "unknown" {
+  const f = String(focus ?? "").toLowerCase();
+  if (/(hypertroph|volume|accumul|growth|size)/.test(f)) return "hypertrophy";
+  if (/(strength|force|max|peak|intens|power)/.test(f)) return "strength";
+  if (/(endur|condition|capacit|aerobic|metcon|stamina)/.test(f)) return "endurance";
+  return "unknown";
+}
+
+/**
+ * Validate the exercises array of a single day. Returns a list of warning
+ * strings (empty when clean). Non-blocking by design — caller decides what
+ * to do with the warnings (log, persist, surface in UI).
+ */
+export function validateExercises(
+  exercises: unknown,
+  context: { day_label?: string | null; focus?: string | null } = {}
+): string[] {
+  const warnings: string[] = [];
+  if (!Array.isArray(exercises)) {
+    warnings.push("exercises is not an array");
+    return warnings;
+  }
+
+  // 1. Per-exercise shape via Zod.
+  const parsed: Array<z.infer<typeof ExerciseOutputSchema>> = [];
+  exercises.forEach((ex, i) => {
+    const r = ExerciseOutputSchema.safeParse(ex);
+    if (!r.success) {
+      warnings.push(`exercise[${i}] (${(ex as any)?.name ?? "?"}): shape invalid — ${r.error.issues.map((iss) => iss.path.join(".") + ": " + iss.message).join("; ")}`);
+    } else {
+      parsed.push(r.data);
+    }
+  });
+  if (parsed.length === 0) return warnings;
+
+  const phase = detectPhase(context.focus);
+
+  // 2. Rationale: non-empty, length, banned phrasings.
+  parsed.forEach((ex, i) => {
+    const r = (ex.rationale ?? "").trim();
+    if (!r) {
+      warnings.push(`exercise[${i}] (${ex.name}): rationale is empty`);
+    } else {
+      if (r.length > 200) warnings.push(`exercise[${i}] (${ex.name}): rationale too long (${r.length} chars > 200)`);
+      const lower = r.toLowerCase();
+      const hits = BANNED_RATIONALE_PHRASES.filter((p) => lower.includes(p));
+      if (hits.length) {
+        warnings.push(`exercise[${i}] (${ex.name}): rationale uses banned generic phrasing: ${hits.join(", ")}`);
+      }
+    }
+    if (!ex.cue || !ex.cue.trim()) {
+      warnings.push(`exercise[${i}] (${ex.name}): cue is empty`);
+    }
+  });
+
+  // 3. Superset rules.
+  const groups = new Map<string, number[]>(); // superset_id → indices
+  parsed.forEach((ex, i) => {
+    if (ex.superset_id) {
+      const arr = groups.get(ex.superset_id) ?? [];
+      arr.push(i);
+      groups.set(ex.superset_id, arr);
+    }
+  });
+  if (groups.size > 3) {
+    warnings.push(`supersets: ${groups.size} groups in this session (max allowed: 3)`);
+  }
+  for (const [tag, idxs] of groups.entries()) {
+    if (idxs.length !== 2) {
+      warnings.push(`superset "${tag}": ${idxs.length} exercises share this tag (must be exactly 2)`);
+    } else if (idxs[1] !== idxs[0] + 1) {
+      warnings.push(`superset "${tag}": exercises at positions ${idxs[0]} and ${idxs[1]} are not consecutive`);
+    }
+  }
+  // No superset_id on a strength-phase main lift (assume index 0 is the main).
+  if (phase === "strength" && parsed[0]?.superset_id) {
+    warnings.push(`strength-phase main lift "${parsed[0].name}" must not be in a superset (superset_id="${parsed[0].superset_id}")`);
+  }
+
+  // 4. Optional rules.
+  const optionalIdxs = parsed
+    .map((ex, i) => (ex.optional ? i : -1))
+    .filter((i) => i >= 0);
+  if (optionalIdxs.length > 2) {
+    warnings.push(`optional=true count is ${optionalIdxs.length} (max allowed: 2)`);
+  }
+  if (parsed.length < 4 && optionalIdxs.length > 0) {
+    warnings.push(`session has only ${parsed.length} exercises — none should be optional`);
+  }
+  for (const i of optionalIdxs) {
+    const ex = parsed[i];
+    // Must be in the last 2 slots.
+    if (i < parsed.length - 2) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but not in last 2 slots`);
+    }
+    // Main lift (index 0) can never be optional.
+    if (i === 0) {
+      warnings.push(`exercise[${i}] (${ex.name}): main lift cannot be optional`);
+    }
+    // RPE ≤ 7.
+    const rpe = parseRpe(ex.rpe);
+    if (rpe !== null && rpe > 7) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but RPE ${ex.rpe} > 7`);
+    }
+    // Not in a superset.
+    if (ex.superset_id) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but is in superset "${ex.superset_id}"`);
+    }
+  }
+
+  // Tag warnings with day context for easier debugging downstream.
+  const label = context.day_label ?? context.focus ?? "day";
+  return warnings.map((w) => `[${label}] ${w}`);
+}
+
 const WeekInputSchema = z.object({
   client: z.object({
     full_name: z.string(),
