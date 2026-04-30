@@ -82,6 +82,7 @@ const PlanSchema = {
         properties: {
           week_number: { type: "number" },
           focus: { type: "string" },
+          rationale: { type: "string" },
           days: {
             type: "array",
             items: {
