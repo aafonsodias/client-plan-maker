@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
@@ -112,11 +112,7 @@ function Landing() {
           </p>
         </div>
         <div className="grid items-center gap-12 md:grid-cols-2">
-          <div className="space-y-8 text-lg font-light">
-            <p>Per-set logging — weight, reps, RPE</p>
-            <p>Full session history per client</p>
-            <p>Progression visible at a glance</p>
-          </div>
+          <ProgressionMockup />
           <SetLogMockup />
         </div>
       </section>
@@ -301,9 +297,9 @@ function HeroPlanMockup() {
 
 function SetLogMockup() {
   const sets = [
-    "Set 1 — 80kg × 6 ✓",
-    "Set 2 — 82.5kg × 6 ✓",
-    "Set 3 — 85kg × 5 ✓",
+    { label: "Set 1", detail: "80kg × 6" },
+    { label: "Set 2", detail: "82.5kg × 6" },
+    { label: "Set 3", detail: "85kg × 5" },
   ];
   return (
     <FloatCard>
@@ -311,13 +307,25 @@ function SetLogMockup() {
         className="absolute -left-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
         style={{ background: "var(--gradient-accent)" }}
       />
-      <p className="text-xs uppercase tracking-widest text-accent">Back Squat · Set log</p>
-      <div className="mt-5 space-y-3 font-mono text-sm text-foreground/90">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-widest text-accent">Back Squat · Set log</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Today · Week 6</p>
+      </div>
+      <div className="mt-5 space-y-2 font-mono text-sm text-foreground/90">
         {sets.map((s) => (
-          <div key={s} className="rounded-md border border-border/60 bg-background/40 px-3 py-2">
-            {s}
+          <div key={s.label} className="flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-3 py-2">
+            <span className="text-muted-foreground">{s.label}</span>
+            <span>{s.detail}</span>
+            <span className="text-accent">✓</span>
           </div>
         ))}
+      </div>
+      <div className="my-4 h-px bg-border/60" />
+      <div className="flex items-center justify-between font-mono text-[12px] text-muted-foreground">
+        <span>Last week — top set 80kg × 6</span>
+        <span className="inline-flex items-center gap-1 text-accent">
+          <ArrowUp className="h-3 w-3" /> +5kg
+        </span>
       </div>
       <div className="mt-6 flex justify-end">
         <button className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground">
@@ -325,5 +333,43 @@ function SetLogMockup() {
         </button>
       </div>
     </FloatCard>
+  );
+}
+
+function ProgressionMockup() {
+  const weights = [70, 72.5, 75, 77.5, 80, 82.5];
+  const w = 280;
+  const h = 90;
+  const min = Math.min(...weights) - 2;
+  const max = Math.max(...weights) + 2;
+  const points = weights.map((v, i) => {
+    const x = (i / (weights.length - 1)) * w;
+    const y = h - ((v - min) / (max - min)) * h;
+    return { x, y, v };
+  });
+  const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+
+  return (
+    <div className="rounded-2xl border border-border bg-card/80 p-6">
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">Back Squat — 6 weeks of work</p>
+      <div className="mt-5">
+        <svg viewBox={`0 0 ${w} ${h + 8}`} className="w-full" preserveAspectRatio="none">
+          <path d={path} fill="none" stroke="var(--accent)" strokeOpacity="0.5" strokeWidth="1.5" />
+          {points.map((p, i) => (
+            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--background)" stroke="var(--accent)" strokeWidth="1.5" />
+          ))}
+        </svg>
+        <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground/60">
+          {weights.map((v, i) => (
+            <span key={i}>W{i + 1}</span>
+          ))}
+        </div>
+      </div>
+      <div className="mt-6 space-y-1.5 font-mono text-[12px] text-muted-foreground">
+        <p>Top set today: <span className="text-foreground/90">85kg × 5</span></p>
+        <p>PR vs week 1: <span className="text-accent">+15kg</span></p>
+        <p>Sessions logged: <span className="text-foreground/90">18</span></p>
+      </div>
+    </div>
   );
 }
