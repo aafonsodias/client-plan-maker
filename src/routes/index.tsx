@@ -153,22 +153,43 @@ function Landing() {
             />
           </div>
           <div>
-            <h2 className="text-[32px] font-light leading-tight tracking-tight">Why I built Forge</h2>
+            <h2 className="text-[32px] font-light leading-tight tracking-tight">Why Forge?</h2>
             <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
               <p>
-                I'm a personal trainer in Lisbon with a Master's in Exercise and Health. For the last 15
-                years, I've spent my evenings doing admin that had nothing to do with coaching: writing
-                plans, formatting PDFs, copying across spreadsheets. The actual coaching was never the
-                problem. The hours of admin around it were.
+                I've been a personal trainer in Lisbon since 2010. In fifteen years, I've realized two
+                things: most professional training plans are poorly put together, and because the admin
+                is such a chore, many trainers just give up and improvise.
               </p>
               <p>
-                Forge does the repetitive parts so you don't have to. The intake is solid (PAR-Q+, ACSM
-                risk stratification, Prochaska), so the AI output is defensible. You edit it, you own it,
-                you send it. No admin theatre. Just coaching.
+                High-quality, structured programming usually takes too much time, so it doesn't get done.
+              </p>
+              <p>
+                Forge is built to change that. It's a tool that makes it easy to generate a plan that is
+                actually defensible, whether you're coaching others or just managing your own training.
+              </p>
+              <ul className="space-y-3 pl-0">
+                <li>
+                  <span className="font-medium text-foreground">Logic over aesthetics.</span>{" "}
+                  It's not about admin theatre or pretty PDFs. It's about using solid frameworks
+                  (PAR-Q+, ACSM risk stratification, Prochaska) to build a baseline that makes sense.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">Professional or personal.</span>{" "}
+                  It works as a professional assistant to speed up client delivery, or as a personal
+                  tool for anyone who wants a structured program without the manual headache.
+                </li>
+                <li>
+                  <span className="font-medium text-foreground">You're the filter.</span>{" "}
+                  The AI handles the repetitive drafting. You review it, fix it, and own it.
+                </li>
+              </ul>
+              <p>
+                The goal isn't to automate coaching. It's to make sure that "it's too much work" is no
+                longer an excuse for a bad plan.
               </p>
             </div>
             <p className="mt-6 text-sm italic text-muted-foreground/70">
-              — André Periquito, MSc Exercise & Health · Personal Trainer since 2010
+              — André Periquito, MSc · Personal Trainer
             </p>
           </div>
         </div>
