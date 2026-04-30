@@ -353,16 +353,30 @@ function ShareDialog({ planId, initialToken, onChange }: { planId: string; initi
   const enable = async (rotate = false) => {
     setBusy(true);
     try {
-      const res = (await ensureShareToken({ data: { plan_id: planId, rotate } })) as { share_token: string };
-      setToken(res.share_token);
-      onChange(res.share_token);
+      // If a token already exists and we're not rotating, just reuse it.
+      if (token && !rotate) {
+        toast.success("Share link ready");
+        return;
+      }
+      const newToken = crypto.randomUUID();
+      const { error } = await supabase
+        .from("workout_plans")
+        .update({ share_token: newToken })
+        .eq("id", planId);
+      if (error) throw error;
+      setToken(newToken);
+      onChange(newToken);
       toast.success(rotate ? "Link rotated" : "Share link ready");
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
   };
   const revoke = async () => {
     setBusy(true);
     try {
-      await revokeShareToken({ data: { plan_id: planId } });
+      const { error } = await supabase
+        .from("workout_plans")
+        .update({ share_token: null })
+        .eq("id", planId);
+      if (error) throw error;
       setToken(null); onChange(null);
       toast.success("Link revoked");
     } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
@@ -456,16 +470,19 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
     if (!day) return;
     setSaving(true);
     try {
-      await saveTrainerSession({
-        data: {
-          plan_id: planId,
-          week_number: weekNum,
-          day_label: dayLabel,
-          session_date: date,
-          session_notes: notes,
-          entries,
-        },
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not signed in");
+      const { error } = await supabase.from("workout_sessions").insert({
+        plan_id: planId,
+        trainer_id: user.id,
+        week_number: weekNum,
+        day_label: dayLabel,
+        session_date: date,
+        session_notes: notes,
+        entries: entries as any,
+        logged_by: "trainer",
       });
+      if (error) throw error;
       toast.success("Session logged");
       reload();
     } catch (e: any) {
