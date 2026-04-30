@@ -645,7 +645,7 @@ function ClientDetail() {
           </div>
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance.">
+          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance." complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? "✓ Pre-screening complete. 0 flags." : `✓ Pre-screening complete. ${parqFlagCount(assessment.parq)} flags — guidance below`} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_QUESTIONS.map((q, idx) => {
                 const value = (assessment.parq as any)[q.key];
@@ -672,7 +672,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Risk stratification */}
-          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high.">
+          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high." complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={`✓ ACSM Risk: ${riskCategory.toUpperCase()}`} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
