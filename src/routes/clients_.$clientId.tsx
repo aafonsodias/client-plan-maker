@@ -738,24 +738,122 @@ function ClientDetail() {
         )}
       </section>
     </div>
+    </TooltipProvider>
+  );
+}
+
+function SectionBlock({ id, title, hint, children }: { id: string; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div id={`sec-${id}`} className="scroll-mt-20 rounded-xl border border-border bg-background/40 p-3">
+      <div className="mb-2 flex items-center gap-1.5">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-accent">{title}</h3>
+        {hint && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask">
+                <Info className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="flex items-center gap-1">
+      <Label className="text-xs">{label}</Label>
+      {hint && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask"><Info className="h-3 w-3" /></button>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs text-xs"><p>{hint}</p></TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   );
 }
 
 function Field({
-  label, value, onChange, type = "text", placeholder,
-}: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
+  label, value, onChange, type = "text", placeholder, hint, className = "",
+}: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; hint?: string; className?: string }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs">{label}</Label>
-      <Input className="h-8 text-sm" type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    <div className={`space-y-1 ${className}`}>
+      <LabelWithHelp label={label} hint={hint} />
+      <Input className="h-8 text-sm" type={type} value={value ?? ""} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   );
 }
-function TextField({ label, value, onChange, className = "" }: { label: string; value: string; onChange: (v: string) => void; className?: string }) {
+function TextField({ label, value, onChange, className = "", hint }: { label: string; value: string; onChange: (v: string) => void; className?: string; hint?: string }) {
   return (
     <div className={`space-y-1 ${className}`}>
-      <Label className="text-xs">{label}</Label>
+      <LabelWithHelp label={label} hint={hint} />
       <Textarea className="min-h-0 py-1.5 text-sm" value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
+    </div>
+  );
+}
+
+function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs transition ${value ? "border-accent bg-accent/10 text-foreground" : "border-border bg-background hover:bg-secondary"}`}
+    >
+      <span>{label}</span>
+      <span className={`ml-2 inline-flex h-4 w-7 items-center rounded-full transition ${value ? "bg-accent" : "bg-secondary"}`}>
+        <span className={`block h-3 w-3 rounded-full bg-background shadow transition ${value ? "translate-x-3.5" : "translate-x-0.5"}`} />
+      </span>
+    </button>
+  );
+}
+
+function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex shrink-0 gap-1">
+      {[
+        [true, "Yes"],
+        [false, "No"],
+      ].map(([v, l]) => {
+        const active = value === v;
+        return (
+          <button
+            key={String(v)}
+            type="button"
+            onClick={() => onChange(v as boolean)}
+            className={`h-6 rounded border px-2 text-[11px] font-medium transition ${active ? (v ? "border-destructive bg-destructive text-destructive-foreground" : "border-primary bg-primary text-primary-foreground") : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+          >
+            {l as string}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScoreRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const current = value ?? "";
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background/40 p-2">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = current === String(n);
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(active ? "" : String(n))}
+              className={`h-6 w-6 rounded border text-[11px] font-medium transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+            >{n}</button>
+          );
+        })}
+      </div>
     </div>
   );
 }
