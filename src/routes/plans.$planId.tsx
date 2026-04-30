@@ -1101,8 +1101,19 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         {entries.map((e, i) => (
           <div key={i} className="rounded-md bg-card p-2.5">
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <h3 className="text-base font-bold tracking-tight text-foreground">
+              <h3 className="text-base font-bold tracking-tight text-foreground inline-flex items-center gap-1.5">
                 {e.exercise_name || <span className="text-foreground0">(unnamed)</span>}
+                {e.exercise_name && (
+                  <a
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(e.exercise_name + " exercise technique")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Watch demo on YouTube"
+                    className="text-muted-foreground hover:text-accent"
+                  >
+                    <PlayCircle className="h-3.5 w-3.5" />
+                  </a>
+                )}
               </h3>
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-accent">
                 Planned · {e.planned.sets || "—"} × {e.planned.reps || "—"} · {e.planned.rest || "—"}
