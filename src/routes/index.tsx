@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
@@ -112,11 +112,7 @@ function Landing() {
           </p>
         </div>
         <div className="grid items-center gap-12 md:grid-cols-2">
-          <div className="space-y-8 text-lg font-light">
-            <p>Per-set logging — weight, reps, RPE</p>
-            <p>Full session history per client</p>
-            <p>Progression visible at a glance</p>
-          </div>
+          <ProgressionMockup />
           <SetLogMockup />
         </div>
       </section>
