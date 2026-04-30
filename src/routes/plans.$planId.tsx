@@ -297,7 +297,7 @@ function PlanEditor() {
       </div>
 
       {mode === "view" ? (
-        <ViewMode plan={data} />
+        <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
       ) : mode === "edit" ? (
         <>
           <div className="space-y-3">
