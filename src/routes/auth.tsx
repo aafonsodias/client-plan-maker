@@ -96,7 +96,8 @@ function AuthPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="su-pw">Password</Label>
-                  <Input id="su-pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input id="su-pw" type="password" required minLength={10} value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <p className="text-xs text-muted-foreground">At least 10 characters. Avoid common or breached passwords.</p>
                 </div>
                 <Button type="submit" className="w-full" disabled={busy}>Create account</Button>
               </form>
