@@ -259,7 +259,8 @@ function PlanEditor() {
       )}
 
       {/* Mode tabs */}
-      <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
           onClick={() => setMode("view")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
@@ -278,6 +279,20 @@ function PlanEditor() {
         >
           <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
+        </div>
+        {plan?.status !== "finalized" && client && (
+          <RegenerateWithFeedbackDialog
+            planId={planId}
+            clientId={client.id}
+            assessmentId={plan.assessment_id}
+            durationWeeks={plan.duration_weeks ?? 4}
+            previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
+            onRegenerated={(newPlan) => {
+              setData({ weeks: newPlan.weeks ?? [] });
+              setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
+            }}
+          />
+        )}
       </div>
 
       {mode === "view" ? (
