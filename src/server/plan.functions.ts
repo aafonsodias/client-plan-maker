@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  buildSafetyBlock,
+  buildClientContextBlock,
+  buildFeedbackBlock,
+  SHARED_PROGRAM_RULES,
+} from "./plan.server";
 
 const WeekInputSchema = z.object({
   client: z.object({
