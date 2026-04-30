@@ -1301,7 +1301,7 @@ function RegenerateWithFeedbackDialog({
       if (!result.ok) {
         if ((result as any).billingRequired) {
           toast.error(result.error);
-          navigate({ to: "/billing" });
+          window.location.href = "/billing";
           return;
         }
         throw new Error(result.error);
