@@ -404,6 +404,7 @@ export type Database = {
           plan_id: string
           session_date: string
           session_notes: string | null
+          status: Database["public"]["Enums"]["session_status"]
           trainer_id: string
           updated_at: string
           week_number: number
@@ -417,6 +418,7 @@ export type Database = {
           plan_id: string
           session_date?: string
           session_notes?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
           trainer_id: string
           updated_at?: string
           week_number: number
@@ -430,6 +432,7 @@ export type Database = {
           plan_id?: string
           session_date?: string
           session_notes?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
           trainer_id?: string
           updated_at?: string
           week_number?: number
@@ -453,6 +456,7 @@ export type Database = {
     }
     Enums: {
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
+      session_status: "done" | "partial" | "missed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -581,6 +585,7 @@ export const Constants = {
   public: {
     Enums: {
       intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
+      session_status: ["done", "partial", "missed"],
     },
   },
 } as const
