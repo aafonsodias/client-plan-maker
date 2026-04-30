@@ -235,7 +235,7 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 function HeroPlanMockup() {
   type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
   const rows: Row[] = [
-    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat (light)", sets: "2 × 8" },
+    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat", sets: "2 × 8", note: "@ light" },
     { badge: "MAIN", tone: "main", name: "Back Squat", sets: "4 × 6", note: "@ RPE 7", sub: "Rest 2:30 · tempo 3-1-X" },
     { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7", sub: "Rest 2:00 · controlled eccentric" },
     { badge: "ACCESSORY", tone: "accessory", name: "Step-Up", sets: "3 × 10/leg" },
@@ -261,7 +261,7 @@ function HeroPlanMockup() {
         <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-medium text-accent">
           M
         </span>
-        <span>Maria S. · Block 2 · Strength</span>
+        <span>Maria S. · Week 5 · Strength Phase</span>
       </div>
       {/* Session title */}
       <div className="mt-3">
