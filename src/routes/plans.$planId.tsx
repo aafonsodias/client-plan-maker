@@ -332,6 +332,14 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
+      <div className="mb-3 -mt-1">
+        <Input
+          value={week.rationale ?? ""}
+          onChange={(e) => onChange({ ...week, rationale: e.target.value })}
+          placeholder="Why this block now? (e.g. accumulation phase — sleep 8/10, no deload yet)"
+          className="h-7 border-dashed bg-transparent text-xs italic text-muted-foreground placeholder:text-muted-foreground/50"
+        />
+      </div>
       <div className="space-y-3">
         {week.days.map((d, di) => (
           <DayBlock key={di} day={d} onChange={(nd) => updateDay(di, nd)} onRemove={() => removeDay(di)} />
@@ -360,6 +368,11 @@ function ViewMode({ plan }: { plan: PlanData }) {
             </span>
             {w.focus && <span className="text-sm text-muted-foreground">{w.focus}</span>}
           </div>
+          {w.rationale && (
+            <p className="mb-3 border-l-2 border-accent/40 pl-2.5 text-[11px] italic text-muted-foreground">
+              {w.rationale}
+            </p>
+          )}
           <div className="space-y-2">
             {w.days.map((d, di) => (
               <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
@@ -367,6 +380,11 @@ function ViewMode({ plan }: { plan: PlanData }) {
                   <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
                   {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
                 </div>
+                {d.rationale && (
+                  <p className="mb-2 border-l-2 border-accent/30 pl-2 text-[10.5px] italic text-muted-foreground/90">
+                    {d.rationale}
+                  </p>
+                )}
                 <SectionView title="Warmup" items={d.warmup} />
                 <SectionView title="Activation" items={d.activation} />
                 <SectionView title="Dynamic stretches" items={d.dynamic_stretches} />
@@ -492,6 +510,14 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
+      </div>
+      <div className="mb-2">
+        <Input
+          value={day.rationale ?? ""}
+          onChange={(e) => onChange({ ...day, rationale: e.target.value })}
+          placeholder="Why this session shape? (e.g. hinge after 48h CNS recovery; hip hinge 3/5 → RDL not deadlift)"
+          className="h-6 border-dashed bg-transparent text-[11px] italic text-muted-foreground placeholder:text-muted-foreground/50"
+        />
       </div>
 
       <SectionEditor title="Warmup" items={day.warmup ?? []} onChange={(it) => setSection("warmup", it)} placeholder="e.g. Rower" />

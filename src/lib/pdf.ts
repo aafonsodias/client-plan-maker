@@ -24,6 +24,7 @@ export type SectionItem = {
 export type Day = {
   day_label: string;
   focus: string;
+  rationale?: string;
   exercises: Exercise[];
   // New (Pass 3) sections — all optional
   warmup?: SectionItem[];
@@ -35,7 +36,7 @@ export type Day = {
   // Per-day cardio prescription (modality / duration / zone / notes — packed into SectionItem shape)
   cardio?: SectionItem[];
 };
-export type Week = { week_number: number; focus: string; days: Day[] };
+export type Week = { week_number: number; focus: string; rationale?: string; days: Day[] };
 export type PlanData = { weeks: Week[] };
 
 /**
