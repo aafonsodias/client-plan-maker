@@ -998,6 +998,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
       }).select("id").single();
       if (error) throw error;
       const newId = inserted?.id;
+      void markOnboardingStep(user.id, "log_session");
       toast.success("Session logged · view history", {
         description: "Click to see all sessions for this plan",
         action: {
