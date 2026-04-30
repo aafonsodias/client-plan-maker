@@ -252,15 +252,28 @@ function ClientDetail() {
   const [progressStep, setProgressStep] = useState(0);
   const [activeSection, setActiveSection] = useState("parq");
 
+  // Auto-save state
+  const [hydrated, setHydrated] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [, setRelTick] = useState(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightSaveRef = useRef<Promise<void> | null>(null);
+  const skipNextAutosaveRef = useRef(true);
+  const lsKey = `forge_assessment_draft_${clientId}`;
+
   useEffect(() => {
     if (!user) return;
     void (async () => {
       const { data: c } = await supabase.from("clients").select("*").eq("id", clientId).single();
       setClient(c);
       const { data: a } = await supabase.from("assessments").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      let dbState: any = null;
+      let dbTs = 0;
       if (a) {
         const ext = (a.extended ?? {}) as Record<string, any>;
-        setAssessment((prev: any) => ({
+        dbTs = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+        dbState = (prev: any) => ({
           ...prev,
           ...a,
           available_equipment: a.available_equipment ?? [],
@@ -282,13 +295,121 @@ function ClientDetail() {
           ext_cardio_test: ext.cardio_test ?? "untested",
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
-        }));
+        });
       }
+      // Check localStorage backup; prefer it if newer
+      let lsState: any = null;
+      let lsTs = 0;
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(lsKey) : null;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.assessment && typeof parsed.savedAt === "number") {
+            lsState = parsed.assessment;
+            lsTs = parsed.savedAt;
+          }
+        }
+      } catch {}
+
+      if (lsState && lsTs >= dbTs) {
+        setAssessment((prev: any) => ({ ...prev, ...lsState }));
+        setLastSavedAt(lsTs);
+      } else if (dbState) {
+        setAssessment(dbState);
+        setLastSavedAt(dbTs || Date.now());
+      }
+
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      setHydrated(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
+
+  // Tick relative time display once a minute
+  useEffect(() => {
+    const id = setInterval(() => setRelTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Debounced auto-save on every assessment change
+  useEffect(() => {
+    if (!hydrated || !user) return;
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return;
+    }
+    // Persist to localStorage immediately as a backup
+    const ts = Date.now();
+    try {
+      localStorage.setItem(lsKey, JSON.stringify({ savedAt: ts, assessment }));
+    } catch {}
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const promise = (async () => {
+        setSaveStatus("saving");
+        try {
+          const payload = { ...buildAssessmentPayload(assessment, user.id, clientId), status: "draft" as const };
+          if (assessment.id) {
+            const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
+            if (error) throw error;
+          } else {
+            const { data, error } = await supabase.from("assessments").insert(payload).select("id").single();
+            if (error) throw error;
+            if (data?.id) {
+              skipNextAutosaveRef.current = true;
+              setAssessment((a: any) => ({ ...a, id: data.id }));
+            }
+          }
+          setLastSavedAt(Date.now());
+          setSaveStatus("saved");
+        } catch (err) {
+          console.warn("Auto-save to cloud failed, kept local backup", err);
+          setSaveStatus("offline");
+        } finally {
+          inFlightSaveRef.current = null;
+        }
+      })();
+      inFlightSaveRef.current = promise;
+    }, 1500);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment, hydrated, user, clientId]);
+
+  const flushPendingSave = async () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    if (!user || !hydrated) return;
+    setSaveStatus("saving");
+    try {
+      const payload = { ...buildAssessmentPayload(assessment, user.id, clientId), status: "draft" as const };
+      if (assessment.id) {
+        const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("assessments").insert(payload).select("id").single();
+        if (error) throw error;
+        if (data?.id) {
+          skipNextAutosaveRef.current = true;
+          setAssessment((a: any) => ({ ...a, id: data.id }));
+        }
+      }
+      setLastSavedAt(Date.now());
+      setSaveStatus("saved");
+    } catch (err) {
+      console.warn("Flush save failed", err);
+      setSaveStatus("offline");
+    }
+    if (inFlightSaveRef.current) {
+      try { await inFlightSaveRef.current; } catch {}
+    }
+  };
 
   const toggleEq = (e: string) => {
     const has = assessment.available_equipment.includes(e);
