@@ -15,6 +15,8 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { useClientPhases } from "@/hooks/use-client-phases";
+import { ClientPhasePill } from "@/components/ClientPhasePill";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: () => (
@@ -608,7 +610,10 @@ function ClientDetail() {
     <TooltipProvider delayDuration={200}>
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-light tracking-tight">{client.full_name}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-light tracking-tight">{client.full_name}</h1>
+          <ClientPhaseHeaderPill clientId={client.id} />
+        </div>
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
       </div>
 
@@ -1303,4 +1308,11 @@ function CompletionStrip({ text }: { text: string }) {
       {text}
     </div>
   );
+}
+
+function ClientPhaseHeaderPill({ clientId }: { clientId: string }) {
+  const phases = useClientPhases([clientId]);
+  const phase = phases[clientId];
+  if (!phase) return null;
+  return <ClientPhasePill phase={phase} size="md" />;
 }

@@ -87,6 +87,7 @@ function Settings() {
           </Link>
           <Link
             to="/clients"
+            search={{ filter: "all" }}
             className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <Users className="h-3.5 w-3.5" /> Clients

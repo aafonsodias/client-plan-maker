@@ -77,7 +77,7 @@ function PlansIndex() {
             {clients.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Add a client first.{" "}
-                <Link to="/clients" className="text-accent underline">Go to Clients</Link>
+                <Link to="/clients" search={{ filter: "all" }} className="text-accent underline">Go to Clients</Link>
               </p>
             ) : (
               <div className="max-h-80 space-y-1 overflow-y-auto">
