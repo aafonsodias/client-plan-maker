@@ -7,7 +7,7 @@ globalThis.FileReader = dom.window.FileReader;
 console.log("globals ok");
 const jsPDFmod = await import("jspdf");
 console.log("jspdf ok");
-jsPDFmod.default.prototype.save = function(){ const buf = Buffer.from(this.output("arraybuffer")); fs.writeFileSync("/tmp/out.pdf", buf); console.log("wrote", buf.length); };
+jsPDFmod.default.prototype.save = function(){ try { console.log("save called"); const buf = Buffer.from(this.output("arraybuffer")); fs.writeFileSync("/tmp/out.pdf", buf); console.log("wrote", buf.length); } catch(e){ console.error("SAVE ERR",e); } };
 const { generatePlanPdf } = await import("./src/lib/pdf.ts");
 console.log("generatePlanPdf loaded");
 const day = { day_label:"Day 1", focus:"Upper push", warmup:[{name:"Arm circles",duration:"2 min"}], exercises:[{name:"Bench Press", sets:"4", reps:"8", rest:"2 min", rpe:"8", tempo:"3-2-1-0", cue:"Press ribs down."}] };
