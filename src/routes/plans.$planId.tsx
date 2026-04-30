@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
+  Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
   ChevronDown, ChevronUp, Heart,
