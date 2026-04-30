@@ -418,3 +418,48 @@ function TextField({ label, value, onChange }: { label: string; value: string; o
     </div>
   );
 }
+
+function ScreenItem({
+  label, score, note, onScore, onNote,
+}: {
+  label: string;
+  score: string | number | null;
+  note: string | null;
+  onScore: (v: string) => void;
+  onNote: (v: string) => void;
+}) {
+  const current = score == null ? "" : String(score);
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="text-sm">{label}</Label>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const active = current === String(n);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onScore(active ? "" : String(n))}
+                className={`h-7 w-7 rounded-md border text-xs font-medium transition ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label={`${label} score ${n}`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <Input
+        className="mt-2 h-8 text-xs"
+        placeholder="Optional note (e.g. knee caves at depth)"
+        value={note ?? ""}
+        onChange={(e) => onNote(e.target.value)}
+      />
+    </div>
+  );
+}
