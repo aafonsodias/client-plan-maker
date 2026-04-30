@@ -117,7 +117,7 @@ function PlanEditor() {
   if (!plan) return <p className="text-muted-foreground">Loading…</p>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           {client && (
@@ -151,12 +151,12 @@ function PlanEditor() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Summary</Label>
-        <Textarea rows={3} value={plan.summary ?? ""} onChange={(e) => setPlan({ ...plan, summary: e.target.value })} />
+      <div className="space-y-1.5">
+        <Label className="text-xs uppercase tracking-widest text-muted-foreground">Summary</Label>
+        <Textarea rows={2} value={plan.summary ?? ""} onChange={(e) => setPlan({ ...plan, summary: e.target.value })} />
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {data.weeks.map((w, wi) => (
           <WeekBlock key={wi} week={w} onChange={(nw) => updateWeek(wi, nw)} onRemove={() => removeWeek(wi)} />
         ))}
@@ -196,15 +196,15 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
   const removeDay = (i: number) => onChange({ ...week, days: week.days.filter((_, idx) => idx !== i) });
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="rounded-md bg-accent px-2 py-1 text-xs font-black uppercase tracking-widest text-accent-foreground">Week {week.week_number}</span>
-        <Input value={week.focus} onChange={(e) => onChange({ ...week, focus: e.target.value })} placeholder="Focus (e.g. Hypertrophy block)" className="flex-1" />
-        <Button variant="ghost" size="icon" onClick={onRemove}>
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="rounded bg-accent px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-accent-foreground">Week {week.week_number}</span>
+        <Input value={week.focus} onChange={(e) => onChange({ ...week, focus: e.target.value })} placeholder="Focus (e.g. Hypertrophy block)" className="h-8 flex-1" />
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-3">
         {week.days.map((d, di) => (
           <DayBlock key={di} day={d} onChange={(nd) => updateDay(di, nd)} onRemove={() => removeDay(di)} />
         ))}
@@ -226,58 +226,61 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
   const removeEx = (i: number) => onChange({ ...day, exercises: day.exercises.filter((_, idx) => idx !== i) });
 
   return (
-    <div className="rounded-xl border border-border/60 bg-background p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Input className="w-32" value={day.day_label} onChange={(e) => onChange({ ...day, day_label: e.target.value })} />
-        <Input value={day.focus} onChange={(e) => onChange({ ...day, focus: e.target.value })} placeholder="Focus (e.g. Push)" className="flex-1" />
-        <Button variant="ghost" size="icon" onClick={onRemove}>
-          <Trash2 className="h-4 w-4" />
+    <div className="rounded-lg border border-border/60 bg-background p-2.5">
+      <div className="mb-2 flex items-center gap-2">
+        <Input className="h-7 w-24 text-sm" value={day.day_label} onChange={(e) => onChange({ ...day, day_label: e.target.value })} />
+        <Input value={day.focus} onChange={(e) => onChange({ ...day, focus: e.target.value })} placeholder="Focus (e.g. Push)" className="h-7 flex-1 text-sm" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
-      <div className="space-y-2">
+
+      {/* Header row — desktop only */}
+      {day.exercises.length > 0 && (
+        <div className="hidden md:grid grid-cols-[minmax(0,1fr)_56px_56px_72px_minmax(0,1.4fr)_28px] items-center gap-1.5 px-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>Exercise</span>
+          <span>Sets</span>
+          <span>Reps</span>
+          <span>Rest</span>
+          <span>Notes</span>
+          <span />
+        </div>
+      )}
+
+      <div className="space-y-1.5">
         {day.exercises.map((ex, ei) => (
-          <div key={ei} className="rounded-lg border border-border/60 bg-card/40 p-3">
-            {/* Top row: exercise name + delete */}
-            <div className="flex items-start gap-2">
-              <div className="flex-1 space-y-1">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Exercise name</Label>
-                <Input placeholder="e.g. Barbell back squat" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
-              </div>
-              <Button variant="ghost" size="icon" className="mt-5 shrink-0" onClick={() => removeEx(ei)}>
-                <Trash2 className="h-4 w-4" />
+          <div key={ei}>
+            {/* Desktop: dense single-row */}
+            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_56px_56px_72px_minmax(0,1.4fr)_28px] items-center gap-1.5">
+              <Input className="h-8 text-sm" placeholder="Exercise" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
+              <Input className="h-8 text-sm" placeholder="3" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
+              <Input className="h-8 text-sm" placeholder="10" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
+              <Input className="h-8 text-sm" placeholder="60s" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
+              <Input className="h-8 text-sm" placeholder="Tempo, RPE, cues…" value={ex.notes} onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })} />
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeEx(ei)}>
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
 
-            {/* Sets / Reps / Rest */}
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sets</Label>
-                <Input placeholder="3" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
+            {/* Mobile: compact stacked card */}
+            <div className="md:hidden rounded-md border border-border/60 bg-card/40 p-2 space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <Input className="h-8 flex-1 text-sm" placeholder="Exercise" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeEx(ei)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reps</Label>
-                <Input placeholder="10" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
+              <div className="grid grid-cols-3 gap-1.5">
+                <Input className="h-8 text-sm" placeholder="Sets" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
+                <Input className="h-8 text-sm" placeholder="Reps" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
+                <Input className="h-8 text-sm" placeholder="Rest" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Rest</Label>
-                <Input placeholder="60s" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
-              </div>
-            </div>
-
-            {/* Notes — full width, multi-line */}
-            <div className="mt-3 space-y-1">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Notes</Label>
-              <Textarea
-                rows={2}
-                placeholder="Tempo, RPE, cues, substitutions…"
-                value={ex.notes}
-                onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })}
-              />
+              <Input className="h-8 text-sm" placeholder="Notes" value={ex.notes} onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })} />
             </div>
           </div>
         ))}
-        <Button variant="outline" size="sm" onClick={addEx}>
-          <Plus className="mr-2 h-3 w-3" /> Add exercise
+        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addEx}>
+          <Plus className="mr-1 h-3 w-3" /> Add exercise
         </Button>
       </div>
     </div>
