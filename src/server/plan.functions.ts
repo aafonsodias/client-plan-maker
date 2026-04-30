@@ -562,8 +562,8 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
       };
     }
 
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
-    if (!anthropicKey) return { ok: false as const, error: "Anthropic API key is not configured." };
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
 
     const { week_number, duration_weeks } = data;
     const isFirstWeek = week_number === 1;
@@ -591,58 +591,58 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const requestBody = {
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 8000,
-        system: sys,
-        messages: [{ role: "user", content: userMsg }],
-        tools: [
-          {
-            name: "emit_workout_week",
-            description: "Emit one week of the workout plan",
-            input_schema: SingleWeekPlanSchema,
-          },
-        ],
-        tool_choice: { type: "tool", name: "emit_workout_week" },
-      };
-      console.log(
-        `[plan.week ${week_number}] Anthropic request — model=${requestBody.model}, sys=${sys.length}c, user=${userMsg.length}c, tool_keys=${Object.keys(SingleWeekPlanSchema.properties ?? {}).join(",")}`
-      );
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          model: "openai/gpt-5",
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: userMsg },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "emit_workout_week",
+                description: "Emit one week of the workout plan",
+                parameters: SingleWeekPlanSchema,
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "emit_workout_week" } },
+        }),
       });
 
-      if (res.status === 429) return { ok: false as const, error: "Claude rate limit reached. Try again in a moment." };
-      if (res.status === 401 || res.status === 403) {
-        return { ok: false as const, error: "Anthropic API key is invalid or unauthorized." };
-      }
+      if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
+      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
       if (!res.ok) {
         const t = await res.text();
-        console.error("Anthropic error (week)", week_number, res.status, t);
-        // Surface the upstream message so the toast is actionable instead of a generic 400.
+        console.error("AI gateway error (week)", week_number, res.status, t);
         let upstream = t;
         try {
           const parsed = JSON.parse(t);
           upstream = parsed?.error?.message ?? parsed?.message ?? t;
         } catch {}
-        return { ok: false as const, error: `Claude request failed (${res.status}): ${String(upstream).slice(0, 400)}` };
+        return { ok: false as const, error: `AI request failed (${res.status}): ${String(upstream).slice(0, 400)}` };
       }
 
       const json = await res.json();
-      const toolUse = Array.isArray(json?.content)
-        ? json.content.find((c: any) => c?.type === "tool_use")
-        : null;
-      const args = toolUse?.input;
-      if (!args) {
-        console.error("Claude returned no tool_use (week)", week_number, JSON.stringify(json).slice(0, 1000));
-        return { ok: false as const, error: `Claude returned no week ${week_number}.` };
+      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+      const argsRaw = toolCall?.function?.arguments;
+      if (!argsRaw) {
+        console.error("AI returned no tool call (week)", week_number, JSON.stringify(json).slice(0, 1000));
+        return { ok: false as const, error: `AI returned no week ${week_number}.` };
+      }
+      let args: any;
+      try {
+        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+      } catch (e) {
+        console.error("Failed to parse week JSON", week_number, e);
+        return { ok: false as const, error: `AI returned malformed week ${week_number}.` };
       }
       // Defensive: force the requested week_number.
       if (args?.week) args.week.week_number = week_number;
