@@ -372,7 +372,17 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
 
 /* ─────────── View mode (compact, read-only render) ─────────── */
 
-function ViewMode({ plan }: { plan: PlanData }) {
+function ViewMode({
+  plan,
+  planId,
+  sessions,
+  reload,
+}: {
+  plan: PlanData;
+  planId: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
   if (!plan.weeks.length) {
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
@@ -394,9 +404,18 @@ function ViewMode({ plan }: { plan: PlanData }) {
           <div className="space-y-2">
             {w.days.map((d, di) => (
               <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
-                <div className="mb-1.5 flex items-baseline gap-2">
+                <div className="mb-1.5 flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
                   {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
+                  <div className="ml-auto">
+                    <DayQuickMark
+                      planId={planId}
+                      weekNumber={w.week_number}
+                      dayLabel={d.day_label}
+                      sessions={sessions}
+                      reload={reload}
+                    />
+                  </div>
                 </div>
                 {d.rationale && (
                   <p className="mb-2 border-l-2 border-accent/30 pl-2 text-[10.5px] italic text-muted-foreground/90">
