@@ -8,6 +8,166 @@ import {
   SHARED_PROGRAM_RULES,
 } from "./plan.server";
 
+// ============================================================================
+// Output validation — Zod + structural rules.
+// validateExercises returns warnings (non-blocking). Callers persist warnings
+// in generation_meta so the trainer/UI can surface them without blocking
+// generation on a soft drift from the AI.
+// ============================================================================
+const ExerciseOutputSchema = z.object({
+  name: z.string().min(1),
+  sets: z.string(),
+  reps: z.string(),
+  rest: z.string(),
+  notes: z.string(),
+  primary_muscles: z.array(z.string()),
+  secondary_muscles: z.array(z.string()),
+  rpe: z.string(),
+  tempo: z.string(),
+  technique_cues: z.string(),
+  cue: z.string(),
+  rationale: z.string(),
+  superset_id: z.string().nullable(),
+  variant: z.string().nullable(),
+  optional: z.boolean(),
+  equipment: z.array(z.string()),
+});
+
+const BANNED_RATIONALE_PHRASES = [
+  "build strength",
+  "great for hypertrophy",
+  "compound movement",
+  "works the whole body",
+  "balanced exercise",
+  "core lift",
+  "fundamental movement",
+  "improves overall fitness",
+  "good warmup",
+  "targets multiple muscles",
+];
+
+function parseRpe(rpe: string): number | null {
+  const m = String(rpe ?? "").match(/(\d+(?:\.\d+)?)/g);
+  if (!m || m.length === 0) return null;
+  // Use the highest number in the range (e.g. "7-8" → 8) as the RPE ceiling.
+  return Math.max(...m.map((n) => parseFloat(n)));
+}
+
+function detectPhase(focus: string | undefined | null): "hypertrophy" | "strength" | "endurance" | "unknown" {
+  const f = String(focus ?? "").toLowerCase();
+  if (/(hypertroph|volume|accumul|growth|size)/.test(f)) return "hypertrophy";
+  if (/(strength|force|max|peak|intens|power)/.test(f)) return "strength";
+  if (/(endur|condition|capacit|aerobic|metcon|stamina)/.test(f)) return "endurance";
+  return "unknown";
+}
+
+/**
+ * Validate the exercises array of a single day. Returns a list of warning
+ * strings (empty when clean). Non-blocking by design — caller decides what
+ * to do with the warnings (log, persist, surface in UI).
+ */
+export function validateExercises(
+  exercises: unknown,
+  context: { day_label?: string | null; focus?: string | null } = {}
+): string[] {
+  const warnings: string[] = [];
+  if (!Array.isArray(exercises)) {
+    warnings.push("exercises is not an array");
+    return warnings;
+  }
+
+  // 1. Per-exercise shape via Zod.
+  const parsed: Array<z.infer<typeof ExerciseOutputSchema>> = [];
+  exercises.forEach((ex, i) => {
+    const r = ExerciseOutputSchema.safeParse(ex);
+    if (!r.success) {
+      warnings.push(`exercise[${i}] (${(ex as any)?.name ?? "?"}): shape invalid — ${r.error.issues.map((iss) => iss.path.join(".") + ": " + iss.message).join("; ")}`);
+    } else {
+      parsed.push(r.data);
+    }
+  });
+  if (parsed.length === 0) return warnings;
+
+  const phase = detectPhase(context.focus);
+
+  // 2. Rationale: non-empty, length, banned phrasings.
+  parsed.forEach((ex, i) => {
+    const r = (ex.rationale ?? "").trim();
+    if (!r) {
+      warnings.push(`exercise[${i}] (${ex.name}): rationale is empty`);
+    } else {
+      if (r.length > 200) warnings.push(`exercise[${i}] (${ex.name}): rationale too long (${r.length} chars > 200)`);
+      const lower = r.toLowerCase();
+      const hits = BANNED_RATIONALE_PHRASES.filter((p) => lower.includes(p));
+      if (hits.length) {
+        warnings.push(`exercise[${i}] (${ex.name}): rationale uses banned generic phrasing: ${hits.join(", ")}`);
+      }
+    }
+    if (!ex.cue || !ex.cue.trim()) {
+      warnings.push(`exercise[${i}] (${ex.name}): cue is empty`);
+    }
+  });
+
+  // 3. Superset rules.
+  const groups = new Map<string, number[]>(); // superset_id → indices
+  parsed.forEach((ex, i) => {
+    if (ex.superset_id) {
+      const arr = groups.get(ex.superset_id) ?? [];
+      arr.push(i);
+      groups.set(ex.superset_id, arr);
+    }
+  });
+  if (groups.size > 3) {
+    warnings.push(`supersets: ${groups.size} groups in this session (max allowed: 3)`);
+  }
+  for (const [tag, idxs] of groups.entries()) {
+    if (idxs.length !== 2) {
+      warnings.push(`superset "${tag}": ${idxs.length} exercises share this tag (must be exactly 2)`);
+    } else if (idxs[1] !== idxs[0] + 1) {
+      warnings.push(`superset "${tag}": exercises at positions ${idxs[0]} and ${idxs[1]} are not consecutive`);
+    }
+  }
+  // No superset_id on a strength-phase main lift (assume index 0 is the main).
+  if (phase === "strength" && parsed[0]?.superset_id) {
+    warnings.push(`strength-phase main lift "${parsed[0].name}" must not be in a superset (superset_id="${parsed[0].superset_id}")`);
+  }
+
+  // 4. Optional rules.
+  const optionalIdxs = parsed
+    .map((ex, i) => (ex.optional ? i : -1))
+    .filter((i) => i >= 0);
+  if (optionalIdxs.length > 2) {
+    warnings.push(`optional=true count is ${optionalIdxs.length} (max allowed: 2)`);
+  }
+  if (parsed.length < 4 && optionalIdxs.length > 0) {
+    warnings.push(`session has only ${parsed.length} exercises — none should be optional`);
+  }
+  for (const i of optionalIdxs) {
+    const ex = parsed[i];
+    // Must be in the last 2 slots.
+    if (i < parsed.length - 2) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but not in last 2 slots`);
+    }
+    // Main lift (index 0) can never be optional.
+    if (i === 0) {
+      warnings.push(`exercise[${i}] (${ex.name}): main lift cannot be optional`);
+    }
+    // RPE ≤ 7.
+    const rpe = parseRpe(ex.rpe);
+    if (rpe !== null && rpe > 7) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but RPE ${ex.rpe} > 7`);
+    }
+    // Not in a superset.
+    if (ex.superset_id) {
+      warnings.push(`exercise[${i}] (${ex.name}): optional=true but is in superset "${ex.superset_id}"`);
+    }
+  }
+
+  // Tag warnings with day context for easier debugging downstream.
+  const label = context.day_label ?? context.focus ?? "day";
+  return warnings.map((w) => `[${label}] ${w}`);
+}
+
 const WeekInputSchema = z.object({
   client: z.object({
     full_name: z.string(),
@@ -178,12 +338,18 @@ const PlanSchema = {
                       rpe: { type: "string" },
                       tempo: { type: "string" },
                       technique_cues: { type: "string" },
+                      cue: { type: "string" },
+                      rationale: { type: "string" },
+                      superset_id: { type: ["string", "null"] },
+                      variant: { type: ["string", "null"] },
+                      optional: { type: "boolean" },
                       equipment: { type: "array", items: { type: "string" } },
                     },
                     required: [
                       "name", "sets", "reps", "rest", "notes",
                       "primary_muscles", "secondary_muscles",
-                      "rpe", "tempo", "technique_cues", "equipment",
+                      "rpe", "tempo", "technique_cues", "cue",
+                      "rationale", "superset_id", "variant", "optional", "equipment",
                     ],
                     additionalProperties: false,
                   },
@@ -236,12 +402,18 @@ const WeekDaySchema = {
           rpe: { type: "string" },
           tempo: { type: "string" },
           technique_cues: { type: "string" },
+          cue: { type: "string" },
+          rationale: { type: "string" },
+          superset_id: { type: ["string", "null"] },
+          variant: { type: ["string", "null"] },
+          optional: { type: "boolean" },
           equipment: { type: "array", items: { type: "string" } },
         },
         required: [
           "name", "sets", "reps", "rest", "notes",
           "primary_muscles", "secondary_muscles",
-          "rpe", "tempo", "technique_cues", "equipment",
+          "rpe", "tempo", "technique_cues", "cue",
+          "rationale", "superset_id", "variant", "optional", "equipment",
         ],
         additionalProperties: false,
       },
@@ -371,18 +543,34 @@ SESSION STRUCTURE — every day MUST include these sections in this exact order:
 SECTION ITEM SHAPE — every item in warmup / activation / dynamic_stretches / cooldown / finisher uses { name, duration, notes }. Use empty strings ("") for fields you don't need (never omit the keys). Keep notes short and concrete (a single cue or rep target).
 
 EXERCISE SHAPE — every exercise in the main work MUST populate ALL of these:
-- name
-- sets, reps, rest (concrete: "3", "8-10", "90s")
-- primary_muscles      — array of primary movers (e.g. ["quadriceps", "glutes"])
-- secondary_muscles    — array of synergists/stabilizers (e.g. ["hamstrings", "core"])
-- rpe                  — target RPE on the 1–10 scale, calibrated to experience:
-    * beginner → 6–7
-    * intermediate → 7–8
-    * advanced → 8–9 (with deload weeks at 6)
-- tempo                — 4-digit tempo notation eccentric-pause-concentric-pause, e.g. "3-1-1-0", "2-0-X-0", "4-2-1-0"
-- technique_cues       — 1–2 short technique cues focused on JOINT CENTRALIZATION, PAUSE AT PEAK STRETCH, and BREATHING PATTERN. Examples: "Brace and exhale on press; ribs stacked over pelvis." or "Pause 1s in the deepest stretch; drive knees out, big toe planted."
-- equipment            — array listing only the equipment used (must be a subset of available_equipment)
-- notes                — programming/substitution context only (e.g. "Drop 10% on week 3 if bar speed slows"). Empty string if nothing to add.
+- name, sets, reps, rest (concrete: "3", "8-10", "90s")
+- primary_muscles[]    — array of primary movers (e.g. ["quadriceps", "glutes"])
+- secondary_muscles[]  — array of synergists/stabilizers
+- rpe — beginner 6–7, intermediate 7–8, advanced 8–9 (deload at 6)
+- tempo — 4-digit eccentric-pause-concentric-pause (e.g. "3-1-1-0", "2-0-X-0")
+- technique_cues — legacy field; repeat the same value as 'cue' for backward compat
+- cue — ONE short technical cue (≤80 chars) on joint centralization, peak-stretch pause, or breathing.
+- rationale — ONE sentence (≤140 chars). MUST be PHASE-CONSISTENT and tie BOTH the day's focus AND a concrete client data point.
+    * Hypertrophy phase → TENSION / VOLUME / STIMULUS / time-under-tension / stretch-mediated growth.
+    * Strength phase    → FORCE PRODUCTION / LOAD / NEURAL DEMAND / intent / bar speed.
+    * Endurance phase   → FATIGUE RESISTANCE / work capacity / repeat-effort tolerance.
+    Mixing vocabularies across phases is a HARD FAIL.
+    BANNED phrasings: "build strength", "great for hypertrophy", "compound movement", "works the whole body", "balanced exercise", "core lift", "fundamental movement", "improves overall fitness", "good warmup", "targets multiple muscles".
+- superset_id — null OR a short tag ("A1"/"A2", "B1"/"B2") when paired. STRICT:
+    * EXACTLY 2 exercises share the same tag (never 1, never 3+).
+    * Paired exercises MUST be consecutive in the array.
+    * Max 2–3 supersets per session.
+    * NEVER on a main lift in a STRENGTH-phase day (main = heaviest compound at session start). Hypertrophy/endurance may pair main lifts.
+- variant — null OR short modifier ("incline", "deficit", "paused", "tempo", "1.25-rep", "pin"). Plain bench → null.
+- optional — boolean. true ONLY for the LAST 1–2 exercises AND RPE ≤ 7 AND a low-priority accessory the client may skip on a hard day. NEVER true for: main lifts, anything in a superset, RPE ≥ 8, primers, or correctives tied to a flagged screen item. <4 working exercises → all false.
+- equipment[] — subset of available_equipment.
+- notes — programming/substitution context only. Empty string if none.
+
+SELF-CHECK BEFORE EMITTING THE TOOL CALL:
+  1. Every rationale uses phase-consistent vocabulary AND cites a concrete client data point. No banned phrasings.
+  2. Every superset_id tag appears EXACTLY twice and consecutively. No tag on a strength-phase main lift.
+  3. optional=true count ≤ 2, only in the last 2 slots, all RPE ≤ 7, none in supersets, none main lifts.
+  Fix violations BEFORE calling emit_workout_plan.
 
 HOLISTIC PERSONALIZATION — you MUST use ALL of the following to calibrate the program (do not just use goal + equipment):
 - Sleep quality (1–10): low → reduce volume, easier sessions early in the week, fewer CNS-demanding lifts, lower RPE caps.
@@ -648,11 +836,25 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       }
       // Defensive: force the requested week_number.
       if (args?.week) args.week.week_number = week_number;
+
+      // Validate every day's exercises (non-blocking).
+      const validationWarnings: string[] = [];
+      const days = Array.isArray(args?.week?.days) ? args.week.days : [];
+      for (const d of days) {
+        validationWarnings.push(
+          ...validateExercises(d?.exercises, { day_label: d?.day_label, focus: d?.focus })
+        );
+      }
+      if (validationWarnings.length) {
+        console.warn(`[plan-validation] week ${week_number}:`, validationWarnings);
+      }
+
       return {
         ok: true as const,
         week: args.week,
         title: isFirstWeek ? (args.title ?? "") : "",
         summary: isFirstWeek ? (args.summary ?? "") : "",
+        validationWarnings,
       };
     } catch (err) {
       console.error("Plan week failed", week_number, err);
@@ -781,6 +983,15 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       const day = args?.day;
       if (!day) return { ok: false as const, error: "AI returned empty day." };
 
+      // Validate exercises (non-blocking).
+      const validationWarnings = validateExercises(day?.exercises, {
+        day_label: day?.day_label,
+        focus: day?.focus,
+      });
+      if (validationWarnings.length) {
+        console.warn(`[plan-validation] day ${week_number}/${day_number}:`, validationWarnings);
+      }
+
       // Persist immediately (upsert to allow regenerate).
       const { error: upsertErr } = await supabaseAdmin
         .from("workout_plan_days")
@@ -803,7 +1014,7 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
         return { ok: false as const, error: `Saved generation but failed to store day ${week_number}/${day_number}.` };
       }
 
-      return { ok: true as const, day, week_number, day_number };
+      return { ok: true as const, day, week_number, day_number, validationWarnings };
     } catch (err) {
       console.error("Plan day failed", week_number, day_number, err);
       return { ok: false as const, error: `Failed to generate day ${week_number}/${day_number}.` };
