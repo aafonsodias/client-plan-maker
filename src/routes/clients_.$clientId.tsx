@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft, generatePlanWeek } from "@/server/plan.functions";
+import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -263,6 +263,8 @@ function ClientDetail() {
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
   const generateWeekFn = useServerFn(generatePlanWeek);
+  const generateDayFn = useServerFn(generatePlanDay);
+  const finalizePlanFn = useServerFn(finalizePlanGeneration);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
@@ -351,6 +353,18 @@ function ClientDetail() {
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  // Per-day generation progress: map of "w-d" -> "pending" | "running" | "done" | "error"
+  const [dayProgress, setDayProgress] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
+  const [progressTotals, setProgressTotals] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  // Resumable in-progress plan detected on mount.
+  const [resumablePlan, setResumablePlan] = useState<{
+    id: string;
+    title: string | null;
+    duration_weeks: number;
+    days_per_week: number;
+    completed: number;
+    total: number;
+  } | null>(null);
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
@@ -430,6 +444,7 @@ function ClientDetail() {
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
       setHydrated(true);
+      void detectResumablePlan();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
@@ -558,12 +573,22 @@ function ClientDetail() {
     setAssessment({ ...assessment, available_equipment: has ? assessment.available_equipment.filter((x: string) => x !== e) : [...assessment.available_equipment, e] });
   };
 
-  const generate = async () => {
+  // =============================================================================
+  // generate — RESUMABLE per-day plan generation.
+  // 1) Save the assessment.
+  // 2) Create (or reuse) an in-progress workout_plans row.
+  // 3) Fan out one call per (week, day) in parallel; each call writes its day
+  //    to workout_plan_days immediately. UI updates as days land.
+  // 4) Finalize: assemble plan_data and mark plan complete.
+  // If `resumePlanId` is provided, we skip already-generated days.
+  // =============================================================================
+  const generate = async (resumePlanId?: string | null) => {
     if (!user || !client) return;
     setBusy(true);
     setProgressStep(1);
+    setDayProgress({});
+    setResumablePlan(null);
     try {
-      // Make sure any pending auto-save has flushed
       await flushPendingSave();
       const payload = buildAssessmentPayload(assessment, user.id, clientId);
       let assessmentId: string | null = assessment.id ?? null;
@@ -577,7 +602,6 @@ function ClientDetail() {
       void markOnboardingStep(user.id, "run_assessment");
       setProgressStep(2);
 
-      // Fan out one call per week in parallel — much faster + dodges per-call upstream timeouts.
       const clientPayload = {
         full_name: client.full_name,
         age: client.age,
@@ -587,81 +611,176 @@ function ClientDetail() {
       };
       const assessmentPayload = { ...payload, secondary_goals: null };
 
-      const weekResults = await Promise.all(
-        Array.from({ length: duration }, (_, i) =>
-          generateWeekFn({
-            data: {
-              client: clientPayload,
-              assessment: assessmentPayload,
-              duration_weeks: duration,
-              week_number: i + 1,
-            },
+      const daysPerWeek = Math.max(1, Math.min(7, Number(assessment.training_days_per_week) || 3));
+      const totalDays = duration * daysPerWeek;
+
+      // Resolve plan_id: either resume an existing in-progress plan, or create one.
+      let planId: string;
+      let planDuration = duration;
+      let planDaysPerWeek = daysPerWeek;
+      if (resumePlanId) {
+        const { data: existing, error: exErr } = await supabase
+          .from("workout_plans")
+          .select("id, duration_weeks, generation_meta")
+          .eq("id", resumePlanId)
+          .maybeSingle();
+        if (exErr || !existing) throw new Error("Could not load the in-progress plan.");
+        planId = existing.id;
+        planDuration = existing.duration_weeks ?? duration;
+        planDaysPerWeek = (existing.generation_meta as any)?.days_per_week ?? daysPerWeek;
+      } else {
+        const { data: planRow, error: planErr } = await supabase
+          .from("workout_plans")
+          .insert({
+            trainer_id: user.id,
+            client_id: clientId,
+            assessment_id: assessmentId,
+            title: `${client.full_name} – ${duration}-Week Plan`,
+            duration_weeks: duration,
+            status: "draft",
+            generation_status: "in_progress",
+            generation_meta: { days_per_week: daysPerWeek, started_at: new Date().toISOString() },
+            plan_data: { weeks: [] },
           })
-        )
+          .select("id")
+          .single();
+        if (planErr) throw planErr;
+        planId = planRow!.id;
+      }
+
+      // Build the full grid + mark already-done days.
+      const grid: Array<{ w: number; d: number }> = [];
+      for (let w = 1; w <= planDuration; w++) {
+        for (let d = 1; d <= planDaysPerWeek; d++) grid.push({ w, d });
+      }
+
+      const { data: existingDays } = await supabase
+        .from("workout_plan_days")
+        .select("week_number, day_number")
+        .eq("plan_id", planId);
+      const doneSet = new Set((existingDays ?? []).map((r: any) => `${r.week_number}-${r.day_number}`));
+
+      const initial: Record<string, "pending" | "running" | "done" | "error"> = {};
+      for (const cell of grid) {
+        const key = `${cell.w}-${cell.d}`;
+        initial[key] = doneSet.has(key) ? "done" : "pending";
+      }
+      setDayProgress(initial);
+      setProgressTotals({ done: doneSet.size, total: grid.length });
+
+      const todo = grid.filter((c) => !doneSet.has(`${c.w}-${c.d}`));
+
+      // Fire all remaining (week, day) calls in parallel and update UI as each lands.
+      let billingHit: any = null;
+      const errors: string[] = [];
+      let completed = doneSet.size;
+
+      await Promise.all(
+        todo.map(async (cell) => {
+          const key = `${cell.w}-${cell.d}`;
+          setDayProgress((prev) => ({ ...prev, [key]: "running" }));
+          try {
+            const r: any = await generateDayFn({
+              data: {
+                plan_id: planId,
+                client: clientPayload,
+                assessment: assessmentPayload,
+                duration_weeks: planDuration,
+                week_number: cell.w,
+                day_number: cell.d,
+                days_per_week: planDaysPerWeek,
+              },
+            });
+            if (!r?.ok) {
+              if (r?.billingRequired) billingHit = r;
+              errors.push(`W${cell.w}D${cell.d}: ${r?.error ?? "unknown"}`);
+              setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+            } else {
+              setDayProgress((prev) => ({ ...prev, [key]: "done" }));
+              completed += 1;
+              setProgressTotals({ done: completed, total: grid.length });
+            }
+          } catch (e: any) {
+            errors.push(`W${cell.w}D${cell.d}: ${e?.message ?? "failed"}`);
+            setDayProgress((prev) => ({ ...prev, [key]: "error" }));
+          }
+        })
       );
 
-      // Surface billing gate or first hard failure.
-      const billingFail = weekResults.find((r: any) => !r.ok && r.billingRequired);
-      if (billingFail) {
-        toast.error((billingFail as any).error);
+      if (billingHit) {
+        toast.error(billingHit.error || "Subscription required");
         navigate({ to: "/billing" });
         return;
       }
-      const firstFail = weekResults.find((r: any) => !r.ok);
-      if (firstFail) throw new Error((firstFail as any).error || "Plan generation failed");
+      if (errors.length) {
+        toast.error(`${errors.length} day(s) failed. Tap "Continue" to retry the missing ones.`);
+        // Refresh resumable banner; leave plan in_progress.
+        await detectResumablePlan();
+        return;
+      }
 
-      const weeks = weekResults
-        .map((r: any) => r.week)
-        .filter(Boolean)
-        .sort((a: any, b: any) => a.week_number - b.week_number);
-      const firstOk = weekResults[0] as any;
-      const result = {
-        ok: true as const,
-        plan: {
-          title: firstOk?.title || "",
-          summary: firstOk?.summary || "",
-          weeks,
-        },
-      };
       setProgressStep(3);
-
-      const { data: plan, error } = await supabase
-        .from("workout_plans")
-        .insert({
-          trainer_id: user.id,
-          client_id: clientId,
-          assessment_id: assessmentId,
-          title: result.plan.title || `${client.full_name} – ${duration}-Week Plan`,
-          summary: result.plan.summary || null,
-          duration_weeks: duration,
-          status: "draft",
-          plan_data: { weeks: result.plan.weeks ?? [] },
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
+      const fin: any = await finalizePlanFn({ data: { plan_id: planId } });
+      if (!fin?.ok) throw new Error(fin?.error ?? "Failed to finalize plan");
       setProgressStep(4);
 
       toast.success("Draft generated");
       void markOnboardingStep(user.id, "generate_plan");
-      // If this client already had a prior plan, treat this as a re-assessment / iteration.
       try {
         const { count: priorPlans } = await supabase
           .from("workout_plans")
           .select("id", { count: "exact", head: true })
           .eq("client_id", clientId);
-        if ((priorPlans ?? 0) > 1) {
-          void markOnboardingStep(user.id, "reassess");
-        }
+        if ((priorPlans ?? 0) > 1) void markOnboardingStep(user.id, "reassess");
       } catch {}
       try { localStorage.removeItem(lsKey); } catch {}
-      navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
+      navigate({ to: "/plans/$planId", params: { planId } });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to generate plan");
+      await detectResumablePlan();
     } finally {
       setBusy(false);
       setProgressStep(0);
     }
+  };
+
+  // Detect any in-progress plan for this client and surface a resume banner.
+  const detectResumablePlan = async () => {
+    if (!user) return;
+    const { data: pl } = await supabase
+      .from("workout_plans")
+      .select("id, title, duration_weeks, generation_meta, generation_status")
+      .eq("client_id", clientId)
+      .eq("generation_status", "in_progress")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!pl) {
+      setResumablePlan(null);
+      return;
+    }
+    const dpw = (pl.generation_meta as any)?.days_per_week ?? 3;
+    const total = (pl.duration_weeks ?? 0) * dpw;
+    const { count } = await supabase
+      .from("workout_plan_days")
+      .select("id", { count: "exact", head: true })
+      .eq("plan_id", pl.id);
+    setResumablePlan({
+      id: pl.id,
+      title: pl.title,
+      duration_weeks: pl.duration_weeks ?? 0,
+      days_per_week: dpw,
+      completed: count ?? 0,
+      total,
+    });
+  };
+
+  // Discard an in-progress plan and start over.
+  const discardResumable = async () => {
+    if (!resumablePlan) return;
+    await supabase.from("workout_plans").delete().eq("id", resumablePlan.id);
+    setResumablePlan(null);
+    toast.success("Previous draft discarded.");
   };
 
   const discardDraft = () => {
@@ -1065,7 +1184,27 @@ function ClientDetail() {
             </button>
           </SectionBlock>
 
-          {busy && <GenerationProgress step={progressStep} />}
+          {!busy && resumablePlan && (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm">
+                <div className="font-semibold">Previous generation in progress</div>
+                <div className="text-muted-foreground text-xs">
+                  {resumablePlan.title || "Untitled plan"} — {resumablePlan.completed}/{resumablePlan.total} days done.
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>Continue</Button>
+                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>Start over</Button>
+              </div>
+            </div>
+          )}
+          {busy && (
+            <GenerationProgress
+              step={progressStep}
+              dayProgress={dayProgress}
+              totals={progressTotals}
+            />
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <AlertDialog>
@@ -1143,7 +1282,7 @@ function ClientDetail() {
                 );
               }
               return (
-                <Button onClick={generate} disabled={busy} size="lg">
+                <Button onClick={() => void generate()} disabled={busy} size="lg">
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   Generate plan draft
                 </Button>
@@ -1411,17 +1550,38 @@ function ScreenItem({
   );
 }
 
-function GenerationProgress({ step }: { step: number }) {
+function GenerationProgress({
+  step,
+  dayProgress,
+  totals,
+}: {
+  step: number;
+  dayProgress?: Record<string, "pending" | "running" | "done" | "error">;
+  totals?: { done: number; total: number };
+}) {
   const steps = [
     { n: 1, label: "Saving assessment" },
-    { n: 2, label: "AI is designing your plan" },
-    { n: 3, label: "Storing the draft" },
+    { n: 2, label: "Generating each day in parallel" },
+    { n: 3, label: "Assembling the plan" },
     { n: 4, label: "Opening your plan" },
   ];
+  // Build week → day grid for visualization.
+  const cells: Array<{ key: string; w: number; d: number; status: string }> = [];
+  if (dayProgress) {
+    for (const key of Object.keys(dayProgress)) {
+      const [w, d] = key.split("-").map(Number);
+      cells.push({ key, w, d, status: dayProgress[key] });
+    }
+    cells.sort((a, b) => (a.w - b.w) || (a.d - b.d));
+  }
+  const weeks = Array.from(new Set(cells.map((c) => c.w))).sort((a, b) => a - b);
+  const pct = totals && totals.total > 0
+    ? Math.round((totals.done / totals.total) * 100)
+    : Math.min(100, (step / 4) * 100);
   return (
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5
+        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5 (per day)
       </div>
       <ul className="space-y-1.5">
         {steps.map((s) => {
@@ -1443,10 +1603,46 @@ function GenerationProgress({ step }: { step: number }) {
           );
         })}
       </ul>
+      {weeks.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="text-[11px] font-mono text-muted-foreground">
+            {totals ? `${totals.done}/${totals.total} days` : ""}
+          </div>
+          {weeks.map((w) => {
+            const wcells = cells.filter((c) => c.w === w);
+            return (
+              <div key={w} className="flex items-center gap-2">
+                <span className="w-12 text-[11px] font-mono text-muted-foreground">W{w}</span>
+                <div className="flex flex-1 flex-wrap gap-1">
+                  {wcells.map((c) => {
+                    const cls =
+                      c.status === "done"
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : c.status === "running"
+                        ? "border-accent/60 bg-accent/20 text-accent animate-pulse"
+                        : c.status === "error"
+                        ? "border-destructive bg-destructive/20 text-destructive"
+                        : "border-border bg-background text-muted-foreground";
+                    return (
+                      <div
+                        key={c.key}
+                        className={`flex h-6 w-7 items-center justify-center rounded border text-[10px] font-mono ${cls}`}
+                        title={`Week ${c.w}, Day ${c.d} — ${c.status}`}
+                      >
+                        {c.d}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-secondary">
         <div
           className="h-full bg-accent transition-all duration-500"
-          style={{ width: `${Math.min(100, (step / 4) * 100)}%` }}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
