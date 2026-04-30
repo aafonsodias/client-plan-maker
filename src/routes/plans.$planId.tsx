@@ -165,7 +165,7 @@ function PlanEditor() {
               onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             />
             {plan.status === "finalized" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
                 <CheckCircle2 className="h-3 w-3" /> Finalized
               </span>
             )}
@@ -253,9 +253,9 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
   const removeDay = (i: number) => onChange({ ...week, days: week.days.filter((_, idx) => idx !== i) });
 
   return (
-    <div className="rounded-xl border border-border bg-muted/70 p-3">
+      <div className="rounded-xl border border-border bg-muted/40 p-3">
       <div className="mb-3 flex items-center gap-2">
-        <span className="rounded bg-accent px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-accent-foreground">Week {week.week_number}</span>
+        <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">Week {week.week_number}</span>
         <Input value={week.focus} onChange={(e) => onChange({ ...week, focus: e.target.value })} placeholder="Focus (e.g. Hypertrophy block)" className="h-8 flex-1" />
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
           <Trash2 className="h-4 w-4" />
@@ -540,8 +540,8 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 bg-background px-4 sm:px-6 lg:px-8 pt-3 pb-6 text-foreground">
       {/* Compact single-row picker */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-card px-2.5 py-2 text-xs">
-        <span className="rounded bg-accent px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-accent-foreground">Log</span>
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 text-xs">
+        <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">Log</span>
         <select
           value={weekNum}
           onChange={(e) => setWeekNum(Number(e.target.value))}
