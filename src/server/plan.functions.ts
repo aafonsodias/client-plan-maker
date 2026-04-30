@@ -836,11 +836,25 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       }
       // Defensive: force the requested week_number.
       if (args?.week) args.week.week_number = week_number;
+
+      // Validate every day's exercises (non-blocking).
+      const validationWarnings: string[] = [];
+      const days = Array.isArray(args?.week?.days) ? args.week.days : [];
+      for (const d of days) {
+        validationWarnings.push(
+          ...validateExercises(d?.exercises, { day_label: d?.day_label, focus: d?.focus })
+        );
+      }
+      if (validationWarnings.length) {
+        console.warn(`[plan-validation] week ${week_number}:`, validationWarnings);
+      }
+
       return {
         ok: true as const,
         week: args.week,
         title: isFirstWeek ? (args.title ?? "") : "",
         summary: isFirstWeek ? (args.summary ?? "") : "",
+        validationWarnings,
       };
     } catch (err) {
       console.error("Plan week failed", week_number, err);
@@ -969,6 +983,15 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       const day = args?.day;
       if (!day) return { ok: false as const, error: "AI returned empty day." };
 
+      // Validate exercises (non-blocking).
+      const validationWarnings = validateExercises(day?.exercises, {
+        day_label: day?.day_label,
+        focus: day?.focus,
+      });
+      if (validationWarnings.length) {
+        console.warn(`[plan-validation] day ${week_number}/${day_number}:`, validationWarnings);
+      }
+
       // Persist immediately (upsert to allow regenerate).
       const { error: upsertErr } = await supabaseAdmin
         .from("workout_plan_days")
@@ -991,7 +1014,7 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
         return { ok: false as const, error: `Saved generation but failed to store day ${week_number}/${day_number}.` };
       }
 
-      return { ok: true as const, day, week_number, day_number };
+      return { ok: true as const, day, week_number, day_number, validationWarnings };
     } catch (err) {
       console.error("Plan day failed", week_number, day_number, err);
       return { ok: false as const, error: `Failed to generate day ${week_number}/${day_number}.` };
