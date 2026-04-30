@@ -1550,17 +1550,38 @@ function ScreenItem({
   );
 }
 
-function GenerationProgress({ step }: { step: number }) {
+function GenerationProgress({
+  step,
+  dayProgress,
+  totals,
+}: {
+  step: number;
+  dayProgress?: Record<string, "pending" | "running" | "done" | "error">;
+  totals?: { done: number; total: number };
+}) {
   const steps = [
     { n: 1, label: "Saving assessment" },
-    { n: 2, label: "AI is designing your plan" },
-    { n: 3, label: "Storing the draft" },
+    { n: 2, label: "Generating each day in parallel" },
+    { n: 3, label: "Assembling the plan" },
     { n: 4, label: "Opening your plan" },
   ];
+  // Build week → day grid for visualization.
+  const cells: Array<{ key: string; w: number; d: number; status: string }> = [];
+  if (dayProgress) {
+    for (const key of Object.keys(dayProgress)) {
+      const [w, d] = key.split("-").map(Number);
+      cells.push({ key, w, d, status: dayProgress[key] });
+    }
+    cells.sort((a, b) => (a.w - b.w) || (a.d - b.d));
+  }
+  const weeks = Array.from(new Set(cells.map((c) => c.w))).sort((a, b) => a - b);
+  const pct = totals && totals.total > 0
+    ? Math.round((totals.done / totals.total) * 100)
+    : Math.min(100, (step / 4) * 100);
   return (
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5
+        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5 (per day)
       </div>
       <ul className="space-y-1.5">
         {steps.map((s) => {
@@ -1582,10 +1603,46 @@ function GenerationProgress({ step }: { step: number }) {
           );
         })}
       </ul>
+      {weeks.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <div className="text-[11px] font-mono text-muted-foreground">
+            {totals ? `${totals.done}/${totals.total} days` : ""}
+          </div>
+          {weeks.map((w) => {
+            const wcells = cells.filter((c) => c.w === w);
+            return (
+              <div key={w} className="flex items-center gap-2">
+                <span className="w-12 text-[11px] font-mono text-muted-foreground">W{w}</span>
+                <div className="flex flex-1 flex-wrap gap-1">
+                  {wcells.map((c) => {
+                    const cls =
+                      c.status === "done"
+                        ? "border-accent bg-accent text-accent-foreground"
+                        : c.status === "running"
+                        ? "border-accent/60 bg-accent/20 text-accent animate-pulse"
+                        : c.status === "error"
+                        ? "border-destructive bg-destructive/20 text-destructive"
+                        : "border-border bg-background text-muted-foreground";
+                    return (
+                      <div
+                        key={c.key}
+                        className={`flex h-6 w-7 items-center justify-center rounded border text-[10px] font-mono ${cls}`}
+                        title={`Week ${c.w}, Day ${c.d} — ${c.status}`}
+                      >
+                        {c.d}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="mt-3 h-1 overflow-hidden rounded-full bg-secondary">
         <div
           className="h-full bg-accent transition-all duration-500"
-          style={{ width: `${Math.min(100, (step / 4) * 100)}%` }}
+          style={{ width: `${pct}%` }}
         />
       </div>
     </div>
