@@ -235,26 +235,45 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
         </Button>
       </div>
       <div className="space-y-2">
-        {day.exercises.length > 0 && (
-          <div className="grid grid-cols-12 items-center gap-2 px-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span className="col-span-4">Exercise name</span>
-            <span className="col-span-1">Sets</span>
-            <span className="col-span-1">Reps</span>
-            <span className="col-span-2">Rest</span>
-            <span className="col-span-3">Notes</span>
-            <span className="col-span-1" />
-          </div>
-        )}
         {day.exercises.map((ex, ei) => (
-          <div key={ei} className="grid grid-cols-12 items-center gap-2">
-            <Input className="col-span-4" placeholder="e.g. Barbell back squat" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
-            <Input className="col-span-1" placeholder="3" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
-            <Input className="col-span-1" placeholder="10" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
-            <Input className="col-span-2" placeholder="60s" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
-            <Input className="col-span-3" placeholder="Tempo, RPE, cues…" value={ex.notes} onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })} />
-            <Button variant="ghost" size="icon" className="col-span-1" onClick={() => removeEx(ei)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div key={ei} className="rounded-lg border border-border/60 bg-card/40 p-3">
+            {/* Top row: exercise name + delete */}
+            <div className="flex items-start gap-2">
+              <div className="flex-1 space-y-1">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Exercise name</Label>
+                <Input placeholder="e.g. Barbell back squat" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
+              </div>
+              <Button variant="ghost" size="icon" className="mt-5 shrink-0" onClick={() => removeEx(ei)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Sets / Reps / Rest */}
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sets</Label>
+                <Input placeholder="3" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reps</Label>
+                <Input placeholder="10" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Rest</Label>
+                <Input placeholder="60s" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
+              </div>
+            </div>
+
+            {/* Notes — full width, multi-line */}
+            <div className="mt-3 space-y-1">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Notes</Label>
+              <Textarea
+                rows={2}
+                placeholder="Tempo, RPE, cues, substitutions…"
+                value={ex.notes}
+                onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })}
+              />
+            </div>
           </div>
         ))}
         <Button variant="outline" size="sm" onClick={addEx}>
