@@ -164,6 +164,7 @@ function ClientDetail() {
 
   const generate = async () => {
     if (!user || !client) return;
+    if (parqHasYes(assessment.parq) && !confirm("PAR-Q+ flagged a potential risk. Recommend physician clearance before training. Continue anyway?")) return;
     setBusy(true);
     setProgressStep(1);
     try {
@@ -204,6 +205,39 @@ function ClientDetail() {
         max_lifts: assessment.max_lifts || null,
         resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
         cardio_capacity: assessment.cardio_capacity || null,
+        // ACSM additions (column-backed)
+        parq_passed: !parqHasYes(assessment.parq),
+        acsm_risk_category: computeRisk(assessment.risk),
+        waist_cm: assessment.waist_cm ? Number(assessment.waist_cm) : null,
+        hip_cm: assessment.hip_cm ? Number(assessment.hip_cm) : null,
+        body_fat_pct: assessment.body_fat_pct ? Number(assessment.body_fat_pct) : null,
+        body_fat_method: assessment.body_fat_method || null,
+        smart_specific: assessment.smart_specific || null,
+        smart_measurable: assessment.smart_measurable || null,
+        smart_deadline: assessment.smart_deadline || null,
+        readiness_stage: assessment.readiness_stage || null,
+        medications: assessment.medications || null,
+        med_flags: assessment.med_flags ?? [],
+        // Everything else lives in JSONB
+        extended: {
+          parq: assessment.parq,
+          risk: assessment.risk,
+          hours_seated: assessment.ext_hours_seated,
+          daily_steps: assessment.ext_daily_steps,
+          job_type: assessment.ext_job_type,
+          meals_per_day: assessment.ext_meals_per_day,
+          alcohol_units_week: assessment.ext_alcohol_units_week,
+          processed_food_freq: assessment.ext_processed_food_freq,
+          water_l_per_day: assessment.ext_water_l_per_day,
+          mob_shoulder: assessment.ext_mob_shoulder,
+          mob_hip: assessment.ext_mob_hip,
+          mob_ankle: assessment.ext_mob_ankle,
+          mob_thoracic: assessment.ext_mob_thoracic,
+          mob_wrist: assessment.ext_mob_wrist,
+          mob_knee: assessment.ext_mob_knee,
+          cardio_test: assessment.ext_cardio_test,
+          cardio_value: assessment.ext_cardio_value,
+        },
       };
       let assessmentId: string | null = assessment.id ?? null;
       if (assessmentId) {
@@ -213,6 +247,7 @@ function ClientDetail() {
         if (error) throw error;
         assessmentId = data!.id;
       }
+      void markOnboardingStep(user.id, "run_assessment");
       setProgressStep(2);
 
       const result = await generateFn({
@@ -253,6 +288,7 @@ function ClientDetail() {
       setProgressStep(4);
 
       toast.success("Draft generated");
+      void markOnboardingStep(user.id, "generate_plan");
       navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
     } catch (e: any) {
       toast.error(e.message ?? "Failed to generate plan");
@@ -260,6 +296,31 @@ function ClientDetail() {
       setBusy(false);
       setProgressStep(0);
     }
+  };
+
+  const discardDraft = () => {
+    setAssessment((a: any) => ({
+      ...a,
+      parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
+      risk: { family_cvd: false, smoking: "never", sedentary: false, bmi_category: "", dyslipidemia: false, prediabetes: false, hypertension: false },
+      waist_cm: "", hip_cm: "", body_fat_pct: "", body_fat_method: "",
+      medications: "", med_flags: [],
+      smart_specific: "", smart_measurable: "", smart_deadline: "", readiness_stage: "",
+      ext_hours_seated: "", ext_daily_steps: "", ext_job_type: "",
+      ext_meals_per_day: "", ext_alcohol_units_week: "", ext_processed_food_freq: "", ext_water_l_per_day: "",
+      ext_mob_shoulder: "", ext_mob_hip: "", ext_mob_ankle: "", ext_mob_thoracic: "", ext_mob_wrist: "", ext_mob_knee: "",
+      ext_cardio_test: "untested", ext_cardio_value: "",
+      primary_goal: "", experience_level: "", training_location: "",
+      available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
+      sleep_quality: "", stress_level: "", nutrition_habits: "", hydration_glasses_per_day: "",
+      mobility_limitations: "", energy_levels: "", recovery_capacity: "", lifestyle: "",
+      standing_posture_notes: "", known_imbalances: "", dominant_side: "",
+      squat_depth_score: "", squat_depth_note: "", overhead_reach_score: "", overhead_reach_note: "",
+      hip_hinge_score: "", hip_hinge_note: "", single_leg_balance_score: "", single_leg_balance_note: "",
+      years_training: "", previous_program_style: "", max_lifts: "",
+      resting_heart_rate: "", cardio_capacity: "",
+    }));
+    toast.success("Draft cleared");
   };
 
   if (!client) return <p className="text-muted-foreground">Loading…</p>;
