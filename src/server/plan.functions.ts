@@ -1011,16 +1011,132 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       const day = args?.day;
       if (!day) return { ok: false as const, error: "AI returned empty day." };
 
-      // Validate exercises (non-blocking).
-      const validationWarnings = validateExercises(day?.exercises, {
-        day_label: day?.day_label,
-        focus: day?.focus,
+      // ---- Generator telemetry from this initial pass ------------------------
+      const generateTelemetry: CallTelemetry = makeTelemetry(
+        "claude-haiku-4-5-20251001",
+        "generate",
+        json?.usage,
+        0, // duration not tracked here yet — leave 0 for the generator pass
+        true
+      );
+
+      // ---- CRITIC-REPAIR LOOP -----------------------------------------------
+      // Pass 1 (critic) → if blocker/major issues → repair → critic-2.
+      // Everything is logged to validation_meta so the trainer can audit it.
+      // Failures in critic/repair never block the user — we save the best
+      // available draft and surface the unresolved issues in the UI.
+      const callLog: CallTelemetry[] = [generateTelemetry];
+      let workingDay = day;
+      let unresolvedIssues: any[] = [];
+      let finalVerdict: "pass" | "needs_repair" | "fail" | "skipped" | "unknown" = "unknown";
+      let criticSummary = "";
+      let repairAttempted = false;
+
+      const programmaticWarnings = validateExercises(workingDay?.exercises, {
+        day_label: workingDay?.day_label,
+        focus: workingDay?.focus,
       });
-      if (validationWarnings.length) {
-        console.warn(`[plan-validation] day ${week_number}/${day_number}:`, validationWarnings);
+      if (programmaticWarnings.length) {
+        console.warn(`[plan-validation] day ${week_number}/${day_number}:`, programmaticWarnings);
       }
 
-      // Persist immediately (upsert to allow regenerate).
+      const critic1 = await criticDay({
+        apiKey,
+        model: "claude-haiku-4-5-20251001",
+        pass: "critic-1",
+        client: data.client,
+        assessment: data.assessment,
+        duration_weeks,
+        week_number,
+        day_number,
+        days_per_week,
+        day: workingDay,
+        programmatic_warnings: programmaticWarnings,
+      });
+      callLog.push(critic1.telemetry);
+
+      if (critic1.ok) {
+        criticSummary = critic1.verdict.summary;
+        if (shouldRepair(critic1.verdict)) {
+          repairAttempted = true;
+          const repaired = await repairDay({
+            apiKey,
+            model: "claude-haiku-4-5-20251001",
+            client: data.client,
+            assessment: data.assessment,
+            duration_weeks,
+            week_number,
+            day_number,
+            days_per_week,
+            day: workingDay,
+            verdict: critic1.verdict,
+          });
+          callLog.push(repaired.telemetry);
+          if (repaired.ok) {
+            workingDay = repaired.day;
+            // Re-critic the repaired day.
+            const programmaticWarnings2 = validateExercises(workingDay?.exercises, {
+              day_label: workingDay?.day_label,
+              focus: workingDay?.focus,
+            });
+            const critic2 = await criticDay({
+              apiKey,
+              model: "claude-haiku-4-5-20251001",
+              pass: "critic-2",
+              client: data.client,
+              assessment: data.assessment,
+              duration_weeks,
+              week_number,
+              day_number,
+              days_per_week,
+              day: workingDay,
+              programmatic_warnings: programmaticWarnings2,
+            });
+            callLog.push(critic2.telemetry);
+            if (critic2.ok) {
+              finalVerdict = critic2.verdict.verdict;
+              criticSummary = critic2.verdict.summary;
+              unresolvedIssues = critic2.verdict.issues.filter(
+                (i) => i.severity === "blocker" || i.severity === "major"
+              );
+            } else {
+              // Repair worked but critic-2 failed → trust the repair.
+              finalVerdict = "unknown";
+              unresolvedIssues = [];
+            }
+          } else {
+            // Repair call failed → keep the original day with the original issues.
+            finalVerdict = critic1.verdict.verdict;
+            unresolvedIssues = critic1.verdict.issues.filter(
+              (i) => i.severity === "blocker" || i.severity === "major"
+            );
+          }
+        } else {
+          finalVerdict = critic1.verdict.verdict;
+          unresolvedIssues = critic1.verdict.issues.filter(
+            (i) => i.severity === "blocker" || i.severity === "major"
+          );
+        }
+      } else {
+        // Critic-1 failed → save the day, mark verdict skipped.
+        finalVerdict = "skipped";
+      }
+
+      const totalCostUsd = callLog.reduce((s, c) => s + (c.cost_usd || 0), 0);
+
+      const validation_meta = {
+        version: 1,
+        final_verdict: finalVerdict,
+        critic_summary: criticSummary,
+        unresolved_issues: unresolvedIssues,
+        programmatic_warnings: programmaticWarnings,
+        repair_attempted: repairAttempted,
+        total_cost_usd: Number(totalCostUsd.toFixed(6)),
+        call_log: callLog,
+        completed_at: new Date().toISOString(),
+      };
+
+      // Persist final day + meta.
       const { error: upsertErr } = await supabaseAdmin
         .from("workout_plan_days")
         .upsert(
@@ -1029,11 +1145,12 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
             trainer_id: userId,
             week_number,
             day_number,
-            day_label: day.day_label ?? `Day ${day_number}`,
-            focus: day.focus ?? null,
-            rationale: day.rationale ?? null,
-            content: day,
+            day_label: workingDay.day_label ?? `Day ${day_number}`,
+            focus: workingDay.focus ?? null,
+            rationale: workingDay.rationale ?? null,
+            content: workingDay,
             status: "done",
+            validation_meta,
           },
           { onConflict: "plan_id,week_number,day_number" }
         );
@@ -1042,7 +1159,14 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
         return { ok: false as const, error: `Saved generation but failed to store day ${week_number}/${day_number}.` };
       }
 
-      return { ok: true as const, day, week_number, day_number, validationWarnings };
+      return {
+        ok: true as const,
+        day: workingDay,
+        week_number,
+        day_number,
+        validationWarnings: programmaticWarnings,
+        validation_meta,
+      };
     } catch (err) {
       console.error("Plan day failed", week_number, day_number, err);
       return { ok: false as const, error: `Failed to generate day ${week_number}/${day_number}.` };
