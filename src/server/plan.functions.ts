@@ -88,6 +88,7 @@ const PlanSchema = {
                 cooldown: { type: "array", items: SectionItemSchema },
                 finisher: { type: "array", items: SectionItemSchema },
                 finisher_enabled: { type: "boolean" },
+                cardio: { type: "array", items: SectionItemSchema },
                 exercises: {
                   type: "array",
                   items: {
@@ -117,7 +118,7 @@ const PlanSchema = {
               required: [
                 "day_label", "focus", "exercises",
                 "warmup", "activation", "dynamic_stretches",
-                "cooldown", "finisher", "finisher_enabled",
+                "cooldown", "finisher", "finisher_enabled", "cardio",
               ],
               additionalProperties: false,
             },

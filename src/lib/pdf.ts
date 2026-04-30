@@ -32,6 +32,8 @@ export type Day = {
   cooldown?: SectionItem[];
   finisher?: SectionItem[];
   finisher_enabled?: boolean;
+  // Per-day cardio prescription (modality / duration / zone / notes — packed into SectionItem shape)
+  cardio?: SectionItem[];
 };
 export type Week = { week_number: number; focus: string; days: Day[] };
 export type PlanData = { weeks: Week[] };
@@ -206,6 +208,7 @@ export async function generatePlanPdf(meta: PdfMeta, plan: PlanData, branding: P
       renderSection("Warmup", day.warmup);
       renderSection("Activation", day.activation);
       renderSection("Dynamic stretches", day.dynamic_stretches);
+      renderSection("Cardio", day.cardio);
 
       if ((day.exercises ?? []).length > 0) {
         ensureSpace(20);
