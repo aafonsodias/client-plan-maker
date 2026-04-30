@@ -734,7 +734,29 @@ function ClientDetail() {
       }
 
       setProgressStep(3);
-      const fin: any = await finalizePlanFn({ data: { plan_id: planId } });
+
+      // Generate title + summary from the full assessment before finalizing.
+      let draftTitle: string | undefined;
+      let draftSummary: string | undefined;
+      try {
+        const draft: any = await generateFn({
+          data: {
+            client: clientPayload,
+            assessment: assessmentPayload,
+            duration_weeks: planDuration,
+          },
+        });
+        if (draft?.ok && draft.plan) {
+          draftTitle = draft.plan.title || undefined;
+          draftSummary = draft.plan.summary || undefined;
+        }
+      } catch (e) {
+        console.warn("Draft title/summary generation failed; falling back to defaults.", e);
+      }
+
+      const fin: any = await finalizePlanFn({
+        data: { plan_id: planId, title: draftTitle, summary: draftSummary },
+      });
       if (!fin?.ok) throw new Error(fin?.error ?? "Failed to finalize plan");
       setProgressStep(4);
 

@@ -192,6 +192,14 @@ function PlanEditor() {
           <Button
             variant="ghost"
             size="sm"
+            className="h-8 text-muted-foreground hover:text-foreground"
+            onClick={exportPdf}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className="h-8 text-muted-foreground hover:text-destructive"
             onClick={async () => {
               if (!confirm("Delete this plan? This cannot be undone.")) return;
