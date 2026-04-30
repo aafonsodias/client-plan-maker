@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Sparkles, FileText, ArrowLeft, Loader2, CheckCircle2, Circle } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 
