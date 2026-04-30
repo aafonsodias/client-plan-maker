@@ -1154,3 +1154,20 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
   }
   return null;
 }
+
+function ParqFlagSummary({ count }: { count: number }) {
+  const clear = count === 0;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest ${clear ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${clear ? "bg-primary" : "bg-accent"}`} />
+        PAR-Q+ flags: {count}
+      </span>
+      {!clear && (
+        <span className="text-[11px] text-muted-foreground">
+          Plan generation will default to low-intensity. Override available.
+        </span>
+      )}
+    </div>
+  );
+}
