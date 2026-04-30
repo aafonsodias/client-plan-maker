@@ -48,6 +48,26 @@ function ClientDetail() {
     energy_levels: "",
     recovery_capacity: "",
     lifestyle: "",
+    // Posture & alignment
+    standing_posture_notes: "",
+    known_imbalances: "",
+    dominant_side: "",
+    // Movement screen (1-5 + note)
+    squat_depth_score: "",
+    squat_depth_note: "",
+    overhead_reach_score: "",
+    overhead_reach_note: "",
+    hip_hinge_score: "",
+    hip_hinge_note: "",
+    single_leg_balance_score: "",
+    single_leg_balance_note: "",
+    // Training history
+    years_training: "",
+    previous_program_style: "",
+    max_lifts: "",
+    // Performance markers
+    resting_heart_rate: "",
+    cardio_capacity: "",
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
@@ -96,6 +116,22 @@ function ClientDetail() {
         energy_levels: assessment.energy_levels || null,
         recovery_capacity: assessment.recovery_capacity || null,
         lifestyle: assessment.lifestyle || null,
+        standing_posture_notes: assessment.standing_posture_notes || null,
+        known_imbalances: assessment.known_imbalances || null,
+        dominant_side: assessment.dominant_side || null,
+        squat_depth_score: assessment.squat_depth_score ? Number(assessment.squat_depth_score) : null,
+        squat_depth_note: assessment.squat_depth_note || null,
+        overhead_reach_score: assessment.overhead_reach_score ? Number(assessment.overhead_reach_score) : null,
+        overhead_reach_note: assessment.overhead_reach_note || null,
+        hip_hinge_score: assessment.hip_hinge_score ? Number(assessment.hip_hinge_score) : null,
+        hip_hinge_note: assessment.hip_hinge_note || null,
+        single_leg_balance_score: assessment.single_leg_balance_score ? Number(assessment.single_leg_balance_score) : null,
+        single_leg_balance_note: assessment.single_leg_balance_note || null,
+        years_training: assessment.years_training !== "" && assessment.years_training != null ? Number(assessment.years_training) : null,
+        previous_program_style: assessment.previous_program_style || null,
+        max_lifts: assessment.max_lifts || null,
+        resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
+        cardio_capacity: assessment.cardio_capacity || null,
       };
       let assessmentId: string | null = assessment.id ?? null;
       if (assessmentId) {
