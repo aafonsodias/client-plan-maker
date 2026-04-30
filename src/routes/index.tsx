@@ -12,7 +12,7 @@ function Landing() {
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2 font-black tracking-tight">
+          <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <Dumbbell className="h-4 w-4" />
             </div>
@@ -38,7 +38,7 @@ function Landing() {
         />
         <div className="mx-auto max-w-6xl px-6 py-24 text-foreground sm:py-32">
           <div className="max-w-3xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
               <Sparkles className="h-3 w-3" /> AI-assisted workout drafting
             </div>
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">

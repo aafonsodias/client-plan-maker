@@ -604,13 +604,13 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
                     value={st.reps}
                     onChange={(ev) => updateSet(i, si, "reps", ev.target.value)}
                     placeholder={e.planned.reps || "—"}
-                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-white placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
+                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
                   />
                   <input
                     value={st.weight}
                     onChange={(ev) => updateSet(i, si, "weight", ev.target.value)}
                     placeholder="kg"
-                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-white placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
+                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
                   />
                   <button
                     onClick={() => removeSet(i, si)}
