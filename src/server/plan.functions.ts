@@ -7,6 +7,9 @@ import {
   buildFeedbackBlock,
   SHARED_PROGRAM_RULES,
 } from "./plan.server";
+import { criticDay, shouldRepair } from "./plan-critic.server";
+import { repairDay } from "./plan-repair.server";
+import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
