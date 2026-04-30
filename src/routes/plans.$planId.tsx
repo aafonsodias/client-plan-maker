@@ -17,9 +17,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { generatePlanPdf, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
-import {
-  ensureShareToken, revokeShareToken, listSessions, saveTrainerSession,
-} from "@/server/sessions.functions";
+// Trainer-side ops use the browser supabase client directly (RLS-protected).
+// Server fns are reserved for the public client-log endpoints.
 
 export const Route = createFileRoute("/plans/$planId")({
   component: () => (
@@ -64,16 +63,24 @@ function PlanEditor() {
         setLogoUrl(signed?.signedUrl ?? null);
       }
       try {
-        const list = (await listSessions({ data: { plan_id: planId } })) as SessionRow[];
-        setSessions(Array.isArray(list) ? list : []);
+        const { data: list } = await supabase
+          .from("workout_sessions")
+          .select("*")
+          .eq("plan_id", planId)
+          .order("session_date", { ascending: false });
+        setSessions((list as unknown as SessionRow[]) ?? []);
       } catch { /* ignore */ }
     })();
   }, [user, planId]);
 
   const reloadSessions = async () => {
     try {
-      const list = (await listSessions({ data: { plan_id: planId } })) as SessionRow[];
-      setSessions(Array.isArray(list) ? list : []);
+      const { data: list } = await supabase
+        .from("workout_sessions")
+        .select("*")
+        .eq("plan_id", planId)
+        .order("session_date", { ascending: false });
+      setSessions((list as unknown as SessionRow[]) ?? []);
     } catch { /* ignore */ }
   };
 
