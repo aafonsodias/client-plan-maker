@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { FileText, Sparkles, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/")({
@@ -37,9 +37,6 @@ function Landing() {
         />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-accent">
-              <Sparkles className="h-3 w-3" /> AI-assisted workout drafting
-            </div>
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
               Stop writing plans
               <span className="block text-accent">at midnight.</span>
@@ -51,7 +48,7 @@ function Landing() {
             <div className="mt-10 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link to="/auth">
-                  Start building plans <ArrowRight className="ml-2 h-4 w-4" />
+                  Draft your first plan <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
@@ -60,9 +57,11 @@ function Landing() {
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <HeroPlanMockup />
-            <p className="mt-4 hidden text-center text-xs uppercase tracking-[0.25em] text-muted-foreground md:block">
-              Periodized · Personalized · Ready in seconds
+            <div className="origin-top scale-[0.95] opacity-[0.92]">
+              <HeroPlanMockup />
+            </div>
+            <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
+              Built on PAR-Q+, ACSM risk stratification, and the 8 years of programming I wish I'd had a tool for.
             </p>
           </div>
         </div>
@@ -238,7 +237,7 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 function HeroPlanMockup() {
   type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
   const rows: Row[] = [
-    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat (light)", sets: "2 × 8" },
+    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat", sets: "2 × 8", note: "@ light" },
     { badge: "MAIN", tone: "main", name: "Back Squat", sets: "4 × 6", note: "@ RPE 7", sub: "Rest 2:30 · tempo 3-1-X" },
     { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7", sub: "Rest 2:00 · controlled eccentric" },
     { badge: "ACCESSORY", tone: "accessory", name: "Step-Up", sets: "3 × 10/leg" },
@@ -264,7 +263,7 @@ function HeroPlanMockup() {
         <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-medium text-accent">
           M
         </span>
-        <span>Maria S. · Block 2 · Strength</span>
+        <span>Maria S. · Week 5 · Strength Phase</span>
       </div>
       {/* Session title */}
       <div className="mt-3">
@@ -282,7 +281,7 @@ function HeroPlanMockup() {
               </span>
               <span className="flex-1 truncate text-sm font-medium text-foreground">{r.name}</span>
               <span className="font-mono text-xs text-muted-foreground">{r.sets}</span>
-              {r.note && <span className="hidden text-[11px] text-muted-foreground/80 lg:inline">{r.note}</span>}
+              {r.note && <span className="font-mono text-[11px] text-muted-foreground/80">{r.note}</span>}
             </div>
             {r.sub && (
               <p className="ml-[4.25rem] mt-0.5 text-[11px] italic text-muted-foreground/70">{r.sub}</p>
