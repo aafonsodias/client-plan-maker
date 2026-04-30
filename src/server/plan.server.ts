@@ -235,3 +235,81 @@ Return structured JSON only via tool call. No explanations. No extra text.
 PERSONALIZATION — calibrate to sleep, stress, hydration, nutrition, mobility limits, energy, recovery capacity, lifestyle, posture, imbalances, dominant side, movement screen scores (≤2 → regress/substitute), training history, RHR, cardio_capacity.
 
 RATIONALE — every week and every day MUST include a 'rationale' (1–2 sentences, max 240 chars) referencing concrete client data fields. Avoid generic phrasing.`;
+
+// =============================================================================
+// JSON schemas — shared between generator, critic-repair, and escalation paths.
+// Kept in plan.server.ts (not .functions.ts) so server-only modules can reuse
+// them without being affected by the createServerFn build transform.
+// =============================================================================
+const SectionItemSchema = {
+  type: "object",
+  properties: {
+    name: { type: "string" },
+    duration: { type: "string" },
+    notes: { type: "string" },
+  },
+  required: ["name", "duration", "notes"],
+  additionalProperties: false,
+} as const;
+
+export const WeekDaySchema = {
+  type: "object",
+  properties: {
+    day_label: { type: "string" },
+    focus: { type: "string" },
+    rationale: { type: "string" },
+    warmup: { type: "array", items: SectionItemSchema },
+    activation: { type: "array", items: SectionItemSchema },
+    dynamic_stretches: { type: "array", items: SectionItemSchema },
+    cooldown: { type: "array", items: SectionItemSchema },
+    finisher: { type: "array", items: SectionItemSchema },
+    finisher_enabled: { type: "boolean" },
+    cardio: { type: "array", items: SectionItemSchema },
+    exercises: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          sets: { type: "string" },
+          reps: { type: "string" },
+          rest: { type: "string" },
+          notes: { type: "string" },
+          primary_muscles: { type: "array", items: { type: "string" } },
+          secondary_muscles: { type: "array", items: { type: "string" } },
+          rpe: { type: "string" },
+          tempo: { type: "string" },
+          technique_cues: { type: "string" },
+          cue: { type: "string" },
+          rationale: { type: "string" },
+          superset_id: { type: ["string", "null"] },
+          variant: { type: ["string", "null"] },
+          optional: { type: "boolean" },
+          equipment: { type: "array", items: { type: "string" } },
+        },
+        required: [
+          "name", "sets", "reps", "rest", "notes",
+          "primary_muscles", "secondary_muscles",
+          "rpe", "tempo", "technique_cues", "cue",
+          "rationale", "superset_id", "variant", "optional", "equipment",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: [
+    "day_label", "focus", "rationale", "exercises",
+    "warmup", "activation", "dynamic_stretches",
+    "cooldown", "finisher", "finisher_enabled", "cardio",
+  ],
+  additionalProperties: false,
+} as const;
+
+export const SingleDayPlanSchema = {
+  type: "object",
+  properties: {
+    day: WeekDaySchema,
+  },
+  required: ["day"],
+  additionalProperties: false,
+} as const;
