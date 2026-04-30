@@ -447,12 +447,6 @@ function ViewMode({
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{children}</div>
-  );
-}
-
 /**
  * Quick plan-vs-actual marker for a day. One click writes a workout_sessions
  * row with status=done|partial|missed and empty entries — the trainer can
