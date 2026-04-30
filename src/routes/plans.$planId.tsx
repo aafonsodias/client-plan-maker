@@ -404,97 +404,43 @@ function ViewMode({
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
   return (
-    <div className="space-y-3">
+    <div className="space-y-12">
       {plan.weeks.map((w, wi) => (
-        <div key={wi} className="rounded-xl border border-border bg-muted/30 p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">
+        <div key={wi} className="space-y-10">
+          {/* Week marker — minimal, lets the day headers carry the weight */}
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
               Week {w.week_number}
             </span>
-            {w.focus && <span className="text-sm text-muted-foreground">{w.focus}</span>}
+            {w.focus && (
+              <>
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">{w.focus}</span>
+              </>
+            )}
           </div>
           {w.rationale && (
-            <p className="mb-3 border-l-2 border-accent/40 pl-2.5 text-[11px] italic text-muted-foreground">
+            <p className="-mt-6 max-w-2xl border-l-2 border-accent/40 pl-3 text-[11px] italic leading-relaxed text-muted-foreground">
               {w.rationale}
             </p>
           )}
-          <div className="space-y-2">
-            {w.days.map((d, di) => (
-              <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
-                <div className="mb-1.5 flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
-                  {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
-                  <div className="ml-auto">
-                    <DayQuickMark
-                      planId={planId}
-                      weekNumber={w.week_number}
-                      dayLabel={d.day_label}
-                      sessions={sessions}
-                      reload={reload}
-                    />
-                  </div>
-                </div>
-                {d.rationale && (
-                  <p className="mb-2 border-l-2 border-accent/30 pl-2 text-[10.5px] italic text-muted-foreground/90">
-                    {d.rationale}
-                  </p>
-                )}
-                <SectionView title="Warmup" items={d.warmup} />
-                <SectionView title="Activation" items={d.activation} />
-                <SectionView title="Dynamic stretches" items={d.dynamic_stretches} />
-
-                <div className="mt-2">
-                  <SectionLabel>Main work</SectionLabel>
-                  {d.exercises.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No exercises.</p>
-                  ) : (
-                    <ul className="divide-y divide-border/40">
-                      {d.exercises.map((ex, ei) => (
-                        <li key={ei} className="py-1.5">
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
-                            {ex.name && (
-                              <a
-                                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + " exercise technique")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="Watch demo on YouTube"
-                                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-accent"
-                              >
-                                <PlayCircle className="h-3 w-3" />
-                              </a>
-                            )}
-                            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-widest flex-wrap">
-                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
-                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
-                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.rest || "—"} rest</span>
-                              {ex.rpe && <span className="rounded bg-accent/15 px-1.5 py-0.5 text-accent">RPE {ex.rpe}</span>}
-                              {ex.tempo && <span className="rounded bg-accent/15 px-1.5 py-0.5 text-accent">Tempo {ex.tempo}</span>}
-                            </span>
-                          </div>
-                          <MuscleChips primary={ex.primary_muscles} secondary={ex.secondary_muscles} />
-                          {ex.technique_cues && (
-                            <p className="mt-1 text-xs italic text-muted-foreground/80">{ex.technique_cues}</p>
-                          )}
-                          {ex.notes && (
-                            <p className="mt-0.5 text-xs text-muted-foreground">{ex.notes}</p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <SectionView title="Cooldown" items={d.cooldown} />
-                {d.cardio && d.cardio.length > 0 && (
-                  <SectionView title="Cardio" items={d.cardio} accent />
-                )}
-                {d.finisher_enabled !== false && d.finisher && d.finisher.length > 0 && (
-                  <SectionView title="Optional finisher" items={d.finisher} accent />
-                )}
-              </div>
-            ))}
-          </div>
+          {w.days.map((d, di) => (
+            <SessionDayView
+              key={di}
+              week={w}
+              day={d}
+              index={di}
+              rightSlot={
+                <DayQuickMark
+                  planId={planId}
+                  weekNumber={w.week_number}
+                  dayLabel={d.day_label}
+                  sessions={sessions}
+                  reload={reload}
+                />
+              }
+            />
+          ))}
         </div>
       ))}
     </div>
