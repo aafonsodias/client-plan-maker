@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -444,6 +444,17 @@ function ViewMode({
                         <li key={ei} className="py-1.5">
                           <div className="flex items-baseline gap-2 flex-wrap">
                             <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
+                            {ex.name && (
+                              <a
+                                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name + " exercise technique")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Watch demo on YouTube"
+                                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-accent"
+                              >
+                                <PlayCircle className="h-3 w-3" />
+                              </a>
+                            )}
                             <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-widest flex-wrap">
                               <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
                               <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
