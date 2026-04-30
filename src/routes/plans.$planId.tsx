@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { useServerFn } from "@tanstack/react-start";
+import { generatePlanDraft } from "@/server/plan.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Server fns are reserved for the public client-log endpoints.
 
@@ -257,7 +259,8 @@ function PlanEditor() {
       )}
 
       {/* Mode tabs */}
-      <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
           onClick={() => setMode("view")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
@@ -276,6 +279,20 @@ function PlanEditor() {
         >
           <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
+        </div>
+        {plan?.status !== "finalized" && client && (
+          <RegenerateWithFeedbackDialog
+            planId={planId}
+            clientId={client.id}
+            assessmentId={plan.assessment_id}
+            durationWeeks={plan.duration_weeks ?? 4}
+            previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
+            onRegenerated={(newPlan) => {
+              setData({ weeks: newPlan.weeks ?? [] });
+              setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
+            }}
+          />
+        )}
       </div>
 
       {mode === "view" ? (
@@ -1033,5 +1050,147 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         </button>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate with feedback — closes the loop between trainer judgement and AI.
+// ---------------------------------------------------------------------------
+function RegenerateWithFeedbackDialog({
+  planId,
+  clientId,
+  assessmentId,
+  durationWeeks,
+  previousPlan,
+  onRegenerated,
+}: {
+  planId: string;
+  clientId: string;
+  assessmentId: string | null;
+  durationWeeks: number;
+  previousPlan: { title: string; summary: string | null; weeks: Week[] };
+  onRegenerated: (plan: { title?: string; summary?: string; weeks?: Week[] }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [busy, setBusy] = useState(false);
+  const generateFn = useServerFn(generatePlanDraft);
+
+  const submit = async () => {
+    if (!feedback.trim()) {
+      toast.error("Write what you want changed.");
+      return;
+    }
+    setBusy(true);
+    try {
+      // Pull client + assessment for context
+      const { data: client, error: clientErr } = await supabase
+        .from("clients").select("*").eq("id", clientId).single();
+      if (clientErr || !client) throw new Error(clientErr?.message ?? "Client not found");
+
+      let assessment: any = null;
+      if (assessmentId) {
+        const { data: a } = await supabase.from("assessments").select("*").eq("id", assessmentId).single();
+        assessment = a;
+      } else {
+        const { data: a } = await supabase
+          .from("assessments").select("*").eq("client_id", clientId)
+          .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+        assessment = a;
+      }
+      if (!assessment) throw new Error("No assessment found for this client.");
+
+      const skeleton = {
+        title: previousPlan.title ?? null,
+        summary: previousPlan.summary ?? null,
+        weeks: (previousPlan.weeks ?? []).map((w) => ({
+          week_number: w.week_number,
+          focus: w.focus ?? null,
+          rationale: w.rationale ?? null,
+          days: (w.days ?? []).map((d) => ({
+            day_label: d.day_label,
+            focus: d.focus ?? null,
+            rationale: d.rationale ?? null,
+          })),
+        })),
+      };
+
+      const result = await generateFn({
+        data: {
+          client: {
+            full_name: client.full_name,
+            age: client.age,
+            sex: client.sex,
+            height_cm: client.height_cm ? Number(client.height_cm) : null,
+            weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
+          },
+          assessment: { ...assessment, secondary_goals: null },
+          duration_weeks: durationWeeks,
+          trainer_feedback: feedback.trim(),
+          previous_plan: skeleton,
+        },
+      });
+      if (!result.ok) throw new Error(result.error);
+
+      // Persist new plan_data + title/summary
+      const newWeeks = result.plan.weeks ?? [];
+      const { error: upErr } = await supabase
+        .from("workout_plans")
+        .update({
+          title: result.plan.title || previousPlan.title,
+          summary: result.plan.summary || previousPlan.summary,
+          plan_data: { weeks: newWeeks },
+        })
+        .eq("id", planId);
+      if (upErr) throw upErr;
+
+      onRegenerated({ title: result.plan.title, summary: result.plan.summary, weeks: newWeeks });
+      toast.success("Plan regenerated with your feedback");
+      setFeedback("");
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Regeneration failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-xs">
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate with feedback
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Regenerate with feedback</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <p className="text-muted-foreground">
+            Tell the AI what to change. Be specific — reference week, day, exercise or rationale. The current plan will be overwritten.
+          </p>
+          <Label htmlFor="regen-fb" className="text-xs uppercase tracking-widest text-muted-foreground">
+            Your corrections
+          </Label>
+          <AutoTextarea
+            id="regen-fb"
+            minRows={5}
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder={`E.g. "Week 2 Day 3: drop back squat — client reports knee discomfort. Replace with goblet squat or split squat. Cap RPE at 7 for all squat patterns."`}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            The previous plan structure and rationales are sent as context so the AI keeps what worked.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
+          <Button onClick={submit} disabled={busy || !feedback.trim()}>
+            {busy ? "Regenerating…" : "Regenerate"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

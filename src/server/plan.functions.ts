@@ -57,6 +57,32 @@ const InputSchema = z.object({
     safety_override: z.boolean().nullable().optional(),
   }),
   duration_weeks: z.number().min(1).max(16).default(4),
+  trainer_feedback: z.string().max(4000).nullable().optional(),
+  previous_plan: z
+    .object({
+      title: z.string().nullable().optional(),
+      summary: z.string().nullable().optional(),
+      weeks: z
+        .array(
+          z.object({
+            week_number: z.number(),
+            focus: z.string().nullable().optional(),
+            rationale: z.string().nullable().optional(),
+            days: z
+              .array(
+                z.object({
+                  day_label: z.string(),
+                  focus: z.string().nullable().optional(),
+                  rationale: z.string().nullable().optional(),
+                })
+              )
+              .optional(),
+          })
+        )
+        .optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 const SectionItemSchema = {
@@ -300,6 +326,43 @@ Clinical safety:
 
 Plan length: ${data.duration_weeks} weeks.`;
 
+    // ---- Feedback loop: trainer corrections from a prior generated plan ----
+    const feedback = (data.trainer_feedback ?? "").trim();
+    const prev = data.previous_plan;
+    let feedbackBlock = "";
+    if (feedback || prev) {
+      const prevSkeleton = prev
+        ? [
+            `Previous title: ${prev.title ?? "—"}`,
+            `Previous summary: ${prev.summary ?? "—"}`,
+            "Previous structure:",
+            ...(prev.weeks ?? []).map(
+              (w) =>
+                `  • Week ${w.week_number} — ${w.focus ?? "—"}${
+                  w.rationale ? ` (rationale: ${w.rationale})` : ""
+                }\n` +
+                (w.days ?? [])
+                  .map(
+                    (d) =>
+                      `      - ${d.day_label}: ${d.focus ?? "—"}${
+                        d.rationale ? ` (rationale: ${d.rationale})` : ""
+                      }`
+                  )
+                  .join("\n")
+            ),
+          ].join("\n")
+        : "";
+
+      feedbackBlock = `
+
+TRAINER FEEDBACK ON PREVIOUS DRAFT — this is the most important input for THIS regeneration. The trainer reviewed the previous plan and wants specific changes. Apply these corrections precisely. Keep what worked, change what they flagged. Reflect the changes explicitly in the new week/day rationales (e.g. "Replaced back squat with goblet squat per trainer feedback — knee discomfort flagged.").
+
+Trainer's feedback (verbatim):
+${feedback || "(no free-text feedback — use the previous plan as anchor and improve clarity / rationale specificity)"}
+
+${prevSkeleton}`;
+    }
+
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
@@ -312,7 +375,7 @@ Plan length: ${data.duration_weeks} weeks.`;
           model: "claude-sonnet-4-5",
           max_tokens: 16000,
           system: sys,
-          messages: [{ role: "user", content: user }],
+          messages: [{ role: "user", content: user + feedbackBlock }],
           tools: [
             {
               name: "emit_workout_plan",
