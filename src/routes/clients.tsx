@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from "sonner";
 import { Plus, ArrowRight, Trash2 } from "lucide-react";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { useClientPhases } from "@/hooks/use-client-phases";
+import { ClientPhasePill } from "@/components/ClientPhasePill";
+import { PhaseKind } from "@/lib/client-phase";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/clients")({
+  validateSearch: (s: Record<string, unknown>) => ({ filter: (s.filter as string) || "all" }),
   component: () => (
     <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
       <Clients />
@@ -27,9 +31,34 @@ type Client = { id: string; full_name: string; email: string | null; age: number
 
 function Clients() {
   const { user } = useAuth();
+  const { filter } = Route.useSearch();
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
+  const phases = useClientPhases(useMemo(() => list.map((c) => c.id), [list]));
+
+  const matchesFilter = (kind?: PhaseKind): boolean => {
+    if (filter === "all" || !kind) return filter === "all";
+    if (filter === "active") return kind === "active";
+    if (filter === "idle") return kind === "idle";
+    if (filter === "ready") return kind === "ready";
+    if (filter === "onboarding") return kind === "onboarding" || kind === "assessment";
+    return true;
+  };
+
+  const filtered = list.filter((c) => filter === "all" || matchesFilter(phases[c.id]?.kind));
+
+  const counts = useMemo(() => {
+    const c = { all: list.length, active: 0, idle: 0, ready: 0, onboarding: 0 };
+    list.forEach((cl) => {
+      const k = phases[cl.id]?.kind;
+      if (k === "active") c.active++;
+      else if (k === "idle") c.idle++;
+      else if (k === "ready") c.ready++;
+      else if (k === "onboarding" || k === "assessment") c.onboarding++;
+    });
+    return c;
+  }, [list, phases]);
 
   const load = async () => {
     const { data } = await supabase.from("clients").select("id, full_name, email, age, created_at").order("created_at", { ascending: false });
@@ -108,17 +137,39 @@ function Clients() {
           No clients yet. Add your first one to get started.
         </div>
       ) : (
+        <>
+        <div className="flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
+          {[
+            { id: "all", label: `All · ${counts.all}` },
+            { id: "onboarding", label: `Onboarding · ${counts.onboarding}` },
+            { id: "active", label: `Active · ${counts.active}` },
+            { id: "idle", label: `Idle · ${counts.idle}` },
+            { id: "ready", label: `Ready for plan · ${counts.ready}` },
+          ].map((f) => (
+            <Link
+              key={f.id}
+              to="/clients"
+              search={{ filter: f.id }}
+              className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+            >
+              {f.label}
+            </Link>
+          ))}
+        </div>
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          {list.map((c) => (
+          {filtered.map((c) => (
             <div key={c.id} className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50">
               <Link
                 to="/clients/$clientId"
                 params={{ clientId: c.id }}
                 className="flex flex-1 items-center justify-between px-5 py-4"
               >
-                <div>
-                  <p className="font-semibold">{c.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{c.email ?? "No email"}</p>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-semibold">{c.full_name}</p>
+                    <p className="text-sm text-muted-foreground">{c.email ?? "No email"}</p>
+                  </div>
+                  {phases[c.id] && <ClientPhasePill phase={phases[c.id]} />}
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
               </Link>
@@ -149,6 +200,7 @@ function Clients() {
             </div>
           ))}
         </div>
+        </>
       )}
     </div>
   );
