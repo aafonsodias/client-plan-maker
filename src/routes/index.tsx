@@ -57,7 +57,9 @@ function Landing() {
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <HeroPlanMockup />
+            <div className="origin-top scale-[0.95] opacity-[0.92]">
+              <HeroPlanMockup />
+            </div>
             <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
               Built on PAR-Q+, ACSM risk stratification, and the 8 years of programming I wish I'd had a tool for.
             </p>
