@@ -368,6 +368,11 @@ function ViewMode({ plan }: { plan: PlanData }) {
             </span>
             {w.focus && <span className="text-sm text-muted-foreground">{w.focus}</span>}
           </div>
+          {w.rationale && (
+            <p className="mb-3 border-l-2 border-accent/40 pl-2.5 text-[11px] italic text-muted-foreground">
+              {w.rationale}
+            </p>
+          )}
           <div className="space-y-2">
             {w.days.map((d, di) => (
               <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
@@ -375,6 +380,11 @@ function ViewMode({ plan }: { plan: PlanData }) {
                   <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
                   {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
                 </div>
+                {d.rationale && (
+                  <p className="mb-2 border-l-2 border-accent/30 pl-2 text-[10.5px] italic text-muted-foreground/90">
+                    {d.rationale}
+                  </p>
+                )}
                 <SectionView title="Warmup" items={d.warmup} />
                 <SectionView title="Activation" items={d.activation} />
                 <SectionView title="Dynamic stretches" items={d.dynamic_stretches} />
