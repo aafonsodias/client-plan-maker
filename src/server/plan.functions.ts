@@ -2,6 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const WeekInputSchema = z.object({
+  client: z.object({
+    full_name: z.string(),
+    age: z.number().nullable().optional(),
+    sex: z.string().nullable().optional(),
+    height_cm: z.number().nullable().optional(),
+    weight_kg: z.number().nullable().optional(),
+  }),
+  assessment: z.any(),
+  duration_weeks: z.number().min(1).max(16),
+  week_number: z.number().min(1).max(16),
+  trainer_feedback: z.string().max(4000).nullable().optional(),
+  previous_plan: z.any().nullable().optional(),
+});
+
 const InputSchema = z.object({
   client: z.object({
     full_name: z.string(),
