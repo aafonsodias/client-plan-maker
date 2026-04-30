@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useServerFn } from "@tanstack/react-start";
 import { generateIntakeToken, markIntakeReviewed } from "@/server/intake.functions";
-import { Copy, MessageCircle, Mail, RefreshCw, Check } from "lucide-react";
+import { Copy, MessageCircle, Mail, RefreshCw, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 type IntakeFields = {
@@ -40,6 +41,7 @@ export function IntakeLinkPanel({
   const generate = useServerFn(generateIntakeToken);
   const review = useServerFn(markIntakeReviewed);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const url = intake.intake_token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/intake/${intake.intake_token}`
@@ -63,6 +65,8 @@ export function IntakeLinkPanel({
 
   const copy = async () => {
     await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
     toast.success("Link copied");
   };
 
@@ -140,10 +144,27 @@ export function IntakeLinkPanel({
       <div className="mt-3 flex items-center gap-2 overflow-hidden rounded-md border border-border bg-background/60 px-2 py-1.5">
         <code className="flex-1 truncate font-mono text-[11px] text-muted-foreground">{url}</code>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex items-center gap-2">
+        <Input
+          readOnly
+          value={url}
+          onFocus={(e) => e.currentTarget.select()}
+          className="flex-1 font-mono text-xs"
+        />
         <Button size="sm" variant="outline" onClick={copy}>
-          <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy link
+          {copied ? (
+            <><Check className="mr-1.5 h-3.5 w-3.5" /> Copied!</>
+          ) : (
+            <><Copy className="mr-1.5 h-3.5 w-3.5" /> Copy</>
+          )}
         </Button>
+        <Button size="sm" variant="outline" asChild>
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open
+          </a>
+        </Button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" asChild>
           <a href={waUrl} target="_blank" rel="noopener noreferrer">
             <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> {waPhone ? "WhatsApp client" : "Send via WhatsApp"}
