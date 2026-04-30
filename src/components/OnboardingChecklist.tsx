@@ -22,9 +22,6 @@ const STEPS: { key: keyof Steps; title: string; desc: string; cta: string; to: s
   { key: "run_assessment",  title: "Run an assessment",      desc: "Complete the ACSM-aligned intake on a client page.",  cta: "Open a client",  to: "/clients" },
   { key: "generate_plan",   title: "Generate a plan",        desc: "Let AI draft a periodized program from the intake.",  cta: "Generate now",   to: "/clients" },
   { key: "export_pdf",      title: "Export a branded PDF",   desc: "Send the polished plan to your client.",              cta: "Open Plans",     to: "/plans" },
-  { key: "log_session",       title: "Log the first session",       desc: "Mark a training day Done, Partial, or Missed to start tracking adherence.", cta: "Open Plans",   to: "/plans" },
-  { key: "review_compliance", title: "Review compliance",           desc: "Check the client's adherence dashboard to see how the plan is landing.",   cta: "Open clients", to: "/clients" },
-  { key: "reassess",          title: "Re-assess and iterate",       desc: "Run a new assessment or regenerate the plan as the client progresses.",    cta: "Open clients", to: "/clients" },
 ];
 
 export function OnboardingChecklist() {
