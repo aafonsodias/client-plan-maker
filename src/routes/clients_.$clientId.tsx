@@ -350,7 +350,7 @@ function ClientDetail() {
       const promise = (async () => {
         setSaveStatus("saving");
         try {
-          const payload = { ...buildAssessmentPayload(assessment, user.id, clientId), status: "draft" as const };
+          const payload = buildAssessmentPayload(assessment, user.id, clientId);
           if (assessment.id) {
             const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
             if (error) throw error;
@@ -388,7 +388,7 @@ function ClientDetail() {
     if (!user || !hydrated) return;
     setSaveStatus("saving");
     try {
-      const payload = { ...buildAssessmentPayload(assessment, user.id, clientId), status: "draft" as const };
+      const payload = buildAssessmentPayload(assessment, user.id, clientId);
       if (assessment.id) {
         const { error } = await supabase.from("assessments").update(payload).eq("id", assessment.id);
         if (error) throw error;
