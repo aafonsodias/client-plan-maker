@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
-  Share2, Copy, RefreshCw, History,
+  Share2, Copy, RefreshCw, History, Eye,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/plans/$planId")({
   ),
 });
 
-type Mode = "edit" | "log";
+type Mode = "view" | "edit" | "log";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
@@ -43,7 +43,7 @@ function PlanEditor() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [data, setData] = useState<PlanData>({ weeks: [] });
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<Mode>("edit");
+  const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
 
   useEffect(() => {
@@ -185,31 +185,45 @@ function PlanEditor() {
       {/* Summary */}
       <div className="space-y-1">
         <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Summary</Label>
-        <AutoTextarea
-          minRows={1}
-          value={plan.summary ?? ""}
-          onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
-          placeholder="High-level summary of this program…"
-        />
+        {mode === "edit" ? (
+          <AutoTextarea
+            minRows={1}
+            value={plan.summary ?? ""}
+            onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
+            placeholder="High-level summary of this program…"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+            {plan.summary?.trim() ? plan.summary : <span className="text-muted-foreground italic">No summary yet.</span>}
+          </p>
+        )}
       </div>
 
       {/* Mode tabs */}
       <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
+          onClick={() => setMode("view")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Eye className="h-3.5 w-3.5" /> View
+        </button>
+        <button
           onClick={() => setMode("edit")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <Pencil className="h-3.5 w-3.5" /> Edit plan
+          <Pencil className="h-3.5 w-3.5" /> Edit
         </button>
         <button
           onClick={() => setMode("log")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "log" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <NotebookPen className="h-3.5 w-3.5" /> Workout log
+          <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
       </div>
 
-      {mode === "edit" ? (
+      {mode === "view" ? (
+        <ViewMode plan={data} />
+      ) : mode === "edit" ? (
         <>
           <div className="space-y-3">
             {data.weeks.map((w, wi) => (
