@@ -88,6 +88,7 @@ const PlanSchema = {
                 cooldown: { type: "array", items: SectionItemSchema },
                 finisher: { type: "array", items: SectionItemSchema },
                 finisher_enabled: { type: "boolean" },
+                cardio: { type: "array", items: SectionItemSchema },
                 exercises: {
                   type: "array",
                   items: {
@@ -117,7 +118,7 @@ const PlanSchema = {
               required: [
                 "day_label", "focus", "exercises",
                 "warmup", "activation", "dynamic_stretches",
-                "cooldown", "finisher", "finisher_enabled",
+                "cooldown", "finisher", "finisher_enabled", "cardio",
               ],
               additionalProperties: false,
             },
@@ -152,9 +153,10 @@ SESSION STRUCTURE — every day MUST include these sections in this exact order:
   1. warmup            — 5–10 min: pulse raiser + general joint mobility (e.g. row 3 min, world's greatest stretch x5/side, shoulder CARs).
   2. activation        — 2–4 short drills specific to the day's primary movement patterns (e.g. glute bridge, band pull-apart, dead bug).
   3. dynamic_stretches — movement-prep dynamic stretches that mirror the day's lifts (e.g. leg swings, Spider-Man with reach).
-  4. exercises         — main work (the lifts/conditioning that drive adaptation).
-  5. cooldown          — 3–6 min static stretches targeting the muscles trained.
-  6. finisher          — ALWAYS provide an optional finisher (vibroplate work / agility ladder / cognitive-motor drill / short conditioning piece). Set finisher_enabled = true by default unless the client's recovery profile is very poor (sleep ≤4 OR stress ≥8 OR recovery_capacity describes "low/poor"), in which case set finisher_enabled = false.
+  4. exercises         — main work (the lifts that drive adaptation).
+  5. cardio            — per-day cardio prescription calibrated to RHR / cardio_capacity / goal. Use SectionItem shape: name = modality (e.g. "Zone 2 row", "Bike intervals 30/30"), duration = time (e.g. "20 min", "8 rounds"), notes = zone/intensity cue (e.g. "HR 130–140", "RPE 7"). Provide an empty array [] only on a true rest/mobility day.
+  6. cooldown          — 3–6 min static stretches targeting the muscles trained.
+  7. finisher          — ALWAYS provide an optional finisher (vibroplate / agility ladder / cognitive-motor drill / short conditioning). Set finisher_enabled = true by default unless recovery is very poor (sleep ≤4 OR stress ≥8 OR recovery_capacity "low/poor"), then false.
 
 SECTION ITEM SHAPE — every item in warmup / activation / dynamic_stretches / cooldown / finisher uses { name, duration, notes }. Use empty strings ("") for fields you don't need (never omit the keys). Keep notes short and concrete (a single cue or rep target).
 

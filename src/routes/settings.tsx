@@ -12,7 +12,7 @@ import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
   component: () => (
-    <AppShell>
+    <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
       <Settings />
     </AppShell>
   ),

@@ -1,10 +1,10 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, Home, Users, Settings, LogOut } from "lucide-react";
+import { Dumbbell, Home, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, back }: { children: ReactNode; back?: { to: string; label?: string } }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +54,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        {back && location.pathname !== "/dashboard" && (
+          <button
+            onClick={() => navigate({ to: back.to as any })}
+            className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> {back.label ?? "Back"}
+          </button>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

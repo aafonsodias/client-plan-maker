@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
+  Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
+  ChevronDown, ChevronUp, Heart,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -22,7 +23,7 @@ import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type
 
 export const Route = createFileRoute("/plans/$planId")({
   component: () => (
-    <AppShell>
+    <AppShell back={{ to: "/plans", label: "All plans" }}>
       <PlanEditor />
     </AppShell>
   ),
@@ -37,6 +38,7 @@ type SessionRow = {
 function PlanEditor() {
   const { planId } = Route.useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [plan, setPlan] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -45,6 +47,7 @@ function PlanEditor() {
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -155,7 +158,7 @@ function PlanEditor() {
         <div className="min-w-0 flex-1">
           {client && (
             <Link to="/clients/$clientId" params={{ clientId: client.id }} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-3 w-3" /> {client.full_name}
+              {client.full_name} →
             </Link>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -173,6 +176,20 @@ function PlanEditor() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ShareDialog planId={planId} initialToken={plan.share_token} onChange={(t) => setPlan({ ...plan, share_token: t })} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-muted-foreground hover:text-destructive"
+            onClick={async () => {
+              if (!confirm("Delete this plan? This cannot be undone.")) return;
+              const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
+              if (error) return toast.error(error.message);
+              toast.success("Plan deleted");
+              navigate({ to: "/plans" });
+            }}
+          >
+            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
+          </Button>
           <Link to="/settings" className="group flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-xs hover:border-accent">
             <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded border border-dashed border-border bg-background">
               {logoUrl ? <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" /> : <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -182,20 +199,37 @@ function PlanEditor() {
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="space-y-1">
-        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Summary</Label>
-        {mode === "edit" ? (
-          <AutoTextarea
-            minRows={1}
-            value={plan.summary ?? ""}
-            onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
-            placeholder="High-level summary of this program…"
-          />
-        ) : (
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-            {plan.summary?.trim() ? plan.summary : <span className="text-muted-foreground italic">No summary yet.</span>}
-          </p>
+      {/* Summary — collapsible */}
+      <div className="rounded-lg border border-border bg-card/50">
+        <button
+          type="button"
+          onClick={() => setSummaryOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+        >
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            Summary {plan.summary?.trim() ? "" : "(empty)"}
+          </span>
+          {summaryOpen ? (
+            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+        </button>
+        {summaryOpen && (
+          <div className="border-t border-border px-3 pb-3 pt-2 animate-fade-in">
+            {mode === "edit" ? (
+              <AutoTextarea
+                minRows={2}
+                value={plan.summary ?? ""}
+                onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
+                placeholder="High-level summary of this program…"
+              />
+            ) : (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                {plan.summary?.trim() ? plan.summary : <span className="text-muted-foreground italic">No summary yet.</span>}
+              </p>
+            )}
+          </div>
         )}
       </div>
 
@@ -367,6 +401,9 @@ function ViewMode({ plan }: { plan: PlanData }) {
                 </div>
 
                 <SectionView title="Cooldown" items={d.cooldown} />
+                {d.cardio && d.cardio.length > 0 && (
+                  <SectionView title="Cardio" items={d.cardio} accent />
+                )}
                 {d.finisher_enabled !== false && d.finisher && d.finisher.length > 0 && (
                   <SectionView title="Optional finisher" items={d.finisher} accent />
                 )}
@@ -725,6 +762,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const [notes, setNotes] = useState("");
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [saving, setSaving] = useState(false);
+  const [rewards, setRewards] = useState<Record<string, number>>({});
 
   const week = plan.weeks.find((w) => w.week_number === weekNum) ?? plan.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
@@ -751,9 +789,17 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const updateSet = (i: number, si: number, k: keyof SetLog, v: string) => {
     const copy = [...entries];
     const sets = [...copy[i].sets];
+    const prev = sets[si];
+    const wasComplete = !!(prev.reps && prev.weight);
     sets[si] = { ...sets[si], [k]: v };
+    const nowComplete = !!(sets[si].reps && sets[si].weight);
     copy[i] = { ...copy[i], sets };
     setEntries(copy);
+    if (!wasComplete && nowComplete) {
+      const key = `${i}-${si}`;
+      setRewards((r) => ({ ...r, [key]: Date.now() }));
+      setTimeout(() => setRewards((r) => { const { [key]: _, ...rest } = r; return rest; }), 700);
+    }
   };
   const addSet = (i: number) => {
     const copy = [...entries];
@@ -878,8 +924,15 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
             </div>
             <div className="space-y-1">
               {e.sets.map((st, si) => (
-                <div key={si} className="grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5">
-                  <span className="text-center text-xs font-bold text-foreground0">{si + 1}</span>
+                <div
+                  key={si}
+                  className={`grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5 rounded transition-all ${
+                    rewards[`${i}-${si}`] ? "animate-scale-in bg-accent/15 ring-1 ring-accent/40" : ""
+                  }`}
+                >
+                  <span className="text-center text-xs font-bold text-foreground0">
+                    {rewards[`${i}-${si}`] ? <Heart className="mx-auto h-3.5 w-3.5 fill-accent text-accent" /> : si + 1}
+                  </span>
                   <input
                     inputMode="numeric"
                     value={st.reps}

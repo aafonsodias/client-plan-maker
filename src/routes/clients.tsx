@@ -12,7 +12,7 @@ import { Plus, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/clients")({
   component: () => (
-    <AppShell>
+    <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
       <Clients />
     </AppShell>
   ),
