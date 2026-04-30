@@ -53,6 +53,29 @@ function parqFlagCount(parq: Record<string, boolean | null>): number {
   return Object.values(parq ?? {}).filter((v) => v === true).length;
 }
 
+// Section -> assessment field keys used to compute a signature for edit detection.
+const PROV_SECTION_FIELDS: Record<string, string[]> = {
+  smart_goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal"],
+  readiness: ["readiness_stage"],
+  training: [
+    "experience_level", "training_days_per_week", "session_duration_minutes",
+    "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
+  ],
+  lifestyle: [
+    "sleep_quality", "stress_level", "ext_hours_seated", "ext_daily_steps",
+    "ext_job_type", "energy_levels", "recovery_capacity",
+  ],
+  nutrition: [
+    "ext_meals_per_day", "ext_alcohol_units_week", "ext_processed_food_freq",
+    "ext_water_l_per_day", "nutrition_habits",
+  ],
+};
+
+function sectionSignature(assessment: any, section: string): string {
+  const fields = PROV_SECTION_FIELDS[section] ?? [];
+  return JSON.stringify(fields.map((f) => assessment?.[f] ?? null));
+}
+
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
