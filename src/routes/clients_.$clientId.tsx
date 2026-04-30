@@ -635,7 +635,7 @@ function ClientDetail() {
             trainer_id: user.id,
             client_id: clientId,
             assessment_id: assessmentId,
-            title: `${client.full_name} – ${duration}-Week Plan`,
+            title: `${client?.full_name ?? "Client"} – ${duration}-Week Plan`,
             duration_weeks: duration,
             status: "draft",
             generation_status: "in_progress",
@@ -851,7 +851,7 @@ function ClientDetail() {
     <div className="space-y-6">
       <div>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-light tracking-tight">{client.full_name}</h1>
+          <h1 className="text-3xl font-light tracking-tight">{client?.full_name}</h1>
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
