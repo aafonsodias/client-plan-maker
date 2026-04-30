@@ -156,9 +156,9 @@ function Landing() {
             <h2 className="text-[32px] font-light leading-tight tracking-tight">Why Forge?</h2>
             <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
               <p>
-                I've been a personal trainer in Lisbon since 2010. In fifteen years, I've realized two
-                things: most professional training plans are poorly put together, and because the admin
-                is such a chore, many trainers just give up and improvise.
+                In fifteen years as a personal trainer, I've realized two things: most professional
+                training plans are poorly put together, and because the admin is such a chore, many
+                trainers just give up and improvise.
               </p>
               <p>
                 High-quality, structured programming usually takes too much time, so it doesn't get done.
