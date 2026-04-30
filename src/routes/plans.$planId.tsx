@@ -118,19 +118,36 @@ function PlanEditor() {
 
   return (
     <div className="space-y-8">
-      <div>
-        {client && (
-          <Link to="/clients/$clientId" params={{ clientId: client.id }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> {client.full_name}
-          </Link>
-        )}
-        <div className="mt-2 flex items-center gap-3">
-          <Input className="h-auto border-0 bg-transparent !text-3xl font-black tracking-tight focus-visible:ring-0" value={plan.title} onChange={(e) => setPlan({ ...plan, title: e.target.value })} />
-          {plan.status === "finalized" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-foreground">
-              <CheckCircle2 className="h-3 w-3" /> Finalized
-            </span>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          {client && (
+            <Link to="/clients/$clientId" params={{ clientId: client.id }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-3 w-3" /> {client.full_name}
+            </Link>
           )}
+          <div className="mt-2 flex items-center gap-3">
+            <Input className="h-auto border-0 bg-transparent !text-3xl font-black tracking-tight focus-visible:ring-0" value={plan.title} onChange={(e) => setPlan({ ...plan, title: e.target.value })} />
+            {plan.status === "finalized" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-foreground">
+                <CheckCircle2 className="h-3 w-3" /> Finalized
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <Link to="/settings" className="group flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 text-xs hover:border-accent">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-background">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo preview" className="max-h-full max-w-full object-contain" />
+              ) : (
+                <SettingsIcon className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+            <div className="text-left">
+              <p className="font-semibold">{logoUrl ? "PDF logo" : "No logo set"}</p>
+              <p className="text-muted-foreground group-hover:text-foreground">Edit branding →</p>
+            </div>
+          </Link>
         </div>
       </div>
 
@@ -152,9 +169,15 @@ function PlanEditor() {
         <Button variant="outline" onClick={() => save()} disabled={saving}>
           <Save className="mr-2 h-4 w-4" /> Save
         </Button>
-        <Button variant="outline" onClick={() => save({ status: "finalized" })} disabled={saving}>
-          Finalize
-        </Button>
+        {plan.status === "finalized" ? (
+          <Button variant="outline" onClick={() => save({ status: "draft" })} disabled={saving}>
+            <LockOpen className="mr-2 h-4 w-4" /> Un-finalize
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={() => save({ status: "finalized" })} disabled={saving}>
+            <Lock className="mr-2 h-4 w-4" /> Finalize
+          </Button>
+        )}
         <Button onClick={exportPdf}>
           <Download className="mr-2 h-4 w-4" /> Export PDF
         </Button>
@@ -212,13 +235,23 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
         </Button>
       </div>
       <div className="space-y-2">
+        {day.exercises.length > 0 && (
+          <div className="grid grid-cols-12 items-center gap-2 px-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <span className="col-span-4">Exercise name</span>
+            <span className="col-span-1">Sets</span>
+            <span className="col-span-1">Reps</span>
+            <span className="col-span-2">Rest</span>
+            <span className="col-span-3">Notes</span>
+            <span className="col-span-1" />
+          </div>
+        )}
         {day.exercises.map((ex, ei) => (
           <div key={ei} className="grid grid-cols-12 items-center gap-2">
-            <Input className="col-span-4" placeholder="Exercise" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
-            <Input className="col-span-1" placeholder="Sets" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
-            <Input className="col-span-1" placeholder="Reps" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
-            <Input className="col-span-2" placeholder="Rest" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
-            <Input className="col-span-3" placeholder="Notes" value={ex.notes} onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })} />
+            <Input className="col-span-4" placeholder="e.g. Barbell back squat" value={ex.name} onChange={(e) => updateEx(ei, { ...ex, name: e.target.value })} />
+            <Input className="col-span-1" placeholder="3" value={ex.sets} onChange={(e) => updateEx(ei, { ...ex, sets: e.target.value })} />
+            <Input className="col-span-1" placeholder="10" value={ex.reps} onChange={(e) => updateEx(ei, { ...ex, reps: e.target.value })} />
+            <Input className="col-span-2" placeholder="60s" value={ex.rest} onChange={(e) => updateEx(ei, { ...ex, rest: e.target.value })} />
+            <Input className="col-span-3" placeholder="Tempo, RPE, cues…" value={ex.notes} onChange={(e) => updateEx(ei, { ...ex, notes: e.target.value })} />
             <Button variant="ghost" size="icon" className="col-span-1" onClick={() => removeEx(ei)}>
               <Trash2 className="h-4 w-4" />
             </Button>
