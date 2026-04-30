@@ -95,7 +95,7 @@ const jsPDFmod = await import("jspdf");
 const orig = jsPDFmod.default.prototype.save;
 jsPDFmod.default.prototype.save = function (filename) {
   const buf = Buffer.from(this.output("arraybuffer"));
-  const fs = require("fs");
+  const fs = await import("fs");
   fs.writeFileSync("/tmp/out.pdf", buf);
   console.log("wrote /tmp/out.pdf", buf.length, "bytes");
 };
