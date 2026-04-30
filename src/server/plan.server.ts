@@ -149,7 +149,7 @@ EXERCISE SHAPE — every exercise MUST populate ALL of:
 - primary_muscles[], secondary_muscles[]
 - rpe (beginner 6–7, intermediate 7–8, advanced 8–9)
 - tempo (4-digit eccentric-pause-concentric-pause, e.g. "3-1-1-0")
-- technique_cues (legacy field — repeat the same value as `cue` for backward compat)
+- technique_cues (legacy field — repeat the same value as 'cue' for backward compat)
 - cue — ONE short technical cue (≤80 chars). Joint centralization,
   pause at peak stretch, or breathing. Example:
   "Brace ribs over pelvis, exhale on press."
