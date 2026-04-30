@@ -158,8 +158,8 @@ function Landing() {
               <p>
                 I'm a personal trainer in Lisbon with a Master's in Exercise and Health. For the last 15
                 years, I've spent my evenings doing admin that had nothing to do with coaching: writing
-                plans, formatting PDFs, copying across spreadsheets. The actual work — helping people move
-                better and feel stronger — kept getting squeezed into whatever time was left.
+                plans, formatting PDFs, copying across spreadsheets. The actual coaching was never the
+                problem. The hours of admin around it were.
               </p>
               <p>
                 Forge does the repetitive parts so you don't have to. The intake is solid (PAR-Q+, ACSM
