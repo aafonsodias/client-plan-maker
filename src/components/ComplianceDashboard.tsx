@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, TrendingUp, Activity, Dumbbell, CalendarCheck } from "lucide-react";
+import { markOnboardingStep } from "@/components/OnboardingChecklist";
 
 /**
  * Per-client compliance dashboard.
@@ -55,6 +56,13 @@ export function ComplianceDashboard({ clientId }: { clientId: string }) {
   const [sessions, setSessions] = useState<any[]>([]);
   const [plans, setPlans] = useState<any[]>([]);
   const [range, setRange] = useState<Range>("30d");
+
+  useEffect(() => {
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) void markOnboardingStep(user.id, "review_compliance");
+    })();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
