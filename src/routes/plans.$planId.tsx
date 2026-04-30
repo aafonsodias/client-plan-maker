@@ -401,6 +401,9 @@ function ViewMode({ plan }: { plan: PlanData }) {
                 </div>
 
                 <SectionView title="Cooldown" items={d.cooldown} />
+                {d.cardio && d.cardio.length > 0 && (
+                  <SectionView title="Cardio" items={d.cardio} accent />
+                )}
                 {d.finisher_enabled !== false && d.finisher && d.finisher.length > 0 && (
                   <SectionView title="Optional finisher" items={d.finisher} accent />
                 )}
