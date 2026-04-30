@@ -43,7 +43,7 @@ function Dashboard() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Welcome back</p>
-          <h1 className="mt-1 text-4xl font-black tracking-tight">Your training studio</h1>
+          <h1 className="mt-1 text-4xl font-light tracking-tight">Your training studio</h1>
         </div>
         <Button asChild>
           <Link to="/clients">
@@ -100,7 +100,7 @@ function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ cl
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <p className="mt-3 text-4xl font-black tracking-tight">{value}</p>
+      <p className="mt-3 text-4xl font-light tracking-tight">{value}</p>
     </div>
   );
 }

@@ -9,13 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        // CTA — soft sage on dark text. Used as the loud primary action.
+        default: "bg-accent text-accent-foreground hover:bg-accent/90",
+        // Quiet primary — white text on a #1e1e1e border. Calm, premium.
+        primary: "border border-border bg-secondary text-foreground hover:bg-secondary/70",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-border bg-transparent text-foreground hover:bg-secondary/60",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "text-foreground hover:bg-secondary/60",
+        link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

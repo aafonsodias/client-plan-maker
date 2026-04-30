@@ -61,7 +61,7 @@ function Clients() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Roster</p>
-          <h1 className="mt-1 text-4xl font-black tracking-tight">Clients</h1>
+          <h1 className="mt-1 text-4xl font-light tracking-tight">Clients</h1>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

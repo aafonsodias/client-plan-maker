@@ -59,7 +59,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-black tracking-tight">
+        <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
           <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Dumbbell className="h-5 w-5" />
           </div>

@@ -96,7 +96,7 @@ function Settings() {
 
       <div>
         <p className="text-sm uppercase tracking-widest text-muted-foreground">Settings</p>
-        <h1 className="mt-1 text-4xl font-black tracking-tight">PDF branding</h1>
+        <h1 className="mt-1 text-4xl font-light tracking-tight">PDF branding</h1>
         <p className="mt-2 text-muted-foreground">Appears on every workout plan PDF you export.</p>
       </div>
 

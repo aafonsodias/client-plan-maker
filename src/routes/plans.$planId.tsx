@@ -165,7 +165,7 @@ function PlanEditor() {
               onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             />
             {plan.status === "finalized" && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
                 <CheckCircle2 className="h-3 w-3" /> Finalized
               </span>
             )}
@@ -253,9 +253,9 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
   const removeDay = (i: number) => onChange({ ...week, days: week.days.filter((_, idx) => idx !== i) });
 
   return (
-    <div className="rounded-xl border border-border bg-muted/70 p-3">
+      <div className="rounded-xl border border-border bg-muted/40 p-3">
       <div className="mb-3 flex items-center gap-2">
-        <span className="rounded bg-accent px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-accent-foreground">Week {week.week_number}</span>
+        <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">Week {week.week_number}</span>
         <Input value={week.focus} onChange={(e) => onChange({ ...week, focus: e.target.value })} placeholder="Focus (e.g. Hypertrophy block)" className="h-8 flex-1" />
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
           <Trash2 className="h-4 w-4" />
@@ -534,25 +534,25 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   };
 
   if (!plan.weeks.length) {
-    return <p className="text-sm text-zinc-400">Add weeks and exercises in Edit mode first.</p>;
+    return <p className="text-sm text-muted-foreground">Add weeks and exercises in Edit mode first.</p>;
   }
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 bg-[#0f0f0f] px-4 sm:px-6 lg:px-8 pt-3 pb-6 text-zinc-100">
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 bg-background px-4 sm:px-6 lg:px-8 pt-3 pb-6 text-foreground">
       {/* Compact single-row picker */}
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-[#1a1a1a] px-2.5 py-2 text-xs">
-        <span className="rounded bg-accent px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-accent-foreground">Log</span>
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 text-xs">
+        <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">Log</span>
         <select
           value={weekNum}
           onChange={(e) => setWeekNum(Number(e.target.value))}
-          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+          className="h-7 rounded bg-secondary px-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
         >
           {plan.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Week {w.week_number}</option>)}
         </select>
         <select
           value={dayLabel}
           onChange={(e) => setDayLabel(e.target.value)}
-          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+          className="h-7 rounded bg-secondary px-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
         >
           {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
         </select>
@@ -560,12 +560,12 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+          className="h-7 rounded bg-secondary px-2 text-xs text-foreground outline-none focus:ring-1 focus:ring-ring"
         />
         <Link
           to="/plans/$planId/sessions"
           params={{ planId }}
-          className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-zinc-100"
+          className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
         >
           <History className="h-3 w-3" /> History ({safeSessions.length})
         </Link>
@@ -573,24 +573,24 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
 
       {/* Exercise cards */}
       <div className="space-y-2">
-        {entries.length === 0 && <p className="text-sm text-zinc-500">No exercises in this day.</p>}
+        {entries.length === 0 && <p className="text-sm text-foreground0">No exercises in this day.</p>}
         {entries.map((e, i) => (
-          <div key={i} className="rounded-md bg-[#1a1a1a] p-2.5">
+          <div key={i} className="rounded-md bg-card p-2.5">
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <h3 className="text-base font-bold tracking-tight text-zinc-50">
-                {e.exercise_name || <span className="text-zinc-500">(unnamed)</span>}
+              <h3 className="text-base font-bold tracking-tight text-foreground">
+                {e.exercise_name || <span className="text-foreground0">(unnamed)</span>}
               </h3>
-              <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-emerald-400/80">
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-accent">
                 Planned · {e.planned.sets || "—"} × {e.planned.reps || "—"} · {e.planned.rest || "—"}
               </span>
             </div>
             {e.planned.notes && (
-              <p className="mb-1.5 text-[11px] italic text-emerald-400/60">{e.planned.notes}</p>
+              <p className="mb-1.5 text-[11px] italic text-accent/70">{e.planned.notes}</p>
             )}
 
             {/* Per-set rows */}
-            <div className="mb-1 grid grid-cols-[2.25rem_1fr_1fr_1.5rem] gap-1.5 px-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-100">
-              <span className="text-zinc-500">Set</span>
+            <div className="mb-1 grid grid-cols-[2.25rem_1fr_1fr_1.5rem] gap-1.5 px-0.5 text-[9px] font-bold uppercase tracking-widest text-foreground">
+              <span className="text-foreground0">Set</span>
               <span>Reps</span>
               <span>Weight</span>
               <span />
@@ -598,23 +598,23 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
             <div className="space-y-1">
               {e.sets.map((st, si) => (
                 <div key={si} className="grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5">
-                  <span className="text-center text-xs font-bold text-zinc-500">{si + 1}</span>
+                  <span className="text-center text-xs font-bold text-foreground0">{si + 1}</span>
                   <input
                     inputMode="numeric"
                     value={st.reps}
                     onChange={(ev) => updateSet(i, si, "reps", ev.target.value)}
                     placeholder={e.planned.reps || "—"}
-                    className="h-7 w-full rounded bg-[#262626] px-2 text-center text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-accent"
+                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
                   />
                   <input
                     value={st.weight}
                     onChange={(ev) => updateSet(i, si, "weight", ev.target.value)}
                     placeholder="kg"
-                    className="h-7 w-full rounded bg-[#262626] px-2 text-center text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-accent"
+                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
                   />
                   <button
                     onClick={() => removeSet(i, si)}
-                    className="text-zinc-600 hover:text-zinc-200"
+                    className="text-muted-foreground/50 hover:text-zinc-200"
                     aria-label="Remove set"
                     type="button"
                   >
@@ -627,7 +627,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
               <button
                 onClick={() => addSet(i)}
                 type="button"
-                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-accent"
+                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-accent"
               >
                 <Plus className="h-3 w-3" /> Add set
               </button>
@@ -635,7 +635,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
                 value={e.notes}
                 onChange={(ev) => updateExNotes(i, ev.target.value)}
                 placeholder="Notes…"
-                className="h-6 flex-1 rounded bg-transparent px-1 text-xs text-zinc-300 placeholder:text-zinc-600 outline-none focus:bg-[#262626]"
+                className="h-6 flex-1 rounded bg-transparent px-1 text-xs text-foreground/90 placeholder:text-muted-foreground/50 outline-none focus:bg-secondary"
               />
             </div>
           </div>
@@ -648,16 +648,16 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Session notes — how did it feel?"
-          className="h-8 w-full rounded bg-[#1a1a1a] px-2.5 text-xs text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-1 focus:ring-accent"
+          className="h-8 w-full rounded bg-card px-2.5 text-xs text-foreground placeholder:text-foreground0 outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       {/* Action bar */}
-      <div className="sticky bottom-2 mt-3 flex items-center justify-end gap-2 rounded-md bg-[#1a1a1a]/95 p-2 backdrop-blur">
+      <div className="sticky bottom-2 mt-3 flex items-center justify-end gap-2 rounded-md bg-card/95 p-2 backdrop-blur">
         <button
           type="button"
           onClick={() => void onExportPdf()}
-          className="inline-flex items-center gap-1.5 rounded bg-white px-3 py-1.5 text-xs font-bold text-black hover:bg-zinc-200"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-transparent px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground transition hover:bg-secondary"
         >
           <Download className="h-3.5 w-3.5" /> Export PDF
         </button>
@@ -665,7 +665,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           type="button"
           onClick={submit}
           disabled={saving || entries.length === 0}
-          className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-accent-foreground transition hover:bg-accent/90 disabled:opacity-50"
         >
           <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save session"}
         </button>
