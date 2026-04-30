@@ -18,6 +18,7 @@ import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: () => (
@@ -1135,6 +1136,12 @@ function ClientDetail() {
           </div>
         )}
       </section>
+
+      {plans.length > 0 && (
+        <section>
+          <ComplianceDashboard clientId={clientId} />
+        </section>
+      )}
     </div>
     </TooltipProvider>
   );
