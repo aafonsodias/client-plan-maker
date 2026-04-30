@@ -60,9 +60,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-          <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
-            <Logo className="h-6 w-6" />
-          </div>
+          <Logo className="h-9 w-9" />
           <span className="text-xl">FORGEPLAN</span>
         </Link>
         <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)]">
