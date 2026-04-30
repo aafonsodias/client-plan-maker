@@ -696,6 +696,7 @@ function ClientDetail() {
       <IntakeLinkPanel
         clientId={client.id}
         clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+        clientPhone={client.phone}
         intake={{
           intake_token: client.intake_token ?? null,
           intake_token_expires_at: client.intake_token_expires_at ?? null,
