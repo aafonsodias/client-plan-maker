@@ -26,6 +26,52 @@ export const Route = createFileRoute("/clients_/$clientId")({
 
 const EQUIPMENT = ["Barbell", "Dumbbells", "Kettlebells", "Cable machine", "Bench", "Pull-up bar", "Bands", "Bodyweight only"];
 
+const PARQ_QUESTIONS = [
+  { key: "q1", text: "Has a doctor ever said you have a heart condition or that you should only do physical activity recommended by a doctor?" },
+  { key: "q2", text: "Do you feel pain in your chest when you do physical activity?" },
+  { key: "q3", text: "In the past month, have you had chest pain when you were not doing physical activity?" },
+  { key: "q4", text: "Do you lose your balance because of dizziness or do you ever lose consciousness?" },
+  { key: "q5", text: "Do you have a bone or joint problem that could be made worse by a change in your physical activity?" },
+  { key: "q6", text: "Is your doctor currently prescribing drugs for blood pressure or a heart condition?" },
+  { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
+];
+
+const SECTIONS = [
+  { id: "parq", label: "PAR-Q+" },
+  { id: "risk", label: "Risk strat." },
+  { id: "anthro", label: "Anthropometry" },
+  { id: "meds", label: "Medications" },
+  { id: "goal", label: "SMART goal" },
+  { id: "readiness", label: "Readiness" },
+  { id: "training", label: "Training setup" },
+  { id: "lifestyle", label: "Lifestyle" },
+  { id: "nutrition", label: "Nutrition" },
+  { id: "mobility", label: "Mobility" },
+  { id: "posture", label: "Posture" },
+  { id: "screen", label: "Movement screen" },
+  { id: "history", label: "Training history" },
+  { id: "performance", label: "Performance" },
+];
+
+function parqHasYes(parq: Record<string, boolean | null>): boolean {
+  return Object.values(parq ?? {}).some((v) => v === true);
+}
+
+function computeRisk(risk: any): string {
+  if (!risk) return "low";
+  let n = 0;
+  if (risk.family_cvd) n++;
+  if (risk.smoking === "current") n++;
+  if (risk.sedentary) n++;
+  if (risk.bmi_category === "obese" || risk.bmi_category === "overweight") n++;
+  if (risk.dyslipidemia) n++;
+  if (risk.prediabetes) n++;
+  if (risk.hypertension) n++;
+  if (n >= 2) return "moderate";
+  if (n >= 4) return "high";
+  return "low";
+}
+
 function ClientDetail() {
   const { clientId } = Route.useParams();
   const { user } = useAuth();
