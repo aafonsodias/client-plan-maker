@@ -8,7 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Trash2 } from "lucide-react";
+import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/clients")({
   component: () => (
@@ -51,9 +56,17 @@ function Clients() {
     const { error } = await supabase.from("clients").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Client added");
+    void markOnboardingStep(user.id, "add_client");
     setOpen(false);
     setForm({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
     void load();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("clients").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setList((l) => l.filter((c) => c.id !== id));
+    toast.success("Client removed");
   };
 
   return (
@@ -97,18 +110,43 @@ function Clients() {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {list.map((c) => (
-            <Link
-              key={c.id}
-              to="/clients/$clientId"
-              params={{ clientId: c.id }}
-              className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
-            >
-              <div>
-                <p className="font-semibold">{c.full_name}</p>
-                <p className="text-sm text-muted-foreground">{c.email ?? "No email"}</p>
-              </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
+            <div key={c.id} className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50">
+              <Link
+                to="/clients/$clientId"
+                params={{ clientId: c.id }}
+                className="flex flex-1 items-center justify-between px-5 py-4"
+              >
+                <div>
+                  <p className="font-semibold">{c.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{c.email ?? "No email"}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                    aria-label="Delete client"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {c.full_name}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes the client and any associated assessments and plans. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => void remove(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           ))}
         </div>
       )}

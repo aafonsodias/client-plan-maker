@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Sparkles } from "lucide-react";
+import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 
 export const Route = createFileRoute("/dashboard")({
   component: () => (
@@ -40,6 +41,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-10">
+      <OnboardingChecklist />
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Welcome back</p>
