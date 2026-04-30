@@ -58,11 +58,9 @@ export function OnboardingChecklist() {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) void dismiss(false); }}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span>Welcome to Forge</span>
-            <img src={waveHand} alt="" className="h-6 w-6 object-contain" />
-          </DialogTitle>
+        <DialogHeader className="items-center text-center">
+          <img src={waveHand} alt="" className="mb-2 h-10 w-10 object-contain" />
+          <DialogTitle>Welcome to Forge</DialogTitle>
           <DialogDescription>
             Four quick steps to your first branded plan. {completed}/{STEPS.length} done.
           </DialogDescription>
