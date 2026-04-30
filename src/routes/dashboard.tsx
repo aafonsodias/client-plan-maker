@@ -136,6 +136,7 @@ function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<
   return (
     <Link
       to={to}
+      search={to === "/clients" ? { filter: "all" } : undefined as any}
       className="group block rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:bg-card/80"
     >
       <div className="flex items-center justify-between">
