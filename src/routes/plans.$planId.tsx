@@ -551,45 +551,6 @@ function DayQuickMark({
   );
 }
 
-function SectionView({ title, items, accent = false }: { title: string; items?: SectionItem[]; accent?: boolean }) {
-  if (!items || items.length === 0) return null;
-  return (
-    <div className="mt-2">
-      <SectionLabel>
-        <span className={accent ? "text-accent" : ""}>{title}</span>
-      </SectionLabel>
-      <ul className="space-y-0.5">
-        {items.map((it, i) => (
-          <li key={i} className="text-xs text-foreground/85">
-            <span className="font-medium">{it.name}</span>
-            {it.duration && <span className="text-muted-foreground"> · {it.duration}</span>}
-            {it.notes && <span className="text-muted-foreground italic"> — {it.notes}</span>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function MuscleChips({ primary, secondary }: { primary?: string[]; secondary?: string[] }) {
-  const p = primary ?? [];
-  const s = secondary ?? [];
-  if (p.length === 0 && s.length === 0) return null;
-  return (
-    <div className="mt-1 flex flex-wrap gap-1">
-      {p.map((m, i) => (
-        <span key={`p-${i}`} className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent">
-          {m}
-        </span>
-      ))}
-      {s.map((m, i) => (
-        <span key={`s-${i}`} className="rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
-          {m}
-        </span>
-      ))}
-    </div>
-  );
-}
 function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) => void; onRemove: () => void }) {
   const addEx = () =>
     onChange({
