@@ -13,7 +13,7 @@ import { Sparkles, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 
-export const Route = createFileRoute("/clients/$clientId")({
+export const Route = createFileRoute("/clients_/$clientId")({
   component: () => (
     <AppShell>
       <ClientDetail />

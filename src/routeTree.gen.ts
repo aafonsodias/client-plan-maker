@@ -15,7 +15,7 @@ import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
-import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
+import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -48,15 +48,15 @@ const PlansPlanIdRoute = PlansPlanIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
-  id: '/$clientId',
-  path: '/$clientId',
-  getParentRoute: () => ClientsRoute,
+  id: '/clients_/$clientId',
+  path: '/clients/$clientId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
+  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
@@ -65,7 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
+  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
@@ -75,10 +75,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
+  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/settings': typeof SettingsRoute
-  '/clients/$clientId': typeof ClientsClientIdRoute
+  '/clients_/$clientId': typeof ClientsClientIdRoute
   '/plans/$planId': typeof PlansPlanIdRoute
 }
 export interface FileRouteTypes {
@@ -107,16 +107,17 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/settings'
-    | '/clients/$clientId'
+    | '/clients_/$clientId'
     | '/plans/$planId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  ClientsRoute: typeof ClientsRouteWithChildren
+  ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
   SettingsRoute: typeof SettingsRoute
+  ClientsClientIdRoute: typeof ClientsClientIdRoute
   PlansPlanIdRoute: typeof PlansPlanIdRoute
 }
 
@@ -164,35 +165,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansPlanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clients/$clientId': {
-      id: '/clients/$clientId'
-      path: '/$clientId'
+    '/clients_/$clientId': {
+      id: '/clients_/$clientId'
+      path: '/clients/$clientId'
       fullPath: '/clients/$clientId'
       preLoaderRoute: typeof ClientsClientIdRouteImport
-      parentRoute: typeof ClientsRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface ClientsRouteChildren {
-  ClientsClientIdRoute: typeof ClientsClientIdRoute
-}
-
-const ClientsRouteChildren: ClientsRouteChildren = {
-  ClientsClientIdRoute: ClientsClientIdRoute,
-}
-
-const ClientsRouteWithChildren =
-  ClientsRoute._addFileChildren(ClientsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  ClientsRoute: ClientsRouteWithChildren,
+  ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,
   SettingsRoute: SettingsRoute,
+  ClientsClientIdRoute: ClientsClientIdRoute,
   PlansPlanIdRoute: PlansPlanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
