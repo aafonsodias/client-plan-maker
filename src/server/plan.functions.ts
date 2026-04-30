@@ -301,7 +301,7 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return { ok: false as const, error: "AI gateway is not configured." };
     }
@@ -493,37 +493,36 @@ ${prevSkeleton}`;
     }
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 8000,
+          system: sys,
           messages: [
-            { role: "system", content: sys },
             { role: "user", content: user + feedbackBlock },
           ],
           tools: [
             {
-              type: "function",
-              function: {
-                name: "emit_workout_plan",
-                description: "Emit the structured workout plan",
-                parameters: PlanSchema,
-              },
+              name: "emit_workout_plan",
+              description: "Emit the structured workout plan",
+              input_schema: PlanSchema,
             },
           ],
-          tool_choice: { type: "function", function: { name: "emit_workout_plan" } },
+          tool_choice: { type: "tool", name: "emit_workout_plan" },
         }),
       });
 
       if (res.status === 429) {
         return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
       }
-      if (res.status === 402) {
-        return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
+      if (res.status === 529) {
+        return { ok: false as const, error: "AI provider overloaded. Try again in a moment." };
       }
       if (!res.ok) {
         const t = await res.text();
@@ -532,18 +531,11 @@ ${prevSkeleton}`;
       }
 
       const json = await res.json();
-      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
-      const argsRaw = toolCall?.function?.arguments;
-      if (!argsRaw) {
+      const toolUse = json?.content?.find((b: any) => b.type === "tool_use");
+      const args: any = toolUse?.input;
+      if (!args) {
         console.error("AI returned no tool call", JSON.stringify(json).slice(0, 1000));
         return { ok: false as const, error: "AI returned no plan." };
-      }
-      let args: any;
-      try {
-        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
-      } catch (e) {
-        console.error("Failed to parse plan JSON", e);
-        return { ok: false as const, error: "AI returned malformed plan." };
       }
       return { ok: true as const, plan: args };
     } catch (err) {
