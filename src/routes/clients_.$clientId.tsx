@@ -1103,6 +1103,8 @@ function SectionBlock({
   defaultCollapsed = false,
   complete = false,
   footer,
+  provenance,
+  reviewed = false,
 }: {
   id: string;
   title: string;
@@ -1111,10 +1113,28 @@ function SectionBlock({
   defaultCollapsed?: boolean;
   complete?: boolean;
   footer?: React.ReactNode;
+  provenance?: "client" | "trainer-edited";
+  reviewed?: boolean;
 }) {
   const [open, setOpen] = useState(!defaultCollapsed);
+  // Provenance border + tag styling
+  const hasProv = provenance === "client" || provenance === "trainer-edited";
+  const borderClass = hasProv
+    ? reviewed
+      ? "border-l-[3px] border-l-accent/30"
+      : "border-l-[3px] border-l-accent"
+    : "";
+  let tagText = "";
+  let tagClass = "";
+  if (provenance === "client") {
+    tagText = "Client-submitted";
+    tagClass = reviewed ? "text-muted-foreground/70" : "text-accent/90";
+  } else if (provenance === "trainer-edited") {
+    tagText = "Edited by you";
+    tagClass = "text-muted-foreground/70";
+  }
   return (
-    <div id={`sec-${id}`} className="scroll-mt-20 rounded-xl border border-border bg-background/40 p-3">
+    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl border border-border bg-background/40 p-3 ${borderClass}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -1139,6 +1159,11 @@ function SectionBlock({
             </TooltipTrigger>
             <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
           </Tooltip>
+        )}
+        {tagText && (
+          <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider ${tagClass}`}>
+            {tagText}
+          </span>
         )}
       </button>
       {open && (
