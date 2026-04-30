@@ -1,18 +1,32 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink } from "lucide-react";
+import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getAccessStatus } from "@/server/billing.functions";
 
 export function AppShell({ children, back }: { children: ReactNode; back?: { to: string; label?: string } }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [access, setAccess] = useState<{
+    hasAccess: boolean;
+    trialActive: boolean;
+    trialDaysLeft: number | null;
+    subscribed: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    getAccessStatus()
+      .then((r) => setAccess(r))
+      .catch(() => {});
+  }, [user]);
 
   if (loading || !user) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
@@ -49,6 +63,12 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             })}
           </nav>
           <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" title="Billing">
+              <Link to="/billing">
+                <CreditCard className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Billing</span>
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="sm" title="View landing page">
               <Link to="/">
                 <ExternalLink className="mr-2 h-4 w-4" />
@@ -62,6 +82,29 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           </div>
         </div>
       </header>
+      {access && !access.subscribed && (access.trialActive || !access.hasAccess) && (
+        <div
+          className={`border-b ${
+            access.hasAccess
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : "border-destructive/40 bg-destructive/10 text-destructive"
+          }`}
+        >
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-2 text-sm">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>
+                {access.hasAccess
+                  ? `${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left in your free trial.`
+                  : "Your free trial has ended. Upgrade to keep generating plans."}
+              </span>
+            </div>
+            <Button asChild size="sm" variant={access.hasAccess ? "outline" : "default"}>
+              <Link to="/billing">Upgrade</Link>
+            </Button>
+          </div>
+        </div>
+      )}
       <main className="mx-auto max-w-6xl px-6 py-6">
         {back && location.pathname !== "/dashboard" && (
           <button

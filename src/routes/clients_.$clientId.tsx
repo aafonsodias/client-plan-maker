@@ -591,7 +591,14 @@ function ClientDetail() {
         },
       });
 
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        if ((result as any).billingRequired) {
+          toast.error(result.error);
+          navigate({ to: "/billing" });
+          return;
+        }
+        throw new Error(result.error);
+      }
       setProgressStep(3);
 
       const { data: plan, error } = await supabase
