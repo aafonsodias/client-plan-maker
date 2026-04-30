@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft, generatePlanWeek } from "@/server/plan.functions";
+import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -263,6 +263,8 @@ function ClientDetail() {
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
   const generateWeekFn = useServerFn(generatePlanWeek);
+  const generateDayFn = useServerFn(generatePlanDay);
+  const finalizePlanFn = useServerFn(finalizePlanGeneration);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
