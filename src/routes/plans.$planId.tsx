@@ -239,7 +239,7 @@ function PlanEditor() {
           </div>
         </>
       ) : (
-        <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+        <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
     </div>
   );
@@ -442,7 +442,7 @@ function parsePlannedSets(s: string): number {
   return 3;
 }
 
-function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: string; sessions: SessionRow[]; reload: () => void }) {
+function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanData; planId: string; sessions: SessionRow[]; reload: () => void; onExportPdf: () => Promise<void> }) {
   const navigate = useNavigate();
   const safeSessions = Array.isArray(sessions) ? sessions : [];
   const firstWeek = plan.weeks[0]?.week_number ?? 1;
@@ -656,10 +656,8 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
       <div className="sticky bottom-2 mt-3 flex items-center justify-end gap-2 rounded-md bg-[#1a1a1a]/95 p-2 backdrop-blur">
         <button
           type="button"
-          onClick={() => void exportPdfFromLog()}
-          className="inline-flex items-center gap-1.5 rounded bg-white px-3 py-1.5 text-xs font-bold text-black hover:bg-zinc-200 disabled:opacity-50"
-          disabled
-          title="Use Edit mode to export the plan PDF"
+          onClick={() => void onExportPdf()}
+          className="inline-flex items-center gap-1.5 rounded bg-white px-3 py-1.5 text-xs font-bold text-black hover:bg-zinc-200"
         >
           <Download className="h-3.5 w-3.5" /> Export PDF
         </button>
@@ -675,5 +673,3 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
     </div>
   );
 }
-
-async function exportPdfFromLog() { /* placeholder */ }
