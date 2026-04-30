@@ -1286,7 +1286,7 @@ function RegenerateWithFeedbackDialog({
       const result = await generateFn({
         data: {
           client: {
-            full_name: client.full_name,
+            full_name: client?.full_name ?? "Client",
             age: client.age,
             sex: client.sex,
             height_cm: client.height_cm ? Number(client.height_cm) : null,
