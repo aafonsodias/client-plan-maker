@@ -67,6 +67,60 @@ const SECTIONS = [
   { id: "performance", label: "Performance" },
 ];
 
+// Optional sections render collapsed by default and count as complete
+// the moment any of their fields is touched.
+const OPTIONAL_SECTIONS = new Set([
+  "anthro", "meds", "readiness", "lifestyle", "nutrition",
+  "posture", "screen", "history", "performance",
+]);
+
+function hasVal(v: any): boolean {
+  if (v == null) return false;
+  if (typeof v === "string") return v.trim() !== "";
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+
+function isSectionComplete(id: string, a: any): boolean {
+  switch (id) {
+    case "parq":
+      return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
+    case "risk":
+      return hasVal(a.risk?.bmi_category);
+    case "anthro":
+      return hasVal(a.waist_cm) || hasVal(a.hip_cm) || hasVal(a.body_fat_pct) || hasVal(a.body_fat_method);
+    case "meds":
+      return hasVal(a.medications) || (a.med_flags?.length ?? 0) > 0;
+    case "goal":
+      return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
+    case "readiness":
+      return hasVal(a.readiness_stage);
+    case "training":
+      return hasVal(a.experience_level) && hasVal(a.training_days_per_week) &&
+             hasVal(a.session_duration_minutes) && (a.available_equipment?.length ?? 0) > 0;
+    case "lifestyle":
+      return hasVal(a.sleep_quality) || hasVal(a.stress_level) || hasVal(a.ext_hours_seated) ||
+             hasVal(a.ext_daily_steps) || hasVal(a.ext_job_type);
+    case "nutrition":
+      return hasVal(a.ext_meals_per_day) || hasVal(a.ext_water_l_per_day) ||
+             hasVal(a.ext_alcohol_units_week) || hasVal(a.nutrition_habits);
+    case "mobility":
+      return ["ext_mob_shoulder","ext_mob_hip","ext_mob_ankle","ext_mob_thoracic","ext_mob_wrist","ext_mob_knee"]
+        .every((k) => hasVal(a[k]));
+    case "posture":
+      return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
+    case "screen":
+      return hasVal(a.squat_depth_score) || hasVal(a.overhead_reach_score) ||
+             hasVal(a.hip_hinge_score) || hasVal(a.single_leg_balance_score);
+    case "history":
+      return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
+    case "performance":
+      return hasVal(a.resting_heart_rate) || a.ext_cardio_test !== "untested";
+    default:
+      return false;
+  }
+}
+
 function parqHasYes(parq: Record<string, boolean | null>): boolean {
   return Object.values(parq ?? {}).some((v) => v === true);
 }
