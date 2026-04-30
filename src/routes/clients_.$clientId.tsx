@@ -1296,3 +1296,11 @@ function ParqFlagSummary({ count }: { count: number }) {
     </div>
   );
 }
+
+function CompletionStrip({ text }: { text: string }) {
+  return (
+    <div className="mt-3 animate-fade-in border-l-2 border-accent/40 bg-accent/5 px-2 py-1 text-[12px] opacity-80">
+      {text}
+    </div>
+  );
+}
