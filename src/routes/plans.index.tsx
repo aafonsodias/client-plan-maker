@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowRight, FileText, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/plans/")({
   component: () => (
@@ -46,10 +50,7 @@ function PlansIndex() {
     })();
   }, [user]);
 
-  const removePlan = async (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirm("Delete this plan? This cannot be undone.")) return;
+  const removePlan = async (id: string) => {
     const { error } = await supabase.from("workout_plans").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setList((l) => l.filter((p) => p.id !== id));
@@ -126,13 +127,30 @@ function PlansIndex() {
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </Link>
-              <button
-                onClick={(e) => removePlan(p.id, e)}
-                className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                aria-label="Delete plan"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                    aria-label="Delete plan"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete "{p.title}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes the plan and all logged sessions. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => void removePlan(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           ))}
         </div>
