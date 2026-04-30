@@ -36,6 +36,20 @@ const PARQ_QUESTIONS = [
   { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
 ];
 
+const PARQ_RATIONALE: Record<string, string> = {
+  q1: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q2: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q3: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q4: "Balance flag. Plan will avoid free-weight overhead movements and unsupported standing exercises until cleared by a physician.",
+  q5: "Musculoskeletal flag. Plan will exclude high-impact patterns and aggressive progressive loading. Mobility-first protocol available.",
+  q6: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q7: "Manual flag. Note specifics in client medical conditions. PDF export will include a physician-review disclaimer.",
+};
+
+function parqFlagCount(parq: Record<string, boolean | null>): number {
+  return Object.values(parq ?? {}).filter((v) => v === true).length;
+}
+
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
