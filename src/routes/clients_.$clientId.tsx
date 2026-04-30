@@ -1261,7 +1261,7 @@ function ClientDetail() {
                 );
               }
               return (
-                <Button onClick={generate} disabled={busy} size="lg">
+                <Button onClick={() => void generate()} disabled={busy} size="lg">
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                   Generate plan draft
                 </Button>
