@@ -242,11 +242,11 @@ HOLISTIC PERSONALIZATION — you MUST use ALL of the following to calibrate the 
 - Training history (years_training, previous_program_style, max_lifts): set realistic starting loads and progression rates; reference prior style if helpful.
 - Performance markers (resting_heart_rate, cardio_capacity): use to set conditioning prescriptions (zones, intervals, durations).
 
-SUMMARY (2–4 sentences) — must explain WHY this program: the holistic reasoning, what was modulated for the client's recovery/lifestyle, what was substituted for movement screen / mobility limits, and any nutrition or recovery cue worth flagging up front.`;
+SUMMARY (2–4 sentences) — must explain WHY this program: the holistic reasoning, what was modulated for the client's recovery/lifestyle, what was substituted for movement screen / mobility limits, and any nutrition or recovery cue worth flagging up front.
 
 RATIONALE — every week and every day MUST include a 'rationale' field (1–2 sentences, max 240 chars). It is NOT a summary of the work — it is the CLINICAL DECISION that justifies it. Reference concrete client data (assessment field name + value).
-- Week rationale → why THIS block now (e.g. "Volume-accumulation block at RPE 7. Client reports sleep 8/10 and stress 4/10, so capacity to absorb work is high. No deload yet — first 4 weeks of return to training.").
-- Day rationale → why THIS session shape (e.g. "Hinge-dominant after 48h CNS recovery from Mon squats. Hip hinge screen scored 3/5, so RDL chosen over conventional deadlift to keep ribcage stacked.").
+- Week rationale: why THIS block now (e.g. "Volume-accumulation block at RPE 7. Client reports sleep 8/10 and stress 4/10, so capacity to absorb work is high. No deload yet — first 4 weeks of return to training.").
+- Day rationale: why THIS session shape (e.g. "Hinge-dominant after 48h CNS recovery from Mon squats. Hip hinge screen scored 3/5, so RDL chosen over conventional deadlift to keep ribcage stacked.").
 Avoid generic phrasing like "great workout" or "balanced session" — name the data point that drove the call.`;
 
     const user = `Client demographics: ${JSON.stringify(data.client)}
