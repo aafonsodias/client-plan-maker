@@ -57,6 +57,32 @@ const InputSchema = z.object({
     safety_override: z.boolean().nullable().optional(),
   }),
   duration_weeks: z.number().min(1).max(16).default(4),
+  trainer_feedback: z.string().max(4000).nullable().optional(),
+  previous_plan: z
+    .object({
+      title: z.string().nullable().optional(),
+      summary: z.string().nullable().optional(),
+      weeks: z
+        .array(
+          z.object({
+            week_number: z.number(),
+            focus: z.string().nullable().optional(),
+            rationale: z.string().nullable().optional(),
+            days: z
+              .array(
+                z.object({
+                  day_label: z.string(),
+                  focus: z.string().nullable().optional(),
+                  rationale: z.string().nullable().optional(),
+                })
+              )
+              .optional(),
+          })
+        )
+        .optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 const SectionItemSchema = {
