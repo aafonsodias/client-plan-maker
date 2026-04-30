@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -36,6 +36,7 @@ type Mode = "view" | "edit" | "log";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
+  status?: "done" | "partial" | "missed" | null;
 };
 
 function PlanEditor() {
