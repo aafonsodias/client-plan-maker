@@ -303,8 +303,69 @@ function IntakePage() {
         </p>
 
         <div className="mt-10 space-y-10">
+          {/* SAFETY — PAR-Q+ */}
+          <Section number={1} title="A few health questions (PAR-Q+)">
+            <p className="-mt-2 text-xs text-muted-foreground">
+              These help your trainer build a plan that's safe for you. Answer honestly — there are no wrong answers.
+            </p>
+            <div className="space-y-3">
+              {PARQ_QUESTIONS.map((q) => (
+                <div key={q.key} className="rounded-lg border border-border bg-background/40 p-3">
+                  <p className="text-sm">{q.text}</p>
+                  <div className="mt-2 flex gap-2">
+                    {([
+                      { v: false, label: "No" },
+                      { v: true, label: "Yes" },
+                    ] as const).map((opt) => {
+                      const on = form.parq[q.key] === opt.v;
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => setForm({ ...form, parq: { ...form.parq, [q.key]: opt.v } })}
+                          className={`rounded-full border px-4 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                        >{opt.label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {Object.values(form.parq).some((v) => v === true) && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Thanks for being honest. Your trainer will review these answers and may suggest a doctor's check before starting harder sessions.
+              </div>
+            )}
+            <Field label="Are you taking any medication regularly?" optional>
+              <Textarea
+                rows={2}
+                value={form.medications}
+                placeholder="e.g. blood pressure meds, insulin, painkillers…"
+                onChange={(e) => setForm({ ...form, medications: e.target.value })}
+              />
+            </Field>
+            <Field label="Any of these apply?" optional>
+              <div className="flex flex-wrap gap-2">
+                {MED_FLAGS.map((m) => {
+                  const on = form.med_flags.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setForm({
+                        ...form,
+                        med_flags: on ? form.med_flags.filter((x) => x !== m) : [...form.med_flags, m],
+                      })}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
+                    >{m}</button>
+                  );
+                })}
+              </div>
+            </Field>
+          </Section>
+
           {/* SMART GOAL */}
-          <Section number={1} title="Your goal">
+          <Section number={2} title="Your goal">
             <Field label="What do you want to achieve?">
               <Textarea value={form.smart_specific} onChange={(e) => setForm({ ...form, smart_specific: e.target.value })} placeholder="e.g. lose 5kg, run a 10k, get stronger…" rows={3} />
             </Field>
@@ -320,7 +381,7 @@ function IntakePage() {
           </Section>
 
           {/* READINESS */}
-          <Section number={2} title="How ready do you feel right now?">
+          <Section number={3} title="How ready do you feel right now?">
             <div className="flex flex-wrap gap-2">
               {READINESS.map((r) => (
                 <button
@@ -336,7 +397,7 @@ function IntakePage() {
           </Section>
 
           {/* TRAINING SETUP */}
-          <Section number={3} title="Training setup">
+          <Section number={4} title="Training setup">
             <Field label="Have you trained before?">
               <Pills options={["Beginner", "Intermediate", "Advanced"]} value={form.experience_level} onChange={(v) => setForm({ ...form, experience_level: v })} />
             </Field>
@@ -379,7 +440,7 @@ function IntakePage() {
           </Section>
 
           {/* LIFESTYLE */}
-          <Section number={4} title="Lifestyle">
+          <Section number={5} title="Lifestyle">
             <SliderField label="How well do you sleep on average?" value={form.sleep_quality} min={1} max={10} onChange={(v) => setForm({ ...form, sleep_quality: v })} legend="1 = poorly · 10 = excellent" />
             <SliderField label="How stressed do you feel day-to-day?" value={form.stress_level} min={1} max={10} onChange={(v) => setForm({ ...form, stress_level: v })} legend="1 = calm · 10 = overwhelmed" />
             <Field label="How many hours do you sit per day?">
@@ -400,7 +461,7 @@ function IntakePage() {
           </Section>
 
           {/* NUTRITION */}
-          <Section number={5} title="Nutrition">
+          <Section number={6} title="Nutrition">
             <Field label="How many meals do you eat per day?">
               <Input inputMode="numeric" value={form.ext_meals_per_day} onChange={(e) => setForm({ ...form, ext_meals_per_day: e.target.value })} />
             </Field>
