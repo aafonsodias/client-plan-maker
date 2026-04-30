@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -139,7 +140,75 @@ function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Founder note */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="grid items-start gap-10 md:grid-cols-[30%_1fr]">
+          <div className="flex justify-center md:justify-start">
+            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-foreground text-background sm:h-40 sm:w-40">
+              <span className="font-serif text-4xl tracking-wide sm:text-5xl">AD</span>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-[32px] font-light leading-tight tracking-tight">Why I built Forge</h2>
+            <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
+              <p>
+                I'm a personal trainer in Lisbon. For eight years I've written client plans on weekends,
+                copied them across spreadsheets, and exported the same Word template a thousand times.
+                The work that mattered — actually coaching people — kept getting pushed to whatever time was left.
+              </p>
+              <p>
+                Forge is the tool I wished existed. The intake follows what I learned in my
+                certification — PAR-Q+, ACSM risk stratification, Prochaska — because lazy intake
+                makes lazy plans. The AI draft is a starting point, not the final word: every plan is
+                yours to edit before it leaves your hands.
+              </p>
+              <p>
+                If you train clients and lose evenings to admin, this is for you. If you'd rather coach
+                than format, this is for you.
+              </p>
+            </div>
+            <p className="mt-6 text-sm italic text-muted-foreground/70">— André, founder</p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <h2 className="text-2xl font-light tracking-tight sm:text-3xl">
+          Questions trainers ask before signing up.
+        </h2>
+        <Accordion type="single" collapsible className="mt-8">
+          {[
+            {
+              q: "Is the AI plan good enough to send to clients as-is?",
+              a: "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Forge is faster than starting from a blank page — not a replacement for your judgement.",
+            },
+            {
+              q: "What if my client has injuries or medical conditions?",
+              a: "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
+            },
+            {
+              q: "Can I use my own branding on the PDF?",
+              a: "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Forge's.",
+            },
+            {
+              q: "What happens to my client data?",
+              a: "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever.",
+            },
+          ].map((item, i) => (
+            <AccordionItem key={i} value={`faq-${i}`} className="border-border">
+              <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
+                {item.q}
+              </AccordionTrigger>
+              <AccordionContent className="text-[15px] leading-[1.7] text-muted-foreground">
+                {item.a}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      {/* Closing CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-center text-foreground sm:px-16">
           <div
@@ -147,14 +216,16 @@ function Landing() {
             style={{ background: "var(--gradient-accent)" }}
           />
           <h2 className="relative mx-auto max-w-2xl text-4xl font-light tracking-tight">
-            Your next client plan, before your next coffee.
+            Your next plan, before your next session.
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl font-light text-muted-foreground">
-            Join trainers building better programs in less time.
+            Free during beta. No card required.
           </p>
-          <Button asChild size="lg" className="relative mt-8">
-            <Link to="/auth">Create your account</Link>
-          </Button>
+          <div className="relative mt-8 flex justify-center">
+            <Button asChild size="lg">
+              <Link to="/auth">Create your account</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
