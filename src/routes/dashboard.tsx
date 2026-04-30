@@ -53,8 +53,8 @@ function Dashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard icon={Users} label="Clients" value={clients} />
-        <StatCard icon={FileText} label="Plans created" value={plans} />
+        <StatCard icon={Users} label="Clients" value={clients} to="/clients" />
+        <StatCard icon={FileText} label="Plans created" value={plans} to="/plans" />
       </div>
 
       <section>
@@ -93,14 +93,17 @@ function Dashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number }) {
+function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; to: "/clients" | "/plans" }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
+    <Link
+      to={to}
+      className="group block rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:bg-card/80"
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-muted-foreground transition group-hover:text-accent" />
       </div>
       <p className="mt-3 text-4xl font-light tracking-tight">{value}</p>
-    </div>
+    </Link>
   );
 }

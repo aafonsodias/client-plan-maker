@@ -31,9 +31,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ForgePlan — Workout plans for personal trainers" },
+      { title: "Rootplan — Workout plans for personal trainers" },
       { name: "description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
-      { property: "og:title", content: "ForgePlan — Workout plans for personal trainers" },
+      { property: "og:title", content: "Rootplan — Workout plans for personal trainers" },
       { property: "og:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

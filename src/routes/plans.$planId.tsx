@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
-  Share2, Copy, RefreshCw, History,
+  Share2, Copy, RefreshCw, History, Eye,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/plans/$planId")({
   ),
 });
 
-type Mode = "edit" | "log";
+type Mode = "view" | "edit" | "log";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
@@ -43,7 +43,7 @@ function PlanEditor() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [data, setData] = useState<PlanData>({ weeks: [] });
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<Mode>("edit");
+  const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
 
   useEffect(() => {
@@ -185,31 +185,45 @@ function PlanEditor() {
       {/* Summary */}
       <div className="space-y-1">
         <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Summary</Label>
-        <AutoTextarea
-          minRows={1}
-          value={plan.summary ?? ""}
-          onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
-          placeholder="High-level summary of this program…"
-        />
+        {mode === "edit" ? (
+          <AutoTextarea
+            minRows={1}
+            value={plan.summary ?? ""}
+            onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
+            placeholder="High-level summary of this program…"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+            {plan.summary?.trim() ? plan.summary : <span className="text-muted-foreground italic">No summary yet.</span>}
+          </p>
+        )}
       </div>
 
       {/* Mode tabs */}
       <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
+          onClick={() => setMode("view")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Eye className="h-3.5 w-3.5" /> View
+        </button>
+        <button
           onClick={() => setMode("edit")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <Pencil className="h-3.5 w-3.5" /> Edit plan
+          <Pencil className="h-3.5 w-3.5" /> Edit
         </button>
         <button
           onClick={() => setMode("log")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "log" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <NotebookPen className="h-3.5 w-3.5" /> Workout log
+          <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
       </div>
 
-      {mode === "edit" ? (
+      {mode === "view" ? (
+        <ViewMode plan={data} />
+      ) : mode === "edit" ? (
         <>
           <div className="space-y-3">
             {data.weeks.map((w, wi) => (
@@ -269,6 +283,59 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
           <Plus className="mr-2 h-3 w-3" /> Add day
         </Button>
       </div>
+    </div>
+  );
+}
+
+/* ─────────── View mode (compact, read-only render) ─────────── */
+
+function ViewMode({ plan }: { plan: PlanData }) {
+  if (!plan.weeks.length) {
+    return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {plan.weeks.map((w, wi) => (
+        <div key={wi} className="rounded-xl border border-border bg-muted/30 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">
+              Week {w.week_number}
+            </span>
+            {w.focus && <span className="text-sm text-muted-foreground">{w.focus}</span>}
+          </div>
+          <div className="space-y-2">
+            {w.days.map((d, di) => (
+              <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
+                <div className="mb-1.5 flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
+                  {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
+                </div>
+                {d.exercises.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No exercises.</p>
+                ) : (
+                  <ul className="divide-y divide-border/40">
+                    {d.exercises.map((ex, ei) => (
+                      <li key={ei} className="py-1.5">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
+                          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest">
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.rest || "—"} rest</span>
+                          </span>
+                        </div>
+                        {ex.notes && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">{ex.notes}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
