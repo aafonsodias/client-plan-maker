@@ -544,6 +544,8 @@ function SectionEditor({
 }
 
 function ExerciseRow({ ex, onChange, onRemove }: { ex: Exercise; onChange: (e: Exercise) => void; onRemove: () => void }) {
+  const csv = (arr?: string[]) => (arr ?? []).join(", ");
+  const fromCsv = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
   return (
     <div className="rounded-md border border-border/50 bg-background p-2">
       <div className="flex items-end gap-2">
@@ -563,11 +565,38 @@ function ExerciseRow({ ex, onChange, onRemove }: { ex: Exercise; onChange: (e: E
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <FieldStack label="RPE">
+          <Input className="h-7 text-sm" placeholder="7-8" value={ex.rpe ?? ""} onChange={(e) => onChange({ ...ex, rpe: e.target.value })} />
+        </FieldStack>
+        <FieldStack label="Tempo">
+          <Input className="h-7 text-sm" placeholder="3-1-1-0" value={ex.tempo ?? ""} onChange={(e) => onChange({ ...ex, tempo: e.target.value })} />
+        </FieldStack>
+        <FieldStack label="Primary muscles" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="quadriceps, glutes" value={csv(ex.primary_muscles)} onChange={(e) => onChange({ ...ex, primary_muscles: fromCsv(e.target.value) })} />
+        </FieldStack>
+        <FieldStack label="Secondary muscles" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="hamstrings, core" value={csv(ex.secondary_muscles)} onChange={(e) => onChange({ ...ex, secondary_muscles: fromCsv(e.target.value) })} />
+        </FieldStack>
+        <FieldStack label="Equipment" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="barbell, rack" value={csv(ex.equipment)} onChange={(e) => onChange({ ...ex, equipment: fromCsv(e.target.value) })} />
+        </FieldStack>
+      </div>
+      <div className="mt-1.5">
+        <FieldStack label="Technique cues">
+          <Input
+            className="h-7 text-sm italic"
+            placeholder="Brace and exhale on press; pause 1s at peak stretch"
+            value={ex.technique_cues ?? ""}
+            onChange={(e) => onChange({ ...ex, technique_cues: e.target.value })}
+          />
+        </FieldStack>
+      </div>
       <div className="mt-1.5">
         <AutoTextarea
           minRows={1}
           className="text-sm py-1.5"
-          placeholder="Notes — tempo, RPE, cues, substitutions…"
+          placeholder="Notes — programming or substitutions"
           value={ex.notes ?? ""}
           onChange={(e) => onChange({ ...ex, notes: e.target.value })}
         />
