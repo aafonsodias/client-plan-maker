@@ -23,6 +23,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
+import { ValidationReport } from "@/components/ValidationReport";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -254,6 +255,9 @@ function PlanEditor() {
           </div>
         )}
       </div>
+
+      {/* AI Validation Report — always visible to the trainer */}
+      <ValidationReport generationMeta={plan.generation_meta} />
 
       {/* Legacy plan: prompt regeneration */}
       {data.weeks.length > 0 && isLegacyPlan(data) && client && (
