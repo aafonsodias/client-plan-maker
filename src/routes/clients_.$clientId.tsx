@@ -336,6 +336,8 @@ function ClientDetail() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightSaveRef = useRef<Promise<void> | null>(null);
   const skipNextAutosaveRef = useRef(true);
+  // Snapshot of section field signatures captured at hydration, used to detect trainer edits to client-submitted sections.
+  const sectionSnapshotRef = useRef<Record<string, string>>({});
   const lsKey = `forge_assessment_draft_${clientId}`;
 
   useEffect(() => {
