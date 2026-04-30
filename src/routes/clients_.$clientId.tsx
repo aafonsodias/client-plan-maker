@@ -36,6 +36,20 @@ const PARQ_QUESTIONS = [
   { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
 ];
 
+const PARQ_RATIONALE: Record<string, string> = {
+  q1: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q2: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q3: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q4: "Balance flag. Plan will avoid free-weight overhead movements and unsupported standing exercises until cleared by a physician.",
+  q5: "Musculoskeletal flag. Plan will exclude high-impact patterns and aggressive progressive loading. Mobility-first protocol available.",
+  q6: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+  q7: "Manual flag. Note specifics in client medical conditions. PDF export will include a physician-review disclaimer.",
+};
+
+function parqFlagCount(parq: Record<string, boolean | null>): number {
+  return Object.values(parq ?? {}).filter((v) => v === true).length;
+}
+
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
@@ -555,23 +569,33 @@ function ClientDetail() {
           {/* PAR-Q+ */}
           <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance.">
             <ul className="space-y-1.5">
-              {PARQ_QUESTIONS.map((q, idx) => (
-                <li key={q.key} className="flex items-start justify-between gap-3 rounded-md border border-border bg-background/40 p-2">
-                  <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
-                  <YesNo value={(assessment.parq as any)[q.key]} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
-                </li>
-              ))}
+              {PARQ_QUESTIONS.map((q, idx) => {
+                const value = (assessment.parq as any)[q.key];
+                const flagged = value === true;
+                return (
+                  <li
+                    key={q.key}
+                    className={`rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
+                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
+                    </div>
+                    {flagged && (
+                      <div className="mt-2 flex animate-fade-in items-start gap-2 rounded-md border border-accent/30 bg-accent/5 p-2 text-[11px] text-muted-foreground">
+                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
+                        <span>{PARQ_RATIONALE[q.key]}</span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
-            {parqYes && (
-              <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>One or more 'Yes' responses. Recommend physician clearance before initiating training.</span>
-              </div>
-            )}
           </SectionBlock>
 
           {/* Risk stratification */}
           <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high.">
+            <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
@@ -847,10 +871,24 @@ function ClientDetail() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button onClick={generate} disabled={busy} size="lg">
-              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Generate plan draft
-            </Button>
+            {parqYes ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={generate} disabled={busy} size="lg">
+                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate low-intensity plan draft
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-xs">
+                  PAR-Q+ flags detected — defaulting to low-intensity prescription. You can override after generation.
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button onClick={generate} disabled={busy} size="lg">
+                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate plan draft
+              </Button>
+            )}
           </div>
         </section>
       </div>
@@ -1115,4 +1153,21 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     );
   }
   return null;
+}
+
+function ParqFlagSummary({ count }: { count: number }) {
+  const clear = count === 0;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest ${clear ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${clear ? "bg-primary" : "bg-accent"}`} />
+        PAR-Q+ flags: {count}
+      </span>
+      {!clear && (
+        <span className="text-[11px] text-muted-foreground">
+          Plan generation will default to low-intensity. Override available.
+        </span>
+      )}
+    </div>
+  );
 }
