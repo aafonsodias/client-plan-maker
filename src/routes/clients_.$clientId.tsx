@@ -679,29 +679,47 @@ function ClientDetail() {
         todo.map(async (cell) => {
           const key = `${cell.w}-${cell.d}`;
           setDayProgress((prev) => ({ ...prev, [key]: "running" }));
-          try {
-            const r: any = await generateDayFn({
-              data: {
-                plan_id: planId,
-                client: clientPayload,
-                assessment: assessmentPayload,
-                duration_weeks: planDuration,
-                week_number: cell.w,
-                day_number: cell.d,
-                days_per_week: planDaysPerWeek,
-              },
-            });
-            if (!r?.ok) {
-              if (r?.billingRequired) billingHit = r;
-              errors.push(`W${cell.w}D${cell.d}: ${r?.error ?? "unknown"}`);
-              setDayProgress((prev) => ({ ...prev, [key]: "error" }));
-            } else {
-              setDayProgress((prev) => ({ ...prev, [key]: "done" }));
-              completed += 1;
-              setProgressTotals({ done: completed, total: grid.length });
+          // Retry up to 3 times with exponential backoff to absorb
+          // transient gateway hiccups (429 / 5xx / network) on a single day.
+          let lastErr = "unknown";
+          let success = false;
+          for (let attempt = 1; attempt <= 3 && !success; attempt++) {
+            try {
+              const r: any = await generateDayFn({
+                data: {
+                  plan_id: planId,
+                  client: clientPayload,
+                  assessment: assessmentPayload,
+                  duration_weeks: planDuration,
+                  week_number: cell.w,
+                  day_number: cell.d,
+                  days_per_week: planDaysPerWeek,
+                },
+              });
+              if (r?.ok) {
+                success = true;
+                setDayProgress((prev) => ({ ...prev, [key]: "done" }));
+                completed += 1;
+                setProgressTotals({ done: completed, total: grid.length });
+                break;
+              }
+              if (r?.billingRequired) {
+                billingHit = r;
+                lastErr = r?.error ?? "billing required";
+                break; // don't retry billing failures
+              }
+              lastErr = r?.error ?? "unknown";
+            } catch (e: any) {
+              lastErr = e?.message ?? "failed";
             }
-          } catch (e: any) {
-            errors.push(`W${cell.w}D${cell.d}: ${e?.message ?? "failed"}`);
+            if (attempt < 3) {
+              // 800ms, 1600ms backoff with small jitter
+              const delay = 800 * attempt + Math.floor(Math.random() * 250);
+              await new Promise((res) => setTimeout(res, delay));
+            }
+          }
+          if (!success) {
+            errors.push(`W${cell.w}D${cell.d}: ${lastErr}`);
             setDayProgress((prev) => ({ ...prev, [key]: "error" }));
           }
         })
