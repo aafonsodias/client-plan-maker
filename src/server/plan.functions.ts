@@ -709,7 +709,7 @@ export const generatePlanDay = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Plan not found." };
     }
 
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
 
     const { week_number, day_number, days_per_week, duration_weeks } = data;
@@ -732,34 +732,33 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-5",
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 8000,
+          system: sys,
           messages: [
-            { role: "system", content: sys },
             { role: "user", content: userMsg },
           ],
           tools: [
             {
-              type: "function",
-              function: {
-                name: "emit_workout_day",
-                description: "Emit one training day",
-                parameters: SingleDayPlanSchema,
-              },
+              name: "emit_workout_day",
+              description: "Emit one training day",
+              input_schema: SingleDayPlanSchema,
             },
           ],
-          tool_choice: { type: "function", function: { name: "emit_workout_day" } },
+          tool_choice: { type: "tool", name: "emit_workout_day" },
         }),
       });
 
       if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
-      if (res.status === 402) return { ok: false as const, error: "AI credits exhausted. Add credits in workspace settings." };
+      if (res.status === 529) return { ok: false as const, error: "AI provider overloaded. Try again in a moment." };
       if (!res.ok) {
         const t = await res.text();
         console.error("AI gateway error (day)", week_number, day_number, res.status, t);
@@ -772,18 +771,11 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       }
 
       const json = await res.json();
-      const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
-      const argsRaw = toolCall?.function?.arguments;
-      if (!argsRaw) {
+      const toolUse = json?.content?.find((b: any) => b.type === "tool_use");
+      const args: any = toolUse?.input;
+      if (!args) {
         console.error("AI returned no tool call (day)", week_number, day_number);
         return { ok: false as const, error: `AI returned no day ${week_number}/${day_number}.` };
-      }
-      let args: any;
-      try {
-        args = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
-      } catch (e) {
-        console.error("Failed to parse day JSON", week_number, day_number, e);
-        return { ok: false as const, error: `AI returned malformed day ${week_number}/${day_number}.` };
       }
 
       const day = args?.day;
