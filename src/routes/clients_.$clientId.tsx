@@ -350,6 +350,8 @@ function ClientDetail() {
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
+  const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
+  const [safetyOverride, setSafetyOverride] = useState(false);
 
   // Auto-save state
   const [hydrated, setHydrated] = useState(false);
@@ -554,7 +556,6 @@ function ClientDetail() {
 
   const generate = async () => {
     if (!user || !client) return;
-    if (parqHasYes(assessment.parq) && !confirm("PAR-Q+ flagged a potential risk. Recommend physician clearance before training. Continue anyway?")) return;
     setBusy(true);
     setProgressStep(1);
     try {
