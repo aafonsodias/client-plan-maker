@@ -287,6 +287,59 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
   );
 }
 
+/* ─────────── View mode (compact, read-only render) ─────────── */
+
+function ViewMode({ plan }: { plan: PlanData }) {
+  if (!plan.weeks.length) {
+    return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {plan.weeks.map((w, wi) => (
+        <div key={wi} className="rounded-xl border border-border bg-muted/30 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">
+              Week {w.week_number}
+            </span>
+            {w.focus && <span className="text-sm text-muted-foreground">{w.focus}</span>}
+          </div>
+          <div className="space-y-2">
+            {w.days.map((d, di) => (
+              <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
+                <div className="mb-1.5 flex items-baseline gap-2">
+                  <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
+                  {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
+                </div>
+                {d.exercises.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No exercises.</p>
+                ) : (
+                  <ul className="divide-y divide-border/40">
+                    {d.exercises.map((ex, ei) => (
+                      <li key={ei} className="py-1.5">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
+                          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest">
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
+                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.rest || "—"} rest</span>
+                          </span>
+                        </div>
+                        {ex.notes && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">{ex.notes}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) => void; onRemove: () => void }) {
   const addEx = () => onChange({ ...day, exercises: [...day.exercises, { name: "", sets: "3", reps: "10", rest: "60s", notes: "" }] });
   const updateEx = (i: number, e: Exercise) => { const c = [...day.exercises]; c[i] = e; onChange({ ...day, exercises: c }); };
