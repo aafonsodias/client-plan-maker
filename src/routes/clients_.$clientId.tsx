@@ -444,6 +444,7 @@ function ClientDetail() {
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
       setHydrated(true);
+      void detectResumablePlan();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
