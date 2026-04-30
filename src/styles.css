@@ -64,7 +64,7 @@
 :root {
   /* Premium zen dark theme: deep neutrals + warm white + muted sage accent */
   --radius: 0.75rem;
-  --background: oklch(0.13 0 0);              /* #0a0a0a page bg */
+  --background: oklch(0.17 0.012 255);         /* #0d1117 dark blue-grey page bg */
   --foreground: oklch(0.95 0 0);               /* #f0f0f0 primary text */
   --card: oklch(0.16 0 0);                     /* #111111 cards */
   --card-foreground: oklch(0.95 0 0);
