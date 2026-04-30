@@ -72,6 +72,7 @@ function ClientDetail() {
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  const [progressStep, setProgressStep] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -94,6 +95,7 @@ function ClientDetail() {
   const generate = async () => {
     if (!user || !client) return;
     setBusy(true);
+    setProgressStep(1);
     try {
       // upsert assessment
       const payload = {
@@ -141,6 +143,7 @@ function ClientDetail() {
         if (error) throw error;
         assessmentId = data!.id;
       }
+      setProgressStep(2);
 
       const result = await generateFn({
         data: {
@@ -160,6 +163,7 @@ function ClientDetail() {
       });
 
       if (!result.ok) throw new Error(result.error);
+      setProgressStep(3);
 
       const { data: plan, error } = await supabase
         .from("workout_plans")
@@ -176,6 +180,7 @@ function ClientDetail() {
         .select("id")
         .single();
       if (error) throw error;
+      setProgressStep(4);
 
       toast.success("Draft generated");
       navigate({ to: "/plans/$planId", params: { planId: plan!.id } });
@@ -183,29 +188,27 @@ function ClientDetail() {
       toast.error(e.message ?? "Failed to generate plan");
     } finally {
       setBusy(false);
+      setProgressStep(0);
     }
   };
 
   if (!client) return <p className="text-muted-foreground">Loading…</p>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <Link to="/clients" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-3 w-3" /> All clients
-        </Link>
-        <h1 className="mt-2 text-4xl font-light tracking-tight">{client.full_name}</h1>
+        <h1 className="text-3xl font-light tracking-tight">{client.full_name}</h1>
         <p className="text-muted-foreground">{client.email ?? "No email"}</p>
       </div>
 
-      <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-bold">Assessment</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Primary goal" placeholder="e.g. Build muscle, lose fat, run a 10K" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
-          <div className="space-y-1.5">
+      <section className="rounded-2xl border border-border bg-card p-4">
+        <h2 className="mb-3 text-base font-bold">Assessment</h2>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Field label="Primary goal" placeholder="e.g. Build muscle, lose fat" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
+          <div className="space-y-1">
             <Label>Experience level</Label>
             <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="beginner">Beginner</SelectItem>
                 <SelectItem value="intermediate">Intermediate</SelectItem>
@@ -215,13 +218,13 @@ function ClientDetail() {
           </div>
           <Field label="Training days / week" type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
           <Field label="Session length (minutes)" type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-          <Field label="Training location" placeholder="Home, commercial gym, garage…" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+          <Field label="Training location" placeholder="Home, gym…" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
           <Field label="Plan length (weeks)" type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
         </div>
 
-        <div className="mt-4">
-          <Label>Available equipment</Label>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-3">
+          <Label className="text-xs">Available equipment</Label>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
             {EQUIPMENT.map((eq) => {
               const on = assessment.available_equipment.includes(eq);
               return (
@@ -229,7 +232,7 @@ function ClientDetail() {
                   key={eq}
                   type="button"
                   onClick={() => toggleEq(eq)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
                     on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground hover:bg-secondary"
                   }`}
                 >
@@ -240,75 +243,63 @@ function ClientDetail() {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <TextField label="Injuries" value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
           <TextField label="Medical conditions" value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-        </div>
-        <div className="mt-4">
-          <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} />
+          <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
         </div>
 
         {/* Holistic / lifestyle factors */}
-        <div className="mt-8">
-          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Lifestyle &amp; recovery</h3>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Used by the AI to design a program that fits the client's recovery, energy, and daily life — not just their training capacity.
-          </p>
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Lifestyle &amp; recovery</h3>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <Field
-              label="Sleep quality (1–10)"
+              label="Sleep (1–10)"
               type="number"
-              placeholder="1 = terrible, 10 = excellent"
               value={String(assessment.sleep_quality ?? "")}
               onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })}
             />
             <Field
-              label="Stress level (1–10)"
+              label="Stress (1–10)"
               type="number"
-              placeholder="1 = relaxed, 10 = burned out"
               value={String(assessment.stress_level ?? "")}
               onChange={(v) => setAssessment({ ...assessment, stress_level: v })}
             />
             <Field
               label="Hydration (glasses / day)"
               type="number"
-              placeholder="e.g. 6"
               value={String(assessment.hydration_glasses_per_day ?? "")}
               onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })}
             />
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label>Lifestyle</Label>
               <Select value={assessment.lifestyle ?? ""} onValueChange={(v) => setAssessment({ ...assessment, lifestyle: v })}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sedentary">Sedentary (desk job, little movement)</SelectItem>
-                  <SelectItem value="active">Active (on feet, regular movement)</SelectItem>
-                  <SelectItem value="very_active">Very active (manual job / athlete)</SelectItem>
+                  <SelectItem value="sedentary">Sedentary</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="very_active">Very active</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <TextField label="Nutrition habits" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} />
             <TextField label="Mobility limitations" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} />
-            <TextField label="Energy throughout day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+            <TextField label="Energy through day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
             <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
           </div>
         </div>
 
         {/* Posture & alignment */}
-        <div className="mt-8">
-          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Posture &amp; alignment</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Static observations that inform exercise selection and corrective work.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Posture &amp; alignment</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
             <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
             <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label>Dominant side</Label>
               <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
-                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="right">Right</SelectItem>
                   <SelectItem value="left">Left</SelectItem>
@@ -320,10 +311,9 @@ function ClientDetail() {
         </div>
 
         {/* Movement screen */}
-        <div className="mt-8">
-          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Movement screen</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Score 1 (severely restricted) to 5 (full, controlled range). Add a brief note for compensations.</p>
-          <div className="space-y-4">
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Movement screen <span className="font-normal text-muted-foreground normal-case tracking-normal">— 1 restricted → 5 full range</span></h3>
+          <div className="grid gap-2 sm:grid-cols-2">
             <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note}
               onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })}
               onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
@@ -340,29 +330,27 @@ function ClientDetail() {
         </div>
 
         {/* Training history */}
-        <div className="mt-8">
-          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Training history</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Background context to set realistic volume and progression rates.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Years training" type="number" placeholder="e.g. 3" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
-            <Field label="Previous program style" placeholder="e.g. PPL, 5/3/1, CrossFit, bodybuilding split" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-          </div>
-          <div className="mt-4">
-            <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} />
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Training history</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+            <Field label="Previous program style" placeholder="e.g. PPL, 5/3/1" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+            <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
           </div>
         </div>
 
         {/* Performance markers */}
-        <div className="mt-8">
-          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Performance markers</h3>
-          <p className="mb-4 text-xs text-muted-foreground">Baseline measurements to track and to calibrate cardio prescription.</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Resting heart rate (bpm)" type="number" placeholder="e.g. 62" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} />
-            <Field label="Current cardio capacity" placeholder="e.g. 5km in 28min, can hold zone 2 for 40min" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} />
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-accent">Performance markers</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} />
+            <Field label="Cardio capacity" placeholder="e.g. 5km in 28min" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} />
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        {busy && <GenerationProgress step={progressStep} />}
+
+        <div className="mt-4 flex justify-end">
           <Button onClick={generate} disabled={busy} size="lg">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Generate plan draft
@@ -404,17 +392,17 @@ function Field({
   label, value, onChange, type = "text", placeholder,
 }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
   return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <Input className="h-8 text-sm" type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
     </div>
   );
 }
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function TextField({ label, value, onChange, className = "" }: { label: string; value: string; onChange: (v: string) => void; className?: string }) {
   return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <Textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
+    <div className={`space-y-1 ${className}`}>
+      <Label className="text-xs">{label}</Label>
+      <Textarea className="min-h-0 py-1.5 text-sm" value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={2} />
     </div>
   );
 }
@@ -430,9 +418,9 @@ function ScreenItem({
 }) {
   const current = score == null ? "" : String(score);
   return (
-    <div className="rounded-lg border border-border bg-background/40 p-3">
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-sm">{label}</Label>
+    <div className="rounded-md border border-border bg-background/40 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs">{label}</Label>
         <div className="flex items-center gap-1">
           {[1, 2, 3, 4, 5].map((n) => {
             const active = current === String(n);
@@ -441,7 +429,7 @@ function ScreenItem({
                 key={n}
                 type="button"
                 onClick={() => onScore(active ? "" : String(n))}
-                className={`h-7 w-7 rounded-md border text-xs font-medium transition ${
+                className={`h-6 w-6 rounded border text-[11px] font-medium transition ${
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-muted-foreground hover:text-foreground"
@@ -455,11 +443,53 @@ function ScreenItem({
         </div>
       </div>
       <Input
-        className="mt-2 h-8 text-xs"
-        placeholder="Optional note (e.g. knee caves at depth)"
+        className="mt-1.5 h-7 text-xs"
+        placeholder="Optional note"
         value={note ?? ""}
         onChange={(e) => onNote(e.target.value)}
       />
+    </div>
+  );
+}
+
+function GenerationProgress({ step }: { step: number }) {
+  const steps = [
+    { n: 1, label: "Saving assessment" },
+    { n: 2, label: "AI is designing your plan" },
+    { n: 3, label: "Storing the draft" },
+    { n: 4, label: "Opening your plan" },
+  ];
+  return (
+    <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
+        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with Claude Sonnet
+      </div>
+      <ul className="space-y-1.5">
+        {steps.map((s) => {
+          const done = step > s.n;
+          const active = step === s.n;
+          return (
+            <li key={s.n} className="flex items-center gap-2 text-sm">
+              {done ? (
+                <CheckCircle2 className="h-4 w-4 text-accent" />
+              ) : active ? (
+                <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground/40" />
+              )}
+              <span className={done ? "text-muted-foreground line-through" : active ? "font-medium text-foreground" : "text-muted-foreground"}>
+                {s.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-secondary">
+        <div
+          className="h-full bg-accent transition-all duration-500"
+          style={{ width: `${Math.min(100, (step / 4) * 100)}%` }}
+        />
+      </div>
     </div>
   );
 }
