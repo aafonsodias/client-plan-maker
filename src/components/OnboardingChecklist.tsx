@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Circle, X } from "lucide-react";
+import waveHand from "@/assets/wave-hand.png";
 
 type Steps = {
   add_client?: boolean;
@@ -58,7 +59,10 @@ export function OnboardingChecklist() {
     <Dialog open={open} onOpenChange={(v) => { if (!v) void dismiss(false); }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Welcome to Forge 👋</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span>Welcome to Forge</span>
+            <img src={waveHand} alt="" className="h-6 w-6 object-contain" />
+          </DialogTitle>
           <DialogDescription>
             Four quick steps to your first branded plan. {completed}/{STEPS.length} done.
           </DialogDescription>
