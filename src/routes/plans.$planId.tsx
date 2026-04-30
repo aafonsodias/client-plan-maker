@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -428,13 +428,22 @@ function ShareDialog({ planId, initialToken, onChange }: { planId: string; initi
 
 /* ─────────── Log mode ─────────── */
 
+type SetLog = { reps: string; weight: string };
 type LogEntry = {
   exercise_name: string;
   planned: { sets: string; reps: string; rest: string; notes: string };
-  actual: { sets: string; reps: string; weight: string; notes: string };
+  sets: SetLog[];
+  notes: string;
 };
 
+function parsePlannedSets(s: string): number {
+  const n = parseInt((s || "").match(/\d+/)?.[0] ?? "", 10);
+  if (Number.isFinite(n) && n > 0 && n < 20) return n;
+  return 3;
+}
+
 function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: string; sessions: SessionRow[]; reload: () => void }) {
+  const navigate = useNavigate();
   const safeSessions = Array.isArray(sessions) ? sessions : [];
   const firstWeek = plan.weeks[0]?.week_number ?? 1;
   const firstDay = plan.weeks[0]?.days[0]?.day_label ?? "Day 1";
@@ -451,18 +460,39 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
   useEffect(() => {
     if (!day) { setEntries([]); return; }
     setEntries(
-      day.exercises.map((e) => ({
-        exercise_name: e.name,
-        planned: { sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "" },
-        actual: { sets: "", reps: "", weight: "", notes: "" },
-      })),
+      day.exercises.map((e) => {
+        const n = parsePlannedSets(e.sets ?? "");
+        return {
+          exercise_name: e.name,
+          planned: { sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "" },
+          sets: Array.from({ length: n }, () => ({ reps: "", weight: "" })),
+          notes: "",
+        };
+      }),
     );
     setNotes("");
   }, [weekNum, dayLabel, plan]);
 
-  const updateActual = (i: number, k: keyof LogEntry["actual"], v: string) => {
+  const updateSet = (i: number, si: number, k: keyof SetLog, v: string) => {
     const copy = [...entries];
-    copy[i] = { ...copy[i], actual: { ...copy[i].actual, [k]: v } };
+    const sets = [...copy[i].sets];
+    sets[si] = { ...sets[si], [k]: v };
+    copy[i] = { ...copy[i], sets };
+    setEntries(copy);
+  };
+  const addSet = (i: number) => {
+    const copy = [...entries];
+    copy[i] = { ...copy[i], sets: [...copy[i].sets, { reps: "", weight: "" }] };
+    setEntries(copy);
+  };
+  const removeSet = (i: number, si: number) => {
+    const copy = [...entries];
+    copy[i] = { ...copy[i], sets: copy[i].sets.filter((_, idx) => idx !== si) };
+    setEntries(copy);
+  };
+  const updateExNotes = (i: number, v: string) => {
+    const copy = [...entries];
+    copy[i] = { ...copy[i], notes: v };
     setEntries(copy);
   };
 
@@ -472,7 +502,7 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not signed in");
-      const { error } = await supabase.from("workout_sessions").insert({
+      const { data: inserted, error } = await supabase.from("workout_sessions").insert({
         plan_id: planId,
         trainer_id: user.id,
         week_number: weekNum,
@@ -481,9 +511,22 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
         session_notes: notes,
         entries: entries as any,
         logged_by: "trainer",
-      });
+      }).select("id").single();
       if (error) throw error;
-      toast.success("Session logged");
+      const newId = inserted?.id;
+      toast.success("Session logged · view history", {
+        description: "Click to see all sessions for this plan",
+        action: {
+          label: "Open",
+          onClick: () => {
+            navigate({
+              to: "/plans/$planId/sessions",
+              params: { planId },
+              search: newId ? { highlight: newId } : {},
+            });
+          },
+        },
+      });
       reload();
     } catch (e: any) {
       toast.error(e.message);
@@ -491,95 +534,146 @@ function LogMode({ plan, planId, sessions, reload }: { plan: PlanData; planId: s
   };
 
   if (!plan.weeks.length) {
-    return <p className="text-sm text-muted-foreground">Add weeks and exercises in Edit mode first.</p>;
+    return <p className="text-sm text-zinc-400">Add weeks and exercises in Edit mode first.</p>;
   }
 
   return (
-    <div className="space-y-4">
-      {/* Picker */}
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-muted/70 p-3">
-        <FieldStack label="Week">
-          <select
-            value={weekNum}
-            onChange={(e) => setWeekNum(Number(e.target.value))}
-            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-          >
-            {plan.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Week {w.week_number}</option>)}
-          </select>
-        </FieldStack>
-        <FieldStack label="Day">
-          <select
-            value={dayLabel}
-            onChange={(e) => setDayLabel(e.target.value)}
-            className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-          >
-            {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
-          </select>
-        </FieldStack>
-        <FieldStack label="Date">
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
-        </FieldStack>
-        <div className="ml-auto">
-          <Button onClick={submit} disabled={saving || entries.length === 0}>
-            <Save className="mr-2 h-4 w-4" /> Save session
-          </Button>
-        </div>
+    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 bg-[#0f0f0f] px-4 sm:px-6 lg:px-8 pt-3 pb-6 text-zinc-100">
+      {/* Compact single-row picker */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-[#1a1a1a] px-2.5 py-2 text-xs">
+        <span className="rounded bg-accent px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-accent-foreground">Log</span>
+        <select
+          value={weekNum}
+          onChange={(e) => setWeekNum(Number(e.target.value))}
+          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+        >
+          {plan.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Week {w.week_number}</option>)}
+        </select>
+        <select
+          value={dayLabel}
+          onChange={(e) => setDayLabel(e.target.value)}
+          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+        >
+          {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
+        </select>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="h-7 rounded bg-[#262626] px-2 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-accent"
+        />
+        <Link
+          to="/plans/$planId/sessions"
+          params={{ planId }}
+          className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-zinc-100"
+        >
+          <History className="h-3 w-3" /> History ({safeSessions.length})
+        </Link>
       </div>
 
-      {/* Entries */}
+      {/* Exercise cards */}
       <div className="space-y-2">
-        {entries.length === 0 && <p className="text-sm text-muted-foreground">No exercises in this day.</p>}
+        {entries.length === 0 && <p className="text-sm text-zinc-500">No exercises in this day.</p>}
         {entries.map((e, i) => (
-          <div key={i} className="rounded-lg border border-border/60 bg-card p-3">
-            <p className="mb-2 text-sm font-semibold">{e.exercise_name || <span className="text-muted-foreground">(unnamed)</span>}</p>
-            <div className="grid gap-2 md:grid-cols-2">
-              <div className="rounded-md bg-muted/60 p-2">
-                <p className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Planned</p>
-                <p className="text-sm">
-                  {e.planned.sets || "—"} × {e.planned.reps || "—"} · rest {e.planned.rest || "—"}
-                </p>
-                {e.planned.notes && <p className="mt-1 text-xs text-muted-foreground">{e.planned.notes}</p>}
-              </div>
-              <div className="rounded-md border border-accent/40 bg-background p-2">
-                <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-accent-foreground/80">Actual</p>
-                <div className="flex gap-1.5">
-                  <FieldStack label="Sets" className="w-14"><Input className="h-7 text-center text-sm" value={e.actual.sets} onChange={(ev) => updateActual(i, "sets", ev.target.value)} /></FieldStack>
-                  <FieldStack label="Reps" className="w-20"><Input className="h-7 text-center text-sm" value={e.actual.reps} onChange={(ev) => updateActual(i, "reps", ev.target.value)} /></FieldStack>
-                  <FieldStack label="Weight" className="flex-1"><Input className="h-7 text-sm" placeholder="e.g. 80kg" value={e.actual.weight} onChange={(ev) => updateActual(i, "weight", ev.target.value)} /></FieldStack>
+          <div key={i} className="rounded-md bg-[#1a1a1a] p-2.5">
+            <div className="mb-1.5 flex items-baseline justify-between gap-2">
+              <h3 className="text-base font-bold tracking-tight text-zinc-50">
+                {e.exercise_name || <span className="text-zinc-500">(unnamed)</span>}
+              </h3>
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-emerald-400/80">
+                Planned · {e.planned.sets || "—"} × {e.planned.reps || "—"} · {e.planned.rest || "—"}
+              </span>
+            </div>
+            {e.planned.notes && (
+              <p className="mb-1.5 text-[11px] italic text-emerald-400/60">{e.planned.notes}</p>
+            )}
+
+            {/* Per-set rows */}
+            <div className="mb-1 grid grid-cols-[2.25rem_1fr_1fr_1.5rem] gap-1.5 px-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-100">
+              <span className="text-zinc-500">Set</span>
+              <span>Reps</span>
+              <span>Weight</span>
+              <span />
+            </div>
+            <div className="space-y-1">
+              {e.sets.map((st, si) => (
+                <div key={si} className="grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5">
+                  <span className="text-center text-xs font-bold text-zinc-500">{si + 1}</span>
+                  <input
+                    inputMode="numeric"
+                    value={st.reps}
+                    onChange={(ev) => updateSet(i, si, "reps", ev.target.value)}
+                    placeholder={e.planned.reps || "—"}
+                    className="h-7 w-full rounded bg-[#262626] px-2 text-center text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-accent"
+                  />
+                  <input
+                    value={st.weight}
+                    onChange={(ev) => updateSet(i, si, "weight", ev.target.value)}
+                    placeholder="kg"
+                    className="h-7 w-full rounded bg-[#262626] px-2 text-center text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-accent"
+                  />
+                  <button
+                    onClick={() => removeSet(i, si)}
+                    className="text-zinc-600 hover:text-zinc-200"
+                    aria-label="Remove set"
+                    type="button"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 </div>
-                <AutoTextarea minRows={1} className="mt-1.5 text-sm py-1.5" placeholder="Notes…" value={e.actual.notes} onChange={(ev) => updateActual(i, "notes", ev.target.value)} />
-              </div>
+              ))}
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <button
+                onClick={() => addSet(i)}
+                type="button"
+                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-accent"
+              >
+                <Plus className="h-3 w-3" /> Add set
+              </button>
+              <input
+                value={e.notes}
+                onChange={(ev) => updateExNotes(i, ev.target.value)}
+                placeholder="Notes…"
+                className="h-6 flex-1 rounded bg-transparent px-1 text-xs text-zinc-300 placeholder:text-zinc-600 outline-none focus:bg-[#262626]"
+              />
             </div>
           </div>
         ))}
       </div>
 
-      <div className="space-y-1">
-        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Session notes</Label>
-        <AutoTextarea minRows={1} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="How did this session feel overall?" />
+      {/* Session notes */}
+      <div className="mt-3">
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Session notes — how did it feel?"
+          className="h-8 w-full rounded bg-[#1a1a1a] px-2.5 text-xs text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-1 focus:ring-accent"
+        />
       </div>
 
-      {/* History */}
-      <div className="rounded-xl border border-border bg-card p-3">
-        <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          <History className="h-3.5 w-3.5" /> Past sessions
-        </p>
-        {safeSessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No sessions logged yet.</p>
-        ) : (
-          <ul className="divide-y divide-border text-sm">
-            {safeSessions.map((s) => (
-              <li key={s.id} className="flex items-center justify-between py-1.5">
-                <span>
-                  <span className="font-semibold">{s.session_date}</span>
-                  <span className="text-muted-foreground"> · Week {s.week_number} · {s.day_label}</span>
-                </span>
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{s.logged_by}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* Action bar */}
+      <div className="sticky bottom-2 mt-3 flex items-center justify-end gap-2 rounded-md bg-[#1a1a1a]/95 p-2 backdrop-blur">
+        <button
+          type="button"
+          onClick={() => void exportPdfFromLog()}
+          className="inline-flex items-center gap-1.5 rounded bg-white px-3 py-1.5 text-xs font-bold text-black hover:bg-zinc-200 disabled:opacity-50"
+          disabled
+          title="Use Edit mode to export the plan PDF"
+        >
+          <Download className="h-3.5 w-3.5" /> Export PDF
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={saving || entries.length === 0}
+          className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save session"}
+        </button>
       </div>
     </div>
   );
 }
+
+async function exportPdfFromLog() { /* placeholder */ }
