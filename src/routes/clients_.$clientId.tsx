@@ -1184,7 +1184,27 @@ function ClientDetail() {
             </button>
           </SectionBlock>
 
-          {busy && <GenerationProgress step={progressStep} />}
+          {!busy && resumablePlan && (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm">
+                <div className="font-semibold">Previous generation in progress</div>
+                <div className="text-muted-foreground text-xs">
+                  {resumablePlan.title || "Untitled plan"} — {resumablePlan.completed}/{resumablePlan.total} days done.
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>Continue</Button>
+                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>Start over</Button>
+              </div>
+            </div>
+          )}
+          {busy && (
+            <GenerationProgress
+              step={progressStep}
+              dayProgress={dayProgress}
+              totals={progressTotals}
+            />
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <AlertDialog>
