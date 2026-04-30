@@ -168,6 +168,75 @@ const PlanSchema = {
   additionalProperties: false,
 } as const;
 
+// Schema for a SINGLE-WEEK generation call. title/summary are emitted on week 1 only.
+const WeekDaySchema = {
+  type: "object",
+  properties: {
+    day_label: { type: "string" },
+    focus: { type: "string" },
+    rationale: { type: "string" },
+    warmup: { type: "array", items: SectionItemSchema },
+    activation: { type: "array", items: SectionItemSchema },
+    dynamic_stretches: { type: "array", items: SectionItemSchema },
+    cooldown: { type: "array", items: SectionItemSchema },
+    finisher: { type: "array", items: SectionItemSchema },
+    finisher_enabled: { type: "boolean" },
+    cardio: { type: "array", items: SectionItemSchema },
+    exercises: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          sets: { type: "string" },
+          reps: { type: "string" },
+          rest: { type: "string" },
+          notes: { type: "string" },
+          primary_muscles: { type: "array", items: { type: "string" } },
+          secondary_muscles: { type: "array", items: { type: "string" } },
+          rpe: { type: "string" },
+          tempo: { type: "string" },
+          technique_cues: { type: "string" },
+          equipment: { type: "array", items: { type: "string" } },
+        },
+        required: [
+          "name", "sets", "reps", "rest", "notes",
+          "primary_muscles", "secondary_muscles",
+          "rpe", "tempo", "technique_cues", "equipment",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: [
+    "day_label", "focus", "rationale", "exercises",
+    "warmup", "activation", "dynamic_stretches",
+    "cooldown", "finisher", "finisher_enabled", "cardio",
+  ],
+  additionalProperties: false,
+} as const;
+
+const SingleWeekPlanSchema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    summary: { type: "string" },
+    week: {
+      type: "object",
+      properties: {
+        week_number: { type: "number" },
+        focus: { type: "string" },
+        rationale: { type: "string" },
+        days: { type: "array", items: WeekDaySchema },
+      },
+      required: ["week_number", "focus", "rationale", "days"],
+      additionalProperties: false,
+    },
+  },
+  required: ["title", "summary", "week"],
+  additionalProperties: false,
+} as const;
+
 export const generatePlanDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
