@@ -17,6 +17,7 @@ import { generatePlanDraft } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
+import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: () => (
