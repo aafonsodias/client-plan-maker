@@ -528,15 +528,11 @@ export async function generatePlanPdf(
         for (let i = 0; i < day.exercises.length; i++) {
           const ex = day.exercises[i];
 
-          // ===== LEVEL 3: Exercise card =====
+          // ===== LEVEL 3: Exercise card — V2 tight (lateral ghost + bottom stat row) =====
           const ghostNum = String(i + 1).padStart(2, "0");
           const cardLeft = M;
           const cardRight = W - M;
           const cardW = cardRight - cardLeft;
-          const statBoxW = 72;
-          const statBoxH = 44;
-          const statGap = 6;
-          const statsX = cardRight - (statBoxW * 3 + statGap * 2) - 16;
 
           // Cue / rationale split (legacy compat)
           const rawCue = ex.cue ?? "";
@@ -560,23 +556,39 @@ export async function generatePlanPdf(
             ...((ex.secondary_muscles ?? []).map((m) => `(${m})`)),
           ].join(" · ");
 
-          const nameX = cardLeft + 64;
-          const textRight = statsX - 16;
-          const nameLines = doc.splitTextToSize(ex.name, textRight - nameX);
-          const cueWidth = textRight - nameX;
-          const cueLines = cueText ? doc.splitTextToSize(cueText, cueWidth) : [];
-          const ratLines = rationaleText ? doc.splitTextToSize(rationaleText, cueWidth) : [];
+          // Layout: lateral ghost gutter on the left, content occupies remainder, stats sit in a compact bottom row.
+          const gutterW = 44;            // tighter than v1 (was effectively 64)
+          const padX = 16;               // inner horizontal padding
+          const padTop = 16;             // tightened from 22
+          const padBottom = 14;          // tightened from 22
+          const statRowH = 34;           // compact bottom row
+          const statRowGap = 12;         // breathing room between content and stats
+          const nameX = cardLeft + gutterW + padX;
+          const contentRight = cardRight - padX;
+          const contentW = contentRight - nameX;
 
-          const topPad = 22;
-          const bottomPad = 22;
-          let contentH = topPad + nameLines.length * 18;
-          if (muscles) contentH += 14;
-          if (cueLines.length) contentH += 10 + cueLines.length * 13;
-          if (ratLines.length) contentH += 8 + ratLines.length * 12;
-          contentH += bottomPad;
-          const finalH = Math.max(contentH, statBoxH + 36);
+          // Pre-measure with the actual fonts (critical to avoid overflow)
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(14);
+          const nameLines = doc.splitTextToSize(ex.name, contentW);
 
-          ensureSpace(finalH + 14);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10.25);
+          const cueLines = cueText ? doc.splitTextToSize(cueText, contentW) : [];
+
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(8.75);
+          const ratLines = rationaleText ? doc.splitTextToSize(rationaleText, contentW) : [];
+
+          // Vertical rhythm — tight but breathable
+          let contentH = padTop + nameLines.length * 17;
+          if (muscles) contentH += 12;
+          if (cueLines.length) contentH += 8 + cueLines.length * 12.5;
+          if (ratLines.length) contentH += 6 + ratLines.length * 11;
+          contentH += statRowGap + statRowH + padBottom;
+          const finalH = Math.max(contentH, 96);
+
+          ensureSpace(finalH + 8);
 
           // Card surface — very subtle
           setFill(doc, theme.bgSubtle);
@@ -588,13 +600,13 @@ export async function generatePlanPdf(
           doc.line(cardLeft, y, cardRight, y);
           doc.line(cardLeft, y + finalH, cardRight, y + finalH);
 
-          // Superset → strong amber border (Level 2 visual link)
+          // Superset → strong amber left border
           if (ex.superset_id) {
             setFill(doc, theme.accent);
-            doc.rect(cardLeft, y, 4, finalH, "F");
+            doc.rect(cardLeft, y, 5, finalH, "F");
           }
 
-          // Optional → soft accent border + pill rendered later
+          // Optional → dashed accent top edge
           if (ex.optional) {
             setDraw(doc, theme.accent);
             doc.setLineDashPattern([2, 2.5], 0);
@@ -604,21 +616,21 @@ export async function generatePlanPdf(
             doc.setLineWidth(0.4);
           }
 
-          // Ghost exercise number — large, behind name, low opacity feel
+          // Lateral ghost number — left gutter, no overlap with content
           setText(doc, theme.inkGhost);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(54);
-          doc.text(ghostNum, cardLeft + 14, y + finalH - 16);
+          doc.setFontSize(56);
+          doc.text(ghostNum, cardLeft + gutterW - 6, y + finalH / 2 + 18, { align: "right" });
 
-          // Exercise name — bold, primary
+          // Exercise name
           setText(doc, theme.ink);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(15);
-          let textY = y + topPad + 4;
+          doc.setFontSize(14);
+          let textY = y + padTop + 4;
           doc.text(nameLines, nameX, textY);
-          textY += nameLines.length * 18;
+          textY += nameLines.length * 17;
 
-          // Chips: variant / superset / optional
+          // Chips line: variant / superset / optional
           const chips: string[] = [];
           if (ex.variant) chips.push(ex.variant);
           if (ex.superset_id) chips.push(`Superset ${ex.superset_id}`);
@@ -626,87 +638,87 @@ export async function generatePlanPdf(
           if (chips.length) {
             setText(doc, ex.optional ? theme.accent : theme.inkMuted);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(7);
-            doc.text(chips.join("   ·   ").toUpperCase(), nameX, textY - 4);
+            doc.setFontSize(6.75);
+            doc.text(chips.join("   ·   ").toUpperCase(), nameX, textY - 5);
           }
 
-          // Muscles — light caption
+          // Muscles
           if (muscles) {
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(8.5);
-            doc.text(muscles, nameX, textY + 8);
-            textY += 14;
+            doc.setFontSize(8.25);
+            doc.text(muscles, nameX, textY + 6);
+            textY += 12;
           }
 
-          // Coaching cue — strong, actionable, non-italic
+          // Coaching cue
           if (cueLines.length) {
-            textY += 10;
+            textY += 8;
             setText(doc, theme.ink);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(10.5);
+            doc.setFontSize(10.25);
             doc.text(cueLines, nameX, textY);
-            textY += cueLines.length * 13;
+            textY += cueLines.length * 12.5;
           }
 
-          // Rationale — italic muted secondary
+          // Rationale
           if (ratLines.length) {
-            textY += 8;
+            textY += 6;
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "italic");
-            doc.setFontSize(9);
+            doc.setFontSize(8.75);
             doc.text(ratLines, nameX, textY);
-            textY += ratLines.length * 12;
+            textY += ratLines.length * 11;
           }
 
-          // Stat boxes — three clean cells, top-right
-          const statTop = y + 16;
-          const stats: Array<[string, string]> = [
-            ["SETS", String(ex.sets ?? "—")],
-            ["REPS", String(ex.reps ?? "—")],
-            ["REST", String(ex.rest ?? "—")],
-          ];
-
+          // ===== Bottom stat row — no borders, just labels + big values, hairline above =====
           const rpeNum = ex.rpe ? parseFloat(String(ex.rpe).replace(/[^\d.]/g, "")) : NaN;
           const rpeHigh = !Number.isNaN(rpeNum) && rpeNum >= 8;
 
+          const statRowY = y + finalH - padBottom - statRowH;
+          // hairline above the stat row
+          setDraw(doc, theme.rule);
+          doc.setLineWidth(0.3);
+          doc.line(nameX, statRowY, contentRight, statRowY);
+
+          const stats: Array<[string, string, boolean]> = [
+            ["SETS", String(ex.sets ?? "—"), false],
+            ["REPS", String(ex.reps ?? "—"), false],
+            ["REST", String(ex.rest ?? "—"), false],
+          ];
+          if (ex.rpe) stats.push(["RPE", String(ex.rpe), rpeHigh]);
+          if (ex.tempo) stats.push(["TEMPO", String(ex.tempo), false]);
+
+          const colW = (contentRight - nameX) / stats.length;
           for (let s = 0; s < stats.length; s++) {
-            const [label, val] = stats[s];
-            const bx = statsX + s * (statBoxW + statGap);
-            setDraw(doc, theme.rule);
-            doc.setLineWidth(0.5);
-            doc.rect(bx, statTop, statBoxW, statBoxH);
+            const [label, val, hot] = stats[s];
+            const cx = nameX + s * colW;
+            // subtle vertical hairline divider between cells (skip first)
+            if (s > 0) {
+              setDraw(doc, theme.rule);
+              doc.setLineWidth(0.3);
+              doc.line(cx, statRowY + 6, cx, statRowY + statRowH - 4);
+            }
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(7);
-            doc.text(label, bx + 8, statTop + 13);
-            setText(doc, theme.ink);
+            doc.setFontSize(6.75);
+            doc.text(label, cx + 8, statRowY + 13);
+            setText(doc, hot ? theme.accent : theme.ink);
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(15);
-            doc.text(val, bx + 8, statTop + 34);
+            doc.setFontSize(14);
+            doc.text(val, cx + 8, statRowY + 30);
           }
 
-          // RPE / TEMPO row beneath the stats — minimal text
-          const meta2: string[] = [];
-          if (ex.rpe) meta2.push(`RPE ${ex.rpe}${rpeHigh ? "  ●" : ""}`);
-          if (ex.tempo) meta2.push(`TEMPO ${ex.tempo}`);
-          if (meta2.length) {
-            setText(doc, rpeHigh ? theme.accent : theme.inkMuted);
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(7);
-            doc.text(meta2.join("    "), statsX, statTop + statBoxH + 12);
-          }
-
-          // Legacy notes fallback
+          // Legacy notes fallback (only if we had no cue/rationale at all)
           if (ex.notes && !cueText && !rationaleText) {
-            const noteLines = doc.splitTextToSize(ex.notes, cueWidth);
+            const noteLines = doc.splitTextToSize(ex.notes, contentW);
             setText(doc, theme.inkMuted);
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
-            doc.text(noteLines, nameX, textY + 6);
+            doc.setFontSize(8.75);
+            doc.text(noteLines, nameX, textY + 4);
           }
 
-          y += finalH + 10;
+          y += finalH + 8;
         }
 
         // ===== LEVEL 4: Manual log grid — dotted, restrained =====
