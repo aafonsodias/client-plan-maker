@@ -212,3 +212,77 @@ function HowItWorksAnimation() {
     </div>
   );
 }
+
+function FloatCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div
+      className={`relative hidden overflow-hidden rounded-2xl border border-border bg-card/80 p-6 shadow-[var(--shadow-elegant)] md:block ${className}`}
+      style={{ animation: "forge-float 4s ease-in-out infinite" }}
+    >
+      {children}
+      <style>{`
+        @keyframes forge-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function HeroPlanMockup() {
+  const rows = [
+    "Back Squat            4 × 6  @ RPE 7",
+    "Romanian Deadlift     3 × 8  @ RPE 7",
+    "Walking Lunge         3 × 10 per leg",
+    "Calf Raise            3 × 12",
+  ];
+  return (
+    <FloatCard>
+      <div
+        className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <p className="text-xs uppercase tracking-widest text-accent">Week 1 — Monday · Lower Body</p>
+      <div className="mt-5 space-y-3 font-mono text-sm text-foreground/90">
+        {rows.map((r) => (
+          <div key={r} className="rounded-md border border-border/60 bg-background/40 px-3 py-2 whitespace-pre">
+            {r}
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <span className="text-[10px] font-light tracking-[0.3em] text-muted-foreground/60">FORGE</span>
+      </div>
+    </FloatCard>
+  );
+}
+
+function SetLogMockup() {
+  const sets = [
+    "Set 1 — 80kg × 6 ✓",
+    "Set 2 — 82.5kg × 6 ✓",
+    "Set 3 — 85kg × 5 ✓",
+  ];
+  return (
+    <FloatCard>
+      <div
+        className="absolute -left-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <p className="text-xs uppercase tracking-widest text-accent">Back Squat · Set log</p>
+      <div className="mt-5 space-y-3 font-mono text-sm text-foreground/90">
+        {sets.map((s) => (
+          <div key={s} className="rounded-md border border-border/60 bg-background/40 px-3 py-2">
+            {s}
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex justify-end">
+        <button className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground">
+          Save session
+        </button>
+      </div>
+    </FloatCard>
+  );
+}
