@@ -522,7 +522,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
             navigate({
               to: "/plans/$planId/sessions",
               params: { planId },
-              search: newId ? { highlight: newId } : {},
+              search: { highlight: newId ?? undefined },
             });
           },
         },
@@ -565,6 +565,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         <Link
           to="/plans/$planId/sessions"
           params={{ planId }}
+          search={{ highlight: undefined }}
           className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
         >
           <History className="h-3 w-3" /> History ({safeSessions.length})
