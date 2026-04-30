@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
-import { Save } from "lucide-react";
+import { Save, PlayCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { getSharedPlan, saveClientSession } from "@/server/sessions.functions";
 import type { PlanData } from "@/lib/pdf";
+import { exerciseDemoUrl } from "@/lib/exercise-demo";
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
@@ -117,7 +118,20 @@ function ClientLogPage() {
       <div className="space-y-2">
         {entries.map((e, i) => (
           <div key={i} className="rounded-lg border border-border/60 bg-card p-3">
-            <p className="mb-2 text-sm font-semibold">{e.exercise_name}</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">{e.exercise_name}</p>
+              {exerciseDemoUrl(e.exercise_name) && (
+                <a
+                  href={exerciseDemoUrl(e.exercise_name) ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:border-accent hover:text-accent"
+                  title="Watch demo on YouTube"
+                >
+                  <PlayCircle className="h-3 w-3" /> Demo
+                </a>
+              )}
+            </div>
             <p className="mb-2 text-xs text-muted-foreground">
               Target: {e.planned.sets || "—"} × {e.planned.reps || "—"} · rest {e.planned.rest || "—"}
             </p>
