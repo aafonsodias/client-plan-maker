@@ -978,23 +978,58 @@ function ClientDetail() {
   );
 }
 
-function SectionBlock({ id, title, hint, children }: { id: string; title: string; hint?: string; children: React.ReactNode }) {
+function SectionBlock({
+  id,
+  title,
+  hint,
+  children,
+  defaultCollapsed = false,
+  complete = false,
+  footer,
+}: {
+  id: string;
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+  defaultCollapsed?: boolean;
+  complete?: boolean;
+  footer?: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(!defaultCollapsed);
   return (
     <div id={`sec-${id}`} className="scroll-mt-20 rounded-xl border border-border bg-background/40 p-3">
-      <div className="mb-2 flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="mb-2 flex w-full items-center gap-1.5 text-left"
+        aria-expanded={open}
+      >
+        {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
         <h3 className="text-xs font-bold uppercase tracking-widest text-accent">{title}</h3>
+        {complete && <Check className="h-3 w-3 text-accent" />}
         {hint && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask">
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => e.stopPropagation()}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Why we ask"
+              >
                 <Info className="h-3 w-3" />
-              </button>
+              </span>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
           </Tooltip>
         )}
-      </div>
-      {children}
+      </button>
+      {open && (
+        <>
+          {children}
+          {footer}
+        </>
+      )}
     </div>
   );
 }
