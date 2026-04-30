@@ -156,22 +156,26 @@ function Landing() {
             <h2 className="text-[32px] font-light leading-tight tracking-tight">Why I built Forge</h2>
             <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
               <p>
-                I'm a personal trainer in Lisbon. For eight years I've written client plans on weekends,
-                copied them across spreadsheets, and exported the same Word template a thousand times.
-                The work that mattered — actually coaching people — kept getting pushed to whatever time was left.
+                I'm a personal trainer in Lisbon. For over a decade — through gyms in Lisbon and Luanda,
+                online clients, and a Master's in Exercise and Health from FMH — I've written client plans
+                on weekends, copied them across spreadsheets, and exported the same Word template a thousand
+                times. The work that mattered — actually coaching people — kept getting pushed to whatever
+                time was left.
               </p>
               <p>
-                Forge is the tool I wished existed. The intake follows what I learned in my
-                certification — PAR-Q+, ACSM risk stratification, Prochaska — because lazy intake
-                makes lazy plans. The AI draft is a starting point, not the final word: every plan is
-                yours to edit before it leaves your hands.
+                Forge is the tool I wished existed. The intake follows what I learned in my certification
+                and Master's — PAR-Q+, ACSM risk stratification, Prochaska — because lazy intake makes
+                lazy plans. The AI draft is a starting point, not the final word: every plan is yours to
+                edit before it leaves your hands.
               </p>
               <p>
                 If you train clients and lose evenings to admin, this is for you. If you'd rather coach
                 than format, this is for you.
               </p>
             </div>
-            <p className="mt-6 text-sm italic text-muted-foreground/70">— André, founder</p>
+            <p className="mt-6 text-sm italic text-muted-foreground/70">
+              — André Periquito, MSc Exercise & Health · Personal Trainer since 2010
+            </p>
           </div>
         </div>
       </section>
