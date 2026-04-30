@@ -657,7 +657,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         <button
           type="button"
           onClick={() => void onExportPdf()}
-          className="inline-flex items-center gap-1.5 rounded bg-white px-3 py-1.5 text-xs font-bold text-black hover:bg-zinc-200"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-transparent px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground transition hover:bg-secondary"
         >
           <Download className="h-3.5 w-3.5" /> Export PDF
         </button>
@@ -665,7 +665,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           type="button"
           onClick={submit}
           disabled={saving || entries.length === 0}
-          className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground hover:opacity-90 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-accent-foreground transition hover:bg-accent/90 disabled:opacity-50"
         >
           <Save className="h-3.5 w-3.5" /> {saving ? "Saving…" : "Save session"}
         </button>
