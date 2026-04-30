@@ -189,7 +189,7 @@ function Landing() {
               </p>
             </div>
             <p className="mt-6 text-sm italic text-muted-foreground/70">
-              — André Periquito, MSc · Personal Trainer
+              — André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer
             </p>
           </div>
         </div>
