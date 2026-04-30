@@ -1,0 +1,17 @@
+import { JSDOM } from "jsdom";
+import fs from "fs";
+const dom = new JSDOM("", { url: "http://localhost/" });
+globalThis.window = dom.window; globalThis.document = dom.window.document;
+globalThis.Image = dom.window.Image; globalThis.HTMLImageElement = dom.window.HTMLImageElement;
+globalThis.FileReader = dom.window.FileReader;
+console.log("globals ok");
+const jsPDFmod = await import("jspdf");
+console.log("jspdf ok");
+jsPDFmod.default.prototype.save = function(){ const buf = Buffer.from(this.output("arraybuffer")); fs.writeFileSync("/tmp/out.pdf", buf); console.log("wrote", buf.length); };
+const { generatePlanPdf } = await import("./src/lib/pdf.ts");
+console.log("generatePlanPdf loaded");
+const day = { day_label:"Day 1", focus:"Upper push", warmup:[{name:"Arm circles",duration:"2 min"}], exercises:[{name:"Bench Press", sets:"4", reps:"8", rest:"2 min", rpe:"8", tempo:"3-2-1-0", cue:"Press ribs down."}] };
+const plan = { weeks:[{week_number:1, focus:"Foundation", days:[day]}] };
+console.log("calling...");
+await generatePlanPdf({title:"Test Plan", client_name:"Test User", duration_weeks:1}, plan, {business_name:"Test", contact_email:"a@b.com"});
+console.log("done");
