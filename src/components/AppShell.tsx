@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,6 +84,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             })}
           </nav>
           <div className="flex items-center gap-1">
+            <LanguageSwitcher />
             <Button asChild variant="ghost" size="sm" title="Billing">
               <Link to="/billing">
                 <CreditCard className="mr-2 h-4 w-4" />
