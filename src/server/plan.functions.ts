@@ -89,6 +89,7 @@ const PlanSchema = {
               properties: {
                 day_label: { type: "string" },
                 focus: { type: "string" },
+                rationale: { type: "string" },
                 warmup: { type: "array", items: SectionItemSchema },
                 activation: { type: "array", items: SectionItemSchema },
                 dynamic_stretches: { type: "array", items: SectionItemSchema },
@@ -123,7 +124,7 @@ const PlanSchema = {
                 },
               },
               required: [
-                "day_label", "focus", "exercises",
+                "day_label", "focus", "rationale", "exercises",
                 "warmup", "activation", "dynamic_stretches",
                 "cooldown", "finisher", "finisher_enabled", "cardio",
               ],
@@ -131,7 +132,7 @@ const PlanSchema = {
             },
           },
         },
-        required: ["week_number", "focus", "days"],
+        required: ["week_number", "focus", "rationale", "days"],
         additionalProperties: false,
       },
     },
