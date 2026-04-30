@@ -1309,3 +1309,10 @@ function CompletionStrip({ text }: { text: string }) {
     </div>
   );
 }
+
+function ClientPhaseHeaderPill({ clientId }: { clientId: string }) {
+  const phases = useClientPhases([clientId]);
+  const phase = phases[clientId];
+  if (!phase) return null;
+  return <ClientPhasePill phase={phase} size="md" />;
+}
