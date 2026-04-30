@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, Save } from "lucide-react";
+import { Upload, Save, ArrowLeft, LayoutDashboard, Users } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
   component: () => (
@@ -70,6 +71,29 @@ function Settings() {
 
   return (
     <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          onClick={() => window.history.back()}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3 w-3" /> Back
+        </button>
+        <div className="flex items-center gap-1 text-sm">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+          </Link>
+          <Link
+            to="/clients"
+            className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Users className="h-3.5 w-3.5" /> Clients
+          </Link>
+        </div>
+      </div>
+
       <div>
         <p className="text-sm uppercase tracking-widest text-muted-foreground">Settings</p>
         <h1 className="mt-1 text-4xl font-black tracking-tight">PDF branding</h1>
