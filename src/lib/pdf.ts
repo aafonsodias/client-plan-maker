@@ -1,9 +1,64 @@
 import jsPDF from "jspdf";
 
-export type Exercise = { name: string; sets: string; reps: string; rest: string; notes: string };
-export type Day = { day_label: string; focus: string; exercises: Exercise[] };
+export type Exercise = {
+  name: string;
+  sets: string;
+  reps: string;
+  rest: string;
+  notes: string;
+  // New (Pass 3) — all optional so legacy plans still parse cleanly
+  primary_muscles?: string[];
+  secondary_muscles?: string[];
+  rpe?: string;          // e.g. "7" or "7-8"
+  tempo?: string;        // e.g. "3-1-1-0"
+  technique_cues?: string;
+  equipment?: string[];
+};
+
+export type SectionItem = {
+  name: string;
+  duration?: string;     // e.g. "5 min"
+  notes?: string;
+};
+
+export type Day = {
+  day_label: string;
+  focus: string;
+  exercises: Exercise[];
+  // New (Pass 3) sections — all optional
+  warmup?: SectionItem[];
+  activation?: SectionItem[];
+  dynamic_stretches?: SectionItem[];
+  cooldown?: SectionItem[];
+  finisher?: SectionItem[];
+  finisher_enabled?: boolean;
+};
 export type Week = { week_number: number; focus: string; days: Day[] };
 export type PlanData = { weeks: Week[] };
+
+/**
+ * A plan is "legacy" (pre-Pass-3) if no day on any week has any of the
+ * new structured sections or new exercise fields. The trainer is shown a
+ * banner suggesting they regenerate to get the full Forge structure.
+ */
+export function isLegacyPlan(plan: PlanData): boolean {
+  for (const w of plan.weeks ?? []) {
+    for (const d of w.days ?? []) {
+      if ((d.warmup?.length ?? 0) > 0) return false;
+      if ((d.activation?.length ?? 0) > 0) return false;
+      if ((d.dynamic_stretches?.length ?? 0) > 0) return false;
+      if ((d.cooldown?.length ?? 0) > 0) return false;
+      if ((d.finisher?.length ?? 0) > 0) return false;
+      for (const ex of d.exercises ?? []) {
+        if ((ex.primary_muscles?.length ?? 0) > 0) return false;
+        if ((ex.secondary_muscles?.length ?? 0) > 0) return false;
+        if (ex.rpe || ex.tempo || ex.technique_cues) return false;
+        if ((ex.equipment?.length ?? 0) > 0) return false;
+      }
+    }
+  }
+  return (plan.weeks?.length ?? 0) > 0;
+}
 
 export type PdfBranding = {
   business_name?: string | null;
@@ -120,6 +175,47 @@ export async function generatePlanPdf(meta: PdfMeta, plan: PlanData, branding: P
       doc.text(`${day.day_label} — ${day.focus}`, M, y);
       y += 14;
 
+      // Pass-3 sections (warmup → cooldown → optional finisher)
+      const renderSection = (title: string, items?: SectionItem[]) => {
+        if (!items || items.length === 0) return;
+        ensureSpace(20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(110, 110, 110);
+        doc.text(title.toUpperCase(), M, y);
+        y += 11;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        for (const it of items) {
+          const label = it.name + (it.duration ? `  (${it.duration})` : "");
+          const noteLines = it.notes ? doc.splitTextToSize(`— ${it.notes}`, W - M * 2 - 12) : [];
+          ensureSpace(12 + noteLines.length * 11);
+          doc.text(label, M + 6, y);
+          y += 11;
+          if (noteLines.length) {
+            doc.setTextColor(120, 120, 120);
+            doc.text(noteLines, M + 16, y);
+            y += noteLines.length * 11;
+            doc.setTextColor(60, 60, 60);
+          }
+        }
+        y += 4;
+      };
+
+      renderSection("Warmup", day.warmup);
+      renderSection("Activation", day.activation);
+      renderSection("Dynamic stretches", day.dynamic_stretches);
+
+      if ((day.exercises ?? []).length > 0) {
+        ensureSpace(20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(110, 110, 110);
+        doc.text("MAIN WORK", M, y);
+        y += 11;
+      }
+
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(110, 110, 110);
@@ -137,7 +233,21 @@ export async function generatePlanPdf(meta: PdfMeta, plan: PlanData, branding: P
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
       for (const ex of day.exercises) {
-        const noteLines = doc.splitTextToSize(ex.notes || "", W - M - 400 - 10);
+        const muscles = [
+          (ex.primary_muscles ?? []).join(", "),
+          (ex.secondary_muscles ?? []).length ? `(${(ex.secondary_muscles ?? []).join(", ")})` : "",
+        ].filter(Boolean).join(" ");
+        const extras = [
+          ex.rpe ? `RPE ${ex.rpe}` : "",
+          ex.tempo ? `Tempo ${ex.tempo}` : "",
+        ].filter(Boolean).join(" · ");
+        const composedNotes = [
+          muscles && `Muscles: ${muscles}`,
+          extras,
+          ex.technique_cues,
+          ex.notes,
+        ].filter(Boolean).join(" — ");
+        const noteLines = doc.splitTextToSize(composedNotes, W - M - 400 - 10);
         const rowH = Math.max(14, noteLines.length * 12);
         ensureSpace(rowH + 6);
         doc.text(ex.name, M, y);
@@ -148,6 +258,11 @@ export async function generatePlanPdf(meta: PdfMeta, plan: PlanData, branding: P
         y += rowH;
       }
       y += 10;
+
+      renderSection("Cooldown", day.cooldown);
+      if (day.finisher_enabled !== false) {
+        renderSection("Optional finisher", day.finisher);
+      }
     }
 
     y += 4;

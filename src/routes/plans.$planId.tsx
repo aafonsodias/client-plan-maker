@@ -11,12 +11,12 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
-  Share2, Copy, RefreshCw, History, Eye,
+  Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { generatePlanPdf, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
+import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Server fns are reserved for the public client-log endpoints.
 
@@ -199,6 +199,27 @@ function PlanEditor() {
         )}
       </div>
 
+      {/* Legacy plan: prompt regeneration */}
+      {data.weeks.length > 0 && isLegacyPlan(data) && client && (
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">This plan uses the old Forge structure.</p>
+            <p className="mt-0.5 text-muted-foreground">
+              Regenerate from {client.full_name}'s assessment to get the full session arc — warmup, activation,
+              dynamic prep, main work, cooldown and an optional finisher — plus muscle tags, RPE and tempo on every exercise.
+            </p>
+          </div>
+          <Link
+            to="/clients/$clientId"
+            params={{ clientId: client.id }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
+          >
+            <Sparkles className="h-3 w-3" /> Regenerate
+          </Link>
+        </div>
+      )}
+
       {/* Mode tabs */}
       <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
         <button
@@ -310,26 +331,44 @@ function ViewMode({ plan }: { plan: PlanData }) {
                   <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
                   {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
                 </div>
-                {d.exercises.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No exercises.</p>
-                ) : (
-                  <ul className="divide-y divide-border/40">
-                    {d.exercises.map((ex, ei) => (
-                      <li key={ei} className="py-1.5">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
-                          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest">
-                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
-                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
-                            <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.rest || "—"} rest</span>
-                          </span>
-                        </div>
-                        {ex.notes && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">{ex.notes}</p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                <SectionView title="Warmup" items={d.warmup} />
+                <SectionView title="Activation" items={d.activation} />
+                <SectionView title="Dynamic stretches" items={d.dynamic_stretches} />
+
+                <div className="mt-2">
+                  <SectionLabel>Main work</SectionLabel>
+                  {d.exercises.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No exercises.</p>
+                  ) : (
+                    <ul className="divide-y divide-border/40">
+                      {d.exercises.map((ex, ei) => (
+                        <li key={ei} className="py-1.5">
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-sm text-foreground">{ex.name || <span className="text-muted-foreground">(unnamed)</span>}</span>
+                            <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-widest flex-wrap">
+                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.sets || "—"} sets</span>
+                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.reps || "—"} reps</span>
+                              <span className="rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{ex.rest || "—"} rest</span>
+                              {ex.rpe && <span className="rounded bg-accent/15 px-1.5 py-0.5 text-accent">RPE {ex.rpe}</span>}
+                              {ex.tempo && <span className="rounded bg-accent/15 px-1.5 py-0.5 text-accent">Tempo {ex.tempo}</span>}
+                            </span>
+                          </div>
+                          <MuscleChips primary={ex.primary_muscles} secondary={ex.secondary_muscles} />
+                          {ex.technique_cues && (
+                            <p className="mt-1 text-xs italic text-muted-foreground/80">{ex.technique_cues}</p>
+                          )}
+                          {ex.notes && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">{ex.notes}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <SectionView title="Cooldown" items={d.cooldown} />
+                {d.finisher_enabled !== false && d.finisher && d.finisher.length > 0 && (
+                  <SectionView title="Optional finisher" items={d.finisher} accent />
                 )}
               </div>
             ))}
@@ -340,10 +379,71 @@ function ViewMode({ plan }: { plan: PlanData }) {
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{children}</div>
+  );
+}
+
+function SectionView({ title, items, accent = false }: { title: string; items?: SectionItem[]; accent?: boolean }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="mt-2">
+      <SectionLabel>
+        <span className={accent ? "text-accent" : ""}>{title}</span>
+      </SectionLabel>
+      <ul className="space-y-0.5">
+        {items.map((it, i) => (
+          <li key={i} className="text-xs text-foreground/85">
+            <span className="font-medium">{it.name}</span>
+            {it.duration && <span className="text-muted-foreground"> · {it.duration}</span>}
+            {it.notes && <span className="text-muted-foreground italic"> — {it.notes}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MuscleChips({ primary, secondary }: { primary?: string[]; secondary?: string[] }) {
+  const p = primary ?? [];
+  const s = secondary ?? [];
+  if (p.length === 0 && s.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {p.map((m, i) => (
+        <span key={`p-${i}`} className="rounded bg-accent/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-accent">
+          {m}
+        </span>
+      ))}
+      {s.map((m, i) => (
+        <span key={`s-${i}`} className="rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-muted-foreground">
+          {m}
+        </span>
+      ))}
+    </div>
+  );
+}
 function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) => void; onRemove: () => void }) {
-  const addEx = () => onChange({ ...day, exercises: [...day.exercises, { name: "", sets: "3", reps: "10", rest: "60s", notes: "" }] });
+  const addEx = () =>
+    onChange({
+      ...day,
+      exercises: [
+        ...day.exercises,
+        {
+          name: "", sets: "3", reps: "10", rest: "60s", notes: "",
+          primary_muscles: [], secondary_muscles: [],
+          rpe: "", tempo: "", technique_cues: "", equipment: [],
+        },
+      ],
+    });
   const updateEx = (i: number, e: Exercise) => { const c = [...day.exercises]; c[i] = e; onChange({ ...day, exercises: c }); };
   const removeEx = (i: number) => onChange({ ...day, exercises: day.exercises.filter((_, idx) => idx !== i) });
+
+  const setSection = (key: "warmup" | "activation" | "dynamic_stretches" | "cooldown" | "finisher", items: SectionItem[]) =>
+    onChange({ ...day, [key]: items });
+
+  const finisherEnabled = day.finisher_enabled !== false;
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-2.5">
@@ -355,6 +455,11 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
         </Button>
       </div>
 
+      <SectionEditor title="Warmup" items={day.warmup ?? []} onChange={(it) => setSection("warmup", it)} placeholder="e.g. Rower" />
+      <SectionEditor title="Activation" items={day.activation ?? []} onChange={(it) => setSection("activation", it)} placeholder="e.g. Glute bridge" />
+      <SectionEditor title="Dynamic stretches" items={day.dynamic_stretches ?? []} onChange={(it) => setSection("dynamic_stretches", it)} placeholder="e.g. Leg swings" />
+
+      <div className="mb-1.5 mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Main work</div>
       <div className="space-y-1.5">
         {day.exercises.map((ex, ei) => (
           <ExerciseRow key={ei} ex={ex} onChange={(e) => updateEx(ei, e)} onRemove={() => removeEx(ei)} />
@@ -363,11 +468,84 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
           <Plus className="mr-1 h-3 w-3" /> Add exercise
         </Button>
       </div>
+
+      <SectionEditor title="Cooldown" items={day.cooldown ?? []} onChange={(it) => setSection("cooldown", it)} placeholder="e.g. Pigeon stretch" />
+
+      <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-accent">Optional finisher</span>
+          <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={finisherEnabled}
+              onChange={(e) => onChange({ ...day, finisher_enabled: e.target.checked })}
+              className="h-3 w-3 accent-accent"
+            />
+            Show on plan & PDF
+          </label>
+        </div>
+        <SectionEditor title="" items={day.finisher ?? []} onChange={(it) => setSection("finisher", it)} placeholder="e.g. Vibroplate or agility ladder" hideTitle />
+      </div>
+    </div>
+  );
+}
+
+function SectionEditor({
+  title, items, onChange, placeholder, hideTitle = false,
+}: {
+  title: string;
+  items: SectionItem[];
+  onChange: (items: SectionItem[]) => void;
+  placeholder?: string;
+  hideTitle?: boolean;
+}) {
+  const update = (i: number, key: keyof SectionItem, v: string) => {
+    const c = [...items]; c[i] = { ...c[i], [key]: v }; onChange(c);
+  };
+  const add = () => onChange([...items, { name: "", duration: "", notes: "" }]);
+  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+  return (
+    <div className="mt-2">
+      {!hideTitle && (
+        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{title}</div>
+      )}
+      <div className="space-y-1">
+        {items.map((it, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <Input
+              className="h-7 flex-1 text-xs"
+              placeholder={placeholder || "Movement / drill"}
+              value={it.name}
+              onChange={(e) => update(i, "name", e.target.value)}
+            />
+            <Input
+              className="h-7 w-20 text-center text-xs"
+              placeholder="time / reps"
+              value={it.duration ?? ""}
+              onChange={(e) => update(i, "duration", e.target.value)}
+            />
+            <Input
+              className="h-7 flex-1 text-xs"
+              placeholder="Cue / note"
+              value={it.notes ?? ""}
+              onChange={(e) => update(i, "notes", e.target.value)}
+            />
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(i)}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        ))}
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={add}>
+          <Plus className="mr-1 h-3 w-3" /> Add
+        </Button>
+      </div>
     </div>
   );
 }
 
 function ExerciseRow({ ex, onChange, onRemove }: { ex: Exercise; onChange: (e: Exercise) => void; onRemove: () => void }) {
+  const csv = (arr?: string[]) => (arr ?? []).join(", ");
+  const fromCsv = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
   return (
     <div className="rounded-md border border-border/50 bg-background p-2">
       <div className="flex items-end gap-2">
@@ -387,11 +565,38 @@ function ExerciseRow({ ex, onChange, onRemove }: { ex: Exercise; onChange: (e: E
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <FieldStack label="RPE">
+          <Input className="h-7 text-sm" placeholder="7-8" value={ex.rpe ?? ""} onChange={(e) => onChange({ ...ex, rpe: e.target.value })} />
+        </FieldStack>
+        <FieldStack label="Tempo">
+          <Input className="h-7 text-sm" placeholder="3-1-1-0" value={ex.tempo ?? ""} onChange={(e) => onChange({ ...ex, tempo: e.target.value })} />
+        </FieldStack>
+        <FieldStack label="Primary muscles" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="quadriceps, glutes" value={csv(ex.primary_muscles)} onChange={(e) => onChange({ ...ex, primary_muscles: fromCsv(e.target.value) })} />
+        </FieldStack>
+        <FieldStack label="Secondary muscles" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="hamstrings, core" value={csv(ex.secondary_muscles)} onChange={(e) => onChange({ ...ex, secondary_muscles: fromCsv(e.target.value) })} />
+        </FieldStack>
+        <FieldStack label="Equipment" className="col-span-2">
+          <Input className="h-7 text-sm" placeholder="barbell, rack" value={csv(ex.equipment)} onChange={(e) => onChange({ ...ex, equipment: fromCsv(e.target.value) })} />
+        </FieldStack>
+      </div>
+      <div className="mt-1.5">
+        <FieldStack label="Technique cues">
+          <Input
+            className="h-7 text-sm italic"
+            placeholder="Brace and exhale on press; pause 1s at peak stretch"
+            value={ex.technique_cues ?? ""}
+            onChange={(e) => onChange({ ...ex, technique_cues: e.target.value })}
+          />
+        </FieldStack>
+      </div>
       <div className="mt-1.5">
         <AutoTextarea
           minRows={1}
           className="text-sm py-1.5"
-          placeholder="Notes — tempo, RPE, cues, substitutions…"
+          placeholder="Notes — programming or substitutions"
           value={ex.notes ?? ""}
           onChange={(e) => onChange({ ...ex, notes: e.target.value })}
         />
@@ -498,7 +703,7 @@ function ShareDialog({ planId, initialToken, onChange }: { planId: string; initi
 type SetLog = { reps: string; weight: string };
 type LogEntry = {
   exercise_name: string;
-  planned: { sets: string; reps: string; rest: string; notes: string };
+  planned: { sets: string; reps: string; rest: string; notes: string; rpe?: string; tempo?: string; technique_cues?: string };
   sets: SetLog[];
   notes: string;
 };
@@ -531,7 +736,10 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         const n = parsePlannedSets(e.sets ?? "");
         return {
           exercise_name: e.name,
-          planned: { sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "" },
+          planned: {
+            sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "",
+            rpe: e.rpe ?? "", tempo: e.tempo ?? "", technique_cues: e.technique_cues ?? "",
+          },
           sets: Array.from({ length: n }, () => ({ reps: "", weight: "" })),
           notes: "",
         };
@@ -650,8 +858,13 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
               </h3>
               <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-accent">
                 Planned · {e.planned.sets || "—"} × {e.planned.reps || "—"} · {e.planned.rest || "—"}
+                {e.planned.rpe ? ` · RPE ${e.planned.rpe}` : ""}
+                {e.planned.tempo ? ` · Tempo ${e.planned.tempo}` : ""}
               </span>
             </div>
+            {e.planned.technique_cues && (
+              <p className="mb-1 text-[11px] italic text-muted-foreground/80">{e.planned.technique_cues}</p>
+            )}
             {e.planned.notes && (
               <p className="mb-1.5 text-[11px] italic text-accent/70">{e.planned.notes}</p>
             )}
