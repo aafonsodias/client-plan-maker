@@ -353,6 +353,18 @@ function ClientDetail() {
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  // Per-day generation progress: map of "w-d" -> "pending" | "running" | "done" | "error"
+  const [dayProgress, setDayProgress] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
+  const [progressTotals, setProgressTotals] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  // Resumable in-progress plan detected on mount.
+  const [resumablePlan, setResumablePlan] = useState<{
+    id: string;
+    title: string | null;
+    duration_weeks: number;
+    days_per_week: number;
+    completed: number;
+    total: number;
+  } | null>(null);
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
