@@ -425,9 +425,25 @@ function MuscleChips({ primary, secondary }: { primary?: string[]; secondary?: s
   );
 }
 function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) => void; onRemove: () => void }) {
-  const addEx = () => onChange({ ...day, exercises: [...day.exercises, { name: "", sets: "3", reps: "10", rest: "60s", notes: "" }] });
+  const addEx = () =>
+    onChange({
+      ...day,
+      exercises: [
+        ...day.exercises,
+        {
+          name: "", sets: "3", reps: "10", rest: "60s", notes: "",
+          primary_muscles: [], secondary_muscles: [],
+          rpe: "", tempo: "", technique_cues: "", equipment: [],
+        },
+      ],
+    });
   const updateEx = (i: number, e: Exercise) => { const c = [...day.exercises]; c[i] = e; onChange({ ...day, exercises: c }); };
   const removeEx = (i: number) => onChange({ ...day, exercises: day.exercises.filter((_, idx) => idx !== i) });
+
+  const setSection = (key: "warmup" | "activation" | "dynamic_stretches" | "cooldown" | "finisher", items: SectionItem[]) =>
+    onChange({ ...day, [key]: items });
+
+  const finisherEnabled = day.finisher_enabled !== false;
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-2.5">
@@ -439,12 +455,88 @@ function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) =>
         </Button>
       </div>
 
+      <SectionEditor title="Warmup" items={day.warmup ?? []} onChange={(it) => setSection("warmup", it)} placeholder="e.g. Rower" />
+      <SectionEditor title="Activation" items={day.activation ?? []} onChange={(it) => setSection("activation", it)} placeholder="e.g. Glute bridge" />
+      <SectionEditor title="Dynamic stretches" items={day.dynamic_stretches ?? []} onChange={(it) => setSection("dynamic_stretches", it)} placeholder="e.g. Leg swings" />
+
+      <div className="mb-1.5 mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Main work</div>
       <div className="space-y-1.5">
         {day.exercises.map((ex, ei) => (
           <ExerciseRow key={ei} ex={ex} onChange={(e) => updateEx(ei, e)} onRemove={() => removeEx(ei)} />
         ))}
         <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addEx}>
           <Plus className="mr-1 h-3 w-3" /> Add exercise
+        </Button>
+      </div>
+
+      <SectionEditor title="Cooldown" items={day.cooldown ?? []} onChange={(it) => setSection("cooldown", it)} placeholder="e.g. Pigeon stretch" />
+
+      <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-accent">Optional finisher</span>
+          <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={finisherEnabled}
+              onChange={(e) => onChange({ ...day, finisher_enabled: e.target.checked })}
+              className="h-3 w-3 accent-accent"
+            />
+            Show on plan & PDF
+          </label>
+        </div>
+        <SectionEditor title="" items={day.finisher ?? []} onChange={(it) => setSection("finisher", it)} placeholder="e.g. Vibroplate or agility ladder" hideTitle />
+      </div>
+    </div>
+  );
+}
+
+function SectionEditor({
+  title, items, onChange, placeholder, hideTitle = false,
+}: {
+  title: string;
+  items: SectionItem[];
+  onChange: (items: SectionItem[]) => void;
+  placeholder?: string;
+  hideTitle?: boolean;
+}) {
+  const update = (i: number, key: keyof SectionItem, v: string) => {
+    const c = [...items]; c[i] = { ...c[i], [key]: v }; onChange(c);
+  };
+  const add = () => onChange([...items, { name: "", duration: "", notes: "" }]);
+  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+  return (
+    <div className="mt-2">
+      {!hideTitle && (
+        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{title}</div>
+      )}
+      <div className="space-y-1">
+        {items.map((it, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <Input
+              className="h-7 flex-1 text-xs"
+              placeholder={placeholder || "Movement / drill"}
+              value={it.name}
+              onChange={(e) => update(i, "name", e.target.value)}
+            />
+            <Input
+              className="h-7 w-20 text-center text-xs"
+              placeholder="time / reps"
+              value={it.duration ?? ""}
+              onChange={(e) => update(i, "duration", e.target.value)}
+            />
+            <Input
+              className="h-7 flex-1 text-xs"
+              placeholder="Cue / note"
+              value={it.notes ?? ""}
+              onChange={(e) => update(i, "notes", e.target.value)}
+            />
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(i)}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        ))}
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={add}>
+          <Plus className="mr-1 h-3 w-3" /> Add
         </Button>
       </div>
     </div>
