@@ -1088,3 +1088,31 @@ function GenerationProgress({ step }: { step: number }) {
     </div>
   );
 }
+function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: number | null }) {
+  const base = "inline-flex items-center gap-1.5 font-mono text-[10px] tabular-nums";
+  if (status === "saving") {
+    return (
+      <span className={`${base} text-accent`}>
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+        Saving…
+      </span>
+    );
+  }
+  if (status === "offline") {
+    return (
+      <span className={`${base} text-accent`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+        Offline — saved locally
+      </span>
+    );
+  }
+  if (status === "saved" || lastSavedAt) {
+    return (
+      <span className={`${base} text-muted-foreground/70`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+        Saved · {formatRelative(lastSavedAt)}
+      </span>
+    );
+  }
+  return null;
+}
