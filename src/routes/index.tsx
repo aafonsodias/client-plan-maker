@@ -231,28 +231,66 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 }
 
 function HeroPlanMockup() {
-  const rows = [
-    "Back Squat            4 × 6  @ RPE 7",
-    "Romanian Deadlift     3 × 8  @ RPE 7",
-    "Walking Lunge         3 × 10 per leg",
-    "Calf Raise            3 × 12",
+  type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
+  const rows: Row[] = [
+    { badge: "WARM-UP", tone: "warmup", name: "Hip Airplane", sets: "2 × 6/side" },
+    { badge: "MAIN", tone: "main", name: "Back Squat", sets: "4 × 6", note: "@ RPE 7", sub: "Rest 2:30 · tempo 3-1-X" },
+    { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7" },
+    { badge: "ACCESSORY", tone: "accessory", name: "Walking Lunge", sets: "3 × 10/leg" },
+    { badge: "ACCESSORY", tone: "accessory", name: "Leg Curl", sets: "3 × 12", note: "@ RPE 8" },
+    { badge: "FINISHER", tone: "finisher", name: "Calf Raise", sets: "3 × 15" },
   ];
+  const badgeClass = (t: Row["tone"]) => {
+    switch (t) {
+      case "main": return "bg-accent/15 text-accent border border-accent/30";
+      case "finisher": return "border border-accent/40 text-accent/80";
+      case "warmup": return "bg-secondary/60 text-muted-foreground border border-border";
+      default: return "bg-secondary/40 text-muted-foreground border border-border";
+    }
+  };
   return (
     <FloatCard>
       <div
         className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
         style={{ background: "var(--gradient-accent)" }}
       />
-      <p className="text-xs uppercase tracking-widest text-accent">Week 1 — Monday · Lower Body</p>
-      <div className="mt-5 space-y-3 font-mono text-sm text-foreground/90">
-        {rows.map((r) => (
-          <div key={r} className="rounded-md border border-border/60 bg-background/40 px-3 py-2 whitespace-pre">
-            {r}
+      {/* Client header */}
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span>MARIA S. · WEEK 3 OF 8</span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--accent)]" />
+          ACTIVE
+        </span>
+      </div>
+      {/* Session title */}
+      <div className="mt-3">
+        <p className="text-base font-medium text-foreground">Monday — Lower Body Strength</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Est. 55 min · 6 exercises</p>
+      </div>
+      <div className="my-4 h-px bg-border" />
+      {/* Exercise list */}
+      <div className="space-y-2">
+        {rows.map((r, i) => (
+          <div key={i}>
+            <div className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-background/40">
+              <span className={`shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${badgeClass(r.tone)}`}>
+                {r.badge}
+              </span>
+              <span className="flex-1 truncate text-sm font-medium text-foreground">{r.name}</span>
+              <span className="font-mono text-xs text-muted-foreground">{r.sets}</span>
+              {r.note && <span className="hidden text-[11px] text-muted-foreground/80 lg:inline">{r.note}</span>}
+            </div>
+            {r.sub && (
+              <p className="ml-[4.25rem] mt-0.5 text-[11px] italic text-muted-foreground/70">{r.sub}</p>
+            )}
           </div>
         ))}
       </div>
-      <div className="mt-6 flex justify-end">
-        <span className="text-[10px] font-light tracking-[0.3em] text-muted-foreground/60">FORGE</span>
+      {/* Footer */}
+      <div className="mt-4 h-px bg-border" />
+      <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
+        <span>FORGE</span>
+        <span className="normal-case tracking-normal">Generated in 87s</span>
       </div>
     </FloatCard>
   );
