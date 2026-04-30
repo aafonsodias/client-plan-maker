@@ -216,6 +216,14 @@ function Landing() {
         </Accordion>
       </section>
 
+      {/* Mission line */}
+      <section className="mx-auto max-w-3xl px-6 pb-16">
+        <p className="text-center text-[15px] leading-[1.7] text-muted-foreground">
+          Forge exists so trainers can spend less time formatting and more time coaching.
+          Better tools for trainers means safer, smarter training for everyone they reach.
+        </p>
+      </section>
+
       {/* Closing CTA */}
       <section className="mx-auto max-w-6xl px-6 pb-24">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-center text-foreground sm:px-16">
