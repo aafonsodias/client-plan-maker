@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useEffect, type ReactNode } from "react";
 
@@ -48,9 +48,18 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               );
             })}
           </nav>
-          <Button variant="ghost" size="sm" onClick={() => { void signOut().then(() => navigate({ to: "/" })); }}>
-            <LogOut className="mr-2 h-4 w-4" /> Sign out
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" title="View landing page">
+              <Link to="/">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Landing</span>
+              </Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { void signOut().then(() => navigate({ to: "/" })); }}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Sign out</span>
+            </Button>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-6">
