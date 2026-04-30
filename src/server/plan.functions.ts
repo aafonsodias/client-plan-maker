@@ -20,6 +20,14 @@ const InputSchema = z.object({
     injuries: z.string().nullable().optional(),
     medical_conditions: z.string().nullable().optional(),
     preferences: z.string().nullable().optional(),
+    sleep_quality: z.number().min(1).max(10).nullable().optional(),
+    stress_level: z.number().min(1).max(10).nullable().optional(),
+    nutrition_habits: z.string().nullable().optional(),
+    hydration_glasses_per_day: z.number().min(0).max(50).nullable().optional(),
+    mobility_limitations: z.string().nullable().optional(),
+    energy_levels: z.string().nullable().optional(),
+    recovery_capacity: z.string().nullable().optional(),
+    lifestyle: z.string().nullable().optional(),
   }),
   duration_weeks: z.number().min(1).max(16).default(4),
 });
@@ -81,17 +89,53 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
       return { ok: false as const, error: "AI is not configured." };
     }
 
-    const sys = `You are an expert personal trainer designing safe, effective, periodized programs.
-Generate a structured workout plan tailored to the client.
-- Use only equipment listed.
-- Avoid contraindications (injuries / medical conditions).
-- Match number of training days and session duration.
-- Provide concrete sets/reps/rest. Keep notes short (form cues).
-- Include a brief summary (2-3 sentences).
+    const sys = `You are an expert personal trainer and strength coach designing safe, effective, periodized programs that are HOLISTIC — they account for training, recovery, nutrition, and lifestyle together.
+
+Hard rules:
+- Use ONLY equipment listed.
+- Avoid all contraindications (injuries, medical conditions, mobility limitations).
+- Match the requested number of training days/week and session duration.
+- Provide concrete sets/reps/rest. Keep exercise notes short (form cues, RPE, tempo).
+
+Holistic adjustments — you MUST modulate volume, intensity, and exercise selection based on the client's recovery and lifestyle profile:
+- Sleep quality (1–10): low scores → reduce overall volume, prioritize easier sessions early in the week, lower CNS-demanding lifts.
+- Stress level (1–10): high scores → favor moderate intensity, avoid frequent failure work, add at least one mobility/parasympathetic-focused day.
+- Hydration / nutrition habits: poor habits → keep session duration realistic, add a brief "fuel & hydration" cue in the summary; do not prescribe extreme cuts.
+- Mobility limitations: substitute compromised patterns (e.g. swap back squat for goblet/box squat or split squat).
+- Energy levels through the day: schedule heavier sessions when the client reports highest energy; lighter / accessory work when energy dips.
+- Recovery capacity: low recovery → fewer hard sessions, more spacing between same-muscle days, deload week earlier.
+- Lifestyle (sedentary / active / very_active):
+    * sedentary → include daily-step / NEAT cues and prioritize basic movement quality;
+    * active → standard programming;
+    * very_active → reduce accessory volume so total weekly load stays manageable.
+
+Summary (2–4 sentences) MUST explicitly explain the holistic reasoning: why this volume/intensity, what was adjusted for sleep/stress/lifestyle, and any nutrition/recovery cues.
+
 Return ONLY structured JSON via the tool.`;
 
-    const user = `Client: ${JSON.stringify(data.client)}
-Assessment: ${JSON.stringify(data.assessment)}
+    const user = `Client demographics: ${JSON.stringify(data.client)}
+
+Training assessment:
+- Primary goal: ${data.assessment.primary_goal ?? "—"}
+- Experience: ${data.assessment.experience_level ?? "—"}
+- Days/week: ${data.assessment.training_days_per_week ?? "—"}
+- Session length: ${data.assessment.session_duration_minutes ?? "—"} min
+- Location: ${data.assessment.training_location ?? "—"}
+- Equipment: ${(data.assessment.available_equipment ?? []).join(", ") || "—"}
+- Injuries: ${data.assessment.injuries ?? "—"}
+- Medical conditions: ${data.assessment.medical_conditions ?? "—"}
+- Preferences/dislikes: ${data.assessment.preferences ?? "—"}
+
+Lifestyle & recovery profile (use these to calibrate the program):
+- Sleep quality (1-10): ${data.assessment.sleep_quality ?? "—"}
+- Stress level (1-10): ${data.assessment.stress_level ?? "—"}
+- Hydration (glasses/day): ${data.assessment.hydration_glasses_per_day ?? "—"}
+- Nutrition habits: ${data.assessment.nutrition_habits ?? "—"}
+- Mobility limitations: ${data.assessment.mobility_limitations ?? "—"}
+- Energy levels through day: ${data.assessment.energy_levels ?? "—"}
+- Recovery capacity: ${data.assessment.recovery_capacity ?? "—"}
+- Lifestyle: ${data.assessment.lifestyle ?? "—"}
+
 Plan length: ${data.duration_weeks} weeks.`;
 
     try {

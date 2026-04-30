@@ -19,14 +19,22 @@ export type Database = {
           available_equipment: string[] | null
           client_id: string
           created_at: string
+          energy_levels: string | null
           experience_level: string | null
+          hydration_glasses_per_day: number | null
           id: string
           injuries: string | null
+          lifestyle: string | null
           medical_conditions: string | null
+          mobility_limitations: string | null
+          nutrition_habits: string | null
           preferences: string | null
           primary_goal: string | null
+          recovery_capacity: string | null
           secondary_goals: string[] | null
           session_duration_minutes: number | null
+          sleep_quality: number | null
+          stress_level: number | null
           trainer_id: string
           training_days_per_week: number | null
           training_location: string | null
@@ -36,14 +44,22 @@ export type Database = {
           available_equipment?: string[] | null
           client_id: string
           created_at?: string
+          energy_levels?: string | null
           experience_level?: string | null
+          hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          lifestyle?: string | null
           medical_conditions?: string | null
+          mobility_limitations?: string | null
+          nutrition_habits?: string | null
           preferences?: string | null
           primary_goal?: string | null
+          recovery_capacity?: string | null
           secondary_goals?: string[] | null
           session_duration_minutes?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
           trainer_id: string
           training_days_per_week?: number | null
           training_location?: string | null
@@ -53,14 +69,22 @@ export type Database = {
           available_equipment?: string[] | null
           client_id?: string
           created_at?: string
+          energy_levels?: string | null
           experience_level?: string | null
+          hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          lifestyle?: string | null
           medical_conditions?: string | null
+          mobility_limitations?: string | null
+          nutrition_habits?: string | null
           preferences?: string | null
           primary_goal?: string | null
+          recovery_capacity?: string | null
           secondary_goals?: string[] | null
           session_duration_minutes?: number | null
+          sleep_quality?: number | null
+          stress_level?: number | null
           trainer_id?: string
           training_days_per_week?: number | null
           training_location?: string | null

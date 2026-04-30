@@ -40,6 +40,14 @@ function ClientDetail() {
     injuries: "",
     medical_conditions: "",
     preferences: "",
+    sleep_quality: "",
+    stress_level: "",
+    nutrition_habits: "",
+    hydration_glasses_per_day: "",
+    mobility_limitations: "",
+    energy_levels: "",
+    recovery_capacity: "",
+    lifestyle: "",
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
@@ -80,6 +88,14 @@ function ClientDetail() {
         injuries: assessment.injuries || null,
         medical_conditions: assessment.medical_conditions || null,
         preferences: assessment.preferences || null,
+        sleep_quality: assessment.sleep_quality ? Number(assessment.sleep_quality) : null,
+        stress_level: assessment.stress_level ? Number(assessment.stress_level) : null,
+        nutrition_habits: assessment.nutrition_habits || null,
+        hydration_glasses_per_day: assessment.hydration_glasses_per_day ? Number(assessment.hydration_glasses_per_day) : null,
+        mobility_limitations: assessment.mobility_limitations || null,
+        energy_levels: assessment.energy_levels || null,
+        recovery_capacity: assessment.recovery_capacity || null,
+        lifestyle: assessment.lifestyle || null,
       };
       let assessmentId: string | null = assessment.id ?? null;
       if (assessmentId) {
@@ -194,6 +210,56 @@ function ClientDetail() {
         </div>
         <div className="mt-4">
           <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} />
+        </div>
+
+        {/* Holistic / lifestyle factors */}
+        <div className="mt-8">
+          <h3 className="mb-1 text-sm font-bold uppercase tracking-widest text-accent">Lifestyle &amp; recovery</h3>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Used by the AI to design a program that fits the client's recovery, energy, and daily life — not just their training capacity.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Sleep quality (1–10)"
+              type="number"
+              placeholder="1 = terrible, 10 = excellent"
+              value={String(assessment.sleep_quality ?? "")}
+              onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })}
+            />
+            <Field
+              label="Stress level (1–10)"
+              type="number"
+              placeholder="1 = relaxed, 10 = burned out"
+              value={String(assessment.stress_level ?? "")}
+              onChange={(v) => setAssessment({ ...assessment, stress_level: v })}
+            />
+            <Field
+              label="Hydration (glasses / day)"
+              type="number"
+              placeholder="e.g. 6"
+              value={String(assessment.hydration_glasses_per_day ?? "")}
+              onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })}
+            />
+            <div className="space-y-1.5">
+              <Label>Lifestyle</Label>
+              <Select value={assessment.lifestyle ?? ""} onValueChange={(v) => setAssessment({ ...assessment, lifestyle: v })}>
+                <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sedentary">Sedentary (desk job, little movement)</SelectItem>
+                  <SelectItem value="active">Active (on feet, regular movement)</SelectItem>
+                  <SelectItem value="very_active">Very active (manual job / athlete)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <TextField label="Nutrition habits" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} />
+            <TextField label="Mobility limitations" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} />
+            <TextField label="Energy throughout day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+            <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end">
