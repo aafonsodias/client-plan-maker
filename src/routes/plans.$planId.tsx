@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -36,6 +36,7 @@ type Mode = "view" | "edit" | "log";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
+  status?: "done" | "partial" | "missed" | null;
 };
 
 function PlanEditor() {
@@ -296,7 +297,7 @@ function PlanEditor() {
       </div>
 
       {mode === "view" ? (
-        <ViewMode plan={data} />
+        <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
       ) : mode === "edit" ? (
         <>
           <div className="space-y-3">
@@ -371,7 +372,17 @@ function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Wee
 
 /* ─────────── View mode (compact, read-only render) ─────────── */
 
-function ViewMode({ plan }: { plan: PlanData }) {
+function ViewMode({
+  plan,
+  planId,
+  sessions,
+  reload,
+}: {
+  plan: PlanData;
+  planId: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
   if (!plan.weeks.length) {
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
@@ -393,9 +404,18 @@ function ViewMode({ plan }: { plan: PlanData }) {
           <div className="space-y-2">
             {w.days.map((d, di) => (
               <div key={di} className="rounded-lg border border-border/60 bg-card p-2.5">
-                <div className="mb-1.5 flex items-baseline gap-2">
+                <div className="mb-1.5 flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-foreground">{d.day_label}</span>
                   {d.focus && <span className="text-xs text-muted-foreground">· {d.focus}</span>}
+                  <div className="ml-auto">
+                    <DayQuickMark
+                      planId={planId}
+                      weekNumber={w.week_number}
+                      dayLabel={d.day_label}
+                      sessions={sessions}
+                      reload={reload}
+                    />
+                  </div>
                 </div>
                 {d.rationale && (
                   <p className="mb-2 border-l-2 border-accent/30 pl-2 text-[10.5px] italic text-muted-foreground/90">
@@ -456,6 +476,103 @@ function ViewMode({ plan }: { plan: PlanData }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{children}</div>
+  );
+}
+
+/**
+ * Quick plan-vs-actual marker for a day. One click writes a workout_sessions
+ * row with status=done|partial|missed and empty entries — the trainer can
+ * always open Log mode later to add detail. Re-clicking the same status
+ * removes the latest mark for that day.
+ */
+function DayQuickMark({
+  planId,
+  weekNumber,
+  dayLabel,
+  sessions,
+  reload,
+}: {
+  planId: string;
+  weekNumber: number;
+  dayLabel: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  // Latest session for this exact day cell
+  const latest = sessions
+    .filter((s) => s.week_number === weekNumber && s.day_label === dayLabel)
+    .sort((a, b) => b.session_date.localeCompare(a.session_date))[0];
+
+  const current = (latest?.status ?? null) as "done" | "partial" | "missed" | null;
+
+  const mark = async (status: "done" | "partial" | "missed") => {
+    setBusy(true);
+    try {
+      // Toggle off if clicking the same status that's already set
+      if (current === status && latest) {
+        const { error } = await supabase.from("workout_sessions").delete().eq("id", latest.id);
+        if (error) throw error;
+        toast.success("Mark cleared");
+      } else {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: u } = await supabase.auth.getUser();
+        const trainerId = u.user?.id;
+        if (!trainerId) throw new Error("Not authenticated");
+        const { error } = await supabase.from("workout_sessions").insert({
+          plan_id: planId,
+          trainer_id: trainerId,
+          week_number: weekNumber,
+          day_label: dayLabel,
+          session_date: today,
+          status,
+          entries: [],
+          logged_by: "trainer",
+        });
+        if (error) throw error;
+        toast.success(
+          status === "done" ? "Marked done" : status === "partial" ? "Marked partial" : "Marked missed",
+        );
+      }
+      await reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to mark");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const btn = (
+    val: "done" | "partial" | "missed",
+    Icon: typeof Check,
+    label: string,
+    activeClass: string,
+  ) => {
+    const active = current === val;
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => mark(val)}
+        title={active ? `${label} — click to clear` : label}
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
+          active
+            ? activeClass
+            : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    );
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      {btn("done", Check, "Done", "border-emerald-500/40 bg-emerald-500/15 text-emerald-600")}
+      {btn("partial", MinusCircle, "Partial", "border-amber-500/40 bg-amber-500/15 text-amber-600")}
+      {btn("missed", XCircle, "Missed", "border-rose-500/40 bg-rose-500/15 text-rose-600")}
+    </div>
   );
 }
 
