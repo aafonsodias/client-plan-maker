@@ -11,7 +11,8 @@ import {
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
 import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { BriefContextRail, BriefContextRailMobile } from "@/components/BriefContextRail";
+import { BriefContextRail } from "@/components/BriefContextRail";
+import { BriefSheetButton } from "@/components/BriefSheetButton";
 
 export const Route = createFileRoute("/plans/$planId/microcycle")({
   component: MicrocycleRoute,
@@ -22,12 +23,14 @@ function MicrocycleRoute() {
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <BriefContextRailMobile planId={planId} />
-        <div className="lg:flex lg:gap-6">
+        <div className="mb-3 flex justify-end xl:hidden">
+          <BriefSheetButton planId={planId} />
+        </div>
+        <div className="xl:flex xl:gap-6">
           <main className="min-w-0 flex-1">
             <MicrocycleReview />
           </main>
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+          <aside className="hidden xl:block w-80 flex-shrink-0">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
               <BriefContextRail planId={planId} />
             </div>

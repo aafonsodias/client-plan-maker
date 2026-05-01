@@ -8,9 +8,12 @@ import {
   approveBlueprint,
 } from "@/server/phased/stage2-blueprint.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { BriefContextRail, BriefContextRailMobile } from "@/components/BriefContextRail";
+import { BriefContextRail } from "@/components/BriefContextRail";
+import { BriefSheetButton } from "@/components/BriefSheetButton";
+import { BlueprintArchetypesList } from "@/components/BlueprintArchetypesList";
+import { BlueprintAiChat } from "@/components/BlueprintAiChat";
 
 export const Route = createFileRoute("/plans/$planId/blueprint")({
   component: BlueprintRoute,
@@ -21,12 +24,11 @@ function BlueprintRoute() {
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <BriefContextRailMobile planId={planId} />
-        <div className="lg:flex lg:gap-6">
+        <div className="xl:flex xl:gap-6">
           <main className="min-w-0 flex-1">
             <BlueprintReview />
           </main>
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+          <aside className="hidden xl:block w-80 flex-shrink-0">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
               <BriefContextRail planId={planId} />
             </div>
@@ -196,6 +198,16 @@ function BlueprintReview() {
     (a, b) => Number(a) - Number(b)
   );
 
+  const archetypeIds = new Set(blueprint.session_archetypes.map((a) => a.id));
+  const missingRefs = Array.from(
+    new Set(
+      weekKeys.flatMap((wk) =>
+        (blueprint.week_to_session_map[wk] ?? []).filter((id) => !archetypeIds.has(id)),
+      ),
+    ),
+  );
+  const hasIntegrityError = missingRefs.length > 0;
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div className="flex items-center justify-between">
@@ -210,7 +222,22 @@ function BlueprintReview() {
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
           <p className="text-xs text-muted-foreground">Stage 2 — Mesocycle blueprint</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <BriefSheetButton planId={planId} />
+          <BlueprintAiChat
+            planId={planId}
+            blueprint={blueprint}
+            onApplyPatch={(patch) => {
+              setBlueprint({
+                ...blueprint,
+                ...(patch.session_archetypes ? { session_archetypes: patch.session_archetypes } : {}),
+                ...(patch.week_to_session_map ? { week_to_session_map: patch.week_to_session_map } : {}),
+                ...(patch.progression_model_proposal
+                  ? { progression_model_proposal: patch.progression_model_proposal }
+                  : {}),
+              });
+            }}
+          />
           <button
             onClick={regenerate}
             disabled={busy}
@@ -221,8 +248,9 @@ function BlueprintReview() {
           </button>
           <button
             onClick={approve}
-            disabled={busy}
+            disabled={busy || hasIntegrityError}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
             Approve → Day 1
@@ -230,58 +258,21 @@ function BlueprintReview() {
         </div>
       </div>
 
+      {hasIntegrityError && (
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          <strong>Atenção:</strong> a matriz Week × Day refere ids que já não existem em Session Archetypes:{" "}
+          <span className="font-mono">{missingRefs.join(", ")}</span>. Corrige antes de aprovar.
+        </div>
+      )}
+
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Session archetypes
         </h2>
-        <div className="space-y-2">
-          {blueprint.session_archetypes.map((a, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                value={a.id}
-                onChange={(e) => {
-                  const next = [...blueprint.session_archetypes];
-                  next[i] = { ...a, id: e.target.value };
-                  setBlueprint({ ...blueprint, session_archetypes: next });
-                }}
-                className="w-32 rounded border border-border bg-background px-2 py-1 text-xs font-mono"
-              />
-              <input
-                value={a.focus}
-                onChange={(e) => {
-                  const next = [...blueprint.session_archetypes];
-                  next[i] = { ...a, focus: e.target.value };
-                  setBlueprint({ ...blueprint, session_archetypes: next });
-                }}
-                className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
-              />
-              <button
-                onClick={() => {
-                  const next = blueprint.session_archetypes.filter((_, j) => j !== i);
-                  setBlueprint({ ...blueprint, session_archetypes: next });
-                }}
-                className="rounded p-1 text-muted-foreground hover:bg-muted"
-                aria-label="Remove"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={() =>
-              setBlueprint({
-                ...blueprint,
-                session_archetypes: [
-                  ...blueprint.session_archetypes,
-                  { id: `archetype_${blueprint.session_archetypes.length + 1}`, focus: "Custom", primary_movements: [] },
-                ],
-              })
-            }
-            className="inline-flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
-          >
-            <Plus className="h-3 w-3" /> Add archetype
-          </button>
-        </div>
+        <BlueprintArchetypesList
+          archetypes={blueprint.session_archetypes}
+          onChange={(next) => setBlueprint({ ...blueprint, session_archetypes: next })}
+        />
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -315,10 +306,17 @@ function BlueprintReview() {
                           map[wk] = arr;
                           setBlueprint({ ...blueprint, week_to_session_map: map });
                         }}
-                        className="rounded border border-border bg-background px-2 py-1 text-xs"
+                        className={`rounded border bg-background px-2 py-1 text-xs ${
+                          archetypeIds.has(id) ? "border-border" : "border-destructive text-destructive"
+                        }`}
                       >
+                        {!archetypeIds.has(id) && (
+                          <option value={id}>{id} (em falta)</option>
+                        )}
                         {blueprint.session_archetypes.map((a) => (
-                          <option key={a.id} value={a.id}>{a.id}</option>
+                          <option key={a.id} value={a.id}>
+                            {a.focus} · {a.id}
+                          </option>
                         ))}
                       </select>
                     </td>

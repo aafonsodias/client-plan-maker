@@ -1,152 +1,126 @@
-## O que observei
 
-Olhei o teu plano `André Periquito… 4-Week Plan` no DB:
-- ✅ `brief` aprovado (rico — risk flags, movement screen, body comp, etc.)
-- ✅ `blueprint` gerado e válido
-- ❌ `progression_plan` ainda nulo
-- ❌ `plan_data.weeks = []` (legacy vazio — por isso vês "No weeks yet")
-- `generation_state.stage = "blueprint"`
+## Problems observed on `/plans/:planId/blueprint`
 
-**A tua queixa real**, traduzida: *"o sistema deixa-me preencher tudo à mão como se fosse um plano em branco, mas perdeu por completo o conhecimento do brief. As decisões — porque é que este archetype, porque esta sessão, porque estes movimentos — não são herdadas."*
+1. **Brief context disappears below 1024px** with no hint. The `BriefContextRailMobile` collapsible exists but is hidden by `lg:hidden` only — it works under 1024px, **but** between ~1024–1280px the desktop rail squeezes the main table awkwardly, and at 1023px the rail vanishes silently with no toggle next to the title.
+2. **Session archetypes** are a flat list of inputs — no drag-to-reorder, no search, and the Week × Day matrix uses `<select>` dropdowns showing only `id`s (e.g. `upper_push_strength`), which is hard to scan.
+3. **No way to talk to the AI** about the blueprint (re-balance, swap, justify a choice). Today the only AI affordance is full "Regenerate" which throws away manual edits.
+4. **Approve flow not always reliable** — `approveBlueprint` runs but if the user edited archetypes/map locally and the new state contains an `id` referenced in `week_to_session_map` that no longer exists, schema validation can silently send a stale shape. Need a pre-flight validator + clear "Approve & continue" CTA that navigates to `/microcycle` only after success.
 
-Tens razão em três frentes:
+## Goal
 
-1. **As páginas dos stages 2/3/4 mostram só o esqueleto técnico** (archetype IDs, week×day matrix, deltas), nunca te mostram o "porquê do brief" que justifica cada decisão. Não há **header sticky com red flags + movement screen + cap×PB** sempre visível.
-2. **Quando o microcycle (Day 1) é gerado, NÃO te explica** que `lower_squat_strength` foi escolhido **porque** o brief disse "neck damage from BJJ → modify overhead", "hip pinching → accommodate flexion depth". A `rationale` por dia existe no schema mas não está visível.
-3. **A página antiga `/plans/$planId`** ainda existe e ainda apanha planos phased em alguns flows (link das screenshots) — embora eu tenha posto o redirect, há cliques que aterram lá antes do useEffect correr (paint inicial). Tu acabas a editar um plano em branco achando que é o "real".
+Make the Blueprint stage feel like a real planning surface: brief always reachable, archetypes editable with drag/search, an AI chat side-panel to discuss changes, and a bullet-proof Approve → Microcycle handoff.
 
 ---
 
-## Proposta — três passos pequenos, sequenciais
+## Plan (4 steps)
 
-### Passo A (fix imediato, hoje): "Brief Context Rail" sticky em todos os stages 2/3/4
+### Step 1 — Always-accessible Brief context
 
-Adicionar um componente reutilizável `<BriefContextRail planId>` que carrega o brief 1×, e renderiza um **lateral colapsável** (ou topo collapsível em mobile) com:
+- Replace the "hidden below lg" rail with a **floating "Brief" button** in the page header (next to Regenerate / Approve) that is **always visible**.
+- Behaviour:
+  - ≥1280px: rail stays as a sticky right sidebar (current behaviour, but raise breakpoint from `lg` 1024 → `xl` 1280 so the table doesn't get crushed).
+  - <1280px: clicking the "Brief" button opens a **right-side Sheet** (`@/components/ui/sheet`) containing `<BriefContextRail planId={planId} />`. Remove the `<details>` mobile collapsible (replaced by the Sheet).
+- Add a small badge on the button showing the count of red flags (amber dot) so the user always knows there is unread context.
 
-- **Goals** (top 3) + timeline
-- **Red flags** com a sua acção (`modify` / `monitor` / `accommodate`)
-- **Movement screen** (squat/hinge/push/pull/lunge/carry scores) — versão mini
-- **Body comp / risk** (BF%, WHR, ACSM risk)
-- **Equipment & sessions/week**
-- **Goal-fit constraints** (o que NÃO fazer)
+### Step 2 — Drag-and-drop + search for Session Archetypes
 
-Aparece em `/plans/$planId/blueprint`, `/microcycle` e `/progressions`. Sempre visível. Para que ao gerar/editar o user veja o "porquê" do brief sem trocar de página.
+- Add `@dnd-kit/core` + `@dnd-kit/sortable` (already common in the stack; otherwise `react-aria` sortable). Use `dnd-kit`.
+- Convert the archetypes list to a `SortableContext` with a drag handle (`GripVertical` icon) on each row.
+- Reordering only changes the **display order** of archetypes; it does **not** touch `week_to_session_map`. Persist order locally in component state and include it when sending to `approveBlueprint` (the schema preserves array order).
+- Add a **search input** above the list that filters archetypes by `id` or `focus`. While a search filter is active, drag is disabled (standard pattern) and a small note explains why.
+- In the **Week × Day matrix**, replace the bare `<select>` showing `id` with a styled select that shows `focus` as the label and `id` as muted secondary text. Keep it as a native `<select>` for accessibility, but render the option as `"Upper — Push focus  ·  upper_push_strength"`.
 
-Custo: ~150 linhas, 1 componente novo, 3 imports. Sem mudanças de schema, sem mudanças server-side.
+### Step 3 — AI Assistant side-panel for the Blueprint
 
-### Passo B (próximo): "Why this?" inline em cada decisão gerada
+- Add a second header button "Ask AI" that opens a Sheet (left side, distinct from the Brief Sheet on the right) containing a chat panel.
+- New server function `discussBlueprint` (in `src/server/phased/stage2-blueprint.functions.ts`):
+  - Input: `{ planId, messages: [{role, content}], currentBlueprint }`.
+  - System prompt: senior coach reviewing the current blueprint against the brief; can either **answer in plain text** or **propose a patch** by calling a tool `propose_blueprint_patch` whose schema is `Partial<Blueprint>` (same `BlueprintSchema` shape but all fields optional at the top level; `session_archetypes` and `week_to_session_map` replace whole if provided).
+  - Reuses `callAnthropicWithSchema` plumbing but allows a free-text response (no tool call required).
+- Client side:
+  - Chat thread stored in component state (not persisted yet — keep scope tight).
+  - When the AI returns a patch proposal, render a **diff preview card** with "Apply" / "Discard" buttons. Apply mutates the local `blueprint` state; user still has to hit "Approve" to persist.
+  - Cost-safety: cap thread to last 10 messages sent to the model; show a small token/cost badge per turn (reuse `result.costUsd`).
 
-- No Blueprint: por baixo de cada **archetype** mostrar uma frase do tipo *"Escolhido porque brief: focus=hipertrofia, hinge score 3/5 → RDL antes de deadlift"* — usar `progression_model_proposal.rationale` que já existe + uma linha por archetype gerada pela LLM (campo novo `archetypes[].rationale`).
-- No Microcycle/Day 1: tornar visível o `rationale` que **já é gerado** mas está escondido na coluna `rationale` da tabela.
-- No Progressions: mostrar `progression_plan.rationale` por dimensão.
+### Step 4 — Reliable Approve → Microcycle
 
-Custo: stage2 schema ganha `archetypes[].rationale: string` (1 migração lógica, sem DB), prompt actualizado, UI mostra. ~200 linhas.
-
-### Passo C (depois): matar o aterrar na página legacy
-
-O redirect que fiz só corre no `useEffect`. Mover para `beforeLoad` da rota `/plans/$planId` — assim a página antiga **nunca chega a render** para planos phased. User nunca mais vê "Summary (empty)" / "No weeks yet" para um plano novo.
-
-Custo: 10 linhas. Resolve as screenshots 2/3/4 que mandaste.
+- Before calling `approveBlueprint`:
+  - Run `BlueprintSchema.safeParse(blueprint)` (already done) **plus** a referential-integrity check: every id referenced in `week_to_session_map` must exist in `session_archetypes`. Show a single inline error banner listing the offending ids; disable Approve until fixed.
+- After successful approve:
+  - Already navigates to `/plans/$planId/microcycle`. Add `await load()` reset of `busy` in a `finally`, and ensure the toast "Blueprint approved — generating Day 1" only fires on `res.ok`.
+- The Microcycle route already has the same rail layout — apply the same Step 1 layout fix there (and on `/progressions`) for consistency.
 
 ---
 
-## Prompt — versão final (Passo A, para arrancar agora)
+## Technical notes
+
+- **Files to edit**: `src/routes/plans.$planId.blueprint.tsx`, `src/routes/plans.$planId.microcycle.tsx`, `src/routes/plans.$planId.progressions.tsx`, `src/server/phased/stage2-blueprint.functions.ts`.
+- **Files to create**: `src/components/BlueprintArchetypesList.tsx` (sortable list + search), `src/components/BlueprintAiChat.tsx` (chat sheet), `src/components/BriefSheetButton.tsx` (header button + Sheet wrapper).
+- **Deps to add**: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
+- **Breakpoint change**: `lg:flex` → `xl:flex`; rail visible at `xl:` only. Brief Sheet button visible at `<xl`.
+- **No DB migration required.** `discussBlueprint` is stateless; chat is in-memory only this iteration.
+- **Telemetry**: each `discussBlueprint` call writes a `generation_log` row with stage `stage2:blueprint:chat`.
+
+---
+
+## Acceptance criteria
+
+- At any viewport ≥320px, a header control labelled "Brief" is always visible on `/blueprint`, `/microcycle`, `/progressions` and opens a Sheet showing the same content as the desktop rail.
+- Session archetypes can be reordered by dragging their handle; the new order persists after Approve and reload.
+- A search input filters archetypes in real time by id or focus substring (case-insensitive).
+- The Week × Day matrix dropdowns show human-readable focus text, not just the snake_case id.
+- An "Ask AI" button opens a chat panel where the user can ask for changes; the AI can either reply in text or surface an "Apply patch" card; clicking Apply updates the editable blueprint without saving.
+- Clicking Approve runs schema + referential-integrity validation; if any `week_to_session_map` id is missing from `session_archetypes`, the user sees an inline error and Approve is disabled until fixed.
+- After a successful Approve, the user is navigated to `/plans/:planId/microcycle` with no console errors.
+
+## Rollback
+
+- Each step is in its own file/component. To revert:
+  - `git revert` the commit(s) — primarily touches `plans.$planId.blueprint.tsx`, the three new components, and the new `discussBlueprint` export.
+  - The DB schema is unchanged, so no migration rollback is needed.
+  - Removing `@dnd-kit/*` from `package.json` restores the previous dependency surface.
+
+---
+
+## Optimised prompt for future requests of this kind
 
 ```
 GOAL:
-Em /plans/$planId/blueprint, /microcycle e /progressions o
-utilizador vê SEMPRE o contexto do brief aprovado (goals, red
-flags com acção, movement screen, body comp, equipment) num rail
-lateral sticky (desktop) ou collapsible no topo (mobile). Sem
-trocar de página e sem perder a UI actual.
+Make the Blueprint stage usable at every viewport, editable by drag,
+searchable, and conversational with the AI, with a reliable Approve→Microcycle handoff.
 
 CONTEXT:
-- workout_plans.brief é jsonb e respeita BriefSchema
-  (src/server/phased/schemas.ts). Tem: client_snapshot.goals[],
-  client_snapshot.red_flags[] (cada um com {flag, severity,
-  recommended_action: "modify"|"monitor"|"accommodate"}),
-  client_snapshot.movement_screen (squat/hinge/push/pull/lunge/
-  carry como 1-5), client_snapshot.body_composition (bf_pct, whr,
-  acsm_risk), client_snapshot.equipment[],
-  sessions_per_week.recommended.
-- 3 rotas alvo: src/routes/plans.$planId.blueprint.tsx,
-  plans.$planId.microcycle.tsx, plans.$planId.progressions.tsx.
-- Já existe useServerFn / supabase client; brief é leitura RLS-
-  safe via supabase.from("workout_plans").select("brief").
-- Cliente actual está em /clients/<id> e tem componentes que
-  renderizam algumas destas peças (referência visual, não
-  importar).
+- Route: src/routes/plans.$planId.blueprint.tsx
+- Brief rail today: src/components/BriefContextRail.tsx (hidden <lg, no toggle)
+- Server fns: src/server/phased/stage2-blueprint.functions.ts
+- Schema: BlueprintSchema in src/server/phased/schemas.ts
+- Approve already navigates to /plans/$planId/microcycle on success
 
 TASK:
-1. Criar src/components/BriefContextRail.tsx que recebe
-   {planId: string} e:
-   - Faz select supabase de workout_plans.brief uma vez (state
-     local; sem React Query — manter consistente com restantes
-     páginas).
-   - Parse com BriefSchema.safeParse; em falha mostra placeholder
-     "Brief indisponível" + link "Abrir Brief".
-   - Renderiza 5 secções colapsáveis (todas abertas por default
-     em desktop): "Objetivos", "Sinais de alerta", "Competência
-     de movimento", "Composição corporal · Risco", "Equipamento
-     & frequência".
-   - Red flags: cada linha mostra texto + badge da
-     recommended_action (modify=amber, monitor=blue,
-     accommodate=violet) usando design tokens
-     (bg-accent/bg-secondary/border-border).
-   - Movement screen: 6 mini-bars 1-5, cor accent.
-   - Body comp: BF%, WHR, ACSM risk como tag.
-   - Goals: lista numerada top 3.
-   - Equipment: chips horizontais.
-2. Layout: em ≥lg viewport, fixed à direita com width 320px,
-   sticky top-16, max-h-[calc(100vh-5rem)] overflow-y-auto.
-   Em <lg, render como <details> collapsible no topo da página.
-3. Integrar em blueprint/microcycle/progressions:
-   - Wrap o conteúdo principal num <div class="lg:flex
-     lg:gap-6"><main class="flex-1 min-w-0">…UI actual…</main>
-     <aside class="hidden lg:block w-80 flex-shrink-0">
-     <BriefContextRail planId={planId} /></aside></div>.
-   - Em mobile, render <BriefContextRail> ANTES da UI actual.
-4. Sem mudar nenhum dos componentes existentes Blueprint /
-   Microcycle / Progressions internamente. Apenas wrap.
+1. Add an always-visible "Brief" header button that opens a Sheet
+   containing BriefContextRail; raise sidebar breakpoint to xl.
+2. Make SESSION ARCHETYPES sortable via @dnd-kit with a search input,
+   and show focus text in the Week × Day selects.
+3. Add an "Ask AI" Sheet with a chat panel calling a new
+   discussBlueprint server fn that can reply in text or propose a
+   Partial<Blueprint> patch the user can Apply locally.
+4. Add referential-integrity check before approveBlueprint and
+   confirm navigation to /microcycle on success.
 
 CONSTRAINTS:
-- Não tocar em server functions, schemas, ou edge functions.
-- Não alterar a página /plans/$planId (legacy).
-- Não mudar branding/cores; usar tokens existentes
-  (bg-card, border-border, text-muted-foreground, bg-accent,
-  etc.).
-- Sem novas dependências.
-- Sem refactor de Blueprint/Microcycle/Progressions além do
-  wrapper de layout.
+- No unrelated changes
+- No refactors of unrelated files
+- No DB migrations
+- Reuse existing UI primitives (sheet, button) and Anthropic plumbing
 
 ACCEPTANCE:
-1. Abrir /plans/<planId-com-brief>/blueprint em desktop ≥1024px:
-   à direita aparece um rail sticky com 5 secções e dados
-   reais do brief; à esquerda continua a ver a UI de archetypes
-   + week×day matrix exactamente como antes.
-2. O mesmo rail aparece em /microcycle e /progressions.
-3. Em viewport <1024px o rail aparece como bloco collapsible
-   colapsado no topo (mobile-friendly).
-4. Se o brief estiver inválido/ausente, o rail mostra fallback
-   "Brief indisponível" com link para /plans/$planId/brief — não
-   crasha.
-5. Nenhuma alteração de comportamento no Blueprint editing
-   (archetypes, matrix, approve, regenerate continuam a
-   funcionar).
+- Brief button visible at every viewport on /blueprint, /microcycle, /progressions
+- Archetypes can be drag-reordered and searched
+- AI chat can propose patches that user applies locally before Approve
+- Approve blocked when week_to_session_map references missing ids
+- Successful Approve navigates to /microcycle without console errors
 
 ROLLBACK:
-Apagar src/components/BriefContextRail.tsx e reverter os
-3 ficheiros de rota (apenas o wrapper de layout adicionado).
+- git revert the feature commit(s); no migrations to undo;
+  remove @dnd-kit/* from package.json to restore deps.
 ```
-
----
-
-## Plano de execução do Passo A
-
-1. **Criar `src/components/BriefContextRail.tsx`** (~180 linhas). Carrega brief, parse, render 5 secções com tokens semânticos.
-2. **Editar 3 ficheiros de rota** (`blueprint`, `microcycle`, `progressions`): wrap conteúdo num grid `lg:flex` + `<aside>` à direita; em mobile, rail no topo collapsed.
-3. Sem migrações, sem servidor, sem novas deps.
-
-**Depois disto pergunto-te se queres seguir para Passo B (rationale inline) ou Passo C (kill da aterragem na página legacy).**
-
-Aprovas o Passo A?
