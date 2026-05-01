@@ -203,7 +203,7 @@ async function upsertDayRow(
   weekNumber: number,
   dayIndex: number,
   status: "done" | "error",
-  day: PhasedDay | null,
+  day: any,
   errorText?: string
 ) {
   // Find existing row
