@@ -1,49 +1,61 @@
-## Goal
+## Findings
 
-Confirm the phased pipeline actually activates by (1) turning the feature flag on for your trainer account and (2) proving in the browser console that the Generate button takes the new branch.
+**Problem 1 — Already correct in code, not a one-line fix.**
+The toast action in `src/routes/clients_.$clientId.tsx` (line 1469–1472) already calls:
+```ts
+navigate({ to: "/plans/$planId/brief", params: { planId: res.planId } })
+```
+The route file `src/routes/plans.$planId.brief.tsx` is registered correctly in `routeTree.gen.ts` at `/plans/$planId/brief`. So the navigation target itself is right.
 
-## Findings (already verified)
+What is likely happening instead:
+- The DB has only one phased-eligible plan: `819c0eef…` (legacy plan, `generation_status = in_progress`, title `"… – 4-Week Plan"`).
+- `startPhasedPlanDraft` reuses any plan where `generation_status != 'complete'`, so it returns this legacy plan's id and skips synthesis (because `brief` is already non-null).
+- Clicking Review **does** go to `/plans/819c0eef…/brief`. Its `brief` JSONB is populated and parses against `BriefSchema`, so the editor should render — unless the user is misreading the screen, or `BriefSchema.safeParse` is silently failing on a field we haven't spotted.
 
-- `SELECT user_id, phased_generation_enabled FROM profiles WHERE phased_generation_enabled = true;` → **0 rows**. Flag is off for everyone, so nothing routes to the new flow.
-- Your trainer id (derived from the client you're viewing): `69a581e5-c4bf-4888-95dc-7a51e24e9ee2`.
-- Routing logic in `src/routes/clients_.$clientId.tsx` (lines 1446–1460) is correct: when `phasedEnabled === true` the button navigates to `/plans/new?clientId=...`; otherwise it calls the legacy `generate()`.
-- All new routes exist on disk and are registered: `plans.new.tsx`, `plans.$planId.brief.tsx`, `plans.$planId.blueprint.tsx`, `plans.$planId.microcycle.tsx`, `plans.$planId.progressions.tsx`.
+So the real fix is the debug line in Problem 2 — once it's there, we'll know whether `brief` is null/unparseable or whether the user is on the wrong route.
 
-## Changes
+## Changes (one file only)
 
-### 1. Migration: enable flag for your account
+**`src/routes/plans.$planId.brief.tsx`** — replace the `if (!brief)` empty-state block (lines 93–107) so it shows an unmistakable debug banner with the plan id:
 
-New file `supabase/migrations/<timestamp>_enable_phased_for_trainer.sql`:
-
-```sql
-UPDATE public.profiles
-SET phased_generation_enabled = true
-WHERE user_id = '69a581e5-c4bf-4888-95dc-7a51e24e9ee2';
+```tsx
+if (!brief) {
+  return (
+    <div className="mx-auto max-w-3xl p-8 text-center">
+      <p className="font-mono text-sm text-destructive">
+        DEBUG: Brief is null or failed schema parse (plan {planId})
+      </p>
+      <p className="mt-2 text-muted-foreground">No brief yet.</p>
+      <button
+        onClick={regenerate}
+        disabled={regenerating}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+      >
+        {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        Generate brief
+      </button>
+    </div>
+  );
+}
 ```
 
-### 2. Temporary console log in `src/routes/clients_.$clientId.tsx`
-
-Inside the `ClientDetail` component, add a `useEffect` that logs the flag whenever it changes:
+Also log to the console inside `load()` so we can see the raw row + parse result:
 
 ```ts
-useEffect(() => {
-  console.log('[phased] enabled =', phasedEnabled);
-}, [phasedEnabled]);
+console.log('[brief route] planId=', planId, 'raw brief=', (data as any).brief,
+            'parsed.success=', parsed.success,
+            parsed.success ? null : parsed.error.issues);
 ```
 
-Placed right after the existing flag-loading effect (~line 490). This is explicitly temporary and will be removed once we confirm the new branch is taken.
+## What I will report back
 
-## Stop conditions
-
-After the migration runs and the log lands:
-
-- Hard-refresh the client page. Console should show `[phased] enabled = true`.
-- Click "Generate plan draft". Browser should navigate to `/plans/new?clientId=bfc11030-...` (the Brief preview), **not** spin in place.
-
-If both check out, report back. Do NOT build any new Stage logic, do NOT touch generation code, do NOT proceed to anything else until you confirm.
+After deploying:
+1. The exact URL the browser shows after clicking Review.
+2. Whether the debug banner appears (Brief is null) or the editor renders.
+3. The console output from `[brief route]` so we know whether the JSONB is missing or just failing schema validation.
 
 ## Out of scope
 
-- No changes to Stage 1–5 server functions.
-- No changes to the legacy `generate()` flow.
-- No new routes or UI.
+- No changes to `clients_.$clientId.tsx` (toast target is already correct).
+- No changes to `startPhasedPlanDraft` or any Stage 2–5 logic.
+- No DB writes.
