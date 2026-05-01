@@ -378,10 +378,11 @@ function HeroPlanMockup() {
 }
 
 function SetLogMockup() {
+  const { t } = useTranslation("plan");
   const sets = [
-    { label: "Set 1", detail: "80kg × 6" },
-    { label: "Set 2", detail: "82.5kg × 6" },
-    { label: "Set 3", detail: "85kg × 5" },
+    { label: t("landing.mockups.set_label", { n: 1 }), detail: "80kg × 6" },
+    { label: t("landing.mockups.set_label", { n: 2 }), detail: "82.5kg × 6" },
+    { label: t("landing.mockups.set_label", { n: 3 }), detail: "85kg × 5" },
   ];
   return (
     <FloatCard>
@@ -390,8 +391,8 @@ function SetLogMockup() {
         style={{ background: "var(--gradient-accent)" }}
       />
       <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-widest text-accent">Back Squat · Set log</p>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Today · Week 6</p>
+        <p className="text-xs uppercase tracking-widest text-accent">{t("landing.mockups.back_squat_set_log")}</p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("landing.mockups.today_week")}</p>
       </div>
       <div className="mt-5 space-y-2 font-mono text-sm text-foreground/90">
         {sets.map((s) => (
@@ -404,14 +405,14 @@ function SetLogMockup() {
       </div>
       <div className="my-4 h-px bg-border/60" />
       <div className="flex items-center justify-between font-mono text-[12px] text-muted-foreground">
-        <span>Last week — top set 80kg × 6</span>
+        <span>{t("landing.mockups.last_week_top")}</span>
         <span className="inline-flex items-center gap-1 text-accent">
           <ArrowUp className="h-3 w-3" /> +5kg
         </span>
       </div>
       <div className="mt-6 flex justify-end">
         <button className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground">
-          Save session
+          {t("landing.mockups.save_session")}
         </button>
       </div>
     </FloatCard>
@@ -419,6 +420,7 @@ function SetLogMockup() {
 }
 
 function ProgressionMockup() {
+  const { t } = useTranslation("plan");
   const weights = [70, 72.5, 75, 77.5, 80, 82.5];
   const w = 280;
   const h = 90;
@@ -433,7 +435,7 @@ function ProgressionMockup() {
 
   return (
     <div className="rounded-2xl border border-border bg-card/80 p-6">
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">Back Squat — 6 weeks of work</p>
+      <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("landing.mockups.back_squat_six_weeks")}</p>
       <div className="mt-5">
         <svg viewBox={`0 0 ${w} ${h + 8}`} className="w-full" preserveAspectRatio="none">
           <path d={path} fill="none" stroke="var(--accent)" strokeOpacity="0.5" strokeWidth="1.5" />
@@ -448,9 +450,9 @@ function ProgressionMockup() {
         </div>
       </div>
       <div className="mt-6 space-y-1.5 font-mono text-[12px] text-muted-foreground">
-        <p>Top set today: <span className="text-foreground/90">85kg × 5</span></p>
-        <p>PR vs week 1: <span className="text-accent">+15kg</span></p>
-        <p>Sessions logged: <span className="text-foreground/90">18</span></p>
+        <p>{t("landing.mockups.top_set_today")} <span className="text-foreground/90">85kg × 5</span></p>
+        <p>{t("landing.mockups.pr_vs_week1")} <span className="text-accent">+15kg</span></p>
+        <p>{t("landing.mockups.sessions_logged")} <span className="text-foreground/90">18</span></p>
       </div>
     </div>
   );
