@@ -2570,3 +2570,193 @@ function ClientPhaseHeaderPill({ clientId }: { clientId: string }) {
   if (!phase) return null;
   return <ClientPhasePill phase={phase} size="md" />;
 }
+
+// ----------------------------------------------------------------------------
+// ClientSnapshotCard — compact "always visible" card at the top of the page.
+// Reuses the same data sources as the synthesis dashboard but with no
+// minimum-coverage gate: it should display whatever is known.
+// ----------------------------------------------------------------------------
+function ClientSnapshotCard({
+  assessment,
+  sectionAnalyses,
+  riskCategory,
+  whr,
+  lastSavedAt,
+}: {
+  assessment: any;
+  sectionAnalyses: Record<string, SectionAnalysis | null>;
+  riskCategory: string;
+  whr: string;
+  lastSavedAt: number | null;
+}) {
+  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const riskTone =
+    riskCategory === "high" ? "text-destructive"
+    : riskCategory === "moderate" ? "text-amber-500"
+    : "text-accent";
+  const recovery = deriveRecoveryProfile(assessment);
+  const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
+  const flags = collectRedFlags(assessment, sectionAnalyses).slice(0, 3);
+  const dateLabel = lastSavedAt
+    ? new Date(lastSavedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Snapshot do cliente
+        </p>
+        <p className="text-[10px] text-muted-foreground">Última avaliação · {dateLabel}</p>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Risco ACSM</p>
+          <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Recuperação</p>
+          <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Composição</p>
+          <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
+        </div>
+      </div>
+      {flags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {flags.map((f) => (
+            <span key={f} className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+              {f}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// MovementCompetencyRadar — inline-SVG 6-axis radar chart.
+// Axes: squat, hinge, push, pull, carry, lunge.  Score 1–5; un-assessed
+// patterns render as a dashed grey axis with no data dot.
+// ----------------------------------------------------------------------------
+function MovementCompetencyRadar({
+  assessment,
+  sectionAnalyses,
+}: {
+  assessment: any;
+  sectionAnalyses: Record<string, SectionAnalysis | null>;
+}) {
+  // Map raw 1–5 scores from the assessment.
+  // push → overhead reach is the closest proxy until pull/carry land in item 11.
+  const lungeNote = sectionAnalyses?.["screen"]?.movement_competency_summary?.lunge ?? "";
+  const axes: Array<{ label: string; score: number | null }> = [
+    { label: "Squat", score: numScore(assessment?.squat_depth_score) },
+    { label: "Hinge", score: numScore(assessment?.hip_hinge_score) },
+    { label: "Push", score: numScore(assessment?.overhead_reach_score) },
+    { label: "Pull", score: numScore(assessment?.pull_pattern_score) },
+    { label: "Carry", score: numScore(assessment?.carry_pattern_score) },
+    { label: "Lunge", score: numScore(assessment?.single_leg_balance_score) || (lungeNote ? 3 : null) },
+  ];
+
+  const SIZE = 220;
+  const CENTER = SIZE / 2;
+  const RADIUS = 80;
+  const N = axes.length;
+  const pointAt = (i: number, scale: number) => {
+    const angle = (-Math.PI / 2) + (i * 2 * Math.PI) / N;
+    return {
+      x: CENTER + Math.cos(angle) * RADIUS * scale,
+      y: CENTER + Math.sin(angle) * RADIUS * scale,
+    };
+  };
+
+  // Polygon path for current scores (un-assessed = 0 → collapsed at center on
+  // that axis; visually we suppress the dot but keep the shape continuous).
+  const polyPoints = axes
+    .map((a, i) => {
+      const v = a.score == null ? 0 : a.score / 5;
+      const p = pointAt(i, v);
+      return `${p.x},${p.y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-3">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        Competência de movimento
+      </p>
+      <div className="flex justify-center">
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-48 w-48">
+          {/* Concentric rings */}
+          {[0.2, 0.4, 0.6, 0.8, 1].map((s) => (
+            <polygon
+              key={s}
+              points={axes.map((_, i) => {
+                const p = pointAt(i, s);
+                return `${p.x},${p.y}`;
+              }).join(" ")}
+              fill="none"
+              stroke="currentColor"
+              strokeOpacity={0.08}
+              strokeWidth={1}
+            />
+          ))}
+          {/* Axes */}
+          {axes.map((a, i) => {
+            const p = pointAt(i, 1);
+            return (
+              <line
+                key={a.label}
+                x1={CENTER}
+                y1={CENTER}
+                x2={p.x}
+                y2={p.y}
+                stroke="currentColor"
+                strokeOpacity={a.score == null ? 0.15 : 0.25}
+                strokeDasharray={a.score == null ? "3 3" : undefined}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {/* Data shape */}
+          <polygon
+            points={polyPoints}
+            fill="oklch(var(--accent) / 0.2)"
+            stroke="oklch(var(--accent))"
+            strokeWidth={1.5}
+          />
+          {/* Data dots (only for assessed axes) */}
+          {axes.map((a, i) => {
+            if (a.score == null) return null;
+            const p = pointAt(i, a.score / 5);
+            return <circle key={a.label} cx={p.x} cy={p.y} r={3} fill="oklch(var(--accent))" />;
+          })}
+          {/* Labels */}
+          {axes.map((a, i) => {
+            const p = pointAt(i, 1.18);
+            return (
+              <text
+                key={a.label}
+                x={p.x}
+                y={p.y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className={`text-[9px] uppercase tracking-widest ${a.score == null ? "fill-muted-foreground/50" : "fill-muted-foreground"}`}
+              >
+                {a.label}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function numScore(v: unknown): number | null {
+  if (typeof v !== "number") return null;
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return Math.max(1, Math.min(5, v));
+}
