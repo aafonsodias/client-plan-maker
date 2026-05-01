@@ -1451,6 +1451,28 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col items-end gap-2">
+                  {briefReady && (
+                    <div className="flex items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+                      <span className="font-medium">
+                        {briefReady.reused ? "Brief already ready." : "Brief ready."}
+                      </span>
+                      <Link
+                        to="/plans/$planId/brief"
+                        params={{ planId: briefReady.planId }}
+                        className="font-semibold text-primary underline underline-offset-2"
+                      >
+                        Review brief →
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setBriefReady(null)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        aria-label="Dismiss"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                   {phasedEnabled && briefCoverage && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
