@@ -60,20 +60,53 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12">
+      {/* Ambient platinum/fiery backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 50% 18%, color-mix(in oklab, var(--accent) 18%, transparent) 0%, transparent 70%), radial-gradient(ellipse 80% 50% at 50% 100%, color-mix(in oklab, var(--accent) 8%, transparent) 0%, transparent 60%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.04]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, var(--foreground) 1px, transparent 0)",
+          backgroundSize: "32px 32px",
+        }}
+      />
       <div className="w-full max-w-md">
         <Link
           to="/"
-          className="mb-10 flex flex-col items-center justify-center gap-3"
+          className="group mb-10 flex flex-col items-center justify-center gap-3"
           aria-label={t("brand.name")}
         >
           <div className="relative">
+            {/* Outer fiery halo */}
             <div
               aria-hidden
-              className="absolute inset-0 -z-10 rounded-full blur-2xl opacity-60"
-              style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
+              className="absolute inset-[-30%] -z-20 rounded-full blur-3xl opacity-70 animate-pulse"
+              style={{
+                background:
+                  "radial-gradient(circle, color-mix(in oklab, var(--accent) 70%, transparent) 0%, color-mix(in oklab, var(--accent) 25%, transparent) 35%, transparent 70%)",
+                animationDuration: "4s",
+              }}
             />
-            <Logo className="h-16 w-16 drop-shadow-[0_0_18px_color-mix(in_oklab,var(--accent)_45%,transparent)]" />
+            {/* Platinum metallic ring */}
+            <div
+              aria-hidden
+              className="absolute inset-[-12%] -z-10 rounded-full opacity-50"
+              style={{
+                background:
+                  "conic-gradient(from 140deg, transparent 0deg, color-mix(in oklab, var(--accent) 60%, white) 90deg, transparent 180deg, color-mix(in oklab, var(--accent) 50%, white) 270deg, transparent 360deg)",
+                filter: "blur(8px)",
+              }}
+            />
+            <Logo className="relative h-20 w-20 drop-shadow-[0_0_24px_color-mix(in_oklab,var(--accent)_60%,transparent)] transition-transform duration-500 group-hover:scale-105" />
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <span className="h-px w-10 bg-accent/70" />
@@ -82,7 +115,13 @@ function AuthPage() {
             </span>
           </div>
         </Link>
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)]">
+        <div
+          className="rounded-2xl border border-border/60 bg-card/70 p-8 shadow-[var(--shadow-elegant)] backdrop-blur-xl"
+          style={{
+            backgroundImage:
+              "linear-gradient(180deg, color-mix(in oklab, var(--card) 80%, transparent) 0%, color-mix(in oklab, var(--card) 95%, transparent) 100%)",
+          }}
+        >
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">{t("auth.tab_signin")}</TabsTrigger>
