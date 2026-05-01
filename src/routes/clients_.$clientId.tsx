@@ -2086,7 +2086,7 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-background/40 p-3">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Síntese da avaliação</p>
         <span className="text-[10px] text-muted-foreground">{analysedCount}/{totalSections} secções analisadas</span>
