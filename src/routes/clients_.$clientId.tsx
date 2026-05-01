@@ -763,7 +763,7 @@ function ClientDetail() {
     void (async () => {
       const { data: row } = await supabase
         .from("workout_plans")
-        .select("id, brief, generation_state, generation_status")
+        .select("id, brief, blueprint, progression_plan, generation_state, generation_status, programming_variables, red_flag_accommodations")
         .eq("trainer_id", user.id)
         .eq("client_id", clientId)
         .neq("generation_status", "complete")
@@ -781,6 +781,20 @@ function ClientDetail() {
       const storedAcc = RedFlagAccommodationsSchema.safeParse(
         (row as any).red_flag_accommodations
       );
+      const hasBlueprintDraft = !!(row as any).blueprint;
+      const hasProgressionsDraft = !!(row as any).progression_plan;
+      // Count microcycle days for this plan (week 1) — drafts mean ≥1 row.
+      let hasMicrocycleDraft = false;
+      try {
+        const { count } = await supabase
+          .from("workout_plan_days")
+          .select("id", { count: "exact", head: true })
+          .eq("plan_id", (row as any).id)
+          .eq("week_number", 1);
+        hasMicrocycleDraft = (count ?? 0) > 0;
+      } catch {
+        /* ignore */
+      }
       setInlineBrief({
         planId: (row as any).id,
         brief: parsed.data,
@@ -792,6 +806,9 @@ function ClientDetail() {
           ? reconcileAccommodations(parsed.data, storedAcc.data)
           : reconcileAccommodations(parsed.data, null),
         approvedStages: approvedList,
+        hasBlueprintDraft,
+        hasMicrocycleDraft,
+        hasProgressionsDraft,
       });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
