@@ -1512,23 +1512,34 @@ function ClientDetail() {
           <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {plans.map((p) => (
-              <Link
-                key={p.id}
-                to="/plans/$planId"
-                params={{ planId: p.id }}
-                className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-semibold">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+            {plans.map((p) => {
+              const stage = (p.generation_state as any)?.stage as string | undefined;
+              const phasedStages = ["brief", "blueprint", "microcycle", "progressions"];
+              const isPhasedDraft = !!stage && phasedStages.includes(stage);
+              const linkProps = isPhasedDraft && stage === "brief"
+                ? { to: "/plans/$planId/brief" as const, params: { planId: p.id } }
+                : isPhasedDraft
+                ? { to: `/plans/$planId/${stage}` as any, params: { planId: p.id } }
+                : { to: "/plans/$planId" as const, params: { planId: p.id } };
+              return (
+                <Link
+                  key={p.id}
+                  {...(linkProps as any)}
+                  className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-semibold">{p.title}</p>
+                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                    </div>
                   </div>
-                </div>
-                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">{p.status}</span>
-              </Link>
-            ))}
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">
+                    {isPhasedDraft ? `Stage: ${stage}` : p.status}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
