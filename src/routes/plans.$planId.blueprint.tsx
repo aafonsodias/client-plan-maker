@@ -31,7 +31,7 @@ function BlueprintRoute() {
             <BlueprintReview />
           </main>
           <aside className="hidden xl:block w-80 2xl:w-96 flex-shrink-0">
-            <div className="sticky top-20 pb-6">
+            <div className="scrollbar-hide sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
               <BriefContextRail planId={planId} />
             </div>
           </aside>
