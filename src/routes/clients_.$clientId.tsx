@@ -1527,12 +1527,34 @@ function ClientDetail() {
 
           {/* Movement screen */}
           <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <ScreenItem label={t("screen_block.squat")} score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
-              <ScreenItem label={t("screen_block.overhead")} score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
-              <ScreenItem label={t("screen_block.hinge")} score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
-              <ScreenItem label={t("screen_block.single_leg")} score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+            <p className="mb-1.5 text-[10px] text-muted-foreground">
+              Marca cada critério observado · adiciona dados de capacidade quando disponíveis.
+            </p>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {PATTERN_IDS.map((p: PatternId) => (
+                <MovementPatternCard
+                  key={p}
+                  pattern={p}
+                  formCriteria={assessment[`${p}_form_criteria`] ?? {}}
+                  capacity={assessment[`${p}_capacity`] ?? {}}
+                  notAssessed={!!assessment.screen_not_assessed?.[p]}
+                  onFormCriteria={(next) =>
+                    setAssessment({ ...assessment, [`${p}_form_criteria`]: next })
+                  }
+                  onCapacity={(next) =>
+                    setAssessment({ ...assessment, [`${p}_capacity`]: next })
+                  }
+                  onNotAssessed={(v) =>
+                    setAssessment({
+                      ...assessment,
+                      screen_not_assessed: {
+                        ...(assessment.screen_not_assessed ?? {}),
+                        [p]: v,
+                      },
+                    })
+                  }
+                />
+              ))}
             </div>
           </SectionBlock>
 
