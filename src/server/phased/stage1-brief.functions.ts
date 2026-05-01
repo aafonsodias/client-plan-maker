@@ -99,7 +99,7 @@ export const synthesizeBrief = createServerFn({ method: "POST" })
         .select("section_analyses")
         .eq("id", (plan as any).assessment_id)
         .maybeSingle();
-      sectionAnalyses = (((assessment as any)?.section_analyses ?? {}) as Record<string, unknown>) ?? {};
+      sectionAnalyses = ((assessment as any)?.section_analyses ?? {}) as Record<string, unknown>;
     }
 
     const system = `You are a senior strength coach. Synthesize a TRAINING BRIEF from the per-section analyses below.
