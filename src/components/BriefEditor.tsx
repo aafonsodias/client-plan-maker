@@ -281,20 +281,22 @@ export default function BriefEditor({
       )}
 
       {accommodations && onAccommodationsChange && (
-        <Card title="Red flag accommodations">
+        <section className="space-y-2 pt-2">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Acomodações de sinais de alerta
+          </h3>
           {accommodations.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              No red flags from the brief — nothing to accommodate.
+              Sem sinais de alerta no brief — nada a acomodar.
             </p>
           ) : (
-            <div className="space-y-3">
+            <ul className="divide-y divide-border">
               {accommodations.map((a, idx) => (
-                <div
-                  key={`${a.flag}-${idx}`}
-                  className="rounded-lg border border-border bg-background/50 p-3"
-                >
-                  <div className="mb-2 text-sm font-medium text-foreground">{a.flag}</div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[160px_1fr]">
+                <li key={`${a.flag}-${idx}`} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                      {a.flag}
+                    </p>
                     <select
                       value={a.strategy}
                       onChange={(e) =>
@@ -302,31 +304,32 @@ export default function BriefEditor({
                           strategy: e.target.value as RedFlagAccommodation["strategy"],
                         })
                       }
-                      className="be-input"
+                      className="be-input shrink-0 sm:w-44"
                     >
-                      <option value="AVOID">Avoid</option>
-                      <option value="MODIFY">Modify</option>
-                      <option value="MONITOR">Monitor</option>
-                      <option value="ACCOMMODATE">Accommodate</option>
+                      {(["AVOID", "MODIFY", "MONITOR", "ACCOMMODATE"] as const).map((s) => (
+                        <option key={s} value={s}>
+                          {FLAG_STRATEGY_LABELS_PT[s]}
+                        </option>
+                      ))}
                     </select>
-                    {(a.strategy === "MODIFY" || a.strategy === "MONITOR") && (
-                      <input
-                        value={a.detail}
-                        onChange={(e) => setAcc(idx, { detail: e.target.value })}
-                        placeholder={
-                          a.strategy === "MODIFY"
-                            ? "e.g. to neutral grip"
-                            : "e.g. in dorsiflexion-dependent exercises"
-                        }
-                        className="be-input"
-                      />
-                    )}
                   </div>
-                </div>
+                  {(a.strategy === "MODIFY" || a.strategy === "MONITOR") && (
+                    <input
+                      value={a.detail}
+                      onChange={(e) => setAcc(idx, { detail: e.target.value })}
+                      placeholder={
+                        a.strategy === "MODIFY"
+                          ? "ex. para pega neutra"
+                          : "ex. em exercícios dependentes de dorsiflexão"
+                      }
+                      className="be-input mt-2 w-full"
+                    />
+                  )}
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </Card>
+        </section>
       )}
 
       <style>{`
