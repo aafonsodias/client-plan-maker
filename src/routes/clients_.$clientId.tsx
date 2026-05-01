@@ -296,6 +296,7 @@ function ClientDetail() {
   const finalizePlanFn = useServerFn(finalizePlanGeneration);
   const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
   const [phasedBusy, setPhasedBusy] = useState(false);
+  const [briefReady, setBriefReady] = useState<{ planId: string; reused: boolean } | null>(null);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
