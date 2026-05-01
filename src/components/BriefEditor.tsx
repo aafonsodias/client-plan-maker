@@ -3,6 +3,7 @@ import type {
   ProgrammingVariables,
   RedFlagAccommodation,
 } from "@/server/phased/schemas";
+import { FLAG_STRATEGY_LABELS_PT } from "@/lib/brief-labels";
 
 export default function BriefEditor({
   brief,
