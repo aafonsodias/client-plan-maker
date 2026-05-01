@@ -482,7 +482,11 @@ function ClientDetail() {
         setLastSavedAt(dbTs || Date.now());
       }
 
-      const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
+      const { data: p } = await supabase
+        .from("workout_plans")
+        .select("id, title, status, updated_at, brief, generation_state, generation_status")
+        .eq("client_id", clientId)
+        .order("updated_at", { ascending: false });
       setPlans(p ?? []);
       // Load phased-generation feature flag for this trainer.
       const { data: prof } = await supabase
