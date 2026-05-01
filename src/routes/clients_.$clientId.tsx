@@ -1448,11 +1448,48 @@ function ClientDetail() {
                   )}
                   {phasedEnabled ? (
                     <Button
-                      onClick={() => navigate({ to: "/plans/new", search: { clientId } as any })}
-                      disabled={busy}
+                      onClick={async () => {
+                        if (phasedBusy) return;
+                        setPhasedBusy(true);
+                        const tId = toast.loading("Synthesizing brief…");
+                        try {
+                          const res = await startPhasedPlanFn({ data: { clientId } });
+                          if (!res.ok) {
+                            toast.error(res.error || "Brief synthesis failed.", { id: tId });
+                            return;
+                          }
+                          toast.success(
+                            (t) => (
+                              <div className="flex items-center gap-3">
+                                <span>
+                                  {res.reused ? "Brief already ready" : "Brief ready"}
+                                </span>
+                                <Link
+                                  to="/plans/$planId/brief"
+                                  params={{ planId: res.planId }}
+                                  className="font-semibold underline"
+                                  onClick={() => toast.dismiss(t)}
+                                >
+                                  Review →
+                                </Link>
+                              </div>
+                            ),
+                            { id: tId, duration: 15000 }
+                          );
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
+                        } finally {
+                          setPhasedBusy(false);
+                        }
+                      }}
+                      disabled={busy || phasedBusy}
                       size="lg"
                     >
-                      <Sparkles className="mr-2 h-4 w-4" />
+                      {phasedBusy ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
                       {t("generate.button")}
                     </Button>
                   ) : (
