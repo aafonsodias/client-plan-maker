@@ -1459,22 +1459,19 @@ function ClientDetail() {
                             return;
                           }
                           toast.success(
-                            (t) => (
-                              <div className="flex items-center gap-3">
-                                <span>
-                                  {res.reused ? "Brief already ready" : "Brief ready"}
-                                </span>
-                                <Link
-                                  to="/plans/$planId/brief"
-                                  params={{ planId: res.planId }}
-                                  className="font-semibold underline"
-                                  onClick={() => toast.dismiss(t)}
-                                >
-                                  Review →
-                                </Link>
-                              </div>
-                            ),
-                            { id: tId, duration: 15000 }
+                            res.reused ? "Brief already ready" : "Brief ready",
+                            {
+                              id: tId,
+                              duration: 15000,
+                              action: {
+                                label: "Review →",
+                                onClick: () =>
+                                  navigate({
+                                    to: "/plans/$planId/brief",
+                                    params: { planId: res.planId },
+                                  }),
+                              },
+                            }
                           );
                         } catch (e: any) {
                           toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
