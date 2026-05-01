@@ -1420,6 +1420,7 @@ function SectionBlock({
   provenance?: "client" | "trainer-edited";
   reviewed?: boolean;
 }) {
+  const { t } = useTranslation("assessment");
   const [open, setOpen] = useState(!defaultCollapsed);
   // Provenance border + tag styling
   const hasProv = provenance === "client" || provenance === "trainer-edited";
@@ -1431,10 +1432,10 @@ function SectionBlock({
   let tagText = "";
   let tagClass = "";
   if (provenance === "client") {
-    tagText = "Client-submitted";
+    tagText = t("tag.client_submitted");
     tagClass = reviewed ? "text-muted-foreground/70" : "text-accent/90";
   } else if (provenance === "trainer-edited") {
-    tagText = "Edited by you";
+    tagText = t("tag.trainer_edited");
     tagClass = "text-muted-foreground/70";
   }
   return (
@@ -1456,12 +1457,12 @@ function SectionBlock({
                 tabIndex={0}
                 onClick={(e) => e.stopPropagation()}
                 className="text-muted-foreground hover:text-foreground"
-                aria-label="Why we ask"
+                aria-label={t("why_we_ask_aria")}
               >
                 <Info className="h-3 w-3" />
               </span>
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
+            <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">{t("why_we_ask")}</span> {hint}</p></TooltipContent>
           </Tooltip>
         )}
         {tagText && (
