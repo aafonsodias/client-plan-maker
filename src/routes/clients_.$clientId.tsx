@@ -1814,6 +1814,47 @@ function ClientDetail() {
   );
 }
 
+type CollapseCtx = {
+  isOpen: (id: string, defaultOpen: boolean) => boolean;
+  setOpen: (id: string, open: boolean) => void;
+  setAll: (open: boolean) => void;
+};
+const SectionCollapseContext = createContext<CollapseCtx | null>(null);
+
+function useSectionCollapseProvider(clientId: string, sectionIds: string[]): CollapseCtx & { allOpen: boolean; allClosed: boolean } {
+  const storageKey = useCallback((id: string) => `forge_assessment_collapse_${clientId}_${id}`, [clientId]);
+  const [overrides, setOverrides] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    const out: Record<string, boolean> = {};
+    for (const id of sectionIds) {
+      try {
+        const v = window.localStorage.getItem(`forge_assessment_collapse_${clientId}_${id}`);
+        if (v === "open") out[id] = true;
+        else if (v === "closed") out[id] = false;
+      } catch { /* ignore */ }
+    }
+    return out;
+  });
+  const isOpen = useCallback((id: string, defaultOpen: boolean) => {
+    return id in overrides ? overrides[id] : defaultOpen;
+  }, [overrides]);
+  const setOpen = useCallback((id: string, open: boolean) => {
+    setOverrides((prev) => ({ ...prev, [id]: open }));
+    try { window.localStorage.setItem(storageKey(id), open ? "open" : "closed"); } catch { /* ignore */ }
+  }, [storageKey]);
+  const setAll = useCallback((open: boolean) => {
+    const next: Record<string, boolean> = {};
+    for (const id of sectionIds) {
+      next[id] = open;
+      try { window.localStorage.setItem(storageKey(id), open ? "open" : "closed"); } catch { /* ignore */ }
+    }
+    setOverrides(next);
+  }, [sectionIds, storageKey]);
+  const allOpen = sectionIds.every((id) => (id in overrides ? overrides[id] : true));
+  const allClosed = sectionIds.every((id) => (id in overrides ? !overrides[id] : false));
+  return { isOpen, setOpen, setAll, allOpen, allClosed };
+}
+
 function SectionBlock({
   id,
   title,
