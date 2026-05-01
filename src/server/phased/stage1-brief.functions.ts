@@ -239,6 +239,21 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
       return { ok: false as const, error: "forbidden" };
     }
 
+    // Bug 2a: if there's already an in-progress phased plan for this client,
+    // reuse it instead of creating a new ghost row.
+    const { data: existing } = await supabase
+      .from("workout_plans")
+      .select("id, generation_status, brief")
+      .eq("trainer_id", userId)
+      .eq("client_id", data.clientId)
+      .neq("generation_status", "complete")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing && (existing as any).id) {
+      return { ok: true as const, planId: (existing as any).id, reused: true as const };
+    }
+
     const { data: assessment } = await supabase
       .from("assessments")
       .select("id, updated_at")
@@ -271,5 +286,5 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
       return { ok: false as const, error: insErr?.message ?? "insert failed" };
     }
 
-    return { ok: true as const, planId: (inserted as any).id };
+    return { ok: true as const, planId: (inserted as any).id, reused: false as const };
   });
