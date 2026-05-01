@@ -23,12 +23,14 @@ function ProgressionsRoute() {
   return (
     <AppShell>
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <BriefContextRailMobile planId={planId} />
-        <div className="lg:flex lg:gap-6">
+        <div className="mb-3 flex justify-end xl:hidden">
+          <BriefSheetButton planId={planId} />
+        </div>
+        <div className="xl:flex xl:gap-6">
           <main className="min-w-0 flex-1">
             <ProgressionsReview />
           </main>
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+          <aside className="hidden xl:block w-80 flex-shrink-0">
             <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
               <BriefContextRail planId={planId} />
             </div>
