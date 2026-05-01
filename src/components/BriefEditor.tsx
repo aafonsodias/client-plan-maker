@@ -1,15 +1,41 @@
-import type { Brief } from "@/server/phased/schemas";
+import type {
+  Brief,
+  ProgrammingVariables,
+  RedFlagAccommodation,
+} from "@/server/phased/schemas";
 
 export default function BriefEditor({
   brief,
   onChange,
   disabled = false,
+  programmingVariables,
+  onProgrammingChange,
+  accommodations,
+  onAccommodationsChange,
 }: {
   brief: Brief;
   onChange: (b: Brief) => void;
   disabled?: boolean;
+  programmingVariables?: ProgrammingVariables;
+  onProgrammingChange?: (p: ProgrammingVariables) => void;
+  accommodations?: RedFlagAccommodation[];
+  onAccommodationsChange?: (a: RedFlagAccommodation[]) => void;
 }) {
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => onChange({ ...brief, [k]: v });
+  const setPv = <K extends keyof ProgrammingVariables>(
+    k: K,
+    v: ProgrammingVariables[K]
+  ) => {
+    if (programmingVariables && onProgrammingChange) {
+      onProgrammingChange({ ...programmingVariables, [k]: v });
+    }
+  };
+  const setAcc = (idx: number, patch: Partial<RedFlagAccommodation>) => {
+    if (!accommodations || !onAccommodationsChange) return;
+    onAccommodationsChange(
+      accommodations.map((a, i) => (i === idx ? { ...a, ...patch } : a))
+    );
+  };
 
   return (
     <div className={`space-y-4 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
@@ -154,6 +180,141 @@ export default function BriefEditor({
           />
         </Field>
       </Card>
+
+      {programmingVariables && onProgrammingChange && (
+        <Card title="Programming setup">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="Training split">
+              <select
+                value={programmingVariables.training_split}
+                onChange={(e) => setPv("training_split", e.target.value as ProgrammingVariables["training_split"])}
+                className="be-input"
+              >
+                <option value="full_body">Full-body</option>
+                <option value="upper_lower">Upper / Lower</option>
+                <option value="ppl">Push / Pull / Legs</option>
+                <option value="pplc">Push / Pull / Legs / Core</option>
+                <option value="ppl_x2">Push / Pull / Legs (×2/wk)</option>
+                <option value="body_part_split">Body-part split</option>
+                <option value="custom">Custom</option>
+              </select>
+            </Field>
+            <Field label="Deload frequency">
+              <select
+                value={programmingVariables.deload_frequency}
+                onChange={(e) => setPv("deload_frequency", e.target.value as ProgrammingVariables["deload_frequency"])}
+                className="be-input"
+              >
+                <option value="every_3_weeks">Every 3 weeks</option>
+                <option value="every_4_weeks">Every 4 weeks</option>
+                <option value="every_5_weeks">Every 5 weeks</option>
+                <option value="every_6_weeks">Every 6 weeks</option>
+                <option value="no_deload">No deload</option>
+              </select>
+            </Field>
+            <Field label="Deload style">
+              <select
+                value={programmingVariables.deload_style}
+                onChange={(e) => setPv("deload_style", e.target.value as ProgrammingVariables["deload_style"])}
+                className="be-input"
+              >
+                <option value="volume_reduction">Volume reduction (-30%)</option>
+                <option value="intensity_reduction">Intensity reduction (-15% load)</option>
+                <option value="full_rest_week">Full rest week</option>
+                <option value="mixed">Mixed (-15% load AND -30% volume)</option>
+              </select>
+            </Field>
+            <Field label="RPE ceiling">
+              <input
+                type="number"
+                min={7.5}
+                max={10}
+                step={0.5}
+                value={programmingVariables.rpe_ceiling}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  if (Number.isFinite(n)) setPv("rpe_ceiling", n);
+                }}
+                className="be-input"
+              />
+            </Field>
+            <Field label="Exercise selection bias">
+              <select
+                value={programmingVariables.exercise_bias}
+                onChange={(e) => setPv("exercise_bias", e.target.value as ProgrammingVariables["exercise_bias"])}
+                className="be-input"
+              >
+                <option value="compound_first">Compound-first</option>
+                <option value="balanced">Balanced</option>
+                <option value="isolation_friendly">Isolation-friendly</option>
+                <option value="bodyweight_friendly">Bodyweight-friendly</option>
+                <option value="equipment_flexible">Equipment-flexible</option>
+              </select>
+            </Field>
+            <Field label="Intensity / volume trade-off">
+              <select
+                value={programmingVariables.intensity_volume_tradeoff}
+                onChange={(e) => setPv("intensity_volume_tradeoff", e.target.value as ProgrammingVariables["intensity_volume_tradeoff"])}
+                className="be-input"
+              >
+                <option value="high_int_low_vol">High intensity / low volume</option>
+                <option value="moderate_moderate">Moderate / moderate</option>
+                <option value="moderate_int_high_vol">Moderate intensity / high volume</option>
+                <option value="low_int_very_high_vol">Low intensity / very high volume</option>
+              </select>
+            </Field>
+          </div>
+        </Card>
+      )}
+
+      {accommodations && onAccommodationsChange && (
+        <Card title="Red flag accommodations">
+          {accommodations.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              No red flags from the brief — nothing to accommodate.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {accommodations.map((a, idx) => (
+                <div
+                  key={`${a.flag}-${idx}`}
+                  className="rounded-lg border border-border bg-background/50 p-3"
+                >
+                  <div className="mb-2 text-sm font-medium text-foreground">{a.flag}</div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[160px_1fr]">
+                    <select
+                      value={a.strategy}
+                      onChange={(e) =>
+                        setAcc(idx, {
+                          strategy: e.target.value as RedFlagAccommodation["strategy"],
+                        })
+                      }
+                      className="be-input"
+                    >
+                      <option value="AVOID">Avoid</option>
+                      <option value="MODIFY">Modify</option>
+                      <option value="MONITOR">Monitor</option>
+                      <option value="ACCOMMODATE">Accommodate</option>
+                    </select>
+                    {(a.strategy === "MODIFY" || a.strategy === "MONITOR") && (
+                      <input
+                        value={a.detail}
+                        onChange={(e) => setAcc(idx, { detail: e.target.value })}
+                        placeholder={
+                          a.strategy === "MODIFY"
+                            ? "e.g. to neutral grip"
+                            : "e.g. in dorsiflexion-dependent exercises"
+                        }
+                        className="be-input"
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       <style>{`
         .be-input { width: 100%; border-radius: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); padding: 6px 10px; font-size: 14px; color: hsl(var(--foreground)); }

@@ -568,7 +568,9 @@ export type Database = {
           generation_status: string
           id: string
           plan_data: Json
+          programming_variables: Json | null
           progression_plan: Json | null
+          red_flag_accommodations: Json | null
           share_token: string | null
           share_token_expires_at: string | null
           status: string
@@ -589,7 +591,9 @@ export type Database = {
           generation_status?: string
           id?: string
           plan_data?: Json
+          programming_variables?: Json | null
           progression_plan?: Json | null
+          red_flag_accommodations?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
           status?: string
@@ -610,7 +614,9 @@ export type Database = {
           generation_status?: string
           id?: string
           plan_data?: Json
+          programming_variables?: Json | null
           progression_plan?: Json | null
+          red_flag_accommodations?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
           status?: string

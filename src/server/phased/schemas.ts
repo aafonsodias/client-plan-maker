@@ -77,6 +77,69 @@ export const BriefSchema = z.object({
 });
 export type Brief = z.infer<typeof BriefSchema>;
 
+// ---- Stage 1.5 — Coach programming variables ------------------------------
+// Coach-controlled knobs captured alongside the brief. Drives Stage 2.
+export const TrainingSplitEnum = z.enum([
+  "full_body",
+  "upper_lower",
+  "ppl",
+  "pplc",
+  "ppl_x2",
+  "body_part_split",
+  "custom",
+]);
+
+export const DeloadFrequencyEnum = z.enum([
+  "every_3_weeks",
+  "every_4_weeks",
+  "every_5_weeks",
+  "every_6_weeks",
+  "no_deload",
+]);
+
+export const DeloadStyleEnum = z.enum([
+  "volume_reduction",
+  "intensity_reduction",
+  "full_rest_week",
+  "mixed",
+]);
+
+export const ExerciseBiasEnum = z.enum([
+  "compound_first",
+  "balanced",
+  "isolation_friendly",
+  "bodyweight_friendly",
+  "equipment_flexible",
+]);
+
+export const IntensityVolumeTradeoffEnum = z.enum([
+  "high_int_low_vol",
+  "moderate_moderate",
+  "moderate_int_high_vol",
+  "low_int_very_high_vol",
+]);
+
+export const ProgrammingVariablesSchema = z.object({
+  training_split: TrainingSplitEnum,
+  deload_frequency: DeloadFrequencyEnum,
+  deload_style: DeloadStyleEnum,
+  rpe_ceiling: z.number().min(7.5).max(10),
+  exercise_bias: ExerciseBiasEnum,
+  intensity_volume_tradeoff: IntensityVolumeTradeoffEnum,
+});
+export type ProgrammingVariables = z.infer<typeof ProgrammingVariablesSchema>;
+
+// ---- Stage 1.5 — Red flag accommodations ----------------------------------
+export const FlagStrategyEnum = z.enum(["AVOID", "MODIFY", "MONITOR", "ACCOMMODATE"]);
+
+export const RedFlagAccommodationSchema = z.object({
+  flag: z.string().min(1),
+  strategy: FlagStrategyEnum,
+  detail: z.string().default(""),
+});
+export const RedFlagAccommodationsSchema = z.array(RedFlagAccommodationSchema);
+export type RedFlagAccommodation = z.infer<typeof RedFlagAccommodationSchema>;
+
 // ---- Stage 2 — Mesocycle blueprint ----------------------------------------
 export const SessionArchetypeSchema = z.object({
   id: z.string().min(1),

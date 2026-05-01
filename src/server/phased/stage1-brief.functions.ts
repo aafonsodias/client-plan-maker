@@ -1,7 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { BriefSchema, GenerationStateSchema, DOWNSTREAM_OF, type GenerationStage } from "./schemas";
+import {
+  BriefSchema,
+  GenerationStateSchema,
+  DOWNSTREAM_OF,
+  ProgrammingVariablesSchema,
+  RedFlagAccommodationsSchema,
+  type GenerationStage,
+} from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 
 const BRIEF_TOOL_SCHEMA = {
@@ -181,6 +188,8 @@ export const approveBrief = createServerFn({ method: "POST" })
       .object({
         planId: z.string().uuid(),
         brief: BriefSchema,
+        programmingVariables: ProgrammingVariablesSchema.optional(),
+        redFlagAccommodations: RedFlagAccommodationsSchema.optional(),
       })
       .parse(d)
   )
@@ -206,12 +215,20 @@ export const approveBrief = createServerFn({ method: "POST" })
       last_updated_at: new Date().toISOString(),
     });
 
+    const update: Record<string, unknown> = {
+      brief: data.brief as any,
+      generation_state: newState as any,
+    };
+    if (data.programmingVariables) {
+      update.programming_variables = data.programmingVariables as any;
+    }
+    if (data.redFlagAccommodations) {
+      update.red_flag_accommodations = data.redFlagAccommodations as any;
+    }
+
     const { error: updErr } = await supabase
       .from("workout_plans")
-      .update({
-        brief: data.brief as any,
-        generation_state: newState as any,
-      })
+      .update(update as any)
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
     return { ok: true as const };

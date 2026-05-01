@@ -17,7 +17,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
-import { BriefSchema, type Brief, type SectionAnalysis } from "@/server/phased/schemas";
+import {
+  BriefSchema,
+  ProgrammingVariablesSchema,
+  RedFlagAccommodationsSchema,
+  type Brief,
+  type ProgrammingVariables,
+  type RedFlagAccommodation,
+  type SectionAnalysis,
+} from "@/server/phased/schemas";
+import {
+  defaultProgrammingVariables,
+  reconcileAccommodations,
+} from "@/server/phased/programming-defaults";
 import BriefEditor from "@/components/BriefEditor";
 import StageCard from "@/components/StageCard";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -306,6 +318,8 @@ function ClientDetail() {
     planId: string;
     brief: Brief;
     approved: boolean;
+    programmingVariables: ProgrammingVariables;
+    accommodations: RedFlagAccommodation[];
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
@@ -691,10 +705,22 @@ function ClientDetail() {
       if (!parsed.success) return;
       const stage = (row as any).generation_state?.stage as string | undefined;
       const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+      const storedPv = ProgrammingVariablesSchema.safeParse(
+        (row as any).programming_variables
+      );
+      const storedAcc = RedFlagAccommodationsSchema.safeParse(
+        (row as any).red_flag_accommodations
+      );
       setInlineBrief({
         planId: (row as any).id,
         brief: parsed.data,
         approved: approvedList.includes("brief") || (!!stage && stage !== "brief"),
+        programmingVariables: storedPv.success
+          ? storedPv.data
+          : defaultProgrammingVariables(parsed.data),
+        accommodations: storedAcc.success
+          ? reconcileAccommodations(parsed.data, storedAcc.data)
+          : reconcileAccommodations(parsed.data, null),
       });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1558,7 +1584,7 @@ function ClientDetail() {
                           // Fetch the freshly-written brief and render it inline below.
                           const { data: row } = await supabase
                             .from("workout_plans")
-                            .select("brief, generation_state")
+                            .select("brief, generation_state, programming_variables, red_flag_accommodations")
                             .eq("id", res.planId)
                             .maybeSingle();
                           const parsed = BriefSchema.safeParse((row as any)?.brief);
@@ -1568,10 +1594,22 @@ function ClientDetail() {
                           }
                           const stage = (row as any)?.generation_state?.stage as string | undefined;
                           const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
+                          const storedPv = ProgrammingVariablesSchema.safeParse(
+                            (row as any)?.programming_variables
+                          );
+                          const storedAcc = RedFlagAccommodationsSchema.safeParse(
+                            (row as any)?.red_flag_accommodations
+                          );
                           setInlineBrief({
                             planId: res.planId,
                             brief: parsed.data,
                             approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
+                            programmingVariables: storedPv.success
+                              ? storedPv.data
+                              : defaultProgrammingVariables(parsed.data),
+                            accommodations: storedAcc.success
+                              ? reconcileAccommodations(parsed.data, storedAcc.data)
+                              : reconcileAccommodations(parsed.data, null),
                           });
                           // Refresh plans list so the new draft shows up.
                           void refreshPlans();
@@ -1624,7 +1662,12 @@ function ClientDetail() {
                         const tId = toast.loading("Approving brief…");
                         try {
                           const res: any = await approveBriefFn({
-                            data: { planId: inlineBrief.planId, brief: inlineBrief.brief },
+                            data: {
+                              planId: inlineBrief.planId,
+                              brief: inlineBrief.brief,
+                              programmingVariables: inlineBrief.programmingVariables,
+                              redFlagAccommodations: inlineBrief.accommodations,
+                            },
                           });
                           if (!res.ok) {
                             toast.error(res.error || "Approve failed", { id: tId });
@@ -1658,6 +1701,11 @@ function ClientDetail() {
                       planId: inlineBrief.planId,
                       brief: parsed.data,
                       approved: false,
+                      programmingVariables: inlineBrief.programmingVariables,
+                      accommodations: reconcileAccommodations(
+                        parsed.data,
+                        inlineBrief.accommodations
+                      ),
                     });
                     toast.success("Brief regenerated", { id: tId });
                   } finally {
@@ -1669,6 +1717,14 @@ function ClientDetail() {
                   brief={inlineBrief.brief}
                   onChange={(b) => setInlineBrief({ ...inlineBrief, brief: b })}
                   disabled={inlineBrief.approved || briefStageBusy}
+                  programmingVariables={inlineBrief.programmingVariables}
+                  onProgrammingChange={(p) =>
+                    setInlineBrief({ ...inlineBrief, programmingVariables: p })
+                  }
+                  accommodations={inlineBrief.accommodations}
+                  onAccommodationsChange={(a) =>
+                    setInlineBrief({ ...inlineBrief, accommodations: a })
+                  }
                 />
               </StageCard>
               {inlineBrief.approved && (
