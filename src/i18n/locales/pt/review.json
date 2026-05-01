@@ -1,0 +1,131 @@
+{
+  "_README": "Sidecar PT translation drafts awaiting founder review. Promote approved entries into common.json / plan.json (under the matching namespace key) to make them live. While entries live here only, the UI falls back to English. All entries below are machine-drafted — REVIEW each one before promoting.",
+  "common": {
+    "actions": {
+      "sign_in": "Entrar",
+      "sign_out": "Terminar sessão",
+      "sign_up": "Criar conta",
+      "start_free": "Começar grátis",
+      "go_to_dashboard": "Ir para o dashboard",
+      "open_dashboard": "Abrir dashboard",
+      "back": "Voltar",
+      "loading": "A carregar…",
+      "continue_with_google": "Continuar com Google",
+      "upgrade": "Fazer upgrade",
+      "or": "ou"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "clients": "Clientes",
+      "branding": "Marca",
+      "billing": "Faturação",
+      "landing": "Página inicial"
+    },
+    "auth": {
+      "tab_signin": "Entrar",
+      "tab_signup": "Criar conta",
+      "field_email": "Email",
+      "field_password": "Palavra-passe",
+      "field_full_name": "Nome completo",
+      "password_hint": "Pelo menos 10 caracteres. Evita palavras-passe comuns ou comprometidas.",
+      "confirm_email_toast": "Confirma a tua conta no email que recebeste."
+    },
+    "shell": {
+      "trial_days_left_one": "Resta {{count}} dia no teu período experimental.",
+      "trial_days_left_other": "Restam {{count}} dias no teu período experimental.",
+      "trial_ended": "O teu período experimental terminou. Faz upgrade para continuar a gerar planos."
+    },
+    "language": {
+      "switch_aria": "Mudar idioma",
+      "english": "Inglês",
+      "portuguese": "Português"
+    },
+    "errors": {
+      "page_not_found_title": "Página não encontrada",
+      "page_not_found_desc": "A página que procuras não existe ou foi movida.",
+      "go_home": "Ir para a página inicial"
+    }
+  },
+  "plan": {
+    "landing": {
+      "hero": {
+        "title_line1": "Para de escrever planos",
+        "title_line2": "à meia-noite.",
+        "subtitle": "Faz uma avaliação estruturada, deixa a IA preparar um programa personalizado em 90 segundos e exporta um PDF com a tua marca que os teus clientes vão mesmo abrir.",
+        "cta_primary_signed_out": "Cria o teu primeiro plano",
+        "cta_primary_signed_in": "Abrir dashboard",
+        "cta_secondary": "Vê como funciona",
+        "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador."
+      },
+      "how_it_works": {
+        "eyebrow": "Como funciona",
+        "title": "Da avaliação ao PDF em quatro passos.",
+        "steps": {
+          "add_client": { "label": "Adicionar cliente", "desc": "Regista os dados em segundos." },
+          "assessment": { "label": "Fazer a avaliação", "desc": "PAR-Q+, risco, mobilidade, objetivos." },
+          "generate": { "label": "Gerar plano", "desc": "A IA cria um programa periodizado." },
+          "export": { "label": "Exportar PDF", "desc": "Com a tua marca, num clique." }
+        }
+      },
+      "credibility": {
+        "title": "Construído sobre a ciência em que já confias.",
+        "subtitle": "A Forge não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeste na tua certificação — para que o resultado seja defensável, não genérico.",
+        "cards": {
+          "parq_title": "Triagem PAR-Q+",
+          "parq_desc": "Triagem de saúde pré-participação com sinalização de risco cardiovascular, metabólico e renal incluída.",
+          "acsm_title": "Estratificação de risco ACSM",
+          "acsm_desc": "Categorização baixa / moderada / alta para guiar a prescrição de intensidade em segurança desde a primeira sessão.",
+          "prochaska_title": "Estágios de mudança de Prochaska",
+          "prochaska_desc": "Prontidão para mudança de comportamento mapeada para o tom de coaching e velocidade de progressão de cada cliente."
+        }
+      },
+      "logging": {
+        "title": "O plano não acaba no PDF.",
+        "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que tu e o cliente vejam o trabalho a acumular."
+      },
+      "features": {
+        "title": "Feito para treinadores que preferem treinar a copiar e colar folhas de cálculo.",
+        "intake_title": "Avaliação estruturada",
+        "intake_desc": "Regista objetivos, equipamento, lesões e horário num único formulário guiado.",
+        "ai_title": "Programas criados por IA",
+        "ai_desc": "Recebe um plano semanal periodizado adaptado à avaliação em segundos.",
+        "pdf_title": "Exportação de PDF com marca",
+        "pdf_desc": "Adiciona o teu logótipo e o nome do teu negócio. Envia um plano polido instantaneamente."
+      },
+      "founder": {
+        "title": "Porquê a Forge?",
+        "img_alt": "André, fundador da Forge",
+        "p1": "Em quinze anos como personal trainer, percebi duas coisas: a maioria dos planos de treino profissionais são mal montados e, como a parte administrativa é uma chatice, muitos treinadores acabam por desistir e improvisar.",
+        "p2": "Programação estruturada e de qualidade demora normalmente demasiado tempo, e por isso não é feita.",
+        "p3": "A Forge foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o teu próprio treino.",
+        "bullet_logic_title": "Lógica acima da estética.",
+        "bullet_logic_body": "Não é teatro administrativo nem PDFs bonitos. É usar frameworks sólidos (PAR-Q+, estratificação de risco ACSM, Prochaska) para construir uma base que faz sentido.",
+        "bullet_pro_title": "Profissional ou pessoal.",
+        "bullet_pro_body": "Funciona como assistente profissional para acelerar a entrega ao cliente, ou como ferramenta pessoal para quem quer um programa estruturado sem dor de cabeça manual.",
+        "bullet_filter_title": "Tu és o filtro.",
+        "bullet_filter_body": "A IA trata da escrita repetitiva. Tu revês, corriges e assumes a autoria.",
+        "p4": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
+        "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
+      },
+      "faq": {
+        "title": "Perguntas que os treinadores fazem antes de se inscrever.",
+        "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
+        "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o teu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o teu critério.",
+        "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
+        "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
+        "q3_q": "Posso usar a minha própria marca no PDF?",
+        "q3_a": "Sim. Carrega o teu logótipo e o nome do teu negócio em Definições. Cada exportação de PDF tem a identidade do teu estúdio, não a da Forge.",
+        "q4_q": "O que acontece aos dados dos meus clientes?",
+        "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
+      },
+      "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
+      "closing": {
+        "title": "O teu próximo plano, antes da tua próxima sessão.",
+        "subtitle": "Grátis durante a fase beta. Sem cartão.",
+        "cta_signed_in": "Abrir dashboard",
+        "cta_signed_out": "Cria a tua conta"
+      },
+      "footer_copy": "© {{year}} Forge"
+    }
+  }
+}

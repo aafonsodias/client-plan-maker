@@ -1,0 +1,82 @@
+{
+  "landing": {
+    "hero": {
+      "title_line1": "Stop writing plans",
+      "title_line2": "at midnight.",
+      "subtitle": "Run a structured intake, let AI draft a personalized program in 90 seconds, and export a branded PDF your clients will actually open.",
+      "cta_primary_signed_out": "Draft your first plan",
+      "cta_primary_signed_in": "Open dashboard",
+      "cta_secondary": "See how it works",
+      "credibility_caption": "Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach."
+    },
+    "how_it_works": {
+      "eyebrow": "How it works",
+      "title": "From intake to PDF in four moves.",
+      "steps": {
+        "add_client": { "label": "Add client", "desc": "Capture demographics in seconds." },
+        "assessment": { "label": "Run assessment", "desc": "PAR-Q+, risk, mobility, goals." },
+        "generate": { "label": "Generate plan", "desc": "AI drafts a periodized program." },
+        "export": { "label": "Export PDF", "desc": "Branded, sent in one click." }
+      }
+    },
+    "credibility": {
+      "title": "Built on the science you already trust.",
+      "subtitle": "Forge isn't just AI on top of a chat box. The intake follows the protocols you learned in your certification — so the output is defensible, not generic.",
+      "cards": {
+        "parq_title": "PAR-Q+ screening",
+        "parq_desc": "Pre-participation health screen with cardiovascular, metabolic, and renal risk flags built in.",
+        "acsm_title": "ACSM risk stratification",
+        "acsm_desc": "Low / moderate / high categorization to guide intensity prescription safely from session one.",
+        "prochaska_title": "Prochaska stages of change",
+        "prochaska_desc": "Behaviour-change readiness mapped to coaching tone and progression speed for each client."
+      }
+    },
+    "logging": {
+      "title": "The plan doesn't end at the PDF.",
+      "subtitle": "Log every set, track every session. Forge keeps the history so you and the client see the work pile up."
+    },
+    "features": {
+      "title": "Built for trainers who'd rather coach than copy-paste spreadsheets.",
+      "intake_title": "Structured intake",
+      "intake_desc": "Capture goals, equipment, injuries, and schedule in a single guided form.",
+      "ai_title": "AI-drafted programs",
+      "ai_desc": "Get a periodized weekly plan tailored to the assessment in seconds.",
+      "pdf_title": "Branded PDF export",
+      "pdf_desc": "Add your logo and business name. Send a polished plan instantly."
+    },
+    "founder": {
+      "title": "Why Forge?",
+      "img_alt": "André, founder of Forge",
+      "p1": "In fifteen years as a personal trainer, I've realized two things: most professional training plans are poorly put together, and because the admin is such a chore, many trainers just give up and improvise.",
+      "p2": "High-quality, structured programming usually takes too much time, so it doesn't get done.",
+      "p3": "Forge is built to change that. It's a tool that makes it easy to generate a plan that is actually defensible, whether you're coaching others or just managing your own training.",
+      "bullet_logic_title": "Logic over aesthetics.",
+      "bullet_logic_body": "It's not about admin theatre or pretty PDFs. It's about using solid frameworks (PAR-Q+, ACSM risk stratification, Prochaska) to build a baseline that makes sense.",
+      "bullet_pro_title": "Professional or personal.",
+      "bullet_pro_body": "It works as a professional assistant to speed up client delivery, or as a personal tool for anyone who wants a structured program without the manual headache.",
+      "bullet_filter_title": "You're the filter.",
+      "bullet_filter_body": "The AI handles the repetitive drafting. You review it, fix it, and own it.",
+      "p4": "The goal isn't to automate coaching. It's to make sure that \"it's too much work\" is no longer an excuse for a bad plan.",
+      "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
+    },
+    "faq": {
+      "title": "Questions trainers ask before signing up.",
+      "q1_q": "Is the AI plan good enough to send to clients as-is?",
+      "q1_a": "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Forge is faster than starting from a blank page — not a replacement for your judgement.",
+      "q2_q": "What if my client has injuries or medical conditions?",
+      "q2_a": "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
+      "q3_q": "Can I use my own branding on the PDF?",
+      "q3_a": "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Forge's.",
+      "q4_q": "What happens to my client data?",
+      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever."
+    },
+    "mission": "Forge exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
+    "closing": {
+      "title": "Your next plan, before your next session.",
+      "subtitle": "Free during beta. No card required.",
+      "cta_signed_in": "Open dashboard",
+      "cta_signed_out": "Create your account"
+    },
+    "footer_copy": "© {{year}} Forge"
+  }
+}
