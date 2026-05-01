@@ -1696,17 +1696,15 @@ function ClientDetail() {
                 );
               }
               return (
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
                   {phasedEnabled && briefCoverage && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
-                        {t("generate.brief_coverage", {
-                          done: briefCoverage.done,
-                          total: briefCoverage.total,
-                          defaultValue: `Pré-visualização do brief: ${briefCoverage.done}/${briefCoverage.total}`,
-                        })}
-                      </span>
-                    </div>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground self-start sm:self-auto">
+                      {t("generate.brief_coverage", {
+                        done: briefCoverage.done,
+                        total: briefCoverage.total,
+                        defaultValue: `Pré-visualização do brief · ${briefCoverage.done}/${briefCoverage.total}`,
+                      })}
+                    </span>
                   )}
                   {phasedEnabled ? (
                     <Button
