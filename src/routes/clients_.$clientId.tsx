@@ -269,6 +269,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "offline";
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
+  const { t } = useTranslation("assessment");
   const { user } = useAuth();
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
