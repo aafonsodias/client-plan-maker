@@ -5,6 +5,8 @@
   "title": "Avaliação",
   "sections_label": "Secções",
   "progress": "Secção {{current}} de {{total}} · {{pct}}% completo · ~{{minutes}} min restantes",
+  "progress_short": "Secção {{current}}/{{total}} · {{pct}}%",
+  "progress_minutes": "~{{minutes}} min restantes",
   "save": {
     "saving": "A guardar…",
     "offline": "Offline — guardado localmente",
