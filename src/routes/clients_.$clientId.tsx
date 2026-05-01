@@ -481,6 +481,13 @@ function ClientDetail() {
 
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      // Load phased-generation feature flag for this trainer.
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("phased_generation_enabled")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setPhasedEnabled(!!(prof as any)?.phased_generation_enabled);
       setHydrated(true);
       void detectResumablePlan();
     })();
