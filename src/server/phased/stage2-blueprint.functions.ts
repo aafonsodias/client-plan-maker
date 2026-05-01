@@ -9,6 +9,7 @@ import {
   DOWNSTREAM_OF,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { computeCallCostUsd } from "@/server/plan-cost.server";
 
 const BLUEPRINT_TOOL_SCHEMA = {
   type: "object",
