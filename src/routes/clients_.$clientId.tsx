@@ -1405,7 +1405,7 @@ function ClientDetail() {
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
             <div className="mb-3 rounded-md border border-border bg-background/40 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Label className="text-xs">Capacidade actual vs PB</Label>
+                <Label className="text-xs">Capacidade actual vs pico anterior</Label>
                 <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                   {assessment.current_capacity_vs_pb ?? 5}/10
                 </span>
@@ -1420,7 +1420,7 @@ function ClientDetail() {
                 }
               />
               <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                1 = muito longe do PB (modo reconstrução) · 5 = a meio · 10 = no PB ou acima (modo progressão).
+                1 = muito longe do pico anterior (modo reconstrução) · 5 = a meio · 10 = no pico anterior ou acima (modo progressão).
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
