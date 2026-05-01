@@ -1740,7 +1740,7 @@ function ClientDetail() {
               )}
             </div>
           )}
-        </section>
+        </AssessmentSection>
       </div>
 
       <section>
