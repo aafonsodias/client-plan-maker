@@ -1254,14 +1254,14 @@ function ClientDetail() {
           {!busy && resumablePlan && (
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm">
-                <div className="font-semibold">Previous generation in progress</div>
+                <div className="font-semibold">{t("resume.title")}</div>
                 <div className="text-muted-foreground text-xs">
-                  {resumablePlan.title || "Untitled plan"} — {resumablePlan.completed}/{resumablePlan.total} days done.
+                  {t("resume.progress", { title: resumablePlan.title || t("resume.untitled"), done: resumablePlan.completed, total: resumablePlan.total })}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>Continue</Button>
-                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>Start over</Button>
+                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>{t("resume.continue")}</Button>
+                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>{t("resume.start_over")}</Button>
               </div>
             </div>
           )}
@@ -1282,19 +1282,17 @@ function ClientDetail() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="lg" disabled={busy}>
-                  <Eraser className="mr-2 h-4 w-4" /> Discard draft
+                  <Eraser className="mr-2 h-4 w-4" /> {t("discard.button")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Discard assessment draft?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Clears all fields above. Saved assessments stay in the database until next save.
-                  </AlertDialogDescription>
+                  <AlertDialogTitle>{t("discard.title")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("discard.desc")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={discardDraft}>Discard</AlertDialogAction>
+                  <AlertDialogCancel>{t("discard.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={discardDraft}>{t("discard.confirm")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -1307,25 +1305,27 @@ function ClientDetail() {
                     <AlertDialogTrigger asChild>
                       <Button disabled={busy} size="lg" variant="destructive">
                         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
-                        Safety review required
+                        {t("generate.safety_button")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Clinical safety check</AlertDialogTitle>
+                        <AlertDialogTitle>{t("generate.safety_title")}</AlertDialogTitle>
                         <AlertDialogDescription asChild>
                           <div className="space-y-3 text-sm">
-                            <p>This client triggered the safety gate:</p>
+                            <p>{t("generate.safety_intro")}</p>
                             <ul className="list-disc space-y-1 pl-5 text-xs">
-                              {parqYes && <li>PAR-Q+ flagged one or more risk markers.</li>}
-                              {isHigh && <li>ACSM risk stratification is <span className="font-semibold text-destructive">High</span>.</li>}
+                              {parqYes && <li>{t("generate.safety_parq")}</li>}
+                              {isHigh && (
+                                <li>
+                                  {t("risk_block.acsm_pill", { level: t("risk_block.level_high") })}
+                                </li>
+                              )}
                               {(assessment.med_flags?.length ?? 0) > 0 && (
-                                <li>Medication flags: {assessment.med_flags.join(", ")}.</li>
+                                <li>{t("generate.safety_meds", { flags: assessment.med_flags.join(", ") })}</li>
                               )}
                             </ul>
-                            <p>
-                              The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.
-                            </p>
+                            <p>{t("generate.safety_body")}</p>
                             <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-background/40 p-3">
                               <input
                                 type="checkbox"
@@ -1333,20 +1333,18 @@ function ClientDetail() {
                                 onChange={(e) => setSafetyOverride(e.target.checked)}
                                 className="mt-0.5 h-4 w-4 accent-accent"
                               />
-                              <span className="text-xs">
-                                I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.
-                              </span>
+                              <span className="text-xs">{t("generate.safety_confirm")}</span>
                             </label>
                           </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("generate.safety_cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={!safetyOverride}
                           onClick={() => { setSafetyDialogOpen(false); void generate(); }}
                         >
-                          Generate conservative draft
+                          {t("generate.safety_proceed")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -1356,7 +1354,7 @@ function ClientDetail() {
               return (
                 <Button onClick={() => void generate()} disabled={busy} size="lg">
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate plan draft
+                  {t("generate.button")}
                 </Button>
               );
             })()}
@@ -1365,9 +1363,9 @@ function ClientDetail() {
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-bold">Plans</h2>
+        <h2 className="mb-4 text-lg font-bold">{t("plans.title")}</h2>
         {plans.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No plans yet.</p>
+          <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => (
@@ -1381,7 +1379,7 @@ function ClientDetail() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="font-semibold">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">Updated {new Date(p.updated_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
                   </div>
                 </div>
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">{p.status}</span>
