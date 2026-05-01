@@ -120,6 +120,7 @@ Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work 
 - Produce notes_for_next_stage as a SHORT (≤ 400 char) free-text summary the next stage will use.
 - emphasis_split must sum to 1.0 (±0.05).
 - mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
+- All free-text fields (notes_for_next_stage, equipment_constraints labels, movement_competency_summary entries) must be written in European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling — não use formas brasileiras.
 
 Output ONLY by calling the record_brief tool.`;
 
@@ -426,6 +427,7 @@ Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work 
 - Produce notes_for_next_stage as a SHORT (≤ 400 char) free-text summary the next stage will use.
 - emphasis_split must sum to 1.0 (±0.05).
 - mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
+- All free-text fields (notes_for_next_stage, equipment_constraints labels, movement_competency_summary entries) must be written in European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling — não use formas brasileiras.
 
 Output ONLY by calling the record_brief tool.`;
 

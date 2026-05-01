@@ -1130,6 +1130,15 @@ function ClientDetail() {
         onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
       />
 
+      {/* Compact client snapshot — always visible, summarizes latest assessment */}
+      <ClientSnapshotCard
+        assessment={assessment}
+        sectionAnalyses={sectionAnalyses}
+        riskCategory={riskCategory}
+        whr={whr}
+        lastSavedAt={lastSavedAt}
+      />
+
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
@@ -1167,15 +1176,6 @@ function ClientDetail() {
         >
 
           {/* PAR-Q+ */}
-          <AssessmentSynthesisDashboard
-            assessment={assessment}
-            sectionAnalyses={sectionAnalyses}
-            totalSections={totalSections}
-            riskCategory={riskCategory}
-            whr={whr}
-            redFlagAccommodations={inlineBrief?.accommodations ?? null}
-          />
-
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_KEYS.map((key, idx) => {
@@ -1236,21 +1236,18 @@ function ClientDetail() {
               <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
               <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
             </div>
-            <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${riskCategory === "high" ? "bg-destructive/15 text-destructive" : riskCategory === "moderate" ? "bg-accent/15 text-accent" : "bg-secondary text-secondary-foreground"}`}>
-              {t("risk_block.acsm_pill", { level: t(`risk_block.level_${riskCategory}` as const) })}
-            </div>
           </SectionBlock>
 
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-3">
               <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
               <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
+              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
               <div className="space-y-1">
                 <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
               </div>
-              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
               <div className="space-y-1 sm:col-span-2">
                 <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
                 <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
@@ -1577,7 +1574,7 @@ function ClientDetail() {
                         {t("generate.brief_coverage", {
                           done: briefCoverage.done,
                           total: briefCoverage.total,
-                          defaultValue: `Brief preview: ${briefCoverage.done}/${briefCoverage.total}`,
+                          defaultValue: `Pré-visualização do brief: ${briefCoverage.done}/${briefCoverage.total}`,
                         })}
                       </span>
                     </div>
@@ -1656,6 +1653,16 @@ function ClientDetail() {
               );
             })()}
           </div>
+
+          {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
+          <AssessmentSynthesisDashboard
+            assessment={assessment}
+            sectionAnalyses={sectionAnalyses}
+            totalSections={totalSections}
+            riskCategory={riskCategory}
+            whr={whr}
+            redFlagAccommodations={inlineBrief?.accommodations ?? null}
+          />
 
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
@@ -1940,6 +1947,15 @@ function AssessmentSynthesisDashboard({
   const accMap = new Map<string, RedFlagAccommodation>();
   for (const acc of redFlagAccommodations ?? []) accMap.set(acc.flag, acc);
 
+  // Sort flags by severity: AVOID → MODIFY → MONITOR → ACCOMMODATE → unmapped
+  const SEVERITY: Record<string, number> = { AVOID: 0, MODIFY: 1, MONITOR: 2, ACCOMMODATE: 3 };
+  const sortedFlags = [...flags].sort((a, b) => {
+    const sa = SEVERITY[accMap.get(a)?.strategy ?? ""] ?? 4;
+    const sb = SEVERITY[accMap.get(b)?.strategy ?? ""] ?? 4;
+    if (sa !== sb) return sa - sb;
+    return a.localeCompare(b);
+  });
+
   return (
     <div className="space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
@@ -1966,6 +1982,8 @@ function AssessmentSynthesisDashboard({
         />
       </div>
 
+      <MovementCompetencyRadar assessment={assessment} sectionAnalyses={sectionAnalyses} />
+
       {flags.length > 0 && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
           <div className="mb-2 flex items-center gap-2">
@@ -1975,7 +1993,7 @@ function AssessmentSynthesisDashboard({
             </p>
           </div>
           <ul className="space-y-1.5">
-            {flags.map((f) => {
+            {sortedFlags.map((f) => {
               const acc = accMap.get(f);
               return (
                 <li key={f} className="flex items-start gap-2 text-xs">
@@ -2019,18 +2037,16 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => ctx.setAll(true)}
-          disabled={ctx.allOpen}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsUpDown className="h-3 w-3" /> Expand all
+          <ChevronsUpDown className="h-3 w-3" /> Expandir tudo
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
-          disabled={ctx.allClosed}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsDownUp className="h-3 w-3" /> Collapse all
+          <ChevronsDownUp className="h-3 w-3" /> Colapsar tudo
         </button>
       </div>
       <SectionCollapseContext.Provider value={ctx}>
@@ -2182,37 +2198,14 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
     );
   }
   if (!analysis) return null;
-  const flags = analysis.red_flags ?? [];
-  const note = analysis.contraindication_notes;
-  const next = analysis.notes_for_next_stage;
-  const hasContent = flags.length > 0 || !!note || !!next;
-  if (!hasContent) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <Check className="h-3 w-3 text-accent" />
-        <span>Sem sinais de alerta nesta secção.</span>
-      </div>
-    );
-  }
+  // Section-level analyses no longer show red_flags — those live only in the
+  // synthesis dashboard at the bottom. Sections only contribute their own
+  // contextual insight (most useful contraindication note or next-stage note).
+  const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
+  if (!insight) return null;
   return (
-    <div className="mt-3 space-y-2 rounded-md border border-accent/30 bg-accent/5 p-3 text-xs">
-      {flags.length > 0 && (
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-          <div className="flex-1">
-            <p className="mb-1 font-semibold">Sinais de alerta</p>
-            <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
-              {flags.map((f, i) => <li key={i}>{f}</li>)}
-            </ul>
-          </div>
-        </div>
-      )}
-      {note && (
-        <div className="text-muted-foreground"><span className="font-semibold text-foreground">Notas: </span>{note}</div>
-      )}
-      {next && (
-        <div className="text-muted-foreground"><span className="font-semibold text-foreground">Para o plano: </span>{next}</div>
-      )}
+    <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-2.5 text-xs text-muted-foreground">
+      {insight}
     </div>
   );
 }
@@ -2550,4 +2543,195 @@ function ClientPhaseHeaderPill({ clientId }: { clientId: string }) {
   const phase = phases[clientId];
   if (!phase) return null;
   return <ClientPhasePill phase={phase} size="md" />;
+}
+
+// ----------------------------------------------------------------------------
+// ClientSnapshotCard — compact "always visible" card at the top of the page.
+// Reuses the same data sources as the synthesis dashboard but with no
+// minimum-coverage gate: it should display whatever is known.
+// ----------------------------------------------------------------------------
+function ClientSnapshotCard({
+  assessment,
+  sectionAnalyses,
+  riskCategory,
+  whr,
+  lastSavedAt,
+}: {
+  assessment: any;
+  sectionAnalyses: Record<string, SectionAnalysis | null>;
+  riskCategory: string;
+  whr: string;
+  lastSavedAt: number | null;
+}) {
+  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const riskTone =
+    riskCategory === "high" ? "text-destructive"
+    : riskCategory === "moderate" ? "text-amber-500"
+    : "text-accent";
+  const recovery = deriveRecoveryProfile(assessment);
+  const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
+  const flags = collectRedFlags(assessment, sectionAnalyses).slice(0, 3);
+  const dateLabel = lastSavedAt
+    ? new Date(lastSavedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Snapshot do cliente
+        </p>
+        <p className="text-[10px] text-muted-foreground">Última avaliação · {dateLabel}</p>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Risco ACSM</p>
+          <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Recuperação</p>
+          <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Composição</p>
+          <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
+        </div>
+      </div>
+      {flags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {flags.map((f) => (
+            <span key={f} className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+              {f}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// MovementCompetencyRadar — inline-SVG 6-axis radar chart.
+// Axes: squat, hinge, push, pull, carry, lunge.  Score 1–5; un-assessed
+// patterns render as a dashed grey axis with no data dot.
+// ----------------------------------------------------------------------------
+function MovementCompetencyRadar({
+  assessment,
+  sectionAnalyses,
+}: {
+  assessment: any;
+  sectionAnalyses: Record<string, SectionAnalysis | null>;
+}) {
+  // Map raw 1–5 scores from the assessment.
+  // push → overhead reach is the closest proxy until pull/carry land in item 11.
+  const lungeNote = sectionAnalyses?.["screen"]?.movement_competency_summary?.lunge ?? "";
+  const axes: Array<{ label: string; score: number | null }> = [
+    { label: "Squat", score: numScore(assessment?.squat_depth_score) },
+    { label: "Hinge", score: numScore(assessment?.hip_hinge_score) },
+    { label: "Push", score: numScore(assessment?.overhead_reach_score) },
+    { label: "Pull", score: numScore(assessment?.pull_pattern_score) },
+    { label: "Carry", score: numScore(assessment?.carry_pattern_score) },
+    { label: "Lunge", score: numScore(assessment?.single_leg_balance_score) || (lungeNote ? 3 : null) },
+  ];
+
+  const SIZE = 220;
+  const CENTER = SIZE / 2;
+  const RADIUS = 80;
+  const N = axes.length;
+  const pointAt = (i: number, scale: number) => {
+    const angle = (-Math.PI / 2) + (i * 2 * Math.PI) / N;
+    return {
+      x: CENTER + Math.cos(angle) * RADIUS * scale,
+      y: CENTER + Math.sin(angle) * RADIUS * scale,
+    };
+  };
+
+  // Polygon path for current scores (un-assessed = 0 → collapsed at center on
+  // that axis; visually we suppress the dot but keep the shape continuous).
+  const polyPoints = axes
+    .map((a, i) => {
+      const v = a.score == null ? 0 : a.score / 5;
+      const p = pointAt(i, v);
+      return `${p.x},${p.y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-3">
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        Competência de movimento
+      </p>
+      <div className="flex justify-center">
+        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-48 w-48">
+          {/* Concentric rings */}
+          {[0.2, 0.4, 0.6, 0.8, 1].map((s) => (
+            <polygon
+              key={s}
+              points={axes.map((_, i) => {
+                const p = pointAt(i, s);
+                return `${p.x},${p.y}`;
+              }).join(" ")}
+              fill="none"
+              stroke="currentColor"
+              strokeOpacity={0.08}
+              strokeWidth={1}
+            />
+          ))}
+          {/* Axes */}
+          {axes.map((a, i) => {
+            const p = pointAt(i, 1);
+            return (
+              <line
+                key={a.label}
+                x1={CENTER}
+                y1={CENTER}
+                x2={p.x}
+                y2={p.y}
+                stroke="currentColor"
+                strokeOpacity={a.score == null ? 0.15 : 0.25}
+                strokeDasharray={a.score == null ? "3 3" : undefined}
+                strokeWidth={1}
+              />
+            );
+          })}
+          {/* Data shape */}
+          <polygon
+            points={polyPoints}
+            fill="var(--accent)"
+            fillOpacity={0.2}
+            stroke="var(--accent)"
+            strokeWidth={1.5}
+          />
+          {/* Data dots (only for assessed axes) */}
+          {axes.map((a, i) => {
+            if (a.score == null) return null;
+            const p = pointAt(i, a.score / 5);
+            return <circle key={a.label} cx={p.x} cy={p.y} r={3} fill="var(--accent)" />;
+          })}
+          {/* Labels */}
+          {axes.map((a, i) => {
+            const p = pointAt(i, 1.18);
+            return (
+              <text
+                key={a.label}
+                x={p.x}
+                y={p.y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className={`text-[9px] uppercase tracking-widest ${a.score == null ? "fill-muted-foreground/50" : "fill-muted-foreground"}`}
+              >
+                {a.label}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function numScore(v: unknown): number | null {
+  if (typeof v !== "number") return null;
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return Math.max(1, Math.min(5, v));
 }
