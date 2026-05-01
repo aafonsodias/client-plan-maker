@@ -868,7 +868,7 @@ function ClientDetail() {
     toast.success("Draft cleared");
   };
 
-  if (!client) return <p className="text-muted-foreground">Loading…</p>;
+  if (!client) return <p className="text-muted-foreground">{t("loading")}</p>;
 
   const parqYes = parqHasYes(assessment.parq);
   const riskCategory = computeRisk(assessment.risk);
@@ -885,11 +885,20 @@ function ClientDetail() {
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
 
+  const expLabelById: Record<string, string> = {
+    beginner: t("training_block.beginner"),
+    intermediate: t("training_block.intermediate"),
+    advanced: t("training_block.advanced"),
+  };
   const trainingSummary = [
-    assessment.training_days_per_week ? `${assessment.training_days_per_week}×/week` : null,
-    assessment.session_duration_minutes ? `${assessment.session_duration_minutes} min` : null,
+    assessment.training_days_per_week
+      ? t("training_block.summary.x_per_week", { n: assessment.training_days_per_week })
+      : null,
+    assessment.session_duration_minutes
+      ? t("training_block.summary.min", { n: assessment.session_duration_minutes })
+      : null,
     assessment.training_location || null,
-    assessment.experience_level || null,
+    assessment.experience_level ? (expLabelById[assessment.experience_level] ?? assessment.experience_level) : null,
   ].filter(Boolean).join(", ");
 
   return (
