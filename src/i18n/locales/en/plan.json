@@ -7,7 +7,8 @@
       "cta_primary_signed_out": "Draft your first plan",
       "cta_primary_signed_in": "Open dashboard",
       "cta_secondary": "See how it works",
-      "credibility_caption": "Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach."
+      "credibility_caption": "Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach.",
+      "social_proof": "Built by a PT, for PTs · Private beta"
     },
     "mockups": {
       "client_header": "Maria S. · Week 5 · Strength Phase",
@@ -42,10 +43,22 @@
       "eyebrow": "How it works",
       "title": "From intake to PDF in four moves.",
       "steps": {
-        "add_client": { "label": "Add client", "desc": "Capture demographics in seconds." },
-        "assessment": { "label": "Run assessment", "desc": "PAR-Q+, risk, mobility, goals." },
-        "generate": { "label": "Generate plan", "desc": "AI drafts a periodized program." },
-        "export": { "label": "Export PDF", "desc": "Branded, sent in one click." }
+        "add_client": {
+          "label": "Add client",
+          "desc": "Capture demographics in seconds."
+        },
+        "assessment": {
+          "label": "Run assessment",
+          "desc": "PAR-Q+, risk, mobility, goals."
+        },
+        "generate": {
+          "label": "Generate plan",
+          "desc": "AI drafts a periodized program."
+        },
+        "export": {
+          "label": "Export PDF",
+          "desc": "Branded, sent in one click."
+        }
       }
     },
     "credibility": {
@@ -106,6 +119,44 @@
       "cta_signed_in": "Open dashboard",
       "cta_signed_out": "Create your account"
     },
-    "footer_copy": "© {{year}} Forge"
+    "footer_copy": "© {{year}} Forge",
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Honest, no surprises.",
+      "beta_badge": "Beta",
+      "beta_title": "Free during beta",
+      "beta_price": "€0",
+      "beta_period": "/ while in beta",
+      "beta_features": [
+        "Unlimited assessments",
+        "AI plan generation",
+        "Branded PDFs",
+        "Session and progression history"
+      ],
+      "beta_cta": "Start free",
+      "pro_badge": "Coming soon",
+      "pro_title": "Pro",
+      "pro_price": "€19",
+      "pro_period": "/ month (indicative)",
+      "pro_features": [
+        "Everything in beta",
+        "Unlimited clients",
+        "Custom domain on PDFs",
+        "Priority support"
+      ],
+      "pro_cta": "Notify me",
+      "nav_link": "Pricing"
+    },
+    "footer": {
+      "tagline": "A training tool for serious PTs.",
+      "product_title": "Product",
+      "product_features": "Features",
+      "product_pricing": "Pricing",
+      "product_how": "How it works",
+      "legal_title": "Legal",
+      "legal_terms": "Terms",
+      "legal_privacy": "Privacy",
+      "legal_contact": "Contact"
+    }
   }
 }

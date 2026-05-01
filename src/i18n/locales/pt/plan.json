@@ -7,7 +7,8 @@
       "cta_primary_signed_out": "Cria o teu primeiro plano",
       "cta_primary_signed_in": "Abrir dashboard",
       "cta_secondary": "Vê como funciona",
-      "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador."
+      "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador.",
+      "social_proof": "Construído por um PT, para PTs · Beta privado"
     },
     "mockups": {
       "client_header": "Maria S. · Semana 5 · Fase de Força",
@@ -118,6 +119,44 @@
       "cta_signed_in": "Abrir dashboard",
       "cta_signed_out": "Cria a tua conta"
     },
-    "footer_copy": "© {{year}} Forge"
+    "footer_copy": "© {{year}} Forge",
+    "pricing": {
+      "eyebrow": "Preço",
+      "title": "Honesto e sem surpresas.",
+      "beta_badge": "Beta",
+      "beta_title": "Grátis durante a beta",
+      "beta_price": "0€",
+      "beta_period": "/ enquanto durar a beta",
+      "beta_features": [
+        "Avaliações ilimitadas",
+        "Geração de planos com IA",
+        "PDFs com a tua marca",
+        "Histórico de sessões e progressões"
+      ],
+      "beta_cta": "Começar grátis",
+      "pro_badge": "Em breve",
+      "pro_title": "Pro",
+      "pro_price": "19€",
+      "pro_period": "/ mês (preço indicativo)",
+      "pro_features": [
+        "Tudo da beta",
+        "Clientes ilimitados",
+        "Domínio próprio nos PDFs",
+        "Suporte prioritário"
+      ],
+      "pro_cta": "Avisar-me",
+      "nav_link": "Preço"
+    },
+    "footer": {
+      "tagline": "Ferramenta de treino para PTs sérios.",
+      "product_title": "Produto",
+      "product_features": "Funcionalidades",
+      "product_pricing": "Preço",
+      "product_how": "Como funciona",
+      "legal_title": "Legal",
+      "legal_terms": "Termos",
+      "legal_privacy": "Privacidade",
+      "legal_contact": "Contacto"
+    }
   }
 }
