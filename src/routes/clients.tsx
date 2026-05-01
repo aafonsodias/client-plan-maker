@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/clients")({
     filter: typeof s.filter === "string" ? s.filter : undefined,
   }),
   component: () => (
-    <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
+    <AppShell back={{ to: "/dashboard" }}>
       <Clients />
     </AppShell>
   ),
@@ -33,6 +34,7 @@ type Client = { id: string; full_name: string; email: string | null; age: number
 
 function Clients() {
   const { user } = useAuth();
+  const { t } = useTranslation("common");
   const search = Route.useSearch();
   const filter = search.filter ?? "all";
   const [list, setList] = useState<Client[]>([]);
@@ -87,7 +89,7 @@ function Clients() {
     };
     const { error } = await supabase.from("clients").insert(payload);
     if (error) return toast.error(error.message);
-    toast.success("Client added");
+    toast.success(t("clients.added_toast"));
     void markOnboardingStep(user.id, "add_client");
     setOpen(false);
     setForm({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
@@ -98,37 +100,37 @@ function Clients() {
     const { error } = await supabase.from("clients").delete().eq("id", id);
     if (error) return toast.error(error.message);
     setList((l) => l.filter((c) => c.id !== id));
-    toast.success("Client removed");
+    toast.success(t("clients.removed_toast"));
   };
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">Roster</p>
-          <h1 className="mt-1 text-4xl font-light tracking-tight">Clients</h1>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("clients.eyebrow")}</p>
+          <h1 className="mt-1 text-4xl font-light tracking-tight">{t("clients.title")}</h1>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add client
+              <Plus className="mr-2 h-4 w-4" /> {t("clients.add_client")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>New client</DialogTitle>
+              <DialogTitle>{t("clients.new_client")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={create} className="space-y-3">
-              <Field label="Full name" required value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-              <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+              <Field label={t("clients.field_full_name")} required value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+              <Field label={t("clients.field_email")} type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
               <div className="grid grid-cols-3 gap-3">
-                <Field label="Age" type="number" value={form.age} onChange={(v) => setForm({ ...form, age: v })} />
-                <Field label="Sex" value={form.sex} onChange={(v) => setForm({ ...form, sex: v })} />
-                <Field label="Height (cm)" type="number" value={form.height_cm} onChange={(v) => setForm({ ...form, height_cm: v })} />
+                <Field label={t("clients.field_age")} type="number" value={form.age} onChange={(v) => setForm({ ...form, age: v })} />
+                <Field label={t("clients.field_sex")} value={form.sex} onChange={(v) => setForm({ ...form, sex: v })} />
+                <Field label={t("clients.field_height")} type="number" value={form.height_cm} onChange={(v) => setForm({ ...form, height_cm: v })} />
               </div>
-              <Field label="Weight (kg)" type="number" value={form.weight_kg} onChange={(v) => setForm({ ...form, weight_kg: v })} />
+              <Field label={t("clients.field_weight")} type="number" value={form.weight_kg} onChange={(v) => setForm({ ...form, weight_kg: v })} />
               <DialogFooter>
-                <Button type="submit">Save client</Button>
+                <Button type="submit">{t("clients.save_client")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -137,17 +139,17 @@ function Clients() {
 
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-muted-foreground">
-          No clients yet. Add your first one to get started.
+          {t("clients.no_clients_empty")}
         </div>
       ) : (
         <>
         <div className="flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
           {[
-            { id: "all", label: `All · ${counts.all}` },
-            { id: "onboarding", label: `Onboarding · ${counts.onboarding}` },
-            { id: "active", label: `Active · ${counts.active}` },
-            { id: "idle", label: `Idle · ${counts.idle}` },
-            { id: "ready", label: `Ready for plan · ${counts.ready}` },
+            { id: "all", label: t("clients.filter_all", { count: counts.all }) },
+            { id: "onboarding", label: t("clients.filter_onboarding", { count: counts.onboarding }) },
+            { id: "active", label: t("clients.filter_active", { count: counts.active }) },
+            { id: "idle", label: t("clients.filter_idle", { count: counts.idle }) },
+            { id: "ready", label: t("clients.filter_ready", { count: counts.ready }) },
           ].map((f) => (
             <Link
               key={f.id}
@@ -170,7 +172,7 @@ function Clients() {
                 <div className="flex items-center gap-3">
                   <div>
                     <p className="font-semibold">{c.full_name}</p>
-                    <p className="text-sm text-muted-foreground">{c.email ?? "No email"}</p>
+                    <p className="text-sm text-muted-foreground">{c.email ?? t("clients.no_email")}</p>
                   </div>
                   {phases[c.id] && <ClientPhasePill phase={phases[c.id]} />}
                 </div>
@@ -180,22 +182,22 @@ function Clients() {
                 <AlertDialogTrigger asChild>
                   <button
                     className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                    aria-label="Delete client"
+                    aria-label={t("clients.delete_aria")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete {c.full_name}?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("clients.delete_title", { name: c.full_name })}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently removes the client and any associated assessments and plans. This cannot be undone.
+                      {t("clients.delete_desc")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>{t("clients.cancel")}</AlertDialogCancel>
                     <AlertDialogAction onClick={() => void remove(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete
+                      {t("clients.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
