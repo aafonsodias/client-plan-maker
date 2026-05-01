@@ -390,3 +390,58 @@ export const approveMicrocycle = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
+
+// ---- Inline edits to a generated day -------------------------------------
+const ExerciseEditZ = z.object({
+  name: z.string().min(1),
+  sets: z.string().default(""),
+  reps: z.string().default(""),
+  rest: z.string().default(""),
+  rpe: z.string().default(""),
+  cue: z.string().default(""),
+});
+
+export const updateDayContent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        dayId: z.string().uuid(),
+        focus: z.string().optional(),
+        rationale: z.string().optional(),
+        exercises: z.array(ExerciseEditZ),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("workout_plan_days")
+      .select("trainer_id, content")
+      .eq("id", data.dayId)
+      .maybeSingle();
+    if (!row || (row as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const prevContent = ((row as any).content ?? {}) as Record<string, unknown>;
+    const prevExercises = (prevContent.exercises as any[]) ?? [];
+    const mergedExercises = data.exercises.map((ex, i) => ({
+      ...(prevExercises[i] ?? {}),
+      ...ex,
+    }));
+    const newContent = { ...prevContent, exercises: mergedExercises };
+    const update: {
+      content: Record<string, unknown>;
+      focus?: string;
+      rationale?: string;
+    } = { content: newContent };
+    if (typeof data.focus === "string") update.focus = data.focus;
+    if (typeof data.rationale === "string") update.rationale = data.rationale;
+    const { error } = await supabase
+      .from("workout_plan_days")
+      .update(update as any)
+      .eq("id", data.dayId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });

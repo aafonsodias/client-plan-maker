@@ -5,14 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import {
   generateDay,
-  generateMicrocycleDays,
   approveMicrocycle,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
+import { DayCardEditable } from "@/components/DayCardEditable";
 
 export const Route = createFileRoute("/plans/$planId/microcycle")({
   component: MicrocycleRoute,
@@ -55,7 +55,6 @@ function MicrocycleReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
   const generateDayFn = useServerFn(generateDay);
-  const generateBatchFn = useServerFn(generateMicrocycleDays);
   const approveFn = useServerFn(approveMicrocycle);
 
   const [planTitle, setPlanTitle] = useState("");
@@ -64,6 +63,8 @@ function MicrocycleReview() {
   const [day1Approved, setDay1Approved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingIdx, setGeneratingIdx] = useState<number | null>(null);
+  const [daysLoaded, setDaysLoaded] = useState(false);
   const day1KickedRef = useRef(false);
 
   async function loadPlan() {
@@ -86,6 +87,7 @@ function MicrocycleReview() {
       .eq("week_number", 1)
       .order("day_number", { ascending: true });
     setDays(((data ?? []) as any[]).map((d) => ({ ...d })));
+    setDaysLoaded(true);
   }
 
   // Initial load + realtime subscription
@@ -106,41 +108,37 @@ function MicrocycleReview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planId]);
 
-  // Auto-fire Day 1 if missing once blueprint loaded
+  // Auto-fire Day 1 only once we know days are loaded (prevents double-gen race)
   useEffect(() => {
-    if (!blueprint || day1KickedRef.current) return;
+    if (!blueprint || !daysLoaded || day1KickedRef.current) return;
     const day1 = days.find((d) => d.day_number === 1);
     if (!day1) {
       day1KickedRef.current = true;
       kickDay1();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blueprint, days]);
+  }, [blueprint, daysLoaded, days]);
 
   async function kickDay1() {
     setGenerating(true);
+    setGeneratingIdx(1);
     const res = await generateDayFn({ data: { planId, dayIndex: 1 } });
     setGenerating(false);
+    setGeneratingIdx(null);
     if (!res.ok) toast.error(res.error || "Day 1 generation failed");
   }
 
   async function regenDay(dayIndex: number) {
+    setGeneratingIdx(dayIndex);
     const res = await generateDayFn({ data: { planId, dayIndex } });
+    setGeneratingIdx(null);
     if (!res.ok) toast.error(res.error || `Day ${dayIndex} failed`);
   }
 
-  async function approveDay1AndContinue() {
-    if (!blueprint) return;
+  function approveDay1AndContinue() {
+    // Day 1 is the gate; once approved the trainer generates remaining days
+    // one-at-a-time below. No auto-batching = no surprise costs / vanishing days.
     setDay1Approved(true);
-    const sessionsPerWeek = blueprint.sessions_per_week;
-    const remaining = Array.from({ length: sessionsPerWeek - 1 }, (_, i) => i + 2);
-    if (remaining.length === 0) return;
-    setGenerating(true);
-    const res = await generateBatchFn({ data: { planId, dayIndices: remaining } });
-    setGenerating(false);
-    if (!res.ok) toast.error(res.error || "Batch generation failed");
-    else if (res.errors > 0) toast.warning(`${res.generated} days ok, ${res.errors} errors`);
-    else toast.success(`${res.generated} days generated`);
   }
 
   async function approve() {
@@ -196,8 +194,9 @@ function MicrocycleReview() {
       )}
 
       {day1 && (
-        <DayCard
+        <DayCardEditable
           day={day1}
+          planId={planId}
           isGate={!day1Approved}
           onRegen={() => regenDay(1)}
           onApproveDay1={approveDay1AndContinue}
@@ -207,117 +206,41 @@ function MicrocycleReview() {
       {day1Approved &&
         Array.from({ length: sessionsPerWeek - 1 }, (_, i) => i + 2).map((idx) => {
           const row = days.find((d) => d.day_number === idx);
+          if (!row) {
+            return (
+              <div
+                key={idx}
+                className="flex items-center justify-between rounded-2xl border border-dashed border-border p-5"
+              >
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">Day {idx}</p>
+                  <p className="text-xs text-muted-foreground">Not generated yet.</p>
+                </div>
+                <button
+                  onClick={() => regenDay(idx)}
+                  disabled={generatingIdx === idx}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                >
+                  {generatingIdx === idx ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  Generate Day {idx}
+                </button>
+              </div>
+            );
+          }
           return (
-            <DayCard
+            <DayCardEditable
               key={idx}
               dayIndex={idx}
               day={row}
+              planId={planId}
               onRegen={() => regenDay(idx)}
             />
           );
         })}
     </div>
-  );
-}
-
-function DayCard({
-  day,
-  dayIndex,
-  isGate,
-  onRegen,
-  onApproveDay1,
-}: {
-  day?: DayRow;
-  dayIndex?: number;
-  isGate?: boolean;
-  onRegen: () => void;
-  onApproveDay1?: () => void;
-}) {
-  const idx = day?.day_number ?? dayIndex ?? 0;
-
-  if (!day) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-        <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-        Day {idx} — queued
-      </div>
-    );
-  }
-
-  if (day.status === "pending") {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground shadow-sm">
-        <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-        Day {idx} — generating…
-      </div>
-    );
-  }
-
-  if (day.status === "error") {
-    return (
-      <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-destructive">
-            <AlertTriangle className="h-4 w-4" /> Day {idx} failed
-          </div>
-          <button
-            onClick={onRegen}
-            className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
-          >
-            <RefreshCw className="h-3 w-3" /> Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const exercises = (day.content?.exercises ?? []) as any[];
-
-  return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="mb-3 flex items-start justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">
-            Day {idx} · {day.day_label}
-          </h2>
-          <p className="text-xs text-muted-foreground">{day.focus}</p>
-        </div>
-        <button
-          onClick={onRegen}
-          className="inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs hover:bg-muted"
-        >
-          <RefreshCw className="h-3 w-3" /> Regenerate
-        </button>
-      </div>
-      {day.rationale && (
-        <p className="mb-3 rounded bg-muted/50 p-2 text-xs text-muted-foreground">{day.rationale}</p>
-      )}
-      <ul className="space-y-1.5">
-        {exercises.map((ex, i) => (
-          <li key={i} className="rounded border border-border/60 px-3 py-2 text-sm">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-medium">{ex.name}</span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {ex.sets}×{ex.reps} @ RPE {ex.rpe} · rest {ex.rest}
-              </span>
-            </div>
-            {ex.cue && <div className="mt-1 text-xs text-muted-foreground">{ex.cue}</div>}
-          </li>
-        ))}
-      </ul>
-      {isGate && onApproveDay1 && (
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
-          <p className="text-xs text-foreground">
-            Day 1 looks good? Approve to generate the rest of the week.
-          </p>
-          <button
-            onClick={onApproveDay1}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            <CheckCircle2 className="h-4 w-4" /> Approve Day 1
-          </button>
-        </div>
-      )}
-    </section>
   );
 }
