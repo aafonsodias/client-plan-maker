@@ -1,33 +1,134 @@
-I checked the app state and database. The current problem is not that the brief is missing: the plan `819c0eef-b7d5-4a37-95c3-b8705a474615` has a valid `brief` JSON object, but it is also marked `generation_status = 'in_progress'` with legacy per-day metadata (`days_per_week: 6`) and an empty finished `plan_data.weeks`. That makes the client page show the old “generation in progress 1/24 days” banner and the plan list opens the finished-plan route (`/plans/:planId`), which is empty. Separately, the “Brief preview 8/14” badge is assessment-section analysis coverage, not the Stage 1 brief itself, and it is stuck partly because the pre-stage analysis fires many AI calls concurrently and hits rate limits.
+# Plan — fix items 1, 2, 3 (no work on 4–17)
 
-Plan:
+## 1. Inline brief review on the client detail page
 
-1. Fix the current stuck UI routing on the client page only
-   - In `src/routes/clients_.$clientId.tsx`, make plan-list links for phased draft plans open `/plans/$planId/brief` instead of `/plans/$planId` when the row has `generation_state.stage === 'brief'` and a `brief` exists.
-   - Expand the client page plan query to include `brief` and `generation_state` so it can make that decision.
-   - This fixes “Ao abrir continua vazio” because the visible draft card will open the brief review screen, not the empty finished plan view.
+Goal: "Generate plan draft" never navigates. After synthesis, the brief renders directly below the button as an editable, collapsible card with an "Approve brief" action. When approved, the card collapses into a thin strip and a placeholder for Stage 2 appears below it. Each subsequent stage will follow this same stacking pattern.
 
-2. Stop legacy resumable-plan UI from picking up phased Stage 1 plans
-   - Update `detectResumablePlan()` to ignore any plan with `generation_state.stage` set to a phased stage (`brief`, `blueprint`, etc.).
-   - Keep the legacy “generation in progress 1/24 days” banner only for legacy per-day generation rows.
-   - This removes the incorrect “Geração anterior em curso — 1/24 dias feitos” banner for a phased plan.
+Architecture decision — generic StageCard wrapper
 
-3. Make “Começar de novo” actually clear phased stuck drafts too
-   - Update `discardResumable()` so after deleting the current resumable plan it also refreshes the plan list from the database.
-   - If the stuck row is a phased draft, surface it as a normal plan/brief link instead of legacy resume progress; no generation logic changes.
+Do not hand-roll the collapse/expand/approve UI on the brief panel only. Build a reusable <StageCard> component now so Stages 2–5 drop in without rewriting layout logic.
 
-4. Fix the brief preview badge so it does not fire a burst of AI calls
-   - Change `triggerSectionAnalyses()` from parallel `Promise.allSettled` fire-and-forget to a small sequential/limited loop so it does not exceed rate limits.
-   - Keep it scoped to pre-stage coverage only; do not touch Stage 2, Stage 3, Stage 4, or Stage 5 generation.
-   - The badge may still show less than 14 when fields are empty, but it should stop getting stuck because of request-rate failures.
+src/components/StageCard.tsx (new file)
 
-5. One-time database cleanup for the current corrupted mixed-state row
-   - Run a migration/update to normalize the current plan: keep the valid `brief`, but clear the legacy in-progress marker by setting its `generation_status` to a non-legacy value (e.g. `pending`) and removing legacy `generation_meta` if needed.
-   - Do not delete the valid brief.
-   - Confirm the row after the update: `id`, `generation_status`, `generation_state`, `has_brief`, and day-row count.
+- Props: stageNumber, title, status ("generating" | "ready" | "approved"), onApprove, onRegenerate, onExpand, defaultCollapsed, children.
 
-Files to touch:
-- `src/routes/clients_.$clientId.tsx` only for UI/routing/resume detection and pre-stage throttling.
+- Renders three states:
 
-Database change:
-- One targeted cleanup/update for plan `819c0eef-b7d5-4a37-95c3-b8705a474615` so the existing valid brief is reachable and the legacy resume banner disappears.
+  - generating: spinner + "Generating…" placeholder, no children.
+
+  - ready (expanded): full card with title, children (the editor), Regenerate + Approve buttons.
+
+  - approved (collapsed): thin strip "Stage N — {title} approved ✓" with a chevron to re-expand.
+
+- Click on the collapsed strip re-expands children in read-only mode (no Approve button when already approved, but Regenerate still available — regenerating reverts approval state and invalidates downstream stages, server-side already handles this via clearDownstream).
+
+src/routes/clients_.$clientId.tsx
+
+- Remove the toast-based "Review brief →" banner (briefReady state and the Link block at lines 1454–1475).
+
+- Add new state: stages: { brief: { planId, data, approved } | null, blueprint: null, microcycle: null, progressions: null }.
+
+- Replace the "Generate plan draft" click handler:
+
+  - Call startPhasedPlanFn with a loading toast.
+
+  - On success, fetch workout_plans.brief for the returned planId. Parse with BriefSchema. Set stages.brief = { planId, data, approved: false }. Success toast (no link).
+
+  - On failure, error toast.
+
+- On mount, if there is an in-progress phased plan for this client (reuse the same query startPhasedPlanFn uses), hydrate stages from the DB so reloading the page restores the inline view exactly where the coach left off. This is required — without it, refreshing loses the stack.
+
+- Below the action row, render the stages stacked vertically:
+
+  - <StageCard stageNumber={1} title="Brief"> wrapping <BriefEditor>
+
+  - <StageCard stageNumber={2} title="Blueprint" status="placeholder"> — empty stub until Stage 2 ships
+
+  - same for 3, 4
+
+src/components/BriefEditor.tsx (new file)
+
+- Move BriefEditor, Card, Field, NumInput helpers and the <style> block from src/routes/plans.$planId.brief.tsx into this shared component. Default export BriefEditor.
+
+- BriefEditor takes brief, onChange, onApprove, onRegenerate, busy as props — does NOT manage its own approve/regenerate buttons. Those live on the StageCard wrapper.
+
+src/routes/plans.$planId.brief.tsx
+
+- Keep the route functional but make it a thin wrapper that fetches the brief and renders <StageCard><BriefEditor /></StageCard>. Useful for direct links / resumed drafts.
+
+Result: Coach stays on /clients/$clientId for Stage 1. No navigation. Stages stack vertically with consistent collapse/expand UX. Refresh restores state. Stages 2–5 plug in by adding their editor and changing the StageCard status from "placeholder" to "ready".
+
+## 2. Visible Pre-Stage 0 post-processing per section
+
+**Goal:** Every section that has a Pre-Stage 0 analysis displays a small post-processing card after autosave. If the AI returned nothing meaningful for that section, show "No flags from this section."
+
+### Changes
+
+`**src/routes/clients_.$clientId.tsx**`
+
+- Extend the section-coverage fetch: in addition to `briefCoverage` (done/total counts), also fetch and store the per-section analysis bodies. Update `getSectionAnalysisCoverage` to return `analyses` map alongside the existing `sections` array — see server change below.
+- Store the result in new state: `sectionAnalyses: Record<string, SectionAnalysis | null>`.
+- After every successful pre-stage call inside `triggerSectionAnalyses`, refresh `sectionAnalyses` from the coverage call (already happens once at the end; keep that, also re-fetch after the loop).
+- In each `<SectionBlock>` render, append a small footer card (below children, above existing `footer` prop) that reads from `sectionAnalyses[sectionId]`:
+  - **Loading state** (signature changed since last fetch but no analysis yet): muted "Analyzing…" with a spinner.
+  - **Has analysis with content** (any of `red_flags`, `contraindication_notes`, `notes_for_next_stage`, `primary_goal`, etc.): render a compact list of the populated fields. Reuse the `CompletionStrip` visual style.
+  - **- Has analysis but all fields empty/omitted:** render a small neutral card "Section noted — no flags or actions for the AI." Avoid the word "nothing" — empty fields are still useful signal.
+  - **No analysis at all** (phased flag off, or section never analysed): render nothing.
+
+`**src/server/phased/pre-stage.functions.ts**`
+
+- Update `getSectionAnalysisCoverage` to also return the full `analyses` object so the client can render each section's post-processing card without an extra round-trip:
+  ```ts
+  return { ok, total, done, sections, analyses };
+  ```
+  &nbsp;
+
+- Add a per-section "Analysing…" indicator that fires on save and clears when the analysis returns. The current flow is silent during the round-trip — the coach sees no feedback between save and analysis appearing. Use a small inline pulse next to the section title while the request is in flight.
+
+**Result:** Every section with an analysed payload gets a visible post-processing card after save. Silence is replaced with explicit "No flags" messaging.
+
+## 3. Ghost-plan cleanup + per-card delete button
+
+### Changes
+
+**Database cleanup (one-shot migration):**
+
+```sql
+DELETE FROM workout_plans
+WHERE title LIKE '%Phased Plan%'
+  AND generation_status != 'complete'
+  AND brief IS NULL;
+```
+
+The `brief IS NULL` guard preserves valid in-progress drafts that already have a synthesized brief. Report the deleted row count back to the user.
+
+`**src/routes/clients_.$clientId.tsx**`
+
+- In the Plans list (lines 1538–1568), restructure each row from a single `<Link>` into a flex row containing: the existing link (clickable area) + a trailing trash icon button.
+- Trash button: opens an `AlertDialog` "Delete this plan?" with confirm/cancel. On confirm, runs `await supabase.from("workout_plans").delete().eq("id", p.id)`, removes from local `plans` state, toasts success.
+- Use `Trash2` from `lucide-react` (already imported).
+- RLS already restricts deletion to the trainer's own rows.
+
+**Result:** Today's ghost rows wiped. Coach can manually delete any future stragglers from the UI.
+
+## Order of work
+
+1. Build src/components/StageCard.tsx — the generic stacking wrapper.
+
+2. Move BriefEditor into src/components/BriefEditor.tsx (no buttons inside, just the editor body).
+
+3. Wire inline brief panel using StageCard + BriefEditor on the client page; remove toast-link banner. Add hydration-on-mount so refresh restores the stack.
+
+4. Add Stage 2/3/4 placeholder StageCards beneath the brief.
+
+5. Extend getSectionAnalysisCoverage to return analyses map.
+
+6. Add per-section analysis cards + "Analysing…" indicator.
+
+7. Run cleanup SQL and report row count.
+
+8. Add per-card trash button with confirm dialog.
+
+## Out of scope
+
+Items 4–17 from the user's message. Stages 2–5 generation logic is untouched — only a passive UI placeholder slot is added so the eventual stacking flow has a home.
