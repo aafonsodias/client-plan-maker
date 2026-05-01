@@ -283,79 +283,23 @@ function BlueprintReview() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Week × Day matrix
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr>
-                <th className="p-2 text-left text-xs font-medium text-muted-foreground">Week</th>
-                {Array.from({ length: blueprint.sessions_per_week }, (_, i) => (
-                  <th key={i} className="p-2 text-left text-xs font-medium text-muted-foreground">
-                    Day {i + 1}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weekKeys.map((wk) => (
-                <tr key={wk} className="border-t border-border">
-                  <td className="p-2 text-xs font-medium">W{wk}</td>
-                  {(blueprint.week_to_session_map[wk] ?? []).map((id, di) => (
-                    <td key={di} className="p-2">
-                      <select
-                        value={id}
-                        onChange={(e) => {
-                          const map = { ...blueprint.week_to_session_map };
-                          const arr = [...(map[wk] ?? [])];
-                          arr[di] = e.target.value;
-                          map[wk] = arr;
-                          setBlueprint({ ...blueprint, week_to_session_map: map });
-                        }}
-                        className={`rounded border bg-background px-2 py-1 text-xs ${
-                          archetypeIds.has(id) ? "border-border" : "border-destructive text-destructive"
-                        }`}
-                      >
-                        {!archetypeIds.has(id) && (
-                          <option value={id}>{id} (em falta)</option>
-                        )}
-                        {blueprint.session_archetypes.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.focus} · {a.id}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <WeekMatrixGrid
+          key={blueprint.session_archetypes.map((a) => a.id).join("|")}
+          blueprint={blueprint}
+          onChange={setBlueprint}
+        />
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Progression model
         </h2>
-        <select
-          value={blueprint.progression_model_proposal.model}
-          onChange={(e) =>
-            setBlueprint({
-              ...blueprint,
-              progression_model_proposal: {
-                ...blueprint.progression_model_proposal,
-                model: e.target.value as Blueprint["progression_model_proposal"]["model"],
-              },
-            })
+        <ProgressionModelPicker
+          proposal={blueprint.progression_model_proposal}
+          onChange={(next) =>
+            setBlueprint({ ...blueprint, progression_model_proposal: next })
           }
-          className="rounded border border-border bg-background px-3 py-2 text-sm"
-        >
-          <option value="linear">Linear</option>
-          <option value="undulating">Undulating</option>
-          <option value="block">Block</option>
-        </select>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {blueprint.progression_model_proposal.rationale}
-        </p>
+        />
       </section>
     </div>
   );
