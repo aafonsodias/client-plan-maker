@@ -157,8 +157,8 @@ RULES:
     const { error: updErr } = await supabase
       .from("assessments")
       .update({
-        section_analyses: newAnalyses,
-        sections_analysed_at: newAt,
+        section_analyses: newAnalyses as any,
+        sections_analysed_at: newAt as any,
       })
       .eq("id", data.assessmentId);
     if (updErr) {
