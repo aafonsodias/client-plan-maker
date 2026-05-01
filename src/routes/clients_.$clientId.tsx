@@ -318,6 +318,8 @@ function ClientDetail() {
     planId: string;
     brief: Brief;
     approved: boolean;
+    programmingVariables: ProgrammingVariables;
+    accommodations: RedFlagAccommodation[];
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
