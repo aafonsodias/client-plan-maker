@@ -1848,6 +1848,7 @@ function ClientDetail() {
                               new Set([...(inlineBrief.approvedStages ?? []), "brief"])
                             ),
                           });
+                          void refreshPlans();
                           toast.success("Brief approved", { id: tId });
                         } finally {
                           setBriefStageBusy(false);
