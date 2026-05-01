@@ -1148,19 +1148,23 @@ function ClientDetail() {
           </nav>
         </aside>
 
-        <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+        <AssessmentSection
+          clientId={clientId}
+          headerProgress={
+            <>
+              <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
+                  {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
+                </span>
               </div>
-              <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
-                {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
-              </span>
-            </div>
-            <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
-          </div>
+              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+            </>
+          }
+        >
 
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
