@@ -14,6 +14,8 @@ import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
 import { BlueprintArchetypesList } from "@/components/BlueprintArchetypesList";
 import { BlueprintAiChat } from "@/components/BlueprintAiChat";
+import { WeekMatrixGrid } from "@/components/WeekMatrixGrid";
+import { ProgressionModelPicker } from "@/components/ProgressionModelPicker";
 
 export const Route = createFileRoute("/plans/$planId/blueprint")({
   component: BlueprintRoute,
@@ -28,8 +30,8 @@ function BlueprintRoute() {
           <main className="min-w-0 flex-1">
             <BlueprintReview />
           </main>
-          <aside className="hidden xl:block w-80 flex-shrink-0">
-            <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
+          <aside className="hidden xl:block w-80 2xl:w-96 flex-shrink-0">
+            <div className="sticky top-20 pb-6">
               <BriefContextRail planId={planId} />
             </div>
           </aside>
