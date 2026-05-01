@@ -411,6 +411,22 @@ function ClientDetail() {
     hip_hinge_note: "",
     single_leg_balance_score: "",
     single_leg_balance_note: "",
+    // Movement screen v2 (form-criterion checklists + capacity)
+    squat_form_criteria: {} as Record<string, boolean>,
+    squat_capacity: {} as Record<string, number | null>,
+    hinge_form_criteria: {} as Record<string, boolean>,
+    hinge_capacity: {} as Record<string, number | null>,
+    push_form_criteria: {} as Record<string, boolean>,
+    push_capacity: {} as Record<string, number | null>,
+    pull_form_criteria: {} as Record<string, boolean>,
+    pull_capacity: {} as Record<string, number | null>,
+    carry_form_criteria: {} as Record<string, boolean>,
+    carry_capacity: {} as Record<string, number | null>,
+    lunge_form_criteria: {} as Record<string, boolean>,
+    lunge_capacity: {} as Record<string, number | null>,
+    screen_not_assessed: {} as Record<string, boolean>,
+    // Setup: current capacity vs personal best (1-10) — drives rebuild/maintain/progress mode
+    current_capacity_vs_pb: null as number | null,
     // Training history
     years_training: "",
     previous_program_style: "",
