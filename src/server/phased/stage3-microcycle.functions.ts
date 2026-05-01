@@ -126,7 +126,7 @@ async function runDay(
   dayIndex: number,
   brief: any,
   blueprint: any
-): Promise<{ ok: true; day: PhasedDay } | { ok: false; error: string }> {
+): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
 
