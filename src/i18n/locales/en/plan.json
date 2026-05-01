@@ -158,5 +158,30 @@
       "legal_privacy": "Privacy",
       "legal_contact": "Contact"
     }
+  },
+  "briefRail": {
+    "approved": "Brief approved",
+    "view": "view",
+    "context_caption": "Context always visible while you design this meso.",
+    "loading": "Loading brief…",
+    "unavailable": "Brief unavailable.",
+    "load_error": "Could not load the brief.",
+    "invalid": "Brief invalid or not yet approved.",
+    "open_brief": "Open Brief",
+    "objectives": "Objectives",
+    "primary": "primary",
+    "red_flags": "Red flags",
+    "movement": "Movement competency",
+    "equipment_freq": "Equipment & frequency",
+    "sessions_per_week": "Sessions/week:",
+    "mesocycle": "Mesocycle:",
+    "weeks": "weeks",
+    "emphasis": "Meso emphasis",
+    "emphasis_upper": "Upper",
+    "emphasis_lower": "Lower",
+    "emphasis_cond": "Cond.",
+    "stage_notes": "Notes for this stage",
+    "rail_title": "Brief — context",
+    "capacity_vs_pb": "current capacity vs PB"
   }
 }

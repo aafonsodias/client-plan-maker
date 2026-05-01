@@ -14,14 +14,14 @@ const PROG_TOOL_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["exercise_id", "dimension", "week_2_delta", "week_3_delta", "week_4_delta", "rationale"],
+        required: ["exercise_id", "dimension", "week_2_delta", "week_3_delta", "week_4_delta"],
         properties: {
           exercise_id: { type: "string" },
           dimension: { type: "string", enum: ["load", "reps", "sets", "intensity_rpe", "tempo", "complexity_variant"] },
           week_2_delta: { type: "string" },
           week_3_delta: { type: "string" },
           week_4_delta: { type: "string" },
-          rationale: { type: "string" },
+          rationale: { type: "string", maxLength: 120 },
         },
       },
     },
@@ -84,6 +84,8 @@ RULES:
 - Be conservative for beginners. Skip exercises that are already at target intensity.
 - Output empty deltas ("") for weeks where nothing should change.
 - Most exercises only need 1 row. Multi-row only when load AND rpe both shift.
+- Keep "rationale" under 12 words. Be terse.
+- You MUST output AT LEAST ONE row for the main compound lifts (squat/hinge/push/pull patterns) — never return an empty rows array.
 
 Call record_progressions exactly once.`;
 
@@ -97,7 +99,7 @@ Call record_progressions exactly once.`;
       toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
       toolJsonSchema: PROG_TOOL_SCHEMA,
       schema: ProgressionPlanSchema,
-      maxTokens: 2500,
+      maxTokens: 8000,
     });
 
     await logGeneration(supabase, {
@@ -112,9 +114,15 @@ Call record_progressions exactly once.`;
       retry_count: result.retryCount,
       duration_ms: result.durationMs,
       error: result.ok ? null : result.error,
+      input_snapshot: { exerciseCount: exerciseList.length, weeks },
+      output_snapshot: result.ok ? { rowCount: (result.data as any)?.rows?.length ?? 0 } : { raw: (result as any).zodError ?? null },
     });
 
     if (!result.ok) return { ok: false as const, error: result.error };
+
+    if (!result.data || !Array.isArray((result.data as any).rows) || (result.data as any).rows.length === 0) {
+      return { ok: false as const, error: "AI returned no progression deltas. Try Regenerate." };
+    }
 
     const { error: updErr } = await supabase
       .from("workout_plans")
