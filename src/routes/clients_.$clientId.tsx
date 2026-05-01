@@ -650,11 +650,42 @@ function ClientDetail() {
     void (async () => {
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
-        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+        if (r?.ok) {
+          setBriefCoverage({ done: r.done, total: r.total });
+          setSectionAnalyses((r.analyses ?? {}) as Record<string, SectionAnalysis | null>);
+        }
       } catch {}
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phasedEnabled, assessment.id]);
+
+  // Hydrate inline brief panel on mount: if there's an in-progress phased plan
+  // for this client with a brief already, surface it directly so refresh restores state.
+  useEffect(() => {
+    if (!phasedEnabled || !user || !hydrated) return;
+    void (async () => {
+      const { data: row } = await supabase
+        .from("workout_plans")
+        .select("id, brief, generation_state, generation_status")
+        .eq("trainer_id", user.id)
+        .eq("client_id", clientId)
+        .neq("generation_status", "complete")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!row || !(row as any).brief) return;
+      const parsed = BriefSchema.safeParse((row as any).brief);
+      if (!parsed.success) return;
+      const stage = (row as any).generation_state?.stage as string | undefined;
+      const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+      setInlineBrief({
+        planId: (row as any).id,
+        brief: parsed.data,
+        approved: approvedList.includes("brief") || (!!stage && stage !== "brief"),
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phasedEnabled, user, hydrated, clientId]);
 
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
