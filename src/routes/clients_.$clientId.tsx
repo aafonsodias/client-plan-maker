@@ -2009,11 +2009,23 @@ function ClientDetail() {
                           title="Blueprint"
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
-                          approveLabel={blueprintApproved ? "Abrir" : "Gerar Blueprint →"}
-                          onApprove={() => runStage("blueprint", blueprintApproved)}
+                          approveLabel={
+                            blueprintApproved
+                              ? "Abrir"
+                              : hasBlueprintDraft
+                              ? "Ver draft →"
+                              : "Gerar Blueprint →"
+                          }
+                          onApprove={() =>
+                            blueprintApproved || hasBlueprintDraft
+                              ? navigateToStage("blueprint")
+                              : runStage("blueprint", false)
+                          }
                         >
                           <p className="text-sm text-muted-foreground">
-                            Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.
+                            {hasBlueprintDraft && !blueprintApproved
+                              ? "Tens um rascunho por aprovar — abre para continuar onde deixaste."
+                              : "Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever."}
                           </p>
                         </StageCard>
                         <StageCard
@@ -2027,15 +2039,26 @@ function ClientDetail() {
                               : "placeholder"
                           }
                           busy={stageBusy === "microcycle"}
-                          approveLabel={microcycleApproved ? "Abrir" : "Gerar Microcycle →"}
+                          approveLabel={
+                            microcycleApproved
+                              ? "Abrir"
+                              : hasMicrocycleDraft
+                              ? "Ver draft →"
+                              : "Gerar Microcycle →"
+                          }
                           onApprove={
                             blueprintApproved
-                              ? () => runStage("microcycle", microcycleApproved)
+                              ? () =>
+                                  microcycleApproved || hasMicrocycleDraft
+                                    ? navigateToStage("microcycle")
+                                    : runStage("microcycle", false)
                               : undefined
                           }
                         >
                           <p className="text-sm text-muted-foreground">
-                            {blueprintApproved
+                            {hasMicrocycleDraft && !microcycleApproved
+                              ? "Tens dias gerados por aprovar — abre para continuar."
+                              : blueprintApproved
                               ? "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar."
                               : "Aprova o Blueprint primeiro."}
                           </p>
@@ -2051,15 +2074,26 @@ function ClientDetail() {
                               : "placeholder"
                           }
                           busy={stageBusy === "progressions"}
-                          approveLabel={progressionsApproved ? "Abrir" : "Gerar Progressions →"}
+                          approveLabel={
+                            progressionsApproved
+                              ? "Abrir"
+                              : hasProgressionsDraft
+                              ? "Ver draft →"
+                              : "Gerar Progressions →"
+                          }
                           onApprove={
                             microcycleApproved
-                              ? () => runStage("progressions", progressionsApproved)
+                              ? () =>
+                                  progressionsApproved || hasProgressionsDraft
+                                    ? navigateToStage("progressions")
+                                    : runStage("progressions", false)
                               : undefined
                           }
                         >
                           <p className="text-sm text-muted-foreground">
-                            {microcycleApproved
+                            {hasProgressionsDraft && !progressionsApproved
+                              ? "Tens deltas propostos por aprovar — abre para rever."
+                              : microcycleApproved
                               ? "Deltas de progressão para as semanas 2+. Clica para gerar."
                               : "Aprova o Microcycle primeiro."}
                           </p>
