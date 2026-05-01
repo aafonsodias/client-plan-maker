@@ -1476,19 +1476,9 @@ function ClientDetail() {
                           }
                           toast.success(
                             res.reused ? "Brief already ready" : "Brief ready",
-                            {
-                              id: tId,
-                              duration: 15000,
-                              action: {
-                                label: "Review →",
-                                onClick: () =>
-                                  navigate({
-                                    to: "/plans/$planId/brief",
-                                    params: { planId: res.planId },
-                                  }),
-                              },
-                            }
+                            { id: tId, duration: 6000 }
                           );
+                          setBriefReady({ planId: res.planId, reused: !!res.reused });
                         } catch (e: any) {
                           toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
                         } finally {
