@@ -40,19 +40,26 @@ export default function BriefEditor({
 
   return (
     <div className={`space-y-4 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
-      <Card title="Goal">
-        <Field label="Primary goal">
+      <Card title="Objetivo">
+        <Field label="Objetivo principal">
           <select
             value={brief.primary_goal}
             onChange={(e) => set("primary_goal", e.target.value as Brief["primary_goal"])}
             className="be-input"
           >
-            {["hypertrophy", "strength", "conditioning", "mixed", "fat_loss", "general"].map((g) => (
-              <option key={g} value={g}>{g}</option>
+            {([
+              ["hypertrophy", "Hipertrofia"],
+              ["strength", "Força"],
+              ["conditioning", "Condição física"],
+              ["mixed", "Misto"],
+              ["fat_loss", "Perda de gordura"],
+              ["general", "Geral"],
+            ] as const).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
             ))}
           </select>
         </Field>
-        <Field label="Secondary goals (comma-sep)">
+        <Field label="Objetivos secundários (separados por vírgula)">
           <input
             value={brief.secondary_goals.join(", ")}
             onChange={(e) =>
@@ -64,20 +71,24 @@ export default function BriefEditor({
             className="be-input"
           />
         </Field>
-        <Field label="Training age">
+        <Field label="Experiência de treino">
           <select
             value={brief.training_age_band}
             onChange={(e) => set("training_age_band", e.target.value as Brief["training_age_band"])}
             className="be-input"
           >
-            {["beginner", "intermediate", "advanced"].map((g) => (
-              <option key={g} value={g}>{g}</option>
+            {([
+              ["beginner", "Iniciante"],
+              ["intermediate", "Intermédio"],
+              ["advanced", "Avançado"],
+            ] as const).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
             ))}
           </select>
         </Field>
       </Card>
 
-      <Card title="Schedule & emphasis">
+      <Card title="Agenda e ênfase">
         {typeof brief.current_capacity_vs_pb === "number" && (
           <div className="mb-2">
             <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -92,7 +103,7 @@ export default function BriefEditor({
           </div>
         )}
         <div className="grid grid-cols-3 gap-3">
-          <Field label="Sessions/wk (rec.)">
+          <Field label="Sessões/sem (rec.)">
             <NumInput
               value={brief.sessions_per_week.recommended}
               min={1}
@@ -100,7 +111,7 @@ export default function BriefEditor({
               onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, recommended: n })}
             />
           </Field>
-          <Field label="Min">
+          <Field label="Mín.">
             <NumInput
               value={brief.sessions_per_week.min}
               min={1}
@@ -108,7 +119,7 @@ export default function BriefEditor({
               onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, min: n })}
             />
           </Field>
-          <Field label="Max">
+          <Field label="Máx.">
             <NumInput
               value={brief.sessions_per_week.max}
               min={1}
@@ -117,7 +128,7 @@ export default function BriefEditor({
             />
           </Field>
         </div>
-        <Field label="Mesocycle length (weeks)">
+        <Field label="Duração do mesociclo (semanas)">
           <NumInput
             value={brief.mesocycle_length_weeks}
             min={2}
@@ -126,8 +137,12 @@ export default function BriefEditor({
           />
         </Field>
         <div className="grid grid-cols-3 gap-3">
-          {(["upper", "lower", "conditioning"] as const).map((k) => (
-            <Field key={k} label={`${k} share`}>
+          {([
+            ["upper", "Superior"],
+            ["lower", "Inferior"],
+            ["conditioning", "Condição"],
+          ] as const).map(([k, l]) => (
+            <Field key={k} label={`Quota ${l.toLowerCase()}`}>
               <NumInput
                 value={brief.emphasis_split[k]}
                 step={0.05}
@@ -140,9 +155,16 @@ export default function BriefEditor({
         </div>
       </Card>
 
-      <Card title="Movement competency">
-        {(["squat", "hinge", "push", "pull", "carry", "lunge"] as const).map((p) => (
-          <Field key={p} label={p}>
+      <Card title="Competência de movimento">
+        {([
+          ["squat", "Agachamento"],
+          ["hinge", "Dobra de anca"],
+          ["push", "Empurrar"],
+          ["pull", "Puxar"],
+          ["carry", "Transporte"],
+          ["lunge", "Avanço"],
+        ] as const).map(([p, l]) => (
+          <Field key={p} label={l}>
             <input
               value={brief.movement_competency_summary[p]}
               onChange={(e) =>
@@ -152,14 +174,14 @@ export default function BriefEditor({
                 })
               }
               className="be-input"
-              placeholder="e.g. full ROM, restricted, no notes"
+              placeholder="ex. ADM completa, restrito, sem notas"
             />
           </Field>
         ))}
       </Card>
 
-      <Card title="Safety & equipment">
-        <Field label="Red flags (one per line)">
+      <Card title="Segurança e equipamento">
+        <Field label="Sinais de alerta (um por linha)">
           <textarea
             value={brief.red_flags.join("\n")}
             onChange={(e) =>
@@ -172,7 +194,7 @@ export default function BriefEditor({
             className="be-input"
           />
         </Field>
-        <Field label="Equipment constraints (one per line)">
+        <Field label="Restrições de equipamento (uma por linha)">
           <textarea
             value={brief.equipment_constraints.join("\n")}
             onChange={(e) =>
@@ -185,7 +207,7 @@ export default function BriefEditor({
             className="be-input"
           />
         </Field>
-        <Field label="Notes for next stage">
+        <Field label="Notas para a próxima etapa">
           <textarea
             value={brief.notes_for_next_stage}
             onChange={(e) => set("notes_for_next_stage", e.target.value)}
@@ -196,49 +218,49 @@ export default function BriefEditor({
       </Card>
 
       {programmingVariables && onProgrammingChange && (
-        <Card title="Programming setup">
+        <Card title="Configuração de programação">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Training split">
+            <Field label="Divisão de treino">
               <select
                 value={programmingVariables.training_split}
                 onChange={(e) => setPv("training_split", e.target.value as ProgrammingVariables["training_split"])}
                 className="be-input"
               >
-                <option value="full_body">Full-body</option>
-                <option value="upper_lower">Upper / Lower</option>
-                <option value="ppl">Push / Pull / Legs</option>
-                <option value="pplc">Push / Pull / Legs / Core</option>
-                <option value="ppl_x2">Push / Pull / Legs (×2/wk)</option>
-                <option value="body_part_split">Body-part split</option>
-                <option value="custom">Custom</option>
+                <option value="full_body">Corpo inteiro</option>
+                <option value="upper_lower">Superior / Inferior</option>
+                <option value="ppl">Empurrar / Puxar / Pernas</option>
+                <option value="pplc">Empurrar / Puxar / Pernas / Core</option>
+                <option value="ppl_x2">Empurrar / Puxar / Pernas (×2/sem)</option>
+                <option value="body_part_split">Divisão por grupo muscular</option>
+                <option value="custom">Personalizada</option>
               </select>
             </Field>
-            <Field label="Deload frequency">
+            <Field label="Frequência de deload">
               <select
                 value={programmingVariables.deload_frequency}
                 onChange={(e) => setPv("deload_frequency", e.target.value as ProgrammingVariables["deload_frequency"])}
                 className="be-input"
               >
-                <option value="every_3_weeks">Every 3 weeks</option>
-                <option value="every_4_weeks">Every 4 weeks</option>
-                <option value="every_5_weeks">Every 5 weeks</option>
-                <option value="every_6_weeks">Every 6 weeks</option>
-                <option value="no_deload">No deload</option>
+                <option value="every_3_weeks">A cada 3 semanas</option>
+                <option value="every_4_weeks">A cada 4 semanas</option>
+                <option value="every_5_weeks">A cada 5 semanas</option>
+                <option value="every_6_weeks">A cada 6 semanas</option>
+                <option value="no_deload">Sem deload</option>
               </select>
             </Field>
-            <Field label="Deload style">
+            <Field label="Estilo de deload">
               <select
                 value={programmingVariables.deload_style}
                 onChange={(e) => setPv("deload_style", e.target.value as ProgrammingVariables["deload_style"])}
                 className="be-input"
               >
-                <option value="volume_reduction">Volume reduction (-30%)</option>
-                <option value="intensity_reduction">Intensity reduction (-15% load)</option>
-                <option value="full_rest_week">Full rest week</option>
-                <option value="mixed">Mixed (-15% load AND -30% volume)</option>
+                <option value="volume_reduction">Redução de volume (-30%)</option>
+                <option value="intensity_reduction">Redução de intensidade (-15% carga)</option>
+                <option value="full_rest_week">Semana de repouso total</option>
+                <option value="mixed">Misto (-15% carga e -30% volume)</option>
               </select>
             </Field>
-            <Field label="RPE ceiling">
+            <Field label="Tecto de RPE">
               <input
                 type="number"
                 min={7.5}
@@ -252,29 +274,29 @@ export default function BriefEditor({
                 className="be-input"
               />
             </Field>
-            <Field label="Exercise selection bias">
+            <Field label="Tendência de selecção de exercícios">
               <select
                 value={programmingVariables.exercise_bias}
                 onChange={(e) => setPv("exercise_bias", e.target.value as ProgrammingVariables["exercise_bias"])}
                 className="be-input"
               >
-                <option value="compound_first">Compound-first</option>
-                <option value="balanced">Balanced</option>
-                <option value="isolation_friendly">Isolation-friendly</option>
-                <option value="bodyweight_friendly">Bodyweight-friendly</option>
-                <option value="equipment_flexible">Equipment-flexible</option>
+                <option value="compound_first">Compostos primeiro</option>
+                <option value="balanced">Equilibrado</option>
+                <option value="isolation_friendly">Favorável a isolamento</option>
+                <option value="bodyweight_friendly">Favorável a peso corporal</option>
+                <option value="equipment_flexible">Flexível em equipamento</option>
               </select>
             </Field>
-            <Field label="Intensity / volume trade-off">
+            <Field label="Trade-off intensidade / volume">
               <select
                 value={programmingVariables.intensity_volume_tradeoff}
                 onChange={(e) => setPv("intensity_volume_tradeoff", e.target.value as ProgrammingVariables["intensity_volume_tradeoff"])}
                 className="be-input"
               >
-                <option value="high_int_low_vol">High intensity / low volume</option>
-                <option value="moderate_moderate">Moderate / moderate</option>
-                <option value="moderate_int_high_vol">Moderate intensity / high volume</option>
-                <option value="low_int_very_high_vol">Low intensity / very high volume</option>
+                <option value="high_int_low_vol">Alta intensidade / baixo volume</option>
+                <option value="moderate_moderate">Moderado / moderado</option>
+                <option value="moderate_int_high_vol">Intensidade moderada / alto volume</option>
+                <option value="low_int_very_high_vol">Baixa intensidade / volume muito alto</option>
               </select>
             </Field>
           </div>
