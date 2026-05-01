@@ -985,64 +985,64 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Risk stratification */}
-          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high." complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={`✓ ACSM Risk: ${riskCategory.toUpperCase()}`} /> : null}>
+          <SectionBlock id="risk" title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
-              <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
+              <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
-                <LabelWithHelp label="Smoking" hint="Current smokers carry highest CVD risk." />
+                <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
                 <Select value={assessment.risk.smoking} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="never">Never</SelectItem>
-                    <SelectItem value="former">Former</SelectItem>
-                    <SelectItem value="current">Current</SelectItem>
+                    <SelectItem value="never">{t("risk_block.smoking_never")}</SelectItem>
+                    <SelectItem value="former">{t("risk_block.smoking_former")}</SelectItem>
+                    <SelectItem value="current">{t("risk_block.smoking_current")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Toggle label="Sedentary (<150 min/week MVPA)" value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
+              <Toggle label={t("risk_block.sedentary")} value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
               <div className="space-y-1">
-                <LabelWithHelp label="BMI category" hint="Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30. Use 'Muscular' when BMI ≥25 but body-fat % is within athletic range (♂ ≤17%, ♀ ≤24%) — BMI overestimates adiposity in resistance-trained individuals." />
+                <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
                 <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="underweight">Underweight</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="overweight">Overweight</SelectItem>
-                    <SelectItem value="obese">Obese</SelectItem>
-                    <SelectItem value="muscular">Muscular (athletic build)</SelectItem>
+                    <SelectItem value="underweight">{t("risk_block.bmi_underweight")}</SelectItem>
+                    <SelectItem value="normal">{t("risk_block.bmi_normal")}</SelectItem>
+                    <SelectItem value="overweight">{t("risk_block.bmi_overweight")}</SelectItem>
+                    <SelectItem value="obese">{t("risk_block.bmi_obese")}</SelectItem>
+                    <SelectItem value="muscular">{t("risk_block.bmi_muscular")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Toggle label="Dyslipidemia" value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
-              <Toggle label="Pre-diabetes" value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
-              <Toggle label="Hypertension" value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
+              <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
+              <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
+              <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
             </div>
             <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${riskCategory === "high" ? "bg-destructive/15 text-destructive" : riskCategory === "moderate" ? "bg-accent/15 text-accent" : "bg-secondary text-secondary-foreground"}`}>
-              ACSM risk: {riskCategory}
+              {t("risk_block.acsm_pill", { level: t(`risk_block.level_${riskCategory}` as const) })}
             </div>
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" title="Anthropometry" hint="Body composition baseline. Waist-to-hip ratio is computed automatically." defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Waist (cm)" type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint="Measure at narrowest point above the hip bone, exhale." />
-              <Field label="Hip (cm)" type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint="Measure at the widest part of the buttocks." />
+              <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
+              <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
               <div className="space-y-1">
-                <Label className="text-xs">Waist-to-hip ratio</Label>
+                <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
               </div>
-              <Field label="Body fat %" type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint="Optional. Use the same method over time for trend." />
+              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
               <div className="space-y-1 sm:col-span-2">
-                <LabelWithHelp label="Body fat method" hint="Calipers, bioimpedance, DEXA, etc." />
+                <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
                 <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="calipers">Skinfold calipers</SelectItem>
-                    <SelectItem value="bia">Bioimpedance (BIA)</SelectItem>
-                    <SelectItem value="dexa">DEXA</SelectItem>
-                    <SelectItem value="bodpod">BodPod</SelectItem>
-                    <SelectItem value="visual">Visual estimate</SelectItem>
+                    <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
+                    <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
+                    <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
+                    <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
+                    <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1050,19 +1050,23 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Medications */}
-          <SectionBlock id="meds" title="Medication & supplements" hint="Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution." defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <TextField label="Free text (medications, supplements, dosage)" value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
+          <SectionBlock id="meds" title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
+            <TextField label={t("meds_block.free_text")} value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {["Beta-blocker", "Statin", "Anticoagulant"].map((flag) => {
+              {[
+                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta") },
+                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin") },
+                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag") },
+              ].map(({ id, canonical: flag, label }) => {
                 const on = assessment.med_flags.includes(flag);
                 return (
                   <button
-                    key={flag}
+                    key={id}
                     type="button"
                     onClick={() => setAssessment({ ...assessment, med_flags: on ? assessment.med_flags.filter((f: string) => f !== flag) : [...assessment.med_flags, flag] })}
                     className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-background hover:bg-secondary"}`}
                   >
-                    {on && "⚑ "}{flag}
+                    {on && "⚑ "}{label}
                   </button>
                 );
               })}
@@ -1070,32 +1074,26 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* SMART goal */}
-          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound." complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={`✓ Goal logged: ${String(assessment.smart_specific ?? "").slice(0, 40)}`} /> : null}>
+          <SectionBlock id="goal" title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Specific outcome" value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder="e.g. Squat 1.5×BW for 5 reps" hint="What concrete result?" className="sm:col-span-2" />
-              <Field label="Measurable target" value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder="e.g. 120kg @ BW80kg" hint="Number you'll measure." />
-              <Field label="Deadline" type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint="Realistic completion date." />
-              <TextField label="Goal context (optional)" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
+              <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
+              <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
+              <Field label={t("goal_block.deadline")} type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint={t("goal_block.deadline_hint")} />
+              <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Readiness */}
-          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach." defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="readiness" title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
             <div className="flex flex-wrap gap-1.5">
-              {[
-                ["precontemplation", "Pre-contemplation"],
-                ["contemplation", "Contemplation"],
-                ["preparation", "Preparation"],
-                ["action", "Action"],
-                ["maintenance", "Maintenance"],
-              ].map(([v, l]) => (
+              {(["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const).map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setAssessment({ ...assessment, readiness_stage: v })}
                   className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${assessment.readiness_stage === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}
                 >
-                  {l}
+                  {t(`readiness_block.${v}` as const)}
                 </button>
               ))}
             </div>
