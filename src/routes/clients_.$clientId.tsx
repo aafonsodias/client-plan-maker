@@ -96,6 +96,7 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
   training: [
     "experience_level", "training_days_per_week", "session_duration_minutes",
     "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
+    "current_capacity_vs_pb",
   ],
   lifestyle: [
     "sleep_quality", "stress_level", "ext_hours_seated", "ext_daily_steps",
@@ -111,8 +112,13 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
   ],
   posture: ["standing_posture_notes", "known_imbalances", "dominant_side"],
   screen: [
-    "squat_depth_score", "squat_depth_note", "overhead_reach_score", "overhead_reach_note",
-    "hip_hinge_score", "hip_hinge_note", "single_leg_balance_score", "single_leg_balance_note",
+    "squat_form_criteria", "squat_capacity",
+    "hinge_form_criteria", "hinge_capacity",
+    "push_form_criteria", "push_capacity",
+    "pull_form_criteria", "pull_capacity",
+    "carry_form_criteria", "carry_capacity",
+    "lunge_form_criteria", "lunge_capacity",
+    "screen_not_assessed",
   ],
   history: ["years_training", "previous_program_style", "max_lifts"],
   performance: ["resting_heart_rate", "cardio_capacity", "ext_cardio_test"],
