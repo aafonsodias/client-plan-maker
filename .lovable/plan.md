@@ -1,5 +1,35 @@
 # Round 2 — Corrections + Movement Competency Rework
 
+## Progress checkpoint (turn 1 of N)
+
+**Done:**
+- Migration applied: `section_analyses_locale`, BP fields (`systolic_bp_mmhg`, `diastolic_bp_mmhg`, `bp_measured_at`), 12 movement-screen JSONB fields (`<pattern>_form_criteria`, `<pattern>_capacity`), `screen_not_assessed`, `current_capacity_vs_pb`. Range trigger updated.
+- New libs: `src/lib/brief-labels.ts`, `src/lib/blood-pressure.ts`, `src/lib/movement-criteria.ts`, `src/lib/capacity-thresholds.ts`.
+- New component: `src/components/MovementPatternCard.tsx`.
+- Schema: `BriefSchema.current_capacity_vs_pb` added (nullable int 1–10).
+- Stage1 brief tool schema + both system prompts updated with rebuild/moderate/normal block.
+
+**Remaining (next turn — strict order, typecheck after each):**
+- A1: remove `<ClientSnapshotCard>` render + function; add inline "Última avaliação · DD/MM/YYYY →" link in header; add `id="sintese-da-avaliacao"` wrapper around `<AssessmentSynthesisDashboard>`.
+- A2 server: extend `analyzeAssessmentSection` `InputSchema` with `locale` (default 'pt-PT'); persist into `section_analyses_locale`. Extend `getSectionAnalysisCoverage` return with `analyses_locale`.
+- A2 client: stale-locale detection on coverage load; "Re-analisar avaliação" button in assessment header (sequential 14-section run with N/14 progress).
+- A3: full pt-PT sweep — `IntakeLinkPanel.tsx`, `StageCard.tsx` (label props), `BriefEditor.tsx` (use `brief-labels.ts` maps + i18n), and any `clients_.$clientId.tsx` strings still in EN. Add corresponding keys to `pt/en` JSON.
+- A4: `SectionBlock` — when `analysis` exists, suppress deterministic stub (`footer` / `CompletionStrip`) so they're mutually exclusive.
+- A5: BP inputs in Risk section (above existing toggles), `categorizeBp` pill, auto-toggle hypertension on stage1+, crisis banner that blocks "Gerar rascunho do plano". Persist via `buildAssessmentPayload`. Surface BP in synthesis ACSM stat caption.
+- B1: replace 4 `<ScreenItem>`s in Movement Screen section with 6 `<MovementPatternCard>` (one per pattern). Hydrate `<pattern>_form_criteria`, `<pattern>_capacity`, `screen_not_assessed` into local state; persist via `buildAssessmentPayload`. Update `PROV_SECTION_FIELDS.screen` to the 12 new fields + `screen_not_assessed`.
+- B2: pickSectionPayload('screen') returns the 12 new fields + `not_assessed`. Add `notes_for_next_stage` to `SECTION_BRIEF_CONTRIBUTIONS.screen`. Already covered by `MovementPatternCard` UI.
+- B3: Setup section UI — slider 1–10 for `current_capacity_vs_pb` with rebuild copy + tooltip. Persist in payload. pickSectionPayload('training') adds `current_capacity_vs_pb`. Surface as pill in `BriefEditor` "Schedule & emphasis" card.
+- B4: rewrite `MovementCompetencyRadar` to read form scores (count/5) + `capacityScore(pattern, ...)`; render solid orange polygon (form) + dashed grey polygon (capacity); dashed-only axis when not assessed. Caption: "Forma vs Capacidade · {N}/6 padrões avaliados".
+- STOP after B4. Show preview, then proceed to reduced Item 7 (HowToAssess for non-screen sections only).
+
+**Notes for continuation:**
+- DB columns `squat_depth_score` etc. stay in DB but stop being read/written by UI.
+- `i18n.language` resolved value `'pt'` → map to `'pt-PT'` for locale comparison; `'en'` → `'en-GB'`.
+- All migrations re-runnable (`add column if not exists`).
+- Only project-wide gotcha: `BriefSchema` now has `current_capacity_vs_pb` — existing brief rows in DB lack the key but the `.default(null)` keeps `safeParse` happy.
+
+---
+
 Strict order. Typecheck after each step. **Stop after B4** and show the new Movement Screen + radar before continuing to Item 7.
 
 ---
