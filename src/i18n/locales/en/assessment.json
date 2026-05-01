@@ -5,6 +5,8 @@
   "title": "Assessment",
   "sections_label": "Sections",
   "progress": "Section {{current}} of {{total}} · {{pct}}% complete · ~{{minutes}} min left",
+  "progress_short": "Section {{current}}/{{total}} · {{pct}}%",
+  "progress_minutes": "~{{minutes}} min left",
   "save": {
     "saving": "Saving…",
     "offline": "Offline — saved locally",
