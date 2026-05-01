@@ -1130,6 +1130,15 @@ function ClientDetail() {
         onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
       />
 
+      {/* Compact client snapshot — always visible, summarizes latest assessment */}
+      <ClientSnapshotCard
+        assessment={assessment}
+        sectionAnalyses={sectionAnalyses}
+        riskCategory={riskCategory}
+        whr={whr}
+        lastSavedAt={lastSavedAt}
+      />
+
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
@@ -1167,15 +1176,6 @@ function ClientDetail() {
         >
 
           {/* PAR-Q+ */}
-          <AssessmentSynthesisDashboard
-            assessment={assessment}
-            sectionAnalyses={sectionAnalyses}
-            totalSections={totalSections}
-            riskCategory={riskCategory}
-            whr={whr}
-            redFlagAccommodations={inlineBrief?.accommodations ?? null}
-          />
-
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_KEYS.map((key, idx) => {
