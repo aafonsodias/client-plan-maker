@@ -43,6 +43,15 @@ function BriefReview() {
     setPlanTitle((data as any).title ?? "");
     setClientId((data as any).client_id ?? null);
     const parsed = BriefSchema.safeParse((data as any).brief);
+    console.log(
+      "[brief route] planId=",
+      planId,
+      "raw brief=",
+      (data as any).brief,
+      "parsed.success=",
+      parsed.success,
+      parsed.success ? null : parsed.error.issues
+    );
     setBrief(parsed.success ? parsed.data : null);
     setLoading(false);
   }
@@ -93,7 +102,10 @@ function BriefReview() {
   if (!brief) {
     return (
       <div className="mx-auto max-w-3xl p-8 text-center">
-        <p className="text-muted-foreground">No brief yet.</p>
+        <p className="font-mono text-sm text-destructive">
+          DEBUG: Brief is null or failed schema parse (plan {planId})
+        </p>
+        <p className="mt-2 text-muted-foreground">No brief yet.</p>
         <button
           onClick={regenerate}
           disabled={regenerating}
