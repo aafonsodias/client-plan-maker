@@ -197,5 +197,6 @@ export const getSectionAnalysisCoverage = createServerFn({ method: "GET" })
       total: PHASED_SECTIONS.length,
       done: sections.filter((s) => s.analysed).length,
       sections,
+      analyses,
     };
   });
