@@ -17,6 +17,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
+import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
+import { generateMicrocycleDays } from "@/server/phased/stage3-microcycle.functions";
+import { proposeProgressions } from "@/server/phased/stage4-progressions.functions";
 import {
   BriefSchema,
   ProgrammingVariablesSchema,
@@ -341,6 +344,10 @@ function ClientDetail() {
   const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
   const synthesizeBriefFn = useServerFn(synthesizeBrief);
   const approveBriefFn = useServerFn(approveBrief);
+  const generateBlueprintFn = useServerFn(generateBlueprint);
+  const generateMicrocycleDaysFn = useServerFn(generateMicrocycleDays);
+  const proposeProgressionsFn = useServerFn(proposeProgressions);
+  const [stageBusy, setStageBusy] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   const [phasedBusy, setPhasedBusy] = useState(false);
   // Inline brief panel: rendered below the action row. Replaces the toast-link banner.
   const [inlineBrief, setInlineBrief] = useState<{
@@ -1841,6 +1848,7 @@ function ClientDetail() {
                               new Set([...(inlineBrief.approvedStages ?? []), "brief"])
                             ),
                           });
+                          void refreshPlans();
                           toast.success("Brief approved", { id: tId });
                         } finally {
                           setBriefStageBusy(false);
@@ -1901,24 +1909,69 @@ function ClientDetail() {
                     const blueprintApproved = approvedStages.includes("blueprint");
                     const microcycleApproved = approvedStages.includes("microcycle");
                     const progressionsApproved = approvedStages.includes("progressions");
-                    const goTo = (path: "blueprint" | "microcycle" | "progressions") =>
-                      navigate({
-                        to:
-                          path === "blueprint"
-                            ? "/plans/$planId/blueprint"
-                            : path === "microcycle"
-                            ? "/plans/$planId/microcycle"
-                            : "/plans/$planId/progressions",
-                        params: { planId: inlineBrief.planId },
-                      });
+                    const planId = inlineBrief.planId;
+                    const runStage = async (
+                      stage: "blueprint" | "microcycle" | "progressions",
+                      alreadyDone: boolean
+                    ) => {
+                      // If already approved, just navigate.
+                      if (alreadyDone) {
+                        navigate({
+                          to:
+                            stage === "blueprint"
+                              ? "/plans/$planId/blueprint"
+                              : stage === "microcycle"
+                              ? "/plans/$planId/microcycle"
+                              : "/plans/$planId/progressions",
+                          params: { planId },
+                        });
+                        return;
+                      }
+                      if (stageBusy) return;
+                      setStageBusy(stage);
+                      const labels: Record<string, string> = {
+                        blueprint: "A gerar Blueprint…",
+                        microcycle: "A gerar Microcycle (Semana 1)…",
+                        progressions: "A gerar Progressions…",
+                      };
+                      const tId = toast.loading(labels[stage]);
+                      try {
+                        const res: any =
+                          stage === "blueprint"
+                            ? await generateBlueprintFn({ data: { planId } })
+                            : stage === "microcycle"
+                            ? await generateMicrocycleDaysFn({ data: { planId } })
+                            : await proposeProgressionsFn({ data: { planId } });
+                        if (!res?.ok) {
+                          toast.error(res?.error || `Falha ao gerar ${stage}`, { id: tId });
+                          return;
+                        }
+                        toast.success(`${stage[0].toUpperCase() + stage.slice(1)} pronto`, { id: tId });
+                        void refreshPlans();
+                        navigate({
+                          to:
+                            stage === "blueprint"
+                              ? "/plans/$planId/blueprint"
+                              : stage === "microcycle"
+                              ? "/plans/$planId/microcycle"
+                              : "/plans/$planId/progressions",
+                          params: { planId },
+                        });
+                      } catch (e: any) {
+                        toast.error(e?.message ?? `Falha ao gerar ${stage}`, { id: tId });
+                      } finally {
+                        setStageBusy(null);
+                      }
+                    };
                     return (
                       <>
                         <StageCard
                           stageNumber={2}
                           title="Blueprint"
                           status={blueprintApproved ? "approved" : "ready"}
+                          busy={stageBusy === "blueprint"}
                           approveLabel={blueprintApproved ? "Abrir" : "Gerar Blueprint →"}
-                          onApprove={() => goTo("blueprint")}
+                          onApprove={() => runStage("blueprint", blueprintApproved)}
                         >
                           <p className="text-sm text-muted-foreground">
                             Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.
@@ -1934,8 +1987,13 @@ function ClientDetail() {
                               ? "ready"
                               : "placeholder"
                           }
+                          busy={stageBusy === "microcycle"}
                           approveLabel={microcycleApproved ? "Abrir" : "Gerar Microcycle →"}
-                          onApprove={blueprintApproved ? () => goTo("microcycle") : undefined}
+                          onApprove={
+                            blueprintApproved
+                              ? () => runStage("microcycle", microcycleApproved)
+                              : undefined
+                          }
                         >
                           <p className="text-sm text-muted-foreground">
                             {blueprintApproved
@@ -1953,8 +2011,13 @@ function ClientDetail() {
                               ? "ready"
                               : "placeholder"
                           }
+                          busy={stageBusy === "progressions"}
                           approveLabel={progressionsApproved ? "Abrir" : "Gerar Progressions →"}
-                          onApprove={microcycleApproved ? () => goTo("progressions") : undefined}
+                          onApprove={
+                            microcycleApproved
+                              ? () => runStage("progressions", progressionsApproved)
+                              : undefined
+                          }
                         >
                           <p className="text-sm text-muted-foreground">
                             {microcycleApproved
