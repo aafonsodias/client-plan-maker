@@ -228,7 +228,7 @@ export const approveBrief = createServerFn({ method: "POST" })
 
     const { error: updErr } = await supabase
       .from("workout_plans")
-      .update(update)
+      .update(update as any)
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
     return { ok: true as const };
