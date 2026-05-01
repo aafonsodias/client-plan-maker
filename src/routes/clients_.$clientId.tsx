@@ -16,6 +16,7 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
+import { startPhasedPlanDraft } from "@/server/phased/stage1-brief.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -493,11 +494,6 @@ function ClientDetail() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
-
-  // TEMP: verify the phased flag is actually on for this trainer at runtime.
-  useEffect(() => {
-    console.log('[phased] enabled =', phasedEnabled);
-  }, [phasedEnabled]);
 
   // Capture per-section field signatures the first time we hydrate so we can
   // detect when the trainer edits a section that was filled by the client.
