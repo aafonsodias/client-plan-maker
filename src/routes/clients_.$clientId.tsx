@@ -588,6 +588,47 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessment, hydrated, user, clientId]);
 
+  // Eager Pre-Stage 0: for each phased section whose payload signature changed,
+  // fire-and-forget a server-side micro-analysis. Server is idempotent + cached,
+  // and gated on the trainer's phased_generation_enabled flag.
+  const triggerSectionAnalyses = async () => {
+    if (!assessment.id) return;
+    const sections = Object.keys(PROV_SECTION_FIELDS).filter((s) => s !== "smart_goal");
+    const fired: Promise<unknown>[] = [];
+    for (const section of sections) {
+      const sig = sectionSignature(assessment, section);
+      if (lastAnalysedSigRef.current[section] === sig) continue;
+      // Skip empty sections — nothing for the model to analyse.
+      if (sig === JSON.stringify([]) || /^\[(null,?)+\]$/.test(sig.replace(/\s/g, ""))) continue;
+      lastAnalysedSigRef.current[section] = sig;
+      fired.push(
+        analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } })
+          .catch((e) => console.warn("pre-stage analyze failed", section, e))
+      );
+    }
+    if (fired.length === 0) return;
+    // After all settle, refresh coverage badge.
+    void Promise.allSettled(fired).then(async () => {
+      if (!assessment.id) return;
+      try {
+        const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+      } catch {}
+    });
+  };
+
+  // Initial coverage fetch when phased flag is on and assessment exists.
+  useEffect(() => {
+    if (!phasedEnabled || !assessment.id) return;
+    void (async () => {
+      try {
+        const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phasedEnabled, assessment.id]);
+
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
