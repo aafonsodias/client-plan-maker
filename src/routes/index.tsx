@@ -312,14 +312,15 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 }
 
 function HeroPlanMockup() {
+  const { t } = useTranslation("plan");
   type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
   const rows: Row[] = [
-    { badge: "WARM-UP", tone: "warmup", name: "Goblet Squat", sets: "2 × 8", note: "@ light" },
-    { badge: "MAIN", tone: "main", name: "Back Squat", sets: "4 × 6", note: "@ RPE 7", sub: "Rest 2:30 · tempo 3-1-X" },
-    { badge: "MAIN", tone: "main", name: "Romanian Deadlift", sets: "3 × 8", note: "@ RPE 7", sub: "Rest 2:00 · controlled eccentric" },
-    { badge: "ACCESSORY", tone: "accessory", name: "Step-Up", sets: "3 × 10/leg" },
-    { badge: "ACCESSORY", tone: "accessory", name: "Leg Curl", sets: "3 × 12", note: "@ RPE 7" },
-    { badge: "FINISHER", tone: "finisher", name: "KB Swing", sets: "3 × 15" },
+    { badge: t("landing.mockups.badge_warmup"), tone: "warmup", name: t("landing.mockups.ex_goblet_squat"), sets: "2 × 8", note: t("landing.mockups.at_light") },
+    { badge: t("landing.mockups.badge_main"), tone: "main", name: t("landing.mockups.ex_back_squat"), sets: "4 × 6", note: t("landing.mockups.at_rpe7"), sub: t("landing.mockups.rest_tempo_squat") },
+    { badge: t("landing.mockups.badge_main"), tone: "main", name: t("landing.mockups.ex_rdl"), sets: "3 × 8", note: t("landing.mockups.at_rpe7"), sub: t("landing.mockups.rest_tempo_rdl") },
+    { badge: t("landing.mockups.badge_accessory"), tone: "accessory", name: t("landing.mockups.ex_step_up"), sets: "3 × 10" },
+    { badge: t("landing.mockups.badge_accessory"), tone: "accessory", name: t("landing.mockups.ex_leg_curl"), sets: "3 × 12", note: t("landing.mockups.at_rpe7") },
+    { badge: t("landing.mockups.badge_finisher"), tone: "finisher", name: t("landing.mockups.ex_kb_swing"), sets: "3 × 15" },
   ];
   const badgeClass = (t: Row["tone"]) => {
     switch (t) {
@@ -340,12 +341,12 @@ function HeroPlanMockup() {
         <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-medium text-accent">
           M
         </span>
-        <span>Maria S. · Week 5 · Strength Phase</span>
+        <span>{t("landing.mockups.client_header")}</span>
       </div>
       {/* Session title */}
       <div className="mt-3">
-        <p className="text-base font-medium text-foreground">Monday — Lower Body Strength</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">Est. 55 min · 6 exercises</p>
+        <p className="text-base font-medium text-foreground">{t("landing.mockups.session_title")}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{t("landing.mockups.session_meta")}</p>
       </div>
       <div className="my-4 h-px bg-border" />
       {/* Exercise list */}
@@ -370,7 +371,7 @@ function HeroPlanMockup() {
       <div className="mt-4 h-px bg-border" />
       <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
         <span>FORGE</span>
-        <span className="normal-case tracking-normal">Personalized for Maria</span>
+        <span className="normal-case tracking-normal">{t("landing.mockups.personalized_for")}</span>
       </div>
     </FloatCard>
   );
