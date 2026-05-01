@@ -146,6 +146,7 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
 
 function IntakePage() {
   const { token } = Route.useParams();
+  const { t } = useTranslation("intake");
   const load = useServerFn(loadIntake);
   const save = useServerFn(saveIntake);
 
@@ -209,8 +210,8 @@ function IntakePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-light tracking-tight">This link has expired.</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Please ask your trainer for a new one.</p>
+          <h1 className="text-2xl font-light tracking-tight">{t("expired_title")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("expired_desc")}</p>
           <PoweredBy />
         </div>
       </div>
@@ -221,8 +222,8 @@ function IntakePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-light tracking-tight">Already submitted{ctx.submittedAt ? ` on ${new Date(ctx.submittedAt).toLocaleDateString()}` : ""}.</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Contact your trainer if you need to update something.</p>
+          <h1 className="text-2xl font-light tracking-tight">{ctx.submittedAt ? t("submitted_title_with_date", { date: new Date(ctx.submittedAt).toLocaleDateString() }) : t("submitted_title_no_date")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submitted_desc")}</p>
           <PoweredBy />
         </div>
       </div>
@@ -233,7 +234,7 @@ function IntakePage() {
     return <ThankYou ctx={ctx} />;
   }
 
-  const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || "Your trainer";
+  const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || t("your_trainer");
 
   const submit = async () => {
     setSubmitting(true);
@@ -242,16 +243,16 @@ function IntakePage() {
       try { localStorage.removeItem(`forge_intake_draft_${token}`); } catch {}
       setSubmitted(true);
     } catch (e: any) {
-      toast.error(e?.message ?? "Could not submit. Try again.");
+      toast.error(e?.message ?? t("submit_failed"));
     } finally { setSubmitting(false); }
   };
 
   const saveDraft = async () => {
     try {
       await save({ data: { token, ...toPayload(form), submit: false } });
-      toast.success("Saved. Come back anytime.");
+      toast.success(t("saved_toast"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Could not save.");
+      toast.error(e?.message ?? t("save_failed"));
     }
   };
 
@@ -268,40 +269,35 @@ function IntakePage() {
           )}
           <div>
             <p className="text-sm font-semibold">{trainerName}</p>
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Intake form</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{t("header_label")}</p>
           </div>
           <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
         </div>
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pt-8">
-        <h1 className="text-2xl font-light tracking-tight sm:text-3xl">Hi {ctx.client?.first_name} 👋</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Your trainer asked you to fill this before your first session. Takes about 10 minutes.
-          You can come back later — we'll save your progress.
-        </p>
+        <h1 className="text-2xl font-light tracking-tight sm:text-3xl">{t("hi", { name: ctx.client?.first_name ?? "" })}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{t("intro")}</p>
 
         <div className="mt-10 space-y-10">
           {/* SAFETY — PAR-Q+ */}
-          <Section number={1} title="A few health questions (PAR-Q+)">
-            <p className="-mt-2 text-xs text-muted-foreground">
-              These help your trainer build a plan that's safe for you. Answer honestly — there are no wrong answers.
-            </p>
+          <Section number={1} title={t("sections.parq_title")}>
+            <p className="-mt-2 text-xs text-muted-foreground">{t("sections.parq_intro")}</p>
             <div className="space-y-3">
-              {PARQ_QUESTIONS.map((q) => (
-                <div key={q.key} className="rounded-lg border border-border bg-background/40 p-3">
-                  <p className="text-sm">{q.text}</p>
+              {PARQ_KEYS.map((qk) => (
+                <div key={qk} className="rounded-lg border border-border bg-background/40 p-3">
+                  <p className="text-sm">{t(`parq.${qk}`)}</p>
                   <div className="mt-2 flex gap-2">
                     {([
-                      { v: false, label: "No" },
-                      { v: true, label: "Yes" },
+                      { v: false, label: t("no") },
+                      { v: true, label: t("yes") },
                     ] as const).map((opt) => {
-                      const on = form.parq[q.key] === opt.v;
+                      const on = form.parq[qk] === opt.v;
                       return (
                         <button
                           key={opt.label}
                           type="button"
-                          onClick={() => setForm({ ...form, parq: { ...form.parq, [q.key]: opt.v } })}
+                          onClick={() => setForm({ ...form, parq: { ...form.parq, [qk]: opt.v } })}
                           className={`rounded-full border px-4 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                         >{opt.label}</button>
                       );
@@ -312,31 +308,32 @@ function IntakePage() {
             </div>
             {Object.values(form.parq).some((v) => v === true) && (
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
-                Thanks for being honest. Your trainer will review these answers and may suggest a doctor's check before starting harder sessions.
+                {t("sections.parq_warning")}
               </div>
             )}
-            <Field label="Are you taking any medication regularly?" optional>
+            <Field label={t("sections.medication_label")} optional optionalLabel={t("optional")}>
               <Textarea
                 rows={2}
                 value={form.medications}
-                placeholder="e.g. blood pressure meds, insulin, painkillers…"
+                placeholder={t("sections.medication_placeholder")}
                 onChange={(e) => setForm({ ...form, medications: e.target.value })}
               />
             </Field>
-            <Field label="Any of these apply?" optional>
+            <Field label={t("sections.med_flags_label")} optional optionalLabel={t("optional")}>
               <div className="flex flex-wrap gap-2">
-                {MED_FLAGS.map((m) => {
-                  const on = form.med_flags.includes(m);
+                {MED_FLAG_IDS.map((mid) => {
+                  const label = t(`med_flags.${mid}`);
+                  const on = form.med_flags.includes(label);
                   return (
                     <button
-                      key={m}
+                      key={mid}
                       type="button"
                       onClick={() => setForm({
                         ...form,
-                        med_flags: on ? form.med_flags.filter((x) => x !== m) : [...form.med_flags, m],
+                        med_flags: on ? form.med_flags.filter((x) => x !== label) : [...form.med_flags, label],
                       })}
                       className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
-                    >{m}</button>
+                    >{label}</button>
                   );
                 })}
               </div>
@@ -344,123 +341,165 @@ function IntakePage() {
           </Section>
 
           {/* SMART GOAL */}
-          <Section number={2} title="Your goal">
-            <Field label="What do you want to achieve?">
-              <Textarea value={form.smart_specific} onChange={(e) => setForm({ ...form, smart_specific: e.target.value })} placeholder="e.g. lose 5kg, run a 10k, get stronger…" rows={3} />
+          <Section number={2} title={t("sections.goal_title")}>
+            <Field label={t("sections.goal_what")}>
+              <Textarea value={form.smart_specific} onChange={(e) => setForm({ ...form, smart_specific: e.target.value })} placeholder={t("sections.goal_what_placeholder")} rows={3} />
             </Field>
-            <Field label="How will you measure success?">
+            <Field label={t("sections.goal_measure")}>
               <Input value={form.smart_measurable} onChange={(e) => setForm({ ...form, smart_measurable: e.target.value })} />
             </Field>
-            <Field label="By when?">
+            <Field label={t("sections.goal_when")}>
               <Input type="date" value={form.smart_deadline} onChange={(e) => setForm({ ...form, smart_deadline: e.target.value })} />
             </Field>
-            <Field label="Anything else we should know about your goal?" optional>
+            <Field label={t("sections.goal_extra")} optional optionalLabel={t("optional")}>
               <Textarea value={form.smart_extra} onChange={(e) => setForm({ ...form, smart_extra: e.target.value })} rows={2} />
             </Field>
           </Section>
 
           {/* READINESS */}
-          <Section number={3} title="How ready do you feel right now?">
+          <Section number={3} title={t("sections.readiness_title")}>
             <div className="flex flex-wrap gap-2">
-              {READINESS.map((r) => (
+              {READINESS_IDS.map((rid) => (
                 <button
-                  key={r.id}
+                  key={rid}
                   type="button"
-                  onClick={() => setForm({ ...form, readiness_stage: r.id })}
-                  className={`rounded-full border px-4 py-2 text-sm transition ${form.readiness_stage === r.id ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setForm({ ...form, readiness_stage: rid })}
+                  className={`rounded-full border px-4 py-2 text-sm transition ${form.readiness_stage === rid ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
                 >
-                  {r.label}
+                  {t(`readiness.${rid}`)}
                 </button>
               ))}
             </div>
           </Section>
 
           {/* TRAINING SETUP */}
-          <Section number={4} title="Training setup">
-            <Field label="Have you trained before?">
-              <Pills options={["Beginner", "Intermediate", "Advanced"]} value={form.experience_level} onChange={(v) => setForm({ ...form, experience_level: v })} />
+          <Section number={4} title={t("sections.training_title")}>
+            <Field label={t("sections.training_experience")}>
+              <Pills
+                options={[
+                  { id: "Beginner", label: t("experience.beginner") },
+                  { id: "Intermediate", label: t("experience.intermediate") },
+                  { id: "Advanced", label: t("experience.advanced") },
+                ]}
+                value={form.experience_level}
+                onChange={(v) => setForm({ ...form, experience_level: v })}
+              />
             </Field>
-            <Field label="How many days a week can you train?">
-              <Pills options={["1","2","3","4","5","6","7"]} value={form.training_days_per_week} onChange={(v) => setForm({ ...form, training_days_per_week: v })} />
+            <Field label={t("sections.training_days")}>
+              <Pills
+                options={["1","2","3","4","5","6","7"].map((n) => ({ id: n, label: n }))}
+                value={form.training_days_per_week}
+                onChange={(v) => setForm({ ...form, training_days_per_week: v })}
+              />
             </Field>
-            <Field label="How long can each session be?">
-              <Pills options={["30","45","60","75","90"]} value={form.session_duration_minutes} onChange={(v) => setForm({ ...form, session_duration_minutes: v })} suffix="min" />
+            <Field label={t("sections.training_duration")}>
+              <Pills
+                options={["30","45","60","75","90"].map((n) => ({ id: n, label: `${n} min` }))}
+                value={form.session_duration_minutes}
+                onChange={(v) => setForm({ ...form, session_duration_minutes: v })}
+              />
             </Field>
-            <Field label="Where will you train?">
-              <Pills options={["Home","Gym","Outdoor","Mixed"]} value={form.training_location} onChange={(v) => setForm({ ...form, training_location: v })} />
+            <Field label={t("sections.training_location")}>
+              <Pills
+                options={[
+                  { id: "Home", label: t("location.home") },
+                  { id: "Gym", label: t("location.gym") },
+                  { id: "Outdoor", label: t("location.outdoor") },
+                  { id: "Mixed", label: t("location.mixed") },
+                ]}
+                value={form.training_location}
+                onChange={(v) => setForm({ ...form, training_location: v })}
+              />
             </Field>
-            <Field label="What equipment do you have?">
+            <Field label={t("sections.training_equipment")}>
               <div className="flex flex-wrap gap-2">
-                {EQUIPMENT.map((eq) => {
-                  const on = form.available_equipment.includes(eq);
+                {EQUIPMENT_IDS.map((eid) => {
+                  // Persist the EN canonical label for backend compatibility.
+                  const enLabels: Record<string, string> = {
+                    barbell: "Barbell", dumbbells: "Dumbbells", kettlebells: "Kettlebells",
+                    cable_machine: "Cable machine", bench: "Bench", pull_up_bar: "Pull-up bar",
+                    bands: "Bands", bodyweight: "Bodyweight only",
+                  };
+                  const persisted = enLabels[eid];
+                  const label = t(`equipment.${eid}`);
+                  const on = form.available_equipment.includes(persisted);
                   return (
                     <button
-                      key={eq}
+                      key={eid}
                       type="button"
                       onClick={() => setForm({
                         ...form,
-                        available_equipment: on ? form.available_equipment.filter((x) => x !== eq) : [...form.available_equipment, eq],
+                        available_equipment: on ? form.available_equipment.filter((x) => x !== persisted) : [...form.available_equipment, persisted],
                       })}
                       className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
-                    >{eq}</button>
+                    >{label}</button>
                   );
                 })}
               </div>
             </Field>
-            <Field label="Any current injuries or pain?" optional>
+            <Field label={t("sections.training_injuries")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.injuries} onChange={(e) => setForm({ ...form, injuries: e.target.value })} />
             </Field>
-            <Field label="Any medical conditions we should know about?" optional>
+            <Field label={t("sections.training_conditions")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.medical_conditions} onChange={(e) => setForm({ ...form, medical_conditions: e.target.value })} />
             </Field>
-            <Field label="Anything you really like or really dislike doing?" optional>
+            <Field label={t("sections.training_preferences")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.preferences} onChange={(e) => setForm({ ...form, preferences: e.target.value })} />
             </Field>
           </Section>
 
           {/* LIFESTYLE */}
-          <Section number={5} title="Lifestyle">
-            <SliderField label="How well do you sleep on average?" value={form.sleep_quality} min={1} max={10} onChange={(v) => setForm({ ...form, sleep_quality: v })} legend="1 = poorly · 10 = excellent" />
-            <SliderField label="How stressed do you feel day-to-day?" value={form.stress_level} min={1} max={10} onChange={(v) => setForm({ ...form, stress_level: v })} legend="1 = calm · 10 = overwhelmed" />
-            <Field label="How many hours do you sit per day?">
+          <Section number={5} title={t("sections.lifestyle_title")}>
+            <SliderField label={t("sections.lifestyle_sleep")} value={form.sleep_quality} min={1} max={10} onChange={(v) => setForm({ ...form, sleep_quality: v })} legend={t("sections.lifestyle_sleep_legend")} />
+            <SliderField label={t("sections.lifestyle_stress")} value={form.stress_level} min={1} max={10} onChange={(v) => setForm({ ...form, stress_level: v })} legend={t("sections.lifestyle_stress_legend")} />
+            <Field label={t("sections.lifestyle_seated")}>
               <Input inputMode="numeric" value={form.ext_hours_seated} onChange={(e) => setForm({ ...form, ext_hours_seated: e.target.value })} />
             </Field>
-            <Field label="Roughly how many steps do you do per day?" optional>
+            <Field label={t("sections.lifestyle_steps")} optional optionalLabel={t("optional")}>
               <Input inputMode="numeric" value={form.ext_daily_steps} onChange={(e) => setForm({ ...form, ext_daily_steps: e.target.value })} />
             </Field>
-            <Field label="What's your job like?">
-              <Pills options={["Desk","Manual","Mixed","Other"]} value={form.ext_job_type} onChange={(v) => setForm({ ...form, ext_job_type: v })} />
+            <Field label={t("sections.lifestyle_job")}>
+              <Pills
+                options={[
+                  { id: "Desk", label: t("job.desk") },
+                  { id: "Manual", label: t("job.manual") },
+                  { id: "Mixed", label: t("job.mixed") },
+                  { id: "Other", label: t("job.other") },
+                ]}
+                value={form.ext_job_type}
+                onChange={(v) => setForm({ ...form, ext_job_type: v })}
+              />
             </Field>
-            <Field label="How is your energy through the day?" optional>
+            <Field label={t("sections.lifestyle_energy")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.energy_levels} onChange={(e) => setForm({ ...form, energy_levels: e.target.value })} />
             </Field>
-            <Field label="How well do you recover from physical effort?" optional>
+            <Field label={t("sections.lifestyle_recovery")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.recovery_capacity} onChange={(e) => setForm({ ...form, recovery_capacity: e.target.value })} />
             </Field>
           </Section>
 
           {/* NUTRITION */}
-          <Section number={6} title="Nutrition">
-            <Field label="How many meals do you eat per day?">
+          <Section number={6} title={t("sections.nutrition_title")}>
+            <Field label={t("sections.nutrition_meals")}>
               <Input inputMode="numeric" value={form.ext_meals_per_day} onChange={(e) => setForm({ ...form, ext_meals_per_day: e.target.value })} />
             </Field>
-            <Field label="How much water do you drink per day? (litres)">
+            <Field label={t("sections.nutrition_water")}>
               <Input inputMode="decimal" value={form.ext_water_l_per_day} onChange={(e) => setForm({ ...form, ext_water_l_per_day: e.target.value })} />
             </Field>
-            <SliderField label="Roughly, how often do you eat processed/fast food?" value={form.ext_processed_food} min={1} max={5} onChange={(v) => setForm({ ...form, ext_processed_food: v })} legend="1 = never · 5 = daily" />
-            <Field label="How many alcoholic drinks per week?">
+            <SliderField label={t("sections.nutrition_processed")} value={form.ext_processed_food} min={1} max={5} onChange={(v) => setForm({ ...form, ext_processed_food: v })} legend={t("sections.nutrition_processed_legend")} />
+            <Field label={t("sections.nutrition_alcohol")}>
               <Input inputMode="numeric" value={form.ext_alcohol_units_week} onChange={(e) => setForm({ ...form, ext_alcohol_units_week: e.target.value })} />
             </Field>
-            <Field label="Anything else about how you eat — allergies, patterns, what works for you?" optional>
+            <Field label={t("sections.nutrition_habits")} optional optionalLabel={t("optional")}>
               <Textarea rows={3} value={form.nutrition_habits} onChange={(e) => setForm({ ...form, nutrition_habits: e.target.value })} />
             </Field>
           </Section>
         </div>
 
         <div className="mt-12 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button variant="outline" onClick={saveDraft} disabled={submitting}>Save and finish later</Button>
+          <Button variant="outline" onClick={saveDraft} disabled={submitting}>{t("save_draft")}</Button>
           <Button onClick={submit} disabled={submitting}>
-            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</> : "Submit to my trainer"}
+            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("submitting")}</> : t("submit")}
           </Button>
         </div>
 
@@ -471,15 +510,16 @@ function IntakePage() {
 }
 
 function ThankYou({ ctx }: { ctx: IntakeContext }) {
-  const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || "Your trainer";
+  const { t } = useTranslation("intake");
+  const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || t("your_trainer");
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="max-w-md text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent">
           <Check className="h-6 w-6" />
         </div>
-        <h1 className="mt-5 text-2xl font-light tracking-tight">Thanks {ctx.client?.first_name}.</h1>
-        <p className="mt-3 text-sm text-muted-foreground">{trainerName} will review this before your first session.</p>
+        <h1 className="mt-5 text-2xl font-light tracking-tight">{t("thanks_title", { name: ctx.client?.first_name ?? "" })}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{t("thanks_desc", { trainer: trainerName })}</p>
         <PoweredBy />
       </div>
     </div>
@@ -487,9 +527,10 @@ function ThankYou({ ctx }: { ctx: IntakeContext }) {
 }
 
 function PoweredBy() {
+  const { t } = useTranslation("intake");
   return (
     <p className="mt-16 text-center text-[10px] uppercase tracking-widest text-muted-foreground/50">
-      Powered by <a href="https://forge.app" className="hover:underline">Forge</a>
+      {t("powered_by")} <a href="https://forge.app" className="hover:underline">Forge</a>
     </p>
   );
 }
@@ -506,27 +547,27 @@ function Section({ number, title, children }: { number: number; title: string; c
   );
 }
 
-function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {
+function Field({ label, optional, optionalLabel, children }: { label: string; optional?: boolean; optionalLabel?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm">{label} {optional && <span className="text-[11px] text-muted-foreground/70">(optional)</span>}</Label>
+      <Label className="text-sm">{label} {optional && <span className="text-[11px] text-muted-foreground/70">{optionalLabel ?? "(optional)"}</span>}</Label>
       {children}
     </div>
   );
 }
 
-function Pills({ options, value, onChange, suffix }: { options: string[]; value: string; onChange: (v: string) => void; suffix?: string }) {
+function Pills({ options, value, onChange }: { options: { id: string; label: string }[]; value: string; onChange: (v: string) => void }) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((o) => {
-        const on = value === o;
+        const on = value === o.id;
         return (
           <button
-            key={o}
+            key={o.id}
             type="button"
-            onClick={() => onChange(o)}
+            onClick={() => onChange(o.id)}
             className={`rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-          >{o}{suffix ? ` ${suffix}` : ""}</button>
+          >{o.label}</button>
         );
       })}
     </div>
@@ -547,6 +588,7 @@ function SliderField({ label, value, min, max, onChange, legend }: { label: stri
 }
 
 function SaveIndicator({ status, lastSavedAt }: { status: "idle" | "saving" | "saved"; lastSavedAt: number | null }) {
+  const { t } = useTranslation("intake");
   const [, force] = useState(0);
   useEffect(() => {
     const id = window.setInterval(() => force((n) => n + 1), 30_000);
@@ -554,10 +596,10 @@ function SaveIndicator({ status, lastSavedAt }: { status: "idle" | "saving" | "s
   }, []);
   let text = "";
   let dot = "";
-  if (status === "saving") { text = "Saving…"; dot = "bg-accent animate-pulse"; }
+  if (status === "saving") { text = t("saving"); dot = "bg-accent animate-pulse"; }
   else if (status === "saved") {
     const ago = lastSavedAt ? Math.floor((Date.now() - lastSavedAt) / 60000) : 0;
-    text = ago < 1 ? "Saved · just now" : `Saved · ${ago}m ago`;
+    text = ago < 1 ? t("saved_just_now") : t("saved_minutes_ago", { minutes: ago });
     dot = "bg-muted-foreground/40";
   }
   if (!text) return <div className="ml-auto" />;
