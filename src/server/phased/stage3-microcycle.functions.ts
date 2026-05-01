@@ -6,7 +6,6 @@ import {
   BriefSchema,
   GenerationStateSchema,
   PhasedDaySchema,
-  type PhasedDay,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 
