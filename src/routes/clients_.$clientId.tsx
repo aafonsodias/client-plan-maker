@@ -1622,10 +1622,10 @@ function ClientDetail() {
             />
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="lg" disabled={busy}>
+                <Button variant="outline" size="sm" disabled={busy} className="w-full sm:w-auto">
                   <Eraser className="mr-2 h-4 w-4" /> {t("discard.button")}
                 </Button>
               </AlertDialogTrigger>
