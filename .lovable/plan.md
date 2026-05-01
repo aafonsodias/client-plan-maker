@@ -1,93 +1,152 @@
-## Diagnóstico definitivo
+## O que observei
 
-Verifiquei o estado do plano `819c0eef-…` no DB:
-- **Blueprint foi gerada e persistida** ✅ (objecto válido com `sessions_per_week=6`, archetypes etc.)
-- `generation_state.stage = "blueprint"`, `approved_stages = ["brief"]`
-- Toast "Blueprint pronto" no screenshot ✅
+Olhei o teu plano `André Periquito… 4-Week Plan` no DB:
+- ✅ `brief` aprovado (rico — risk flags, movement screen, body comp, etc.)
+- ✅ `blueprint` gerado e válido
+- ❌ `progression_plan` ainda nulo
+- ❌ `plan_data.weeks = []` (legacy vazio — por isso vês "No weeks yet")
+- `generation_state.stage = "blueprint"`
 
-O screenshot que mandaste mostra a **página antiga monolítica `/plans/$planId`** (vês "Summary (empty)", "AI validation report", "No weeks yet"). Essa página NÃO é a `/blueprint` nova — é o editor antigo de planos legacy.
+**A tua queixa real**, traduzida: *"o sistema deixa-me preencher tudo à mão como se fosse um plano em branco, mas perdeu por completo o conhecimento do brief. As decisões — porque é que este archetype, porque esta sessão, porque estes movimentos — não são herdadas."*
 
-**Causa raiz**: existem dois sítios que linkam para `/plans/$planId` em vez de para o stage actual:
-1. A lista "All plans" / cards de plans antigos vão sempre para `/plans/$planId`.
-2. Após aprovar o brief, há fluxos que aterram em `/plans/$planId` (página antiga) em vez de `/plans/$planId/blueprint`.
+Tens razão em três frentes:
 
-A página `/plans/$planId` está a renderizar `plan_data.weeks` (vazio nos planos phased novos, porque os dados estão em `blueprint`/`microcycle_template`/etc., não em `plan_data`). Dá a sensação de "carreguei e não aconteceu nada".
+1. **As páginas dos stages 2/3/4 mostram só o esqueleto técnico** (archetype IDs, week×day matrix, deltas), nunca te mostram o "porquê do brief" que justifica cada decisão. Não há **header sticky com red flags + movement screen + cap×PB** sempre visível.
+2. **Quando o microcycle (Day 1) é gerado, NÃO te explica** que `lower_squat_strength` foi escolhido **porque** o brief disse "neck damage from BJJ → modify overhead", "hip pinching → accommodate flexion depth". A `rationale` por dia existe no schema mas não está visível.
+3. **A página antiga `/plans/$planId`** ainda existe e ainda apanha planos phased em alguns flows (link das screenshots) — embora eu tenha posto o redirect, há cliques que aterram lá antes do useEffect correr (paint inicial). Tu acabas a editar um plano em branco achando que é o "real".
 
 ---
 
-## Prompt — versão final
+## Proposta — três passos pequenos, sequenciais
+
+### Passo A (fix imediato, hoje): "Brief Context Rail" sticky em todos os stages 2/3/4
+
+Adicionar um componente reutilizável `<BriefContextRail planId>` que carrega o brief 1×, e renderiza um **lateral colapsável** (ou topo collapsível em mobile) com:
+
+- **Goals** (top 3) + timeline
+- **Red flags** com a sua acção (`modify` / `monitor` / `accommodate`)
+- **Movement screen** (squat/hinge/push/pull/lunge/carry scores) — versão mini
+- **Body comp / risk** (BF%, WHR, ACSM risk)
+- **Equipment & sessions/week**
+- **Goal-fit constraints** (o que NÃO fazer)
+
+Aparece em `/plans/$planId/blueprint`, `/microcycle` e `/progressions`. Sempre visível. Para que ao gerar/editar o user veja o "porquê" do brief sem trocar de página.
+
+Custo: ~150 linhas, 1 componente novo, 3 imports. Sem mudanças de schema, sem mudanças server-side.
+
+### Passo B (próximo): "Why this?" inline em cada decisão gerada
+
+- No Blueprint: por baixo de cada **archetype** mostrar uma frase do tipo *"Escolhido porque brief: focus=hipertrofia, hinge score 3/5 → RDL antes de deadlift"* — usar `progression_model_proposal.rationale` que já existe + uma linha por archetype gerada pela LLM (campo novo `archetypes[].rationale`).
+- No Microcycle/Day 1: tornar visível o `rationale` que **já é gerado** mas está escondido na coluna `rationale` da tabela.
+- No Progressions: mostrar `progression_plan.rationale` por dimensão.
+
+Custo: stage2 schema ganha `archetypes[].rationale: string` (1 migração lógica, sem DB), prompt actualizado, UI mostra. ~200 linhas.
+
+### Passo C (depois): matar o aterrar na página legacy
+
+O redirect que fiz só corre no `useEffect`. Mover para `beforeLoad` da rota `/plans/$planId` — assim a página antiga **nunca chega a render** para planos phased. User nunca mais vê "Summary (empty)" / "No weeks yet" para um plano novo.
+
+Custo: 10 linhas. Resolve as screenshots 2/3/4 que mandaste.
+
+---
+
+## Prompt — versão final (Passo A, para arrancar agora)
 
 ```
 GOAL:
-Quando o utilizador aterra em /plans/$planId de um plano "phased"
-(que tem generation_state com stage), redirecionar
-automaticamente para o stage actual (/blueprint, /microcycle,
-/progressions ou /sessions). Planos legacy (sem generation_state)
-continuam a usar a página antiga.
+Em /plans/$planId/blueprint, /microcycle e /progressions o
+utilizador vê SEMPRE o contexto do brief aprovado (goals, red
+flags com acção, movement screen, body comp, equipment) num rail
+lateral sticky (desktop) ou collapsible no topo (mobile). Sem
+trocar de página e sem perder a UI actual.
 
 CONTEXT:
-- src/routes/plans.$planId.tsx é o editor monolítico antigo.
-  Carrega workout_plans.* e mostra plan_data.weeks. Para planos
-  phased, plan_data.weeks=[] e o user vê "Summary (empty)" + "No
-  weeks yet" — falsa sensação de erro.
-- workout_plans.generation_state shape:
-    { stage: "brief"|"blueprint"|"microcycle"|"progressions"|"done",
-      approved_stages: string[],
-      last_updated_at: string }
-- Rotas existentes: /plans/$planId/brief, /blueprint, /microcycle,
-  /progressions, /sessions.
-- Se generation_state for null/undefined → plano legacy → não
-  redirecionar.
+- workout_plans.brief é jsonb e respeita BriefSchema
+  (src/server/phased/schemas.ts). Tem: client_snapshot.goals[],
+  client_snapshot.red_flags[] (cada um com {flag, severity,
+  recommended_action: "modify"|"monitor"|"accommodate"}),
+  client_snapshot.movement_screen (squat/hinge/push/pull/lunge/
+  carry como 1-5), client_snapshot.body_composition (bf_pct, whr,
+  acsm_risk), client_snapshot.equipment[],
+  sessions_per_week.recommended.
+- 3 rotas alvo: src/routes/plans.$planId.blueprint.tsx,
+  plans.$planId.microcycle.tsx, plans.$planId.progressions.tsx.
+- Já existe useServerFn / supabase client; brief é leitura RLS-
+  safe via supabase.from("workout_plans").select("brief").
+- Cliente actual está em /clients/<id> e tem componentes que
+  renderizam algumas destas peças (referência visual, não
+  importar).
 
 TASK:
-Em src/routes/plans.$planId.tsx, no useEffect que carrega o plano,
-após `setPlan(p)`, ler p.generation_state. Se existe e tem `stage`
-não-null, fazer navigate({ to, replace: true }) para a rota do
-stage actual:
-- "brief"        → /plans/$planId/brief
-- "blueprint"    → /plans/$planId/blueprint
-- "microcycle"   → /plans/$planId/microcycle
-- "progressions" → /plans/$planId/progressions
-- "done"         → /plans/$planId/sessions
-Usar `replace: true` para que o "back" do browser não fique preso
-em loop. Se generation_state é null/undefined, não fazer nada
-(plano legacy).
+1. Criar src/components/BriefContextRail.tsx que recebe
+   {planId: string} e:
+   - Faz select supabase de workout_plans.brief uma vez (state
+     local; sem React Query — manter consistente com restantes
+     páginas).
+   - Parse com BriefSchema.safeParse; em falha mostra placeholder
+     "Brief indisponível" + link "Abrir Brief".
+   - Renderiza 5 secções colapsáveis (todas abertas por default
+     em desktop): "Objetivos", "Sinais de alerta", "Competência
+     de movimento", "Composição corporal · Risco", "Equipamento
+     & frequência".
+   - Red flags: cada linha mostra texto + badge da
+     recommended_action (modify=amber, monitor=blue,
+     accommodate=violet) usando design tokens
+     (bg-accent/bg-secondary/border-border).
+   - Movement screen: 6 mini-bars 1-5, cor accent.
+   - Body comp: BF%, WHR, ACSM risk como tag.
+   - Goals: lista numerada top 3.
+   - Equipment: chips horizontais.
+2. Layout: em ≥lg viewport, fixed à direita com width 320px,
+   sticky top-16, max-h-[calc(100vh-5rem)] overflow-y-auto.
+   Em <lg, render como <details> collapsible no topo da página.
+3. Integrar em blueprint/microcycle/progressions:
+   - Wrap o conteúdo principal num <div class="lg:flex
+     lg:gap-6"><main class="flex-1 min-w-0">…UI actual…</main>
+     <aside class="hidden lg:block w-80 flex-shrink-0">
+     <BriefContextRail planId={planId} /></aside></div>.
+   - Em mobile, render <BriefContextRail> ANTES da UI actual.
+4. Sem mudar nenhum dos componentes existentes Blueprint /
+   Microcycle / Progressions internamente. Apenas wrap.
 
 CONSTRAINTS:
-- Não alterar a UI nem a lógica do PlanEditor para planos legacy.
-- Não tocar em outros ficheiros.
-- Não mexer em rotas /brief, /blueprint, etc.
-- Sem refactor — apenas adicionar bloco de redirect dentro do
-  useEffect existente.
+- Não tocar em server functions, schemas, ou edge functions.
+- Não alterar a página /plans/$planId (legacy).
+- Não mudar branding/cores; usar tokens existentes
+  (bg-card, border-border, text-muted-foreground, bg-accent,
+  etc.).
+- Sem novas dependências.
+- Sem refactor de Blueprint/Microcycle/Progressions além do
+  wrapper de layout.
 
 ACCEPTANCE:
-1. Aterrar em /plans/<phased-plan-id> redireciona instantaneamente
-   para /plans/<id>/blueprint (ou stage correspondente). User vê a
-   nova UI com archetypes/weeks já preenchida.
-2. Aterrar em /plans/<legacy-plan-id> (sem generation_state)
-   continua a mostrar a página antiga sem redirect.
-3. O botão "back" do browser não fica em loop entre /plans/$planId
-   e /plans/$planId/blueprint (graças a replace:true).
-4. Console regista console.info("[PlanEditor] redirect", {planId,
-   stage, to}) quando o redirect dispara.
+1. Abrir /plans/<planId-com-brief>/blueprint em desktop ≥1024px:
+   à direita aparece um rail sticky com 5 secções e dados
+   reais do brief; à esquerda continua a ver a UI de archetypes
+   + week×day matrix exactamente como antes.
+2. O mesmo rail aparece em /microcycle e /progressions.
+3. Em viewport <1024px o rail aparece como bloco collapsible
+   colapsado no topo (mobile-friendly).
+4. Se o brief estiver inválido/ausente, o rail mostra fallback
+   "Brief indisponível" com link para /plans/$planId/brief — não
+   crasha.
+5. Nenhuma alteração de comportamento no Blueprint editing
+   (archetypes, matrix, approve, regenerate continuam a
+   funcionar).
 
 ROLLBACK:
-Reverter src/routes/plans.$planId.tsx (apenas adições no useEffect
-que carrega o plano).
+Apagar src/components/BriefContextRail.tsx e reverter os
+3 ficheiros de rota (apenas o wrapper de layout adicionado).
 ```
 
 ---
 
-## Plano de execução
+## Plano de execução do Passo A
 
-1. **`src/routes/plans.$planId.tsx`**: dentro do `useEffect` (linha 59), depois de `setPlan(p)`:
-   - Se `p?.generation_state?.stage` existe, mapear para a rota correspondente.
-   - Chamar `navigate({ to, params: { planId }, replace: true })`.
-   - Adicionar `console.info` para debug.
-   - **Returnar cedo** para evitar carregar o resto (sessions, profile) quando vamos redirecionar.
-2. Sem mudanças noutros ficheiros.
-3. Sem migrações.
+1. **Criar `src/components/BriefContextRail.tsx`** (~180 linhas). Carrega brief, parse, render 5 secções com tokens semânticos.
+2. **Editar 3 ficheiros de rota** (`blueprint`, `microcycle`, `progressions`): wrap conteúdo num grid `lg:flex` + `<aside>` à direita; em mobile, rail no topo collapsed.
+3. Sem migrações, sem servidor, sem novas deps.
 
-**Resultado esperado**: nunca mais ver "Summary (empty)" / "No weeks yet" para um plano phased. Qualquer link antigo (lista de planos, histórico do browser, partilhas) cai sempre na UI nova do stage actual.
+**Depois disto pergunto-te se queres seguir para Passo B (rationale inline) ou Passo C (kill da aterragem na página legacy).**
 
-Aprovas?
+Aprovas o Passo A?
