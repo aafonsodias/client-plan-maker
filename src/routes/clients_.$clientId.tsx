@@ -515,6 +515,20 @@ function ClientDetail() {
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
           provenance: (ext.provenance as Record<string, "client" | "trainer-edited">) ?? {},
+          squat_form_criteria: (a as any).squat_form_criteria ?? {},
+          squat_capacity: (a as any).squat_capacity ?? {},
+          hinge_form_criteria: (a as any).hinge_form_criteria ?? {},
+          hinge_capacity: (a as any).hinge_capacity ?? {},
+          push_form_criteria: (a as any).push_form_criteria ?? {},
+          push_capacity: (a as any).push_capacity ?? {},
+          pull_form_criteria: (a as any).pull_form_criteria ?? {},
+          pull_capacity: (a as any).pull_capacity ?? {},
+          carry_form_criteria: (a as any).carry_form_criteria ?? {},
+          carry_capacity: (a as any).carry_capacity ?? {},
+          lunge_form_criteria: (a as any).lunge_form_criteria ?? {},
+          lunge_capacity: (a as any).lunge_capacity ?? {},
+          screen_not_assessed: (a as any).screen_not_assessed ?? {},
+          current_capacity_vs_pb: (a as any).current_capacity_vs_pb ?? null,
         });
       }
       // Check localStorage backup; prefer it if newer
