@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -42,21 +42,41 @@ export function IntakeLinkPanel({
   const review = useServerFn(markIntakeReviewed);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Local override: after a successful generate/review the parent should
+  // patch its `client` state via onChange, but if that callback is missed
+  // or batched late we still want the panel to render the new link
+  // immediately. This local copy takes precedence over the prop for the
+  // fields it owns.
+  const [override, setOverride] = useState<Partial<IntakeFields> | null>(null);
+  // Reset the override whenever the parent finally sends matching data,
+  // so subsequent prop changes (realtime, refetch, etc.) win again.
+  useEffect(() => {
+    if (!override) return;
+    if (
+      override.intake_token === intake.intake_token &&
+      override.intake_status === intake.intake_status
+    ) {
+      setOverride(null);
+    }
+  }, [intake.intake_token, intake.intake_status, override]);
+  const view: IntakeFields = { ...intake, ...(override ?? {}) };
 
-  const url = intake.intake_token
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/intake/${intake.intake_token}`
+  const url = view.intake_token
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/intake/${view.intake_token}`
     : "";
 
   const doGenerate = async () => {
     setBusy(true);
     try {
       const row = await generate({ data: { clientId } });
-      onChange({
+      const patch = {
         intake_token: row.intake_token,
         intake_token_expires_at: row.intake_token_expires_at,
         intake_status: row.intake_status,
         intake_submitted_at: null,
-      });
+      } as Partial<IntakeFields>;
+      setOverride(patch);
+      onChange(patch);
       toast.success("Intake link ready");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not generate link.");
@@ -84,6 +104,7 @@ export function IntakeLinkPanel({
     setBusy(true);
     try {
       await review({ data: { clientId } });
+      setOverride((o) => ({ ...(o ?? {}), intake_status: "reviewed" }));
       onChange({ intake_status: "reviewed" });
       toast.success("Intake marked reviewed");
     } catch (e: any) {
@@ -92,13 +113,13 @@ export function IntakeLinkPanel({
   };
 
   /* State 3 — submitted */
-  if (intake.intake_status === "submitted") {
+  if (view.intake_status === "submitted") {
     return (
       <div className="rounded-xl border border-accent/40 bg-accent/10 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-accent">Client submitted intake — review and complete hands-on sections.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Submitted {timeAgo(intake.intake_submitted_at)}.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Submitted {timeAgo(view.intake_submitted_at)}.</p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => {
@@ -115,7 +136,7 @@ export function IntakeLinkPanel({
   }
 
   /* State 1 — no link */
-  if (!intake.intake_token || intake.intake_status === "not_sent") {
+  if (!view.intake_token || view.intake_status === "not_sent") {
     return (
       <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Client intake link</p>
@@ -130,8 +151,8 @@ export function IntakeLinkPanel({
   }
 
   /* State 2 — link generated, not yet submitted (sent / opened) */
-  const dotColor = intake.intake_status === "opened" ? "bg-accent" : "bg-muted-foreground/50";
-  const statusText = intake.intake_status === "opened" ? "Opened — not submitted" : "Not opened yet";
+  const dotColor = view.intake_status === "opened" ? "bg-accent" : "bg-muted-foreground/50";
+  const statusText = view.intake_status === "opened" ? "Opened — not submitted" : "Not opened yet";
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -179,13 +200,13 @@ export function IntakeLinkPanel({
       <div className="mt-3 flex items-center gap-2 text-[11px] text-muted-foreground">
         <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
         <span>{statusText}</span>
-        {intake.intake_token_expires_at && (
+        {view.intake_token_expires_at && (
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="ml-auto text-muted-foreground/70">Expires {timeAgo(intake.intake_token_expires_at).replace(" ago", "")} from now</span>
+                <span className="ml-auto text-muted-foreground/70">Expires {timeAgo(view.intake_token_expires_at).replace(" ago", "")} from now</span>
               </TooltipTrigger>
-              <TooltipContent>Link valid until {new Date(intake.intake_token_expires_at).toLocaleDateString()}</TooltipContent>
+              <TooltipContent>Link valid until {new Date(view.intake_token_expires_at).toLocaleDateString()}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
