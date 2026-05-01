@@ -261,6 +261,23 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
     max_lifts: assessment.max_lifts || null,
     resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
     cardio_capacity: assessment.cardio_capacity || null,
+    squat_form_criteria: assessment.squat_form_criteria ?? {},
+    squat_capacity: assessment.squat_capacity ?? {},
+    hinge_form_criteria: assessment.hinge_form_criteria ?? {},
+    hinge_capacity: assessment.hinge_capacity ?? {},
+    push_form_criteria: assessment.push_form_criteria ?? {},
+    push_capacity: assessment.push_capacity ?? {},
+    pull_form_criteria: assessment.pull_form_criteria ?? {},
+    pull_capacity: assessment.pull_capacity ?? {},
+    carry_form_criteria: assessment.carry_form_criteria ?? {},
+    carry_capacity: assessment.carry_capacity ?? {},
+    lunge_form_criteria: assessment.lunge_form_criteria ?? {},
+    lunge_capacity: assessment.lunge_capacity ?? {},
+    screen_not_assessed: assessment.screen_not_assessed ?? {},
+    current_capacity_vs_pb:
+      typeof assessment.current_capacity_vs_pb === "number"
+        ? assessment.current_capacity_vs_pb
+        : null,
     parq_passed: !parqHasYes(assessment.parq),
     acsm_risk_category: computeRisk(assessment.risk),
     waist_cm: assessment.waist_cm ? Number(assessment.waist_cm) : null,
