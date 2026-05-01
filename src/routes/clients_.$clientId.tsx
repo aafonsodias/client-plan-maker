@@ -2723,15 +2723,16 @@ function MovementCompetencyRadar({
           {/* Data shape */}
           <polygon
             points={polyPoints}
-            fill="oklch(var(--accent) / 0.2)"
-            stroke="oklch(var(--accent))"
+            fill="var(--accent)"
+            fillOpacity={0.2}
+            stroke="var(--accent)"
             strokeWidth={1.5}
           />
           {/* Data dots (only for assessed axes) */}
           {axes.map((a, i) => {
             if (a.score == null) return null;
             const p = pointAt(i, a.score / 5);
-            return <circle key={a.label} cx={p.x} cy={p.y} r={3} fill="oklch(var(--accent))" />;
+            return <circle key={a.label} cx={p.x} cy={p.y} r={3} fill="var(--accent)" />;
           })}
           {/* Labels */}
           {axes.map((a, i) => {
