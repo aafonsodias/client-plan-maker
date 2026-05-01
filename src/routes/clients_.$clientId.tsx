@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
@@ -37,6 +37,9 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
+import MovementPatternCard from "@/components/MovementPatternCard";
+import { PATTERN_IDS, formScore, type PatternId } from "@/lib/movement-criteria";
+import { Slider } from "@/components/ui/slider";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -93,6 +96,7 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
   training: [
     "experience_level", "training_days_per_week", "session_duration_minutes",
     "training_location", "available_equipment", "injuries", "medical_conditions", "preferences",
+    "current_capacity_vs_pb",
   ],
   lifestyle: [
     "sleep_quality", "stress_level", "ext_hours_seated", "ext_daily_steps",
@@ -108,8 +112,13 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
   ],
   posture: ["standing_posture_notes", "known_imbalances", "dominant_side"],
   screen: [
-    "squat_depth_score", "squat_depth_note", "overhead_reach_score", "overhead_reach_note",
-    "hip_hinge_score", "hip_hinge_note", "single_leg_balance_score", "single_leg_balance_note",
+    "squat_form_criteria", "squat_capacity",
+    "hinge_form_criteria", "hinge_capacity",
+    "push_form_criteria", "push_capacity",
+    "pull_form_criteria", "pull_capacity",
+    "carry_form_criteria", "carry_capacity",
+    "lunge_form_criteria", "lunge_capacity",
+    "screen_not_assessed",
   ],
   history: ["years_training", "previous_program_style", "max_lifts"],
   performance: ["resting_heart_rate", "cardio_capacity", "ext_cardio_test"],
@@ -180,8 +189,11 @@ function isSectionComplete(id: string, a: any): boolean {
     case "posture":
       return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
     case "screen":
-      return hasVal(a.squat_depth_score) || hasVal(a.overhead_reach_score) ||
-             hasVal(a.hip_hinge_score) || hasVal(a.single_leg_balance_score);
+      return PATTERN_IDS.every((p) => {
+        if (a.screen_not_assessed?.[p] === true) return true;
+        const fc = a[`${p}_form_criteria`];
+        return fc && formScore(fc) >= 3;
+      });
     case "history":
       return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
     case "performance":
@@ -249,6 +261,23 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
     max_lifts: assessment.max_lifts || null,
     resting_heart_rate: assessment.resting_heart_rate ? Number(assessment.resting_heart_rate) : null,
     cardio_capacity: assessment.cardio_capacity || null,
+    squat_form_criteria: assessment.squat_form_criteria ?? {},
+    squat_capacity: assessment.squat_capacity ?? {},
+    hinge_form_criteria: assessment.hinge_form_criteria ?? {},
+    hinge_capacity: assessment.hinge_capacity ?? {},
+    push_form_criteria: assessment.push_form_criteria ?? {},
+    push_capacity: assessment.push_capacity ?? {},
+    pull_form_criteria: assessment.pull_form_criteria ?? {},
+    pull_capacity: assessment.pull_capacity ?? {},
+    carry_form_criteria: assessment.carry_form_criteria ?? {},
+    carry_capacity: assessment.carry_capacity ?? {},
+    lunge_form_criteria: assessment.lunge_form_criteria ?? {},
+    lunge_capacity: assessment.lunge_capacity ?? {},
+    screen_not_assessed: assessment.screen_not_assessed ?? {},
+    current_capacity_vs_pb:
+      typeof assessment.current_capacity_vs_pb === "number"
+        ? assessment.current_capacity_vs_pb
+        : null,
     parq_passed: !parqHasYes(assessment.parq),
     acsm_risk_category: computeRisk(assessment.risk),
     waist_cm: assessment.waist_cm ? Number(assessment.waist_cm) : null,
@@ -399,6 +428,22 @@ function ClientDetail() {
     hip_hinge_note: "",
     single_leg_balance_score: "",
     single_leg_balance_note: "",
+    // Movement screen v2 (form-criterion checklists + capacity)
+    squat_form_criteria: {} as Record<string, boolean>,
+    squat_capacity: {} as Record<string, number | null>,
+    hinge_form_criteria: {} as Record<string, boolean>,
+    hinge_capacity: {} as Record<string, number | null>,
+    push_form_criteria: {} as Record<string, boolean>,
+    push_capacity: {} as Record<string, number | null>,
+    pull_form_criteria: {} as Record<string, boolean>,
+    pull_capacity: {} as Record<string, number | null>,
+    carry_form_criteria: {} as Record<string, boolean>,
+    carry_capacity: {} as Record<string, number | null>,
+    lunge_form_criteria: {} as Record<string, boolean>,
+    lunge_capacity: {} as Record<string, number | null>,
+    screen_not_assessed: {} as Record<string, boolean>,
+    // Setup: current capacity vs personal best (1-10) — drives rebuild/maintain/progress mode
+    current_capacity_vs_pb: null as number | null,
     // Training history
     years_training: "",
     previous_program_style: "",
@@ -487,6 +532,20 @@ function ClientDetail() {
           ext_cardio_value: ext.cardio_value ?? "",
           med_flags: a.med_flags ?? [],
           provenance: (ext.provenance as Record<string, "client" | "trainer-edited">) ?? {},
+          squat_form_criteria: (a as any).squat_form_criteria ?? {},
+          squat_capacity: (a as any).squat_capacity ?? {},
+          hinge_form_criteria: (a as any).hinge_form_criteria ?? {},
+          hinge_capacity: (a as any).hinge_capacity ?? {},
+          push_form_criteria: (a as any).push_form_criteria ?? {},
+          push_capacity: (a as any).push_capacity ?? {},
+          pull_form_criteria: (a as any).pull_form_criteria ?? {},
+          pull_capacity: (a as any).pull_capacity ?? {},
+          carry_form_criteria: (a as any).carry_form_criteria ?? {},
+          carry_capacity: (a as any).carry_capacity ?? {},
+          lunge_form_criteria: (a as any).lunge_form_criteria ?? {},
+          lunge_capacity: (a as any).lunge_capacity ?? {},
+          screen_not_assessed: (a as any).screen_not_assessed ?? {},
+          current_capacity_vs_pb: (a as any).current_capacity_vs_pb ?? null,
         });
       }
       // Check localStorage backup; prefer it if newer
@@ -1131,15 +1190,29 @@ function ClientDetail() {
       />
 
       {/* Compact client snapshot — always visible, summarizes latest assessment */}
-      <ClientSnapshotCard
-        assessment={assessment}
-        sectionAnalyses={sectionAnalyses}
-        riskCategory={riskCategory}
-        whr={whr}
-        lastSavedAt={lastSavedAt}
-      />
+      {lastSavedAt && (
+        <a
+          href="#sintese-da-avaliacao"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("sintese-da-avaliacao")?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }}
+          className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground transition hover:text-foreground"
+        >
+          Última avaliação ·{" "}
+          {new Date(lastSavedAt).toLocaleDateString("pt-PT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}{" "}
+          <ArrowRight className="h-3 w-3" />
+        </a>
+      )}
 
-      <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>
@@ -1160,18 +1233,30 @@ function ClientDetail() {
         <AssessmentSection
           clientId={clientId}
           headerProgress={
-            <>
-              <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <h2 className="shrink-0 text-base font-bold">{t("title")}</h2>
+                <div className="h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full bg-accent/70 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
-                  {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
-                </span>
               </div>
-              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
-            </>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+                <span>
+                  {t("progress_short", {
+                    current: sectionNumber,
+                    total: totalSections,
+                    pct,
+                  })}
+                </span>
+                <span className="hidden sm:inline">
+                  {t("progress_minutes", { minutes: minutesLeft })}
+                </span>
+                <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+              </div>
+            </div>
           }
         >
 
@@ -1184,11 +1269,13 @@ function ClientDetail() {
                 return (
                   <li
                     key={key}
-                    className={`rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
+                    className={`min-w-0 overflow-hidden rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {t(`parq_block.questions.${key}` as const)}</p>
-                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [key]: v } })} />
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                      <p className="min-w-0 flex-1 break-words text-xs"><span className="font-semibold">{idx + 1}.</span> {t(`parq_block.questions.${key}` as const)}</p>
+                      <div className="shrink-0 self-start">
+                        <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [key]: v } })} />
+                      </div>
                     </div>
                     {flagged && (
                       <div className="mt-2 flex animate-fade-in items-start gap-2 rounded-md border border-accent/30 bg-accent/5 p-2 text-[11px] text-muted-foreground">
@@ -1316,6 +1403,26 @@ function ClientDetail() {
 
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
+            <div className="mb-3 rounded-md border border-border bg-background/40 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <Label className="text-xs">Capacidade actual vs PB</Label>
+                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {assessment.current_capacity_vs_pb ?? 5}/10
+                </span>
+              </div>
+              <Slider
+                min={1}
+                max={10}
+                step={1}
+                value={[assessment.current_capacity_vs_pb ?? 5]}
+                onValueChange={([v]) =>
+                  setAssessment({ ...assessment, current_capacity_vs_pb: v })
+                }
+              />
+              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+                1 = muito longe do PB (modo reconstrução) · 5 = a meio · 10 = no PB ou acima (modo progressão).
+              </p>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
@@ -1420,12 +1527,34 @@ function ClientDetail() {
 
           {/* Movement screen */}
           <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <ScreenItem label={t("screen_block.squat")} score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
-              <ScreenItem label={t("screen_block.overhead")} score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
-              <ScreenItem label={t("screen_block.hinge")} score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
-              <ScreenItem label={t("screen_block.single_leg")} score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+            <p className="mb-1.5 text-[10px] text-muted-foreground">
+              Marca cada critério observado · adiciona dados de capacidade quando disponíveis.
+            </p>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {PATTERN_IDS.map((p: PatternId) => (
+                <MovementPatternCard
+                  key={p}
+                  pattern={p}
+                  formCriteria={assessment[`${p}_form_criteria`] ?? {}}
+                  capacity={assessment[`${p}_capacity`] ?? {}}
+                  notAssessed={!!assessment.screen_not_assessed?.[p]}
+                  onFormCriteria={(next) =>
+                    setAssessment({ ...assessment, [`${p}_form_criteria`]: next })
+                  }
+                  onCapacity={(next) =>
+                    setAssessment({ ...assessment, [`${p}_capacity`]: next })
+                  }
+                  onNotAssessed={(v) =>
+                    setAssessment({
+                      ...assessment,
+                      screen_not_assessed: {
+                        ...(assessment.screen_not_assessed ?? {}),
+                        [p]: v,
+                      },
+                    })
+                  }
+                />
+              ))}
             </div>
           </SectionBlock>
 
@@ -1957,7 +2086,7 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-background/40 p-3">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Síntese da avaliação</p>
         <span className="text-[10px] text-muted-foreground">{analysedCount}/{totalSections} secções analisadas</span>
@@ -2033,7 +2162,7 @@ function AssessmentSection({
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
       </div>
-      <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
           type="button"
           onClick={() => ctx.setAll(true)}

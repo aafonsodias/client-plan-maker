@@ -77,6 +77,19 @@ export default function BriefEditor({
       </Card>
 
       <Card title="Schedule & emphasis">
+        {typeof brief.current_capacity_vs_pb === "number" && (
+          <div className="mb-2">
+            <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
+              Capacidade actual: {brief.current_capacity_vs_pb}/10 — {
+                brief.current_capacity_vs_pb <= 3
+                  ? "modo reconstrução"
+                  : brief.current_capacity_vs_pb >= 8
+                    ? "modo progressão"
+                    : "modo manutenção"
+              }
+            </span>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3">
           <Field label="Sessions/wk (rec.)">
             <NumInput
