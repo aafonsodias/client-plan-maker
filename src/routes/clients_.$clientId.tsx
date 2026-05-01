@@ -1834,6 +1834,171 @@ type CollapseCtx = {
 };
 const SectionCollapseContext = createContext<CollapseCtx | null>(null);
 
+function deriveRecoveryProfile(a: any): { label: string; caption: string } | null {
+  const sleep = a?.sleep_quality ? Number(a.sleep_quality) : null;
+  const stress = a?.stress_level ? Number(a.stress_level) : null;
+  const cap = (a?.recovery_capacity ?? "").toString().toLowerCase();
+  if (sleep == null && stress == null && !cap) return null;
+  let score = 0;
+  let n = 0;
+  if (sleep != null) { score += sleep; n++; }
+  if (stress != null) { score += (10 - stress); n++; }
+  if (cap.includes("high") || cap.includes("alta")) { score += 8; n++; }
+  else if (cap.includes("low") || cap.includes("baixa")) { score += 3; n++; }
+  else if (cap) { score += 5; n++; }
+  const avg = n ? score / n : 0;
+  const label = avg >= 7 ? "Alta" : avg >= 5 ? "Moderada" : "Baixa";
+  const parts: string[] = [];
+  if (sleep != null) parts.push(`sono ${sleep}/10`);
+  if (stress != null) parts.push(`stress ${stress}/10`);
+  return { label, caption: parts.join(" · ") || "—" };
+}
+
+function collectRedFlags(
+  a: any,
+  sectionAnalyses: Record<string, SectionAnalysis | null>,
+): string[] {
+  const out = new Set<string>();
+  // PAR-Q+ flags
+  PARQ_KEYS.forEach((k, idx) => {
+    if ((a?.parq ?? {})[k] === true) out.add(`PAR-Q+ Q${idx + 1}`);
+  });
+  // From per-section analyses
+  for (const a2 of Object.values(sectionAnalyses)) {
+    if (!a2) continue;
+    for (const f of a2.red_flags ?? []) out.add(f);
+  }
+  return Array.from(out);
+}
+
+function StatCard({
+  label,
+  value,
+  caption,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+  tone?: "neutral" | "success" | "warning" | "destructive";
+}) {
+  const toneClass =
+    tone === "destructive" ? "text-destructive"
+    : tone === "warning" ? "text-amber-500"
+    : tone === "success" ? "text-accent"
+    : "text-foreground";
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-light tracking-tight ${toneClass}`}>{value}</p>
+      {caption && <p className="mt-1 text-xs text-muted-foreground">{caption}</p>}
+    </div>
+  );
+}
+
+function AssessmentSynthesisDashboard({
+  assessment,
+  sectionAnalyses,
+  totalSections,
+  riskCategory,
+  whr,
+  redFlagAccommodations,
+}: {
+  assessment: any;
+  sectionAnalyses: Record<string, SectionAnalysis | null>;
+  totalSections: number;
+  riskCategory: string;
+  whr: string;
+  redFlagAccommodations: RedFlagAccommodation[] | null;
+}) {
+  const analysedCount = Object.values(sectionAnalyses).filter(Boolean).length;
+  if (analysedCount < Math.ceil(totalSections * 0.5)) return null;
+
+  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const riskCaption = riskCategory === "high"
+    ? "Aprovação médica recomendada"
+    : riskCategory === "moderate"
+    ? "Avaliar antes de cargas elevadas"
+    : "Sem necessidade de clearance";
+  const riskTone: "destructive" | "warning" | "success" =
+    riskCategory === "high" ? "destructive" : riskCategory === "moderate" ? "warning" : "success";
+
+  const recovery = deriveRecoveryProfile(assessment);
+
+  const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
+  const bodyCompValue = `${bf} · WHR ${whr}`;
+  const whrNum = whr === "—" ? null : Number(whr);
+  const bodyCompCaption = whrNum == null
+    ? "Adicionar medidas para interpretação"
+    : whrNum >= 0.95
+    ? "Risco cardiometabólico elevado"
+    : whrNum >= 0.85
+    ? "Risco moderado · monitorizar"
+    : "Padrão saudável";
+
+  const flags = collectRedFlags(assessment, sectionAnalyses);
+  const accMap = new Map<string, RedFlagAccommodation>();
+  for (const acc of redFlagAccommodations ?? []) accMap.set(acc.flag, acc);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-background/40 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Síntese da avaliação</p>
+        <span className="text-[10px] text-muted-foreground">{analysedCount}/{totalSections} secções analisadas</span>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Risco ACSM"
+          value={riskLabel}
+          caption={riskCaption}
+          tone={riskTone}
+        />
+        <StatCard
+          label="Perfil de recuperação"
+          value={recovery?.label ?? "—"}
+          caption={recovery?.caption ?? "Sem dados de sono/stress"}
+        />
+        <StatCard
+          label="Composição corporal"
+          value={bodyCompValue}
+          caption={bodyCompCaption}
+        />
+      </div>
+
+      {flags.length > 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+          <div className="mb-2 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+              Sinais de alerta · {flags.length}
+            </p>
+          </div>
+          <ul className="space-y-1.5">
+            {flags.map((f) => {
+              const acc = accMap.get(f);
+              return (
+                <li key={f} className="flex items-start gap-2 text-xs">
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                  <span className="flex-1 text-foreground">{f}</span>
+                  {acc && (
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
+                      acc.strategy === "AVOID" ? "bg-destructive/15 text-destructive"
+                      : acc.strategy === "MODIFY" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : acc.strategy === "MONITOR" ? "bg-accent/15 text-accent"
+                      : "bg-secondary text-secondary-foreground"
+                    }`}>{acc.strategy}</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AssessmentSection({
   clientId,
   headerProgress,
