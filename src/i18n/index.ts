@@ -13,7 +13,7 @@ export const LOCALE_STORAGE_KEY = "forge.locale";
 
 // Avoid double-init under React StrictMode / HMR.
 if (!i18n.isInitialized) {
-  void i18n
+  i18n
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
@@ -43,6 +43,16 @@ if (!i18n.isInitialized) {
       },
       react: { useSuspense: false },
     });
+
+  // Keep <html lang> in sync with the active language for a11y + SEO.
+  if (typeof document !== "undefined") {
+    const sync = () => {
+      const lng = (i18n.resolvedLanguage ?? i18n.language ?? "en").slice(0, 2);
+      document.documentElement.lang = lng;
+    };
+    sync();
+    i18n.on("languageChanged", sync);
+  }
 }
 
 export default i18n;
