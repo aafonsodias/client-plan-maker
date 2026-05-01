@@ -1405,7 +1405,7 @@ function ClientDetail() {
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
             <div className="mb-3 rounded-md border border-border bg-background/40 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <Label className="text-xs">Capacidade actual vs PB</Label>
+                <Label className="text-xs">Capacidade actual vs pico anterior</Label>
                 <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                   {assessment.current_capacity_vs_pb ?? 5}/10
                 </span>
@@ -1420,7 +1420,7 @@ function ClientDetail() {
                 }
               />
               <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                1 = muito longe do PB (modo reconstrução) · 5 = a meio · 10 = no PB ou acima (modo progressão).
+                1 = muito longe do pico anterior (modo reconstrução) · 5 = a meio · 10 = no pico anterior ou acima (modo progressão).
               </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -1622,10 +1622,10 @@ function ClientDetail() {
             />
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="lg" disabled={busy}>
+                <Button variant="outline" size="sm" disabled={busy} className="w-full sm:w-auto">
                   <Eraser className="mr-2 h-4 w-4" /> {t("discard.button")}
                 </Button>
               </AlertDialogTrigger>
@@ -1647,7 +1647,7 @@ function ClientDetail() {
                 return (
                   <AlertDialog open={safetyDialogOpen} onOpenChange={(o) => { setSafetyDialogOpen(o); if (!o) setSafetyOverride(false); }}>
                     <AlertDialogTrigger asChild>
-                      <Button disabled={busy} size="lg" variant="destructive">
+                      <Button disabled={busy} size="lg" variant="destructive" className="w-full sm:w-auto">
                         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
                         {t("generate.safety_button")}
                       </Button>
@@ -1696,17 +1696,15 @@ function ClientDetail() {
                 );
               }
               return (
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
                   {phasedEnabled && briefCoverage && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
-                        {t("generate.brief_coverage", {
-                          done: briefCoverage.done,
-                          total: briefCoverage.total,
-                          defaultValue: `Pré-visualização do brief: ${briefCoverage.done}/${briefCoverage.total}`,
-                        })}
-                      </span>
-                    </div>
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground self-start sm:self-auto">
+                      {t("generate.brief_coverage", {
+                        done: briefCoverage.done,
+                        total: briefCoverage.total,
+                        defaultValue: `Pré-visualização do brief · ${briefCoverage.done}/${briefCoverage.total}`,
+                      })}
+                    </span>
                   )}
                   {phasedEnabled ? (
                     <Button
@@ -1764,6 +1762,7 @@ function ClientDetail() {
                       }}
                       disabled={busy || phasedBusy}
                       size="lg"
+                      className="w-full sm:w-auto"
                     >
                       {phasedBusy ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1773,7 +1772,7 @@ function ClientDetail() {
                       {t("generate.button")}
                     </Button>
                   ) : (
-                    <Button onClick={() => void generate()} disabled={busy} size="lg">
+                    <Button onClick={() => void generate()} disabled={busy} size="lg" className="w-full sm:w-auto">
                       {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                       {t("generate.button")}
                     </Button>
