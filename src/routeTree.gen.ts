@@ -16,11 +16,13 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansIndexRouteImport } from './routes/plans.index'
+import { Route as PlansNewRouteImport } from './routes/plans.new'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
+import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.brief'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -58,6 +60,11 @@ const PlansIndexRoute = PlansIndexRouteImport.update({
   path: '/plans/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlansNewRoute = PlansNewRouteImport.update({
+  id: '/plans/new',
+  path: '/plans/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlansPlanIdRoute = PlansPlanIdRouteImport.update({
   id: '/plans/$planId',
   path: '/plans/$planId',
@@ -83,6 +90,11 @@ const PlansPlanIdSessionsRoute = PlansPlanIdSessionsRouteImport.update({
   path: '/sessions',
   getParentRoute: () => PlansPlanIdRoute,
 } as any)
+const PlansPlanIdBriefRoute = PlansPlanIdBriefRouteImport.update({
+  id: '/brief',
+  path: '/brief',
+  getParentRoute: () => PlansPlanIdRoute,
+} as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -101,7 +113,9 @@ export interface FileRoutesByFullPath {
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -116,7 +130,9 @@ export interface FileRoutesByTo {
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/new': typeof PlansNewRoute
   '/plans': typeof PlansIndexRoute
+  '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -132,7 +148,9 @@ export interface FileRoutesById {
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
+  '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -149,7 +167,9 @@ export interface FileRouteTypes {
     | '/intake/$token'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/new'
     | '/plans/'
+    | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   fileRoutesByTo: FileRoutesByTo
@@ -164,7 +184,9 @@ export interface FileRouteTypes {
     | '/intake/$token'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/new'
     | '/plans'
+    | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   id:
@@ -179,7 +201,9 @@ export interface FileRouteTypes {
     | '/intake/$token'
     | '/log/$token'
     | '/plans/$planId'
+    | '/plans/new'
     | '/plans/'
+    | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   fileRoutesById: FileRoutesById
@@ -195,6 +219,7 @@ export interface RootRouteChildren {
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
   PlansPlanIdRoute: typeof PlansPlanIdRouteWithChildren
+  PlansNewRoute: typeof PlansNewRoute
   PlansIndexRoute: typeof PlansIndexRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -250,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plans/new': {
+      id: '/plans/new'
+      path: '/plans/new'
+      fullPath: '/plans/new'
+      preLoaderRoute: typeof PlansNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plans/$planId': {
       id: '/plans/$planId'
       path: '/plans/$planId'
@@ -285,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansPlanIdSessionsRouteImport
       parentRoute: typeof PlansPlanIdRoute
     }
+    '/plans/$planId/brief': {
+      id: '/plans/$planId/brief'
+      path: '/brief'
+      fullPath: '/plans/$planId/brief'
+      preLoaderRoute: typeof PlansPlanIdBriefRouteImport
+      parentRoute: typeof PlansPlanIdRoute
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -296,10 +335,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface PlansPlanIdRouteChildren {
+  PlansPlanIdBriefRoute: typeof PlansPlanIdBriefRoute
   PlansPlanIdSessionsRoute: typeof PlansPlanIdSessionsRoute
 }
 
 const PlansPlanIdRouteChildren: PlansPlanIdRouteChildren = {
+  PlansPlanIdBriefRoute: PlansPlanIdBriefRoute,
   PlansPlanIdSessionsRoute: PlansPlanIdSessionsRoute,
 }
 
@@ -318,6 +359,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
   PlansPlanIdRoute: PlansPlanIdRouteWithChildren,
+  PlansNewRoute: PlansNewRoute,
   PlansIndexRoute: PlansIndexRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
 }

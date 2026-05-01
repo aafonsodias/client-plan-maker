@@ -1,0 +1,275 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { BriefSchema, GenerationStateSchema, DOWNSTREAM_OF, type GenerationStage } from "./schemas";
+import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+
+const BRIEF_TOOL_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "primary_goal",
+    "secondary_goals",
+    "red_flags",
+    "movement_competency_summary",
+    "training_age_band",
+    "sessions_per_week",
+    "mesocycle_length_weeks",
+    "emphasis_split",
+    "equipment_constraints",
+    "notes_for_next_stage",
+  ],
+  properties: {
+    primary_goal: {
+      type: "string",
+      enum: ["hypertrophy", "strength", "conditioning", "mixed", "fat_loss", "general"],
+    },
+    secondary_goals: { type: "array", items: { type: "string" } },
+    red_flags: { type: "array", items: { type: "string" } },
+    movement_competency_summary: {
+      type: "object",
+      additionalProperties: false,
+      required: ["squat", "hinge", "push", "pull", "carry", "lunge"],
+      properties: {
+        squat: { type: "string" },
+        hinge: { type: "string" },
+        push: { type: "string" },
+        pull: { type: "string" },
+        carry: { type: "string" },
+        lunge: { type: "string" },
+      },
+    },
+    training_age_band: { type: "string", enum: ["beginner", "intermediate", "advanced"] },
+    sessions_per_week: {
+      type: "object",
+      additionalProperties: false,
+      required: ["recommended", "min", "max"],
+      properties: {
+        recommended: { type: "integer", minimum: 1, maximum: 7 },
+        min: { type: "integer", minimum: 1, maximum: 7 },
+        max: { type: "integer", minimum: 1, maximum: 7 },
+      },
+    },
+    mesocycle_length_weeks: { type: "integer", minimum: 2, maximum: 12 },
+    emphasis_split: {
+      type: "object",
+      additionalProperties: false,
+      required: ["upper", "lower", "conditioning"],
+      properties: {
+        upper: { type: "number", minimum: 0, maximum: 1 },
+        lower: { type: "number", minimum: 0, maximum: 1 },
+        conditioning: { type: "number", minimum: 0, maximum: 1 },
+      },
+    },
+    equipment_constraints: { type: "array", items: { type: "string" } },
+    notes_for_next_stage: { type: "string" },
+  },
+};
+
+function clearDownstream(stage: GenerationStage) {
+  const downstream = DOWNSTREAM_OF[stage];
+  const out: Record<string, null> = {};
+  if (downstream.includes("blueprint")) out.blueprint = null;
+  if (downstream.includes("progressions")) out.progression_plan = null;
+  return out;
+}
+
+/**
+ * Stage 1: synthesize the training brief from the cached section_analyses
+ * map + any coach notes already on the plan. Never reads raw assessment data.
+ */
+export const synthesizeBrief = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ planId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: plan, error } = await supabase
+      .from("workout_plans")
+      .select("id, trainer_id, client_id, assessment_id, brief, generation_state, duration_weeks")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (error || !plan) return { ok: false as const, error: error?.message ?? "plan not found" };
+    if ((plan as any).trainer_id !== userId) return { ok: false as const, error: "forbidden" };
+
+    let sectionAnalyses: Record<string, unknown> = {};
+    if ((plan as any).assessment_id) {
+      const { data: assessment } = await supabase
+        .from("assessments")
+        .select("section_analyses")
+        .eq("id", (plan as any).assessment_id)
+        .maybeSingle();
+      sectionAnalyses = ((assessment as any)?.section_analyses ?? {}) as Record<string, unknown>;
+    }
+
+    const system = `You are a senior strength coach. Synthesize a TRAINING BRIEF from the per-section analyses below.
+
+Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work has already been done per section. You must:
+- Merge red_flags from all sections (dedupe).
+- Pick a single primary_goal grounded in the goal section.
+- Reconcile training_age_band across sections (history > anthro > performance).
+- Use the training section's sessions_per_week and equipment_constraints verbatim unless they conflict with red flags.
+- Build movement_competency_summary by merging mobility, posture, and screen sections (later sections override earlier with concrete scores).
+- Produce notes_for_next_stage as a SHORT (≤ 400 char) free-text summary the next stage will use.
+- emphasis_split must sum to 1.0 (±0.05).
+- mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
+
+Output ONLY by calling the record_brief tool.`;
+
+    const userMessage = `Per-section analyses (JSON map):\n${JSON.stringify(sectionAnalyses, null, 2)}\n\nDefault mesocycle length (weeks): ${(plan as any).duration_weeks ?? 4}`;
+
+    const model = resolveModel("FORGE_MODEL_STAGE_1", "claude-haiku-4-5-20251001");
+    const result = await callAnthropicWithSchema({
+      model,
+      system,
+      userMessage,
+      toolName: "record_brief",
+      toolDescription: "Record the consolidated training brief.",
+      toolJsonSchema: BRIEF_TOOL_SCHEMA,
+      schema: BriefSchema,
+      maxTokens: 1500,
+    });
+
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: data.planId,
+      assessment_id: (plan as any).assessment_id ?? null,
+      stage: "stage1:brief",
+      model_used: model,
+      input_tokens: result.inputTokens,
+      output_tokens: result.outputTokens,
+      cost_usd: result.costUsd,
+      zod_passed: result.ok,
+      retry_count: result.retryCount,
+      duration_ms: result.durationMs,
+      error: result.ok ? null : result.error,
+      input_snapshot: { section_analyses_keys: Object.keys(sectionAnalyses) },
+      output_snapshot: result.ok ? result.data : (result as any).zodError ?? null,
+    });
+
+    if (!result.ok) {
+      return { ok: false as const, error: result.error, zodError: (result as any).zodError };
+    }
+
+    const newState = GenerationStateSchema.parse({
+      stage: "brief",
+      approved_stages: [],
+      last_updated_at: new Date().toISOString(),
+    });
+
+    const { error: updErr } = await supabase
+      .from("workout_plans")
+      .update({
+        brief: result.data as any,
+        generation_state: newState as any,
+        ...clearDownstream("brief"),
+      })
+      .eq("id", data.planId);
+    if (updErr) return { ok: false as const, error: updErr.message };
+
+    return { ok: true as const, brief: result.data };
+  });
+
+/**
+ * Approve (and optionally edit) the brief. Marks Stage 1 complete and
+ * advances generation_state.stage to "blueprint".
+ */
+export const approveBrief = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        brief: BriefSchema,
+      })
+      .parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("trainer_id, generation_state")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || (plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+
+    const prevState = GenerationStateSchema.safeParse((plan as any).generation_state ?? {});
+    const approved = new Set(prevState.success ? prevState.data.approved_stages : []);
+    approved.add("brief");
+
+    const newState = GenerationStateSchema.parse({
+      stage: "blueprint",
+      approved_stages: Array.from(approved),
+      last_updated_at: new Date().toISOString(),
+    });
+
+    const { error: updErr } = await supabase
+      .from("workout_plans")
+      .update({
+        brief: data.brief as any,
+        generation_state: newState as any,
+      })
+      .eq("id", data.planId);
+    if (updErr) return { ok: false as const, error: updErr.message };
+    return { ok: true as const };
+  });
+
+/**
+ * Create a new plan row in "brief" stage and return its id. Used by
+ * /plans/new to start the phased flow from the client detail page.
+ */
+export const createPhasedPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ clientId: z.string().uuid(), title: z.string().optional() }).parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Verify client belongs to trainer + grab latest assessment.
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id, full_name, trainer_id")
+      .eq("id", data.clientId)
+      .maybeSingle();
+    if (!client || (client as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+
+    const { data: assessment } = await supabase
+      .from("assessments")
+      .select("id, updated_at")
+      .eq("client_id", data.clientId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const initialState = GenerationStateSchema.parse({
+      stage: "brief",
+      approved_stages: [],
+      last_updated_at: new Date().toISOString(),
+    });
+
+    const { data: inserted, error: insErr } = await supabase
+      .from("workout_plans")
+      .insert({
+        trainer_id: userId,
+        client_id: data.clientId,
+        assessment_id: (assessment as any)?.id ?? null,
+        title: data.title ?? `${(client as any).full_name} — Phased Plan`,
+        status: "draft",
+        generation_status: "pending",
+        generation_state: initialState as any,
+        plan_data: { weeks: [] } as any,
+      })
+      .select("id")
+      .single();
+    if (insErr || !inserted) {
+      return { ok: false as const, error: insErr?.message ?? "insert failed" };
+    }
+
+    return { ok: true as const, planId: (inserted as any).id };
+  });
