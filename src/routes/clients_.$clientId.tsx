@@ -1840,7 +1840,15 @@ function SectionBlock({
   analysing?: boolean;
 }) {
   const { t } = useTranslation("assessment");
-  const [open, setOpen] = useState(!defaultCollapsed);
+  const ctx = useContext(SectionCollapseContext);
+  const [localOpen, setLocalOpen] = useState(!defaultCollapsed);
+  const open = ctx ? ctx.isOpen(id, !defaultCollapsed) : localOpen;
+  const setOpen = (next: boolean | ((o: boolean) => boolean)) => {
+    const value = typeof next === "function" ? (next as (o: boolean) => boolean)(open) : next;
+    if (ctx) ctx.setOpen(id, value);
+    else setLocalOpen(value);
+  };
+  const analysed = !!analysis;
   // Provenance border + tag styling
   const hasProv = provenance === "client" || provenance === "trainer-edited";
   const borderClass = hasProv
