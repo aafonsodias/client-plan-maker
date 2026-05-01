@@ -1657,6 +1657,16 @@ function ClientDetail() {
             })()}
           </div>
 
+          {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
+          <AssessmentSynthesisDashboard
+            assessment={assessment}
+            sectionAnalyses={sectionAnalyses}
+            totalSections={totalSections}
+            riskCategory={riskCategory}
+            whr={whr}
+            redFlagAccommodations={inlineBrief?.accommodations ?? null}
+          />
+
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
           {phasedEnabled && inlineBrief && (
