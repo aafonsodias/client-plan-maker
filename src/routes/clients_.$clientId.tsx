@@ -357,6 +357,9 @@ function ClientDetail() {
     programmingVariables: ProgrammingVariables;
     accommodations: RedFlagAccommodation[];
     approvedStages?: string[];
+    hasBlueprintDraft?: boolean;
+    hasMicrocycleDraft?: boolean;
+    hasProgressionsDraft?: boolean;
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
