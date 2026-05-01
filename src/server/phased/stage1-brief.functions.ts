@@ -239,6 +239,21 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
       return { ok: false as const, error: "forbidden" };
     }
 
+    // Bug 2a: if there's already an in-progress phased plan for this client,
+    // reuse it instead of creating a new ghost row.
+    const { data: existing } = await supabase
+      .from("workout_plans")
+      .select("id, generation_status, brief")
+      .eq("trainer_id", userId)
+      .eq("client_id", data.clientId)
+      .neq("generation_status", "complete")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing && (existing as any).id) {
+      return { ok: true as const, planId: (existing as any).id, reused: true as const };
+    }
+
     const { data: assessment } = await supabase
       .from("assessments")
       .select("id, updated_at")
@@ -271,5 +286,201 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
       return { ok: false as const, error: insErr?.message ?? "insert failed" };
     }
 
-    return { ok: true as const, planId: (inserted as any).id };
+    return { ok: true as const, planId: (inserted as any).id, reused: false as const };
+  });
+
+/**
+ * One-shot: find-or-create a phased plan for the client AND synthesize the
+ * brief. If brief synthesis fails on a freshly-created plan, delete the
+ * orphan row so we never accumulate empty drafts (Bug 2b).
+ *
+ * Returns { planId, reused, briefReady } so the client can show a toast
+ * with a "Review" link without auto-navigating.
+ */
+export const startPhasedPlanDraft = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ clientId: z.string().uuid(), title: z.string().optional() }).parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Verify ownership.
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id, full_name, trainer_id")
+      .eq("id", data.clientId)
+      .maybeSingle();
+    if (!client || (client as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+
+    // Bug 2a: reuse any in-progress phased plan for this client.
+    const { data: existing } = await supabase
+      .from("workout_plans")
+      .select("id, brief, generation_status")
+      .eq("trainer_id", userId)
+      .eq("client_id", data.clientId)
+      .neq("generation_status", "complete")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let planId: string;
+    let createdNow = false;
+    if (existing && (existing as any).id) {
+      planId = (existing as any).id;
+      // If the existing plan already has a brief, we're done — no need to re-synth.
+      if ((existing as any).brief) {
+        return {
+          ok: true as const,
+          planId,
+          reused: true as const,
+          briefReady: true as const,
+        };
+      }
+    } else {
+      const { data: assessment } = await supabase
+        .from("assessments")
+        .select("id, updated_at")
+        .eq("client_id", data.clientId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const initialState = GenerationStateSchema.parse({
+        stage: "brief",
+        approved_stages: [],
+        last_updated_at: new Date().toISOString(),
+      });
+
+      const { data: inserted, error: insErr } = await supabase
+        .from("workout_plans")
+        .insert({
+          trainer_id: userId,
+          client_id: data.clientId,
+          assessment_id: (assessment as any)?.id ?? null,
+          title: data.title ?? `${(client as any).full_name} — Phased Plan`,
+          status: "draft",
+          generation_status: "pending",
+          generation_state: initialState as any,
+          plan_data: { weeks: [] } as any,
+        })
+        .select("id")
+        .single();
+      if (insErr || !inserted) {
+        return { ok: false as const, error: insErr?.message ?? "insert failed" };
+      }
+      planId = (inserted as any).id;
+      createdNow = true;
+    }
+
+    // Run synthesis inline. We need to load the (possibly just-created) plan row
+    // to pass to the same synthesis logic.
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("id, trainer_id, assessment_id, duration_weeks")
+      .eq("id", planId)
+      .maybeSingle();
+    if (!plan) {
+      // Shouldn't happen, but clean up if it does.
+      if (createdNow) await supabase.from("workout_plans").delete().eq("id", planId);
+      return { ok: false as const, error: "plan vanished after insert" };
+    }
+
+    let sectionAnalyses: Record<string, unknown> = {};
+    if ((plan as any).assessment_id) {
+      const { data: assessment } = await supabase
+        .from("assessments")
+        .select("section_analyses")
+        .eq("id", (plan as any).assessment_id)
+        .maybeSingle();
+      sectionAnalyses = ((assessment as any)?.section_analyses ?? {}) as Record<string, unknown>;
+    }
+
+    const system = `You are a senior strength coach. Synthesize a TRAINING BRIEF from the per-section analyses below.
+
+Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work has already been done per section. You must:
+- Merge red_flags from all sections (dedupe).
+- Pick a single primary_goal grounded in the goal section.
+- Reconcile training_age_band across sections (history > anthro > performance).
+- Use the training section's sessions_per_week and equipment_constraints verbatim unless they conflict with red flags.
+- Build movement_competency_summary by merging mobility, posture, and screen sections (later sections override earlier with concrete scores).
+- Produce notes_for_next_stage as a SHORT (≤ 400 char) free-text summary the next stage will use.
+- emphasis_split must sum to 1.0 (±0.05).
+- mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
+
+Output ONLY by calling the record_brief tool.`;
+
+    const userMessage = `Per-section analyses (JSON map):\n${JSON.stringify(sectionAnalyses, null, 2)}\n\nDefault mesocycle length (weeks): ${(plan as any).duration_weeks ?? 4}`;
+
+    const model = resolveModel("FORGE_MODEL_STAGE_1", "claude-haiku-4-5-20251001");
+    const result = await callAnthropicWithSchema({
+      model,
+      system,
+      userMessage,
+      toolName: "record_brief",
+      toolDescription: "Record the consolidated training brief.",
+      toolJsonSchema: BRIEF_TOOL_SCHEMA,
+      schema: BriefSchema,
+      maxTokens: 1500,
+    });
+
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      assessment_id: (plan as any).assessment_id ?? null,
+      stage: "stage1:brief",
+      model_used: model,
+      input_tokens: result.inputTokens,
+      output_tokens: result.outputTokens,
+      cost_usd: result.costUsd,
+      zod_passed: result.ok,
+      retry_count: result.retryCount,
+      duration_ms: result.durationMs,
+      error: result.ok ? null : result.error,
+      input_snapshot: { section_analyses_keys: Object.keys(sectionAnalyses) },
+      output_snapshot: result.ok ? result.data : (result as any).zodError ?? null,
+    });
+
+    if (!result.ok) {
+      // Bug 2b: never leave an empty draft behind.
+      if (createdNow) {
+        await supabase.from("workout_plans").delete().eq("id", planId);
+      }
+      return {
+        ok: false as const,
+        error: result.error,
+        zodError: (result as any).zodError,
+      };
+    }
+
+    const newState = GenerationStateSchema.parse({
+      stage: "brief",
+      approved_stages: [],
+      last_updated_at: new Date().toISOString(),
+    });
+
+    const { error: updErr } = await supabase
+      .from("workout_plans")
+      .update({
+        brief: result.data as any,
+        generation_state: newState as any,
+        blueprint: null,
+        progression_plan: null,
+      })
+      .eq("id", planId);
+    if (updErr) {
+      if (createdNow) {
+        await supabase.from("workout_plans").delete().eq("id", planId);
+      }
+      return { ok: false as const, error: updErr.message };
+    }
+
+    return {
+      ok: true as const,
+      planId,
+      reused: !createdNow,
+      briefReady: true as const,
+    };
   });

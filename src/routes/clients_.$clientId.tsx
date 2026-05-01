@@ -16,6 +16,7 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
+import { startPhasedPlanDraft } from "@/server/phased/stage1-brief.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -293,6 +294,8 @@ function ClientDetail() {
   const generateWeekFn = useServerFn(generatePlanWeek);
   const generateDayFn = useServerFn(generatePlanDay);
   const finalizePlanFn = useServerFn(finalizePlanGeneration);
+  const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
+  const [phasedBusy, setPhasedBusy] = useState(false);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
@@ -493,11 +496,6 @@ function ClientDetail() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
-
-  // TEMP: verify the phased flag is actually on for this trainer at runtime.
-  useEffect(() => {
-    console.log('[phased] enabled =', phasedEnabled);
-  }, [phasedEnabled]);
 
   // Capture per-section field signatures the first time we hydrate so we can
   // detect when the trainer edits a section that was filled by the client.
@@ -1450,11 +1448,45 @@ function ClientDetail() {
                   )}
                   {phasedEnabled ? (
                     <Button
-                      onClick={() => navigate({ to: "/plans/new", search: { clientId } as any })}
-                      disabled={busy}
+                      onClick={async () => {
+                        if (phasedBusy) return;
+                        setPhasedBusy(true);
+                        const tId = toast.loading("Synthesizing brief…");
+                        try {
+                          const res = await startPhasedPlanFn({ data: { clientId } });
+                          if (!res.ok) {
+                            toast.error(res.error || "Brief synthesis failed.", { id: tId });
+                            return;
+                          }
+                          toast.success(
+                            res.reused ? "Brief already ready" : "Brief ready",
+                            {
+                              id: tId,
+                              duration: 15000,
+                              action: {
+                                label: "Review →",
+                                onClick: () =>
+                                  navigate({
+                                    to: "/plans/$planId/brief",
+                                    params: { planId: res.planId },
+                                  }),
+                              },
+                            }
+                          );
+                        } catch (e: any) {
+                          toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
+                        } finally {
+                          setPhasedBusy(false);
+                        }
+                      }}
+                      disabled={busy || phasedBusy}
                       size="lg"
                     >
-                      <Sparkles className="mr-2 h-4 w-4" />
+                      {phasedBusy ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
                       {t("generate.button")}
                     </Button>
                   ) : (
