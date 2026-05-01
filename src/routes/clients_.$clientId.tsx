@@ -1465,28 +1465,6 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col items-end gap-2">
-                  {briefReady && (
-                    <div className="flex items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
-                      <span className="font-medium">
-                        {briefReady.reused ? "Brief already ready." : "Brief ready."}
-                      </span>
-                      <Link
-                        to="/plans/$planId/brief"
-                        params={{ planId: briefReady.planId }}
-                        className="font-semibold text-primary underline underline-offset-2"
-                      >
-                        Review brief →
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setBriefReady(null)}
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        aria-label="Dismiss"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
                   {phasedEnabled && briefCoverage && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
@@ -1510,11 +1488,30 @@ function ClientDetail() {
                             toast.error(res.error || "Brief synthesis failed.", { id: tId });
                             return;
                           }
+                          // Fetch the freshly-written brief and render it inline below.
+                          const { data: row } = await supabase
+                            .from("workout_plans")
+                            .select("brief, generation_state")
+                            .eq("id", res.planId)
+                            .maybeSingle();
+                          const parsed = BriefSchema.safeParse((row as any)?.brief);
+                          if (!parsed.success) {
+                            toast.error("Brief returned but failed to parse.", { id: tId });
+                            return;
+                          }
+                          const stage = (row as any)?.generation_state?.stage as string | undefined;
+                          const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
+                          setInlineBrief({
+                            planId: res.planId,
+                            brief: parsed.data,
+                            approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
+                          });
+                          // Refresh plans list so the new draft shows up.
+                          void refreshPlans();
                           toast.success(
                             res.reused ? "Brief already ready" : "Brief ready",
-                            { id: tId, duration: 6000 }
+                            { id: tId, duration: 4000 }
                           );
-                          setBriefReady({ planId: res.planId, reused: !!res.reused });
                         } catch (e: any) {
                           toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
                         } finally {
@@ -1541,6 +1538,81 @@ function ClientDetail() {
               );
             })()}
           </div>
+
+          {/* Phased generation: stages stack vertically below the action row.
+              Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
+          {phasedEnabled && inlineBrief && (
+            <div className="space-y-3">
+              <StageCard
+                stageNumber={1}
+                title="Brief"
+                status={inlineBrief.approved ? "approved" : "ready"}
+                busy={briefStageBusy}
+                onApprove={
+                  inlineBrief.approved
+                    ? undefined
+                    : async () => {
+                        if (briefStageBusy) return;
+                        setBriefStageBusy(true);
+                        const tId = toast.loading("Approving brief…");
+                        try {
+                          const res: any = await approveBriefFn({
+                            data: { planId: inlineBrief.planId, brief: inlineBrief.brief },
+                          });
+                          if (!res.ok) {
+                            toast.error(res.error || "Approve failed", { id: tId });
+                            return;
+                          }
+                          setInlineBrief({ ...inlineBrief, approved: true });
+                          toast.success("Brief approved", { id: tId });
+                        } finally {
+                          setBriefStageBusy(false);
+                        }
+                      }
+                }
+                onRegenerate={async () => {
+                  if (briefStageBusy) return;
+                  setBriefStageBusy(true);
+                  const tId = toast.loading("Regenerating brief…");
+                  try {
+                    const res: any = await synthesizeBriefFn({
+                      data: { planId: inlineBrief.planId },
+                    });
+                    if (!res.ok) {
+                      toast.error(res.error || "Regenerate failed", { id: tId });
+                      return;
+                    }
+                    const parsed = BriefSchema.safeParse(res.brief);
+                    if (!parsed.success) {
+                      toast.error("Brief returned but failed to parse.", { id: tId });
+                      return;
+                    }
+                    setInlineBrief({
+                      planId: inlineBrief.planId,
+                      brief: parsed.data,
+                      approved: false,
+                    });
+                    toast.success("Brief regenerated", { id: tId });
+                  } finally {
+                    setBriefStageBusy(false);
+                  }
+                }}
+              >
+                <BriefEditor
+                  brief={inlineBrief.brief}
+                  onChange={(b) => setInlineBrief({ ...inlineBrief, brief: b })}
+                  disabled={inlineBrief.approved || briefStageBusy}
+                />
+              </StageCard>
+              {inlineBrief.approved && (
+                <>
+                  <StageCard stageNumber={2} title="Blueprint" status="placeholder" />
+                  <StageCard stageNumber={3} title="Microcycle" status="placeholder" />
+                  <StageCard stageNumber={4} title="Progressions" status="placeholder" />
+                </>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
