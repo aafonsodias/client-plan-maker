@@ -22,6 +22,8 @@ import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
+import { Route as PlansPlanIdProgressionsRouteImport } from './routes/plans.$planId.progressions'
+import { Route as PlansPlanIdMicrocycleRouteImport } from './routes/plans.$planId.microcycle'
 import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.brief'
 import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId.blueprint'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
@@ -91,6 +93,16 @@ const PlansPlanIdSessionsRoute = PlansPlanIdSessionsRouteImport.update({
   path: '/sessions',
   getParentRoute: () => PlansPlanIdRoute,
 } as any)
+const PlansPlanIdProgressionsRoute = PlansPlanIdProgressionsRouteImport.update({
+  id: '/progressions',
+  path: '/progressions',
+  getParentRoute: () => PlansPlanIdRoute,
+} as any)
+const PlansPlanIdMicrocycleRoute = PlansPlanIdMicrocycleRouteImport.update({
+  id: '/microcycle',
+  path: '/microcycle',
+  getParentRoute: () => PlansPlanIdRoute,
+} as any)
 const PlansPlanIdBriefRoute = PlansPlanIdBriefRouteImport.update({
   id: '/brief',
   path: '/brief',
@@ -123,6 +135,8 @@ export interface FileRoutesByFullPath {
   '/plans/': typeof PlansIndexRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
+  '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
+  '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -141,6 +155,8 @@ export interface FileRoutesByTo {
   '/plans': typeof PlansIndexRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
+  '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
+  '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -160,6 +176,8 @@ export interface FileRoutesById {
   '/plans/': typeof PlansIndexRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
+  '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
+  '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -180,6 +198,8 @@ export interface FileRouteTypes {
     | '/plans/'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
+    | '/plans/$planId/microcycle'
+    | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +218,8 @@ export interface FileRouteTypes {
     | '/plans'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
+    | '/plans/$planId/microcycle'
+    | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   id:
@@ -216,6 +238,8 @@ export interface FileRouteTypes {
     | '/plans/'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
+    | '/plans/$planId/microcycle'
+    | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
   fileRoutesById: FileRoutesById
@@ -329,6 +353,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansPlanIdSessionsRouteImport
       parentRoute: typeof PlansPlanIdRoute
     }
+    '/plans/$planId/progressions': {
+      id: '/plans/$planId/progressions'
+      path: '/progressions'
+      fullPath: '/plans/$planId/progressions'
+      preLoaderRoute: typeof PlansPlanIdProgressionsRouteImport
+      parentRoute: typeof PlansPlanIdRoute
+    }
+    '/plans/$planId/microcycle': {
+      id: '/plans/$planId/microcycle'
+      path: '/microcycle'
+      fullPath: '/plans/$planId/microcycle'
+      preLoaderRoute: typeof PlansPlanIdMicrocycleRouteImport
+      parentRoute: typeof PlansPlanIdRoute
+    }
     '/plans/$planId/brief': {
       id: '/plans/$planId/brief'
       path: '/brief'
@@ -356,12 +394,16 @@ declare module '@tanstack/react-router' {
 interface PlansPlanIdRouteChildren {
   PlansPlanIdBlueprintRoute: typeof PlansPlanIdBlueprintRoute
   PlansPlanIdBriefRoute: typeof PlansPlanIdBriefRoute
+  PlansPlanIdMicrocycleRoute: typeof PlansPlanIdMicrocycleRoute
+  PlansPlanIdProgressionsRoute: typeof PlansPlanIdProgressionsRoute
   PlansPlanIdSessionsRoute: typeof PlansPlanIdSessionsRoute
 }
 
 const PlansPlanIdRouteChildren: PlansPlanIdRouteChildren = {
   PlansPlanIdBlueprintRoute: PlansPlanIdBlueprintRoute,
   PlansPlanIdBriefRoute: PlansPlanIdBriefRoute,
+  PlansPlanIdMicrocycleRoute: PlansPlanIdMicrocycleRoute,
+  PlansPlanIdProgressionsRoute: PlansPlanIdProgressionsRoute,
   PlansPlanIdSessionsRoute: PlansPlanIdSessionsRoute,
 }
 
@@ -387,3 +429,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
