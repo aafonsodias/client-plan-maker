@@ -1487,6 +1487,3 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       validation_meta,
     };
   });
-
-// Re-export so the cost helper is bundle-included whenever this module is.
-void computeCallCostUsd;
