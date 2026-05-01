@@ -1190,13 +1190,27 @@ function ClientDetail() {
       />
 
       {/* Compact client snapshot — always visible, summarizes latest assessment */}
-      <ClientSnapshotCard
-        assessment={assessment}
-        sectionAnalyses={sectionAnalyses}
-        riskCategory={riskCategory}
-        whr={whr}
-        lastSavedAt={lastSavedAt}
-      />
+      {lastSavedAt && (
+        <a
+          href="#sintese-da-avaliacao"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("sintese-da-avaliacao")?.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }}
+          className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground transition hover:text-foreground"
+        >
+          Última avaliação ·{" "}
+          {new Date(lastSavedAt).toLocaleDateString("pt-PT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })}{" "}
+          <ArrowRight className="h-3 w-3" />
+        </a>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
@@ -1219,18 +1233,30 @@ function ClientDetail() {
         <AssessmentSection
           clientId={clientId}
           headerProgress={
-            <>
-              <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <h2 className="shrink-0 text-base font-bold">{t("title")}</h2>
+                <div className="h-1.5 min-w-[60px] flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full bg-accent/70 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
-                <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
-                  {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
-                </span>
               </div>
-              <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
-            </>
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+                <span>
+                  {t("progress_short", {
+                    current: sectionNumber,
+                    total: totalSections,
+                    pct,
+                  })}
+                </span>
+                <span className="hidden sm:inline">
+                  {t("progress_minutes", { minutes: minutesLeft })}
+                </span>
+                <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+              </div>
+            </div>
           }
         >
 
