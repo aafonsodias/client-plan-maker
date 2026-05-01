@@ -158,5 +158,31 @@
       "legal_privacy": "Privacidade",
       "legal_contact": "Contacto"
     }
+  },
+  "briefRail": {
+    "approved": "Brief aprovado",
+    "view": "ver",
+    "context_caption": "Contexto sempre visível enquanto desenhas este meso.",
+    "loading": "A carregar brief…",
+    "unavailable": "Brief indisponível.",
+    "load_error": "Não foi possível carregar o brief.",
+    "invalid": "Brief inválido ou ainda não aprovado.",
+    "open_brief": "Abrir Brief",
+    "objectives": "Objetivos",
+    "primary": "primário",
+    "red_flags": "Sinais de alerta",
+    "movement": "Competência de movimento",
+    "equipment_freq": "Equipamento & frequência",
+    "sessions_per_week": "Sessões/semana:",
+    "mesocycle": "Mesociclo:",
+    "weeks": "semanas",
+    "emphasis": "Ênfase do meso",
+    "emphasis_upper": "Superior",
+    "emphasis_lower": "Inferior",
+    "emphasis_cond": "Cond.",
+    "stage_notes": "Notas para esta stage",
+    "rail_title": "Brief — contexto",
+    "capacity_vs_pb": "capacidade atual vs PB"
   }
+}
 }
