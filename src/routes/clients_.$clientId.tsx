@@ -1647,7 +1647,7 @@ function ClientDetail() {
                 return (
                   <AlertDialog open={safetyDialogOpen} onOpenChange={(o) => { setSafetyDialogOpen(o); if (!o) setSafetyOverride(false); }}>
                     <AlertDialogTrigger asChild>
-                      <Button disabled={busy} size="lg" variant="destructive">
+                      <Button disabled={busy} size="lg" variant="destructive" className="w-full sm:w-auto">
                         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
                         {t("generate.safety_button")}
                       </Button>
