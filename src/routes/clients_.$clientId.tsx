@@ -705,10 +705,22 @@ function ClientDetail() {
       if (!parsed.success) return;
       const stage = (row as any).generation_state?.stage as string | undefined;
       const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+      const storedPv = ProgrammingVariablesSchema.safeParse(
+        (row as any).programming_variables
+      );
+      const storedAcc = RedFlagAccommodationsSchema.safeParse(
+        (row as any).red_flag_accommodations
+      );
       setInlineBrief({
         planId: (row as any).id,
         brief: parsed.data,
         approved: approvedList.includes("brief") || (!!stage && stage !== "brief"),
+        programmingVariables: storedPv.success
+          ? storedPv.data
+          : defaultProgrammingVariables(parsed.data),
+        accommodations: storedAcc.success
+          ? reconcileAccommodations(parsed.data, storedAcc.data)
+          : reconcileAccommodations(parsed.data, null),
       });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
