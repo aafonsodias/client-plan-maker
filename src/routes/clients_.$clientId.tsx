@@ -1874,8 +1874,9 @@ function SectionBlock({
         aria-expanded={open}
       >
         {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-        <h3 className="text-xs font-bold uppercase tracking-widest text-accent">{title}</h3>
-        {complete && <Check className="h-3 w-3 text-accent" />}
+        <h3 className={`text-xs font-bold uppercase tracking-widest ${analysed ? "text-accent/70" : "text-accent"}`}>{title}</h3>
+        {analysed && <Check className="h-3 w-3 text-accent" aria-label="analysed" />}
+        {!analysed && complete && <Check className="h-3 w-3 text-muted-foreground/60" />}
         {hint && (
           <Tooltip>
             <TooltipTrigger asChild>
