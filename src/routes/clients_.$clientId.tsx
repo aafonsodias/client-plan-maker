@@ -67,6 +67,11 @@ function parqFlagCount(parq: Record<string, boolean | null>): number {
 
 // Section -> assessment field keys used to compute a signature for edit detection.
 const PROV_SECTION_FIELDS: Record<string, string[]> = {
+  parq: ["parq"],
+  risk: ["risk"],
+  anthro: ["waist_cm", "hip_cm", "body_fat_pct", "body_fat_method"],
+  meds: ["medications", "med_flags"],
+  goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal", "secondary_goals"],
   smart_goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal"],
   readiness: ["readiness_stage"],
   training: [
@@ -81,6 +86,17 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
     "ext_meals_per_day", "ext_alcohol_units_week", "ext_processed_food_freq",
     "ext_water_l_per_day", "nutrition_habits",
   ],
+  mobility: [
+    "mobility_limitations", "ext_mob_shoulder", "ext_mob_hip", "ext_mob_ankle",
+    "ext_mob_thoracic", "ext_mob_wrist", "ext_mob_knee",
+  ],
+  posture: ["standing_posture_notes", "known_imbalances", "dominant_side"],
+  screen: [
+    "squat_depth_score", "squat_depth_note", "overhead_reach_score", "overhead_reach_note",
+    "hip_hinge_score", "hip_hinge_note", "single_leg_balance_score", "single_leg_balance_note",
+  ],
+  history: ["years_training", "previous_program_style", "max_lifts"],
+  performance: ["resting_heart_rate", "cardio_capacity", "ext_cardio_test"],
 };
 
 function sectionSignature(assessment: any, section: string): string {
