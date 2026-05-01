@@ -1,4 +1,5 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
@@ -11,6 +12,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation("common");
   const [access, setAccess] = useState<{
     hasAccess: boolean;
     trialActive: boolean;
@@ -50,13 +52,13 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   }, [user]);
 
   if (loading || !user) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading…</div>;
+    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">{t("actions.loading")}</div>;
   }
 
   const nav = [
-    { to: "/dashboard", label: "Dashboard", icon: Home },
-    { to: "/clients", label: "Clients", icon: Users },
-    { to: "/settings", label: "Branding", icon: Settings },
+    { to: "/dashboard", label: t("nav.dashboard"), icon: Home },
+    { to: "/clients", label: t("nav.clients"), icon: Users },
+    { to: "/settings", label: t("nav.branding"), icon: Settings },
   ] as const;
 
   return (
@@ -65,7 +67,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/dashboard" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
             <Logo className="h-8 w-8" />
-            <span>FORGE</span>
+            <span>{t("brand.name")}</span>
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((n) => {
@@ -85,21 +87,21 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           </nav>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
-            <Button asChild variant="ghost" size="sm" title="Billing">
+            <Button asChild variant="ghost" size="sm" title={t("nav.billing")}>
               <Link to="/billing">
                 <CreditCard className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Billing</span>
+                <span className="hidden sm:inline">{t("nav.billing")}</span>
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="sm" title="View landing page">
+            <Button asChild variant="ghost" size="sm" title={t("nav.landing")}>
               <Link to="/">
                 <ExternalLink className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Landing</span>
+                <span className="hidden sm:inline">{t("nav.landing")}</span>
               </Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => { void signOut().then(() => navigate({ to: "/" })); }}>
               <LogOut className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Sign out</span>
+              <span className="hidden sm:inline">{t("actions.sign_out")}</span>
             </Button>
           </div>
         </div>
@@ -117,12 +119,12 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>
                 {access.hasAccess
-                  ? `${access.trialDaysLeft} day${access.trialDaysLeft === 1 ? "" : "s"} left in your free trial.`
-                  : "Your free trial has ended. Upgrade to keep generating plans."}
+                  ? t("shell.trial_days_left", { count: access.trialDaysLeft ?? 0 })
+                  : t("shell.trial_ended")}
               </span>
             </div>
             <Button asChild size="sm" variant={access.hasAccess ? "outline" : "default"}>
-              <Link to="/billing">Upgrade</Link>
+              <Link to="/billing">{t("actions.upgrade")}</Link>
             </Button>
           </div>
         </div>
@@ -133,7 +135,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             onClick={() => navigate({ to: back.to as any })}
             className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> {back.label ?? "Back"}
+            <ArrowLeft className="h-3.5 w-3.5" /> {back.label ?? t("actions.back")}
           </button>
         )}
         {children}
