@@ -1,56 +1,89 @@
-## What we're doing right now (status)
+## Estado atual
 
-We just finished **Steps 3 & 4** of the planning-flow polish:
-- **Microcycle**: Day 1 is the gate; remaining days are now generated **one at a time** via explicit "Generate Day N" buttons (no more silent batching / vanishing days). Each day is fully editable inline and edits persist via `updateDayContent`.
-- **Progressions**: replaced the flat table with **per-exercise cards** that include SVG **sparklines** for load / reps / RPE trends across W1→W4.
+Acabámos de:
+- Trocar logo (versão recortada).
+- Centrar opticamente o wordmark FORGE no auth (compensação `paddingLeft` para o `tracking`).
+- Esconder a scrollbar branca dos rails de Brief em microcycle / progressions / blueprint.
+- Polir a página de auth (logo grande + glow + linha accent + language switcher discreto).
 
-Open thread you just raised — *"Microcycle regens but doesn't do it"*: I want to verify this is a real bug before fixing blindly. Likely cause is realtime not refreshing the day row after `generateDay` resolves. I'll add this to the next pass with reproduction steps.
+Agora atacamos os atritos da landing page **+** dois bugs estruturais que ficaram pendentes.
 
 ---
 
 ## GOAL
-Refresh the brand mark, clean up the auth screen, and remove the white scrollbar on the right rail.
+Aumentar conversão e clareza da landing page, e resolver dois bugs reais no fluxo de geração.
 
 ## CONTEXT
-- Logo lives in `src/components/Logo.tsx` and points to `src/assets/forge-logo.png`. New asset will replace it.
-- Auth page is `src/routes/auth.tsx` — currently shows the logo + "FORGE" wordmark above a card, with the language switcher centered below. User says the symbol feels "dead" and wonders if it should be there at all.
-- Right rail (`<aside>` in `plans.$planId.{microcycle,progressions,blueprint}.tsx`) uses `overflow-y-auto` which exposes the browser's white scrollbar.
+- Landing: `src/routes/index.tsx`. Hero usa o subtítulo i18n `plan:landing.hero.subtitle` (que **já está bom em PT/EN** — afinal não é tão genérico como pensei; revi-o agora).
+- Microcycle: `src/routes/plans.$planId.microcycle.tsx` chama `generateDay` mas o `regenDay` confia 100% no realtime do Supabase para refrescar — em sessões edge isto falha por vezes (= "regenerou mas não vejo nada novo"). Além disso, quando o dia volta, a row tem o **mesmo `id`** mas conteúdo novo → o `useEffect` em `DayCardEditable` que sincroniza com `day` corre, mas o gating `!editing` pode bloquear se o utilizador clicou em qualquer input.
+- FAQ + footer não têm links legais (Termos / Privacidade) — bloqueio para B2B sério.
 
 ## TASK
 
-**1. Logo asset swap**
-- Copy `user-uploads://fORGE.png` to `src/assets/forge-logo.png` (overwrite). No code change needed — every consumer (`Logo.tsx`, AppShell, auth page, etc.) inherits it.
+### Bloco A — Bugs (alta prioridade)
 
-**2. Auth page polish (`src/routes/auth.tsx`)**
-- Replace the small Logo + wordmark row with a **larger, centered logo only** (h-14 w-14), a thin orange divider line beneath it, and the wordmark `FORGE` rendered with wider tracking + small caps as a single typographic mark. This matches the "ingot + flame seam" aesthetic of the new icon.
-- Add subtle vertical breathing (more space above the card, slight glow behind the logo using a radial accent).
-- Keep tabs / form / Google button untouched.
-- Keep the language switcher at the bottom but smaller and lower-contrast so it doesn't compete with the form.
+**A1. Microcycle regen não atualiza UI**
+- Em `regenDay()` (e `kickDay1()`), chamar `loadDays()` explicitamente após o `await` resolver, **mesmo com realtime ativo**. Realtime continua a ser fallback.
+- Em `DayCardEditable`, mudar a key de identidade: passar `key={`${day.id}-${day.updated_at ?? day.status}`}` no parent, para forçar remount quando o conteúdo muda. Isto evita o problema de o `useEffect` não disparar se `day` reference change for raso.
+- Adicionar coluna `updated_at` ao select em `loadDays()` (já existe em `workout_plan_days`).
 
-**3. Hide sidebar scrollbar (cross-browser)**
-- Add a `.scrollbar-hide` utility in `src/styles.css`:
-  ```css
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
-  ```
-- Apply `scrollbar-hide` to the `<div>` wrapping `BriefContextRail` in:
-  - `src/routes/plans.$planId.microcycle.tsx`
-  - `src/routes/plans.$planId.progressions.tsx`
-  - `src/routes/plans.$planId.blueprint.tsx` (if same pattern)
+**A2. "Generate Day N" pode duplicar pedidos se carregado várias vezes**
+- Trocar `generatingIdx` por um `Set<number>` para suportar múltiplos paralelos sem perder estado.
+- Disable do botão enquanto status === "pending" (não só quando o índice está em geração local).
+
+### Bloco B — Landing page conversão
+
+**B1. Pricing transparente**
+- Adicionar uma secção `#pricing` simples entre "Logging / history" e "Features":
+  - 1 card "Beta" — Grátis, todas as features, sem cartão.
+  - 1 card "Pro (em breve)" — 19€/mês indicativo, lista de features, CTA "Avisar-me".
+- Adicionar link "Preço" no nav header.
+- i18n keys novas em `plan.json` (PT/EN): `landing.pricing.{eyebrow,title,beta_*,pro_*,cta}`.
+
+**B2. Prova social acima da fold**
+- Pequeno badge sob o subtítulo do hero: ícone + "Construído por um PT, para PTs · Beta privado" (i18n).
+- Não inventar números. Texto honesto.
+
+**B3. Hierarquia dos CTAs no hero**
+- Tornar o secundário ("Como funciona") `variant="ghost"` em vez de `outline`, para o primário ressaltar mais.
+
+**B4. Footer com links legais**
+- Adicionar grid de 3 colunas no footer: Brand · Produto (Features, Pricing, How it works) · Legal (Termos, Privacidade, Contacto).
+- Criar rotas placeholder `src/routes/terms.tsx` e `src/routes/privacy.tsx` com conteúdo básico (lorem ipsum legal genérico — utilizador depois preenche).
+- i18n keys `landing.footer.{links_*,legal_*,product_*}`.
+
+### Bloco C — Polish secundário
+
+**C1. Scroll-anchor offset** — quando se clica "Como funciona", o título fica colado por baixo do header sticky. Adicionar `scroll-mt-20` aos `<section id="...">`.
+
+**C2. Mockup do hero a ocultar em mobile** — o `HeroPlanMockup` usa `FloatCard` que tem `hidden ... md:block`. Fica vazio em mobile. Adicionar versão simplificada visível em mobile (apenas 3 linhas + título), ou colapsar a coluna.
 
 ## CONSTRAINTS
-- No unrelated changes; do **not** touch microcycle/progression logic in this turn.
-- Do not modify any auth flow code (signIn / signUp / google handlers).
-- Do not touch i18n keys.
+- Sem refactors fora dos ficheiros listados.
+- Sem alterar lógica do AI (geração de plano).
+- Sem novos packages.
+- i18n: cada chave nova **tem** de existir em PT e EN.
 
 ## ACCEPTANCE
-- New ingot icon visible in AppShell header AND on the auth page (just by replacing the asset file).
-- Auth page: logo centered, larger, accent line under it, wordmark below; language switcher visibly de-emphasized at the bottom.
-- Right rail in microcycle / progressions / blueprint pages no longer shows a white scrollbar; scroll still works.
+- **A1**: clicar "Regenerate" num dia faz aparecer o conteúdo novo dentro de ≤2s sem refresh manual; reproduzir 3× consecutivas.
+- **A2**: clicar 3× rápido em "Generate Day 2" só dispara 1 geração; botão fica disabled durante.
+- **B1**: secção "Pricing" visível em scroll, link "Preço" no nav vai lá ter.
+- **B2**: badge de prova social visível no hero em PT e EN.
+- **B4**: rodapé tem 3 colunas; `/terms` e `/privacy` carregam sem 404.
+- **C1**: clicar âncora não esconde título atrás do header.
+- **C2**: hero em viewport 375px mostra mockup compacto em vez de coluna vazia.
 
 ## ROLLBACK
-- Restore the previous `forge-logo.png` from git history.
-- Revert `src/routes/auth.tsx` and remove the `.scrollbar-hide` utility + class usages.
+- A1/A2: reverter `microcycle.tsx` e `DayCardEditable.tsx`.
+- B1–B4: remover secção pricing, badge, rotas legais, links do footer.
+- C1/C2: remover classes `scroll-mt-*` e o mockup mobile.
 
-## Next turn (pending your nod)
-- Investigate the **microcycle "regen runs but UI doesn't update"** bug — most likely a stale realtime payload or missing `loadDays()` after `generateDay` resolves.
+---
+
+## Ordem de execução proposta
+1. **A1 + A2** primeiro (bug = bloqueador real do utilizador).
+2. **B4** (rotas legais) — rápido e desbloqueia confiança.
+3. **B1** pricing — maior impacto comercial.
+4. **B2 + B3 + C1 + C2** — polish de remate.
+
+Aprovas e avanço, ou queres reorganizar a ordem / cortar algum bloco?
