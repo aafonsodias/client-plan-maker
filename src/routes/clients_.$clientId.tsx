@@ -1768,6 +1768,8 @@ function SectionBlock({
   footer,
   provenance,
   reviewed = false,
+  analysis,
+  analysing = false,
 }: {
   id: string;
   title: string;
@@ -1778,6 +1780,8 @@ function SectionBlock({
   footer?: React.ReactNode;
   provenance?: "client" | "trainer-edited";
   reviewed?: boolean;
+  analysis?: SectionAnalysis | null;
+  analysing?: boolean;
 }) {
   const { t } = useTranslation("assessment");
   const [open, setOpen] = useState(!defaultCollapsed);
