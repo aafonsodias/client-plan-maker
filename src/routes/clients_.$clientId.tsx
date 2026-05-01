@@ -189,8 +189,11 @@ function isSectionComplete(id: string, a: any): boolean {
     case "posture":
       return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
     case "screen":
-      return hasVal(a.squat_depth_score) || hasVal(a.overhead_reach_score) ||
-             hasVal(a.hip_hinge_score) || hasVal(a.single_leg_balance_score);
+      return PATTERN_IDS.every((p) => {
+        if (a.screen_not_assessed?.[p] === true) return true;
+        const fc = a[`${p}_form_criteria`];
+        return fc && formScore(fc) >= 3;
+      });
     case "history":
       return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
     case "performance":
