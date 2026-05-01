@@ -1824,7 +1824,13 @@ function ClientDetail() {
                             toast.error(res.error || "Approve failed", { id: tId });
                             return;
                           }
-                          setInlineBrief({ ...inlineBrief, approved: true });
+                          setInlineBrief({
+                            ...inlineBrief,
+                            approved: true,
+                            approvedStages: Array.from(
+                              new Set([...(inlineBrief.approvedStages ?? []), "brief"])
+                            ),
+                          });
                           toast.success("Brief approved", { id: tId });
                         } finally {
                           setBriefStageBusy(false);
