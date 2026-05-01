@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
+import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -66,6 +67,11 @@ function parqFlagCount(parq: Record<string, boolean | null>): number {
 
 // Section -> assessment field keys used to compute a signature for edit detection.
 const PROV_SECTION_FIELDS: Record<string, string[]> = {
+  parq: ["parq"],
+  risk: ["risk"],
+  anthro: ["waist_cm", "hip_cm", "body_fat_pct", "body_fat_method"],
+  meds: ["medications", "med_flags"],
+  goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal", "secondary_goals"],
   smart_goal: ["smart_specific", "smart_measurable", "smart_deadline", "primary_goal"],
   readiness: ["readiness_stage"],
   training: [
@@ -80,6 +86,17 @@ const PROV_SECTION_FIELDS: Record<string, string[]> = {
     "ext_meals_per_day", "ext_alcohol_units_week", "ext_processed_food_freq",
     "ext_water_l_per_day", "nutrition_habits",
   ],
+  mobility: [
+    "mobility_limitations", "ext_mob_shoulder", "ext_mob_hip", "ext_mob_ankle",
+    "ext_mob_thoracic", "ext_mob_wrist", "ext_mob_knee",
+  ],
+  posture: ["standing_posture_notes", "known_imbalances", "dominant_side"],
+  screen: [
+    "squat_depth_score", "squat_depth_note", "overhead_reach_score", "overhead_reach_note",
+    "hip_hinge_score", "hip_hinge_note", "single_leg_balance_score", "single_leg_balance_note",
+  ],
+  history: ["years_training", "previous_program_style", "max_lifts"],
+  performance: ["resting_heart_rate", "cardio_capacity", "ext_cardio_test"],
 };
 
 function sectionSignature(assessment: any, section: string): string {
@@ -396,6 +413,14 @@ function ClientDetail() {
   const sectionSnapshotRef = useRef<Record<string, string>>({});
   const lsKey = `forge_assessment_draft_${clientId}`;
 
+  // Phased generation feature-flag + brief preview coverage.
+  const [phasedEnabled, setPhasedEnabled] = useState(false);
+  const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
+  const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
+  const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
+  // Track signature of last-analysed payload per section to avoid duplicate fires.
+  const lastAnalysedSigRef = useRef<Record<string, string>>({});
+
   useEffect(() => {
     if (!user) return;
     void (async () => {
@@ -456,6 +481,13 @@ function ClientDetail() {
 
       const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      // Load phased-generation feature flag for this trainer.
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("phased_generation_enabled")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setPhasedEnabled(!!(prof as any)?.phased_generation_enabled);
       setHydrated(true);
       void detectResumablePlan();
     })();
@@ -534,6 +566,12 @@ function ClientDetail() {
           }
           setLastSavedAt(Date.now());
           setSaveStatus("saved");
+          // Fire-and-forget Pre-Stage 0 micro-analyses for sections whose
+          // signature changed since the last analysis. Gated server-side on
+          // profiles.phased_generation_enabled.
+          if (phasedEnabled && assessment.id) {
+            void triggerSectionAnalyses();
+          }
         } catch (err) {
           console.warn("Auto-save to cloud failed, kept local backup", err);
           setSaveStatus("offline");
@@ -549,6 +587,47 @@ function ClientDetail() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assessment, hydrated, user, clientId]);
+
+  // Eager Pre-Stage 0: for each phased section whose payload signature changed,
+  // fire-and-forget a server-side micro-analysis. Server is idempotent + cached,
+  // and gated on the trainer's phased_generation_enabled flag.
+  const triggerSectionAnalyses = async () => {
+    if (!assessment.id) return;
+    const sections = Object.keys(PROV_SECTION_FIELDS).filter((s) => s !== "smart_goal");
+    const fired: Promise<unknown>[] = [];
+    for (const section of sections) {
+      const sig = sectionSignature(assessment, section);
+      if (lastAnalysedSigRef.current[section] === sig) continue;
+      // Skip empty sections — nothing for the model to analyse.
+      if (sig === JSON.stringify([]) || /^\[(null,?)+\]$/.test(sig.replace(/\s/g, ""))) continue;
+      lastAnalysedSigRef.current[section] = sig;
+      fired.push(
+        analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } })
+          .catch((e) => console.warn("pre-stage analyze failed", section, e))
+      );
+    }
+    if (fired.length === 0) return;
+    // After all settle, refresh coverage badge.
+    void Promise.allSettled(fired).then(async () => {
+      if (!assessment.id) return;
+      try {
+        const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+      } catch {}
+    });
+  };
+
+  // Initial coverage fetch when phased flag is on and assessment exists.
+  useEffect(() => {
+    if (!phasedEnabled || !assessment.id) return;
+    void (async () => {
+      try {
+        const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phasedEnabled, assessment.id]);
 
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
@@ -1352,10 +1431,34 @@ function ClientDetail() {
                 );
               }
               return (
-                <Button onClick={() => void generate()} disabled={busy} size="lg">
-                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {t("generate.button")}
-                </Button>
+                <div className="flex flex-col items-end gap-2">
+                  {phasedEnabled && briefCoverage && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
+                        {t("generate.brief_coverage", {
+                          done: briefCoverage.done,
+                          total: briefCoverage.total,
+                          defaultValue: `Brief preview: ${briefCoverage.done}/${briefCoverage.total}`,
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {phasedEnabled ? (
+                    <Button
+                      onClick={() => navigate({ to: "/plans/new", search: { clientId } as any })}
+                      disabled={busy}
+                      size="lg"
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      {t("generate.button")}
+                    </Button>
+                  ) : (
+                    <Button onClick={() => void generate()} disabled={busy} size="lg">
+                      {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                      {t("generate.button")}
+                    </Button>
+                  )}
+                </div>
               );
             })()}
           </div>
