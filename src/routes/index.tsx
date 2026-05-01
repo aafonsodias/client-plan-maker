@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
@@ -34,6 +34,9 @@ function Landing() {
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
+            <a href="#pricing" className="hidden sm:inline-block px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              {t("plan:landing.pricing.nav_link")}
+            </a>
             <LanguageSwitcher className="mr-1" />
             {signedIn ? (
               <Button asChild size="sm">
@@ -69,13 +72,17 @@ function Landing() {
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
               {t("plan:landing.hero.subtitle")}
             </p>
-            <div className="mt-10 flex flex-wrap gap-3">
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90">
+              <Sparkles className="h-3 w-3" />
+              {t("plan:landing.hero.social_proof")}
+            </div>
+            <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link to={primaryCtaTo}>
                   {primaryCtaLabel} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="ghost">
                 <a href="#how-it-works">{t("plan:landing.hero.cta_secondary")}</a>
               </Button>
             </div>
@@ -92,7 +99,7 @@ function Landing() {
       </section>
 
       {/* How it works — animated mock */}
-      <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
+      <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.how_it_works.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.how_it_works.title")}</h2>
@@ -135,8 +142,63 @@ function Landing() {
         </div>
       </section>
 
+
+      {/* Pricing */}
+      <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-12 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.pricing.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.pricing.title")}</h2>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Beta card */}
+          <div className="relative rounded-2xl border border-accent/40 bg-card p-8 shadow-[var(--shadow-elegant)]">
+            <div className="absolute right-6 top-6 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+              {t("plan:landing.pricing.beta_badge")}
+            </div>
+            <h3 className="text-xl font-medium">{t("plan:landing.pricing.beta_title")}</h3>
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="text-4xl font-light tracking-tight">{t("plan:landing.pricing.beta_price")}</span>
+              <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.beta_period")}</span>
+            </div>
+            <ul className="mt-6 space-y-3 text-sm">
+              {(t("plan:landing.pricing.beta_features", { returnObjects: true }) as string[]).map((f, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                  <span className="text-foreground/85">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Button asChild size="lg" className="mt-8 w-full">
+              <Link to={primaryCtaTo}>{t("plan:landing.pricing.beta_cta")}</Link>
+            </Button>
+          </div>
+          {/* Pro card */}
+          <div className="relative rounded-2xl border border-border bg-card/60 p-8">
+            <div className="absolute right-6 top-6 rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("plan:landing.pricing.pro_badge")}
+            </div>
+            <h3 className="text-xl font-medium text-muted-foreground">{t("plan:landing.pricing.pro_title")}</h3>
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="text-4xl font-light tracking-tight text-muted-foreground">{t("plan:landing.pricing.pro_price")}</span>
+              <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.pro_period")}</span>
+            </div>
+            <ul className="mt-6 space-y-3 text-sm">
+              {(t("plan:landing.pricing.pro_features", { returnObjects: true }) as string[]).map((f, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70" />
+                  <span className="text-muted-foreground">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Button asChild size="lg" variant="outline" className="mt-8 w-full">
+              <a href="mailto:hello@forge.app?subject=Forge%20Pro%20-%20notify%20me">{t("plan:landing.pricing.pro_cta")}</a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
-      <section id="features" className="mx-auto max-w-6xl px-6 py-24">
+      <section id="features" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <h2 className="mb-12 max-w-2xl text-4xl font-light tracking-tight">{t("plan:landing.features.title")}</h2>
         <div className="grid gap-6 md:grid-cols-3">
           {[
@@ -237,8 +299,39 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        {t("plan:landing.footer_copy", { year: new Date().getFullYear() })}
+      <footer className="border-t border-border bg-card/30 py-12 text-sm text-muted-foreground">
+        <div className="mx-auto max-w-6xl px-6 grid gap-8 md:grid-cols-3">
+          <div>
+            <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-xs text-foreground">
+              <Logo className="h-6 w-6" />
+              <span>{t("common:brand.name")}</span>
+            </Link>
+            <p className="mt-3 text-xs">{t("plan:landing.footer.tagline")}</p>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/80">
+              {t("plan:landing.footer.product_title")}
+            </p>
+            <ul className="mt-3 space-y-2 text-xs">
+              <li><a href="#features" className="hover:text-foreground">{t("plan:landing.footer.product_features")}</a></li>
+              <li><a href="#pricing" className="hover:text-foreground">{t("plan:landing.footer.product_pricing")}</a></li>
+              <li><a href="#how-it-works" className="hover:text-foreground">{t("plan:landing.footer.product_how")}</a></li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-foreground/80">
+              {t("plan:landing.footer.legal_title")}
+            </p>
+            <ul className="mt-3 space-y-2 text-xs">
+              <li><Link to="/terms" className="hover:text-foreground">{t("plan:landing.footer.legal_terms")}</Link></li>
+              <li><Link to="/privacy" className="hover:text-foreground">{t("plan:landing.footer.legal_privacy")}</Link></li>
+              <li><a href="mailto:hello@forge.app" className="hover:text-foreground">{t("plan:landing.footer.legal_contact")}</a></li>
+            </ul>
+          </div>
+        </div>
+        <div className="mx-auto mt-10 max-w-6xl px-6 text-center text-xs text-muted-foreground/70">
+          {t("plan:landing.footer_copy", { year: new Date().getFullYear() })}
+        </div>
       </footer>
       <ScrollToTopButton />
     </div>
@@ -297,7 +390,7 @@ function HowItWorksAnimation() {
 function FloatCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`relative hidden overflow-hidden rounded-2xl border border-border bg-card/90 p-6 shadow-[var(--shadow-elegant)] md:block ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-border bg-card/90 p-6 shadow-[var(--shadow-elegant)] ${className}`}
       style={{ animation: "forge-float 4s ease-in-out infinite" }}
     >
       {children}

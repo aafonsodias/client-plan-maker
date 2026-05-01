@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -28,9 +30,19 @@ import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.bri
 import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId.blueprint'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -126,7 +138,9 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -146,7 +160,9 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -167,7 +183,9 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/clients_/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -189,7 +207,9 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -209,7 +229,9 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -229,7 +251,9 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/privacy'
     | '/settings'
+    | '/terms'
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -250,7 +274,9 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
+  PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
+  TermsRoute: typeof TermsRoute
   ClientsClientIdRoute: typeof ClientsClientIdRoute
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
@@ -262,11 +288,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -417,7 +457,9 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,
+  PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
+  TermsRoute: TermsRoute,
   ClientsClientIdRoute: ClientsClientIdRoute,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
@@ -429,3 +471,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
