@@ -77,7 +77,7 @@ function AuthPage() {
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <span className="h-px w-10 bg-accent/70" />
-            <span className="text-sm font-light uppercase tracking-[0.45em] text-foreground/90">
+            <span className="text-sm font-light uppercase tracking-[0.45em] text-foreground/90" style={{ paddingLeft: "0.45em" }}>
               {t("brand.name")}
             </span>
           </div>
