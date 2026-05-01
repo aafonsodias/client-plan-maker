@@ -23,6 +23,7 @@ import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
 import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.brief'
+import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId.blueprint'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -95,6 +96,11 @@ const PlansPlanIdBriefRoute = PlansPlanIdBriefRouteImport.update({
   path: '/brief',
   getParentRoute: () => PlansPlanIdRoute,
 } as any)
+const PlansPlanIdBlueprintRoute = PlansPlanIdBlueprintRouteImport.update({
+  id: '/blueprint',
+  path: '/blueprint',
+  getParentRoute: () => PlansPlanIdRoute,
+} as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans': typeof PlansIndexRoute
+  '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/'
+    | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans'
+    | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/'
+    | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
@@ -324,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansPlanIdBriefRouteImport
       parentRoute: typeof PlansPlanIdRoute
     }
+    '/plans/$planId/blueprint': {
+      id: '/plans/$planId/blueprint'
+      path: '/blueprint'
+      fullPath: '/plans/$planId/blueprint'
+      preLoaderRoute: typeof PlansPlanIdBlueprintRouteImport
+      parentRoute: typeof PlansPlanIdRoute
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -335,11 +354,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface PlansPlanIdRouteChildren {
+  PlansPlanIdBlueprintRoute: typeof PlansPlanIdBlueprintRoute
   PlansPlanIdBriefRoute: typeof PlansPlanIdBriefRoute
   PlansPlanIdSessionsRoute: typeof PlansPlanIdSessionsRoute
 }
 
 const PlansPlanIdRouteChildren: PlansPlanIdRouteChildren = {
+  PlansPlanIdBlueprintRoute: PlansPlanIdBlueprintRoute,
   PlansPlanIdBriefRoute: PlansPlanIdBriefRoute,
   PlansPlanIdSessionsRoute: PlansPlanIdSessionsRoute,
 }
