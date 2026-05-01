@@ -113,6 +113,31 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             <span className="truncate">{t("brand.name")}</span>
           </Link>
 
+          {/* Mobile-only locale chip — visible at-a-glance, taps the same items as desktop globe */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("language.switch_aria")}
+                className="md:hidden inline-flex shrink-0 items-center rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                {currentLocale}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {SUPPORTED_LOCALES.map((code) => (
+                <DropdownMenuItem key={code} onSelect={() => changeLocale(code)}>
+                  {currentLocale === code ? (
+                    <Check className="mr-2 h-4 w-4" />
+                  ) : (
+                    <span className="mr-2 inline-block h-4 w-4" />
+                  )}
+                  {code === "pt" ? t("language.portuguese") : t("language.english")}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Desktop nav (≥ md) */}
           <nav className="hidden min-w-0 items-center gap-1 md:flex">
             {primaryNav.map((n) => {
