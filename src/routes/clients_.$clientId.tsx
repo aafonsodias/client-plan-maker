@@ -955,6 +955,28 @@ function ClientDetail() {
     toast.success("Previous draft discarded.");
   };
 
+  // Refresh the Plans list (used after creating a phased draft or deleting a plan).
+  const refreshPlans = async () => {
+    const { data: p } = await supabase
+      .from("workout_plans")
+      .select("id, title, status, updated_at, brief, generation_state, generation_status")
+      .eq("client_id", clientId)
+      .order("updated_at", { ascending: false });
+    setPlans(p ?? []);
+  };
+
+  // Delete a single plan (with confirm) from the Plans list.
+  const deletePlan = async (planId: string) => {
+    const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
+    if (error) {
+      toast.error("Delete failed: " + error.message);
+      return;
+    }
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    if (inlineBrief?.planId === planId) setInlineBrief(null);
+    toast.success("Plan deleted");
+  };
+
   const discardDraft = () => {
     // no-op marker
     setAssessment((a: any) => ({
