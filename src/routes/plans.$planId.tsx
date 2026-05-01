@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,12 +28,22 @@ import { ValidationReport } from "@/components/ValidationReport";
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
 export const Route = createFileRoute("/plans/$planId")({
-  component: () => (
+  component: PlanRoute,
+});
+
+function PlanRoute() {
+  const { planId } = Route.useParams();
+  const location = useLocation();
+  const isBasePlanRoute = location.pathname === `/plans/${planId}`;
+
+  if (!isBasePlanRoute) return <Outlet />;
+
+  return (
     <AppShell back={{ to: "/plans", label: "All plans" }}>
       <PlanEditor />
     </AppShell>
-  ),
-});
+  );
+}
 
 type Mode = "view" | "edit" | "log";
 type SessionRow = {
