@@ -1108,13 +1108,13 @@ function ClientDetail() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="space-y-6">
+    <div className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-light tracking-tight">{client?.full_name}</h1>
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
-        <p className="text-muted-foreground">{client.email ?? t("no_email")}</p>
+        <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
       </div>
 
       <IntakeLinkPanel

@@ -140,7 +140,7 @@ export function IntakeLinkPanel({
     return (
       <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Client intake link</p>
-        <Button size="sm" variant="secondary" className="mt-3" onClick={doGenerate} disabled={busy}>
+        <Button size="sm" variant="secondary" className="mt-3 w-full whitespace-normal text-left sm:w-auto" onClick={doGenerate} disabled={busy}>
           Generate intake link
         </Button>
         <p className="mt-2 text-xs text-muted-foreground">
@@ -155,31 +155,31 @@ export function IntakeLinkPanel({
   const statusText = view.intake_status === "opened" ? "Opened — not submitted" : "Not opened yet";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
+    <div className="rounded-xl border border-border bg-card p-4 max-w-full overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Client intake link</p>
         <button onClick={doGenerate} disabled={busy} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
           <RefreshCw className="h-3 w-3" /> Regenerate link
         </button>
       </div>
       <div className="mt-3 flex items-center gap-2 overflow-hidden rounded-md border border-border bg-background/60 px-2 py-1.5">
-        <code className="flex-1 truncate font-mono text-[11px] text-muted-foreground">{url}</code>
+        <code className="flex-1 min-w-0 truncate font-mono text-[11px] text-muted-foreground">{url}</code>
       </div>
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-stretch gap-2 sm:flex-nowrap sm:items-center">
         <Input
           readOnly
           value={url}
           onFocus={(e) => e.currentTarget.select()}
-          className="flex-1 font-mono text-xs"
+          className="w-full max-w-full min-w-0 flex-1 font-mono text-xs"
         />
-        <Button size="sm" variant="outline" onClick={copy}>
+        <Button size="sm" variant="outline" onClick={copy} className="shrink-0">
           {copied ? (
             <><Check className="mr-1.5 h-3.5 w-3.5" /> Copied!</>
           ) : (
             <><Copy className="mr-1.5 h-3.5 w-3.5" /> Copy</>
           )}
         </Button>
-        <Button size="sm" variant="outline" asChild>
+        <Button size="sm" variant="outline" asChild className="shrink-0">
           <a href={url} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open
           </a>
