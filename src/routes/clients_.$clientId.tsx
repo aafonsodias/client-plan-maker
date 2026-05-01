@@ -349,6 +349,7 @@ function ClientDetail() {
     approved: boolean;
     programmingVariables: ProgrammingVariables;
     accommodations: RedFlagAccommodation[];
+    approvedStages?: string[];
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
