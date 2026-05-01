@@ -627,6 +627,11 @@ function ClientDetail() {
       queue.push(section);
     }
     if (queue.length === 0) return;
+    setAnalysingSections((prev) => {
+      const next = { ...prev };
+      for (const s of queue) next[s] = true;
+      return next;
+    });
     void (async () => {
       for (const section of queue) {
         try {
@@ -634,12 +639,20 @@ function ClientDetail() {
         } catch (e) {
           console.warn("pre-stage analyze failed", section, e);
         }
+        setAnalysingSections((prev) => {
+          const next = { ...prev };
+          delete next[section];
+          return next;
+        });
         await new Promise((r) => setTimeout(r, 600));
       }
       if (!assessment.id) return;
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
-        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+        if (r?.ok) {
+          setBriefCoverage({ done: r.done, total: r.total });
+          setSectionAnalyses((r.analyses ?? {}) as Record<string, SectionAnalysis | null>);
+        }
       } catch {}
     })();
   };
