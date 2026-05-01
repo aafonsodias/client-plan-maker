@@ -61,6 +61,26 @@ function PlanEditor() {
     void (async () => {
       const { data: p } = await supabase.from("workout_plans").select("*").eq("id", planId).single();
       setPlan(p);
+      // Phased plan redirect: if this plan was created with the new
+      // staged generator, jump straight to its current stage instead of
+      // showing the legacy "Summary (empty)" editor.
+      const gs: any = (p as any)?.generation_state;
+      const stage: string | undefined = gs?.stage;
+      if (stage) {
+        const stageRoute: Record<string, "/plans/$planId/brief" | "/plans/$planId/blueprint" | "/plans/$planId/microcycle" | "/plans/$planId/progressions" | "/plans/$planId/sessions"> = {
+          brief: "/plans/$planId/brief",
+          blueprint: "/plans/$planId/blueprint",
+          microcycle: "/plans/$planId/microcycle",
+          progressions: "/plans/$planId/progressions",
+          done: "/plans/$planId/sessions",
+        };
+        const to = stageRoute[stage];
+        if (to) {
+          console.info("[PlanEditor] redirect", { planId, stage, to });
+          navigate({ to, params: { planId }, replace: true });
+          return;
+        }
+      }
       setData((p?.plan_data as unknown as PlanData) ?? { weeks: [] });
       if (p?.client_id) {
         const { data: c } = await supabase.from("clients").select("*").eq("id", p.client_id).single();
