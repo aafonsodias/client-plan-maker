@@ -94,7 +94,7 @@ function Sparkline({ values, highlighted }: { values: number[]; highlighted: boo
     return [x, y] as const;
   });
   const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
-  const stroke = highlighted ? "hsl(var(--accent))" : "hsl(var(--muted-foreground))";
+  const stroke = highlighted ? "var(--accent)" : "var(--muted-foreground)";
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" aria-hidden>
       {[0.25, 0.5, 0.75].map((g) => (
@@ -104,7 +104,7 @@ function Sparkline({ values, highlighted }: { values: number[]; highlighted: boo
           x2={w - padX}
           y1={h - padY - g * (h - padY * 2)}
           y2={h - padY - g * (h - padY * 2)}
-          stroke="hsl(var(--border))"
+          stroke="var(--border)"
           strokeDasharray="2 3"
           strokeWidth={0.5}
         />
@@ -120,7 +120,7 @@ function Sparkline({ values, highlighted }: { values: number[]; highlighted: boo
           y={h - 0.5}
           textAnchor="middle"
           fontSize={7}
-          fill="hsl(var(--muted-foreground))"
+          fill="var(--muted-foreground)"
         >
           W{i + 1}
         </text>
