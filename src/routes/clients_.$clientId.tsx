@@ -1662,7 +1662,12 @@ function ClientDetail() {
                         const tId = toast.loading("Approving brief…");
                         try {
                           const res: any = await approveBriefFn({
-                            data: { planId: inlineBrief.planId, brief: inlineBrief.brief },
+                            data: {
+                              planId: inlineBrief.planId,
+                              brief: inlineBrief.brief,
+                              programmingVariables: inlineBrief.programmingVariables,
+                              redFlagAccommodations: inlineBrief.accommodations,
+                            },
                           });
                           if (!res.ok) {
                             toast.error(res.error || "Approve failed", { id: tId });
@@ -1712,6 +1717,14 @@ function ClientDetail() {
                   brief={inlineBrief.brief}
                   onChange={(b) => setInlineBrief({ ...inlineBrief, brief: b })}
                   disabled={inlineBrief.approved || briefStageBusy}
+                  programmingVariables={inlineBrief.programmingVariables}
+                  onProgrammingChange={(p) =>
+                    setInlineBrief({ ...inlineBrief, programmingVariables: p })
+                  }
+                  accommodations={inlineBrief.accommodations}
+                  onAccommodationsChange={(a) =>
+                    setInlineBrief({ ...inlineBrief, accommodations: a })
+                  }
                 />
               </StageCard>
               {inlineBrief.approved && (
