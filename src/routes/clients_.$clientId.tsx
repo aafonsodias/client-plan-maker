@@ -1943,7 +1943,10 @@ function ClientDetail() {
                             ? await generateMicrocycleDaysFn({ data: { planId } })
                             : await proposeProgressionsFn({ data: { planId } });
                         if (!res?.ok) {
-                          toast.error(res?.error || `Falha ao gerar ${stage}`, { id: tId });
+                          const prefix = stage[0].toUpperCase() + stage.slice(1);
+                          const msg = res?.error || `Falha ao gerar ${stage}`;
+                          console.error(`[${prefix}] generate failed`, { planId, stage, error: msg });
+                          toast.error(`${prefix}: ${msg}`, { id: tId });
                           return;
                         }
                         toast.success(`${stage[0].toUpperCase() + stage.slice(1)} pronto`, { id: tId });
@@ -1958,7 +1961,10 @@ function ClientDetail() {
                           params: { planId },
                         });
                       } catch (e: any) {
-                        toast.error(e?.message ?? `Falha ao gerar ${stage}`, { id: tId });
+                        const prefix = stage[0].toUpperCase() + stage.slice(1);
+                        const msg = e?.message ?? `Falha ao gerar ${stage}`;
+                        console.error(`[${prefix}] generate threw`, { planId, stage, error: msg });
+                        toast.error(`${prefix}: ${msg}`, { id: tId });
                       } finally {
                         setStageBusy(null);
                       }
