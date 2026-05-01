@@ -1,186 +1,341 @@
----
+# Round 2 — Corrections + Movement Competency Rework
 
-**Polish & restructure pass — client/assessment page**
-
-13 items, executed in order. Typecheck after each. **STOP after item 6 for visual review.**
-
-GitHub: https://github.com/aafonsodias/client-plan-maker
+Strict order. Typecheck after each step. **Stop after B4** and show the new Movement Screen + radar before continuing to Item 7.
 
 ---
 
-**Item 1 — Fix Expand/Collapse All**
+## A1 — Replace snapshot card with inline link
 
-In `src/routes/clients_.$clientId.tsx`, `useSectionCollapseProvider` already calls `setAll(true|false)` and writes every section to localStorage. The bug is the `disabled={ctx.allOpen}` / `disabled={ctx.allClosed}` guards on the buttons — when state is mixed, `allOpen` is true if every section currently lacks an explicit override (sections default to open), so clicking does nothing visible. Remove the disabled guards, and force `setAll` to write overrides for every section regardless of current state. Result: clicking always forces all open / all closed.
+In `src/routes/clients_.$clientId.tsx`:
 
----
+- Delete the `<ClientSnapshotCard … />` render at line 1134 and the entire `function ClientSnapshotCard(...)` definition (line 2549). Drop unused props/imports.
+- Next to the client name in the header, render a small inline element:
+  - `Última avaliação · {DD/MM/YYYY of assessment.updated_at}` followed by an arrow button.
+  - On click: `document.getElementById('sintese-da-avaliacao')?.scrollIntoView({ behavior: 'smooth' })`.
+  - Hide the link if no assessment exists yet.
+- Add `id="sintese-da-avaliacao"` to the wrapper around `<AssessmentSynthesisDashboard … />` (line ~1658).
+- Format date via `new Intl.DateTimeFormat(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' })`.
 
-**Item 2 — Restructure Synthesis Dashboard placement**
+## A2 — Force locale re-analysis of cached AI outputs
 
-- Extract the existing `AssessmentSynthesisDashboard` (currently rendered around line 1170, before assessment sections) into `src/components/AssessmentSynthesisCard.tsx`.
-- Client page top: render a compact "client snapshot card" above the assessment, using the most recent assessment (date, ACSM risk, recovery, body comp, top 3 red flags). Always visible; no sections-analyzed gate.
-- Assessment area: move the full synthesis to **below the last section**, just above the brief card.
-- Add the radar chart: new `MovementCompetencyRadar` inline-SVG component (no new dep). 6 axes: squat, hinge, push, pull, carry, lunge. Score sources: `assessment.squat_depth_score`, `hip_hinge_score`, `overhead_reach_score` (push proxy), plus the new pull/carry scores from item 11 (until item 11 ships, dashed). Un-assessed axes render as dashed grey lines + grey dot at center.
-- Sort red flags: order by severity using `red_flag_accommodations` strategy lookup: AVOID → MODIFY → MONITOR → ACCOMMODATE → unmapped (alpha last).
+**Migration** (new file `supabase/migrations/<ts>_section_analyses_locale.sql`):
 
----
-
-**Item 3 — Eliminate duplicate alerts inside sections**
-
-Today every `SectionBlock` renders `analysis.red_flags` from its own pre-stage analysis, but the synthesis fuses them — and because the AI sometimes echoes upstream flags, sections look duplicated. Fix:
-
-- Tighten the pre-stage prompt in `src/server/phased/pre-stage.functions.ts`: append "Only emit red_flags derived directly from THIS section's payload. Do not restate flags inferable from other sections."
-- In `SectionAnalysisCard` (around line 2175), drop the `red_flags` list rendering entirely. Section cards show only `contraindication_notes` / next-stage notes / movement summary fragments. Cross-section flag aggregation lives only in the synthesis dashboard.
-
----
-
-**Item 4 — Constructive section messaging**
-
-Rewrite `SectionAnalysisCard`:
-
-- If `contraindication_notes` or `notes_for_next_stage` exist → render the most useful one as a single line, no "Para o plano:" prefix.
-- If neither exists → render nothing (card hidden), instead of "Sem sinais de alerta".
-- For sections with simple deterministic insights (Goal, Anthropometry), compute a local one-liner client-side and render it even before AI analysis returns. **Use only this fixed rule set — do not invent additional rules:**
-  - WHR > 0.95 (M) or > 0.85 (F) → "Risco cardiometabólico elevado — priorizar perímetro abdominal"
-  - BF% > 25 (M) / > 32 (F) → "Composição corporal acima do ideal — considerar défice calórico moderado"
-  - Goal section with target weight/measurement loss → "Objetivo realista em ~X semanas a défice moderado" (compute X from baseline; cap at 1% body weight/week)
-  - All others: no client-side one-liner; wait for AI.
-
----
-
-**Item 5 — pt-pt formal pass**
-
-- Add `locale` arg to `analyzeAssessmentSection` and `synthesizeBrief` server functions, default `pt-pt`. System prompts get: "Output in European Portuguese, formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling (não use formas brasileiras)."
-- Add an `en-GB` branch in the same prompt so trainer locale flows through.
-- Caller passes `i18n.language` from the client.
-- Sweep hard-coded English strings in `clients_.$clientId.tsx`: "Expand all" / "Collapse all" / "Brief preview" / "No logged sessions yet" → use `t()` keys added to `src/i18n/locales/{pt,en}/{common,assessment}.json`.
-- Re-run pre-stage analysis for previously-analyzed sections when locale differs from cached output (cheap: store locale alongside hash in `sections_analysed_at`).
-
----
-
-**Item 6 — Compact design pass**
-
-Tighten `clients_.$clientId.tsx`:
-
-- `SectionBlock` body padding: `p-5` → `p-3 md:p-4`; `space-y-4` → `space-y-3`; body text `leading-relaxed` → `leading-snug`.
-- Risk stratification block: rewrite to a 2-col grid — left column is wrapping pill toggles for FH-DCV / sedentarismo / dislipidemia / HTA / tabagismo / IMC; right column is single ACSM result chip + one-line interpretation. Remove the duplicate "Risco ACSM: BAIXO" badge.
-- Anthropometry: one `grid-cols-3` row for waist/hip/BF, method dropdown full-width below.
-- Medication: wrap insight text in a `<details>` with summary "Ver análise →".
-- Goal section: drop the duplicate "Objetivo registado: …" line below the SMART card.
-- Brief card: subsection gap from `space-y-8` → `space-y-4`; inner field padding tightened to match.
-- Pass over the page: any `space-y-{≥6}` → `space-y-4`; `gap-{≥6}` between cards → `gap-4`.
-
-**STOP. Confirm before continuing:**
-
-- (a) Risk stratification fits one row at desktop width
-- (b) "Sem sinais de alerta" strings are gone everywhere
-- (c) Brief card spacing visibly tighter than before
-- (d) No vertical whitespace gaps > 24px except between major card blocks
-- (e) Mobile (< 640px) still readable, no horizontal overflow
-
-Show me a screenshot of the assessment page top-to-bottom before starting item 7.
-
----
-
-**Item 7 — "Como avaliar" guidance**
-
-New `src/components/HowToAssess.tsx`: an inline `<details>` triggered by a "Como avaliar →" button next to the section title. Content table keyed by section id with concise evidence-based protocols:
-
-- Mobility / Anatómica: shoulder, hip, ankle 1–5 rubric.
-- Posture & Alignment: plumbline landmarks + common deviations (forward head, kyphosis, anterior pelvic tilt).
-- Movement Screen: overhead squat / hip hinge / single-leg balance / inverted row / carry — pass criteria.
-- Anthropometry: waist (narrowest, end-exhalation), hip (greater trochanter), BF (method-dependent SOPs).
-
-Strings live in `assessment.json` so they translate.
-
----
-
-**Item 8 — "Ver sugestões" on red flag accommodations**
-
-In `BriefEditor.tsx`, per-flag accommodation row gets a "Ver sugestões" button. New server function `suggestAccommodation` in `src/server/phased/accommodation-suggestions.functions.ts` calling Claude Haiku with the flag text + strategy + locale.
-
-System prompt:
-
-```
-You suggest evidence-based exercise modifications for a flagged condition.
-Return: { modifications: string[] (1-3 specific exercise/setup changes), reference?: string }
-
-CITATION RULES (strict):
-- Only cite well-known guidelines/papers you can recall with full confidence: ACSM guidelines, NSCA Essentials, Cools et al. 2014 (scapular kinematics), Reiman & Manske 2014 (functional testing), McGill spine work.
-- If you cannot recall a specific study with confidence (authors, year, journal), output "Research suggests..." instead of inventing.
-- Never fabricate authors, years, or journal names.
-- When in doubt, omit the reference field entirely. A useful modification with no citation beats a modification with a fake one.
-
+```sql
+alter table public.assessments
+  add column if not exists section_analyses_locale jsonb not null default '{}'::jsonb;
 ```
 
-Returns `{ modifications: string[], reference?: string }`. Render inline below the flag.
+**Server (`src/server/phased/pre-stage.functions.ts`)**:
 
----
+- Extend `InputSchema` with optional `locale: z.string().default('pt-PT')`.
+- On every successful write, also write `section_analyses_locale[section] = locale` alongside `section_analyses` and `sections_analysed_at`.
+- Extend `getSectionAnalysisCoverage` to also return `analyses_locale: Record<string,string>`.
 
-**Item 9 — Founder bypass**
+**Client (`clients_.$clientId.tsx`)**:
 
-- `.env`: add `FORGE_FOUNDER_EMAILS=aafonsodias@gmail.com` (comma-separated allowlist, server-readable). Also expose to client via `VITE_FORGE_FOUNDER_EMAILS` for UI gating.
-- New helper `src/lib/founder.ts`: `isFounderEmail(email)` parsing the env var.
-- `AppShell.tsx`: skip the trial banner if `isFounderEmail(user.email)`. Show small "Founder" pill in the user menu.
-- `billing.tsx`: skip the access-wall redirect / show a "Founder account — billing disabled" panel when applicable.
+- After loading coverage, compare `i18n.language` (mapped to `'pt-PT'` or `'en-GB'`) vs `analyses_locale[sectionId]`. For mismatches: drop from local `sectionAnalyses` map and enqueue `analyzeAssessmentSection({ section, force: true, locale })` through the existing autosave / coverage refresh hook.
+- Add a "Re-analisar avaliação" button in the assessment header next to Expand/Collapse:
+  - Confirms via dialog (cost note ~€0.05).
+  - Iterates the 14 sections sequentially, calls `analyzeAssessmentSection({ force: true, locale })`.
+  - Shows progress `N/14` with `<Loader2 />`.
+  - Disables Expand/Collapse during run; re-renders synthesis when done.
 
----
+## A3 — Translate remaining English UI bleeds
 
-**Item 10 — Posture photo upload (Phase 1, capture only)**
+Pure i18n sweep. Add missing keys to `src/i18n/locales/{pt,en}/{common,assessment}.json`. Replace literals in:
 
-- Migration: create storage bucket `posture-photos` with RLS — trainers can read/write only paths starting with `${trainer_id}/`.
-- Migration: `assessments.posture_photos jsonb default '{}'::jsonb` storing `{ front, side, back: { path, uploaded_at } }`.
-- New `src/components/PostureCapture.tsx` rendered below the Posture & Alignment section: 3 upload slots (Frente / Lado / Trás), each shows current thumbnail, replace button, lightbox on click.
-- Upload path: `posture-photos/${trainerId}/${clientId}/${assessmentId}/${view}.jpg`. Store path in `assessments.posture_photos`.
-- "Comparar com avaliação anterior" button: queries the previous `assessments` row for the same client (by `created_at`), opens a modal with side-by-side thumbnails for each view. Disabled if no previous assessment with photos.
-- No skeleton overlay, no AI — Phase 2 work deferred.
-
----
-
-**Item 11 — Pull + Carry in Movement Screen**
-
-- Migration: `assessments.pull_pattern_score int`, `pull_pattern_note text`, `carry_pattern_score int`, `carry_pattern_note text`. Validation trigger: scores 1–5.
-- Update `validate_assessment_ranges()` accordingly.
-- Movement Screen section in `clients_.$clientId.tsx`: add the two new score+note fields.
-- `pickSectionPayload` in `section-map.ts`: include pull/carry fields for the screen section so the brief AI sees them.
-- Update `MovementCompetencyRadar` (item 2) to read these directly — no more "not assessed" hallucinations.
-
----
-
-**Item 12 — Reassessment infrastructure**
-
-- Migration: 
-  ```sql
-  alter table assessments  add column is_reassessment boolean not null default false,  add column previous_assessment_id uuid references assessments(id) on delete set null;
-
+- `**IntakeLinkPanel.tsx**`: "Client intake link" → `intake.link_label` (`LINK DE AVALIAÇÃO DO CLIENTE`); "Generate intake link" → `Gerar link de avaliação`; helper text → `Envie um link ao seu cliente para preencher as secções de autoavaliação a partir do telemóvel.`; toasts ("Intake link ready", "Link copied", "Intake marked reviewed"); WhatsApp/email body templates → pt-PT formal ("Olá {nome}, …").
+- `**StageCard.tsx**`: accept `regenerateLabel` / `generatingLabel` / `placeholderLabel` props; default still EN, but every call site in `clients_.$clientId.tsx` passes pt-PT (`Regenerar`, `Aprovar`, `A gerar…`, `Aparece aqui assim que a etapa anterior for aprovada.`, `Etapa N — {title}`).
+- `**BriefEditor.tsx**`: All Card titles, Field labels, placeholders, "No red flags…" empty state → pt-PT keys. Equipment options, deload styles, splits, etc. read from a new `src/lib/brief-labels.ts`:
+  ```ts
+  export const PRIMARY_GOAL_LABELS_PT: Record<string,string> = {
+    hypertrophy: 'Hipertrofia', strength: 'Força', conditioning: 'Condição física',
+    mixed: 'Misto', fat_loss: 'Perda de gordura', general: 'Geral',
+  };
+  export const TRAINING_AGE_LABELS_PT = { beginner:'Iniciante', intermediate:'Intermédio', advanced:'Avançado' };
+  export const TRAINING_SPLIT_LABELS_PT = { full_body:'Corpo inteiro', upper_lower:'Superior / Inferior', ppl:'Empurrar / Puxar / Pernas', pplc:'Empurrar / Puxar / Pernas / Core', ppl_x2:'PPL (×2/sem)', body_part_split:'Por grupo muscular', custom:'Personalizado' };
+  export const DELOAD_FREQUENCY_LABELS_PT = { every_3_weeks:'A cada 3 semanas', every_4_weeks:'A cada 4 semanas', every_5_weeks:'A cada 5 semanas', every_6_weeks:'A cada 6 semanas', no_deload:'Sem deload' };
+  export const DELOAD_STYLE_LABELS_PT = { volume_reduction:'Redução de volume (-30%)', intensity_reduction:'Redução de intensidade (-15% carga)', full_rest_week:'Semana de descanso total', mixed:'Misto (-15% carga e -30% volume)' };
+  export const EXERCISE_BIAS_LABELS_PT = { compound_first:'Compostos primeiro', balanced:'Equilibrado', isolation_friendly:'Favorável a isolamento', bodyweight_friendly:'Favorável a peso corporal', equipment_flexible:'Flexível a equipamento' };
+  export const INT_VOL_LABELS_PT = { high_int_low_vol:'Alta intensidade / baixo volume', moderate_moderate:'Moderado / moderado', moderate_int_high_vol:'Intensidade moderada / volume alto', low_int_very_high_vol:'Baixa intensidade / volume muito alto' };
+  export const FLAG_STRATEGY_LABELS_PT = { AVOID:'Evitar', MODIFY:'Modificar', MONITOR:'Monitorizar', ACCOMMODATE:'Acomodar' };
   ```
-- Client page: "Nova avaliação" button next to the existing assessment. Click opens dialog: "Reavaliação" / "Nova avaliação completa".
-- Reassessment path: insert a new `assessments` row with `is_reassessment=true`, `previous_assessment_id` set, copies forward stable fields (PAR-Q+, equipment, history, goals). Trainer is then dropped into the new assessment with only volatile sections expanded by default (anthropometry, mobility, posture, screen, performance markers).
-- Full UI flow for diff/comparison is out of scope this round — schema + entry button only.
+  DB values stay canonical (e.g. `fat_loss`); only the visible `<option>` text uses the map.
+- Sweep `clients_.$clientId.tsx` and `AppShell.tsx` for any remaining `"Brief preview"`, `"All clients"`, `"Approve brief"`, etc. and route through `t(...)`.
+
+## A4 — Deterministic and AI insight mutually exclusive
+
+In `clients_.$clientId.tsx` (the `SectionBlock` / per-section render):
+
+- Compute `hasAiInsight = !!sectionAnalyses[sectionId]` (anything with at least one non-empty field).
+- When `hasAiInsight`, do NOT render the deterministic stub (the `✓ Objetivo registado: …` snippet, etc.). Render only `<SectionAnalysisCard />`.
+- When no AI insight (yet, or stripped by A2), keep the deterministic stub as fallback.
 
 ---
 
-**Item 13 — Landing page teaser visuals**
+**A5 — Blood pressure measurement**
 
-In `src/routes/index.tsx`, below the existing features grid, add a 4-tile preview row using inline SVG/CSS mockups (no real screenshots needed):
+Critical gap: ACSM risk stratification requires measured BP, not just a toggle. The current "Hipertensão" toggle is self-reported and can mask stage-2 HTN where exercise clearance is mandatory.
 
-- Client snapshot card mock (avatar + 3 stat chips).
-- Movement competency radar (reuse `MovementCompetencyRadar` with sample data).
-- Red flags banner snippet (3 chips with severity colors).
-- Brief generation flow (3-step pill row: Avaliação → Brief → Plano).
+Migration (new file `supabase/migrations/<ts>_blood_pressure.sql`):
 
-Add i18n keys under `plan:landing.preview.*`. Mobile: stack to 2x2.
+sql
+
+```sql
+alter table public.assessments
+  add column if not exists systolic_bp_mmhg int,
+  add column if not exists diastolic_bp_mmhg int,
+  add column if not exists bp_measured_at timestamptz;
+```
+
+Update `public.validate_assessment_ranges` to enforce: `systolic_bp_mmhg between 70 and 220`, `diastolic_bp_mmhg between 40 and 130` when present.
+
+UI — in the Estratificação de Risco section, above the existing toggles, add a two-input row:
+
+- "Pressão sistólica (mmHg)" — number input
+- "Pressão diastólica (mmHg)" — number input
+- Small "ⓘ Como medir" tooltip: cliente sentado, 5 min de descanso, braço apoiado ao nível do coração, 2 medições com 1 min de intervalo, registar a média.
+
+Auto-categorize per AHA 2017 thresholds in a new `src/lib/blood-pressure.ts`:
+
+ts
+
+```ts
+export function categorizeBp(sbp: number | null, dbp: number | null):
+  'normal' | 'elevated' | 'stage1' | 'stage2' | 'crisis' | null {
+  if (sbp == null || dbp == null) return null;
+  if (sbp > 180 || dbp > 120) return 'crisis';
+  if (sbp >= 140 || dbp >= 90) return 'stage2';
+  if (sbp >= 130 || dbp >= 80) return 'stage1';
+  if (sbp >= 120 && dbp < 80) return 'elevated';
+  return 'normal';
+}
+```
+
+Render category as a pill below the inputs (colours: normal=green, elevated=amber, stage1=orange, stage2=red, crisis=red+pulsing).
+
+If category is `stage1` or higher: auto-toggle the existing `risk.hypertension` flag (cannot be unchecked while measured BP indicates HTN).
+
+If category is `crisis`: render a red banner across the section: **"⚠ URGENTE — encaminhar para serviço médico antes de qualquer atividade física. Não prosseguir com a avaliação até clearance."** Block the "Gerar rascunho do plano" button while crisis is active.
+
+Update `src/server/phased/risk-stratification.ts` (or wherever ACSM category is computed) to use measured BP when present, fall back to toggle otherwise.
+
+`pickSectionPayload('risk', a)` adds `systolic_bp_mmhg`, `diastolic_bp_mmhg`, `bp_category` (computed).
+
+Synthesis dashboard: add BP to the ACSM stat card subtitle when measured ("Sem necessidade de clearance · TA 118/76").
+
+Brief AI prompt (in `synthesizeBrief`): "If `bp_category === 'stage2'`, recommend cardiology clearance and prescribe RPE ≤ 7 for first 2 weeks. If `crisis`, refuse to generate a plan and output a clearance-required brief instead."
+
+&nbsp;
+
+## B — Movement competency objectivity rework
+
+### B1 — Form criteria (checkboxes)
+
+**Migration** (single file with B2):
+
+```sql
+alter table public.assessments
+  add column if not exists squat_form_criteria  jsonb default '{}'::jsonb,
+  add column if not exists hinge_form_criteria  jsonb default '{}'::jsonb,
+  add column if not exists push_form_criteria   jsonb default '{}'::jsonb,
+  add column if not exists pull_form_criteria   jsonb default '{}'::jsonb,
+  add column if not exists carry_form_criteria  jsonb default '{}'::jsonb,
+  add column if not exists lunge_form_criteria  jsonb default '{}'::jsonb,
+  add column if not exists squat_capacity  jsonb default '{}'::jsonb,
+  add column if not exists hinge_capacity  jsonb default '{}'::jsonb,
+  add column if not exists push_capacity   jsonb default '{}'::jsonb,
+  add column if not exists pull_capacity   jsonb default '{}'::jsonb,
+  add column if not exists carry_capacity  jsonb default '{}'::jsonb,
+  add column if not exists lunge_capacity  jsonb default '{}'::jsonb,
+  add column if not exists screen_not_assessed jsonb default '{}'::jsonb;
+  -- screen_not_assessed: { squat: true, ... }
+```
+
+New file `src/lib/movement-criteria.ts` exporting per-pattern arrays of `{ key, label_pt, tooltip_pt }`, exactly the 30 criteria from the prompt (5×6).
+
+New component `src/components/MovementPatternCard.tsx`: for one pattern, renders:
+
+- Header with pattern label + computed `Forma: N/5`.
+- 5 checkboxes with `ⓘ` Tooltip per line.
+- "Ainda não avaliado" toggle (writes `screen_not_assessed[pattern] = true`, disables checkboxes & capacity).
+- Capacity sub-section (B2).
+
+In `clients_.$clientId.tsx`, replace the current `screen` section body (the 4 `<ScreenItem … />` block at ~line 1425) with `<MovementPatternCard pattern="squat" … />` × 6. Drop the legacy `squat_depth_score / overhead_reach_score / hip_hinge_score / single_leg_balance_score` rendering (keep DB columns, do not read them anymore).
+
+`PROV_SECTION_FIELDS.screen` updated to the 12 new fields + `screen_not_assessed`.
+
+### B2 — Capacity fields
+
+Same `MovementPatternCard` renders, below the criteria block, two optional inputs per pattern:
+
+
+| Pattern | Field A                        | Field B                 |
+| ------- | ------------------------------ | ----------------------- |
+| squat   | reps até falha (peso corporal) | 1RM (kg)                |
+| hinge   | KB swings em 60s               | RDL 1RM (kg)            |
+| push    | flexões estritas até falha     | Shoulder press 1RM (kg) |
+| pull    | dead hang (s)                  | pull-ups (reps)         |
+| carry   | carga (kg)                     | distância (m)           |
+| lunge   | walking lunge reps por lado    | —                       |
+
+
+Stored as e.g. `squat_capacity = { reps_to_failure: 12, one_rm_kg: null }`. Schema for keys defined in `src/lib/movement-criteria.ts`.
+
+`pickSectionPayload('screen', a)` in `src/server/phased/section-map.ts` now returns:
+
+```ts
+{
+  squat_form_criteria: a.squat_form_criteria, squat_capacity: a.squat_capacity,
+  hinge_form_criteria: …, hinge_capacity: …,
+  push_form_criteria:  …, push_capacity:  …,
+  pull_form_criteria:  …, pull_capacity:  …,
+  carry_form_criteria: …, carry_capacity: …,
+  lunge_form_criteria: …, lunge_capacity: …,
+  not_assessed: a.screen_not_assessed,
+}
+```
+
+Update `SECTION_BRIEF_CONTRIBUTIONS.screen` to also include `notes_for_next_stage` so the AI can comment on capacity gaps.  
+  
+
 
 ---
 
-**Technical notes**
+**Append to B2 — lunge needs Field B**
 
-- No new heavy deps. Radar chart is hand-rolled SVG (~80 lines). Photo upload uses the existing supabase storage client.
-- All AI calls go through `callAnthropicWithSchema` with the new `locale` field threaded through system prompts.
-- Migrations land before code that uses the new columns/buckets.
-- Phased flag (`profiles.phased_generation_enabled`) continues to gate every AI call — no behavior change for trainers without it.
-- Mobile: every new layout uses `md:` breakpoints; client snapshot card and radar reflow to single column under 640px.
-- Locale-aware: every AI call must respect `i18n.language` (pt-pt default, en-GB fallback). Hard-coded English strings are bugs.
+Lunge currently has only one capacity field. Add Field B: **Bulgarian split squat 1RM (kg)**.
+
+Update the table:
+
+| lunge | walking lunge reps por lado | Bulgarian split squat 1RM (kg) |
+
+Stored as `lunge_capacity = { walking_lunge_reps_per_side, bulgarian_one_rm_kg }`. Already covered by the threshold function above.
+
+### B3 — `current_capacity_vs_pb` global field
+
+**Migration** (append to the same file):
+
+```sql
+alter table public.assessments
+  add column if not exists current_capacity_vs_pb int;
+
+-- Validate via existing validate_assessment_ranges trigger:
+-- extend the function to enforce 1..10
+```
+
+Update `public.validate_assessment_ranges` to also raise if `current_capacity_vs_pb` is outside 1..10.
+
+UI: in the **Setup** section ("training" id), add a slider 1–10 above split/equipment with the rebuild copy from the prompt. Tooltip text included verbatim. Persisted via existing autosave path.
+
+`pickSectionPayload('training', …)` adds `current_capacity_vs_pb`.
+
+In `src/server/phased/stage1-brief.functions.ts` `synthesizeBrief` system prompt, append the rebuild/moderate/normal block from the prompt.
+
+`BriefSchema` (in `src/server/phased/schemas.ts`): add
+
+```ts
+current_capacity_vs_pb: z.number().int().min(1).max(10).nullable().default(null),
+```
+
+and surface it in `BriefEditor` "Schedule & emphasis" card as an inline pill ("Capacidade actual: 4/10 — modo reconstrução").
+
+### B4 — Update `MovementCompetencyRadar`
+
+In `clients_.$clientId.tsx` (component at ~line 2618):
+
+- Read **form** scores from `*_form_criteria`: count truthy values / 5, scaled to 0..1.
+- Read **capacity** scores via a new file `src/lib/capacity-thresholds.ts`:
+  ```ts
+  // Each entry maps a measured value to a 0..1 score using piecewise thresholds.
+  export function squatCapacityScore(c: any): number | null { /* reps & 1RM rules */ }
+  // …one per pattern. Returns null if no measurement provided.
+  ```
+- For each axis decide: `notAssessed` (toggle on, OR no form data + no capacity data) → render dashed grey radial line, no dot.
+- Render two polygons: solid orange (form), dashed grey (capacity). Skip dashed polygon if zero capacity points.
+- Caption below: `Forma vs Capacidade · {N}/6 padrões avaliados` where N counts patterns with at least one of the two layers.
+
+**Append to B4 — capacity threshold spec**
+
+The new `src/lib/capacity-thresholds.ts` MUST use these explicit thresholds, not Lovable's guess (otherwise the radar will inflate again). Use piecewise linear interpolation:
+
+ts
+
+```ts
+// Each function returns 0..1 or null. Tunable per population later.
+export function squatCapacityScore(c: any): number | null {
+  const reps = c?.reps_to_failure;
+  const oneRm = c?.one_rm_kg;
+  if (reps != null) return clamp01(reps / 30); // 30 BW reps = 1.0
+  if (oneRm != null) return clamp01((oneRm / 100) * 0.6); // 100kg ≈ 0.6 (intermediate baseline)
+  return null;
+}
+export function hingeCapacityScore(c: any): number | null {
+  if (c?.kb_swings_60s != null) return clamp01(c.kb_swings_60s / 40);
+  if (c?.rdl_one_rm_kg != null) return clamp01((c.rdl_one_rm_kg / 120) * 0.6);
+  return null;
+}
+export function pushCapacityScore(c: any): number | null {
+  if (c?.strict_pushups != null) return clamp01(c.strict_pushups / 30);
+  if (c?.shoulder_press_one_rm_kg != null) return clamp01((c.shoulder_press_one_rm_kg / 60) * 0.6);
+  return null;
+}
+export function pullCapacityScore(c: any): number | null {
+  if (c?.pullups != null) return clamp01(c.pullups / 15);
+  if (c?.dead_hang_seconds != null) return clamp01(c.dead_hang_seconds / 60);
+  return null;
+}
+export function carryCapacityScore(c: any): number | null {
+  // Combined: load (kg) × distance (m) normalized
+  if (c?.load_kg != null && c?.distance_m != null) {
+    const work = c.load_kg * c.distance_m;
+    return clamp01(work / 2400); // 60kg × 40m = baseline 1.0
+  }
+  return null;
+}
+export function lungeCapacityScore(c: any): number | null {
+  if (c?.walking_lunge_reps_per_side != null) return clamp01(c.walking_lunge_reps_per_side / 20);
+  if (c?.bulgarian_one_rm_kg != null) return clamp01((c.bulgarian_one_rm_kg / 50) * 0.6);
+  return null;
+}
+function clamp01(n: number) { return Math.max(0, Math.min(1, n)); }
+```
+
+These are intermediate/general-population baselines. Document at top of file: "Thresholds calibrated for general adult fitness — adjust factors in `CAPACITY_BASELINES` map for athletic populations later."
 
 ---
+
+## ⏸ STOP — show preview here
+
+Acceptance for stop point:
+(a) snapshot card gone, arrow link in header scrolls to synthesis;
+(b) page renders fully in pt-PT after re-analysis;
+(c) Stage card buttons say `Regenerar` / `Aprovar`;
+(d) Movement Screen shows checkboxes per pattern, no 1–5 sliders;
+(e) capacity fields render below criteria;
+(f) `current_capacity_vs_pb` slider in Setup;
+(g) radar shows form (solid) + capacity (dashed) layers.
+
+---
+
+## Item 7 (reduced) — `HowToAssess` for non-screen sections only
+
+After approval of B4 preview:
+
+- Build `src/components/HowToAssess.tsx` (collapsible "Como avaliar" panel).
+- Render only on: **Mobilidade** (shoulder/hip/ankle 1–5 rubric), **Postura & Alinhamento** (plumbline + common deviations), **Antropometria** (waist narrowest end-exhalation, hip greater trochanter, BF SOPs).
+- Do NOT render on the Movement Screen — the criterion checkboxes are the SOPs.
+
+Items 8–13 from the previous round resume after Item 7 and are not re-planned here.
+
+---
+
+## Technical notes
+
+- All migrations use `add column if not exists` to be re-runnable.
+- Locale strings in PT use European Portuguese formal "você" (`o seu`, `a sua`).
+- New AI calls (`analyzeAssessmentSection` with `locale: 'pt-PT'`) reuse the existing prompt — the prompt already enforces pt-PT (added in round 1); we are now invalidating stale cache so it actually takes effect.
+- No changes to `src/integrations/supabase/client.ts` or `types.ts` (auto-generated).
+- Typecheck after A1, A2, A3, A4, B1, B2, B3, B4.
 
 &nbsp;
