@@ -482,7 +482,11 @@ function ClientDetail() {
         setLastSavedAt(dbTs || Date.now());
       }
 
-      const { data: p } = await supabase.from("workout_plans").select("id, title, status, updated_at").eq("client_id", clientId).order("updated_at", { ascending: false });
+      const { data: p } = await supabase
+        .from("workout_plans")
+        .select("id, title, status, updated_at, brief, generation_state, generation_status")
+        .eq("client_id", clientId)
+        .order("updated_at", { ascending: false });
       setPlans(p ?? []);
       // Load phased-generation feature flag for this trainer.
       const { data: prof } = await supabase
@@ -597,27 +601,32 @@ function ClientDetail() {
   const triggerSectionAnalyses = async () => {
     if (!assessment.id) return;
     const sections = Object.keys(PROV_SECTION_FIELDS).filter((s) => s !== "smart_goal");
-    const fired: Promise<unknown>[] = [];
+    // Run sequentially with a small inter-call delay so we don't trip Anthropic
+    // concurrent-connection rate limits (HTTP 429).
+    const queue: string[] = [];
     for (const section of sections) {
       const sig = sectionSignature(assessment, section);
       if (lastAnalysedSigRef.current[section] === sig) continue;
-      // Skip empty sections — nothing for the model to analyse.
       if (sig === JSON.stringify([]) || /^\[(null,?)+\]$/.test(sig.replace(/\s/g, ""))) continue;
       lastAnalysedSigRef.current[section] = sig;
-      fired.push(
-        analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } })
-          .catch((e) => console.warn("pre-stage analyze failed", section, e))
-      );
+      queue.push(section);
     }
-    if (fired.length === 0) return;
-    // After all settle, refresh coverage badge.
-    void Promise.allSettled(fired).then(async () => {
+    if (queue.length === 0) return;
+    void (async () => {
+      for (const section of queue) {
+        try {
+          await analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } });
+        } catch (e) {
+          console.warn("pre-stage analyze failed", section, e);
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
       if (!assessment.id) return;
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
         if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
       } catch {}
-    });
+    })();
   };
 
   // Initial coverage fetch when phased flag is on and assessment exists.
@@ -891,13 +900,19 @@ function ClientDetail() {
     if (!user) return;
     const { data: pl } = await supabase
       .from("workout_plans")
-      .select("id, title, duration_weeks, generation_meta, generation_status")
+      .select("id, title, duration_weeks, generation_meta, generation_state, generation_status")
       .eq("client_id", clientId)
       .eq("generation_status", "in_progress")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!pl) {
+      setResumablePlan(null);
+      return;
+    }
+    // Ignore phased-flow plans — they don't use the legacy per-day resume banner.
+    const stage = (pl.generation_state as any)?.stage as string | undefined;
+    if (stage && ["brief", "blueprint", "microcycle", "progressions"].includes(stage)) {
       setResumablePlan(null);
       return;
     }
@@ -1508,23 +1523,34 @@ function ClientDetail() {
           <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {plans.map((p) => (
-              <Link
-                key={p.id}
-                to="/plans/$planId"
-                params={{ planId: p.id }}
-                className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-semibold">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+            {plans.map((p) => {
+              const stage = (p.generation_state as any)?.stage as string | undefined;
+              const phasedStages = ["brief", "blueprint", "microcycle", "progressions"];
+              const isPhasedDraft = !!stage && phasedStages.includes(stage);
+              const linkProps = isPhasedDraft && stage === "brief"
+                ? { to: "/plans/$planId/brief" as const, params: { planId: p.id } }
+                : isPhasedDraft
+                ? { to: `/plans/$planId/${stage}` as any, params: { planId: p.id } }
+                : { to: "/plans/$planId" as const, params: { planId: p.id } };
+              return (
+                <Link
+                  key={p.id}
+                  {...(linkProps as any)}
+                  className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-semibold">{p.title}</p>
+                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                    </div>
                   </div>
-                </div>
-                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">{p.status}</span>
-              </Link>
-            ))}
+                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">
+                    {isPhasedDraft ? `Stage: ${stage}` : p.status}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
