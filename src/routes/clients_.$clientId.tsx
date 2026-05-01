@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -356,6 +356,8 @@ function ClientDetail() {
   // Per-day generation progress: map of "w-d" -> "pending" | "running" | "done" | "error"
   const [dayProgress, setDayProgress] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
   const [progressTotals, setProgressTotals] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
+  const stopRequestedRef = useRef(false);
+  const [stopping, setStopping] = useState(false);
   // Resumable in-progress plan detected on mount.
   const [resumablePlan, setResumablePlan] = useState<{
     id: string;
@@ -587,6 +589,8 @@ function ClientDetail() {
     setBusy(true);
     setProgressStep(1);
     setDayProgress({});
+    stopRequestedRef.current = false;
+    setStopping(false);
     setResumablePlan(null);
     try {
       await flushPendingSave();
@@ -676,11 +680,13 @@ function ClientDetail() {
       let completed = doneSet.size;
 
       for (const cell of todo) {
+        if (stopRequestedRef.current) break;
         const key = `${cell.w}-${cell.d}`;
         setDayProgress((prev) => ({ ...prev, [key]: "running" }));
         let lastErr = "unknown";
         let success = false;
         for (let attempt = 1; attempt <= 2 && !success; attempt++) {
+          if (stopRequestedRef.current) break;
           try {
             const r: any = await generateDayFn({
               data: {
@@ -724,6 +730,11 @@ function ClientDetail() {
       if (billingHit) {
         toast.error(billingHit.error || "Subscription required");
         navigate({ to: "/billing" });
+        return;
+      }
+      if (stopRequestedRef.current) {
+        toast.success("Generation stopped. Progress saved as draft — tap Continue to resume.");
+        await detectResumablePlan();
         return;
       }
       if (errors.length) {
@@ -777,6 +788,8 @@ function ClientDetail() {
     } finally {
       setBusy(false);
       setProgressStep(0);
+      stopRequestedRef.current = false;
+      setStopping(false);
     }
   };
 
@@ -1239,6 +1252,11 @@ function ClientDetail() {
               step={progressStep}
               dayProgress={dayProgress}
               totals={progressTotals}
+              stopping={stopping}
+              onStop={() => {
+                stopRequestedRef.current = true;
+                setStopping(true);
+              }}
             />
           )}
 
@@ -1590,10 +1608,14 @@ function GenerationProgress({
   step,
   dayProgress,
   totals,
+  stopping,
+  onStop,
 }: {
   step: number;
   dayProgress?: Record<string, "pending" | "running" | "done" | "error">;
   totals?: { done: number; total: number };
+  stopping?: boolean;
+  onStop?: () => void;
 }) {
   const steps = [
     { n: 1, label: "Saving assessment" },
@@ -1616,8 +1638,23 @@ function GenerationProgress({
     : Math.min(100, (step / 4) * 100);
   return (
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-        <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with GPT-5 (per day)
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
+          <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with Claude Haiku 4.5 (per day)
+        </div>
+        {onStop && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onStop}
+            disabled={stopping}
+            className="h-7 text-xs"
+          >
+            <StopCircle className="mr-1 h-3.5 w-3.5" />
+            {stopping ? "Stopping…" : "Stop generation"}
+          </Button>
+        )}
       </div>
       <ul className="space-y-1.5">
         {steps.map((s) => {
