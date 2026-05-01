@@ -298,8 +298,19 @@ function ClientDetail() {
   const generateDayFn = useServerFn(generatePlanDay);
   const finalizePlanFn = useServerFn(finalizePlanGeneration);
   const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
+  const synthesizeBriefFn = useServerFn(synthesizeBrief);
+  const approveBriefFn = useServerFn(approveBrief);
   const [phasedBusy, setPhasedBusy] = useState(false);
-  const [briefReady, setBriefReady] = useState<{ planId: string; reused: boolean } | null>(null);
+  // Inline brief panel: rendered below the action row. Replaces the toast-link banner.
+  const [inlineBrief, setInlineBrief] = useState<{
+    planId: string;
+    brief: Brief;
+    approved: boolean;
+  } | null>(null);
+  const [briefStageBusy, setBriefStageBusy] = useState(false);
+  // Per-section AI post-processing analyses (Pre-Stage 0).
+  const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
+  const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
