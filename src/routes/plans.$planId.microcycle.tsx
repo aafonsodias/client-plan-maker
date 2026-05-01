@@ -49,6 +49,7 @@ type DayRow = {
   focus: string;
   rationale: string;
   content: any;
+  updated_at?: string;
 };
 
 function MicrocycleReview() {
@@ -63,7 +64,10 @@ function MicrocycleReview() {
   const [day1Approved, setDay1Approved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [generatingIdx, setGeneratingIdx] = useState<number | null>(null);
+  const [generatingSet, setGeneratingSet] = useState<Set<number>>(new Set());
+  const isGenerating = (i: number) => generatingSet.has(i);
+  const addGenerating = (i: number) => setGeneratingSet((s) => { const n = new Set(s); n.add(i); return n; });
+  const removeGenerating = (i: number) => setGeneratingSet((s) => { const n = new Set(s); n.delete(i); return n; });
   const [daysLoaded, setDaysLoaded] = useState(false);
   const day1KickedRef = useRef(false);
 
@@ -82,7 +86,7 @@ function MicrocycleReview() {
   async function loadDays() {
     const { data } = await supabase
       .from("workout_plan_days")
-      .select("id, day_number, status, day_label, focus, rationale, content")
+      .select("id, day_number, status, day_label, focus, rationale, content, updated_at")
       .eq("plan_id", planId)
       .eq("week_number", 1)
       .order("day_number", { ascending: true });
@@ -120,18 +124,22 @@ function MicrocycleReview() {
   }, [blueprint, daysLoaded, days]);
 
   async function kickDay1() {
+    if (isGenerating(1)) return;
     setGenerating(true);
-    setGeneratingIdx(1);
+    addGenerating(1);
     const res = await generateDayFn({ data: { planId, dayIndex: 1 } });
     setGenerating(false);
-    setGeneratingIdx(null);
+    removeGenerating(1);
+    await loadDays();
     if (!res.ok) toast.error(res.error || "Day 1 generation failed");
   }
 
   async function regenDay(dayIndex: number) {
-    setGeneratingIdx(dayIndex);
+    if (isGenerating(dayIndex)) return;
+    addGenerating(dayIndex);
     const res = await generateDayFn({ data: { planId, dayIndex } });
-    setGeneratingIdx(null);
+    removeGenerating(dayIndex);
+    await loadDays();
     if (!res.ok) toast.error(res.error || `Day ${dayIndex} failed`);
   }
 
@@ -195,6 +203,7 @@ function MicrocycleReview() {
 
       {day1 && (
         <DayCardEditable
+          key={`day1-${day1.updated_at ?? day1.status}`}
           day={day1}
           planId={planId}
           isGate={!day1Approved}
@@ -218,10 +227,10 @@ function MicrocycleReview() {
                 </div>
                 <button
                   onClick={() => regenDay(idx)}
-                  disabled={generatingIdx === idx}
+                  disabled={isGenerating(idx) || row?.status === "pending"}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
                 >
-                  {generatingIdx === idx ? (
+                  {isGenerating(idx) || row?.status === "pending" ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <Sparkles className="h-3 w-3" />
@@ -233,7 +242,7 @@ function MicrocycleReview() {
           }
           return (
             <DayCardEditable
-              key={idx}
+              key={`day${idx}-${row.updated_at ?? row.status}`}
               dayIndex={idx}
               day={row}
               planId={planId}
