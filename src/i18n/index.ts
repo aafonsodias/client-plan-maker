@@ -4,8 +4,10 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 import enCommon from "./locales/en/common.json";
 import enPlan from "./locales/en/plan.json";
+import enIntake from "./locales/en/intake.json";
 import ptCommon from "./locales/pt/common.json";
 import ptPlan from "./locales/pt/plan.json";
+import ptIntake from "./locales/pt/intake.json";
 
 export const SUPPORTED_LOCALES = ["en", "pt"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -20,11 +22,11 @@ if (!i18n.isInitialized) {
       // EN owns all keys — PT JSON is intentionally sparse and falls back to EN.
       fallbackLng: "en",
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
-      ns: ["common", "plan"],
+      ns: ["common", "plan", "intake"],
       defaultNS: "common",
       resources: {
-        en: { common: enCommon, plan: enPlan },
-        pt: { common: ptCommon, plan: ptPlan },
+        en: { common: enCommon, plan: enPlan, intake: enIntake },
+        pt: { common: ptCommon, plan: ptPlan, intake: ptIntake },
       },
       detection: {
         order: ["localStorage", "navigator"],
