@@ -1699,7 +1699,7 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
-                  {phasedEnabled && briefCoverage && (
+                  {phasedEnabled && briefCoverage && !inlineBrief?.approved && (
                     <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground self-start sm:self-auto">
                       {t("generate.brief_coverage", {
                         done: briefCoverage.done,
@@ -1708,7 +1708,17 @@ function ClientDetail() {
                       })}
                     </span>
                   )}
-                  {phasedEnabled ? (
+                  {phasedEnabled && inlineBrief?.approved ? (
+                    <Button asChild size="lg" className="w-full sm:w-auto">
+                      <Link
+                        to="/plans/$planId/blueprint"
+                        params={{ planId: inlineBrief.planId }}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Continuar para Blueprint
+                      </Link>
+                    </Button>
+                  ) : phasedEnabled ? (
                     <Button
                       onClick={async () => {
                         if (phasedBusy) return;
