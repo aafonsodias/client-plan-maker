@@ -909,7 +909,7 @@ function ClientDetail() {
           <h1 className="text-3xl font-light tracking-tight">{client?.full_name}</h1>
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
-        <p className="text-muted-foreground">{client.email ?? "No email"}</p>
+        <p className="text-muted-foreground">{client.email ?? t("no_email")}</p>
       </div>
 
       <IntakeLinkPanel
@@ -928,7 +928,7 @@ function ClientDetail() {
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
-            <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sections</p>
+            <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>
             {sectionStatus.map((s) => (
               <a
                 key={s.id}
@@ -936,7 +936,7 @@ function ClientDetail() {
                 onClick={() => setActiveSection(s.id)}
                 className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <span>{s.label}</span>
+                <span>{t(`sections.${s.id}` as const)}</span>
                 {s.complete && <Check className="h-3 w-3 text-accent" />}
               </a>
             ))}
@@ -945,37 +945,37 @@ function ClientDetail() {
 
         <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-base font-bold shrink-0">Assessment</h2>
+            <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
               </div>
               <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
-                Section {sectionNumber} of {totalSections} · {pct}% complete · ~{minutesLeft} min left
+                {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
               </span>
             </div>
             <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
           </div>
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance." complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? "✓ Pre-screening complete. 0 flags." : `✓ Pre-screening complete. ${parqFlagCount(assessment.parq)} flags — guidance below`} /> : null}>
+          <SectionBlock id="parq" title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
-              {PARQ_QUESTIONS.map((q, idx) => {
-                const value = (assessment.parq as any)[q.key];
+              {PARQ_KEYS.map((key, idx) => {
+                const value = (assessment.parq as any)[key];
                 const flagged = value === true;
                 return (
                   <li
-                    key={q.key}
+                    key={key}
                     className={`rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
-                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
+                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {t(`parq_block.questions.${key}` as const)}</p>
+                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [key]: v } })} />
                     </div>
                     {flagged && (
                       <div className="mt-2 flex animate-fade-in items-start gap-2 rounded-md border border-accent/30 bg-accent/5 p-2 text-[11px] text-muted-foreground">
                         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
-                        <span>{PARQ_RATIONALE[q.key]}</span>
+                        <span>{t(`parq_block.rationale.${PARQ_RATIONALE_KEY[key]}` as const)}</span>
                       </div>
                     )}
                   </li>
