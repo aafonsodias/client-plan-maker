@@ -1,6 +1,6 @@
 import type { ProgressionPlan } from "@/server/phased/schemas";
 
-type Row = ProgressionPlan["rows"][number];
+type Row = ProgressionPlan["rows"][number] & { _idx: number };
 
 // Parse a delta string like "+2.5kg", "-1 rep", "+0.5 RPE", "same"
 // into a numeric magnitude (signed). Returns 0 when not parseable.
