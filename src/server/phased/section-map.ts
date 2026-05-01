@@ -35,7 +35,7 @@ export const SECTION_BRIEF_CONTRIBUTIONS: Record<PhasedSectionId, string[]> = {
   nutrition: ["recovery_profile", "notes_for_next_stage"],
   mobility: ["movement_competency_summary", "notes_for_next_stage"],
   posture: ["movement_competency_summary", "notes_for_next_stage"],
-  screen: ["movement_competency_summary"],
+  screen: ["movement_competency_summary", "notes_for_next_stage"],
   history: ["training_age_band", "notes_for_next_stage"],
   performance: ["training_age_band", "notes_for_next_stage"],
 };
@@ -89,6 +89,7 @@ export function pickSectionPayload(
         training_location: a.training_location,
         available_equipment: a.available_equipment,
         preferences: a.preferences,
+        current_capacity_vs_pb: a.current_capacity_vs_pb,
       };
     case "lifestyle":
       return {
@@ -122,14 +123,19 @@ export function pickSectionPayload(
       };
     case "screen":
       return {
-        squat_depth_score: a.squat_depth_score,
-        squat_depth_note: a.squat_depth_note,
-        overhead_reach_score: a.overhead_reach_score,
-        overhead_reach_note: a.overhead_reach_note,
-        hip_hinge_score: a.hip_hinge_score,
-        hip_hinge_note: a.hip_hinge_note,
-        single_leg_balance_score: a.single_leg_balance_score,
-        single_leg_balance_note: a.single_leg_balance_note,
+        squat_form_criteria: a.squat_form_criteria,
+        squat_capacity: a.squat_capacity,
+        hinge_form_criteria: a.hinge_form_criteria,
+        hinge_capacity: a.hinge_capacity,
+        push_form_criteria: a.push_form_criteria,
+        push_capacity: a.push_capacity,
+        pull_form_criteria: a.pull_form_criteria,
+        pull_capacity: a.pull_capacity,
+        carry_form_criteria: a.carry_form_criteria,
+        carry_capacity: a.carry_capacity,
+        lunge_form_criteria: a.lunge_form_criteria,
+        lunge_capacity: a.lunge_capacity,
+        not_assessed: a.screen_not_assessed,
       };
     case "history":
       return {
