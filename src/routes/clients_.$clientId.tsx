@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -21,33 +22,42 @@ import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 
 export const Route = createFileRoute("/clients_/$clientId")({
-  component: () => (
-    <AppShell back={{ to: "/clients", label: "All clients" }}>
-      <ClientDetail />
-    </AppShell>
-  ),
+  component: ClientDetailRoute,
 });
 
-const EQUIPMENT = ["Barbell", "Dumbbells", "Kettlebells", "Cable machine", "Bench", "Pull-up bar", "Bands", "Bodyweight only"];
+function ClientDetailRoute() {
+  const { t } = useTranslation("assessment");
+  return (
+    <AppShell back={{ to: "/clients", label: t("all_clients") }}>
+      <ClientDetail />
+    </AppShell>
+  );
+}
 
-const PARQ_QUESTIONS = [
-  { key: "q1", text: "Has a doctor ever said you have a heart condition or that you should only do physical activity recommended by a doctor?" },
-  { key: "q2", text: "Do you feel pain in your chest when you do physical activity?" },
-  { key: "q3", text: "In the past month, have you had chest pain when you were not doing physical activity?" },
-  { key: "q4", text: "Do you lose your balance because of dizziness or do you ever lose consciousness?" },
-  { key: "q5", text: "Do you have a bone or joint problem that could be made worse by a change in your physical activity?" },
-  { key: "q6", text: "Is your doctor currently prescribing drugs for blood pressure or a heart condition?" },
-  { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
+// Stable IDs — labels resolved via i18n at render time. The DB stores
+// the canonical EN label for `available_equipment` for backward compatibility.
+const EQUIPMENT_OPTIONS: Array<{ id: string; canonical: string }> = [
+  { id: "barbell", canonical: "Barbell" },
+  { id: "dumbbells", canonical: "Dumbbells" },
+  { id: "kettlebells", canonical: "Kettlebells" },
+  { id: "cable_machine", canonical: "Cable machine" },
+  { id: "bench", canonical: "Bench" },
+  { id: "pull_up_bar", canonical: "Pull-up bar" },
+  { id: "bands", canonical: "Bands" },
+  { id: "bodyweight", canonical: "Bodyweight only" },
 ];
 
-const PARQ_RATIONALE: Record<string, string> = {
-  q1: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
-  q2: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
-  q3: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
-  q4: "Balance flag. Plan will avoid free-weight overhead movements and unsupported standing exercises until cleared by a physician.",
-  q5: "Musculoskeletal flag. Plan will exclude high-impact patterns and aggressive progressive loading. Mobility-first protocol available.",
-  q6: "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
-  q7: "Manual flag. Note specifics in client medical conditions. PDF export will include a physician-review disclaimer.",
+const PARQ_KEYS = ["q1", "q2", "q3", "q4", "q5", "q6", "q7"] as const;
+
+// Map each PAR-Q+ question to a rationale key for translation.
+const PARQ_RATIONALE_KEY: Record<string, string> = {
+  q1: "cardio",
+  q2: "cardio",
+  q3: "cardio",
+  q4: "balance",
+  q5: "msk",
+  q6: "cardio",
+  q7: "manual",
 };
 
 function parqFlagCount(parq: Record<string, boolean | null>): number {
@@ -259,6 +269,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "offline";
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
+  const { t } = useTranslation("assessment");
   const { user } = useAuth();
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
@@ -857,7 +868,7 @@ function ClientDetail() {
     toast.success("Draft cleared");
   };
 
-  if (!client) return <p className="text-muted-foreground">Loading…</p>;
+  if (!client) return <p className="text-muted-foreground">{t("loading")}</p>;
 
   const parqYes = parqHasYes(assessment.parq);
   const riskCategory = computeRisk(assessment.risk);
@@ -874,11 +885,20 @@ function ClientDetail() {
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
 
+  const expLabelById: Record<string, string> = {
+    beginner: t("training_block.beginner"),
+    intermediate: t("training_block.intermediate"),
+    advanced: t("training_block.advanced"),
+  };
   const trainingSummary = [
-    assessment.training_days_per_week ? `${assessment.training_days_per_week}×/week` : null,
-    assessment.session_duration_minutes ? `${assessment.session_duration_minutes} min` : null,
+    assessment.training_days_per_week
+      ? t("training_block.summary.x_per_week", { n: assessment.training_days_per_week })
+      : null,
+    assessment.session_duration_minutes
+      ? t("training_block.summary.min", { n: assessment.session_duration_minutes })
+      : null,
     assessment.training_location || null,
-    assessment.experience_level || null,
+    assessment.experience_level ? (expLabelById[assessment.experience_level] ?? assessment.experience_level) : null,
   ].filter(Boolean).join(", ");
 
   return (
@@ -889,7 +909,7 @@ function ClientDetail() {
           <h1 className="text-3xl font-light tracking-tight">{client?.full_name}</h1>
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
-        <p className="text-muted-foreground">{client.email ?? "No email"}</p>
+        <p className="text-muted-foreground">{client.email ?? t("no_email")}</p>
       </div>
 
       <IntakeLinkPanel
@@ -908,7 +928,7 @@ function ClientDetail() {
       <div className="grid gap-6 lg:grid-cols-[200px_1fr]">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
-            <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sections</p>
+            <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>
             {sectionStatus.map((s) => (
               <a
                 key={s.id}
@@ -916,7 +936,7 @@ function ClientDetail() {
                 onClick={() => setActiveSection(s.id)}
                 className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs transition ${activeSection === s.id ? "bg-secondary font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <span>{s.label}</span>
+                <span>{t(`sections.${s.id}` as const)}</span>
                 {s.complete && <Check className="h-3 w-3 text-accent" />}
               </a>
             ))}
@@ -925,37 +945,37 @@ function ClientDetail() {
 
         <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-base font-bold shrink-0">Assessment</h2>
+            <h2 className="text-base font-bold shrink-0">{t("title")}</h2>
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <div className="h-1.5 min-w-[80px] flex-1 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full bg-accent/70 transition-all duration-500" style={{ width: `${pct}%` }} />
               </div>
               <span className="font-mono text-[10px] tabular-nums text-muted-foreground whitespace-nowrap">
-                Section {sectionNumber} of {totalSections} · {pct}% complete · ~{minutesLeft} min left
+                {t("progress", { current: sectionNumber, total: totalSections, pct, minutes: minutesLeft })}
               </span>
             </div>
             <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
           </div>
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" title="PAR-Q+ pre-screening" hint="Standard pre-participation screening. Any 'Yes' suggests physician clearance." complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? "✓ Pre-screening complete. 0 flags." : `✓ Pre-screening complete. ${parqFlagCount(assessment.parq)} flags — guidance below`} /> : null}>
+          <SectionBlock id="parq" title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
-              {PARQ_QUESTIONS.map((q, idx) => {
-                const value = (assessment.parq as any)[q.key];
+              {PARQ_KEYS.map((key, idx) => {
+                const value = (assessment.parq as any)[key];
                 const flagged = value === true;
                 return (
                   <li
-                    key={q.key}
+                    key={key}
                     className={`rounded-md border bg-background/40 p-2 transition-colors ${flagged ? "border-accent/40 border-l-[3px] border-l-accent" : "border-border"}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {q.text}</p>
-                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [q.key]: v } })} />
+                      <p className="text-xs"><span className="font-semibold">{idx + 1}.</span> {t(`parq_block.questions.${key}` as const)}</p>
+                      <YesNo value={value} onChange={(v) => setAssessment({ ...assessment, parq: { ...assessment.parq, [key]: v } })} />
                     </div>
                     {flagged && (
                       <div className="mt-2 flex animate-fade-in items-start gap-2 rounded-md border border-accent/30 bg-accent/5 p-2 text-[11px] text-muted-foreground">
                         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
-                        <span>{PARQ_RATIONALE[q.key]}</span>
+                        <span>{t(`parq_block.rationale.${PARQ_RATIONALE_KEY[key]}` as const)}</span>
                       </div>
                     )}
                   </li>
@@ -965,64 +985,64 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Risk stratification */}
-          <SectionBlock id="risk" title="Risk stratification" hint="ACSM-style coronary risk factor count → low / moderate / high." complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={`✓ ACSM Risk: ${riskCategory.toUpperCase()}`} /> : null}>
+          <SectionBlock id="risk" title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
-              <Toggle label="Family history of CVD (1st-degree, <55 M / <65 F)" value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
+              <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
-                <LabelWithHelp label="Smoking" hint="Current smokers carry highest CVD risk." />
+                <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
                 <Select value={assessment.risk.smoking} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="never">Never</SelectItem>
-                    <SelectItem value="former">Former</SelectItem>
-                    <SelectItem value="current">Current</SelectItem>
+                    <SelectItem value="never">{t("risk_block.smoking_never")}</SelectItem>
+                    <SelectItem value="former">{t("risk_block.smoking_former")}</SelectItem>
+                    <SelectItem value="current">{t("risk_block.smoking_current")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Toggle label="Sedentary (<150 min/week MVPA)" value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
+              <Toggle label={t("risk_block.sedentary")} value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
               <div className="space-y-1">
-                <LabelWithHelp label="BMI category" hint="Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30. Use 'Muscular' when BMI ≥25 but body-fat % is within athletic range (♂ ≤17%, ♀ ≤24%) — BMI overestimates adiposity in resistance-trained individuals." />
+                <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
                 <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="underweight">Underweight</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="overweight">Overweight</SelectItem>
-                    <SelectItem value="obese">Obese</SelectItem>
-                    <SelectItem value="muscular">Muscular (athletic build)</SelectItem>
+                    <SelectItem value="underweight">{t("risk_block.bmi_underweight")}</SelectItem>
+                    <SelectItem value="normal">{t("risk_block.bmi_normal")}</SelectItem>
+                    <SelectItem value="overweight">{t("risk_block.bmi_overweight")}</SelectItem>
+                    <SelectItem value="obese">{t("risk_block.bmi_obese")}</SelectItem>
+                    <SelectItem value="muscular">{t("risk_block.bmi_muscular")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Toggle label="Dyslipidemia" value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
-              <Toggle label="Pre-diabetes" value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
-              <Toggle label="Hypertension" value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
+              <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
+              <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
+              <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
             </div>
             <div className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest ${riskCategory === "high" ? "bg-destructive/15 text-destructive" : riskCategory === "moderate" ? "bg-accent/15 text-accent" : "bg-secondary text-secondary-foreground"}`}>
-              ACSM risk: {riskCategory}
+              {t("risk_block.acsm_pill", { level: t(`risk_block.level_${riskCategory}` as const) })}
             </div>
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" title="Anthropometry" hint="Body composition baseline. Waist-to-hip ratio is computed automatically." defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Waist (cm)" type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint="Measure at narrowest point above the hip bone, exhale." />
-              <Field label="Hip (cm)" type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint="Measure at the widest part of the buttocks." />
+              <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
+              <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
               <div className="space-y-1">
-                <Label className="text-xs">Waist-to-hip ratio</Label>
+                <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
               </div>
-              <Field label="Body fat %" type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint="Optional. Use the same method over time for trend." />
+              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
               <div className="space-y-1 sm:col-span-2">
-                <LabelWithHelp label="Body fat method" hint="Calipers, bioimpedance, DEXA, etc." />
+                <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
                 <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="calipers">Skinfold calipers</SelectItem>
-                    <SelectItem value="bia">Bioimpedance (BIA)</SelectItem>
-                    <SelectItem value="dexa">DEXA</SelectItem>
-                    <SelectItem value="bodpod">BodPod</SelectItem>
-                    <SelectItem value="visual">Visual estimate</SelectItem>
+                    <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
+                    <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
+                    <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
+                    <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
+                    <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1030,19 +1050,23 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Medications */}
-          <SectionBlock id="meds" title="Medication & supplements" hint="Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution." defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <TextField label="Free text (medications, supplements, dosage)" value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
+          <SectionBlock id="meds" title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
+            <TextField label={t("meds_block.free_text")} value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {["Beta-blocker", "Statin", "Anticoagulant"].map((flag) => {
+              {[
+                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta") },
+                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin") },
+                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag") },
+              ].map(({ id, canonical: flag, label }) => {
                 const on = assessment.med_flags.includes(flag);
                 return (
                   <button
-                    key={flag}
+                    key={id}
                     type="button"
                     onClick={() => setAssessment({ ...assessment, med_flags: on ? assessment.med_flags.filter((f: string) => f !== flag) : [...assessment.med_flags, flag] })}
                     className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-background hover:bg-secondary"}`}
                   >
-                    {on && "⚑ "}{flag}
+                    {on && "⚑ "}{label}
                   </button>
                 );
               })}
@@ -1050,135 +1074,129 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* SMART goal */}
-          <SectionBlock id="goal" title="Primary goal (SMART)" hint="Specific · Measurable · Achievable · Relevant · Time-bound." complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={`✓ Goal logged: ${String(assessment.smart_specific ?? "").slice(0, 40)}`} /> : null}>
+          <SectionBlock id="goal" title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Specific outcome" value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder="e.g. Squat 1.5×BW for 5 reps" hint="What concrete result?" className="sm:col-span-2" />
-              <Field label="Measurable target" value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder="e.g. 120kg @ BW80kg" hint="Number you'll measure." />
-              <Field label="Deadline" type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint="Realistic completion date." />
-              <TextField label="Goal context (optional)" value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
+              <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
+              <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
+              <Field label={t("goal_block.deadline")} type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint={t("goal_block.deadline_hint")} />
+              <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Readiness */}
-          <SectionBlock id="readiness" title="Readiness to change (Prochaska)" hint="Stage of behavioral change — calibrates coaching approach." defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="readiness" title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
             <div className="flex flex-wrap gap-1.5">
-              {[
-                ["precontemplation", "Pre-contemplation"],
-                ["contemplation", "Contemplation"],
-                ["preparation", "Preparation"],
-                ["action", "Action"],
-                ["maintenance", "Maintenance"],
-              ].map(([v, l]) => (
+              {(["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const).map((v) => (
                 <button
                   key={v}
                   type="button"
                   onClick={() => setAssessment({ ...assessment, readiness_stage: v })}
                   className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${assessment.readiness_stage === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}
                 >
-                  {l}
+                  {t(`readiness_block.${v}` as const)}
                 </button>
               ))}
             </div>
           </SectionBlock>
 
           {/* Training setup (existing) */}
-          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints." complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={`✓ Setup: ${trainingSummary}`} /> : null}>
+          <SectionBlock id="training" title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
-                <LabelWithHelp label="Experience level" hint="Beginner = <1y consistent · Intermediate = 1–3y · Advanced = 3y+." />
+                <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
                 <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="beginner">{t("training_block.beginner")}</SelectItem>
+                    <SelectItem value="intermediate">{t("training_block.intermediate")}</SelectItem>
+                    <SelectItem value="advanced">{t("training_block.advanced")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Field label="Training days / week" type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label="Session length (min)" type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-              <Field label="Training location" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
-              <Field label="Plan length (weeks)" type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
+              <Field label={t("training_block.days_per_week")} type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label={t("training_block.session_length")} type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              <Field label={t("training_block.training_location")} value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+              <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
             <div className="mt-3">
-              <Label className="text-xs">Available equipment</Label>
+              <Label className="text-xs">{t("training_block.available_equipment")}</Label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {EQUIPMENT.map((eq) => {
-                  const on = assessment.available_equipment.includes(eq);
+                {EQUIPMENT_OPTIONS.map(({ id, canonical }) => {
+                  const on = assessment.available_equipment.includes(canonical);
                   return (
-                    <button key={eq} type="button" onClick={() => toggleEq(eq)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{eq}</button>
+                    <button key={id} type="button" onClick={() => toggleEq(canonical)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{t(`equipment.${id}` as const)}</button>
                   );
                 })}
               </div>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <TextField label="Injuries" value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
-              <TextField label="Medical conditions" value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-              <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
+              <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
+              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators." defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="lifestyle" title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Sleep (1–10)" type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint="Subjective average sleep quality this past month." />
-              <Field label="Stress (1–10)" type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint="Perceived overall stress." />
-              <Field label="Hours seated / day" type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint="Total sitting time including work + commute." />
-              <Field label="Daily steps (if known)" type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint="From wearable if available." />
-              <Field label="Job type" value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder="desk, manual, mixed…" />
-              <TextField label="Energy through day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
-              <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+              <Field label={t("lifestyle_block.sleep")} type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint={t("lifestyle_block.sleep_hint")} />
+              <Field label={t("lifestyle_block.stress")} type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint={t("lifestyle_block.stress_hint")} />
+              <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
+              <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
+              <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
+              <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+              <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
             </div>
           </SectionBlock>
 
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions." defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="nutrition" title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Meals / day" type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
-              <Field label="Alcohol units / week" type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint="UK unit ≈ 10 ml ethanol." />
-              <Field label="Processed food frequency (1–5)" type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint="1 = rare · 5 = most meals." />
-              <Field label="Water (L / day)" type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
+              <Field label={t("nutrition_block.meals")} type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
+              <Field label={t("nutrition_block.alcohol")} type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint={t("nutrition_block.alcohol_hint")} />
+              <Field label={t("nutrition_block.processed")} type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint={t("nutrition_block.processed_hint")} />
+              <Field label={t("nutrition_block.water")} type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
               {showAdvancedNutrition && (
-                <Field label="Hydration (glasses, legacy)" type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
+                <Field label={t("nutrition_block.hydration_legacy")} type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
               )}
-              <TextField label="Notes (allergies, dietary pattern)" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
+              <TextField label={t("nutrition_block.notes")} value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
             </div>
             <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-              {showAdvancedNutrition ? "Hide advanced fields" : "Show advanced fields"}
+              {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
           </SectionBlock>
 
           {/* Mobility checklist */}
-          <SectionBlock id="mobility" title="Mobility — anatomical (1–5)" hint="Score each region: 1 = severely restricted, 5 = full pain-free range.">
-            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
+          <SectionBlock id="mobility" title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
+            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {[
-                ["ext_mob_shoulder", "Shoulder"],
-                ["ext_mob_hip", "Hip"],
-                ["ext_mob_ankle", "Ankle"],
-                ["ext_mob_thoracic", "Thoracic spine"],
-                ["ext_mob_wrist", "Wrist"],
-                ["ext_mob_knee", "Knee"],
-              ].map(([key, label]) => (
-                <ScoreRow key={key} label={label} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
+              {([
+                ["ext_mob_shoulder", "shoulder"],
+                ["ext_mob_hip", "hip"],
+                ["ext_mob_ankle", "ankle"],
+                ["ext_mob_thoracic", "thoracic"],
+                ["ext_mob_wrist", "wrist"],
+                ["ext_mob_knee", "knee"],
+              ] as const).map(([key, labelKey]) => (
+                <ScoreRow key={key} label={t(`mobility_block.${labelKey}` as const)} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
               ))}
             </div>
-            <TextField label="Notes (specific limitations, pain triggers)" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
+            <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
           </SectionBlock>
 
           {/* Posture */}
-          <SectionBlock id="posture" title="Posture & alignment" hint="Standing posture and known asymmetries." defaultCollapsed complete={isSectionComplete("posture", assessment)}>
+          <SectionBlock id="posture" title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
-              <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+              <TextField label={t("posture_block.standing")} value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
+              <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
               <div className="space-y-1">
-                <Label className="text-xs">Dominant side</Label>
+                <Label className="text-xs">{t("posture_block.dominant")}</Label>
                 <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="right">Right</SelectItem>
-                    <SelectItem value="left">Left</SelectItem>
-                    <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
+                    <SelectItem value="right">{t("posture_block.right")}</SelectItem>
+                    <SelectItem value="left">{t("posture_block.left")}</SelectItem>
+                    <SelectItem value="ambidextrous">{t("posture_block.ambi")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1186,64 +1204,64 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Movement screen */}
-          <SectionBlock id="screen" title="Movement screen" hint="Functional pattern quality. 1 = restricted → 5 = controlled full range." defaultCollapsed complete={isSectionComplete("screen", assessment)}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
+          <SectionBlock id="screen" title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
-              <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
-              <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
-              <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+              <ScreenItem label={t("screen_block.squat")} score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
+              <ScreenItem label={t("screen_block.overhead")} score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
+              <ScreenItem label={t("screen_block.hinge")} score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
+              <ScreenItem label={t("screen_block.single_leg")} score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
             </div>
           </SectionBlock>
 
           {/* Training history */}
-          <SectionBlock id="history" title="Training history" hint="Prior exposure shapes starting loads and progression rates." defaultCollapsed complete={isSectionComplete("history", assessment)}>
+          <SectionBlock id="history" title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
-              <Field label="Previous program style" placeholder="PPL, 5/3/1…" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-              <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
+              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+              <TextField label={t("history_block.max_lifts")} value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Performance */}
-          <SectionBlock id="performance" title="Performance markers" hint="Cardiovascular and conditioning baseline." defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+          <SectionBlock id="performance" title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint="Measured first thing AM, supine." />
+              <Field label={t("performance_block.rhr")} type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint={t("performance_block.rhr_hint")} />
               <div className="space-y-1">
-                <LabelWithHelp label="Cardio test" hint="Pick a standard test or 'untested'." />
+                <LabelWithHelp label={t("performance_block.cardio_test")} hint={t("performance_block.cardio_test_hint")} />
                 <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="untested">Untested</SelectItem>
-                    <SelectItem value="cooper">Cooper 12-min run (m)</SelectItem>
-                    <SelectItem value="rockport">Rockport 1-mile walk (min:sec)</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="untested">{t("performance_block.untested")}</SelectItem>
+                    <SelectItem value="cooper">{t("performance_block.cooper")}</SelectItem>
+                    <SelectItem value="rockport">{t("performance_block.rockport")}</SelectItem>
+                    <SelectItem value="other">{t("performance_block.other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {assessment.ext_cardio_test !== "untested" && (
-                <Field label="Test result" value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint="Distance, time, or VO₂ estimate." />
+                <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
               )}
               {showAdvancedPerformance && (
-                <TextField label="Cardio context (legacy free text)" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
               )}
             </div>
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-              {showAdvancedPerformance ? "Hide advanced fields" : "Show advanced fields"}
+              {showAdvancedPerformance ? t("hide_advanced") : t("show_advanced")}
             </button>
           </SectionBlock>
 
           {!busy && resumablePlan && (
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm">
-                <div className="font-semibold">Previous generation in progress</div>
+                <div className="font-semibold">{t("resume.title")}</div>
                 <div className="text-muted-foreground text-xs">
-                  {resumablePlan.title || "Untitled plan"} — {resumablePlan.completed}/{resumablePlan.total} days done.
+                  {t("resume.progress", { title: resumablePlan.title || t("resume.untitled"), done: resumablePlan.completed, total: resumablePlan.total })}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>Continue</Button>
-                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>Start over</Button>
+                <Button size="sm" onClick={() => void generate(resumablePlan.id)}>{t("resume.continue")}</Button>
+                <Button size="sm" variant="outline" onClick={() => void discardResumable()}>{t("resume.start_over")}</Button>
               </div>
             </div>
           )}
@@ -1264,19 +1282,17 @@ function ClientDetail() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="lg" disabled={busy}>
-                  <Eraser className="mr-2 h-4 w-4" /> Discard draft
+                  <Eraser className="mr-2 h-4 w-4" /> {t("discard.button")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Discard assessment draft?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Clears all fields above. Saved assessments stay in the database until next save.
-                  </AlertDialogDescription>
+                  <AlertDialogTitle>{t("discard.title")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("discard.desc")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={discardDraft}>Discard</AlertDialogAction>
+                  <AlertDialogCancel>{t("discard.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={discardDraft}>{t("discard.confirm")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -1289,25 +1305,27 @@ function ClientDetail() {
                     <AlertDialogTrigger asChild>
                       <Button disabled={busy} size="lg" variant="destructive">
                         {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
-                        Safety review required
+                        {t("generate.safety_button")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Clinical safety check</AlertDialogTitle>
+                        <AlertDialogTitle>{t("generate.safety_title")}</AlertDialogTitle>
                         <AlertDialogDescription asChild>
                           <div className="space-y-3 text-sm">
-                            <p>This client triggered the safety gate:</p>
+                            <p>{t("generate.safety_intro")}</p>
                             <ul className="list-disc space-y-1 pl-5 text-xs">
-                              {parqYes && <li>PAR-Q+ flagged one or more risk markers.</li>}
-                              {isHigh && <li>ACSM risk stratification is <span className="font-semibold text-destructive">High</span>.</li>}
+                              {parqYes && <li>{t("generate.safety_parq")}</li>}
+                              {isHigh && (
+                                <li>
+                                  {t("risk_block.acsm_pill", { level: t("risk_block.level_high") })}
+                                </li>
+                              )}
                               {(assessment.med_flags?.length ?? 0) > 0 && (
-                                <li>Medication flags: {assessment.med_flags.join(", ")}.</li>
+                                <li>{t("generate.safety_meds", { flags: assessment.med_flags.join(", ") })}</li>
                               )}
                             </ul>
-                            <p>
-                              The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.
-                            </p>
+                            <p>{t("generate.safety_body")}</p>
                             <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border bg-background/40 p-3">
                               <input
                                 type="checkbox"
@@ -1315,20 +1333,18 @@ function ClientDetail() {
                                 onChange={(e) => setSafetyOverride(e.target.checked)}
                                 className="mt-0.5 h-4 w-4 accent-accent"
                               />
-                              <span className="text-xs">
-                                I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.
-                              </span>
+                              <span className="text-xs">{t("generate.safety_confirm")}</span>
                             </label>
                           </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t("generate.safety_cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={!safetyOverride}
                           onClick={() => { setSafetyDialogOpen(false); void generate(); }}
                         >
-                          Generate conservative draft
+                          {t("generate.safety_proceed")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -1338,7 +1354,7 @@ function ClientDetail() {
               return (
                 <Button onClick={() => void generate()} disabled={busy} size="lg">
                   {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate plan draft
+                  {t("generate.button")}
                 </Button>
               );
             })()}
@@ -1347,9 +1363,9 @@ function ClientDetail() {
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-bold">Plans</h2>
+        <h2 className="mb-4 text-lg font-bold">{t("plans.title")}</h2>
         {plans.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No plans yet.</p>
+          <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => (
@@ -1363,7 +1379,7 @@ function ClientDetail() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="font-semibold">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">Updated {new Date(p.updated_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
                   </div>
                 </div>
                 <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">{p.status}</span>
@@ -1404,6 +1420,7 @@ function SectionBlock({
   provenance?: "client" | "trainer-edited";
   reviewed?: boolean;
 }) {
+  const { t } = useTranslation("assessment");
   const [open, setOpen] = useState(!defaultCollapsed);
   // Provenance border + tag styling
   const hasProv = provenance === "client" || provenance === "trainer-edited";
@@ -1415,10 +1432,10 @@ function SectionBlock({
   let tagText = "";
   let tagClass = "";
   if (provenance === "client") {
-    tagText = "Client-submitted";
+    tagText = t("tag.client_submitted");
     tagClass = reviewed ? "text-muted-foreground/70" : "text-accent/90";
   } else if (provenance === "trainer-edited") {
-    tagText = "Edited by you";
+    tagText = t("tag.trainer_edited");
     tagClass = "text-muted-foreground/70";
   }
   return (
@@ -1440,12 +1457,12 @@ function SectionBlock({
                 tabIndex={0}
                 onClick={(e) => e.stopPropagation()}
                 className="text-muted-foreground hover:text-foreground"
-                aria-label="Why we ask"
+                aria-label={t("why_we_ask_aria")}
               >
                 <Info className="h-3 w-3" />
               </span>
             </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">Why we ask:</span> {hint}</p></TooltipContent>
+            <TooltipContent className="max-w-xs text-xs"><p><span className="font-semibold">{t("why_we_ask")}</span> {hint}</p></TooltipContent>
           </Tooltip>
         )}
         {tagText && (
@@ -1465,13 +1482,14 @@ function SectionBlock({
 }
 
 function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
+  const { t } = useTranslation("assessment");
   return (
     <div className="flex items-center gap-1">
       <Label className="text-xs">{label}</Label>
       {hint && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask"><Info className="h-3 w-3" /></button>
+            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t("why_we_ask_aria")}><Info className="h-3 w-3" /></button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs text-xs"><p>{hint}</p></TooltipContent>
         </Tooltip>
@@ -1515,12 +1533,13 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
 }
 
 function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
+  const { t } = useTranslation("assessment");
   return (
     <div className="flex shrink-0 gap-1">
-      {[
-        [true, "Yes"],
-        [false, "No"],
-      ].map(([v, l]) => {
+      {([
+        [true, t("yes")],
+        [false, t("no")],
+      ] as const).map(([v, l]) => {
         const active = value === v;
         return (
           <button
@@ -1529,7 +1548,7 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boole
             onClick={() => onChange(v as boolean)}
             className={`h-6 rounded border px-2 text-[11px] font-medium transition ${active ? (v ? "border-destructive bg-destructive text-destructive-foreground" : "border-primary bg-primary text-primary-foreground") : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
           >
-            {l as string}
+            {l}
           </button>
         );
       })}
@@ -1568,6 +1587,7 @@ function ScreenItem({
   onScore: (v: string) => void;
   onNote: (v: string) => void;
 }) {
+  const { t } = useTranslation("assessment");
   const current = score == null ? "" : String(score);
   return (
     <div className="rounded-md border border-border bg-background/40 p-2">
@@ -1586,7 +1606,7 @@ function ScreenItem({
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-muted-foreground hover:text-foreground"
                 }`}
-                aria-label={`${label} score ${n}`}
+                aria-label={t("score_aria", { label, n })}
               >
                 {n}
               </button>
@@ -1596,7 +1616,7 @@ function ScreenItem({
       </div>
       <Input
         className="mt-1.5 h-7 text-xs"
-        placeholder="Optional note"
+        placeholder={t("optional_note")}
         value={note ?? ""}
         onChange={(e) => onNote(e.target.value)}
       />
@@ -1617,11 +1637,12 @@ function GenerationProgress({
   stopping?: boolean;
   onStop?: () => void;
 }) {
+  const { t } = useTranslation("assessment");
   const steps = [
-    { n: 1, label: "Saving assessment" },
-    { n: 2, label: "Generating each day in parallel" },
-    { n: 3, label: "Assembling the plan" },
-    { n: 4, label: "Opening your plan" },
+    { n: 1, label: t("progress_panel.step_save") },
+    { n: 2, label: t("progress_panel.step_generate") },
+    { n: 3, label: t("progress_panel.step_assemble") },
+    { n: 4, label: t("progress_panel.step_open") },
   ];
   // Build week → day grid for visualization.
   const cells: Array<{ key: string; w: number; d: number; status: string }> = [];
@@ -1640,7 +1661,7 @@ function GenerationProgress({
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-          <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with Claude Haiku 4.5 (per day)
+          <Sparkles className="h-3.5 w-3.5 animate-pulse" /> {t("progress_panel.header")}
         </div>
         {onStop && (
           <Button
@@ -1652,7 +1673,7 @@ function GenerationProgress({
             className="h-7 text-xs"
           >
             <StopCircle className="mr-1 h-3.5 w-3.5" />
-            {stopping ? "Stopping…" : "Stop generation"}
+            {stopping ? t("progress_panel.stopping") : t("progress_panel.stop")}
           </Button>
         )}
       </div>
@@ -1679,13 +1700,13 @@ function GenerationProgress({
       {weeks.length > 0 && (
         <div className="mt-3 space-y-1.5">
           <div className="text-[11px] font-mono text-muted-foreground">
-            {totals ? `${totals.done}/${totals.total} days` : ""}
+            {totals ? t("progress_panel.days_progress", { done: totals.done, total: totals.total }) : ""}
           </div>
           {weeks.map((w) => {
             const wcells = cells.filter((c) => c.w === w);
             return (
               <div key={w} className="flex items-center gap-2">
-                <span className="w-12 text-[11px] font-mono text-muted-foreground">W{w}</span>
+                <span className="w-12 text-[11px] font-mono text-muted-foreground">{t("progress_panel.week_label", { n: w })}</span>
                 <div className="flex flex-1 flex-wrap gap-1">
                   {wcells.map((c) => {
                     const cls =
@@ -1700,7 +1721,7 @@ function GenerationProgress({
                       <div
                         key={c.key}
                         className={`flex h-6 w-7 items-center justify-center rounded border text-[10px] font-mono ${cls}`}
-                        title={`Week ${c.w}, Day ${c.d} — ${c.status}`}
+                        title={t("progress_panel.cell_title", { w: c.w, d: c.d, status: c.status })}
                       >
                         {c.d}
                       </div>
@@ -1722,12 +1743,26 @@ function GenerationProgress({
   );
 }
 function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: number | null }) {
+  const { t } = useTranslation("assessment");
+  const formatRel = (ts: number | null): string => {
+    if (!ts) return "";
+    const diff = Math.max(0, Date.now() - ts);
+    const s = Math.floor(diff / 1000);
+    if (s < 5) return t("rel_time.just_now");
+    if (s < 60) return t("rel_time.seconds_ago", { s });
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("rel_time.minutes_ago", { m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("rel_time.hours_ago", { h });
+    const d = Math.floor(h / 24);
+    return t("rel_time.days_ago", { d });
+  };
   const base = "inline-flex items-center gap-1.5 font-mono text-[10px] tabular-nums";
   if (status === "saving") {
     return (
       <span className={`${base} text-accent`}>
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        Saving…
+        {t("save.saving")}
       </span>
     );
   }
@@ -1735,7 +1770,7 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     return (
       <span className={`${base} text-accent`}>
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        Offline — saved locally
+        {t("save.offline")}
       </span>
     );
   }
@@ -1743,7 +1778,7 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     return (
       <span className={`${base} text-muted-foreground/70`}>
         <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-        Saved · {formatRelative(lastSavedAt)}
+        {t("save.saved", { when: formatRel(lastSavedAt) })}
       </span>
     );
   }
@@ -1751,17 +1786,16 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
 }
 
 function ParqFlagSummary({ count }: { count: number }) {
+  const { t } = useTranslation("assessment");
   const clear = count === 0;
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest ${clear ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${clear ? "bg-primary" : "bg-accent"}`} />
-        PAR-Q+ flags: {count}
+        {t("parq_block.flag_summary_label", { count })}
       </span>
       {!clear && (
-        <span className="text-[11px] text-muted-foreground">
-          Plan generation will default to low-intensity. Override available.
-        </span>
+        <span className="text-[11px] text-muted-foreground">{t("parq_block.flag_summary_note")}</span>
       )}
     </div>
   );
