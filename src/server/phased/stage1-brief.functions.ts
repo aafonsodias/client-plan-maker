@@ -70,6 +70,7 @@ const BRIEF_TOOL_SCHEMA = {
     },
     equipment_constraints: { type: "array", items: { type: "string" } },
     notes_for_next_stage: { type: "string" },
+    current_capacity_vs_pb: { type: ["integer", "null"], minimum: 1, maximum: 10 },
   },
 };
 
@@ -121,6 +122,11 @@ Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work 
 - emphasis_split must sum to 1.0 (±0.05).
 - mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
 - All free-text fields (notes_for_next_stage, equipment_constraints labels, movement_competency_summary entries) must be written in European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling — não use formas brasileiras.
+- Read current_capacity_vs_pb from the goal/training section's notes_for_next_stage when present (1–10 self-rated "where I am vs my best ever"). Echo it back in the brief's current_capacity_vs_pb field. Then use it to calibrate notes_for_next_stage:
+  • If current_capacity_vs_pb ≤ 4, the client is in REBUILD mode: prioritize accumulation phase, sub-maximal loads (RPE ≤ 7.5), pattern reinforcement over intensification. Do NOT prescribe heavy compound work in week 1; phase it in by week 3+.
+  • If 5–7, MODERATE progression — start at ~70% of suspected capacity, build to 85%.
+  • If 8–10, NORMAL progression cadence applies.
+  If current_capacity_vs_pb is missing/unknown, set the brief field to null and proceed with normal cadence.
 
 Output ONLY by calling the record_brief tool.`;
 
@@ -428,6 +434,11 @@ Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work 
 - emphasis_split must sum to 1.0 (±0.05).
 - mesocycle_length_weeks should default to ${(plan as any).duration_weeks ?? 4}.
 - All free-text fields (notes_for_next_stage, equipment_constraints labels, movement_competency_summary entries) must be written in European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling — não use formas brasileiras.
+- Read current_capacity_vs_pb from the goal/training section's notes_for_next_stage when present (1–10 self-rated "where I am vs my best ever"). Echo it back in the brief's current_capacity_vs_pb field. Then use it to calibrate notes_for_next_stage:
+  • If current_capacity_vs_pb ≤ 4, the client is in REBUILD mode: prioritize accumulation phase, sub-maximal loads (RPE ≤ 7.5), pattern reinforcement over intensification. Do NOT prescribe heavy compound work in week 1; phase it in by week 3+.
+  • If 5–7, MODERATE progression — start at ~70% of suspected capacity, build to 85%.
+  • If 8–10, NORMAL progression cadence applies.
+  If current_capacity_vs_pb is missing/unknown, set the brief field to null and proceed with normal cadence.
 
 Output ONLY by calling the record_brief tool.`;
 

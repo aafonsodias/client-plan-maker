@@ -20,13 +20,20 @@ export type Database = {
           available_equipment: string[] | null
           body_fat_method: string | null
           body_fat_pct: number | null
+          bp_measured_at: string | null
           cardio_capacity: string | null
+          carry_capacity: Json
+          carry_form_criteria: Json
           client_id: string
           created_at: string
+          current_capacity_vs_pb: number | null
+          diastolic_bp_mmhg: number | null
           dominant_side: string | null
           energy_levels: string | null
           experience_level: string | null
           extended: Json
+          hinge_capacity: Json
+          hinge_form_criteria: Json
           hip_cm: number | null
           hip_hinge_note: string | null
           hip_hinge_score: number | null
@@ -35,6 +42,8 @@ export type Database = {
           injuries: string | null
           known_imbalances: string | null
           lifestyle: string | null
+          lunge_capacity: Json
+          lunge_form_criteria: Json
           max_lifts: string | null
           med_flags: string[] | null
           medical_conditions: string | null
@@ -47,11 +56,17 @@ export type Database = {
           preferences: string | null
           previous_program_style: string | null
           primary_goal: string | null
+          pull_capacity: Json
+          pull_form_criteria: Json
+          push_capacity: Json
+          push_form_criteria: Json
           readiness_stage: string | null
           recovery_capacity: string | null
           resting_heart_rate: number | null
+          screen_not_assessed: Json
           secondary_goals: string[] | null
           section_analyses: Json
+          section_analyses_locale: Json
           sections_analysed_at: Json
           session_duration_minutes: number | null
           single_leg_balance_note: string | null
@@ -60,10 +75,13 @@ export type Database = {
           smart_deadline: string | null
           smart_measurable: string | null
           smart_specific: string | null
+          squat_capacity: Json
           squat_depth_note: string | null
           squat_depth_score: number | null
+          squat_form_criteria: Json
           standing_posture_notes: string | null
           stress_level: number | null
+          systolic_bp_mmhg: number | null
           trainer_id: string
           training_days_per_week: number | null
           training_location: string | null
@@ -76,13 +94,20 @@ export type Database = {
           available_equipment?: string[] | null
           body_fat_method?: string | null
           body_fat_pct?: number | null
+          bp_measured_at?: string | null
           cardio_capacity?: string | null
+          carry_capacity?: Json
+          carry_form_criteria?: Json
           client_id: string
           created_at?: string
+          current_capacity_vs_pb?: number | null
+          diastolic_bp_mmhg?: number | null
           dominant_side?: string | null
           energy_levels?: string | null
           experience_level?: string | null
           extended?: Json
+          hinge_capacity?: Json
+          hinge_form_criteria?: Json
           hip_cm?: number | null
           hip_hinge_note?: string | null
           hip_hinge_score?: number | null
@@ -91,6 +116,8 @@ export type Database = {
           injuries?: string | null
           known_imbalances?: string | null
           lifestyle?: string | null
+          lunge_capacity?: Json
+          lunge_form_criteria?: Json
           max_lifts?: string | null
           med_flags?: string[] | null
           medical_conditions?: string | null
@@ -103,11 +130,17 @@ export type Database = {
           preferences?: string | null
           previous_program_style?: string | null
           primary_goal?: string | null
+          pull_capacity?: Json
+          pull_form_criteria?: Json
+          push_capacity?: Json
+          push_form_criteria?: Json
           readiness_stage?: string | null
           recovery_capacity?: string | null
           resting_heart_rate?: number | null
+          screen_not_assessed?: Json
           secondary_goals?: string[] | null
           section_analyses?: Json
+          section_analyses_locale?: Json
           sections_analysed_at?: Json
           session_duration_minutes?: number | null
           single_leg_balance_note?: string | null
@@ -116,10 +149,13 @@ export type Database = {
           smart_deadline?: string | null
           smart_measurable?: string | null
           smart_specific?: string | null
+          squat_capacity?: Json
           squat_depth_note?: string | null
           squat_depth_score?: number | null
+          squat_form_criteria?: Json
           standing_posture_notes?: string | null
           stress_level?: number | null
+          systolic_bp_mmhg?: number | null
           trainer_id: string
           training_days_per_week?: number | null
           training_location?: string | null
@@ -132,13 +168,20 @@ export type Database = {
           available_equipment?: string[] | null
           body_fat_method?: string | null
           body_fat_pct?: number | null
+          bp_measured_at?: string | null
           cardio_capacity?: string | null
+          carry_capacity?: Json
+          carry_form_criteria?: Json
           client_id?: string
           created_at?: string
+          current_capacity_vs_pb?: number | null
+          diastolic_bp_mmhg?: number | null
           dominant_side?: string | null
           energy_levels?: string | null
           experience_level?: string | null
           extended?: Json
+          hinge_capacity?: Json
+          hinge_form_criteria?: Json
           hip_cm?: number | null
           hip_hinge_note?: string | null
           hip_hinge_score?: number | null
@@ -147,6 +190,8 @@ export type Database = {
           injuries?: string | null
           known_imbalances?: string | null
           lifestyle?: string | null
+          lunge_capacity?: Json
+          lunge_form_criteria?: Json
           max_lifts?: string | null
           med_flags?: string[] | null
           medical_conditions?: string | null
@@ -159,11 +204,17 @@ export type Database = {
           preferences?: string | null
           previous_program_style?: string | null
           primary_goal?: string | null
+          pull_capacity?: Json
+          pull_form_criteria?: Json
+          push_capacity?: Json
+          push_form_criteria?: Json
           readiness_stage?: string | null
           recovery_capacity?: string | null
           resting_heart_rate?: number | null
+          screen_not_assessed?: Json
           secondary_goals?: string[] | null
           section_analyses?: Json
+          section_analyses_locale?: Json
           sections_analysed_at?: Json
           session_duration_minutes?: number | null
           single_leg_balance_note?: string | null
@@ -172,10 +223,13 @@ export type Database = {
           smart_deadline?: string | null
           smart_measurable?: string | null
           smart_specific?: string | null
+          squat_capacity?: Json
           squat_depth_note?: string | null
           squat_depth_score?: number | null
+          squat_form_criteria?: Json
           standing_posture_notes?: string | null
           stress_level?: number | null
+          systolic_bp_mmhg?: number | null
           trainer_id?: string
           training_days_per_week?: number | null
           training_location?: string | null

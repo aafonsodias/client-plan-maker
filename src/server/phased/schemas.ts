@@ -74,6 +74,13 @@ export const BriefSchema = z.object({
   }),
   equipment_constraints: z.array(z.string()).default([]),
   notes_for_next_stage: z.string().default(""),
+  current_capacity_vs_pb: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .nullable()
+    .default(null),
 });
 export type Brief = z.infer<typeof BriefSchema>;
 
