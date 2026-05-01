@@ -160,7 +160,7 @@ export const PhasedDaySchema = z.object({
   cardio: z.array(SectionItemZ).default([]),
   exercises: z.array(ExerciseZ).min(1),
 });
-export type PhasedDay = z.infer<typeof PhasedDaySchema>;
+export type PhasedDay = z.output<typeof PhasedDaySchema>;
 
 // ---- Generation state stored on workout_plans.generation_state -------------
 export const GenerationStageSchema = z.enum([
