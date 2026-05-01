@@ -62,9 +62,25 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-          <Logo className="h-9 w-9" />
-          <span className="text-xl">{t("brand.name")}</span>
+        <Link
+          to="/"
+          className="mb-10 flex flex-col items-center justify-center gap-3"
+          aria-label={t("brand.name")}
+        >
+          <div className="relative">
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 rounded-full blur-2xl opacity-60"
+              style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
+            />
+            <Logo className="h-16 w-16 drop-shadow-[0_0_18px_color-mix(in_oklab,var(--accent)_45%,transparent)]" />
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="h-px w-10 bg-accent/70" />
+            <span className="text-sm font-light uppercase tracking-[0.45em] text-foreground/90">
+              {t("brand.name")}
+            </span>
+          </div>
         </Link>
         <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)]">
           <Tabs defaultValue="signin">
@@ -117,8 +133,10 @@ function AuthPage() {
             {t("actions.continue_with_google")}
           </Button>
         </div>
-        <div className="mt-6 flex justify-center">
-          <LanguageSwitcher />
+        <div className="mt-8 flex justify-center opacity-60 hover:opacity-100 transition-opacity">
+          <div className="scale-90">
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </div>
