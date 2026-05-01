@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
