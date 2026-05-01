@@ -11,7 +11,8 @@ import { bulkFillRemainingWeeks } from "@/server/phased/stage5-bulkfill.function
 import { ProgressionPlanSchema, type ProgressionPlan } from "@/server/phased/schemas";
 import { Loader2, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { BriefContextRail, BriefContextRailMobile } from "@/components/BriefContextRail";
+import { BriefContextRail } from "@/components/BriefContextRail";
+import { BriefSheetButton } from "@/components/BriefSheetButton";
 
 export const Route = createFileRoute("/plans/$planId/progressions")({
   component: ProgressionsRoute,
