@@ -1137,7 +1137,7 @@ function ClientDetail() {
           </div>
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
+          <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_KEYS.map((key, idx) => {
                 const value = (assessment.parq as any)[key];
@@ -1164,7 +1164,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Risk stratification */}
-          <SectionBlock id="risk" title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
+          <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
@@ -1203,7 +1203,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
               <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
@@ -1229,7 +1229,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Medications */}
-          <SectionBlock id="meds" title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
+          <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
             <TextField label={t("meds_block.free_text")} value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {[
@@ -1253,7 +1253,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* SMART goal */}
-          <SectionBlock id="goal" title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
+          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
               <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
@@ -1263,7 +1263,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Readiness */}
-          <SectionBlock id="readiness" title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
             <div className="flex flex-wrap gap-1.5">
               {(["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const).map((v) => (
                 <button
@@ -1279,7 +1279,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training setup (existing) */}
-          <SectionBlock id="training" title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
+          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
@@ -1316,7 +1316,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("lifestyle_block.sleep")} type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint={t("lifestyle_block.sleep_hint")} />
               <Field label={t("lifestyle_block.stress")} type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint={t("lifestyle_block.stress_hint")} />
@@ -1329,7 +1329,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("nutrition_block.meals")} type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
               <Field label={t("nutrition_block.alcohol")} type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint={t("nutrition_block.alcohol_hint")} />
@@ -1346,7 +1346,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Mobility checklist */}
-          <SectionBlock id="mobility" title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
+          <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {([
@@ -1364,7 +1364,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Posture */}
-          <SectionBlock id="posture" title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
+          <SectionBlock id="posture" analysing={analysingSections["posture"]} analysis={sectionAnalyses["posture"]} title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <TextField label={t("posture_block.standing")} value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
               <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
@@ -1383,7 +1383,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Movement screen */}
-          <SectionBlock id="screen" title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <ScreenItem label={t("screen_block.squat")} score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
@@ -1394,7 +1394,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training history */}
-          <SectionBlock id="history" title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
+          <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
               <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
@@ -1403,7 +1403,7 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Performance */}
-          <SectionBlock id="performance" title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+          <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("performance_block.rhr")} type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint={t("performance_block.rhr_hint")} />
               <div className="space-y-1">
