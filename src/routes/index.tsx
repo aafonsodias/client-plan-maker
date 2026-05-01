@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -12,10 +14,15 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { user } = useAuth();
+  const { t } = useTranslation(["plan", "common"]);
   const signedIn = !!user;
   const primaryCtaTo = signedIn ? "/dashboard" : "/auth";
-  const primaryCtaLabel = signedIn ? "Open dashboard" : "Draft your first plan";
-  const closingCtaLabel = signedIn ? "Open dashboard" : "Create your account";
+  const primaryCtaLabel = signedIn
+    ? t("plan:landing.hero.cta_primary_signed_in")
+    : t("plan:landing.hero.cta_primary_signed_out");
+  const closingCtaLabel = signedIn
+    ? t("plan:landing.closing.cta_signed_in")
+    : t("plan:landing.closing.cta_signed_out");
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -23,20 +30,21 @@ function Landing() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
             <Logo className="h-8 w-8" />
-            <span className="text-lg">FORGE</span>
+            <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
+            <LanguageSwitcher className="mr-1" />
             {signedIn ? (
               <Button asChild size="sm">
-                <Link to="/dashboard">Go to dashboard</Link>
+                <Link to="/dashboard">{t("common:actions.go_to_dashboard")}</Link>
               </Button>
             ) : (
               <>
                 <Button asChild variant="ghost" size="sm">
-                  <Link to="/auth">Sign in</Link>
+                  <Link to="/auth">{t("common:actions.sign_in")}</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link to="/auth">Start free</Link>
+                  <Link to="/auth">{t("common:actions.start_free")}</Link>
                 </Button>
               </>
             )}
@@ -54,12 +62,11 @@ function Landing() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
           <div>
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
-              Stop writing plans
-              <span className="block text-accent">at midnight.</span>
+              {t("plan:landing.hero.title_line1")}
+              <span className="block text-accent">{t("plan:landing.hero.title_line2")}</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
-              Run a structured intake, let AI draft a personalized program in 90 seconds, and export a
-              branded PDF your clients will actually open.
+              {t("plan:landing.hero.subtitle")}
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -68,7 +75,7 @@ function Landing() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <a href="#how-it-works">See how it works</a>
+                <a href="#how-it-works">{t("plan:landing.hero.cta_secondary")}</a>
               </Button>
             </div>
           </div>
@@ -77,7 +84,7 @@ function Landing() {
               <HeroPlanMockup />
             </div>
             <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
-              Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach.
+              {t("plan:landing.hero.credibility_caption")}
             </p>
           </div>
         </div>
@@ -86,8 +93,8 @@ function Landing() {
       {/* How it works — animated mock */}
       <section id="how-it-works" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
-          <p className="text-xs uppercase tracking-widest text-accent">How it works</p>
-          <h2 className="mt-2 text-4xl font-light tracking-tight">From intake to PDF in four moves.</h2>
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.how_it_works.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.how_it_works.title")}</h2>
         </div>
         <HowItWorksAnimation />
       </section>
@@ -95,17 +102,14 @@ function Landing() {
       {/* Credibility — built on the science */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-12 max-w-2xl">
-          <h2 className="text-4xl font-light tracking-tight">Built on the science you already trust.</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">
-            Forge isn't just AI on top of a chat box. The intake follows the protocols you learned in
-            your certification — so the output is defensible, not generic.
-          </p>
+          <h2 className="text-4xl font-light tracking-tight">{t("plan:landing.credibility.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.credibility.subtitle")}</p>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {[
-            { icon: ClipboardCheck, title: "PAR-Q+ screening", desc: "Pre-participation health screen with cardiovascular, metabolic, and renal risk flags built in." },
-            { icon: ShieldCheck, title: "ACSM risk stratification", desc: "Low / moderate / high categorization to guide intensity prescription safely from session one." },
-            { icon: RefreshCw, title: "Prochaska stages of change", desc: "Behaviour-change readiness mapped to coaching tone and progression speed for each client." },
+            { icon: ClipboardCheck, title: t("plan:landing.credibility.cards.parq_title"), desc: t("plan:landing.credibility.cards.parq_desc") },
+            { icon: ShieldCheck, title: t("plan:landing.credibility.cards.acsm_title"), desc: t("plan:landing.credibility.cards.acsm_desc") },
+            { icon: RefreshCw, title: t("plan:landing.credibility.cards.prochaska_title"), desc: t("plan:landing.credibility.cards.prochaska_desc") },
           ].map((c) => (
             <div key={c.title} className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:shadow-[var(--shadow-elegant)]">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
@@ -121,11 +125,8 @@ function Landing() {
       {/* Logging / history — beyond the PDF */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-12 max-w-2xl">
-          <h2 className="text-4xl font-light tracking-tight">The plan doesn't end at the PDF.</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">
-            Log every set, track every session. Forge keeps the history so you and the client see the
-            work pile up.
-          </p>
+          <h2 className="text-4xl font-light tracking-tight">{t("plan:landing.logging.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logging.subtitle")}</p>
         </div>
         <div className="grid items-center gap-12 md:grid-cols-2">
           <ProgressionMockup />
@@ -135,14 +136,12 @@ function Landing() {
 
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-6 py-24">
-        <h2 className="mb-12 max-w-2xl text-4xl font-light tracking-tight">
-          Built for trainers who'd rather coach than copy-paste spreadsheets.
-        </h2>
+        <h2 className="mb-12 max-w-2xl text-4xl font-light tracking-tight">{t("plan:landing.features.title")}</h2>
         <div className="grid gap-6 md:grid-cols-3">
           {[
-            { icon: Users, title: "Structured intake", desc: "Capture goals, equipment, injuries, and schedule in a single guided form." },
-            { icon: Zap, title: "AI-drafted programs", desc: "Get a periodized weekly plan tailored to the assessment in seconds." },
-            { icon: FileText, title: "Branded PDF export", desc: "Add your logo and business name. Send a polished plan instantly." },
+            { icon: Users, title: t("plan:landing.features.intake_title"), desc: t("plan:landing.features.intake_desc") },
+            { icon: Zap, title: t("plan:landing.features.ai_title"), desc: t("plan:landing.features.ai_desc") },
+            { icon: FileText, title: t("plan:landing.features.pdf_title"), desc: t("plan:landing.features.pdf_desc") },
           ].map((f) => (
             <div key={f.title} className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:shadow-[var(--shadow-elegant)]">
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
@@ -161,77 +160,47 @@ function Landing() {
           <div className="flex justify-center md:justify-start">
             <img
               src={andreFounder}
-              alt="André, founder of Forge"
+              alt={t("plan:landing.founder.img_alt")}
               className="h-[120px] w-[120px] rounded-full border border-muted-foreground/30 object-cover object-[center_top] md:h-[160px] md:w-[160px]"
               style={{ boxShadow: "0 0 24px rgba(212, 175, 89, 0.08)" }}
             />
           </div>
           <div>
-            <h2 className="text-[32px] font-light leading-tight tracking-tight">Why Forge?</h2>
+            <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
             <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
-              <p>
-                In fifteen years as a personal trainer, I've realized two things: most professional
-                training plans are poorly put together, and because the admin is such a chore, many
-                trainers just give up and improvise.
-              </p>
-              <p>
-                High-quality, structured programming usually takes too much time, so it doesn't get done.
-              </p>
-              <p>
-                Forge is built to change that. It's a tool that makes it easy to generate a plan that is
-                actually defensible, whether you're coaching others or just managing your own training.
-              </p>
+              <p>{t("plan:landing.founder.p1")}</p>
+              <p>{t("plan:landing.founder.p2")}</p>
+              <p>{t("plan:landing.founder.p3")}</p>
               <ul className="space-y-3 pl-0">
                 <li>
-                  <span className="font-medium text-foreground">Logic over aesthetics.</span>{" "}
-                  It's not about admin theatre or pretty PDFs. It's about using solid frameworks
-                  (PAR-Q+, ACSM risk stratification, Prochaska) to build a baseline that makes sense.
+                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_logic_title")}</span>{" "}
+                  {t("plan:landing.founder.bullet_logic_body")}
                 </li>
                 <li>
-                  <span className="font-medium text-foreground">Professional or personal.</span>{" "}
-                  It works as a professional assistant to speed up client delivery, or as a personal
-                  tool for anyone who wants a structured program without the manual headache.
+                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_pro_title")}</span>{" "}
+                  {t("plan:landing.founder.bullet_pro_body")}
                 </li>
                 <li>
-                  <span className="font-medium text-foreground">You're the filter.</span>{" "}
-                  The AI handles the repetitive drafting. You review it, fix it, and own it.
+                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_filter_title")}</span>{" "}
+                  {t("plan:landing.founder.bullet_filter_body")}
                 </li>
               </ul>
-              <p>
-                The goal isn't to automate coaching. It's to make sure that "it's too much work" is no
-                longer an excuse for a bad plan.
-              </p>
+              <p>{t("plan:landing.founder.p4")}</p>
             </div>
-            <p className="mt-6 text-sm italic text-muted-foreground/70">
-              — André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer
-            </p>
+            <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-6 pb-24">
-        <h2 className="text-2xl font-light tracking-tight sm:text-3xl">
-          Questions trainers ask before signing up.
-        </h2>
+        <h2 className="text-2xl font-light tracking-tight sm:text-3xl">{t("plan:landing.faq.title")}</h2>
         <Accordion type="single" collapsible className="mt-8">
           {[
-            {
-              q: "Is the AI plan good enough to send to clients as-is?",
-              a: "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Forge is faster than starting from a blank page — not a replacement for your judgement.",
-            },
-            {
-              q: "What if my client has injuries or medical conditions?",
-              a: "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
-            },
-            {
-              q: "Can I use my own branding on the PDF?",
-              a: "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Forge's.",
-            },
-            {
-              q: "What happens to my client data?",
-              a: "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever.",
-            },
+            { q: t("plan:landing.faq.q1_q"), a: t("plan:landing.faq.q1_a") },
+            { q: t("plan:landing.faq.q2_q"), a: t("plan:landing.faq.q2_a") },
+            { q: t("plan:landing.faq.q3_q"), a: t("plan:landing.faq.q3_a") },
+            { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
@@ -247,10 +216,7 @@ function Landing() {
 
       {/* Mission line */}
       <section className="mx-auto max-w-3xl px-6 pb-16">
-        <p className="text-center text-[15px] leading-[1.7] text-muted-foreground">
-          Forge exists so trainers can spend less time formatting and more time coaching.
-          Better tools for trainers means safer, smarter training for everyone they reach.
-        </p>
+        <p className="text-center text-[15px] leading-[1.7] text-muted-foreground">{t("plan:landing.mission")}</p>
       </section>
 
       {/* Closing CTA */}
@@ -260,12 +226,8 @@ function Landing() {
             className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-25 blur-3xl"
             style={{ background: "var(--gradient-accent)" }}
           />
-          <h2 className="relative mx-auto max-w-2xl text-4xl font-light tracking-tight">
-            Your next plan, before your next session.
-          </h2>
-          <p className="relative mx-auto mt-4 max-w-xl font-light text-muted-foreground">
-            Free during beta. No card required.
-          </p>
+          <h2 className="relative mx-auto max-w-2xl text-4xl font-light tracking-tight">{t("plan:landing.closing.title")}</h2>
+          <p className="relative mx-auto mt-4 max-w-xl font-light text-muted-foreground">{t("plan:landing.closing.subtitle")}</p>
           <div className="relative mt-8 flex justify-center">
             <Button asChild size="lg">
               <Link to={primaryCtaTo}>{closingCtaLabel}</Link>
@@ -275,7 +237,7 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Forge
+        {t("plan:landing.footer_copy", { year: new Date().getFullYear() })}
       </footer>
     </div>
   );
