@@ -1749,6 +1749,7 @@ function ClientDetail() {
                             accommodations: storedAcc.success
                               ? reconcileAccommodations(parsed.data, storedAcc.data)
                               : reconcileAccommodations(parsed.data, null),
+                            approvedStages: approvedList,
                           });
                           // Refresh plans list so the new draft shows up.
                           void refreshPlans();
