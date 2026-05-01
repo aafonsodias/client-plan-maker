@@ -344,6 +344,10 @@ function ClientDetail() {
   const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
   const synthesizeBriefFn = useServerFn(synthesizeBrief);
   const approveBriefFn = useServerFn(approveBrief);
+  const generateBlueprintFn = useServerFn(generateBlueprint);
+  const generateMicrocycleDaysFn = useServerFn(generateMicrocycleDays);
+  const proposeProgressionsFn = useServerFn(proposeProgressions);
+  const [stageBusy, setStageBusy] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   const [phasedBusy, setPhasedBusy] = useState(false);
   // Inline brief panel: rendered below the action row. Replaces the toast-link banner.
   const [inlineBrief, setInlineBrief] = useState<{
