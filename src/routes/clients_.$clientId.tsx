@@ -1481,13 +1481,14 @@ function SectionBlock({
 }
 
 function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
+  const { t } = useTranslation("assessment");
   return (
     <div className="flex items-center gap-1">
       <Label className="text-xs">{label}</Label>
       {hint && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Why we ask"><Info className="h-3 w-3" /></button>
+            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t("why_we_ask_aria")}><Info className="h-3 w-3" /></button>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs text-xs"><p>{hint}</p></TooltipContent>
         </Tooltip>
@@ -1531,12 +1532,13 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
 }
 
 function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
+  const { t } = useTranslation("assessment");
   return (
     <div className="flex shrink-0 gap-1">
-      {[
-        [true, "Yes"],
-        [false, "No"],
-      ].map(([v, l]) => {
+      {([
+        [true, t("yes")],
+        [false, t("no")],
+      ] as const).map(([v, l]) => {
         const active = value === v;
         return (
           <button
@@ -1545,7 +1547,7 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boole
             onClick={() => onChange(v as boolean)}
             className={`h-6 rounded border px-2 text-[11px] font-medium transition ${active ? (v ? "border-destructive bg-destructive text-destructive-foreground" : "border-primary bg-primary text-primary-foreground") : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
           >
-            {l as string}
+            {l}
           </button>
         );
       })}
@@ -1584,6 +1586,7 @@ function ScreenItem({
   onScore: (v: string) => void;
   onNote: (v: string) => void;
 }) {
+  const { t } = useTranslation("assessment");
   const current = score == null ? "" : String(score);
   return (
     <div className="rounded-md border border-border bg-background/40 p-2">
@@ -1602,7 +1605,7 @@ function ScreenItem({
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-muted-foreground hover:text-foreground"
                 }`}
-                aria-label={`${label} score ${n}`}
+                aria-label={t("score_aria", { label, n })}
               >
                 {n}
               </button>
@@ -1612,7 +1615,7 @@ function ScreenItem({
       </div>
       <Input
         className="mt-1.5 h-7 text-xs"
-        placeholder="Optional note"
+        placeholder={t("optional_note")}
         value={note ?? ""}
         onChange={(e) => onNote(e.target.value)}
       />
@@ -1633,11 +1636,12 @@ function GenerationProgress({
   stopping?: boolean;
   onStop?: () => void;
 }) {
+  const { t } = useTranslation("assessment");
   const steps = [
-    { n: 1, label: "Saving assessment" },
-    { n: 2, label: "Generating each day in parallel" },
-    { n: 3, label: "Assembling the plan" },
-    { n: 4, label: "Opening your plan" },
+    { n: 1, label: t("progress_panel.step_save") },
+    { n: 2, label: t("progress_panel.step_generate") },
+    { n: 3, label: t("progress_panel.step_assemble") },
+    { n: 4, label: t("progress_panel.step_open") },
   ];
   // Build week → day grid for visualization.
   const cells: Array<{ key: string; w: number; d: number; status: string }> = [];
@@ -1656,7 +1660,7 @@ function GenerationProgress({
     <div className="mt-4 animate-fade-in rounded-xl border border-accent/30 bg-accent/5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent">
-          <Sparkles className="h-3.5 w-3.5 animate-pulse" /> Generating with Claude Haiku 4.5 (per day)
+          <Sparkles className="h-3.5 w-3.5 animate-pulse" /> {t("progress_panel.header")}
         </div>
         {onStop && (
           <Button
@@ -1668,7 +1672,7 @@ function GenerationProgress({
             className="h-7 text-xs"
           >
             <StopCircle className="mr-1 h-3.5 w-3.5" />
-            {stopping ? "Stopping…" : "Stop generation"}
+            {stopping ? t("progress_panel.stopping") : t("progress_panel.stop")}
           </Button>
         )}
       </div>
@@ -1695,13 +1699,13 @@ function GenerationProgress({
       {weeks.length > 0 && (
         <div className="mt-3 space-y-1.5">
           <div className="text-[11px] font-mono text-muted-foreground">
-            {totals ? `${totals.done}/${totals.total} days` : ""}
+            {totals ? t("progress_panel.days_progress", { done: totals.done, total: totals.total }) : ""}
           </div>
           {weeks.map((w) => {
             const wcells = cells.filter((c) => c.w === w);
             return (
               <div key={w} className="flex items-center gap-2">
-                <span className="w-12 text-[11px] font-mono text-muted-foreground">W{w}</span>
+                <span className="w-12 text-[11px] font-mono text-muted-foreground">{t("progress_panel.week_label", { n: w })}</span>
                 <div className="flex flex-1 flex-wrap gap-1">
                   {wcells.map((c) => {
                     const cls =
@@ -1716,7 +1720,7 @@ function GenerationProgress({
                       <div
                         key={c.key}
                         className={`flex h-6 w-7 items-center justify-center rounded border text-[10px] font-mono ${cls}`}
-                        title={`Week ${c.w}, Day ${c.d} — ${c.status}`}
+                        title={t("progress_panel.cell_title", { w: c.w, d: c.d, status: c.status })}
                       >
                         {c.d}
                       </div>
@@ -1738,12 +1742,26 @@ function GenerationProgress({
   );
 }
 function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: number | null }) {
+  const { t } = useTranslation("assessment");
+  const formatRel = (ts: number | null): string => {
+    if (!ts) return "";
+    const diff = Math.max(0, Date.now() - ts);
+    const s = Math.floor(diff / 1000);
+    if (s < 5) return t("rel_time.just_now");
+    if (s < 60) return t("rel_time.seconds_ago", { s });
+    const m = Math.floor(s / 60);
+    if (m < 60) return t("rel_time.minutes_ago", { m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("rel_time.hours_ago", { h });
+    const d = Math.floor(h / 24);
+    return t("rel_time.days_ago", { d });
+  };
   const base = "inline-flex items-center gap-1.5 font-mono text-[10px] tabular-nums";
   if (status === "saving") {
     return (
       <span className={`${base} text-accent`}>
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-        Saving…
+        {t("save.saving")}
       </span>
     );
   }
@@ -1751,7 +1769,7 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     return (
       <span className={`${base} text-accent`}>
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        Offline — saved locally
+        {t("save.offline")}
       </span>
     );
   }
@@ -1759,7 +1777,7 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     return (
       <span className={`${base} text-muted-foreground/70`}>
         <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-        Saved · {formatRelative(lastSavedAt)}
+        {t("save.saved", { when: formatRel(lastSavedAt) })}
       </span>
     );
   }
@@ -1767,17 +1785,16 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
 }
 
 function ParqFlagSummary({ count }: { count: number }) {
+  const { t } = useTranslation("assessment");
   const clear = count === 0;
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-widest ${clear ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
         <span className={`h-1.5 w-1.5 rounded-full ${clear ? "bg-primary" : "bg-accent"}`} />
-        PAR-Q+ flags: {count}
+        {t("parq_block.flag_summary_label", { count })}
       </span>
       {!clear && (
-        <span className="text-[11px] text-muted-foreground">
-          Plan generation will default to low-intensity. Override available.
-        </span>
+        <span className="text-[11px] text-muted-foreground">{t("parq_block.flag_summary_note")}</span>
       )}
     </div>
   );
