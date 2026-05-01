@@ -781,6 +781,7 @@ function ClientDetail() {
         accommodations: storedAcc.success
           ? reconcileAccommodations(parsed.data, storedAcc.data)
           : reconcileAccommodations(parsed.data, null),
+        approvedStages: approvedList,
       });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
