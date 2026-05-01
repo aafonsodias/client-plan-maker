@@ -1,0 +1,393 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  BlueprintSchema,
+  BriefSchema,
+  GenerationStateSchema,
+  PhasedDaySchema,
+  type PhasedDay,
+} from "./schemas";
+import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+
+// JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
+const SECTION_ITEM = {
+  type: "object",
+  additionalProperties: false,
+  required: ["name", "duration", "notes"],
+  properties: {
+    name: { type: "string" },
+    duration: { type: "string" },
+    notes: { type: "string" },
+  },
+};
+
+const DAY_TOOL_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "day_label",
+    "focus",
+    "rationale",
+    "warmup",
+    "activation",
+    "dynamic_stretches",
+    "cooldown",
+    "finisher",
+    "finisher_enabled",
+    "cardio",
+    "exercises",
+  ],
+  properties: {
+    day_label: { type: "string" },
+    focus: { type: "string" },
+    rationale: { type: "string" },
+    warmup: { type: "array", items: SECTION_ITEM },
+    activation: { type: "array", items: SECTION_ITEM },
+    dynamic_stretches: { type: "array", items: SECTION_ITEM },
+    cooldown: { type: "array", items: SECTION_ITEM },
+    finisher: { type: "array", items: SECTION_ITEM },
+    finisher_enabled: { type: "boolean" },
+    cardio: { type: "array", items: SECTION_ITEM },
+    exercises: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "name", "sets", "reps", "rest", "notes",
+          "primary_muscles", "secondary_muscles",
+          "rpe", "tempo", "technique_cues", "cue",
+          "rationale", "superset_id", "variant", "optional", "equipment",
+        ],
+        properties: {
+          name: { type: "string" },
+          sets: { type: "string" },
+          reps: { type: "string" },
+          rest: { type: "string" },
+          notes: { type: "string" },
+          primary_muscles: { type: "array", items: { type: "string" } },
+          secondary_muscles: { type: "array", items: { type: "string" } },
+          rpe: { type: "string" },
+          tempo: { type: "string" },
+          technique_cues: { type: "string" },
+          cue: { type: "string" },
+          rationale: { type: "string" },
+          superset_id: { type: ["string", "null"] },
+          variant: { type: ["string", "null"] },
+          optional: { type: "boolean" },
+          equipment: { type: "array", items: { type: "string" } },
+        },
+      },
+    },
+  },
+};
+
+type LoadedPlan = {
+  trainer_id: string;
+  brief: any;
+  blueprint: any;
+};
+
+async function loadPlan(supabase: any, planId: string, userId: string): Promise<
+  { ok: true; plan: LoadedPlan } | { ok: false; error: string }
+> {
+  const { data: plan } = await supabase
+    .from("workout_plans")
+    .select("trainer_id, brief, blueprint")
+    .eq("id", planId)
+    .maybeSingle();
+  if (!plan || (plan as any).trainer_id !== userId) {
+    return { ok: false, error: "forbidden" };
+  }
+  return { ok: true, plan: plan as LoadedPlan };
+}
+
+function archetypeForDay(blueprint: any, dayIndex: number): {
+  id: string;
+  focus: string;
+  primary_movements: string[];
+} | null {
+  const map = blueprint?.week_to_session_map ?? {};
+  const week1 = map["1"] ?? Object.values(map)[0];
+  if (!Array.isArray(week1)) return null;
+  const id = week1[dayIndex - 1];
+  if (!id) return null;
+  const arch = (blueprint?.session_archetypes ?? []).find((a: any) => a?.id === id);
+  if (!arch) return { id, focus: id, primary_movements: [] };
+  return arch;
+}
+
+async function runDay(
+  supabase: any,
+  userId: string,
+  planId: string,
+  dayIndex: number,
+  brief: any,
+  blueprint: any
+): Promise<{ ok: true; day: PhasedDay } | { ok: false; error: string }> {
+  const arch = archetypeForDay(blueprint, dayIndex);
+  if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
+
+  const equipment = (brief?.equipment_constraints ?? []).join(", ") || "no specific constraints";
+  const redFlags = (brief?.red_flags ?? []).join("; ") || "none";
+
+  const system = `You are a senior strength coach generating ONE single training session.
+
+Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
+
+RULES:
+- Order: warmup → activation → dynamic_stretches → exercises → cooldown → (finisher if enabled) → (cardio if relevant).
+- exercises: 4–8 entries. Order: primer → main lift → secondary → accessories → optional.
+- Main lift: the FIRST exercise with RPE ≥ 8 (or first exercise if none).
+- superset_id: same string for paired exercises (max 3 groups), null otherwise. NEVER pair the main lift in a strength phase.
+- optional: ≤ 2 marked optional, all with RPE ≤ 7.
+- equipment[]: subset of available equipment.
+- rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
+- All required fields must be filled — use empty arrays/strings where genuinely empty.
+
+Call record_day exactly once.`;
+
+  const user = `Day ${dayIndex} of Week 1.
+Archetype: ${arch.id} — ${arch.focus}
+Primary movements: ${arch.primary_movements.join(", ") || "(coach's choice)"}
+
+Brief context:
+- primary_goal: ${brief.primary_goal}
+- training_age_band: ${brief.training_age_band}
+- sessions_per_week: ${brief.sessions_per_week?.recommended}
+- movement_competency_summary: ${JSON.stringify(brief.movement_competency_summary)}
+- red_flags: ${redFlags}
+- equipment available: ${equipment}
+- progression_model: ${blueprint?.progression_model_proposal?.model ?? "linear"}
+- coach notes: ${brief.notes_for_next_stage || "(none)"}
+
+Generate ONLY this single day's session.`;
+
+  const model = resolveModel("FORGE_MODEL_STAGE_3", "claude-sonnet-4-5-20250929");
+  const result = await callAnthropicWithSchema({
+    model,
+    system,
+    userMessage: user,
+    toolName: "record_day",
+    toolDescription: "Record one training session as a structured day.",
+    toolJsonSchema: DAY_TOOL_SCHEMA,
+    schema: PhasedDaySchema,
+    maxTokens: 4000,
+  });
+
+  await logGeneration(supabase, {
+    trainer_id: userId,
+    plan_id: planId,
+    stage: `stage3:day${dayIndex}`,
+    model_used: model,
+    input_tokens: result.inputTokens,
+    output_tokens: result.outputTokens,
+    cost_usd: result.costUsd,
+    zod_passed: result.ok,
+    retry_count: result.retryCount,
+    duration_ms: result.durationMs,
+    error: result.ok ? null : result.error,
+    output_snapshot: result.ok ? { day_label: result.data.day_label, focus: result.data.focus } : (result as any).zodError ?? null,
+  });
+
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true, day: result.data };
+}
+
+async function upsertDayRow(
+  supabase: any,
+  trainer_id: string,
+  planId: string,
+  weekNumber: number,
+  dayIndex: number,
+  status: "done" | "error",
+  day: PhasedDay | null,
+  errorText?: string
+) {
+  // Find existing row
+  const { data: existing } = await supabase
+    .from("workout_plan_days")
+    .select("id")
+    .eq("plan_id", planId)
+    .eq("week_number", weekNumber)
+    .eq("day_number", dayIndex)
+    .maybeSingle();
+
+  const payload: any = {
+    plan_id: planId,
+    trainer_id,
+    week_number: weekNumber,
+    day_number: dayIndex,
+    day_label: day?.day_label ?? `Day ${dayIndex}`,
+    focus: day?.focus ?? "",
+    rationale: day?.rationale ?? "",
+    status,
+    content: day ?? {},
+    validation_meta: errorText ? { error: errorText } : {},
+  };
+
+  if (existing?.id) {
+    await supabase.from("workout_plan_days").update(payload).eq("id", existing.id);
+  } else {
+    await supabase.from("workout_plan_days").insert(payload);
+  }
+}
+
+async function markPending(
+  supabase: any,
+  trainer_id: string,
+  planId: string,
+  dayIndex: number
+) {
+  const { data: existing } = await supabase
+    .from("workout_plan_days")
+    .select("id")
+    .eq("plan_id", planId)
+    .eq("week_number", 1)
+    .eq("day_number", dayIndex)
+    .maybeSingle();
+  const payload: any = {
+    plan_id: planId,
+    trainer_id,
+    week_number: 1,
+    day_number: dayIndex,
+    day_label: `Day ${dayIndex}`,
+    focus: "",
+    rationale: "",
+    status: "pending",
+    content: {},
+    validation_meta: {},
+  };
+  if (existing?.id) {
+    await supabase.from("workout_plan_days").update(payload).eq("id", existing.id);
+  } else {
+    await supabase.from("workout_plan_days").insert(payload);
+  }
+}
+
+/** Generate a single day (used for Day 1 and per-day regen). */
+export const generateDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ planId: z.string().uuid(), dayIndex: z.number().int().min(1).max(7) }).parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const loaded = await loadPlan(supabase, data.planId, userId);
+    if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const briefP = BriefSchema.safeParse(loaded.plan.brief);
+    const bpP = BlueprintSchema.safeParse(loaded.plan.blueprint);
+    if (!briefP.success || !bpP.success) {
+      return { ok: false as const, error: "Brief or blueprint missing/invalid" };
+    }
+    await markPending(supabase, userId, data.planId, data.dayIndex);
+    const r = await runDay(supabase, userId, data.planId, data.dayIndex, briefP.data, bpP.data);
+    if (!r.ok) {
+      await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
+      return { ok: false as const, error: r.error };
+    }
+    await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "done", r.day);
+    return { ok: true as const };
+  });
+
+/** Generate days 2..N with bounded concurrency = 3, server-side. */
+export const generateMicrocycleDays = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        dayIndices: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+      })
+      .parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const loaded = await loadPlan(supabase, data.planId, userId);
+    if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const briefP = BriefSchema.safeParse(loaded.plan.brief);
+    const bpP = BlueprintSchema.safeParse(loaded.plan.blueprint);
+    if (!briefP.success || !bpP.success) {
+      return { ok: false as const, error: "Brief or blueprint missing/invalid" };
+    }
+
+    // Mark all pending immediately so UI sees them.
+    await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
+
+    const queue = [...data.dayIndices];
+    const concurrency = 3;
+    let okCount = 0;
+    let errCount = 0;
+
+    async function worker() {
+      while (queue.length > 0) {
+        const idx = queue.shift();
+        if (idx == null) return;
+        try {
+          const r = await runDay(
+            supabase,
+            userId,
+            data.planId,
+            idx,
+            briefP.data,
+            bpP.data
+          );
+          if (r.ok) {
+            await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
+            okCount++;
+          } else {
+            await upsertDayRow(supabase, userId, data.planId, 1, idx, "error", null, r.error);
+            errCount++;
+          }
+        } catch (e) {
+          await upsertDayRow(
+            supabase,
+            userId,
+            data.planId,
+            1,
+            idx,
+            "error",
+            null,
+            e instanceof Error ? e.message : String(e)
+          );
+          errCount++;
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+    return { ok: true as const, generated: okCount, errors: errCount };
+  });
+
+export const approveMicrocycle = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ planId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("trainer_id, generation_state")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || (plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const prev = GenerationStateSchema.safeParse((plan as any).generation_state ?? {});
+    const approved = new Set(prev.success ? prev.data.approved_stages : []);
+    approved.add("brief");
+    approved.add("blueprint");
+    approved.add("microcycle");
+    const newState = GenerationStateSchema.parse({
+      stage: "progressions",
+      approved_stages: Array.from(approved),
+      last_updated_at: new Date().toISOString(),
+    });
+    const { error } = await supabase
+      .from("workout_plans")
+      .update({ generation_state: newState as any })
+      .eq("id", data.planId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
