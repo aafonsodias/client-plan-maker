@@ -227,10 +227,10 @@ function MicrocycleReview() {
                 </div>
                 <button
                   onClick={() => regenDay(idx)}
-                  disabled={isGenerating(idx) || row?.status === "pending"}
+                  disabled={isGenerating(idx)}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
                 >
-                  {isGenerating(idx) || row?.status === "pending" ? (
+                  {isGenerating(idx) ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
                     <Sparkles className="h-3 w-3" />
