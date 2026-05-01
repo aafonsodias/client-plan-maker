@@ -1284,7 +1284,13 @@ export const finalizePlanGeneration = createServerFn({ method: "POST" })
         title: data.title || planRow.title,
         summary: data.summary || planRow.summary,
         generation_status: "complete",
-        status: "draft",
+        // Flip to "finalized" so dashboards/cards show the plan as live
+        // instead of stuck on "Draft" after a successful end-to-end generation.
+        // The trainer can still unlock it back to draft from the plan page.
+        // TODO: if any day failed, set status to "failed" instead — currently
+        // the orchestrator surfaces per-day errors before reaching finalize,
+        // so reaching this branch implies all days succeeded.
+        status: "finalized",
         generation_meta: newGenMeta,
       })
       .eq("id", data.plan_id);
