@@ -1,0 +1,49 @@
+{
+  "brand": {
+    "name": "FORGE"
+  },
+  "actions": {
+    "sign_in": "Sign in",
+    "sign_out": "Sign out",
+    "sign_up": "Create account",
+    "start_free": "Start free",
+    "go_to_dashboard": "Go to dashboard",
+    "open_dashboard": "Open dashboard",
+    "back": "Back",
+    "loading": "Loading…",
+    "continue_with_google": "Continue with Google",
+    "upgrade": "Upgrade",
+    "or": "or"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "branding": "Branding",
+    "billing": "Billing",
+    "landing": "Landing"
+  },
+  "auth": {
+    "tab_signin": "Sign in",
+    "tab_signup": "Create account",
+    "field_email": "Email",
+    "field_password": "Password",
+    "field_full_name": "Full name",
+    "password_hint": "At least 10 characters. Avoid common or breached passwords.",
+    "confirm_email_toast": "Check your email to confirm your account."
+  },
+  "shell": {
+    "trial_days_left_one": "{{count}} day left in your free trial.",
+    "trial_days_left_other": "{{count}} days left in your free trial.",
+    "trial_ended": "Your free trial has ended. Upgrade to keep generating plans."
+  },
+  "language": {
+    "switch_aria": "Change language",
+    "english": "English",
+    "portuguese": "Português"
+  },
+  "errors": {
+    "page_not_found_title": "Page not found",
+    "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",
+    "go_home": "Go home"
+  }
+}
