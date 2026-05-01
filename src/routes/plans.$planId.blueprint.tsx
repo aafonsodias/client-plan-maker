@@ -212,8 +212,9 @@ function BlueprintReview() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
           <Link
             to="/plans/$planId/brief"
             params={{ planId }}
@@ -223,6 +224,16 @@ function BlueprintReview() {
           </Link>
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
           <p className="text-xs text-muted-foreground">Stage 2 — Mesocycle blueprint</p>
+          </div>
+          <button
+            onClick={approve}
+            disabled={busy || hasIntegrityError}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            Approve → Day 1
+          </button>
         </div>
         <div className="flex flex-wrap gap-2">
           <BriefSheetButton planId={planId} />
@@ -247,15 +258,6 @@ function BlueprintReview() {
           >
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             Regenerate
-          </button>
-          <button
-            onClick={approve}
-            disabled={busy || hasIntegrityError}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Approve → Day 1
           </button>
         </div>
       </div>
