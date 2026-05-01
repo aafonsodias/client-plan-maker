@@ -3,15 +3,17 @@ import { cn } from "@/lib/utils";
 import { SUPPORTED_LOCALES, LOCALE_STORAGE_KEY, type Locale } from "@/i18n";
 
 /**
- * Segmented control: PT | EN (uppercase per founder preference).
+ * Segmented control: pt | en.
  * Persists to localStorage under "forge.locale" via i18next-browser-languagedetector.
  * No page reload — react-i18next re-renders subscribed components.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { i18n, t } = useTranslation("common");
+  const localeOptions: Locale[] = ["pt", "en"];
+  const activeLanguage = (i18n.language ?? i18n.resolvedLanguage ?? "en").slice(0, 2);
   const current = (
-    SUPPORTED_LOCALES.includes(i18n.resolvedLanguage as Locale)
-      ? (i18n.resolvedLanguage as Locale)
+    SUPPORTED_LOCALES.includes(activeLanguage as Locale)
+      ? (activeLanguage as Locale)
       : "en"
   );
 
@@ -39,7 +41,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         className,
       )}
     >
-      {SUPPORTED_LOCALES.map((code) => {
+      {localeOptions.map((code) => {
         const active = code === current;
         return (
           <button
@@ -48,7 +50,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             onClick={() => change(code)}
             aria-pressed={active}
             className={cn(
-              "rounded-sm px-2 py-1 uppercase tracking-wider transition",
+              "rounded-sm px-2 py-1 tracking-wider transition",
               active
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
