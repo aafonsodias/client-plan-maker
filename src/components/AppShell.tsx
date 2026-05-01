@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,7 +66,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/dashboard" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
+          <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
             <Logo className="h-8 w-8" />
             <span>{t("brand.name")}</span>
           </Link>
@@ -140,6 +141,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         )}
         {children}
       </main>
+      <ScrollToTopButton />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -239,6 +240,7 @@ function Landing() {
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
         {t("plan:landing.footer_copy", { year: new Date().getFullYear() })}
       </footer>
+      <ScrollToTopButton />
     </div>
   );
 }
