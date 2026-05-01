@@ -1886,9 +1886,75 @@ function ClientDetail() {
               </StageCard>
               {inlineBrief.approved && (
                 <>
-                  <StageCard stageNumber={2} title="Blueprint" status="placeholder" />
-                  <StageCard stageNumber={3} title="Microcycle" status="placeholder" />
-                  <StageCard stageNumber={4} title="Progressions" status="placeholder" />
+                  {(() => {
+                    const approvedStages = inlineBrief.approvedStages ?? ["brief"];
+                    const blueprintApproved = approvedStages.includes("blueprint");
+                    const microcycleApproved = approvedStages.includes("microcycle");
+                    const progressionsApproved = approvedStages.includes("progressions");
+                    const goTo = (path: "blueprint" | "microcycle" | "progressions") =>
+                      navigate({
+                        to:
+                          path === "blueprint"
+                            ? "/plans/$planId/blueprint"
+                            : path === "microcycle"
+                            ? "/plans/$planId/microcycle"
+                            : "/plans/$planId/progressions",
+                        params: { planId: inlineBrief.planId },
+                      });
+                    return (
+                      <>
+                        <StageCard
+                          stageNumber={2}
+                          title="Blueprint"
+                          status={blueprintApproved ? "approved" : "ready"}
+                          approveLabel={blueprintApproved ? "Abrir" : "Gerar Blueprint →"}
+                          onApprove={() => goTo("blueprint")}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.
+                          </p>
+                        </StageCard>
+                        <StageCard
+                          stageNumber={3}
+                          title="Microcycle"
+                          status={
+                            microcycleApproved
+                              ? "approved"
+                              : blueprintApproved
+                              ? "ready"
+                              : "placeholder"
+                          }
+                          approveLabel={microcycleApproved ? "Abrir" : "Gerar Microcycle →"}
+                          onApprove={blueprintApproved ? () => goTo("microcycle") : undefined}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            {blueprintApproved
+                              ? "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar."
+                              : "Aprova o Blueprint primeiro."}
+                          </p>
+                        </StageCard>
+                        <StageCard
+                          stageNumber={4}
+                          title="Progressions"
+                          status={
+                            progressionsApproved
+                              ? "approved"
+                              : microcycleApproved
+                              ? "ready"
+                              : "placeholder"
+                          }
+                          approveLabel={progressionsApproved ? "Abrir" : "Gerar Progressions →"}
+                          onApprove={microcycleApproved ? () => goTo("progressions") : undefined}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            {microcycleApproved
+                              ? "Deltas de progressão para as semanas 2+. Clica para gerar."
+                              : "Aprova o Microcycle primeiro."}
+                          </p>
+                        </StageCard>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
