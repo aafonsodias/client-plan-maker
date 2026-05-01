@@ -2162,7 +2162,7 @@ function AssessmentSection({
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
       </div>
-      <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
           type="button"
           onClick={() => ctx.setAll(true)}
