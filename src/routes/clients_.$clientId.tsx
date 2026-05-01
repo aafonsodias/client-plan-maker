@@ -1699,22 +1699,49 @@ function ClientDetail() {
                 ? { to: `/plans/$planId/${stage}` as any, params: { planId: p.id } }
                 : { to: "/plans/$planId" as const, params: { planId: p.id } };
               return (
-                <Link
+                <div
                   key={p.id}
-                  {...(linkProps as any)}
-                  className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
+                  className="flex items-center justify-between border-b border-border last:border-b-0 hover:bg-secondary/50"
                 >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-semibold">{p.title}</p>
-                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                  <Link
+                    {...(linkProps as any)}
+                    className="flex flex-1 items-center justify-between px-5 py-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-semibold">{p.title}</p>
+                        <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                      </div>
                     </div>
-                  </div>
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">
-                    {isPhasedDraft ? `Stage: ${stage}` : p.status}
-                  </span>
-                </Link>
+                    <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">
+                      {isPhasedDraft ? `Stage: ${stage}` : p.status}
+                    </span>
+                  </Link>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="px-4 py-4 text-muted-foreground hover:text-destructive"
+                        aria-label="Delete plan"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this plan?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          "{p.title}" will be permanently deleted, including all its sessions and generated content. This cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deletePlan(p.id)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               );
             })}
           </div>
