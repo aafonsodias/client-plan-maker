@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -21,12 +22,17 @@ import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 
 export const Route = createFileRoute("/clients_/$clientId")({
-  component: () => (
-    <AppShell back={{ to: "/clients", label: "All clients" }}>
+  component: ClientDetailRoute,
+});
+
+function ClientDetailRoute() {
+  const { t } = useTranslation("assessment");
+  return (
+    <AppShell back={{ to: "/clients", label: t("all_clients") }}>
       <ClientDetail />
     </AppShell>
-  ),
-});
+  );
+}
 
 const EQUIPMENT = ["Barbell", "Dumbbells", "Kettlebells", "Cable machine", "Bench", "Pull-up bar", "Bands", "Bodyweight only"];
 
