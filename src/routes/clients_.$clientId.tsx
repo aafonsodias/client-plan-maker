@@ -1100,103 +1100,103 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Training setup (existing) */}
-          <SectionBlock id="training" title="Training setup" hint="Frequency, location, available equipment, and constraints." complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={`✓ Setup: ${trainingSummary}`} /> : null}>
+          <SectionBlock id="training" title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
-                <LabelWithHelp label="Experience level" hint="Beginner = <1y consistent · Intermediate = 1–3y · Advanced = 3y+." />
+                <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
                 <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="beginner">Beginner</SelectItem>
-                    <SelectItem value="intermediate">Intermediate</SelectItem>
-                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="beginner">{t("training_block.beginner")}</SelectItem>
+                    <SelectItem value="intermediate">{t("training_block.intermediate")}</SelectItem>
+                    <SelectItem value="advanced">{t("training_block.advanced")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Field label="Training days / week" type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label="Session length (min)" type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-              <Field label="Training location" value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
-              <Field label="Plan length (weeks)" type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
+              <Field label={t("training_block.days_per_week")} type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label={t("training_block.session_length")} type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              <Field label={t("training_block.training_location")} value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+              <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
             <div className="mt-3">
-              <Label className="text-xs">Available equipment</Label>
+              <Label className="text-xs">{t("training_block.available_equipment")}</Label>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {EQUIPMENT.map((eq) => {
-                  const on = assessment.available_equipment.includes(eq);
+                {EQUIPMENT_OPTIONS.map(({ id, canonical }) => {
+                  const on = assessment.available_equipment.includes(canonical);
                   return (
-                    <button key={eq} type="button" onClick={() => toggleEq(eq)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{eq}</button>
+                    <button key={id} type="button" onClick={() => toggleEq(canonical)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{t(`equipment.${id}` as const)}</button>
                   );
                 })}
               </div>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <TextField label="Injuries" value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
-              <TextField label="Medical conditions" value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-              <TextField label="Preferences / dislikes" value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
+              <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
+              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" title="Lifestyle & recovery" hint="Daily activity, recovery markers, and sleep/stress modulators." defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="lifestyle" title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Sleep (1–10)" type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint="Subjective average sleep quality this past month." />
-              <Field label="Stress (1–10)" type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint="Perceived overall stress." />
-              <Field label="Hours seated / day" type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint="Total sitting time including work + commute." />
-              <Field label="Daily steps (if known)" type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint="From wearable if available." />
-              <Field label="Job type" value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder="desk, manual, mixed…" />
-              <TextField label="Energy through day" value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
-              <TextField label="Recovery capacity" value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+              <Field label={t("lifestyle_block.sleep")} type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint={t("lifestyle_block.sleep_hint")} />
+              <Field label={t("lifestyle_block.stress")} type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint={t("lifestyle_block.stress_hint")} />
+              <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
+              <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
+              <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
+              <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+              <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
             </div>
           </SectionBlock>
 
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" title="Nutrition & hydration" hint="Quantitative habits beat free-text descriptions." defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="nutrition" title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Meals / day" type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
-              <Field label="Alcohol units / week" type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint="UK unit ≈ 10 ml ethanol." />
-              <Field label="Processed food frequency (1–5)" type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint="1 = rare · 5 = most meals." />
-              <Field label="Water (L / day)" type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
+              <Field label={t("nutrition_block.meals")} type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
+              <Field label={t("nutrition_block.alcohol")} type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint={t("nutrition_block.alcohol_hint")} />
+              <Field label={t("nutrition_block.processed")} type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint={t("nutrition_block.processed_hint")} />
+              <Field label={t("nutrition_block.water")} type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
               {showAdvancedNutrition && (
-                <Field label="Hydration (glasses, legacy)" type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
+                <Field label={t("nutrition_block.hydration_legacy")} type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
               )}
-              <TextField label="Notes (allergies, dietary pattern)" value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
+              <TextField label={t("nutrition_block.notes")} value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
             </div>
             <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-              {showAdvancedNutrition ? "Hide advanced fields" : "Show advanced fields"}
+              {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
           </SectionBlock>
 
           {/* Mobility checklist */}
-          <SectionBlock id="mobility" title="Mobility — anatomical (1–5)" hint="Score each region: 1 = severely restricted, 5 = full pain-free range.">
-            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
+          <SectionBlock id="mobility" title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
+            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {[
-                ["ext_mob_shoulder", "Shoulder"],
-                ["ext_mob_hip", "Hip"],
-                ["ext_mob_ankle", "Ankle"],
-                ["ext_mob_thoracic", "Thoracic spine"],
-                ["ext_mob_wrist", "Wrist"],
-                ["ext_mob_knee", "Knee"],
-              ].map(([key, label]) => (
-                <ScoreRow key={key} label={label} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
+              {([
+                ["ext_mob_shoulder", "shoulder"],
+                ["ext_mob_hip", "hip"],
+                ["ext_mob_ankle", "ankle"],
+                ["ext_mob_thoracic", "thoracic"],
+                ["ext_mob_wrist", "wrist"],
+                ["ext_mob_knee", "knee"],
+              ] as const).map(([key, labelKey]) => (
+                <ScoreRow key={key} label={t(`mobility_block.${labelKey}` as const)} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
               ))}
             </div>
-            <TextField label="Notes (specific limitations, pain triggers)" value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
+            <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
           </SectionBlock>
 
           {/* Posture */}
-          <SectionBlock id="posture" title="Posture & alignment" hint="Standing posture and known asymmetries." defaultCollapsed complete={isSectionComplete("posture", assessment)}>
+          <SectionBlock id="posture" title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <TextField label="Standing posture notes" value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
-              <TextField label="Known imbalances" value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+              <TextField label={t("posture_block.standing")} value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
+              <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
               <div className="space-y-1">
-                <Label className="text-xs">Dominant side</Label>
+                <Label className="text-xs">{t("posture_block.dominant")}</Label>
                 <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder="Select…" /></SelectTrigger>
+                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="right">Right</SelectItem>
-                    <SelectItem value="left">Left</SelectItem>
-                    <SelectItem value="ambidextrous">Ambidextrous</SelectItem>
+                    <SelectItem value="right">{t("posture_block.right")}</SelectItem>
+                    <SelectItem value="left">{t("posture_block.left")}</SelectItem>
+                    <SelectItem value="ambidextrous">{t("posture_block.ambi")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1204,50 +1204,50 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Movement screen */}
-          <SectionBlock id="screen" title="Movement screen" hint="Functional pattern quality. 1 = restricted → 5 = controlled full range." defaultCollapsed complete={isSectionComplete("screen", assessment)}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">1 = limited · 5 = excellent</p>
+          <SectionBlock id="screen" title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <ScreenItem label="Squat depth" score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
-              <ScreenItem label="Overhead reach" score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
-              <ScreenItem label="Hip hinge" score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
-              <ScreenItem label="Single-leg balance" score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
+              <ScreenItem label={t("screen_block.squat")} score={assessment.squat_depth_score} note={assessment.squat_depth_note} onScore={(v) => setAssessment({ ...assessment, squat_depth_score: v })} onNote={(v) => setAssessment({ ...assessment, squat_depth_note: v })} />
+              <ScreenItem label={t("screen_block.overhead")} score={assessment.overhead_reach_score} note={assessment.overhead_reach_note} onScore={(v) => setAssessment({ ...assessment, overhead_reach_score: v })} onNote={(v) => setAssessment({ ...assessment, overhead_reach_note: v })} />
+              <ScreenItem label={t("screen_block.hinge")} score={assessment.hip_hinge_score} note={assessment.hip_hinge_note} onScore={(v) => setAssessment({ ...assessment, hip_hinge_score: v })} onNote={(v) => setAssessment({ ...assessment, hip_hinge_note: v })} />
+              <ScreenItem label={t("screen_block.single_leg")} score={assessment.single_leg_balance_score} note={assessment.single_leg_balance_note} onScore={(v) => setAssessment({ ...assessment, single_leg_balance_score: v })} onNote={(v) => setAssessment({ ...assessment, single_leg_balance_note: v })} />
             </div>
           </SectionBlock>
 
           {/* Training history */}
-          <SectionBlock id="history" title="Training history" hint="Prior exposure shapes starting loads and progression rates." defaultCollapsed complete={isSectionComplete("history", assessment)}>
+          <SectionBlock id="history" title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Years training" type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
-              <Field label="Previous program style" placeholder="PPL, 5/3/1…" value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-              <TextField label="Max lifts (if known)" value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
+              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+              <TextField label={t("history_block.max_lifts")} value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
             </div>
           </SectionBlock>
 
           {/* Performance */}
-          <SectionBlock id="performance" title="Performance markers" hint="Cardiovascular and conditioning baseline." defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+          <SectionBlock id="performance" title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label="Resting HR (bpm)" type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint="Measured first thing AM, supine." />
+              <Field label={t("performance_block.rhr")} type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint={t("performance_block.rhr_hint")} />
               <div className="space-y-1">
-                <LabelWithHelp label="Cardio test" hint="Pick a standard test or 'untested'." />
+                <LabelWithHelp label={t("performance_block.cardio_test")} hint={t("performance_block.cardio_test_hint")} />
                 <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="untested">Untested</SelectItem>
-                    <SelectItem value="cooper">Cooper 12-min run (m)</SelectItem>
-                    <SelectItem value="rockport">Rockport 1-mile walk (min:sec)</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="untested">{t("performance_block.untested")}</SelectItem>
+                    <SelectItem value="cooper">{t("performance_block.cooper")}</SelectItem>
+                    <SelectItem value="rockport">{t("performance_block.rockport")}</SelectItem>
+                    <SelectItem value="other">{t("performance_block.other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {assessment.ext_cardio_test !== "untested" && (
-                <Field label="Test result" value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint="Distance, time, or VO₂ estimate." />
+                <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
               )}
               {showAdvancedPerformance && (
-                <TextField label="Cardio context (legacy free text)" value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
               )}
             </div>
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-              {showAdvancedPerformance ? "Hide advanced fields" : "Show advanced fields"}
+              {showAdvancedPerformance ? t("hide_advanced") : t("show_advanced")}
             </button>
           </SectionBlock>
 
