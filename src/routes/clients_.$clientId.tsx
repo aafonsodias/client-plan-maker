@@ -17,7 +17,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
-import { BriefSchema, type Brief, type SectionAnalysis } from "@/server/phased/schemas";
+import {
+  BriefSchema,
+  ProgrammingVariablesSchema,
+  RedFlagAccommodationsSchema,
+  type Brief,
+  type ProgrammingVariables,
+  type RedFlagAccommodation,
+  type SectionAnalysis,
+} from "@/server/phased/schemas";
+import {
+  defaultProgrammingVariables,
+  reconcileAccommodations,
+} from "@/server/phased/programming-defaults";
 import BriefEditor from "@/components/BriefEditor";
 import StageCard from "@/components/StageCard";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
