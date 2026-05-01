@@ -1,61 +1,33 @@
-## Findings
+I checked the app state and database. The current problem is not that the brief is missing: the plan `819c0eef-b7d5-4a37-95c3-b8705a474615` has a valid `brief` JSON object, but it is also marked `generation_status = 'in_progress'` with legacy per-day metadata (`days_per_week: 6`) and an empty finished `plan_data.weeks`. That makes the client page show the old “generation in progress 1/24 days” banner and the plan list opens the finished-plan route (`/plans/:planId`), which is empty. Separately, the “Brief preview 8/14” badge is assessment-section analysis coverage, not the Stage 1 brief itself, and it is stuck partly because the pre-stage analysis fires many AI calls concurrently and hits rate limits.
 
-**Problem 1 — Already correct in code, not a one-line fix.**
-The toast action in `src/routes/clients_.$clientId.tsx` (line 1469–1472) already calls:
-```ts
-navigate({ to: "/plans/$planId/brief", params: { planId: res.planId } })
-```
-The route file `src/routes/plans.$planId.brief.tsx` is registered correctly in `routeTree.gen.ts` at `/plans/$planId/brief`. So the navigation target itself is right.
+Plan:
 
-What is likely happening instead:
-- The DB has only one phased-eligible plan: `819c0eef…` (legacy plan, `generation_status = in_progress`, title `"… – 4-Week Plan"`).
-- `startPhasedPlanDraft` reuses any plan where `generation_status != 'complete'`, so it returns this legacy plan's id and skips synthesis (because `brief` is already non-null).
-- Clicking Review **does** go to `/plans/819c0eef…/brief`. Its `brief` JSONB is populated and parses against `BriefSchema`, so the editor should render — unless the user is misreading the screen, or `BriefSchema.safeParse` is silently failing on a field we haven't spotted.
+1. Fix the current stuck UI routing on the client page only
+   - In `src/routes/clients_.$clientId.tsx`, make plan-list links for phased draft plans open `/plans/$planId/brief` instead of `/plans/$planId` when the row has `generation_state.stage === 'brief'` and a `brief` exists.
+   - Expand the client page plan query to include `brief` and `generation_state` so it can make that decision.
+   - This fixes “Ao abrir continua vazio” because the visible draft card will open the brief review screen, not the empty finished plan view.
 
-So the real fix is the debug line in Problem 2 — once it's there, we'll know whether `brief` is null/unparseable or whether the user is on the wrong route.
+2. Stop legacy resumable-plan UI from picking up phased Stage 1 plans
+   - Update `detectResumablePlan()` to ignore any plan with `generation_state.stage` set to a phased stage (`brief`, `blueprint`, etc.).
+   - Keep the legacy “generation in progress 1/24 days” banner only for legacy per-day generation rows.
+   - This removes the incorrect “Geração anterior em curso — 1/24 dias feitos” banner for a phased plan.
 
-## Changes (one file only)
+3. Make “Começar de novo” actually clear phased stuck drafts too
+   - Update `discardResumable()` so after deleting the current resumable plan it also refreshes the plan list from the database.
+   - If the stuck row is a phased draft, surface it as a normal plan/brief link instead of legacy resume progress; no generation logic changes.
 
-**`src/routes/plans.$planId.brief.tsx`** — replace the `if (!brief)` empty-state block (lines 93–107) so it shows an unmistakable debug banner with the plan id:
+4. Fix the brief preview badge so it does not fire a burst of AI calls
+   - Change `triggerSectionAnalyses()` from parallel `Promise.allSettled` fire-and-forget to a small sequential/limited loop so it does not exceed rate limits.
+   - Keep it scoped to pre-stage coverage only; do not touch Stage 2, Stage 3, Stage 4, or Stage 5 generation.
+   - The badge may still show less than 14 when fields are empty, but it should stop getting stuck because of request-rate failures.
 
-```tsx
-if (!brief) {
-  return (
-    <div className="mx-auto max-w-3xl p-8 text-center">
-      <p className="font-mono text-sm text-destructive">
-        DEBUG: Brief is null or failed schema parse (plan {planId})
-      </p>
-      <p className="mt-2 text-muted-foreground">No brief yet.</p>
-      <button
-        onClick={regenerate}
-        disabled={regenerating}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-      >
-        {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-        Generate brief
-      </button>
-    </div>
-  );
-}
-```
+5. One-time database cleanup for the current corrupted mixed-state row
+   - Run a migration/update to normalize the current plan: keep the valid `brief`, but clear the legacy in-progress marker by setting its `generation_status` to a non-legacy value (e.g. `pending`) and removing legacy `generation_meta` if needed.
+   - Do not delete the valid brief.
+   - Confirm the row after the update: `id`, `generation_status`, `generation_state`, `has_brief`, and day-row count.
 
-Also log to the console inside `load()` so we can see the raw row + parse result:
+Files to touch:
+- `src/routes/clients_.$clientId.tsx` only for UI/routing/resume detection and pre-stage throttling.
 
-```ts
-console.log('[brief route] planId=', planId, 'raw brief=', (data as any).brief,
-            'parsed.success=', parsed.success,
-            parsed.success ? null : parsed.error.issues);
-```
-
-## What I will report back
-
-After deploying:
-1. The exact URL the browser shows after clicking Review.
-2. Whether the debug banner appears (Brief is null) or the editor renders.
-3. The console output from `[brief route]` so we know whether the JSONB is missing or just failing schema validation.
-
-## Out of scope
-
-- No changes to `clients_.$clientId.tsx` (toast target is already correct).
-- No changes to `startPhasedPlanDraft` or any Stage 2–5 logic.
-- No DB writes.
+Database change:
+- One targeted cleanup/update for plan `819c0eef-b7d5-4a37-95c3-b8705a474615` so the existing valid brief is reachable and the legacy resume banner disappears.
