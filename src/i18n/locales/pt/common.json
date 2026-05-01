@@ -1,1 +1,47 @@
-{}
+{
+  "actions": {
+    "sign_in": "Entrar",
+    "sign_out": "Terminar sessão",
+    "sign_up": "Criar conta",
+    "start_free": "Começar grátis",
+    "go_to_dashboard": "Ir para o dashboard",
+    "open_dashboard": "Abrir dashboard",
+    "back": "Voltar",
+    "loading": "A carregar…",
+    "continue_with_google": "Continuar com Google",
+    "upgrade": "Fazer upgrade",
+    "or": "ou",
+    "scroll_to_top": "Voltar ao topo"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "clients": "Clientes",
+    "branding": "Marca",
+    "billing": "Faturação",
+    "landing": "Página inicial"
+  },
+  "auth": {
+    "tab_signin": "Entrar",
+    "tab_signup": "Criar conta",
+    "field_email": "Email",
+    "field_password": "Palavra-passe",
+    "field_full_name": "Nome completo",
+    "password_hint": "Pelo menos 10 caracteres. Evita palavras-passe comuns ou comprometidas.",
+    "confirm_email_toast": "Confirma a tua conta no email que recebeste."
+  },
+  "shell": {
+    "trial_days_left_one": "Resta {{count}} dia no teu período experimental.",
+    "trial_days_left_other": "Restam {{count}} dias no teu período experimental.",
+    "trial_ended": "O teu período experimental terminou. Faz upgrade para continuar a gerar planos."
+  },
+  "language": {
+    "switch_aria": "Mudar idioma",
+    "english": "Inglês",
+    "portuguese": "Português"
+  },
+  "errors": {
+    "page_not_found_title": "Página não encontrada",
+    "page_not_found_desc": "A página que procuras não existe ou foi movida.",
+    "go_home": "Ir para a página inicial"
+  }
+}
