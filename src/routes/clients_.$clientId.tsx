@@ -1825,6 +1825,47 @@ type CollapseCtx = {
 };
 const SectionCollapseContext = createContext<CollapseCtx | null>(null);
 
+function AssessmentSection({
+  clientId,
+  headerProgress,
+  children,
+}: {
+  clientId: string;
+  headerProgress: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
+  const ctx = useSectionCollapseProvider(clientId, sectionIds);
+  return (
+    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        {headerProgress}
+      </div>
+      <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+        <button
+          type="button"
+          onClick={() => ctx.setAll(true)}
+          disabled={ctx.allOpen}
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+        >
+          <ChevronsUpDown className="h-3 w-3" /> Expand all
+        </button>
+        <button
+          type="button"
+          onClick={() => ctx.setAll(false)}
+          disabled={ctx.allClosed}
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+        >
+          <ChevronsDownUp className="h-3 w-3" /> Collapse all
+        </button>
+      </div>
+      <SectionCollapseContext.Provider value={ctx}>
+        {children}
+      </SectionCollapseContext.Provider>
+    </section>
+  );
+}
+
 function useSectionCollapseProvider(clientId: string, sectionIds: string[]): CollapseCtx & { allOpen: boolean; allClosed: boolean } {
   const storageKey = useCallback((id: string) => `forge_assessment_collapse_${clientId}_${id}`, [clientId]);
   const [overrides, setOverrides] = useState<Record<string, boolean>>(() => {
