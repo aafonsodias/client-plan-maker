@@ -2019,16 +2019,14 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => ctx.setAll(true)}
-          disabled={ctx.allOpen}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
           <ChevronsUpDown className="h-3 w-3" /> Expand all
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
-          disabled={ctx.allClosed}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:opacity-40"
+          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
           <ChevronsDownUp className="h-3 w-3" /> Collapse all
         </button>
