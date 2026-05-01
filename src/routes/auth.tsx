@@ -62,9 +62,6 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-4 flex justify-end">
-          <LanguageSwitcher />
-        </div>
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
           <Logo className="h-9 w-9" />
           <span className="text-xl">{t("brand.name")}</span>
@@ -119,6 +116,9 @@ function AuthPage() {
           <Button onClick={google} variant="outline" className="w-full">
             {t("actions.continue_with_google")}
           </Button>
+        </div>
+        <div className="mt-6 flex justify-center">
+          <LanguageSwitcher />
         </div>
       </div>
     </div>
