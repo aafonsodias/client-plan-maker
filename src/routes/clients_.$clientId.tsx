@@ -413,6 +413,14 @@ function ClientDetail() {
   const sectionSnapshotRef = useRef<Record<string, string>>({});
   const lsKey = `forge_assessment_draft_${clientId}`;
 
+  // Phased generation feature-flag + brief preview coverage.
+  const [phasedEnabled, setPhasedEnabled] = useState(false);
+  const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
+  const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
+  const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
+  // Track signature of last-analysed payload per section to avoid duplicate fires.
+  const lastAnalysedSigRef = useRef<Record<string, string>>({});
+
   useEffect(() => {
     if (!user) return;
     void (async () => {
