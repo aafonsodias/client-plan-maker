@@ -51,6 +51,8 @@ export type Database = {
           recovery_capacity: string | null
           resting_heart_rate: number | null
           secondary_goals: string[] | null
+          section_analyses: Json
+          sections_analysed_at: Json
           session_duration_minutes: number | null
           single_leg_balance_note: string | null
           single_leg_balance_score: number | null
@@ -105,6 +107,8 @@ export type Database = {
           recovery_capacity?: string | null
           resting_heart_rate?: number | null
           secondary_goals?: string[] | null
+          section_analyses?: Json
+          sections_analysed_at?: Json
           session_duration_minutes?: number | null
           single_leg_balance_note?: string | null
           single_leg_balance_score?: number | null
@@ -159,6 +163,8 @@ export type Database = {
           recovery_capacity?: string | null
           resting_heart_rate?: number | null
           secondary_goals?: string[] | null
+          section_analyses?: Json
+          sections_analysed_at?: Json
           session_duration_minutes?: number | null
           single_leg_balance_note?: string | null
           single_leg_balance_score?: number | null
@@ -343,6 +349,63 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_log: {
+        Row: {
+          assessment_id: string | null
+          cost_usd: number
+          created_at: string
+          duration_ms: number
+          error: string | null
+          id: string
+          input_snapshot: Json | null
+          input_tokens: number
+          model_used: string
+          output_snapshot: Json | null
+          output_tokens: number
+          plan_id: string | null
+          retry_count: number
+          stage: string
+          trainer_id: string
+          zod_passed: boolean
+        }
+        Insert: {
+          assessment_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          id?: string
+          input_snapshot?: Json | null
+          input_tokens?: number
+          model_used: string
+          output_snapshot?: Json | null
+          output_tokens?: number
+          plan_id?: string | null
+          retry_count?: number
+          stage: string
+          trainer_id: string
+          zod_passed: boolean
+        }
+        Update: {
+          assessment_id?: string | null
+          cost_usd?: number
+          created_at?: string
+          duration_ms?: number
+          error?: string | null
+          id?: string
+          input_snapshot?: Json | null
+          input_tokens?: number
+          model_used?: string
+          output_snapshot?: Json | null
+          output_tokens?: number
+          plan_id?: string | null
+          retry_count?: number
+          stage?: string
+          trainer_id?: string
+          zod_passed?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_name: string | null
@@ -354,6 +417,7 @@ export type Database = {
           logo_url: string | null
           onboarding_completed: boolean
           onboarding_steps: Json
+          phased_generation_enabled: boolean
           primary_color: string | null
           tagline: string | null
           updated_at: string
@@ -369,6 +433,7 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean
           onboarding_steps?: Json
+          phased_generation_enabled?: boolean
           primary_color?: string | null
           tagline?: string | null
           updated_at?: string
@@ -384,6 +449,7 @@ export type Database = {
           logo_url?: string | null
           onboarding_completed?: boolean
           onboarding_steps?: Json
+          phased_generation_enabled?: boolean
           primary_color?: string | null
           tagline?: string | null
           updated_at?: string
@@ -492,13 +558,17 @@ export type Database = {
       workout_plans: {
         Row: {
           assessment_id: string | null
+          blueprint: Json | null
+          brief: Json | null
           client_id: string
           created_at: string
           duration_weeks: number | null
           generation_meta: Json
+          generation_state: Json
           generation_status: string
           id: string
           plan_data: Json
+          progression_plan: Json | null
           share_token: string | null
           share_token_expires_at: string | null
           status: string
@@ -509,13 +579,17 @@ export type Database = {
         }
         Insert: {
           assessment_id?: string | null
+          blueprint?: Json | null
+          brief?: Json | null
           client_id: string
           created_at?: string
           duration_weeks?: number | null
           generation_meta?: Json
+          generation_state?: Json
           generation_status?: string
           id?: string
           plan_data?: Json
+          progression_plan?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
           status?: string
@@ -526,13 +600,17 @@ export type Database = {
         }
         Update: {
           assessment_id?: string | null
+          blueprint?: Json | null
+          brief?: Json | null
           client_id?: string
           created_at?: string
           duration_weeks?: number | null
           generation_meta?: Json
+          generation_state?: Json
           generation_status?: string
           id?: string
           plan_data?: Json
+          progression_plan?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
           status?: string
