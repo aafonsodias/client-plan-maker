@@ -2201,37 +2201,14 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
     );
   }
   if (!analysis) return null;
-  const flags = analysis.red_flags ?? [];
-  const note = analysis.contraindication_notes;
-  const next = analysis.notes_for_next_stage;
-  const hasContent = flags.length > 0 || !!note || !!next;
-  if (!hasContent) {
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
-        <Check className="h-3 w-3 text-accent" />
-        <span>Sem sinais de alerta nesta secção.</span>
-      </div>
-    );
-  }
+  // Section-level analyses no longer show red_flags — those live only in the
+  // synthesis dashboard at the bottom. Sections only contribute their own
+  // contextual insight (most useful contraindication note or next-stage note).
+  const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
+  if (!insight) return null;
   return (
-    <div className="mt-3 space-y-2 rounded-md border border-accent/30 bg-accent/5 p-3 text-xs">
-      {flags.length > 0 && (
-        <div className="flex items-start gap-2">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-          <div className="flex-1">
-            <p className="mb-1 font-semibold">Sinais de alerta</p>
-            <ul className="list-disc space-y-0.5 pl-4 text-muted-foreground">
-              {flags.map((f, i) => <li key={i}>{f}</li>)}
-            </ul>
-          </div>
-        </div>
-      )}
-      {note && (
-        <div className="text-muted-foreground"><span className="font-semibold text-foreground">Notas: </span>{note}</div>
-      )}
-      {next && (
-        <div className="text-muted-foreground"><span className="font-semibold text-foreground">Para o plano: </span>{next}</div>
-      )}
+    <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-2.5 text-xs text-muted-foreground">
+      {insight}
     </div>
   );
 }
