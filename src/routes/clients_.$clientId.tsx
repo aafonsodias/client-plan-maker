@@ -1696,6 +1696,11 @@ function ClientDetail() {
                       planId: inlineBrief.planId,
                       brief: parsed.data,
                       approved: false,
+                      programmingVariables: inlineBrief.programmingVariables,
+                      accommodations: reconcileAccommodations(
+                        parsed.data,
+                        inlineBrief.accommodations
+                      ),
                     });
                     toast.success("Brief regenerated", { id: tId });
                   } finally {
