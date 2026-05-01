@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -17,15 +18,16 @@ type Steps = {
   reassess?: boolean;
 };
 
-const STEPS: { key: keyof Steps; title: string; desc: string; cta: string; to: string }[] = [
-  { key: "add_client",      title: "Add your first client",  desc: "Create a client profile to track everything.",        cta: "Go to Clients",  to: "/clients" },
-  { key: "run_assessment",  title: "Run an assessment",      desc: "Complete the ACSM-aligned intake on a client page.",  cta: "Open a client",  to: "/clients" },
-  { key: "generate_plan",   title: "Generate a plan",        desc: "Let AI draft a periodized program from the intake.",  cta: "Generate now",   to: "/clients" },
-  { key: "export_pdf",      title: "Export a branded PDF",   desc: "Send the polished plan to your client.",              cta: "Open Plans",     to: "/plans" },
+const STEPS: { key: keyof Steps; to: string }[] = [
+  { key: "add_client",     to: "/clients" },
+  { key: "run_assessment", to: "/clients" },
+  { key: "generate_plan",  to: "/clients" },
+  { key: "export_pdf",     to: "/plans" },
 ];
 
 export function OnboardingChecklist() {
   const { user } = useAuth();
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [steps, setSteps] = useState<Steps>({});
   const [loaded, setLoaded] = useState(false);
@@ -63,9 +65,9 @@ export function OnboardingChecklist() {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader className="items-center text-center">
           <img src={waveHand} alt="" className="mb-2 h-10 w-10 object-contain" />
-          <DialogTitle>Welcome to Forge</DialogTitle>
+          <DialogTitle>{t("onboarding.title")}</DialogTitle>
           <DialogDescription>
-            A full coaching loop, in {STEPS.length} steps. {completed}/{STEPS.length} done.
+            {t("onboarding.description", { total: STEPS.length, done: completed })}
           </DialogDescription>
         </DialogHeader>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-secondary">
@@ -78,12 +80,12 @@ export function OnboardingChecklist() {
               <li key={s.key} className={`flex items-start gap-3 rounded-xl border p-3 ${done ? "border-accent/40 bg-accent/5" : "border-border bg-background"}`}>
                 {done ? <CheckCircle2 className="mt-0.5 h-5 w-5 text-accent" /> : <Circle className="mt-0.5 h-5 w-5 text-muted-foreground/60" />}
                 <div className="flex-1">
-                  <p className={`font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{i + 1}. {s.title}</p>
-                  <p className="text-xs text-muted-foreground">{s.desc}</p>
+                  <p className={`font-medium ${done ? "text-muted-foreground line-through" : ""}`}>{i + 1}. {t(`onboarding.steps.${s.key}.title`)}</p>
+                  <p className="text-xs text-muted-foreground">{t(`onboarding.steps.${s.key}.desc`)}</p>
                 </div>
                 {!done && (
                   <Button asChild size="sm" variant="outline" onClick={() => setOpen(false)}>
-                    <Link to={s.to as any}>{s.cta}</Link>
+                    <Link to={s.to as any}>{t(`onboarding.steps.${s.key}.cta`)}</Link>
                   </Button>
                 )}
               </li>
@@ -92,9 +94,9 @@ export function OnboardingChecklist() {
         </ol>
         <div className="mt-4 flex justify-between">
           <Button variant="ghost" size="sm" onClick={() => void dismiss(false)}>
-            <X className="mr-1 h-4 w-4" /> Remind me later
+            <X className="mr-1 h-4 w-4" /> {t("onboarding.remind_later")}
           </Button>
-          <Button size="sm" onClick={() => void dismiss(true)}>I've got it</Button>
+          <Button size="sm" onClick={() => void dismiss(true)}>{t("onboarding.got_it")}</Button>
         </div>
       </DialogContent>
     </Dialog>
