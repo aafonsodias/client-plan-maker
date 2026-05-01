@@ -1577,7 +1577,7 @@ function ClientDetail() {
                         {t("generate.brief_coverage", {
                           done: briefCoverage.done,
                           total: briefCoverage.total,
-                          defaultValue: `Brief preview: ${briefCoverage.done}/${briefCoverage.total}`,
+                          defaultValue: `Pré-visualização do brief: ${briefCoverage.done}/${briefCoverage.total}`,
                         })}
                       </span>
                     </div>
@@ -2042,14 +2042,14 @@ function AssessmentSection({
           onClick={() => ctx.setAll(true)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsUpDown className="h-3 w-3" /> Expand all
+          <ChevronsUpDown className="h-3 w-3" /> Expandir tudo
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsDownUp className="h-3 w-3" /> Collapse all
+          <ChevronsDownUp className="h-3 w-3" /> Colapsar tudo
         </button>
       </div>
       <SectionCollapseContext.Provider value={ctx}>
