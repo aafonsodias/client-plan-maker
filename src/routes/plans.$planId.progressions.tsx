@@ -13,6 +13,7 @@ import { Loader2, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
+import { ProgressionExerciseCard } from "@/components/ProgressionExerciseCard";
 
 export const Route = createFileRoute("/plans/$planId/progressions")({
   component: ProgressionsRoute,
@@ -137,8 +138,8 @@ function ProgressionsReview() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <Link
             to="/plans/$planId/microcycle"
             params={{ planId }}
@@ -146,12 +147,12 @@ function ProgressionsReview() {
           >
             <ArrowLeft className="h-3 w-3" /> Microcycle
           </Link>
-          <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="mt-1 truncate text-xl font-semibold text-foreground">{planTitle}</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Stage 4 — Progression deltas (weeks 2–{weeks})
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-shrink-0 gap-2">
           <button
             onClick={regenerate}
             disabled={busy}
@@ -171,63 +172,33 @@ function ProgressionsReview() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/30">
-            <tr>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">Exercise</th>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">Dim.</th>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">W2</th>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">W3</th>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">W4</th>
-              <th className="p-2 text-left text-xs font-medium text-muted-foreground">Why</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plan.rows.map((r, i) => (
-              <tr key={i} className="border-t border-border">
-                <td className="p-2 font-mono text-xs">{r.exercise_id}</td>
-                <td className="p-2 text-xs">{r.dimension}</td>
-                <td className="p-2">
-                  <input
-                    value={r.week_2_delta}
-                    onChange={(e) => {
-                      const next = [...plan.rows];
-                      next[i] = { ...r, week_2_delta: e.target.value };
-                      setPlan({ ...plan, rows: next });
-                    }}
-                    className="w-24 rounded border border-border bg-background px-2 py-1 text-xs"
-                    placeholder="+2.5kg"
-                  />
-                </td>
-                <td className="p-2">
-                  <input
-                    value={r.week_3_delta}
-                    onChange={(e) => {
-                      const next = [...plan.rows];
-                      next[i] = { ...r, week_3_delta: e.target.value };
-                      setPlan({ ...plan, rows: next });
-                    }}
-                    className="w-24 rounded border border-border bg-background px-2 py-1 text-xs"
-                  />
-                </td>
-                <td className="p-2">
-                  <input
-                    value={r.week_4_delta}
-                    onChange={(e) => {
-                      const next = [...plan.rows];
-                      next[i] = { ...r, week_4_delta: e.target.value };
-                      setPlan({ ...plan, rows: next });
-                    }}
-                    className="w-24 rounded border border-border bg-background px-2 py-1 text-xs"
-                  />
-                </td>
-                <td className="p-2 text-xs text-muted-foreground">{r.rationale}</td>
-              </tr>
+      {(() => {
+        // Group rows by exercise_id, preserving original index for updates
+        const indexed = plan.rows.map((r, _idx) => ({ ...r, _idx }));
+        const groups = new Map<string, typeof indexed>();
+        for (const r of indexed) {
+          const key = r.exercise_id || "—";
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key)!.push(r);
+        }
+        const update = (rowIdx: number, patch: Partial<(typeof plan.rows)[number]>) => {
+          const next = [...plan.rows];
+          next[rowIdx] = { ...next[rowIdx], ...patch };
+          setPlan({ ...plan, rows: next });
+        };
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from(groups.entries()).map(([exId, rows]) => (
+              <ProgressionExerciseCard
+                key={exId}
+                exerciseId={exId}
+                rows={rows}
+                onChange={update}
+              />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        );
+      })()}
 
       <p className="text-center text-xs text-muted-foreground">
         Weeks 2–{weeks} are built deterministically from these deltas — no further AI calls.
