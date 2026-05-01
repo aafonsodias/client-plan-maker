@@ -1950,6 +1950,15 @@ function AssessmentSynthesisDashboard({
   const accMap = new Map<string, RedFlagAccommodation>();
   for (const acc of redFlagAccommodations ?? []) accMap.set(acc.flag, acc);
 
+  // Sort flags by severity: AVOID → MODIFY → MONITOR → ACCOMMODATE → unmapped
+  const SEVERITY: Record<string, number> = { AVOID: 0, MODIFY: 1, MONITOR: 2, ACCOMMODATE: 3 };
+  const sortedFlags = [...flags].sort((a, b) => {
+    const sa = SEVERITY[accMap.get(a)?.strategy ?? ""] ?? 4;
+    const sb = SEVERITY[accMap.get(b)?.strategy ?? ""] ?? 4;
+    if (sa !== sb) return sa - sb;
+    return a.localeCompare(b);
+  });
+
   return (
     <div className="space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
@@ -1976,6 +1985,8 @@ function AssessmentSynthesisDashboard({
         />
       </div>
 
+      <MovementCompetencyRadar assessment={assessment} sectionAnalyses={sectionAnalyses} />
+
       {flags.length > 0 && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
           <div className="mb-2 flex items-center gap-2">
@@ -1985,7 +1996,7 @@ function AssessmentSynthesisDashboard({
             </p>
           </div>
           <ul className="space-y-1.5">
-            {flags.map((f) => {
+            {sortedFlags.map((f) => {
               const acc = accMap.get(f);
               return (
                 <li key={f} className="flex items-start gap-2 text-xs">
