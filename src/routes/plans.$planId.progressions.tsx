@@ -11,14 +11,32 @@ import { bulkFillRemainingWeeks } from "@/server/phased/stage5-bulkfill.function
 import { ProgressionPlanSchema, type ProgressionPlan } from "@/server/phased/schemas";
 import { Loader2, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { BriefContextRail, BriefContextRailMobile } from "@/components/BriefContextRail";
 
 export const Route = createFileRoute("/plans/$planId/progressions")({
-  component: () => (
-    <AppShell>
-      <ProgressionsReview />
-    </AppShell>
-  ),
+  component: ProgressionsRoute,
 });
+
+function ProgressionsRoute() {
+  const { planId } = Route.useParams();
+  return (
+    <AppShell>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <BriefContextRailMobile planId={planId} />
+        <div className="lg:flex lg:gap-6">
+          <main className="min-w-0 flex-1">
+            <ProgressionsReview />
+          </main>
+          <aside className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
+              <BriefContextRail planId={planId} />
+            </div>
+          </aside>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
 
 function ProgressionsReview() {
   const { planId } = Route.useParams();
