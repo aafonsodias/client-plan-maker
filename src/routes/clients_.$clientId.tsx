@@ -16,7 +16,10 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
-import { startPhasedPlanDraft } from "@/server/phased/stage1-brief.functions";
+import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
+import { BriefSchema, type Brief, type SectionAnalysis } from "@/server/phased/schemas";
+import BriefEditor from "@/components/BriefEditor";
+import StageCard from "@/components/StageCard";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -295,8 +298,19 @@ function ClientDetail() {
   const generateDayFn = useServerFn(generatePlanDay);
   const finalizePlanFn = useServerFn(finalizePlanGeneration);
   const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
+  const synthesizeBriefFn = useServerFn(synthesizeBrief);
+  const approveBriefFn = useServerFn(approveBrief);
   const [phasedBusy, setPhasedBusy] = useState(false);
-  const [briefReady, setBriefReady] = useState<{ planId: string; reused: boolean } | null>(null);
+  // Inline brief panel: rendered below the action row. Replaces the toast-link banner.
+  const [inlineBrief, setInlineBrief] = useState<{
+    planId: string;
+    brief: Brief;
+    approved: boolean;
+  } | null>(null);
+  const [briefStageBusy, setBriefStageBusy] = useState(false);
+  // Per-section AI post-processing analyses (Pre-Stage 0).
+  const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
+  const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
@@ -613,6 +627,11 @@ function ClientDetail() {
       queue.push(section);
     }
     if (queue.length === 0) return;
+    setAnalysingSections((prev) => {
+      const next = { ...prev };
+      for (const s of queue) next[s] = true;
+      return next;
+    });
     void (async () => {
       for (const section of queue) {
         try {
@@ -620,12 +639,20 @@ function ClientDetail() {
         } catch (e) {
           console.warn("pre-stage analyze failed", section, e);
         }
+        setAnalysingSections((prev) => {
+          const next = { ...prev };
+          delete next[section];
+          return next;
+        });
         await new Promise((r) => setTimeout(r, 600));
       }
       if (!assessment.id) return;
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
-        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+        if (r?.ok) {
+          setBriefCoverage({ done: r.done, total: r.total });
+          setSectionAnalyses((r.analyses ?? {}) as Record<string, SectionAnalysis | null>);
+        }
       } catch {}
     })();
   };
@@ -636,11 +663,42 @@ function ClientDetail() {
     void (async () => {
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
-        if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
+        if (r?.ok) {
+          setBriefCoverage({ done: r.done, total: r.total });
+          setSectionAnalyses((r.analyses ?? {}) as Record<string, SectionAnalysis | null>);
+        }
       } catch {}
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phasedEnabled, assessment.id]);
+
+  // Hydrate inline brief panel on mount: if there's an in-progress phased plan
+  // for this client with a brief already, surface it directly so refresh restores state.
+  useEffect(() => {
+    if (!phasedEnabled || !user || !hydrated) return;
+    void (async () => {
+      const { data: row } = await supabase
+        .from("workout_plans")
+        .select("id, brief, generation_state, generation_status")
+        .eq("trainer_id", user.id)
+        .eq("client_id", clientId)
+        .neq("generation_status", "complete")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!row || !(row as any).brief) return;
+      const parsed = BriefSchema.safeParse((row as any).brief);
+      if (!parsed.success) return;
+      const stage = (row as any).generation_state?.stage as string | undefined;
+      const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+      setInlineBrief({
+        planId: (row as any).id,
+        brief: parsed.data,
+        approved: approvedList.includes("brief") || (!!stage && stage !== "brief"),
+      });
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phasedEnabled, user, hydrated, clientId]);
 
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
@@ -941,7 +999,30 @@ function ClientDetail() {
     toast.success("Previous draft discarded.");
   };
 
+  // Refresh the Plans list (used after creating a phased draft or deleting a plan).
+  const refreshPlans = async () => {
+    const { data: p } = await supabase
+      .from("workout_plans")
+      .select("id, title, status, updated_at, brief, generation_state, generation_status")
+      .eq("client_id", clientId)
+      .order("updated_at", { ascending: false });
+    setPlans(p ?? []);
+  };
+
+  // Delete a single plan (with confirm) from the Plans list.
+  const deletePlan = async (planId: string) => {
+    const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
+    if (error) {
+      toast.error("Delete failed: " + error.message);
+      return;
+    }
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    if (inlineBrief?.planId === planId) setInlineBrief(null);
+    toast.success("Plan deleted");
+  };
+
   const discardDraft = () => {
+    // no-op marker
     setAssessment((a: any) => ({
       ...a,
       parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
@@ -1451,28 +1532,6 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col items-end gap-2">
-                  {briefReady && (
-                    <div className="flex items-center gap-3 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
-                      <span className="font-medium">
-                        {briefReady.reused ? "Brief already ready." : "Brief ready."}
-                      </span>
-                      <Link
-                        to="/plans/$planId/brief"
-                        params={{ planId: briefReady.planId }}
-                        className="font-semibold text-primary underline underline-offset-2"
-                      >
-                        Review brief →
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setBriefReady(null)}
-                        className="text-xs text-muted-foreground hover:text-foreground"
-                        aria-label="Dismiss"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
                   {phasedEnabled && briefCoverage && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="rounded-full bg-secondary px-2 py-0.5 font-medium">
@@ -1496,11 +1555,30 @@ function ClientDetail() {
                             toast.error(res.error || "Brief synthesis failed.", { id: tId });
                             return;
                           }
+                          // Fetch the freshly-written brief and render it inline below.
+                          const { data: row } = await supabase
+                            .from("workout_plans")
+                            .select("brief, generation_state")
+                            .eq("id", res.planId)
+                            .maybeSingle();
+                          const parsed = BriefSchema.safeParse((row as any)?.brief);
+                          if (!parsed.success) {
+                            toast.error("Brief returned but failed to parse.", { id: tId });
+                            return;
+                          }
+                          const stage = (row as any)?.generation_state?.stage as string | undefined;
+                          const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
+                          setInlineBrief({
+                            planId: res.planId,
+                            brief: parsed.data,
+                            approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
+                          });
+                          // Refresh plans list so the new draft shows up.
+                          void refreshPlans();
                           toast.success(
                             res.reused ? "Brief already ready" : "Brief ready",
-                            { id: tId, duration: 6000 }
+                            { id: tId, duration: 4000 }
                           );
-                          setBriefReady({ planId: res.planId, reused: !!res.reused });
                         } catch (e: any) {
                           toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
                         } finally {
@@ -1527,6 +1605,81 @@ function ClientDetail() {
               );
             })()}
           </div>
+
+          {/* Phased generation: stages stack vertically below the action row.
+              Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
+          {phasedEnabled && inlineBrief && (
+            <div className="space-y-3">
+              <StageCard
+                stageNumber={1}
+                title="Brief"
+                status={inlineBrief.approved ? "approved" : "ready"}
+                busy={briefStageBusy}
+                onApprove={
+                  inlineBrief.approved
+                    ? undefined
+                    : async () => {
+                        if (briefStageBusy) return;
+                        setBriefStageBusy(true);
+                        const tId = toast.loading("Approving brief…");
+                        try {
+                          const res: any = await approveBriefFn({
+                            data: { planId: inlineBrief.planId, brief: inlineBrief.brief },
+                          });
+                          if (!res.ok) {
+                            toast.error(res.error || "Approve failed", { id: tId });
+                            return;
+                          }
+                          setInlineBrief({ ...inlineBrief, approved: true });
+                          toast.success("Brief approved", { id: tId });
+                        } finally {
+                          setBriefStageBusy(false);
+                        }
+                      }
+                }
+                onRegenerate={async () => {
+                  if (briefStageBusy) return;
+                  setBriefStageBusy(true);
+                  const tId = toast.loading("Regenerating brief…");
+                  try {
+                    const res: any = await synthesizeBriefFn({
+                      data: { planId: inlineBrief.planId },
+                    });
+                    if (!res.ok) {
+                      toast.error(res.error || "Regenerate failed", { id: tId });
+                      return;
+                    }
+                    const parsed = BriefSchema.safeParse(res.brief);
+                    if (!parsed.success) {
+                      toast.error("Brief returned but failed to parse.", { id: tId });
+                      return;
+                    }
+                    setInlineBrief({
+                      planId: inlineBrief.planId,
+                      brief: parsed.data,
+                      approved: false,
+                    });
+                    toast.success("Brief regenerated", { id: tId });
+                  } finally {
+                    setBriefStageBusy(false);
+                  }
+                }}
+              >
+                <BriefEditor
+                  brief={inlineBrief.brief}
+                  onChange={(b) => setInlineBrief({ ...inlineBrief, brief: b })}
+                  disabled={inlineBrief.approved || briefStageBusy}
+                />
+              </StageCard>
+              {inlineBrief.approved && (
+                <>
+                  <StageCard stageNumber={2} title="Blueprint" status="placeholder" />
+                  <StageCard stageNumber={3} title="Microcycle" status="placeholder" />
+                  <StageCard stageNumber={4} title="Progressions" status="placeholder" />
+                </>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
