@@ -246,11 +246,12 @@ function Landing() {
 }
 
 function HowItWorksAnimation() {
+  const { t } = useTranslation("plan");
   const steps = [
-    { label: "Add client", desc: "Capture demographics in seconds." },
-    { label: "Run assessment", desc: "PAR-Q+, risk, mobility, goals." },
-    { label: "Generate plan", desc: "AI drafts a periodized program." },
-    { label: "Export PDF", desc: "Branded, sent in one click." },
+    { label: t("landing.how_it_works.steps.add_client.label"), desc: t("landing.how_it_works.steps.add_client.desc") },
+    { label: t("landing.how_it_works.steps.assessment.label"), desc: t("landing.how_it_works.steps.assessment.desc") },
+    { label: t("landing.how_it_works.steps.generate.label"), desc: t("landing.how_it_works.steps.generate.desc") },
+    { label: t("landing.how_it_works.steps.export.label"), desc: t("landing.how_it_works.steps.export.desc") },
   ];
   return (
     <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
