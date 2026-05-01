@@ -956,6 +956,7 @@ function ClientDetail() {
   };
 
   const discardDraft = () => {
+    // no-op marker
     setAssessment((a: any) => ({
       ...a,
       parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
