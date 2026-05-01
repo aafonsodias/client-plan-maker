@@ -1762,6 +1762,7 @@ function ClientDetail() {
                       }}
                       disabled={busy || phasedBusy}
                       size="lg"
+                      className="w-full sm:w-auto"
                     >
                       {phasedBusy ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1771,7 +1772,7 @@ function ClientDetail() {
                       {t("generate.button")}
                     </Button>
                   ) : (
-                    <Button onClick={() => void generate()} disabled={busy} size="lg">
+                    <Button onClick={() => void generate()} disabled={busy} size="lg" className="w-full sm:w-auto">
                       {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                       {t("generate.button")}
                     </Button>
