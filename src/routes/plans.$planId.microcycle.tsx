@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import {
   generateDay,
-  generateMicrocycleDays,
   approveMicrocycle,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
