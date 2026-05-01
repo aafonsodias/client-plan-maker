@@ -1929,7 +1929,20 @@ function ClientDetail() {
                     const blueprintApproved = approvedStages.includes("blueprint");
                     const microcycleApproved = approvedStages.includes("microcycle");
                     const progressionsApproved = approvedStages.includes("progressions");
+                    const hasBlueprintDraft = inlineBrief.hasBlueprintDraft ?? false;
+                    const hasMicrocycleDraft = inlineBrief.hasMicrocycleDraft ?? false;
+                    const hasProgressionsDraft = inlineBrief.hasProgressionsDraft ?? false;
                     const planId = inlineBrief.planId;
+                    const navigateToStage = (stage: "blueprint" | "microcycle" | "progressions") =>
+                      navigate({
+                        to:
+                          stage === "blueprint"
+                            ? "/plans/$planId/blueprint"
+                            : stage === "microcycle"
+                            ? "/plans/$planId/microcycle"
+                            : "/plans/$planId/progressions",
+                        params: { planId },
+                      });
                     const runStage = async (
                       stage: "blueprint" | "microcycle" | "progressions",
                       alreadyDone: boolean
