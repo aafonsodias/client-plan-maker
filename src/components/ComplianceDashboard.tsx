@@ -194,7 +194,7 @@ export function ComplianceDashboard({ clientId }: { clientId: string }) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading compliance…
+        <Loader2 className="h-4 w-4 animate-spin" /> A carregar adesão…
       </div>
     );
   }
@@ -202,7 +202,7 @@ export function ComplianceDashboard({ clientId }: { clientId: string }) {
   if (sessions.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
-        No logged sessions yet. Once the client (or you) starts logging from a plan, the compliance dashboard will populate automatically.
+        Ainda sem sessões registadas. Assim que o cliente (ou você) começar a registar a partir de um plano, o painel de adesão é preenchido automaticamente.
       </div>
     );
   }
