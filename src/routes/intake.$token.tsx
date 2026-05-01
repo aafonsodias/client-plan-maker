@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
 import { Button } from "@/components/ui/button";
@@ -14,33 +15,11 @@ export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
 });
 
-const EQUIPMENT = ["Barbell", "Dumbbells", "Kettlebells", "Cable machine", "Bench", "Pull-up bar", "Bands", "Bodyweight only"];
-const READINESS = [
-  { id: "precontemplation", label: "Just exploring" },
-  { id: "contemplation", label: "Thinking about it" },
-  { id: "preparation", label: "Ready to start" },
-  { id: "action", label: "Already started" },
-  { id: "maintenance", label: "Keeping it going" },
-];
-
-const PARQ_QUESTIONS: { key: "q1"|"q2"|"q3"|"q4"|"q5"|"q6"|"q7"; text: string }[] = [
-  { key: "q1", text: "Has a doctor ever said you have a heart condition or that you should only do physical activity recommended by a doctor?" },
-  { key: "q2", text: "Do you feel pain in your chest when you do physical activity?" },
-  { key: "q3", text: "In the past month, have you had chest pain when you were not doing physical activity?" },
-  { key: "q4", text: "Do you lose your balance because of dizziness or do you ever lose consciousness?" },
-  { key: "q5", text: "Do you have a bone or joint problem that could be made worse by a change in your physical activity?" },
-  { key: "q6", text: "Is your doctor currently prescribing drugs for blood pressure or a heart condition?" },
-  { key: "q7", text: "Do you know of any other reason why you should not do physical activity?" },
-];
-
-const MED_FLAGS = [
-  "Beta-blockers",
-  "Blood pressure meds",
-  "Diabetes / insulin",
-  "Anticoagulants",
-  "Anti-inflammatories",
-  "Other",
-];
+// Stable IDs persisted in DB; labels resolved via i18n at render time.
+const EQUIPMENT_IDS = ["barbell", "dumbbells", "kettlebells", "cable_machine", "bench", "pull_up_bar", "bands", "bodyweight"] as const;
+const READINESS_IDS = ["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const;
+const PARQ_KEYS = ["q1","q2","q3","q4","q5","q6","q7"] as const;
+const MED_FLAG_IDS = ["beta_blockers", "bp_meds", "diabetes", "anticoagulants", "anti_inflammatories", "other"] as const;
 
 type FormState = {
   smart_specific: string;
