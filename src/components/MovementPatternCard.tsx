@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   CAPACITY_FIELDS,
   FORM_CRITERIA,
@@ -48,11 +49,10 @@ export default function MovementPatternCard({
           )}
         </div>
         <label className="flex shrink-0 cursor-pointer items-center gap-1.5 text-[11px] text-muted-foreground">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={notAssessed}
-            onChange={(e) => onNotAssessed(e.target.checked)}
-            className="h-3 w-3 accent-muted-foreground"
+            onCheckedChange={(v) => onNotAssessed(v === true)}
+            className="h-3.5 w-3.5"
           />
           Ainda não avaliado
         </label>
@@ -63,15 +63,14 @@ export default function MovementPatternCard({
           const checked = !!formCriteria?.[c.key];
           return (
             <li key={c.key} className="flex items-start gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
+                id={`fc-${pattern}-${c.key}`}
                 disabled={disabled}
                 checked={checked}
-                onChange={(e) =>
-                  onFormCriteria({ ...(formCriteria ?? {}), [c.key]: e.target.checked })
+                onCheckedChange={(v) =>
+                  onFormCriteria({ ...(formCriteria ?? {}), [c.key]: v === true })
                 }
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-primary"
-                id={`fc-${pattern}-${c.key}`}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0"
               />
               <label
                 htmlFor={`fc-${pattern}-${c.key}`}
