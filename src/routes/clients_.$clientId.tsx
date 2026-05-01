@@ -349,6 +349,7 @@ function ClientDetail() {
     approved: boolean;
     programmingVariables: ProgrammingVariables;
     accommodations: RedFlagAccommodation[];
+    approvedStages?: string[];
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
@@ -780,6 +781,7 @@ function ClientDetail() {
         accommodations: storedAcc.success
           ? reconcileAccommodations(parsed.data, storedAcc.data)
           : reconcileAccommodations(parsed.data, null),
+        approvedStages: approvedList,
       });
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1697,7 +1699,7 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
-                  {phasedEnabled && briefCoverage && (
+                  {phasedEnabled && briefCoverage && !inlineBrief?.approved && (
                     <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground self-start sm:self-auto">
                       {t("generate.brief_coverage", {
                         done: briefCoverage.done,
@@ -1706,7 +1708,17 @@ function ClientDetail() {
                       })}
                     </span>
                   )}
-                  {phasedEnabled ? (
+                  {phasedEnabled && inlineBrief?.approved ? (
+                    <Button asChild size="lg" className="w-full sm:w-auto">
+                      <Link
+                        to="/plans/$planId/blueprint"
+                        params={{ planId: inlineBrief.planId }}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Continuar para Blueprint
+                      </Link>
+                    </Button>
+                  ) : phasedEnabled ? (
                     <Button
                       onClick={async () => {
                         if (phasedBusy) return;
@@ -1747,6 +1759,7 @@ function ClientDetail() {
                             accommodations: storedAcc.success
                               ? reconcileAccommodations(parsed.data, storedAcc.data)
                               : reconcileAccommodations(parsed.data, null),
+                            approvedStages: approvedList,
                           });
                           // Refresh plans list so the new draft shows up.
                           void refreshPlans();
@@ -1821,7 +1834,13 @@ function ClientDetail() {
                             toast.error(res.error || "Approve failed", { id: tId });
                             return;
                           }
-                          setInlineBrief({ ...inlineBrief, approved: true });
+                          setInlineBrief({
+                            ...inlineBrief,
+                            approved: true,
+                            approvedStages: Array.from(
+                              new Set([...(inlineBrief.approvedStages ?? []), "brief"])
+                            ),
+                          });
                           toast.success("Brief approved", { id: tId });
                         } finally {
                           setBriefStageBusy(false);
@@ -1877,9 +1896,75 @@ function ClientDetail() {
               </StageCard>
               {inlineBrief.approved && (
                 <>
-                  <StageCard stageNumber={2} title="Blueprint" status="placeholder" />
-                  <StageCard stageNumber={3} title="Microcycle" status="placeholder" />
-                  <StageCard stageNumber={4} title="Progressions" status="placeholder" />
+                  {(() => {
+                    const approvedStages = inlineBrief.approvedStages ?? ["brief"];
+                    const blueprintApproved = approvedStages.includes("blueprint");
+                    const microcycleApproved = approvedStages.includes("microcycle");
+                    const progressionsApproved = approvedStages.includes("progressions");
+                    const goTo = (path: "blueprint" | "microcycle" | "progressions") =>
+                      navigate({
+                        to:
+                          path === "blueprint"
+                            ? "/plans/$planId/blueprint"
+                            : path === "microcycle"
+                            ? "/plans/$planId/microcycle"
+                            : "/plans/$planId/progressions",
+                        params: { planId: inlineBrief.planId },
+                      });
+                    return (
+                      <>
+                        <StageCard
+                          stageNumber={2}
+                          title="Blueprint"
+                          status={blueprintApproved ? "approved" : "ready"}
+                          approveLabel={blueprintApproved ? "Abrir" : "Gerar Blueprint →"}
+                          onApprove={() => goTo("blueprint")}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.
+                          </p>
+                        </StageCard>
+                        <StageCard
+                          stageNumber={3}
+                          title="Microcycle"
+                          status={
+                            microcycleApproved
+                              ? "approved"
+                              : blueprintApproved
+                              ? "ready"
+                              : "placeholder"
+                          }
+                          approveLabel={microcycleApproved ? "Abrir" : "Gerar Microcycle →"}
+                          onApprove={blueprintApproved ? () => goTo("microcycle") : undefined}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            {blueprintApproved
+                              ? "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar."
+                              : "Aprova o Blueprint primeiro."}
+                          </p>
+                        </StageCard>
+                        <StageCard
+                          stageNumber={4}
+                          title="Progressions"
+                          status={
+                            progressionsApproved
+                              ? "approved"
+                              : microcycleApproved
+                              ? "ready"
+                              : "placeholder"
+                          }
+                          approveLabel={progressionsApproved ? "Abrir" : "Gerar Progressions →"}
+                          onApprove={microcycleApproved ? () => goTo("progressions") : undefined}
+                        >
+                          <p className="text-sm text-muted-foreground">
+                            {microcycleApproved
+                              ? "Deltas de progressão para as semanas 2+. Clica para gerar."
+                              : "Aprova o Microcycle primeiro."}
+                          </p>
+                        </StageCard>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
