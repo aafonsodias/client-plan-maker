@@ -494,6 +494,11 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, clientId]);
 
+  // TEMP: verify the phased flag is actually on for this trainer at runtime.
+  useEffect(() => {
+    console.log('[phased] enabled =', phasedEnabled);
+  }, [phasedEnabled]);
+
   // Capture per-section field signatures the first time we hydrate so we can
   // detect when the trainer edits a section that was filled by the client.
   useEffect(() => {
