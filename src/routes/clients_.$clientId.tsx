@@ -601,27 +601,32 @@ function ClientDetail() {
   const triggerSectionAnalyses = async () => {
     if (!assessment.id) return;
     const sections = Object.keys(PROV_SECTION_FIELDS).filter((s) => s !== "smart_goal");
-    const fired: Promise<unknown>[] = [];
+    // Run sequentially with a small inter-call delay so we don't trip Anthropic
+    // concurrent-connection rate limits (HTTP 429).
+    const queue: string[] = [];
     for (const section of sections) {
       const sig = sectionSignature(assessment, section);
       if (lastAnalysedSigRef.current[section] === sig) continue;
-      // Skip empty sections — nothing for the model to analyse.
       if (sig === JSON.stringify([]) || /^\[(null,?)+\]$/.test(sig.replace(/\s/g, ""))) continue;
       lastAnalysedSigRef.current[section] = sig;
-      fired.push(
-        analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } })
-          .catch((e) => console.warn("pre-stage analyze failed", section, e))
-      );
+      queue.push(section);
     }
-    if (fired.length === 0) return;
-    // After all settle, refresh coverage badge.
-    void Promise.allSettled(fired).then(async () => {
+    if (queue.length === 0) return;
+    void (async () => {
+      for (const section of queue) {
+        try {
+          await analyzeSectionFn({ data: { assessmentId: assessment.id, section: section as any } });
+        } catch (e) {
+          console.warn("pre-stage analyze failed", section, e);
+        }
+        await new Promise((r) => setTimeout(r, 600));
+      }
       if (!assessment.id) return;
       try {
         const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
         if (r?.ok) setBriefCoverage({ done: r.done, total: r.total });
       } catch {}
-    });
+    })();
   };
 
   // Initial coverage fetch when phased flag is on and assessment exists.
