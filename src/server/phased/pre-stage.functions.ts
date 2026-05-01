@@ -108,8 +108,9 @@ Allowed output fields (omit any you cannot ground in the data): ${allowedFields.
 RULES:
 - Be terse. Each string field ≤ 200 chars.
 - NEVER invent data not present in the input. If a field cannot be answered, omit it.
-- For red_flags, only include items grounded in the input (e.g. "PAR-Q+ Q1: heart condition").
+- For red_flags, only include items derived DIRECTLY from THIS section's payload. Do not restate flags that another section would catch (e.g. PAR-Q answers, lifestyle stress) — assume those sections handle their own flags.
 - For movement_competency_summary, only fill the patterns this section actually informs.
+- Output European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling (não use formas brasileiras).
 - Output ONLY by calling the record_section_analysis tool.`;
 
     const userMessage = `Section data (JSON):\n${JSON.stringify(sectionPayload, null, 2)}`;
