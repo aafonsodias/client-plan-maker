@@ -17,13 +17,17 @@ export function LanguageSwitcher({ className }: { className?: string }) {
 
   const change = (next: Locale) => {
     if (next === current) return;
-    void i18n.changeLanguage(next);
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-      document.documentElement.lang = next;
-    } catch {
-      // ignore
-    }
+    // i18next-browser-languagedetector persists to localStorage under
+    // LOCALE_STORAGE_KEY automatically (caches: ["localStorage"]).
+    // We also write defensively in case detector caching is disabled.
+    void i18n.changeLanguage(next).then(() => {
+      try {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
+        document.documentElement.lang = next;
+      } catch {
+        // ignore
+      }
+    });
   };
 
   return (
