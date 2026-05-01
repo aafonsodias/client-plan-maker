@@ -179,3 +179,181 @@ export const approveBlueprint = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
+
+// ---- Conversational discussion of the current blueprint -------------------
+// AI may either reply in plain text (advice) or propose a partial patch the
+// user can apply locally before approving. No DB writes happen here.
+
+const ChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(4000),
+});
+
+const PatchProposalSchema = z.object({
+  session_archetypes: z.array(
+    z.object({
+      id: z.string().min(1),
+      focus: z.string().min(1),
+      primary_movements: z.array(z.string()).default([]),
+    }),
+  ).optional(),
+  week_to_session_map: z.record(z.string(), z.array(z.string())).optional(),
+  progression_model_proposal: z
+    .object({
+      model: z.enum(["linear", "undulating", "block"]),
+      rationale: z.string().default(""),
+    })
+    .optional(),
+});
+
+export const discussBlueprint = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        messages: z.array(ChatMessageSchema).min(1).max(10),
+        currentBlueprint: BlueprintSchema,
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("trainer_id, brief")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || (plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const briefParsed = BriefSchema.safeParse((plan as any).brief);
+    if (!briefParsed.success) {
+      return { ok: false as const, error: "Brief is missing or invalid." };
+    }
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI key not configured." };
+
+    const model = resolveModel("FORGE_MODEL_STAGE_2", "claude-haiku-4-5-20251001");
+
+    const system = `You are a senior strength coach reviewing a MESOCYCLE BLUEPRINT with a trainer.
+You can either:
+ (a) reply in plain text with advice/explanation, OR
+ (b) call the tool "propose_blueprint_patch" with a Partial<Blueprint> the trainer can apply.
+
+Rules for patches:
+- session_archetypes: if provided, REPLACES the whole list. Keep ids unique snake_case.
+- week_to_session_map: keys "1".."N", each value length must equal sessions_per_week (${data.currentBlueprint.sessions_per_week}). All ids must exist in session_archetypes (current or new).
+- progression_model_proposal: optional override.
+- Respect brief.red_flags and equipment_constraints.
+- Only propose a patch when the trainer asks for a change. For questions, reply in text.`;
+
+    const userContent = `BRIEF:\n${JSON.stringify(briefParsed.data, null, 2)}\n\nCURRENT BLUEPRINT:\n${JSON.stringify(data.currentBlueprint, null, 2)}\n\nCONVERSATION:\n${data.messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`;
+
+    const tool = {
+      name: "propose_blueprint_patch",
+      description: "Propose a partial blueprint patch the trainer can apply.",
+      input_schema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          session_archetypes: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["id", "focus", "primary_movements"],
+              properties: {
+                id: { type: "string" },
+                focus: { type: "string" },
+                primary_movements: { type: "array", items: { type: "string" } },
+              },
+            },
+          },
+          week_to_session_map: {
+            type: "object",
+            additionalProperties: { type: "array", items: { type: "string" } },
+          },
+          progression_model_proposal: {
+            type: "object",
+            additionalProperties: false,
+            required: ["model", "rationale"],
+            properties: {
+              model: { type: "string", enum: ["linear", "undulating", "block"] },
+              rationale: { type: "string" },
+            },
+          },
+        },
+      },
+    };
+
+    const t0 = Date.now();
+    let resp: Response;
+    try {
+      resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1500,
+          system,
+          tools: [tool],
+          messages: [{ role: "user", content: userContent }],
+        }),
+      });
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: `Network error: ${e instanceof Error ? e.message : String(e)}`,
+      };
+    }
+    const durationMs = Date.now() - t0;
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      return { ok: false as const, error: `Anthropic ${resp.status}: ${body.slice(0, 300)}` };
+    }
+    const json: any = await resp.json();
+    const inputTokens = Number(json?.usage?.input_tokens ?? 0);
+    const outputTokens = Number(json?.usage?.output_tokens ?? 0);
+    const costUsd = computeCallCostUsd(model, {
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+    });
+
+    const blocks: any[] = json?.content ?? [];
+    const textBlock = blocks.find((b) => b?.type === "text");
+    const toolBlock = blocks.find((b) => b?.type === "tool_use" && b?.name === "propose_blueprint_patch");
+    let patch: z.infer<typeof PatchProposalSchema> | null = null;
+    if (toolBlock) {
+      const parsed = PatchProposalSchema.safeParse(toolBlock.input);
+      if (parsed.success) patch = parsed.data;
+    }
+
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: data.planId,
+      stage: "stage2:blueprint:chat",
+      model_used: model,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cost_usd: costUsd,
+      zod_passed: true,
+      retry_count: 0,
+      duration_ms: durationMs,
+      output_snapshot: { reply: textBlock?.text ?? "", patch },
+    });
+
+    return {
+      ok: true as const,
+      reply: (textBlock?.text as string | undefined) ?? "",
+      patch,
+      costUsd,
+    };
+  });
