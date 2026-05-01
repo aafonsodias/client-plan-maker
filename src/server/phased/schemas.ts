@@ -119,6 +119,49 @@ export const ProgressionPlanSchema = z.object({
 });
 export type ProgressionPlan = z.infer<typeof ProgressionPlanSchema>;
 
+// ---- Stage 3 — Single-day workout content ----------------------------------
+// Mirrors the existing FORGE day shape so workout_plan_days.content is
+// byte-compatible with the legacy single-shot generator.
+const SectionItemZ = z.object({
+  name: z.string(),
+  duration: z.string(),
+  notes: z.string(),
+});
+
+const ExerciseZ = z.object({
+  name: z.string().min(1),
+  sets: z.string(),
+  reps: z.string(),
+  rest: z.string(),
+  notes: z.string(),
+  primary_muscles: z.array(z.string()),
+  secondary_muscles: z.array(z.string()),
+  rpe: z.string(),
+  tempo: z.string(),
+  technique_cues: z.string(),
+  cue: z.string(),
+  rationale: z.string(),
+  superset_id: z.string().nullable(),
+  variant: z.string().nullable(),
+  optional: z.boolean(),
+  equipment: z.array(z.string()),
+});
+
+export const PhasedDaySchema = z.object({
+  day_label: z.string(),
+  focus: z.string(),
+  rationale: z.string(),
+  warmup: z.array(SectionItemZ).default([]),
+  activation: z.array(SectionItemZ).default([]),
+  dynamic_stretches: z.array(SectionItemZ).default([]),
+  cooldown: z.array(SectionItemZ).default([]),
+  finisher: z.array(SectionItemZ).default([]),
+  finisher_enabled: z.boolean().default(false),
+  cardio: z.array(SectionItemZ).default([]),
+  exercises: z.array(ExerciseZ).min(1),
+});
+export type PhasedDay = z.output<typeof PhasedDaySchema>;
+
 // ---- Generation state stored on workout_plans.generation_state -------------
 export const GenerationStageSchema = z.enum([
   "brief",
