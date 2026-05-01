@@ -895,13 +895,19 @@ function ClientDetail() {
     if (!user) return;
     const { data: pl } = await supabase
       .from("workout_plans")
-      .select("id, title, duration_weeks, generation_meta, generation_status")
+      .select("id, title, duration_weeks, generation_meta, generation_state, generation_status")
       .eq("client_id", clientId)
       .eq("generation_status", "in_progress")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!pl) {
+      setResumablePlan(null);
+      return;
+    }
+    // Ignore phased-flow plans — they don't use the legacy per-day resume banner.
+    const stage = (pl.generation_state as any)?.stage as string | undefined;
+    if (stage && ["brief", "blueprint", "microcycle", "progressions"].includes(stage)) {
       setResumablePlan(null);
       return;
     }
