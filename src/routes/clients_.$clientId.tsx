@@ -566,6 +566,12 @@ function ClientDetail() {
           }
           setLastSavedAt(Date.now());
           setSaveStatus("saved");
+          // Fire-and-forget Pre-Stage 0 micro-analyses for sections whose
+          // signature changed since the last analysis. Gated server-side on
+          // profiles.phased_generation_enabled.
+          if (phasedEnabled && assessment.id) {
+            void triggerSectionAnalyses();
+          }
         } catch (err) {
           console.warn("Auto-save to cloud failed, kept local backup", err);
           setSaveStatus("offline");
