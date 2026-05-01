@@ -294,6 +294,8 @@ function ClientDetail() {
   const generateWeekFn = useServerFn(generatePlanWeek);
   const generateDayFn = useServerFn(generatePlanDay);
   const finalizePlanFn = useServerFn(finalizePlanGeneration);
+  const startPhasedPlanFn = useServerFn(startPhasedPlanDraft);
+  const [phasedBusy, setPhasedBusy] = useState(false);
 
   const [client, setClient] = useState<any>(null);
   const [assessment, setAssessment] = useState<any>({
