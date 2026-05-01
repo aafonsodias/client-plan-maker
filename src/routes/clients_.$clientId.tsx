@@ -1584,7 +1584,7 @@ function ClientDetail() {
                           // Fetch the freshly-written brief and render it inline below.
                           const { data: row } = await supabase
                             .from("workout_plans")
-                            .select("brief, generation_state")
+                            .select("brief, generation_state, programming_variables, red_flag_accommodations")
                             .eq("id", res.planId)
                             .maybeSingle();
                           const parsed = BriefSchema.safeParse((row as any)?.brief);
@@ -1594,10 +1594,22 @@ function ClientDetail() {
                           }
                           const stage = (row as any)?.generation_state?.stage as string | undefined;
                           const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
+                          const storedPv = ProgrammingVariablesSchema.safeParse(
+                            (row as any)?.programming_variables
+                          );
+                          const storedAcc = RedFlagAccommodationsSchema.safeParse(
+                            (row as any)?.red_flag_accommodations
+                          );
                           setInlineBrief({
                             planId: res.planId,
                             brief: parsed.data,
                             approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
+                            programmingVariables: storedPv.success
+                              ? storedPv.data
+                              : defaultProgrammingVariables(parsed.data),
+                            accommodations: storedAcc.success
+                              ? reconcileAccommodations(parsed.data, storedAcc.data)
+                              : reconcileAccommodations(parsed.data, null),
                           });
                           // Refresh plans list so the new draft shows up.
                           void refreshPlans();
