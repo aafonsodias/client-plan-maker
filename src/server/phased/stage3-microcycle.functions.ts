@@ -431,12 +431,16 @@ export const updateDayContent = createServerFn({ method: "POST" })
       ...ex,
     }));
     const newContent = { ...prevContent, exercises: mergedExercises };
-    const update: Record<string, unknown> = { content: newContent };
+    const update: {
+      content: Record<string, unknown>;
+      focus?: string;
+      rationale?: string;
+    } = { content: newContent };
     if (typeof data.focus === "string") update.focus = data.focus;
     if (typeof data.rationale === "string") update.rationale = data.rationale;
     const { error } = await supabase
       .from("workout_plan_days")
-      .update(update)
+      .update(update as any)
       .eq("id", data.dayId);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
