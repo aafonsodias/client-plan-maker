@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, DollarSign } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { BrandMark } from "@/components/BrandMark";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +11,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { CurrencyMenu } from "@/components/CurrencyMenu";
 import { PriceTag } from "@/components/PriceTag";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { CURRENCIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -18,6 +21,8 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const { user } = useAuth();
   const { t } = useTranslation(["plan", "common"]);
+  const { code: currencyCode } = useCurrency();
+  const activeSymbol = CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? "€";
   const signedIn = !!user;
   const primaryCtaTo = signedIn ? "/dashboard" : "/auth";
   const primaryCtaLabel = signedIn
@@ -32,18 +37,18 @@ function Landing() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <Logo className="h-8 w-8" />
+            <BrandMark size="md" />
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
             <CurrencyMenu>
               <button
                 type="button"
-                className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-accent transition"
+                className="hidden sm:inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground hover:text-accent transition"
                 aria-label={t("common:currency.title", "Currency")}
                 title={t("common:currency.title", "Currency")}
               >
-                <DollarSign className="h-4 w-4" />
+                <span aria-hidden>{activeSymbol}</span>
               </button>
             </CurrencyMenu>
             <LanguageSwitcher className="mr-1" />
