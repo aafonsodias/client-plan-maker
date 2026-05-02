@@ -48,7 +48,15 @@
       "pr_vs_week1": "PR vs week 1:",
       "sessions_logged": "Sessions logged:",
       "rest_tempo_squat": "Rest 2:30 · tempo 3-1-X",
-      "rest_tempo_rdl": "Rest 2:00 · controlled eccentric"
+      "rest_tempo_rdl": "Rest 2:00 · controlled eccentric",
+      "ex_hip_thrust": "Hip Thrust",
+      "ex_chest_pull": "Chest-Supported Row",
+      "ex_split_squat": "DB Split Squat",
+      "ex_pallof": "Pallof Press",
+      "ex_db_bench": "DB Bench Press",
+      "ex_overhead_press": "DB Overhead Press",
+      "ex_pullup_assist": "Assisted Pull-Up",
+      "ex_farmer_carry": "Farmer Carry"
     },
     "how_it_works": {
       "eyebrow": "How it works",
