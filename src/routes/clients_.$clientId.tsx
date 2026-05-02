@@ -1856,7 +1856,14 @@ function ClientDetail() {
                         <AlertDialogCancel>{t("generate.safety_cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={!safetyOverride}
-                          onClick={() => { setSafetyDialogOpen(false); void generate(); }}
+                          onClick={() => {
+                            setSafetyDialogOpen(false);
+                            if (phasedEnabled) {
+                              void runPhasedStart();
+                            } else {
+                              void generate();
+                            }
+                          }}
                         >
                           {t("generate.safety_proceed")}
                         </AlertDialogAction>
