@@ -59,3 +59,48 @@ export const updateExerciseInWeek = createServerFn({ method: "POST" })
     if (upErr) return { ok: false as const, error: upErr.message };
     return { ok: true as const };
   });
+
+/**
+ * Delete a single exercise from workout_plan_days.content.exercises across
+ * ALL weeks of a plan, matched by name (case-insensitive). This keeps the
+ * mesocycle coherent — you wouldn't want a removed lift reappearing in W3.
+ */
+export const deleteExerciseAcrossWeeks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        dayLabel: z.string(),
+        exerciseName: z.string().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("workout_plan_days")
+      .select("id, trainer_id, content, week_number")
+      .eq("plan_id", data.planId)
+      .eq("day_label", data.dayLabel);
+    if (error) return { ok: false as const, error: error.message };
+    if (!rows?.length) return { ok: false as const, error: "no matching days" };
+    const target = data.exerciseName.trim().toLowerCase();
+    let touched = 0;
+    for (const row of rows as any[]) {
+      if (row.trainer_id !== userId) continue;
+      const content = (row.content ?? {}) as Record<string, unknown>;
+      const exs = Array.isArray((content as any).exercises) ? (content as any).exercises : [];
+      const next = exs.filter(
+        (e: any) => String(e?.name ?? "").trim().toLowerCase() !== target,
+      );
+      if (next.length === exs.length) continue;
+      const { error: upErr } = await supabase
+        .from("workout_plan_days")
+        .update({ content: { ...content, exercises: next } })
+        .eq("id", row.id);
+      if (upErr) return { ok: false as const, error: upErr.message };
+      touched++;
+    }
+    return { ok: true as const, touched };
+  });
