@@ -265,6 +265,103 @@ function PrepSection({
   );
 }
 
+/** Estimate total prep duration from items with formats like "30s", "2 min", "1:30". */
+function estimatePrepMinutes(items: SectionItem[]): number {
+  let totalSec = 0;
+  for (const it of items) {
+    const d = (it.duration ?? "").toLowerCase().trim();
+    if (!d) continue;
+    const colon = d.match(/^(\d+):(\d{1,2})$/);
+    if (colon) { totalSec += +colon[1] * 60 + +colon[2]; continue; }
+    const min = d.match(/(\d+(?:[.,]\d+)?)\s*m/);
+    const sec = d.match(/(\d+)\s*s/);
+    if (min) totalSec += parseFloat(min[1].replace(",", ".")) * 60;
+    if (sec) totalSec += parseInt(sec[1], 10);
+    if (!min && !sec) {
+      const n = parseFloat(d);
+      if (!isNaN(n)) totalSec += n * 60; // assume minutes
+    }
+  }
+  return Math.round(totalSec / 60);
+}
+
+/** Compact, colour-coded preparation block (warmup + activation + dynamic). Collapsed by default. */
+function PrepCluster({
+  warmup,
+  activation,
+  dynamic,
+}: {
+  warmup: SectionItem[];
+  activation: SectionItem[];
+  dynamic: SectionItem[];
+}) {
+  const [open, setOpen] = useState(false);
+  const totalMin = useMemo(
+    () => estimatePrepMinutes([...warmup, ...activation, ...dynamic]),
+    [warmup, activation, dynamic],
+  );
+  const blocks: { label: string; items: SectionItem[]; color: string; bg: string }[] = [
+    { label: "Warmup",     items: warmup,     color: "oklch(0.78 0.12 70)",  bg: "oklch(0.78 0.12 70 / 0.12)" },
+    { label: "Activation", items: activation, color: "oklch(0.72 0.13 160)", bg: "oklch(0.72 0.13 160 / 0.12)" },
+    { label: "Dynamic",    items: dynamic,    color: "oklch(0.75 0.10 230)", bg: "oklch(0.75 0.10 230 / 0.12)" },
+  ].filter((b) => b.items.length > 0);
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-secondary/40"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-0.5">
+            {blocks.map((b) => (
+              <span key={b.label} className="h-2 w-2 rounded-full" style={{ backgroundColor: b.color }} />
+            ))}
+          </div>
+          <span className="text-xs font-bold uppercase tracking-[0.16em] text-foreground">Preparação</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            {blocks.map((b) => b.label.toLowerCase()).join(" · ")}
+            {totalMin > 0 ? ` · ~${totalMin} min` : ""}
+          </span>
+        </div>
+        {open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="space-y-1 border-t border-border/60 px-2 py-1.5">
+          {blocks.map((b) => (
+            <div
+              key={b.label}
+              className="flex items-start gap-2 rounded px-2 py-1.5"
+              style={{ backgroundColor: b.bg }}
+            >
+              <span
+                aria-hidden
+                className="mt-1 inline-block h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: b.color }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: b.color }}>
+                  {b.label}
+                </div>
+                <ul className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-foreground/85">
+                  {b.items.map((it, i) => (
+                    <li key={i} className="inline-flex items-baseline gap-1">
+                      <span className="font-medium">{it.name}</span>
+                      {it.duration && <span className="text-[10px] text-muted-foreground">· {it.duration}</span>}
+                      {i < b.items.length - 1 && <span className="text-muted-foreground/40">,</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────────────── LEVEL 3 — exercise card ─────────────────── */
 
 function ExerciseCard({
