@@ -1,0 +1,70 @@
+{
+  "title": "Manual",
+  "subtitle": "Tudo o que precisas de saber para tirares o máximo da Forge — passo a passo.",
+  "back_to_app": "Voltar à app",
+  "open": "Abrir manual",
+  "tab_aria": "Secção do manual",
+  "footer_help": "Não encontras o que precisas? Escreve a aafonsodias@gmail.com — respondo eu.",
+  "sections": {
+    "start": {
+      "title": "Começar",
+      "intro": "Em 5 minutos tens a tua conta pronta e o primeiro cliente a preencher um intake.",
+      "steps": [
+        { "h": "Cria a tua conta", "p": "Em /auth, cria conta com email + palavra-passe ou Google. Confirma o email para desbloquear a app." },
+        { "h": "Abre o Dashboard", "p": "É o teu hub: clientes ativos, planos recentes e o estado de cada um (rascunho, pronto, em curso)." },
+        { "h": "Adiciona o primeiro cliente", "p": "Clientes → \"Adicionar cliente\". Basta nome — o resto preenche-se com o intake." },
+        { "h": "Envia o intake", "p": "No cartão do cliente, copia o link de intake e envia. O cliente preenche pelo telemóvel; tu recebes tudo estruturado." }
+      ]
+    },
+    "intake": {
+      "title": "Intake & Brief",
+      "intro": "O intake são as respostas do cliente. O Brief é a leitura profissional dessas respostas que vai alimentar todo o plano.",
+      "steps": [
+        { "h": "Intake (cliente)", "p": "Objetivos, histórico, equipamento, lesões, PAR-Q+. O cliente faz isto sozinho — leva 4–7 minutos." },
+        { "h": "Brief (tu)", "p": "Em /plans/{id}/brief revês o que a IA extraiu: objetivo primário, ênfase, faixa de treino, sinais de alerta. Ajustas qualquer coisa." },
+        { "h": "Sinais de alerta", "p": "O número laranja ⓘ ao lado de \"Brief\" são red flags (dor, lesão recente, contraindicação). Lê-os antes de aprovar." },
+        { "h": "Aprova", "p": "Quando o brief está fiel ao cliente, aprovas e desbloqueias o Blueprint." }
+      ]
+    },
+    "plan": {
+      "title": "Blueprint, Microciclo & Progressões",
+      "intro": "É aqui que se desenha o treino. 3 etapas, da estrutura ao detalhe.",
+      "steps": [
+        { "h": "Blueprint", "p": "Define a forma do mesociclo: nº de semanas, dias/semana, foco de cada dia (push, pull, lower, full, etc.)." },
+        { "h": "Microciclo (Semana 1)", "p": "Detalhe exercício a exercício do Dia 1. Aprovas o Dia 1 — \"porta de qualidade\" — e a IA gera os restantes dias com o mesmo nível." },
+        { "h": "Aprovar microciclo", "p": "Quando os 3 dias estão prontos, o botão \"Aprovar microciclo\" fica esmeralda. Clica para a IA propor as progressões W2–W4." },
+        { "h": "Progressões", "p": "Vês deltas por semana (+kg, +rep, +RPE). Conservador > agressivo. Aprovas e o plano fica pronto para o cliente treinar." }
+      ]
+    },
+    "logs": {
+      "title": "Logs de treino",
+      "intro": "O cliente regista o treino sessão a sessão. Tu vês tudo em tempo real.",
+      "steps": [
+        { "h": "Link de log", "p": "Cada cliente tem um link estável (/log/{token}) que podes guardar nos contactos dele. Funciona em qualquer telemóvel." },
+        { "h": "Marcar séries", "p": "Em cada série, regista carga e reps. Opcionalmente RPE (0–10). Sem RPE também serve." },
+        { "h": "Marcar dia como feito", "p": "Só ativa quando há pelo menos uma série registada — evita marcar dias vazios por engano." },
+        { "h": "Imprimir folha (em breve)", "p": "Versão PDF imprimível para quem prefere papel no ginásio. Trazes a folha, escreves à mão, fotografas e a app lê." }
+      ]
+    },
+    "feedback": {
+      "title": "Interpretar feedback",
+      "intro": "A app não é só registo — é um ciclo de melhoria.",
+      "steps": [
+        { "h": "Cores", "p": "Esmeralda = pronto / completo. Âmbar = atenção (sinal de alerta, exceder RPE). Vermelho = erro / desvio crítico. Cinzento = neutro / em curso." },
+        { "h": "Trend de progressão", "p": "Mostra mudança acumulada W1 → W4. Se a linha estagnar 2 semanas, considera dessensibilizar (descarga ou troca de exercício)." },
+        { "h": "Quando ajustar?", "p": "Conservador: se o cliente bate o RPE-alvo 2 sessões seguidas, sobe o delta da próxima semana. Se falha, mantém ou recua." },
+        { "h": "Próxima semana", "p": "Com base nos logs, gera nova folha de treino para a semana seguinte (em breve — automatização do ciclo). Por agora, edita o microciclo manualmente." }
+      ]
+    },
+    "billing": {
+      "title": "Faturação & limites",
+      "intro": "Plano gratuito vs plano completo.",
+      "steps": [
+        { "h": "Plano gratuito", "p": "1 plano de treino finalizado. Suficiente para validares se a Forge serve para o teu fluxo." },
+        { "h": "Trial", "p": "Desbloqueia geração ilimitada por X dias para testares vários clientes." },
+        { "h": "Subscrição", "p": "Acesso ilimitado, todos os clientes, todas as iterações. Cancelas quando quiseres." },
+        { "h": "Founder", "p": "Acesso permanente para o fundador da Forge — sem trial, sem limite, sem banners de upgrade." }
+      ]
+    }
+  }
+}
