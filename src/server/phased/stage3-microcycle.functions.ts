@@ -14,6 +14,67 @@ import {
   type TierGuidelines,
 } from "./programming-tier.server";
 
+/**
+ * Cap preparation duration at 15 minutes total (warmup + activation +
+ * dynamic_stretches). The model frequently inflates these to 25–35 minutes,
+ * which is unrealistic. We trim from the LARGEST section first while
+ * preserving at least one item per non-empty section.
+ */
+function parseDurationToSeconds(d: string | undefined): number {
+  if (!d) return 0;
+  const s = String(d).toLowerCase().trim();
+  const colon = s.match(/^(\d+):(\d{1,2})$/);
+  if (colon) return Number(colon[1]) * 60 + Number(colon[2]);
+  const min = s.match(/(\d+(?:[.,]\d+)?)\s*m/);
+  const sec = s.match(/(\d+)\s*s/);
+  let total = 0;
+  if (min) total += parseFloat(min[1].replace(",", ".")) * 60;
+  if (sec) total += parseInt(sec[1], 10);
+  if (!min && !sec) {
+    const n = parseFloat(s);
+    if (!isNaN(n)) total += n * 60;
+  }
+  return total;
+}
+
+function sumPrepSeconds(items: any[] | undefined): number {
+  if (!Array.isArray(items)) return 0;
+  return items.reduce((acc, it) => acc + parseDurationToSeconds(it?.duration), 0);
+}
+
+function sanitizePrepBlocks(day: any): any {
+  if (!day) return day;
+  const MAX_TOTAL_SEC = 15 * 60;
+  const sections: ("warmup" | "activation" | "dynamic_stretches")[] = [
+    "warmup",
+    "activation",
+    "dynamic_stretches",
+  ];
+  const total =
+    sumPrepSeconds(day.warmup) +
+    sumPrepSeconds(day.activation) +
+    sumPrepSeconds(day.dynamic_stretches);
+  if (total <= MAX_TOTAL_SEC) return day;
+  // Compute scale to fit within 15 min, then re-format each item duration in minutes.
+  const scale = MAX_TOTAL_SEC / total;
+  const out = { ...day };
+  for (const sec of sections) {
+    const items = Array.isArray(day[sec]) ? day[sec] : [];
+    if (items.length === 0) continue;
+    out[sec] = items.map((it: any) => {
+      const orig = parseDurationToSeconds(it?.duration);
+      if (!orig) return it;
+      const scaled = Math.max(20, Math.round(orig * scale));
+      const formatted =
+        scaled >= 60
+          ? `${Math.round(scaled / 60)} min`
+          : `${scaled} s`;
+      return { ...it, duration: formatted };
+    });
+  }
+  return out;
+}
+
 // JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
 const SECTION_ITEM = {
   type: "object",
@@ -216,7 +277,7 @@ Generate ONLY this single day's session.`;
   });
 
   if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true, day: result.data };
+  return { ok: true, day: sanitizePrepBlocks(result.data) };
 }
 
 async function upsertDayRow(
