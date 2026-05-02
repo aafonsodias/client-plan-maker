@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { BriefSchema, type Brief } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { Loader2, RefreshCw, ArrowRight, ArrowLeft, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import BriefEditor from "@/components/BriefEditor";
 import { useTranslation } from "react-i18next";
@@ -130,14 +130,14 @@ function BriefReview() {
   if (approved) {
     return (
       <div className="mx-auto max-w-3xl p-6 sm:p-8">
-        <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-4">
+        <div className="flex items-center justify-between rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 shadow-[0_0_0_1px_rgba(16,185,129,0.15),0_8px_30px_-12px_rgba(16,185,129,0.35)]">
           <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/30 text-emerald-200 ring-1 ring-emerald-400/40">
               <Check className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Stage 1 — Brief approved</p>
-              <p className="text-xs text-muted-foreground">Loading blueprint…</p>
+              <p className="text-sm font-semibold text-emerald-100">Brief aprovado</p>
+              <p className="text-xs text-emerald-200/70">A carregar blueprint…</p>
             </div>
           </div>
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -147,8 +147,8 @@ function BriefReview() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-3xl space-y-4 p-3 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           {clientId && (
             <Link
@@ -156,13 +156,14 @@ function BriefReview() {
               params={{ clientId }}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3 w-3" /> Client
+              <ArrowLeft className="h-3 w-3" /> Cliente
             </Link>
           )}
-          <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
-          <p className="text-xs text-muted-foreground">Stage 1 — Brief review</p>
+          <h1 className="truncate text-lg font-semibold text-foreground">{planTitle}</h1>
+          <p className="text-[11px] text-muted-foreground">Brief — revê e aprova</p>
         </div>
         <div className="flex items-center gap-2">
+          <BriefSectionsToggle />
           <button
             onClick={regenerate}
             disabled={regenerating || approving}
@@ -183,6 +184,35 @@ function BriefReview() {
       </div>
 
       <BriefEditor brief={brief} onChange={setBrief} />
+    </div>
+  );
+}
+
+/**
+ * Header pills that broadcast a custom event picked up by BriefEditor cards
+ * to expand-all / collapse-all every section at once. Lightweight pub/sub
+ * via `window.dispatchEvent` keeps the props surface clean.
+ */
+function BriefSectionsToggle() {
+  return (
+    <div className="hidden items-center overflow-hidden rounded-lg border border-border bg-card sm:inline-flex">
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent("brief:expand-all"))}
+        className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted hover:text-foreground"
+        title="Expandir tudo"
+      >
+        <ChevronDown className="h-3 w-3" /> Expandir
+      </button>
+      <span className="h-4 w-px bg-border" />
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent("brief:collapse-all"))}
+        className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground hover:bg-muted hover:text-foreground"
+        title="Colapsar tudo"
+      >
+        <ChevronUp className="h-3 w-3" /> Colapsar
+      </button>
     </div>
   );
 }
