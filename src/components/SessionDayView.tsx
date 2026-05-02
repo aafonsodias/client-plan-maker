@@ -53,6 +53,20 @@ function youtubeHref(name: string) {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " exercise technique")}`;
 }
 
+/** Subtle hue per day index. Decorative only — never replaces semantic colour
+ *  (RPE tone, superset accent, etc.). Used at very low opacity. */
+const DAY_ACCENTS = [
+  "oklch(0.74 0.10 85)",   // amber soft
+  "oklch(0.72 0.10 200)",  // teal
+  "oklch(0.74 0.10 320)",  // mauve
+  "oklch(0.74 0.10 145)",  // sage
+  "oklch(0.74 0.10 30)",   // terracotta
+] as const;
+
+function dayAccentFor(index: number): string {
+  return DAY_ACCENTS[((index % DAY_ACCENTS.length) + DAY_ACCENTS.length) % DAY_ACCENTS.length];
+}
+
 /* ─────────────────── LEVEL 1 — Session header ─────────────────── */
 
 export function SessionDayView({
@@ -71,6 +85,7 @@ export function SessionDayView({
   const dayNumber = String(index + 1).padStart(2, "0");
   const supersetMap = useMemo(() => buildSupersetMap(day.exercises), [day.exercises]);
   const [contextOpen, setContextOpen] = useState(true);
+  const accent = dayAccentFor(index);
 
   const hasWarmup = (day.warmup?.length ?? 0) > 0;
   const hasActivation = (day.activation?.length ?? 0) > 0;
@@ -85,17 +100,29 @@ export function SessionDayView({
         {/* Ghost day number — decorative */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -left-1 -top-2 select-none text-5xl font-thin leading-none text-foreground/[0.06] tracking-tighter"
-          style={{ fontWeight: 200 }}
+          className="pointer-events-none absolute -left-1 -top-2 select-none text-5xl font-thin leading-none tracking-tighter"
+          style={{ fontWeight: 200, color: accent, opacity: 0.18 }}
         >
           {dayNumber}
         </span>
 
         <div className="relative flex items-start justify-between gap-3 pl-0">
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              {day.day_label}
-            </h2>
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+                style={{
+                  color: accent,
+                  backgroundColor: `color-mix(in oklab, ${accent} 14%, transparent)`,
+                }}
+              >
+                Day {index + 1}
+              </span>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                {day.day_label}
+              </h2>
+            </div>
             {day.focus && (
               <p className="mt-0.5 text-sm italic text-muted-foreground">
                 {day.focus}
@@ -106,8 +133,13 @@ export function SessionDayView({
           {rightSlot && <div className="shrink-0">{rightSlot}</div>}
         </div>
 
-        {/* full-width 1px divider */}
-        <div className="mt-3 h-px w-full bg-border" />
+        {/* full-width 1px divider — tinted by day accent */}
+        <div
+          className="mt-3 h-px w-full"
+          style={{
+            backgroundImage: `linear-gradient(to right, color-mix(in oklab, ${accent} 55%, transparent), transparent)`,
+          }}
+        />
 
         {/* Context note (sleep / stress rationale) */}
         {day.rationale && (

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
 import { rpeTone, parseRpe as parseRpeShared } from "@/lib/rpe-tone";
+import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -308,11 +309,13 @@ export function MesocycleTableView({
                 weekCount={weekNumbers.length}
                 compact={compact}
                 editable={editable && !!planId}
+                planId={planId}
                 editingKey={editingKey}
                 setEditingKey={setEditingKey}
                 patches={patches}
                 onSaveEdit={saveEdit}
                 onRemoveExercise={removeExercise}
+                onAdded={() => onUpdated?.()}
                 deletingName={deletingName}
                 isFirstGroup={gi === 0}
               />
@@ -333,11 +336,13 @@ function DayBlock({
   weekCount,
   compact,
   editable,
+  planId,
   editingKey,
   setEditingKey,
   patches,
   onSaveEdit,
   onRemoveExercise,
+  onAdded,
   deletingName,
   isFirstGroup,
 }: {
@@ -346,11 +351,13 @@ function DayBlock({
   weekCount: number;
   compact: boolean;
   editable: boolean;
+  planId?: string;
   editingKey: string | null;
   setEditingKey: (k: string | null) => void;
   patches: Record<string, Partial<Exercise>>;
   onSaveEdit: (key: string, weekNumber: number, dayLabel: string, exIdx: number, patch: Partial<Exercise>) => void;
   onRemoveExercise: (dayLabel: string, exerciseName: string) => void;
+  onAdded: () => void;
   deletingName: string | null;
   isFirstGroup: boolean;
 }) {
@@ -387,6 +394,18 @@ function DayBlock({
           isDeleting={deletingName === `${day.day_label}|${exercise.name}`}
         />
       ))}
+      {editable && planId && (
+        <tr>
+          <td colSpan={weekCount + 1} className="bg-card px-3 py-1.5">
+            <AddExerciseDialog
+              planId={planId}
+              dayLabel={day.day_label}
+              existingNames={rows.map((r) => r.exercise.name)}
+              onAdded={onAdded}
+            />
+          </td>
+        </tr>
+      )}
     </>
   );
 }

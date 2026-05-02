@@ -21,8 +21,8 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 - [x] #24 MesocycleTableView day-row breathability (6px gap), unconditional RPE column (already in place), SS chip in name cell, big amber-gradient Exportar PDF CTA.
 
 ## Still pending after this turn
-- [ ] #20 add-exercise picker with search (needs new server fn + modal UX)
-- [ ] #23 day-card colour differentiation in SessionDayView (light tinted accent per day index)
+- [x] #20 add-exercise dialog (server fn `addExerciseAcrossWeeks` + dialog with sets/reps/rpe/rest + insert-after picker). Search/autocomplete still backlog.
+- [x] #23 day-card colour differentiation in SessionDayView (per-day hue on ghost number, divider gradient, "Day N" chip)
 
 ## Phase B turn 1 — DONE
 - [x] Founder recognition (AppShell crown chip + DB upgrade for aafonsodias@gmail.com, trial banner suppressed)
