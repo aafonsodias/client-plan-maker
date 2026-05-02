@@ -1,13 +1,13 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "An evidence-based",
-      "title_line2": "programming workbench.",
-      "subtitle": "Forge holds your client’s clinical context, computes MEV/MAV by muscle group, and generates editable mesocycles. Print the week, log what happened at the gym, and next week adjusts to real feedback.",
+      "title_line1": "The tool I wish I'd had",
+      "title_line2": "as a coach.",
+      "subtitle": "Clinical assessment, defensible mesocycle, branded PDF for the gym, feedback that adjusts next week. No shortcuts. No black box.",
       "cta_primary_signed_out": "Draft your first plan",
       "cta_primary_signed_in": "Open dashboard",
       "cta_secondary": "How it works",
-      "credibility_caption": "Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach.",
+      "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
       "social_proof": "Built by a coach, for coaches · Private beta"
     },
     "mockups": {
@@ -62,15 +62,15 @@
       }
     },
     "credibility": {
-      "title": "Built on the science you already trust.",
-      "subtitle": "Forge isn't just AI on top of a chat box. The intake follows the protocols you learned in your certification — so the output is defensible, not generic.",
+      "title": "Under continuous development and refinement.",
+      "subtitle": "There are bugs. Things still missing. But because you're the human filter, the output stays defensible — patience pays. The foundations are already in; the rest gets folded in as it earns its place.",
       "cards": {
         "parq_title": "PAR-Q+ screening",
-        "parq_desc": "Pre-participation health screen with cardiovascular, metabolic, and renal risk flags built in.",
+        "parq_desc": "Already inside. Pre-participation health screen with cardiovascular, metabolic, and renal risk flags.",
         "acsm_title": "ACSM risk stratification",
-        "acsm_desc": "Low / moderate / high categorization to guide intensity prescription safely from session one.",
+        "acsm_desc": "Already inside. Low / moderate / high categorization to guide intensity prescription safely from session one.",
         "prochaska_title": "Prochaska stages of change",
-        "prochaska_desc": "Behaviour-change readiness mapped to coaching tone and progression speed for each client."
+        "prochaska_desc": "Already inside. Readiness for change mapped to coaching tone and progression speed. Coming: Helms, Israetel, Schoenfeld, RP, NSCA — folded in step by step."
       }
     },
     "logging": {
@@ -78,9 +78,9 @@
       "subtitle": "Log every set, track every session. Forge keeps the history so you and the client see the work pile up."
     },
     "journey": {
-      "eyebrow": "The journey",
-      "title": "How a Forge plan is built — the same five stages, every time.",
-      "subtitle": "What you'll see inside the app is exactly what we describe below. No surprises, no black box.",
+      "eyebrow": "Under continuous build",
+      "title": "Five stages today — refined every week.",
+      "subtitle": "This is what you'll see inside the app, right now. The shape and the detail keep evolving as we learn from each plan generated. Long-term goal: fold in all the human knowledge relevant to programming.",
       "stages": {
         "intake": {
           "label": "Intake",
@@ -106,11 +106,19 @@
     },
     "logbook_preview": {
       "eyebrow": "After the PDF",
-      "title": "The logbook is what keeps the plan alive.",
-      "subtitle": "PDF is the starting point. Logging every set turns it into a feedback loop — you see what's working, the client sees the work pile up.",
+      "title": "Every set logged becomes fuel for next week.",
+      "subtitle": "The PDF is the starting point. Each log — manual today, voice and sensors tomorrow — feeds the next generation. All optional, all toggle: give what you have, get what we can do with it.",
       "log_caption": "Preview — log a session in seconds.",
       "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine.",
-      "history_caption": "Week-over-week history — watch load climb without opening the gym."
+      "history_caption": "Week-over-week history — watch load climb without opening the gym.",
+      "signals_title": "What goes in (today and soon)",
+      "signal_load": "Accumulated load per movement pattern",
+      "signal_deltas": "Week-over-week deltas, automatic",
+      "signal_context": "Context kept: sleep, stress, perceived RPE",
+      "signals_soon_title": "Coming next, optional",
+      "signal_voice": "Voice notes → text → adjustment",
+      "signal_devices": "Scale, steps, sleep, heart rate",
+      "signal_uploads": "Bioimpedance, blood pressure — photo, PDF or Excel"
     },
     "roadmap": {
       "eyebrow": "Coming next",
@@ -144,16 +152,9 @@
     "founder": {
       "title": "Why Forge?",
       "img_alt": "André, founder of Forge",
-      "p1": "In fifteen years as a personal trainer, I've realized two things: most professional training plans are poorly put together, and because the admin is such a chore, many trainers just give up and improvise.",
-      "p2": "High-quality, structured programming usually takes too much time, so it doesn't get done.",
-      "p3": "Forge is built to change that. It's a tool that makes it easy to generate a plan that is actually defensible, whether you're coaching others or just managing your own training.",
-      "bullet_logic_title": "Logic over aesthetics.",
-      "bullet_logic_body": "It's not about admin theatre or pretty PDFs. It's about using solid frameworks (PAR-Q+, ACSM risk stratification, Prochaska) to build a baseline that makes sense.",
-      "bullet_pro_title": "Professional or personal.",
-      "bullet_pro_body": "It works as a professional assistant to speed up client delivery, or as a personal tool for anyone who wants a structured program without the manual headache.",
-      "bullet_filter_title": "You're the filter.",
-      "bullet_filter_body": "The AI handles the repetitive drafting. You review it, fix it, and own it.",
-      "p4": "The goal isn't to automate coaching. It's to make sure that \"it's too much work\" is no longer an excuse for a bad plan.",
+      "p1": "In fifteen years as a PT I kept seeing the same thing: plans poorly put together because programming with judgement takes too much work.",
+      "p2": "Forge exists to take that excuse off the table. Solid foundations (PAR-Q+, ACSM, Prochaska), you as the human filter, AI only for the repetitive drafting.",
+      "p3": "The goal isn't to automate coaching. It's to make sure that \"it's too much work\" is no longer an excuse for a bad plan.",
       "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
     },
     "faq": {
@@ -179,14 +180,14 @@
       "eyebrow": "Pricing",
       "title": "Honest, no surprises.",
       "beta_badge": "Beta",
-      "beta_title": "Free during beta",
+      "beta_title": "Closed beta — you enter through onboarding",
       "beta_price": "€0",
-      "beta_period": "/ while in beta",
+      "beta_period": "/ assessment + 1 plan + 1 week of logbook",
       "beta_features": [
-        "Unlimited assessments",
-        "AI plan generation",
-        "Branded PDFs",
-        "Session and progression history"
+        "You sign up with email and complete the full assessment, slide by slide",
+        "1 generated training plan + branded PDF",
+        "1 week of logbook to feel the feedback loop",
+        "To keep going: become a Founder, or join Pro"
       ],
       "beta_cta": "Start free",
       "pro_badge": "Coming soon",
@@ -194,7 +195,7 @@
       "pro_price": "€19",
       "pro_period": "/ month (indicative)",
       "pro_features": [
-        "Everything in beta",
+        "Everything in beta, no plan limit",
         "Unlimited clients",
         "Custom domain on PDFs",
         "Priority support"
