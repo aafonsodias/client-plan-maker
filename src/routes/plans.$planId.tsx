@@ -18,6 +18,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
+import { planStatusInfo } from "@/lib/plan-status";
+import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
@@ -56,6 +58,7 @@ function PlanEditor() {
   const { planId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t: tCommon } = useTranslation("common");
   const [plan, setPlan] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -247,11 +250,18 @@ function PlanEditor() {
               value={plan.title}
               onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             />
-            {plan.status === "finalized" && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
-                <CheckCircle2 className="h-3 w-3" /> Finalized
-              </span>
-            )}
+            {(() => {
+              const s = planStatusInfo(plan, tCommon as any);
+              if (s.key === "draft") return null;
+              return (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest ${s.className}`}
+                >
+                  {s.key === "finalized" && <CheckCircle2 className="h-3 w-3" />}
+                  {s.label}
+                </span>
+              );
+            })()}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
