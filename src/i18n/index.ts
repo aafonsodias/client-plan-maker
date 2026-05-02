@@ -1,6 +1,5 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
 
 import enCommon from "./locales/en/common.json";
 import enPlan from "./locales/en/plan.json";
@@ -18,24 +17,24 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const LOCALE_STORAGE_KEY = "forge.locale";
 
 // Avoid double-init under React StrictMode / HMR.
+// IMPORTANT: SSR has no localStorage/navigator, so it always renders in the
+// fallback locale. To prevent React hydration mismatches, the client's FIRST
+// paint must also use that same fallback. The persisted locale is only
+// applied after hydration via `applyPersistedLocale()` (called from the
+// root component's useEffect).
 if (!i18n.isInitialized) {
   i18n
-    .use(LanguageDetector)
     .use(initReactI18next)
     .init({
       // EN owns all keys — PT JSON is intentionally sparse and falls back to EN.
       fallbackLng: "en",
+      lng: "en",
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
       ns: ["common", "plan", "intake", "assessment", "manual"],
       defaultNS: "common",
       resources: {
         en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment, manual: enManual },
         pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment, manual: ptManual },
-      },
-      detection: {
-        order: ["localStorage", "navigator"],
-        lookupLocalStorage: LOCALE_STORAGE_KEY,
-        caches: ["localStorage"],
       },
       interpolation: { escapeValue: false }, // React already escapes
       returnNull: false,
@@ -59,6 +58,31 @@ if (!i18n.isInitialized) {
     sync();
     i18n.on("languageChanged", sync);
   }
+}
+
+/**
+ * Reads the persisted locale from localStorage (or browser language) and
+ * applies it. MUST only be called on the client, after hydration.
+ */
+export function applyPersistedLocale(): void {
+  if (typeof window === "undefined") return;
+  let target: string | null = null;
+  try {
+    target = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+  } catch {
+    target = null;
+  }
+  if (!target && typeof navigator !== "undefined") {
+    target = (navigator.language || "en").slice(0, 2);
+  }
+  const normalized = (target ?? "en").slice(0, 2);
+  if (!(SUPPORTED_LOCALES as readonly string[]).includes(normalized)) return;
+  if (i18n.language === normalized) return;
+  void i18n.changeLanguage(normalized);
+  // Persist for next visit.
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, normalized);
+  } catch {}
 }
 
 export default i18n;
