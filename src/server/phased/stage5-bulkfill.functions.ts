@@ -193,7 +193,7 @@ export const bulkFillRemainingWeeks = createServerFn({ method: "POST" })
         update.summary = sentences ? sentences.slice(0, 2).join(" ").trim() : trimmed.slice(0, 360);
       }
     }
-    await supabase.from("workout_plans").update(update).eq("id", data.planId);
+    await supabase.from("workout_plans").update(update as any).eq("id", data.planId);
 
     const durMs = Date.now() - t0;
     await logGeneration(supabase, {
