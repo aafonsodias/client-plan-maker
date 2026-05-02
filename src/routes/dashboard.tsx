@@ -5,13 +5,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, FileText, Sparkles, Trash2 } from "lucide-react";
+import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { useMemo } from "react";
 import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
+import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -31,14 +32,15 @@ function Dashboard() {
   const [clients, setClients] = useState<number>(0);
   const [plans, setPlans] = useState<number>(0);
   const [clientIds, setClientIds] = useState<string[]>([]);
+  const [clientRows, setClientRows] = useState<Array<{ id: string; full_name: string; date_of_birth: string | null; intake_status: string; intake_token: string | null; intake_submitted_at: string | null; created_at: string }>>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
   const [statusCounts, setStatusCounts] = useState<{ draft: number; ready: number; finalized: number }>({ draft: 0, ready: 0, finalized: 0 });
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ data: clientRows }, { count: p }, { data: r }, { data: allPlans }] = await Promise.all([
-        supabase.from("clients").select("id"),
+      const [{ data: cRows }, { count: p }, { data: r }, { data: allPlans }] = await Promise.all([
+        supabase.from("clients").select("id, full_name, date_of_birth, intake_status, intake_token, intake_submitted_at, created_at"),
         supabase.from("workout_plans").select("id", { count: "exact", head: true }),
         supabase
           .from("workout_plans")
@@ -49,7 +51,9 @@ function Dashboard() {
           .from("workout_plans")
           .select("status, generation_state, generation_status"),
       ]);
-      const ids = (clientRows ?? []).map((c: any) => c.id);
+      const rows = (cRows as any[]) ?? [];
+      setClientRows(rows);
+      const ids = rows.map((c: any) => c.id);
       setClientIds(ids);
       setClients(ids.length);
       setPlans(p ?? 0);
@@ -94,6 +98,61 @@ function Dashboard() {
     return c;
   }, [phases]);
 
+  // Build the "Attention" feed — actionable items ordered by urgency.
+  const attention = useMemo(() => {
+    const items: Array<{ kind: string; key: string; title: string; href?: string; clientId?: string; sub?: string; urgent?: boolean }> = [];
+    for (const c of clientRows) {
+      // Submitted, not yet reviewed
+      if (c.intake_status === "submitted") {
+        items.push({
+          kind: "submitted", key: `sub-${c.id}`,
+          title: `${c.full_name} submeteu a avaliação`,
+          sub: "Pronto para revisão",
+          clientId: c.id, urgent: true,
+        });
+      }
+      // Birthday in next 14 days
+      const d = daysUntilBirthday(c.date_of_birth);
+      if (d !== null && d <= 14) {
+        const age = turningAge(c.date_of_birth);
+        items.push({
+          kind: "birthday", key: `bd-${c.id}`,
+          title: `${c.full_name} faz ${age ?? ""} anos ${d === 0 ? "hoje" : d === 1 ? "amanhã" : `em ${d} dias`}`,
+          sub: "Lembra-te de mandar uma mensagem",
+          clientId: c.id,
+        });
+      }
+      // Sent >7d ago, never opened/submitted
+      if (c.intake_status === "sent" && c.intake_token) {
+        const ageDays = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000);
+        if (ageDays >= 7) {
+          items.push({
+            kind: "stale", key: `stale-${c.id}`,
+            title: `${c.full_name} ainda não preencheu`,
+            sub: `Link enviado há ${ageDays} dias — talvez relembrar?`,
+            clientId: c.id,
+          });
+        }
+      }
+    }
+    // submitted first, then birthdays, then stale
+    return items.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent)).slice(0, 6);
+  }, [clientRows]);
+
+  // Quick action: copy intake link of the most recent client without submission
+  const quickIntakeClient = useMemo(() => {
+    return clientRows.find((c) => c.intake_token && c.intake_status !== "submitted" && c.intake_status !== "reviewed");
+  }, [clientRows]);
+  const copyQuickIntake = async () => {
+    if (!quickIntakeClient?.intake_token) return;
+    const url = `${window.location.origin}/intake/${quickIntakeClient.intake_token}`;
+    await navigator.clipboard.writeText(url);
+    toast.success(`Link de ${quickIntakeClient.full_name.split(" ")[0]} copiado`);
+  };
+
+  const isEmpty = clients === 0;
+  const noPlansYet = clients > 0 && plans === 0;
+
   return (
     <div className="space-y-10">
       <OnboardingChecklist />
@@ -108,6 +167,72 @@ function Dashboard() {
           </Link>
         </Button>
       </div>
+
+      {/* Empty state — onboarding hero */}
+      {isEmpty && (
+        <div className="rounded-3xl border border-accent/30 bg-card p-8 sm:p-10">
+          <p className="text-xs uppercase tracking-widest text-accent">Começa aqui</p>
+          <h2 className="mt-2 text-2xl font-light tracking-tight sm:text-3xl">Ainda não tens clientes. Em 3 passos estás a enviar um plano.</h2>
+          <ol className="mt-6 space-y-3 text-sm">
+            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">1</span><span><b>Adiciona um cliente</b> — só nome e email.</span></li>
+            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">2</span><span><b>Envia o link de avaliação</b> — ele preenche tudo no telemóvel.</span></li>
+            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">3</span><span><b>Geras o plano</b> — revês, ajustas, exportas em PDF com a tua marca.</span></li>
+          </ol>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button asChild><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-2 h-4 w-4" /> Adicionar primeiro cliente</Link></Button>
+            <Button variant="outline" asChild><Link to="/manual"><BookOpen className="mr-2 h-4 w-4" /> Ler o manual</Link></Button>
+          </div>
+        </div>
+      )}
+
+      {/* Quick actions strip — visible once there's at least one client */}
+      {!isEmpty && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild size="sm"><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-1.5 h-4 w-4" /> Novo cliente</Link></Button>
+          {quickIntakeClient && (
+            <Button size="sm" variant="outline" onClick={copyQuickIntake}>
+              <Copy className="mr-1.5 h-4 w-4" /> Copiar link de avaliação · {quickIntakeClient.full_name.split(" ")[0]}
+            </Button>
+          )}
+          <Button asChild size="sm" variant="outline"><Link to="/plans/new"><FileText className="mr-1.5 h-4 w-4" /> Novo plano</Link></Button>
+          <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> Manual</Link></Button>
+        </div>
+      )}
+
+      {/* Attention panel — surfaces submitted intakes, birthdays, stale invites */}
+      {attention.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-lg font-bold">Atenção</h2>
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            {attention.map((it) => {
+              const Icon = it.kind === "submitted" ? Inbox : it.kind === "birthday" ? Cake : Clock;
+              return (
+                <Link
+                  key={it.key}
+                  to="/clients/$clientId"
+                  params={{ clientId: it.clientId! }}
+                  className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 hover:bg-secondary/50"
+                >
+                  <Icon className={`h-4 w-4 shrink-0 ${it.urgent ? "text-accent" : "text-muted-foreground"}`} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{it.title}</p>
+                    {it.sub && <p className="truncate text-xs text-muted-foreground">{it.sub}</p>}
+                  </div>
+                  {it.urgent && <span className="shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">Rever</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {noPlansYet && attention.length === 0 && (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <p className="font-medium">Próximo passo: enviar a avaliação</p>
+          <p className="mt-1 text-sm text-muted-foreground">Abre um cliente e copia o link de intake — ele preenche em 5 minutos.</p>
+          <Button asChild className="mt-4" variant="outline"><Link to="/clients" search={{ filter: "all" }}>Ver clientes</Link></Button>
+        </div>
+      )}
 
       {clients > 0 && (
         <div className="flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
