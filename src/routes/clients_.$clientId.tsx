@@ -1479,6 +1479,12 @@ function ClientDetail() {
 
         <AssessmentSection
           clientId={clientId}
+          defaultCollapsed={!!readyPlanForAssessment}
+          summaryLine={
+            (assessment as any)?.performed_on
+              ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
+              : `${totalSections} secções · ${pct}%`
+          }
           headerProgress={
             <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <div className="flex min-w-0 items-center gap-3">
