@@ -37,6 +37,7 @@ import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions"
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
+import { VolumeSection } from "@/components/volume/VolumeSection";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
