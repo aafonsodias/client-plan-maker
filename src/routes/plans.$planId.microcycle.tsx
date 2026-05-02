@@ -168,6 +168,11 @@ function MicrocycleReview() {
 
   const day1 = days.find((d) => d.day_number === 1);
   const sessionsPerWeek = blueprint?.sessions_per_week ?? 0;
+  // When the trainer comes back to a finalized plan via Edit, the gate +
+  // green approval CTA make no sense — the plan is already approved.
+  // We render every day inline and let DayCardEditable's own Edit button
+  // carry the only mutation affordance.
+  const isFinalized = planStatus === "finalized";
   const doneCount = days.filter(
     (d) => d.day_number <= sessionsPerWeek && d.status === "done",
   ).length;
@@ -201,11 +206,12 @@ function MicrocycleReview() {
           </p>
         </div>
         <div className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end">
-          {allDone && !busy && (
+          {!isFinalized && allDone && !busy && (
             <span className="inline-flex items-center gap-1 self-center text-[11px] font-medium text-emerald-500 dark:text-emerald-400 sm:self-end">
               <CheckCircle2 className="h-3 w-3" /> {t("microcycle.ready_to_approve")}
             </span>
           )}
+          {!isFinalized && (
           <button
             onClick={approve}
             disabled={!allDone || busy}
@@ -241,6 +247,16 @@ function MicrocycleReview() {
                 : t("actions.approve_microcycle")}
             </span>
           </button>
+          )}
+          {isFinalized && (
+            <Link
+              to="/plans/$planId"
+              params={{ planId }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground transition hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" /> Back to plan
+            </Link>
+          )}
         </div>
       </div>
 
