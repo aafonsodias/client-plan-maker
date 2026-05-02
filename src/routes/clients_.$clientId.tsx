@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
-import { DemoOrchestrator } from "@/components/DemoOrchestrator";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+const DemoOrchestrator = lazy(() =>
+  import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
+);
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -71,7 +73,11 @@ function ClientDetailRoute() {
   return (
     <AppShell back={{ to: "/clients", label: t("all_clients") }}>
       <ClientDetail />
-      <DemoOrchestrator clientId={clientId} enabled={demo === "play"} />
+      {demo === "play" && (
+        <Suspense fallback={null}>
+          <DemoOrchestrator clientId={clientId} enabled />
+        </Suspense>
+      )}
     </AppShell>
   );
 }
