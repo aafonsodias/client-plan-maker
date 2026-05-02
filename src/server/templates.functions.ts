@@ -91,7 +91,7 @@ export const applyTemplateToClient = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
-    const quota = await checkPlanQuota(userId);
+    const quota = await checkPlanQuota(supabaseAdmin, userId);
     if (!quota.ok) return { ok: false as const, error: "quota_exceeded" };
 
     const { data: tpl, error: tplErr } = await supabaseAdmin
