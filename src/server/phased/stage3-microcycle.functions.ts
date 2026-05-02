@@ -8,6 +8,11 @@ import {
   PhasedDaySchema,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import {
+  classifyTier,
+  tierGuidelines,
+  type TierGuidelines,
+} from "./programming-tier.server";
 
 // JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
 const SECTION_ITEM = {
@@ -87,6 +92,9 @@ type LoadedPlan = {
   trainer_id: string;
   brief: any;
   blueprint: any;
+  generation_meta?: any;
+  assessment_id?: string | null;
+  client_id?: string | null;
 };
 
 async function loadPlan(supabase: any, planId: string, userId: string): Promise<
@@ -94,7 +102,7 @@ async function loadPlan(supabase: any, planId: string, userId: string): Promise<
 > {
   const { data: plan } = await supabase
     .from("workout_plans")
-    .select("trainer_id, brief, blueprint")
+    .select("trainer_id, brief, blueprint, generation_meta, assessment_id, client_id")
     .eq("id", planId)
     .maybeSingle();
   if (!plan || (plan as any).trainer_id !== userId) {
@@ -124,7 +132,8 @@ async function runDay(
   planId: string,
   dayIndex: number,
   brief: any,
-  blueprint: any
+  blueprint: any,
+  guidelines: TierGuidelines | null
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -132,13 +141,28 @@ async function runDay(
   const equipment = (brief?.equipment_constraints ?? []).join(", ") || "no specific constraints";
   const redFlags = (brief?.red_flags ?? []).join("; ") || "none";
 
+  const tierBlock = guidelines
+    ? `
+
+PROGRAMMING TIER: ${guidelines.tier.toUpperCase()}
+- Main-block exercises (the "exercises" array): ${guidelines.exercisesPerSessionMin}-${guidelines.exercisesPerSessionMax}.
+- RPE range: ${guidelines.rpeRange}.
+${
+  guidelines.forbiddenExercises.length > 0
+    ? `- DO NOT USE these exercises (any variation): ${guidelines.forbiddenExercises.join(", ")}.
+- Use these alternatives instead:
+${guidelines.requiredAlternatives}`
+    : ""
+}`
+    : "";
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
 
 RULES:
 - Order: warmup → activation → dynamic_stretches → exercises → cooldown → (finisher if enabled) → (cardio if relevant).
-- exercises: 4–8 entries. Order: primer → main lift → secondary → accessories → optional.
+- exercises: ${guidelines ? `${guidelines.exercisesPerSessionMin}-${guidelines.exercisesPerSessionMax}` : "4–8"} entries. Order: primer → main lift → secondary → accessories → optional.
 - Main lift: the FIRST exercise with RPE ≥ 8 (or first exercise if none).
 - superset_id: same string for paired exercises (max 3 groups), null otherwise. NEVER pair the main lift in a strength phase.
 - optional: ≤ 2 marked optional, all with RPE ≤ 7.
@@ -146,7 +170,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.`;
+Call record_day exactly once.${tierBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -266,6 +290,41 @@ async function markPending(
   }
 }
 
+async function resolveTierGuidelines(
+  supabase: any,
+  loadedPlan: LoadedPlan,
+  brief: any,
+): Promise<TierGuidelines | null> {
+  const meta = loadedPlan.generation_meta as any;
+  if (meta?.tier_guidelines) return meta.tier_guidelines as TierGuidelines;
+  if (meta?.tier && brief) {
+    return tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  }
+  // Fallback: classify from assessment now.
+  let assessment: Record<string, any> | null = null;
+  if (loadedPlan.assessment_id) {
+    const { data } = await supabase
+      .from("assessments")
+      .select("*")
+      .eq("id", loadedPlan.assessment_id)
+      .maybeSingle();
+    assessment = (data as any) ?? null;
+  }
+  if (!assessment && loadedPlan.client_id) {
+    const { data } = await supabase
+      .from("assessments")
+      .select("*")
+      .eq("client_id", loadedPlan.client_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    assessment = (data as any) ?? null;
+  }
+  if (!brief) return null;
+  const tier = classifyTier(brief, assessment ?? {});
+  return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+}
+
 /** Generate a single day (used for Day 1 and per-day regen). */
 export const generateDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -281,8 +340,17 @@ export const generateDay = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
     await markPending(supabase, userId, data.planId, data.dayIndex);
-    const r = await runDay(supabase, userId, data.planId, data.dayIndex, briefP.data, bpP.data);
+    const r = await runDay(
+      supabase,
+      userId,
+      data.planId,
+      data.dayIndex,
+      briefP.data,
+      bpP.data,
+      guidelines,
+    );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
       return { ok: false as const, error: r.error };
@@ -291,7 +359,7 @@ export const generateDay = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Generate days 2..N with bounded concurrency = 3, server-side. */
+/** Generate days 2..N with bounded concurrency = 5, server-side. */
 export const generateMicrocycleDays = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -311,12 +379,13 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
 
     const queue = [...data.dayIndices];
-    const concurrency = 3;
+    const concurrency = 5;
     let okCount = 0;
     let errCount = 0;
 
@@ -331,7 +400,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             data.planId,
             idx,
             briefP.data,
-            bpP.data
+            bpP.data,
+            guidelines,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);

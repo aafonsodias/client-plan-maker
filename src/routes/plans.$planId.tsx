@@ -25,6 +25,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
+import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
@@ -493,11 +494,32 @@ function ViewMode({
   sessions: SessionRow[];
   reload: () => Promise<void>;
 }) {
+  const [layout, setLayout] = useState<"cards" | "table">("cards");
   if (!plan.weeks.length) {
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+          <button
+            onClick={() => setLayout("cards")}
+            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setLayout("table")}
+            className={`rounded-md px-3 py-1 transition ${layout === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Table
+          </button>
+        </div>
+      </div>
+      {layout === "table" ? (
+        <MesocycleTableView plan={plan} />
+      ) : (
+        <div className="space-y-12">
       {plan.weeks.map((w, wi) => (
         <div key={wi} className="space-y-10">
           {/* Week marker — minimal, lets the day headers carry the weight */}
@@ -536,6 +558,8 @@ function ViewMode({
           ))}
         </div>
       ))}
+        </div>
+      )}
     </div>
   );
 }

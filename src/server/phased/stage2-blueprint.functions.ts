@@ -10,6 +10,12 @@ import {
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
+import {
+  classifyTier,
+  tierGuidelines,
+  tierPromptBlock,
+  validateBlueprintShape,
+} from "./programming-tier.server";
 
 const BLUEPRINT_TOOL_SCHEMA = {
   type: "object",
@@ -69,7 +75,7 @@ export const generateBlueprint = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("id, trainer_id, brief, duration_weeks")
+      .select("id, trainer_id, brief, duration_weeks, assessment_id, client_id")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
@@ -82,7 +88,41 @@ export const generateBlueprint = createServerFn({ method: "POST" })
     const brief = briefParsed.data;
     const weeks = (plan as any).duration_weeks ?? brief.mesocycle_length_weeks ?? 4;
 
-    const system = `You are a senior strength coach designing a MESOCYCLE BLUEPRINT.
+    // Load the assessment so we can classify a programming tier. We try the
+    // explicit assessment_id first, then fall back to the latest assessment
+    // for the client. If we can't find one, we still proceed (tier defaults
+    // to "advanced" in classifyTier when nothing flags).
+    let assessment: Record<string, any> | null = null;
+    const aid = (plan as any).assessment_id as string | null;
+    const cid = (plan as any).client_id as string | null;
+    if (aid) {
+      const { data: a } = await supabase
+        .from("assessments")
+        .select("*")
+        .eq("id", aid)
+        .maybeSingle();
+      assessment = (a as any) ?? null;
+    }
+    if (!assessment && cid) {
+      const { data: a } = await supabase
+        .from("assessments")
+        .select("*")
+        .eq("client_id", cid)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      assessment = (a as any) ?? null;
+    }
+
+    const tier = classifyTier(brief, assessment ?? {});
+    const guidelines = tierGuidelines(
+      tier,
+      brief.sessions_per_week.recommended,
+      brief.primary_goal,
+    );
+    const tierBlock = tierPromptBlock(guidelines);
+
+    const baseSystem = `You are a senior strength coach designing a MESOCYCLE BLUEPRINT.
 
 OUTPUT ONLY THE SKELETON — no exercises, no sets/reps. The blueprint defines:
 - session_archetypes: 2–5 distinct session templates (e.g. {id:"lower_squat", focus:"Lower — Squat focus", primary_movements:["back squat","hinge"]}).
@@ -90,19 +130,24 @@ OUTPUT ONLY THE SKELETON — no exercises, no sets/reps. The blueprint defines:
 - progression_model_proposal: pick "linear" (novice/strength), "undulating" (intermediate/hypertrophy), or "block" (advanced).
 
 RULES:
-- sessions_per_week MUST equal brief.sessions_per_week.recommended (${brief.sessions_per_week.recommended}).
+- sessions_per_week MUST fall within the FREQUENCY range stated in the PROGRAMMING TIER block below (this OVERRIDES brief.sessions_per_week.recommended of ${brief.sessions_per_week.recommended} when they conflict).
 - mesocycle_length_weeks MUST equal ${weeks}.
 - archetype ids: lowercase snake_case, unique.
-- Respect red_flags and equipment_constraints when naming archetypes.
+- Respect red_flags, equipment_constraints, and the FORBIDDEN EXERCISES list below when naming archetypes/movements.
 
-Call record_blueprint with valid input.`;
+Call record_blueprint with valid input.
+
+${tierBlock}`;
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
     const model = resolveModel("FORGE_MODEL_STAGE_2", "claude-haiku-4-5-20251001");
-    const result = await callAnthropicWithSchema({
+
+    // Up to 2 attempts: first run, then a stricter retry if the shape fails
+    // the tier validator.
+    let result = await callAnthropicWithSchema({
       model,
-      system,
+      system: baseSystem,
       userMessage: user,
       toolName: "record_blueprint",
       toolDescription: "Record the mesocycle blueprint skeleton.",
@@ -110,6 +155,23 @@ Call record_blueprint with valid input.`;
       schema: BlueprintSchema,
       maxTokens: 1500,
     });
+
+    if (result.ok) {
+      const shape = validateBlueprintShape(result.data as any, guidelines);
+      if (!shape.ok) {
+        const stricter = `${baseSystem}\n\nPREVIOUS ATTEMPT FAILED: ${shape.error}\nYou MUST emit sessions_per_week strictly inside the tier range above.`;
+        result = await callAnthropicWithSchema({
+          model,
+          system: stricter,
+          userMessage: user,
+          toolName: "record_blueprint",
+          toolDescription: "Record the mesocycle blueprint skeleton.",
+          toolJsonSchema: BLUEPRINT_TOOL_SCHEMA,
+          schema: BlueprintSchema,
+          maxTokens: 1500,
+        });
+      }
+    }
 
     await logGeneration(supabase, {
       trainer_id: userId,
@@ -141,11 +203,13 @@ Call record_blueprint with valid input.`;
       .update({
         blueprint: result.data as any,
         generation_state: newState as any,
+        // Persist tier so Stage 3 + 4 don't re-classify and so the UI can show it
+        generation_meta: { tier, tier_guidelines: guidelines } as any,
         ...clearDownstream("blueprint"),
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, blueprint: result.data };
+    return { ok: true as const, blueprint: result.data, tier };
   });
 
 export const approveBlueprint = createServerFn({ method: "POST" })
