@@ -34,6 +34,32 @@ export const generateIntakeToken = createServerFn({ method: "POST" })
     return row;
   });
 
+/* ─────────────── Trainer-side: one-shot invite (creates placeholder client) ─────────────── */
+
+export const createInviteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { fullName?: string | null }) =>
+    z.object({ fullName: z.string().trim().max(120).nullable().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const expires = newExpiry();
+    const placeholder = (data.fullName ?? "").trim() || "Convite pendente";
+    const { data: row, error } = await supabaseAdmin
+      .from("clients")
+      .insert({
+        trainer_id: userId,
+        full_name: placeholder,
+        intake_token: crypto.randomUUID(),
+        intake_token_expires_at: expires,
+        intake_status: "sent",
+      } as any)
+      .select("id, full_name, phone, intake_token, intake_token_expires_at, intake_status")
+      .single();
+    if (error || !row) throw new Error("Could not create invite.");
+    return row;
+  });
+
 export const markIntakeReviewed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { clientId: string }) => z.object({ clientId: z.string().uuid() }).parse(d))
