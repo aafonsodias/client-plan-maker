@@ -12,6 +12,7 @@ import { CurrencyMenu } from "@/components/CurrencyMenu";
 import { PriceTag } from "@/components/PriceTag";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CURRENCIES } from "@/lib/currency";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -39,18 +40,19 @@ function Landing() {
             <BrandMark size="md" />
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center justify-end gap-1.5">
             <CurrencyMenu>
               <button
                 type="button"
-                className="hidden sm:inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground hover:text-accent transition"
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground transition hover:text-accent"
                 aria-label={t("common:currency.title", "Currency")}
                 title={t("common:currency.title", "Currency")}
               >
                 <span aria-hidden>{activeSymbol}</span>
               </button>
             </CurrencyMenu>
-            <LanguageSwitcher className="mr-1" />
+            <LanguageSwitcher />
+            <ThemeToggle />
             {signedIn ? (
               <Button asChild size="sm">
                 <Link to="/dashboard">{t("common:actions.go_to_dashboard")}</Link>
