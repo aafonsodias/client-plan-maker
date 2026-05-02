@@ -776,6 +776,18 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
           <p className="hidden flex-1 text-center text-[10px] uppercase tracking-widest text-muted-foreground/60 sm:block">
             ↵ {t("next")} · Esc {t("back")}
           </p>
+          {current?.canSkip && !canAdvance && (
+            <Button variant="ghost" size="sm" onClick={() => {
+              // Mark all skip-keys, then advance regardless of validity.
+              const keys = current.skipKeys ?? [];
+              if (keys.length) {
+                setForm((f) => ({ ...f, skipped: { ...f.skipped, ...Object.fromEntries(keys.map((k) => [k, true])) } }));
+              }
+              if (isLast) onSubmit(); else setStep((s) => Math.min(total - 1, s + 1));
+            }} disabled={submitting}>
+              <SkipForward className="mr-1 h-4 w-4" /> {t("skip")}
+            </Button>
+          )}
           <Button onClick={next} disabled={!canAdvance || submitting} size="sm">
             {submitting && isLast ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("submitting")}</>
