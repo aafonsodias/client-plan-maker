@@ -626,3 +626,50 @@ function ProgressionMockup() {
     </div>
   );
 }
+
+function JourneyStrip() {
+  const { t } = useTranslation("plan");
+  const stages = [
+    { key: "intake", icon: ClipboardList },
+    { key: "brief", icon: FileSignature },
+    { key: "blueprint", icon: LayoutGrid },
+    { key: "microcycle", icon: CalendarDays },
+    { key: "progressions", icon: TrendingUp },
+  ] as const;
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-10">
+      <div
+        className="absolute -left-32 top-0 h-72 w-72 rounded-full opacity-15 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <ol className="relative grid gap-4 sm:grid-cols-5">
+        {stages.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <li
+              key={s.key}
+              className="group relative rounded-2xl border border-border bg-background/40 p-4 transition hover:border-accent/40"
+              style={{ animation: `fade-in 0.5s ease-out ${i * 100}ms both` }}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
+                  {i + 1}
+                </div>
+                <Icon className="h-4 w-4 text-accent/80" />
+              </div>
+              <p className="text-sm font-medium tracking-tight">
+                {t(`landing.journey.stages.${s.key}.label`)}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {t(`landing.journey.stages.${s.key}.desc`)}
+              </p>
+              {i < stages.length - 1 && (
+                <div className="absolute right-0 top-8 hidden h-px w-4 translate-x-full bg-gradient-to-r from-accent/50 to-transparent sm:block" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
