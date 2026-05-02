@@ -290,6 +290,41 @@ async function markPending(
   }
 }
 
+async function resolveTierGuidelines(
+  supabase: any,
+  loadedPlan: LoadedPlan,
+  brief: any,
+): Promise<TierGuidelines | null> {
+  const meta = loadedPlan.generation_meta as any;
+  if (meta?.tier_guidelines) return meta.tier_guidelines as TierGuidelines;
+  if (meta?.tier && brief) {
+    return tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  }
+  // Fallback: classify from assessment now.
+  let assessment: Record<string, any> | null = null;
+  if (loadedPlan.assessment_id) {
+    const { data } = await supabase
+      .from("assessments")
+      .select("*")
+      .eq("id", loadedPlan.assessment_id)
+      .maybeSingle();
+    assessment = (data as any) ?? null;
+  }
+  if (!assessment && loadedPlan.client_id) {
+    const { data } = await supabase
+      .from("assessments")
+      .select("*")
+      .eq("client_id", loadedPlan.client_id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    assessment = (data as any) ?? null;
+  }
+  if (!brief) return null;
+  const tier = classifyTier(brief, assessment ?? {});
+  return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+}
+
 /** Generate a single day (used for Day 1 and per-day regen). */
 export const generateDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -305,8 +340,17 @@ export const generateDay = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
     await markPending(supabase, userId, data.planId, data.dayIndex);
-    const r = await runDay(supabase, userId, data.planId, data.dayIndex, briefP.data, bpP.data);
+    const r = await runDay(
+      supabase,
+      userId,
+      data.planId,
+      data.dayIndex,
+      briefP.data,
+      bpP.data,
+      guidelines,
+    );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
       return { ok: false as const, error: r.error };
@@ -315,7 +359,7 @@ export const generateDay = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Generate days 2..N with bounded concurrency = 3, server-side. */
+/** Generate days 2..N with bounded concurrency = 5, server-side. */
 export const generateMicrocycleDays = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -335,12 +379,13 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
 
     const queue = [...data.dayIndices];
-    const concurrency = 3;
+    const concurrency = 5;
     let okCount = 0;
     let errCount = 0;
 
@@ -355,7 +400,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             data.planId,
             idx,
             briefP.data,
-            bpP.data
+            bpP.data,
+            guidelines,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
