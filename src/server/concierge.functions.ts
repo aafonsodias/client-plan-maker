@@ -1,0 +1,118 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { CONCIERGE_ROUTES, buildRouteContext } from "@/lib/concierge-routes";
+
+/**
+ * Concierge AI — answers user questions about how the app works and points
+ * to concrete routes. Returns markdown text + an array of suggested links the
+ * UI renders as clickable chips. Founder-only at first.
+ */
+
+const MessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+
+export const askConcierge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        messages: z.array(MessageSchema).max(20),
+        currentPath: z.string().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    void context.userId; // founder gating happens client-side; this is best-effort
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "AI not configured." };
+
+    const validPaths = CONCIERGE_ROUTES.map((r) => r.path).join(", ");
+    const systemPrompt = `You are the in-app concierge for "Atlhan Plan", a fitness coaching tool for personal trainers.
+
+Your job:
+- Answer questions about HOW the app works.
+- Point users to the right place using one of these exact routes (no others):
+
+${buildRouteContext()}
+
+Style:
+- Reply in the same language the user wrote (PT or EN).
+- Be concise, friendly, never marketing-speak.
+- Use markdown lightly (bullets, bold). No headings.
+- When you reference a place in the app, ALWAYS call submit_answer with the path in suggestions[].
+- Valid paths only: ${validPaths}
+- The user is currently on: ${data.currentPath ?? "/"}
+
+If the question isn't about the app, politely say so and ask what they'd like to do here.`;
+
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "system", content: systemPrompt }, ...data.messages],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "submit_answer",
+              description: "Return the assistant's reply with optional navigation suggestions.",
+              parameters: {
+                type: "object",
+                properties: {
+                  reply: { type: "string", description: "The markdown answer to display to the user." },
+                  suggestions: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        path: { type: "string", description: "Route path from the allowed list." },
+                        label: { type: "string", description: "Short clickable label (1–4 words)." },
+                      },
+                      required: ["path", "label"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["reply", "suggestions"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "submit_answer" } },
+      }),
+    });
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) return { ok: false as const, error: "AI rate-limited; try again in a minute." };
+      if (aiRes.status === 402) return { ok: false as const, error: "AI credits exhausted." };
+      const text = await aiRes.text().catch(() => "");
+      console.error("[concierge] gateway", aiRes.status, text.slice(0, 300));
+      return { ok: false as const, error: `AI gateway error ${aiRes.status}` };
+    }
+
+    const json: any = await aiRes.json();
+    const argsRaw = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!argsRaw) return { ok: false as const, error: "AI did not return a structured answer." };
+
+    let parsed: { reply: string; suggestions: Array<{ path: string; label: string }> };
+    try {
+      parsed = JSON.parse(argsRaw);
+    } catch {
+      return { ok: false as const, error: "AI reply was not valid JSON." };
+    }
+
+    // Filter suggestions to allow-list only.
+    const allow = new Set(CONCIERGE_ROUTES.map((r) => r.path));
+    const suggestions = (parsed.suggestions ?? []).filter((s) => allow.has(s.path));
+
+    return { ok: true as const, reply: parsed.reply, suggestions };
+  });
