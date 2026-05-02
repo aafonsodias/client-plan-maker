@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, ArrowRight, Trash2 } from "lucide-react";
+import { Plus, ArrowRight, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { createDemoClient } from "@/server/demo-client.functions";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -75,6 +78,26 @@ function Clients() {
     if (user) void load();
   }, [user]);
 
+  const navigate = useNavigate();
+  const createDemoFn = useServerFn(createDemoClient);
+  const [creatingDemo, setCreatingDemo] = useState(false);
+
+  const createDemo = async () => {
+    if (!user || creatingDemo) return;
+    setCreatingDemo(true);
+    try {
+      const res: any = await createDemoFn();
+      if (!res?.clientId) throw new Error("Resposta inválida do servidor");
+      toast.success(t("clients.demo_added_toast", { defaultValue: "Cliente de demonstração criado" }));
+      void markOnboardingStep(user.id, "add_client");
+      void navigate({ to: "/clients/$clientId", params: { clientId: res.clientId } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível criar o cliente de demo");
+    } finally {
+      setCreatingDemo(false);
+    }
+  };
+
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -111,12 +134,27 @@ function Clients() {
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("clients.eyebrow")}</p>
           <h1 className="mt-1 text-4xl font-light tracking-tight">{t("clients.title")}</h1>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> {t("clients.add_client")}
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void createDemo()}
+            disabled={creatingDemo}
+            title="Cria um cliente fictício com avaliação completa para testar o fluxo de planeamento"
+          >
+            {creatingDemo ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> {t("clients.add_client")}
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>{t("clients.new_client")}</DialogTitle>
@@ -135,7 +173,8 @@ function Clients() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {list.length === 0 ? (
