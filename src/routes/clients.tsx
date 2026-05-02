@@ -18,6 +18,7 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
+import { DemoLabPanel } from "@/components/DemoLabPanel";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -129,6 +130,7 @@ function Clients() {
 
   return (
     <div className="space-y-8">
+      <DemoLabPanel />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("clients.eyebrow")}</p>
