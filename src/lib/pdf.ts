@@ -541,7 +541,9 @@ export async function generatePlanPdf(
   ];
 
   for (const arc of archetypes) {
-    newPage(`${arc.label.toUpperCase()} · ${arc.focus.toUpperCase()}`);
+    // Truncate the running header so a long focus phrase never bleeds onto the next page.
+    const headerFocus = (arc.focus || "Session").slice(0, 80);
+    newPage(`${arc.label.toUpperCase()} · ${headerFocus.toUpperCase()}`);
 
     // Session header — single row
     setText(doc, theme.inkMuted);
@@ -551,7 +553,12 @@ export async function generatePlanPdf(
     setText(doc, theme.ink);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
-    doc.text(fitText(arc.focus || "Session", W - M * 2 - 200), M, y + 18);
+    // Wrap the focus title across up to 2 lines instead of truncating with ellipsis.
+    const focusTitleLines = doc.splitTextToSize(arc.focus || "Session", W - M * 2 - 200).slice(0, 2);
+    for (let li = 0; li < focusTitleLines.length; li++) {
+      doc.text(focusTitleLines[li], M, y + 18 + li * 18);
+    }
+    const focusTitleHeight = (focusTitleLines.length - 1) * 18;
 
     // Right-side meta: ex count and approx sets
     const baseEx = arc.base.exercises ?? [];
@@ -564,7 +571,7 @@ export async function generatePlanPdf(
     doc.setFontSize(8);
     doc.text(`${baseEx.length} ex · ~${setsEstimate} sets`, W - M, y + 18, { align: "right" });
 
-    y += 24;
+    y += 24 + focusTitleHeight;
     setDraw(doc, theme.accent);
     doc.setLineWidth(2);
     doc.line(M, y, M + 40, y);
@@ -583,26 +590,28 @@ export async function generatePlanPdf(
       const w1Index = new Map<string, Exercise>();
       for (const ex of w1Day.exercises ?? []) w1Index.set(exKey(ex.name), ex);
 
-      // Column geometry — landscape A4 = 842pt wide, M=36 → 770pt usable
-      const colNumW = 22;
-      const colExW = 200;
-      const colCueW = 150;
+      // Column geometry — landscape A4 = 842pt wide, M=36 → 770pt usable.
+      // We replace the per-week delta columns with 4 handwriting slots S1..S4
+      // so the trainer reads and writes on the SAME row. Week-over-week
+      // progressions are still visible in-app (Mesociclo view).
+      const colNumW = 20;
+      const colExW = 170;
+      const colCueW = 130;
       const statCols = ["SETS", "REPS", "REST", "RPE", "TEMPO"];
-      const statColW = 38;
-      const deltaCols = Math.max(0, numWeeks - 1); // W2..W4
-      const deltaColW = 70;
+      const statColW = 36;
+      const slotsCount = 4;
+      const slotColW = 64; // each S1..S4 slot
 
-      // Compute total and shrink cue column if needed
       const required =
-        colNumW + colExW + colCueW + statCols.length * statColW + deltaCols * deltaColW;
+        colNumW + colExW + colCueW + statCols.length * statColW + slotsCount * slotColW;
       const slack = (W - M * 2) - required;
-      const cueW = Math.max(110, colCueW + slack);
+      const cueW = Math.max(90, colCueW + slack);
 
       const xNum = M;
       const xEx = xNum + colNumW;
       const xCue = xEx + colExW;
       const xStat0 = xCue + cueW;
-      const xDelta0 = xStat0 + statCols.length * statColW;
+      const xSlot0 = xStat0 + statCols.length * statColW;
 
       // Header
       setText(doc, theme.inkMuted);
@@ -614,8 +623,12 @@ export async function generatePlanPdf(
       for (let s = 0; s < statCols.length; s++) {
         doc.text(statCols[s], xStat0 + s * statColW + statColW / 2, y, { align: "center" });
       }
-      for (let dI = 0; dI < deltaCols; dI++) {
-        doc.text(`W${dI + 2} Δ`, xDelta0 + dI * deltaColW + deltaColW / 2, y, { align: "center" });
+      for (let sI = 0; sI < slotsCount; sI++) {
+        doc.text(
+          `S${sI + 1}  peso × reps @RPE`,
+          xSlot0 + sI * slotColW + 4,
+          y,
+        );
       }
       y += 4;
       setDraw(doc, theme.rule);
@@ -684,18 +697,12 @@ export async function generatePlanPdf(
           doc.text(fitText(val, statColW - 6), cx, rowTop + 12, { align: "center" });
         }
 
-        // Delta columns: compare W{n+2} day exercises by name to this W1 row
-        const baseForDelta = w1Index.get(exKey(ex.name)) ?? ex;
-        for (let dI = 0; dI < deltaCols; dI++) {
-          const wn = dI + 2;
-          const dDay = weekDayMap.get(wn);
-          const later = dDay?.exercises?.find((e) => exKey(e.name) === exKey(ex.name));
-          const delta = diffDelta(baseForDelta, later);
-          const cx = xDelta0 + dI * deltaColW + deltaColW / 2;
-          setText(doc, delta === "—" ? theme.inkMuted : theme.ink);
-          doc.setFont("helvetica", delta === "—" ? "normal" : "bold");
-          doc.setFontSize(8);
-          doc.text(fitText(delta, deltaColW - 6), cx, rowTop + 12, { align: "center" });
+        // Handwriting slots S1..S4 — empty lines for the trainer to fill in the gym.
+        setDraw(doc, theme.rule);
+        doc.setLineWidth(0.4);
+        for (let sI = 0; sI < slotsCount; sI++) {
+          const sx = xSlot0 + sI * slotColW;
+          doc.line(sx + 4, rowTop + 14, sx + slotColW - 6, rowTop + 14);
         }
 
         // Superset tracking
