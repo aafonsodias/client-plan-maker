@@ -167,7 +167,6 @@
       "health_steps":          { "label": "8 000 passos diários",           "specific": "Manter média de 8 000 passos/dia ao longo da semana",        "measurable": "8 000 passos/dia em ≥ 5 dias/semana" }
     }
   },
-  },
   "readiness_block": {
     "title": "Prontidão para mudança (Prochaska)",
     "hint": "Estágio de mudança comportamental — calibra a abordagem de coaching.",
