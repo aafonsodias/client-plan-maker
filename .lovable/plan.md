@@ -1,78 +1,108 @@
-## Goal
 
-Turn the demo client into a self-running showcase. When the trainer scrolls down on a `?demo=play` client, each section auto-collapses, turns golden ("approved"), the next gate auto-runs, and we keep going through Brief → Blueprint → Microcycle → Progressions → Finalize. The journey ends with a popup showing the plan as a `MesocycleTableView` maquette plus developer/client-friendly reasoning notes.
+# Phase 2 — Polish, bot realism, and guide AI
 
-## Activation
+Five focused workstreams. All are additive; no schema breakages. We keep tone consistent (status palette, emerald = ready, amber = warn) and reuse existing components.
 
-- Entry: `/clients/{id}?demo=play` (the "+ Cliente demo" button now navigates with this query) OR a new "▶ Reproduzir demo" button on demo clients (detected via `extended.demo_meta.archetype`).
-- Strictly opt-in. Without `?demo=play` everything behaves as today.
+## 1. "Assessment" drawer on the plan page
 
-## Stage flow (gate-by-gate)
+On `/plans/$planId`, add a header button **"Avaliação"** next to Share / Export PDF / Branding. It opens a side `Sheet` showing the latest assessment for the plan's client — read-only, scrollable, summarized like the maquette tab:
 
-For each gate the orchestrator does:
-1. Wait until the gate's anchor scrolls into the viewport (IntersectionObserver, threshold ~0.4).
-2. Pulse a soft amber ring on the active card (visual "this is being reviewed").
-3. Run the gate's action.
-4. On success → collapse the section, mark it golden ("approved" tone via `toneChip("success")`).
-5. Auto-scroll just enough to bring the next gate into view, then resume.
+- Persona chip if it's a demo client (reads `assessments.extended.demo_meta.archetype`)
+- Risk category + ACSM tier pill (reuse `riskCategory` logic from client page; extract to `src/lib/assessment-summary.ts`)
+- Goal, experience, days/week, session minutes, equipment chips, injuries, meds, PAR-Q+ flags
+- "Open full assessment" link → `/clients/{clientId}` anchored to the assessment section
 
-Gates, in order:
-1. **Assessment review** — auto-mark `intake_status = "reviewed"` if not already, scroll past the intake panel.
-2. **Synthesis dashboard** — no action, just dwell ~600ms so the trainer reads it, then collapse.
-3. **Generate Brief** — call `runPhasedStart()` (existing). Wait for `inlineBrief` to populate.
-4. **Approve Brief** — call the existing `approveBriefFn` path (the one wired in `StageCard.onApprove`).
-5. **Blueprint** — `runStage("blueprint", false)` then auto-approve once draft exists.
-6. **Microcycle** — same pattern via `generateMicrocycleDaysFn` then approve.
-7. **Progressions** — `proposeProgressionsFn` then approve.
-8. **Finalize** — call `finalizePlanFn` so the plan flips to "ready".
+New file: `src/components/PlanAssessmentSheet.tsx`. Wire it in the plan header (`src/routes/plans.$planId.tsx` around the Share/Export row).
 
-Each step has a 60s timeout and surfaces a toast on failure (so we learn where the flow broke — that *is* the QA signal).
+## 2. Collapse the post-finalization assessment + kill the redundant red button
 
-## Theatrical details
+Today, after the plan is `ready`, the client page still shows the full assessment form and the prominent "Generate" button. We change that:
 
-- A small floating HUD (bottom-right): "Demo · Stage 3/7 · Microcycle" + Pause / Skip buttons. Pause stops the orchestrator; Skip jumps to the next gate.
-- Sections being processed get `ring-2 ring-amber-400/40 animate-pulse`; once done they switch to `tone="success"` chip + collapsed state.
-- A sidebar "trail" shows ✓ for completed gates and ⟳ for the active one — uses the existing `toneDot` helper from `src/lib/status-tone.ts`.
-- `prefers-reduced-motion`: skip the pulse animation, keep instant collapses.
+- When a finalized plan exists for the client (any `workout_plans.status = 'ready'`), replace the entire assessment block + generate button with a single collapsed line:
+  - `Avaliação · 12 May 2026 · ACSM moderate · Goal: hypertrophy · 4×/week · [Persona: cardiac_rehab if demo]`
+  - Right-aligned: `Open plan →` and a chevron to expand the read-only assessment inline
+- Remove the "Regenerate" / red destructive button entirely from this collapsed state. (Re-generation lives only on the plan page via the existing "Regenerate with feedback" dialog.)
+- Expanded view = current form, but rendered read-only (`disabled` inputs) with an "Edit assessment" toggle that re-enables fields. No silent data loss.
 
-## Final maquette popup
+Implementation: a `<FinalizedAssessmentSummary />` component gated on `hasReadyPlan`, mounted at the top of the assessment section in `src/routes/clients_.$clientId.tsx`. The existing form stays mounted but collapsed inside a `<Collapsible>`.
 
-When `finalizePlan` resolves, open a large `Dialog` with:
-- **Header**: persona archetype + expected red flags as chips (read from `assessment.extended.demo_meta`).
-- **Plan tab** (default): `<MesocycleTableView planId={...} />` — the existing main table view, embedded.
-- **Reasoning tab**: rendered from a new server function `judgeDemoRun(planId)` that uses Lovable AI Gateway (`google/gemini-3-flash-preview`, tool-calling for structured output) to produce:
-  - `safety_violations[]` (e.g. "Prescribed back squat despite no_axial_loading flag")
-  - `progression_realism` (A–F + 1-line note)
-  - `equipment_adherence` (A–F + note)
-  - `volume_balance` (agonist/antagonist comment, picking up on the user's earlier feedback)
-  - `top_friction_points[]` (max 3, dev-facing)
-  - `client_summary` (2 sentences a client could read)
-- **Notes tab**: raw archetype JSON + the brief/blueprint/microcycle/progressions JSONs, collapsible — useful when iterating on prompts.
-- Result is persisted to `workout_plans.demo_critique` (column already exists from prior migration) so reopening the dialog doesn't re-bill the AI call.
-- "Recriar avaliação" button → calls `judgeDemoRun({ force: true })`.
+## 3. Richer demo-bot session logs (weight + RPE + 1 complaint)
 
-## Files to add / change
+Current `fabricateEntry` only writes weight + RPE-as-note. We upgrade it so each demo session looks like a real client used the log:
 
-New:
-- `src/components/DemoOrchestrator.tsx` — the controller hook + HUD. Exposes `useDemoOrchestrator({ enabled, gates })`.
-- `src/components/DemoMaquetteDialog.tsx` — the final popup with tabs.
-- `src/server/demo-judge.functions.ts` — `judgeDemoRun` server fn (Lovable AI Gateway, tool-calling schema, persists to `workout_plans.demo_critique`).
+- Always populate `actual.weight` (kg), `actual.reps`, `actual.rpe` (separate field, not just notes)
+- Distance/time fields filled when the planned exercise is `cardio | conditioning | carry`
+- 1 in 3 sessions includes a `client_feedback` entry with one of:
+  - **Question** — "Posso trocar X por Y? Doi-me o ombro nesta semana."
+  - **Complaint** — "Última série não consegui acabar, RPE 10."
+  - **Stress signal** — "Dormi mal, sessão pesada."
+- These go into a new JSONB column `workout_sessions.client_feedback` (nullable) so we can render them in the trainer inbox later.
 
-Edit:
-- `src/routes/clients_.$clientId.tsx` — add data attributes (`data-demo-gate="brief"` etc.) on each section/StageCard, mount `<DemoOrchestrator>` when `search.demo === "play"`, and open `<DemoMaquetteDialog>` once finalize resolves.
-- `src/routes/clients.tsx` — make the "+ Cliente demo" navigation append `?demo=play`.
-- `src/i18n/locales/{en,pt}/plan.json` — strings for HUD, dialog tabs, judge labels.
+Migration: `ALTER TABLE workout_sessions ADD COLUMN client_feedback JSONB NULL;`
 
-No DB migration needed (`demo_critique` column already in place).
+Files touched:
+- `src/server/demo-sessions.functions.ts` — expand `fabricateEntry`, add `maybeFeedback(persona)` helper. Persona pulled from latest assessment's `extended.demo_meta.archetype` so a `cardiac_rehab` bot complains about chest tightness while a `powerlifter` complains about elbow tendinopathy.
+- `src/server/demo-oneshot.functions.ts` — also call the upgraded seeder.
+- New `src/lib/demo-personas.ts` — shared archetype → feedback templates.
 
-## Out of scope (for this pass)
+Trainer inbox surface: tiny badge on the client row (`clients.tsx`) when any of their sessions has `client_feedback IS NOT NULL`. Click → `/clients/{id}` opens a "Mensagens do cliente" panel listing them. Minimal — just enough to *force us to build a reply UI later*.
 
-- Fabricating historical logbook data (Phase D from the earlier plan).
-- Running the orchestrator on non-demo clients.
-- Persisting orchestrator progress across reloads — refresh restarts from the current gate state.
+## 4. "Live log → table" collapsed view
 
-## Acceptance
+When a session is logged (status = `done`), the giant log card in `/plans/$planId` collapses to a single row mirroring the table view:
 
-- Creating a demo client lands on `/clients/{id}?demo=play` and, on first scroll, the assessment collapses → brief generates → brief approves → blueprint → microcycle → progressions → finalize, all without manual clicks.
-- A failure at any stage stops the run, shows the gate name in the HUD, and surfaces the error toast (so we can iterate).
-- Final popup shows the mesocycle table and the AI judge's grade card, including at least one concrete note tied to the persona's `expected_red_flags`.
+```
+✓ W2 D1  Full-Body A   8 ex · 24 sets · avg RPE 7.8   12 May  ⌄
+```
+
+Click expands to the current detailed view. New component `<LoggedSessionCollapsed />` rendered inside the existing log list. Only `done` sessions collapse; `partial`/`missed` stay expanded so they catch the eye.
+
+## 5. In-app guide AI ("Concierge")
+
+A floating `?` button (bottom-left, mirror of demo HUD) opens a small chat dock. Goals:
+
+- Answer free-text questions about the app
+- Point to concrete routes — replies can include `<go to="/plans/new">` tags that render as clickable chips
+- Aware of current route (`useLocation`) so "where do I generate a plan?" gives a deep link
+
+Implementation:
+- New edge function `supabase/functions/concierge/index.ts` calling Lovable AI Gateway (`google/gemini-3-flash-preview`)
+- System prompt embeds a compact route map: every `/route` + 1-line purpose, generated from a hand-curated `src/lib/concierge-routes.ts` (we don't auto-scan)
+- Tool-calling: `navigate(path)`, `highlight(selector)` so it can return structured pointers
+- Client component `src/components/ConciergeDock.tsx` mounted in `AppShell`. Uses `react-markdown` for replies; honours the markdown rule from chatbot best practices.
+- Conversation memory kept in `localStorage` per session (no DB table yet — defer until users ask)
+
+Founder-only at first (`aafonsodias@gmail.com`) so we can iterate without misleading early users.
+
+## Technical notes
+
+- All new components follow the **status palette** (emerald = done, amber = warn, red = blocked), via `toneChip`/`toneDot` helpers in `src/lib/status-tone.ts`.
+- Markdown rendering: install `react-markdown` if not present (`bun add react-markdown`).
+- DB migration is non-destructive: add nullable `client_feedback JSONB` to `workout_sessions`. No RLS change required (existing policies cover it).
+- Concierge edge function added with `verify_jwt = false` since it only needs the user's question + route, no PII.
+
+## Out of scope (next phase)
+
+- Cron-driven simulation tick (still on-demand via Demo Lab button)
+- Real friend graph in Forge
+- Concierge for non-founder users
+
+---
+
+## Parallel task prompt for Opus 4.7
+
+Paste this to your other agent — it's tedious cleanup unrelated to the above:
+
+> **Task: i18n audit and extraction for `src/routes/clients_.$clientId.tsx`**
+>
+> The file is 3343 lines and mixes hard-coded Portuguese strings with `t()` calls from `react-i18next`. Goals:
+> 1. Find every JSX text node and `toast.*` / `aria-label` / `title` string that is **not** wrapped in `t()`.
+> 2. For each, propose a stable key under the `assessment` namespace (existing file: `src/i18n/locales/{en,pt}/assessment.json`) and produce a unified diff that:
+>    - replaces the string with `t("…")`
+>    - adds the EN + PT entries to both JSON files
+> 3. Skip strings that are clearly developer-only (console.error, dev panel labels gated on `aafonsodias@gmail.com`).
+> 4. Output as a single PR-style patch with a short summary table: `key | EN | PT | line`.
+>
+> Constraints: do not change any logic, only string extraction. Do not touch `src/components/DemoLabPanel.tsx` or anything under `src/server/`. Preserve existing `t()` calls verbatim.
+
+When Opus returns the patch, I'll apply it on top of the work above.
