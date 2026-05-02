@@ -75,3 +75,45 @@ function stageFallback(stage: string): string {
       return stage;
   }
 }
+
+/**
+ * Returns true when the trainer has logged at least
+ * `duration_weeks × sessions_per_week` sessions for the plan — i.e. every
+ * prescribed slot has a record. Used to surface the "Bloco concluído na
+ * totalidade" CTA so the next block becomes the obvious next move.
+ */
+export function isPlanFullyLogged(
+  plan: { duration_weeks?: number | null; brief?: any | null } | null | undefined,
+  sessionsCount: number,
+): boolean {
+  if (!plan) return false;
+  const weeks = plan.duration_weeks ?? 0;
+  const perWeek =
+    (plan as any)?.brief?.sessions_per_week?.recommended ??
+    (plan as any)?.brief?.sessions_per_week ??
+    0;
+  const target = Number(weeks) * Number(perWeek);
+  if (!Number.isFinite(target) || target <= 0) return false;
+  return sessionsCount >= target;
+}
+
+/**
+ * Client-safe leak detector. Mirror of the server-side helper in
+ * `phased/summary.server.ts` — duplicated intentionally so the route file
+ * (client bundle) can decide whether to surface the "Re-gerar resumo"
+ * button without importing a *.server.ts module.
+ */
+const SUMMARY_LEAK_MARKERS = [
+  "sem análises por secção",
+  "notes_for_next_stage",
+  "stage hint",
+  "internal note",
+  "tbd",
+  "lorem ipsum",
+];
+
+export function summaryLooksLeaked(summary: string | null | undefined): boolean {
+  const s = (summary ?? "").toString().trim().toLowerCase();
+  if (!s) return true;
+  return SUMMARY_LEAK_MARKERS.some((m) => s.includes(m));
+}

@@ -10,6 +10,7 @@ import {
 import { criticDay, shouldRepair } from "./plan-critic.server";
 import { repairDay } from "./plan-repair.server";
 import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
+import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
@@ -1492,4 +1493,47 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       validationWarnings: programmaticWarnings,
       validation_meta,
     };
+  });
+
+/**
+ * regeneratePlanSummary — one-shot, deterministic rewrite of a plan's
+ * `summary` from the brief. Used to fix legacy plans whose summary leaked
+ * AI meta-commentary (e.g. "Sem análises por secção fornecidas…") because
+ * they were generated before the deterministic summary builder landed.
+ *
+ * No AI call. Pure function of `brief` + `duration_weeks`.
+ */
+export const regeneratePlanSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ planId: z.string().uuid(), force: z.boolean().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: plan, error } = await supabase
+      .from("workout_plans")
+      .select("id, trainer_id, brief, duration_weeks, summary")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (error || !plan) return { ok: false as const, error: error?.message ?? "Not found" };
+    if ((plan as any).trainer_id !== userId) return { ok: false as const, error: "forbidden" };
+
+    const brief = (plan as any).brief ?? {};
+    if (!brief || Object.keys(brief).length === 0) {
+      return { ok: false as const, error: "Sem brief — não dá para gerar resumo determinístico." };
+    }
+    const weeks = (plan as any).duration_weeks ?? 4;
+    const newSummary = buildDeterministicSummary(brief, weeks);
+
+    if (!data.force && !summaryLooksLeaked((plan as any).summary)) {
+      // Existing summary looks clean — refuse silently to avoid clobbering.
+      return { ok: true as const, summary: (plan as any).summary, changed: false as const };
+    }
+
+    const { error: updErr } = await supabase
+      .from("workout_plans")
+      .update({ summary: newSummary })
+      .eq("id", data.planId);
+    if (updErr) return { ok: false as const, error: updErr.message };
+    return { ok: true as const, summary: newSummary, changed: true as const };
   });

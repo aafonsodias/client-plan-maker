@@ -13,6 +13,7 @@ import {
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
   ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3, Loader2,
+  TrendingUp,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -22,7 +23,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft } from "@/server/plan.functions";
+import { generatePlanDraft, regeneratePlanSummary } from "@/server/plan.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
@@ -34,6 +35,8 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
+import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
+import { isPlanFullyLogged, summaryLooksLeaked } from "@/lib/plan-status";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -55,7 +58,7 @@ function PlanRoute() {
   );
 }
 
-type Mode = "view" | "edit" | "log" | "results";
+type Mode = "view" | "edit" | "log" | "results" | "progress";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
@@ -79,6 +82,8 @@ function PlanEditor() {
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
   const markFinishedFn = useServerFn(markPlanFinished);
+  const regenSummaryFn = useServerFn(regeneratePlanSummary);
+  const [regenSummaryBusy, setRegenSummaryBusy] = useState(false);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
@@ -370,6 +375,36 @@ function PlanEditor() {
             <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
           </Button>
           <ImportLogDialog planId={planId} plan={data} />
+          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              disabled={regenSummaryBusy}
+              title="Re-escrever o resumo a partir do brief (determinístico, sem IA)"
+              onClick={async () => {
+                setRegenSummaryBusy(true);
+                try {
+                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
+                  if (r?.ok && r?.summary) {
+                    setPlan({ ...plan, summary: r.summary });
+                    toast.success("Resumo regenerado a partir do brief.");
+                  } else {
+                    toast.error(r?.error ?? "Falhou regenerar resumo.");
+                  }
+                } finally {
+                  setRegenSummaryBusy(false);
+                }
+              }}
+            >
+              {regenSummaryBusy ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Re-gerar resumo
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -485,19 +520,29 @@ function PlanEditor() {
           em planos de demonstração (mantém a IA como atalho honesto). */}
       {plan?.generation_status === "complete"
         && plan?.status !== "archived" && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+        (() => {
+          const fullyLogged = isPlanFullyLogged(plan, sessions.length);
+          const wrapClass = fullyLogged
+            ? "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs"
+            : "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs";
+          return (
+        <div className={wrapClass}>
           <div className="flex-1">
-            <p className="font-semibold text-foreground">
+            <p className="font-semibold text-foreground inline-flex items-center gap-1.5">
+              {fullyLogged && <Sparkles className="h-3.5 w-3.5 text-amber-400" />}
               Bloco {(plan as any).block_number ?? 1}
-              {(plan as any).completion_state === "finished_logging"
+              {fullyLogged
+                ? " concluído na totalidade — todas as sessões registadas."
+                : (plan as any).completion_state === "finished_logging"
                 ? " · concluído pelo treinador"
                 : sessions.length > 0
                 ? ` · ${sessions.length} sessão(ões) registada(s)`
-                : " · pronto para fechar"}.
+                : " · pronto para fechar"}
             </p>
             <p className="mt-0.5 text-muted-foreground">
-              Arquive este bloco e desenhe o Bloco {((plan as any).block_number ?? 1) + 1}.
-              Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.
+              {fullyLogged
+                ? `Pronto para fechar e desenhar o Bloco ${((plan as any).block_number ?? 1) + 1}? A nota de transição traz adesão e variação de RPE pré-preenchidas — você assina.`
+                : `Arquive este bloco e desenhe o Bloco ${((plan as any).block_number ?? 1) + 1}. Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.`}
             </p>
           </div>
           {(plan as any).completion_state !== "finished_logging" && (
@@ -523,13 +568,18 @@ function PlanEditor() {
             currentBlockNumber={(plan as any).block_number ?? 1}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
             trigger={
-              <Button size="sm">
+              <Button
+                size="sm"
+                className={fullyLogged ? "bg-amber-500 text-black hover:bg-amber-400" : undefined}
+              >
                 <PlayCircle className="mr-2 h-4 w-4" />
                 Iniciar Bloco {((plan as any).block_number ?? 1) + 1}
               </Button>
             }
           />
         </div>
+          );
+        })()
       )}
 
       {/* AI Validation Report — always visible to the trainer */}
@@ -591,6 +641,13 @@ function PlanEditor() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setMode("progress")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "progress" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+          title="Gráfico de progressão por exercício a partir do logbook"
+        >
+          <TrendingUp className="h-3.5 w-3.5" /> Progresso
+        </button>
         </div>
         {plan?.status !== "finalized" && client && (
           <RegenerateWithFeedbackDialog
@@ -651,6 +708,11 @@ function PlanEditor() {
         )
       ) : mode === "results" ? (
         <ResultsPanel plan={data} sessions={sessions as any} />
+      ) : mode === "progress" ? (
+        <ExerciseTrendChart
+          sessions={sessions as any}
+          blockNumber={(plan as any).block_number ?? 1}
+        />
       ) : (
         <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
