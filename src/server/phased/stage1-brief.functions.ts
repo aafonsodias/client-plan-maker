@@ -73,6 +73,10 @@ const BRIEF_TOOL_SCHEMA = {
     equipment_constraints: { type: "array", items: { type: "string" } },
     notes_for_next_stage: { type: "string" },
     current_capacity_vs_pb: { type: ["integer", "null"], minimum: 1, maximum: 10 },
+    intensity_appetite: {
+      type: "string",
+      enum: ["conservador", "padrao", "agressivo"],
+    },
   },
 };
 

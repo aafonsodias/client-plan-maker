@@ -81,6 +81,12 @@ export const BriefSchema = z.object({
     .max(10)
     .nullable()
     .default(null),
+  // Coach-tunable progression aggression. Drives the RPE ramp + load deltas
+  // in Stage 4. Defaults to "padrao" (standard) so existing plans behave the
+  // same; "agressivo" pushes harder, "conservador" backs off.
+  intensity_appetite: z
+    .enum(["conservador", "padrao", "agressivo"])
+    .default("padrao"),
 });
 export type Brief = z.infer<typeof BriefSchema>;
 

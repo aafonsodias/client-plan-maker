@@ -181,16 +181,46 @@ export const bulkFillRemainingWeeks = createServerFn({ method: "POST" })
     const existingSummary = ((plan as any).summary ?? "").toString().trim();
     if (!existingSummary) {
       const brief = (plan as any).brief ?? {};
-      const candidate =
-        (brief?.summary as string | undefined) ||
-        (brief?.rationale as string | undefined) ||
-        (brief?.notes_for_next_stage as string | undefined) ||
-        "";
-      const trimmed = candidate.toString().trim();
-      if (trimmed) {
-        // Keep ~2 sentences max for the card.
-        const sentences = trimmed.match(/[^.!?]+[.!?]+/g);
-        update.summary = sentences ? sentences.slice(0, 2).join(" ").trim() : trimmed.slice(0, 360);
+      // Deterministic programme-level summary derived from brief facts.
+      // We avoid `notes_for_next_stage` because it often contains internal
+      // meta-commentary ("Sem análises por secção fornecidas…") that leaks
+      // into the user-facing card.
+      const goalLabel: Record<string, string> = {
+        hypertrophy: "hipertrofia",
+        strength: "força",
+        conditioning: "condição física",
+        mixed: "misto força + condição",
+        fat_loss: "perda de gordura",
+        general: "preparação geral",
+      };
+      const ageLabel: Record<string, string> = {
+        beginner: "iniciante",
+        intermediate: "intermédio",
+        advanced: "avançado",
+      };
+      const appetiteLabel: Record<string, string> = {
+        conservador: "RPE 5→6→6.5 (deload W4)",
+        padrao: "RPE 6→7→7.5 (deload W4)",
+        agressivo: "RPE 7→8→8.5 (deload W4)",
+      };
+      const goal = goalLabel[brief?.primary_goal] ?? "preparação geral";
+      const age = ageLabel[brief?.training_age_band] ?? "";
+      const sessions = brief?.sessions_per_week?.recommended ?? 3;
+      const appetite = brief?.intensity_appetite ?? "padrao";
+      const wave = appetiteLabel[appetite] ?? appetiteLabel.padrao;
+      const flagBit =
+        Array.isArray(brief?.red_flags) && brief.red_flags.length > 0
+          ? ` Acomodações activas: ${brief.red_flags.slice(0, 2).join("; ")}.`
+          : "";
+      update.summary = `Mesociclo de ${weeks} semanas, ${sessions}× por semana, focado em ${goal}${age ? ` (perfil ${age})` : ""}. Onda de intensidade ${wave}; semana 4 reduz volume/RPE para recuperar.${flagBit}`.trim();
+    }
+    // Surface the appetite on generation_meta so the plan card / future Auditor
+    // can show it without re-reading the brief.
+    {
+      const brief = (plan as any).brief ?? {};
+      const meta = ((plan as any).generation_meta ?? {}) as Record<string, unknown>;
+      if (brief?.intensity_appetite) {
+        update.generation_meta = { ...meta, intensity_appetite: brief.intensity_appetite };
       }
     }
     await supabase.from("workout_plans").update(update as any).eq("id", data.planId);

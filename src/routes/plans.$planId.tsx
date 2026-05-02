@@ -33,6 +33,7 @@ import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
+import { ImportLogDialog } from "@/components/ImportLogDialog";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -368,6 +369,7 @@ function PlanEditor() {
           >
             <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
           </Button>
+          <ImportLogDialog planId={planId} plan={data} />
           <Button
             variant="ghost"
             size="sm"

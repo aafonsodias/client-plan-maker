@@ -221,6 +221,28 @@ export default function BriefEditor({
             className="be-input"
           />
         </Field>
+        <Field label="Apetite de intensidade">
+          <select
+            value={brief.intensity_appetite ?? "padrao"}
+            onChange={(e) =>
+              set(
+                "intensity_appetite",
+                e.target.value as Brief["intensity_appetite"],
+              )
+            }
+            className="be-input"
+          >
+            <option value="conservador">
+              Conservador — RPE 5→6→6.5, saltos pequenos de carga
+            </option>
+            <option value="padrao">
+              Padrão — RPE 6→7→7.5, +2.5–5%/sem em compostos
+            </option>
+            <option value="agressivo">
+              Agressivo — RPE 7→8→8.5, +5%/sem em compostos
+            </option>
+          </select>
+        </Field>
       </Card>
 
       {programmingVariables && onProgrammingChange && (
