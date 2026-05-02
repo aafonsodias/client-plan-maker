@@ -19,6 +19,7 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
+import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 const DemoLabPanel = lazy(() =>
   import("@/components/DemoLabPanel").then((m) => ({ default: m.DemoLabPanel }))
 );
@@ -47,7 +48,9 @@ function Clients() {
   const filter = search.filter ?? "all";
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", date_of_birth: "" });
+  const [createdClient, setCreatedClient] = useState<{ id: string; full_name: string; phone: string | null } | null>(null);
+  const [creating, setCreating] = useState(false);
   const phases = useClientPhases(useMemo(() => list.map((c) => c.id), [list]));
 
   const matchesFilter = (kind?: PhaseKind): boolean => {
@@ -104,24 +107,33 @@ function Clients() {
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    const payload = {
-      trainer_id: user.id,
-      full_name: form.full_name,
-      email: form.email || null,
-      age: form.age ? Number(form.age) : null,
-      sex: form.sex || null,
-      height_cm: form.height_cm ? Number(form.height_cm) : null,
-      weight_kg: form.weight_kg ? Number(form.weight_kg) : null,
-      notes: form.notes || null,
-    };
-    const { error } = await supabase.from("clients").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success(t("clients.added_toast"));
-    void markOnboardingStep(user.id, "add_client");
+    if (!user || creating) return;
+    setCreating(true);
+    try {
+      const payload: any = {
+        trainer_id: user.id,
+        full_name: form.full_name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        date_of_birth: form.date_of_birth || null,
+      };
+      const { data: row, error } = await supabase.from("clients").insert(payload).select("id, full_name, phone").single();
+      if (error || !row) return toast.error(error?.message ?? "Não foi possível criar o cliente.");
+      toast.success(t("clients.added_toast"));
+      void markOnboardingStep(user.id, "add_client");
+      setCreatedClient({ id: row.id, full_name: row.full_name, phone: row.phone ?? null });
+      void load();
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const closeAndReset = () => {
     setOpen(false);
-    setForm({ full_name: "", email: "", age: "", sex: "", height_cm: "", weight_kg: "", notes: "" });
-    void load();
+    setTimeout(() => {
+      setForm({ full_name: "", email: "", phone: "", date_of_birth: "" });
+      setCreatedClient(null);
+    }, 200);
   };
 
   const remove = async (id: string) => {
@@ -156,29 +168,57 @@ function Clients() {
             )}
             {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
           </Button>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeAndReset())}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> {t("clients.add_client")}
               </Button>
             </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t("clients.new_client")}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={create} className="space-y-3">
-              <Field label={t("clients.field_full_name")} required value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
-              <Field label={t("clients.field_email")} type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-              <div className="grid grid-cols-3 gap-3">
-                <Field label={t("clients.field_age")} type="number" value={form.age} onChange={(v) => setForm({ ...form, age: v })} />
-                <Field label={t("clients.field_sex")} value={form.sex} onChange={(v) => setForm({ ...form, sex: v })} />
-                <Field label={t("clients.field_height")} type="number" value={form.height_cm} onChange={(v) => setForm({ ...form, height_cm: v })} />
-              </div>
-              <Field label={t("clients.field_weight")} type="number" value={form.weight_kg} onChange={(v) => setForm({ ...form, weight_kg: v })} />
-              <DialogFooter>
-                <Button type="submit">{t("clients.save_client")}</Button>
-              </DialogFooter>
-            </form>
+          <DialogContent className="sm:max-w-lg">
+            {!createdClient ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Novo cliente</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  Só preciso do nome e contacto. O resto da avaliação (idade, altura, peso, objetivos, lesões…) o cliente preenche pelo link que enviares a seguir.
+                </p>
+                <form onSubmit={create} className="space-y-3">
+                  <Field label="Nome completo" required value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+                  <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+                  <Field label="Telemóvel (opcional, para enviar por WhatsApp)" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                  <Field label="Data de nascimento (opcional — para te lembrar de aniversários)" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
+                  <DialogFooter>
+                    <Button type="submit" disabled={creating || !form.full_name.trim()}>
+                      {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Criar e gerar link
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Envia o link a {createdClient.full_name.split(" ")[0]}</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">
+                  O link abre uma avaliação simples no telemóvel — ele preenche, tu reveês.
+                </p>
+                <IntakeLinkPanel
+                  clientId={createdClient.id}
+                  clientFirstName={createdClient.full_name.split(" ")[0]}
+                  clientPhone={createdClient.phone}
+                  intake={{ intake_token: null, intake_token_expires_at: null, intake_status: "not_sent", intake_submitted_at: null }}
+                  onChange={() => {}}
+                />
+                <DialogFooter className="mt-2">
+                  <Button variant="outline" asChild>
+                    <Link to="/clients/$clientId" params={{ clientId: createdClient.id }}>Abrir cliente</Link>
+                  </Button>
+                  <Button onClick={closeAndReset}>Concluído</Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
           </Dialog>
         </div>
