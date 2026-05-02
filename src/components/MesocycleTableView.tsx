@@ -275,18 +275,25 @@ export function MesocycleTableView({
           </colgroup>
           <thead className="bg-muted/50 text-[10px] uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="bg-muted/50 px-3 py-2 text-left font-semibold">Exercise</th>
-              {weekNumbers.map((wn) => (
-                <th
-                  key={wn}
-                  className={`px-2 py-2 text-left font-semibold ${
-                    isDeloadWeek(wn) ? "text-amber-300/80" : ""
-                  }`}
-                >
-                  Week {wn}
-                  {isDeloadWeek(wn) ? " · deload" : ""}
-                </th>
-              ))}
+              <th className="bg-muted/50 px-3 py-2 text-left font-semibold align-top">Exercise</th>
+              {weekNumbers.map((wn) => {
+                const t = weekTotals.find((x) => x.wn === wn);
+                return (
+                  <th
+                    key={wn}
+                    className={`px-2 py-2 text-left font-semibold align-top ${
+                      isDeloadWeek(wn) ? "text-amber-300/80" : ""
+                    }`}
+                  >
+                    <div>Week {wn}{isDeloadWeek(wn) ? " · deload" : ""}</div>
+                    {t?.rpe != null && (
+                      <div className="mt-0.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground/70">
+                        RPE alvo {t.rpe.toFixed(1)}
+                      </div>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
