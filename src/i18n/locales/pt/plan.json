@@ -217,15 +217,15 @@
     "pricing": {
       "eyebrow": "Preço",
       "title": "Honesto e sem surpresas.",
-      "beta_badge": "Experimenta",
-      "beta_title": "Experimenta — sem cartão",
+      "beta_badge": "Grátis",
+      "beta_title": "Grátis para começar",
       "beta_price": "0€",
-      "beta_period": "durante o teu primeiro plano",
+      "beta_period": "para o teu primeiro plano",
       "beta_features": [
-        "Faz a avaliação completa, slide a slide",
-        "Recebe o teu primeiro plano em PDF com a tua marca",
-        "Uma semana de logbook para sentires o ciclo de feedback",
-        "Continuas a usar enquanto fizer sentido para ti"
+        "1 cliente · 1 plano completo",
+        "PDF com a tua marca",
+        "Sem cartão, sem prazo",
+        "Continuas a usar enquanto fizer sentido"
       ],
       "beta_cta": "Começar agora",
       "pro_badge": "Em breve",
