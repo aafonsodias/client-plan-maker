@@ -260,7 +260,7 @@ function MicrocycleReview() {
         </div>
       </div>
 
-      {sessionsPerWeek > 0 && (inFlight || !allDone) && (
+      {!isFinalized && sessionsPerWeek > 0 && (inFlight || !allDone) && (
         <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
           <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-2">
