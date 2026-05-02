@@ -70,7 +70,7 @@ export function SessionDayView({
 }) {
   const dayNumber = String(index + 1).padStart(2, "0");
   const supersetMap = useMemo(() => buildSupersetMap(day.exercises), [day.exercises]);
-  const [contextOpen, setContextOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(true);
 
   const hasWarmup = (day.warmup?.length ?? 0) > 0;
   const hasActivation = (day.activation?.length ?? 0) > 0;
@@ -112,22 +112,18 @@ export function SessionDayView({
         {/* Context note (sleep / stress rationale) */}
         {day.rationale && (
           <div className="mt-3">
-            <blockquote
-              className={`relative border-l-2 border-accent bg-secondary/40 pl-3 pr-3 py-2 text-xs italic text-muted-foreground ${
-                contextOpen ? "" : "line-clamp-2"
-              }`}
+            <button
+              type="button"
+              onClick={() => setContextOpen((o) => !o)}
+              className="mb-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
             >
-              {day.rationale}
-            </blockquote>
-            {day.rationale.length > 140 && (
-              <button
-                type="button"
-                onClick={() => setContextOpen((o) => !o)}
-                className="mt-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
-              >
-                {contextOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                {contextOpen ? "Show less" : "Show more"}
-              </button>
+              {contextOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {contextOpen ? "Esconder contexto" : "Mostrar contexto do dia"}
+            </button>
+            {contextOpen && (
+              <blockquote className="relative border-l-2 border-accent bg-secondary/40 pl-3 pr-3 py-2 text-xs italic text-muted-foreground">
+                {day.rationale}
+              </blockquote>
             )}
           </div>
         )}
