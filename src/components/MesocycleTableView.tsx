@@ -203,21 +203,10 @@ export function MesocycleTableView({
     <div className="space-y-4 print:space-y-3">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-          {weekTotals.map((t) => (
-            <span
-              key={t.wn}
-              className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2 py-1 ${
-                isDeloadWeek(t.wn) ? "text-amber-300" : ""
-              }`}
-            >
-              <span className="font-bold">W{t.wn}</span>
-              <span>~{t.reps} reps</span>
-              {t.rpe != null && <span>· RPE {t.rpe.toFixed(1)}</span>}
-              {isDeloadWeek(t.wn) && <span>· deload</span>}
-            </span>
-          ))}
-        </div>
+        {/* Week summary chips removed — week columns already show RPE and the
+            redundant pills added noise. Volume totals will return as
+            "planned vs logged" comparisons in the Results panel. */}
+        <div />
         <div className="flex items-center gap-1">
           <button
             type="button"
