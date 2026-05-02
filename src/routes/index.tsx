@@ -121,6 +121,16 @@ function Landing() {
         <HowItWorksAnimation />
       </section>
 
+      {/* The journey — mirrors the 5 stages of the in-app generator */}
+      <section id="journey" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.journey.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.journey.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.journey.subtitle")}</p>
+        </div>
+        <JourneyStrip />
+      </section>
+
       {/* Credibility — built on the science */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-12 max-w-2xl">
