@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { FORM_CRITERIA, CAPACITY_FIELDS, PATTERN_IDS, type PatternId } from "@/lib/movement-criteria";
+import { FORM_CRITERIA, CAPACITY_FIELDS, PATTERN_IDS, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
+import { pickDemoAvatar } from "@/lib/demo-avatars";
 
 /**
  * Creates a fully-populated demo client + assessment so trainers can preview
