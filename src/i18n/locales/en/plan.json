@@ -266,6 +266,8 @@
     "approve_brief": "Approve brief",
     "approve_blueprint": "Approve → Day 1",
     "approve_microcycle": "Approve microcycle",
+    "approve_microcycle_disabled": "Finish all days to approve",
+    "approve_microcycle_busy": "Approving…",
     "ask_ai": "Ask AI for changes",
     "back_blueprint": "Blueprint",
     "back_brief": "Brief",
