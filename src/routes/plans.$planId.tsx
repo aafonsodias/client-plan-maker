@@ -390,6 +390,17 @@ function PlanEditor() {
         >
           <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
+        <button
+          onClick={() => setMode("results")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "results" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <BarChart3 className="h-3.5 w-3.5" /> Resultados
+          {sessions.length > 0 && (
+            <span className="rounded-full bg-emerald-500/20 px-1.5 py-px text-[9px] font-semibold text-emerald-300">
+              {sessions.length}
+            </span>
+          )}
+        </button>
         </div>
         {plan?.status !== "finalized" && client && (
           <RegenerateWithFeedbackDialog
