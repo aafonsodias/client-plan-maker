@@ -1,3 +1,4 @@
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   MUSCLE_GROUP_LABELS_PT,
   MUSCLE_GROUP_ORDER,
@@ -24,18 +25,17 @@ const STATUS_LABEL: Record<VolumeStatus, string> = {
 };
 
 function messageFor(status: VolumeStatus, sets: number, lm: ReturnType<typeof landmarkOf>): string {
-  const sweetMid = Math.round((lm.mev + lm.mav) / 2);
   switch (status) {
     case "under": {
       const gap = Math.max(1, lm.mev - Math.floor(sets));
-      return `Adiciona ~${gap} série${gap === 1 ? "" : "s"} para chegar ao MEV (${lm.mev}).`;
+      return `Faltam ~${gap} série${gap === 1 ? "" : "s"} (alvo ${lm.mev}).`;
     }
     case "optimal":
-      return `Dentro do alvo (${lm.mev}–${lm.mav}). Mantém.`;
+      return `Dentro do alvo (${lm.mev}–${lm.mav}).`;
     case "over":
-      return `Acima do MAV (${lm.mav}). Vigia recuperação; considera voltar a ~${sweetMid}.`;
+      return `+${Math.ceil(sets - lm.mav)} acima do alvo. Vigia recuperação.`;
     case "danger":
-      return `Excede MRV (${lm.mrv}). Risco de overreaching — corta ${Math.ceil(sets - lm.mav)} série${Math.ceil(sets - lm.mav) === 1 ? "" : "s"}.`;
+      return `Excede MRV (${lm.mrv}). Corta ~${Math.ceil(sets - lm.mav)}.`;
   }
 }
 
@@ -56,13 +56,13 @@ export function VolumeStatusTable({ volume }: Props) {
   });
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="overflow-hidden rounded-xl border border-border bg-card">
       <table className="w-full text-left text-sm">
         <thead className="bg-secondary/40 text-[11px] uppercase tracking-widest text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Grupo</th>
             <th className="px-3 py-2 font-medium">Séries</th>
-            <th className="px-3 py-2 font-medium">MEV / MAV / MRV</th>
             <th className="px-3 py-2 font-medium">Estado</th>
             <th className="hidden px-3 py-2 font-medium md:table-cell">Sugestão</th>
           </tr>
@@ -79,13 +79,17 @@ export function VolumeStatusTable({ volume }: Props) {
               <td className="px-3 py-2.5 tabular-nums">
                 {sets % 1 === 0 ? sets : sets.toFixed(1)}
               </td>
-              <td className="px-3 py-2.5 text-muted-foreground tabular-nums">
-                {lm.mev} · {lm.mav} · {lm.mrv}
-              </td>
               <td className="px-3 py-2.5">
-                <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneChip(STATUS_TONE[status])}`}>
-                  {STATUS_LABEL[status]}
-                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className={`inline-flex cursor-help rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneChip(STATUS_TONE[status])}`}>
+                      {STATUS_LABEL[status]}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    MEV {lm.mev} · MAV {lm.mav} · MRV {lm.mrv}
+                  </TooltipContent>
+                </Tooltip>
               </td>
               <td className="hidden px-3 py-2.5 text-xs text-muted-foreground md:table-cell">
                 {messageFor(status, sets, lm)}
@@ -95,5 +99,6 @@ export function VolumeStatusTable({ volume }: Props) {
         </tbody>
       </table>
     </div>
+    </TooltipProvider>
   );
 }
