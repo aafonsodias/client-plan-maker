@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ManualRouteImport } from './routes/manual'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -43,6 +44,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManualRoute = ManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
+  '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
   '/terms': typeof TermsRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/manual'
     | '/privacy'
     | '/settings'
     | '/terms'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/manual'
     | '/privacy'
     | '/settings'
     | '/terms'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/clients'
     | '/dashboard'
+    | '/manual'
     | '/privacy'
     | '/settings'
     | '/terms'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
+  ManualRoute: typeof ManualRoute
   PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
   TermsRoute: typeof TermsRoute
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manual': {
+      id: '/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof ManualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -457,6 +477,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,
+  ManualRoute: ManualRoute,
   PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
   TermsRoute: TermsRoute,
