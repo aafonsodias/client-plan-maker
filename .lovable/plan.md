@@ -10,10 +10,11 @@ Phase B fechada. Turno foi de **simplificação**, não de novas features.
   - Removido import não usado `SectionItem`.
   - `ViewMode` + `DayQuickMark` preservados (estavam no meio do bloco apagado, recuperados via git).
 
+## Turno seguinte (#5 fechado)
+
+- `/manual` agora tem 3 modos (Manual, FAQ, Contacto) numa só rota. Decisão deliberada para evitar 3 rotas separadas com 3 head() para manter. FAQ é accordion estático em i18n. Contacto usa `mailto:` — zero backend novo, zero captcha, zero rate-limit a inventar.
+
 ## Próximo turno
 
-Antes de adicionar features novas, considerar:
-
-1. `src/lib/pdf.ts` (1244 linhas) — provavelmente partir em módulos por secção (header, mesocycle table, day sheet, footer) sem alterar comportamento.
-2. `src/server/sessions.functions.ts` (437 linhas) — auditar se draft/save/restore/streak podiam viver em ficheiros mais pequenos.
-3. Phase C continua disponível: #1 landing revamp, #5 /manual + /faq + /contacto, #9 assessment fade-section, #6 + #11 synthesis enrichment, #14 speed.
+1. Phase C continua: #1 landing revamp, #9 assessment fade-section, #6 + #11 synthesis enrichment, #14 speed.
+2. Refactors invisíveis (pdf.ts em módulos, sessions.functions.ts split) só fazem sentido quando o trabalho user-facing tiver acalmado.
