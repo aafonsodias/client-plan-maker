@@ -739,103 +739,52 @@ export async function generatePlanPdf(
     // COOL strip
     renderInlineStrip("COOL", collectCool(arc.base));
 
-    // ---- REGISTO MANUAL ----
-    // Uses the empty space at the bottom of the session page so the trainer
-    // can print, scribble loads/reps/RPE in the gym, and later import back.
+    // ---- SESSION META + OBSERVAÇÕES ----
+    // Single compact strip for the trainer to scribble session-level info,
+    // and 2 blank lines for free-form observations (joelho, sono, mudei ex.3, etc.)
     {
-      const baseExForLog = arc.base.exercises ?? [];
-      // Quick fields strip
-      const quickH = 24;
-      const tableTopMin = y + 14;
-      const remaining = H - 30 - tableTopMin; // leave room for footer (~22pt)
-      if (remaining > 60 && baseExForLog.length > 0) {
-        // section divider
+      const tableTopMin = y + 12;
+      const remaining = H - 30 - tableTopMin;
+      if (remaining > 50) {
         y += 8;
         setDraw(doc, theme.rule);
         doc.setLineWidth(0.3);
         doc.line(M, y, W - M, y);
         y += 10;
-        setText(doc, theme.inkMuted);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7);
-        doc.text("REGISTO MANUAL — preencher no ginásio", M, y);
-        y += 8;
 
-        // Quick fields row
         const fields: Array<[string, number]> = [
-          ["DATA", 80],
-          ["INÍCIO", 50],
-          ["FIM", 50],
-          ["RPE ACORDAR", 60],
-          ["PESO HOJE (kg)", 70],
-          ["SONO (h)", 50],
+          ["DATA", 90],
+          ["INÍCIO", 60],
+          ["FIM", 60],
+          ["PESO (kg)", 70],
+          ["SONO (h)", 60],
+          ["RPE ACORDAR", 80],
         ];
         let fx = M;
         setText(doc, theme.inkMuted);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(6.5);
         for (const [label, w] of fields) {
-          doc.text(label, fx, y + 8);
+          doc.text(label, fx, y);
           setDraw(doc, theme.rule);
           doc.setLineWidth(0.5);
-          doc.line(fx, y + 18, fx + w - 8, y + 18);
+          doc.line(fx, y + 10, fx + w - 8, y + 10);
           fx += w;
         }
-        y += quickH;
+        y += 18;
 
-        // Log table — one row per exercise, S1..S4 columns to write peso×reps@RPE
-        const logColNumW = 22;
-        const logColExW = 180;
-        const slotsCount = 4;
-        const slotsAreaW = W - M * 2 - logColNumW - logColExW;
-        const slotW = slotsAreaW / slotsCount;
-
-        // header
-        setText(doc, theme.inkMuted);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(6.5);
-        doc.text("#", M + 4, y);
-        doc.text("EXERCÍCIO", M + logColNumW, y);
-        for (let s = 0; s < slotsCount; s++) {
-          doc.text(
-            `S${s + 1} — peso × reps @RPE`,
-            M + logColNumW + logColExW + s * slotW + 4,
-            y,
-          );
-        }
-        y += 4;
-        setDraw(doc, theme.rule);
-        doc.setLineWidth(0.4);
-        doc.line(M, y, W - M, y);
-        y += 8;
-
-        const rowH = 22;
-        const maxRows = Math.max(0, Math.floor((H - 60 - y) / rowH));
-        const rowsToRender = Math.min(baseExForLog.length, maxRows);
-        for (let i = 0; i < rowsToRender; i++) {
-          const ex = baseExForLog[i];
-          const rowTop = y;
-          if (i % 2 === 1) {
-            setFill(doc, theme.bgSubtle);
-            doc.rect(M, rowTop, W - M * 2, rowH, "F");
-          }
+        // OBSERVAÇÕES — 2 lines
+        if (H - 30 - y > 32) {
           setText(doc, theme.inkMuted);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(8);
-          doc.text(String(i + 1).padStart(2, "0"), M + 4, rowTop + 13);
-          setText(doc, theme.ink);
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(8.5);
-          doc.text(fitText(ex.name, logColExW - 6), M + logColNumW, rowTop + 13);
-
-          // Slot lines for handwriting
+          doc.setFontSize(6.5);
+          doc.text("OBSERVAÇÕES", M, y);
+          y += 6;
           setDraw(doc, theme.rule);
           doc.setLineWidth(0.4);
-          for (let s = 0; s < slotsCount; s++) {
-            const sx = M + logColNumW + logColExW + s * slotW;
-            doc.line(sx + 4, rowTop + 16, sx + slotW - 6, rowTop + 16);
-          }
-          y = rowTop + rowH;
+          doc.line(M, y + 8, W - M, y + 8);
+          doc.line(M, y + 22, W - M, y + 22);
+          y += 28;
         }
       }
     }
