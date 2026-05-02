@@ -65,12 +65,19 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6dfe31f-b880-4ca1-aa7b-c6f200feea05/id-preview-7ce323db--52660b57-3b15-46ae-b3c1-32e2157652c6.lovable.app-1777570010210.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6dfe31f-b880-4ca1-aa7b-c6f200feea05/id-preview-7ce323db--52660b57-3b15-46ae-b3c1-32e2157652c6.lovable.app-1777570010210.png" },
+      { name: "theme-color", content: "#0d1117" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "Forge" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
