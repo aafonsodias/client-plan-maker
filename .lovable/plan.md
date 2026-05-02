@@ -1,107 +1,53 @@
-## Plano de execução — ordem por impacto
+# Próximo passo: tornar a app mostrável
 
-Sprint 3 (intake slideshow) está feito. Resta o que mais move agulha: **monetização** (sem isto não há receita) → **fechar gaps competitivos óbvios** → **polimento**.
+A mensagem que partilhaste tem razão num ponto operacional concreto: o que falta agora **não é mais lógica interna**, é reduzir o atrito entre "eu" e "outra pessoa a usar isto no telemóvel dela". Três blocos pequenos, todos orientados a exposição.
 
-Vou avançar nesta ordem e parar quando não houver mais nada de alto impacto. Aviso no fim.
+## Bloco A — PWA básica (instalável no telemóvel)
 
-### Decisões assumidas (corrige-me se quiseres outra coisa)
+Para alguém poder testar a app como se fosse uma app nativa, sem fricção de "abre o browser e cola este link".
 
-- **Preços**: €19 / €39 / €79 mensal, com opção anual a -2 meses (€190 / €390 / €790). Posiciona-se abaixo do TrueCoach (~$25-50) sem ser "preço de saldo".
-- **Trial**: 14 dias **sem cartão** (já é o que `handle_new_user_trial` faz). Mais signups, conversão pela qualidade do output. Paywall aparece quando trial acaba OU quando tenta gerar 2º plano sem subscrição.
-- **Tax**: Stripe **automatic_tax** (calcula+coleta, eu não trato de filing). VAT EU é o ponto sensível.
+- `public/manifest.webmanifest` com nome, ícones (192/512), `display: standalone`, `theme_color` alinhado ao token `--background`, `start_url: /dashboard`.
+- Ícones gerados a partir do `BrandMark` existente (PNG 192 + 512 + maskable 512).
+- Service worker mínimo (`public/sw.js`) — apenas cache do shell + offline fallback. **Sem** cache agressivo de dados (RLS-sensitive).
+- Registo do SW em `src/routes/__root.tsx` só em produção (`import.meta.env.PROD`).
+- Meta tags no `<head>` do root: `theme-color`, `apple-mobile-web-app-capable`, `apple-touch-icon`.
+- Componente `<InstallPrompt/>` discreto no `AppShell` (rodapé mobile) que aparece quando `beforeinstallprompt` dispara — dispensável depois.
 
----
+## Bloco B — Share rápido para mostrar a alguém
 
-### Fase 4 — Monetização (impacto máximo)
+Para reduzir a fricção do "manda-me lá isso para eu ver".
 
-**4.1 Stripe enable + 3 produtos/preços**
-- Habilitar integração Stripe (já tenho `STRIPE_SECRET_KEY` no projecto, mas é preciso correr o tool oficial para wiring).
-- Criar 6 prices: Starter mensal/anual, Pro mensal/anual, Studio mensal/anual em EUR.
-- Guardar mapping `tier → price_id` em `src/lib/billing-tiers.ts` (single source of truth).
+- Botão "Partilhar app" no `AppShell` (header, ao lado do BrandMark) que usa `navigator.share` (Web Share API) com fallback para copiar link da landing.
+- A landing page (`/`) precisa de um CTA explícito acima da fold: **"Experimenta com 1 cliente — grátis"** que leve ao signup. Já existe a quota de 1 plano gratuito; é só amarrar a copy a essa promessa concreta.
+- Adicionar `og:image` decente nas rotas públicas (`/`, `/manual`, `/privacy`, `/terms`) usando uma imagem do brand já existente — para o link parecer sério quando colado no WhatsApp.
 
-**4.2 Edge functions de billing**
-- `create-checkout` — sessão Stripe Checkout, modo subscription, redirect `/billing/success`.
-- `check-subscription` — lê stripe.subscriptions, escreve em `subscribers` (já existe), devolve `{subscribed, tier, current_period_end}`.
-- `customer-portal` — billing portal session para gestão/cancelamento.
-- `verify_jwt = true` em todas (são autenticadas).
+## Bloco C — Primeiro contacto não embaraçoso
 
-**4.3 Paywall server-side**
-- `checkPlanQuota()` em `src/server/quota.server.ts` já existe e gera `quota_exceeded`. Falta:
-  - Trigger no client em `plans.new.tsx` / `startPhasedPlanDraft` → mostrar `<PaywallDialog/>` em vez de toast genérico.
-  - Novo componente `src/components/PaywallDialog.tsx` com 3 tiers, CTA "Continuar" → `create-checkout`.
-  - Banner no AppShell quando `trial_end` < 3 dias.
+O que uma pessoa nova vê nos primeiros 30 segundos.
 
-**4.4 Página `/billing` upgrade**
-- Mostrar plano actual (de `subscribers`), uso (`profiles.plan_quota_used/limit`), trial countdown.
-- Botão "Gerir subscrição" → `customer-portal`.
-- Tabela comparativa dos 3 tiers com toggle mensal/anual.
+- Auditoria rápida do dashboard vazio: se não há clientes, mostrar um card "Começa por adicionar o teu primeiro cliente" com CTA único, em vez do estado vazio atual.
+- Garantir que o link do Demo Lab (founder-only) não aparece para outras contas — confirmar gate.
+- Verificar que a página `/templates` (acabada de criar) tem estado vazio decente — já tem, mas confirmar copy.
+- Verificar no preview que o flow `signup → adicionar cliente → enviar intake → criar plano` funciona ponta-a-ponta sem dead-ends.
 
-**4.5 Hook global de subscrição**
-- `useSubscription()` em `src/hooks/useSubscription.ts` — invoca `check-subscription` ao login + a cada 60s + após retorno do checkout. Cache em React Query.
+## Detalhes técnicos
 
----
+- PWA: gerar ícones via script Node (sharp não disponível no Worker, mas o build corre em Node — usar `sharp` em `scripts/gen-icons.mjs` chamado manualmente, output commitado em `public/`).
+- SW: estratégia `network-first` para HTML, `cache-first` para assets com hash. Offline page = `/offline.html` estática.
+- Web Share API: detectar `navigator.share` em runtime, fallback para `navigator.clipboard.writeText` + toast.
+- Não tocar em `routeTree.gen.ts`, `client.ts`, `types.ts`, `.env`.
 
-### Fase 5 — Quick wins competitivos (alto ROI, baixo custo)
+## O que **não** faço neste sprint
 
-Auditoria competitiva identificou 3 gaps que dão para fechar rápido sem inflar o produto:
+- Vídeos de exercício (Sprint 5 original) — adia, é otimização interna.
+- Mais tabelas, mais server functions, mais AI.
+- Refactors de design.
 
-**5.1 Vídeo de exercícios** (TrueCoach/Trainerize têm)
-- Coluna `video_url` em `workout_plan_days.content[].exercises[]` (já é jsonb, sem migração).
-- Input no editor de plano + render `<VideoEmbed/>` (YouTube/Vimeo) na vista do cliente e no PDF (link clicável).
+## Critério de "feito"
 
-**5.2 Templates de plano** (poupar tempo aos PTs)
-- Tabela `plan_templates(id, trainer_id, name, plan_data jsonb, created_at)` + RLS.
-- Botão "Guardar como template" em `/plans/$id`.
-- "Novo plano a partir de template" no fluxo `/plans/new`.
+No final consigo:
+1. Abrir a app no telemóvel, "Adicionar ao ecrã principal", e ela abre standalone.
+2. Carregar um botão "Partilhar" e mandar o link a alguém via WhatsApp com preview decente.
+3. Essa pessoa cria conta, adiciona um cliente, e gera 1 plano sem eu intervir.
 
-**5.3 Botão WhatsApp no perfil do cliente**
-- Em `clients_.$clientId.tsx`, se `clients.phone` existir, botão `wa.me/{phone}?text={mensagem pré-preenchida com link do plano}`.
-- Zero backend, 1 componente.
-
----
-
-### Fase 6 — Polimento (se sobrar margem)
-
-- **PWA básica**: `manifest.webmanifest` + service worker mínimo (instalável no telemóvel, sem offline complexo). Trainerize tem app nativa; isto fecha 60% do gap percebido.
-- **Status-tone audit**: substituir cores hardcoded por `toneChip/toneDot` de `src/lib/status-tone.ts` em `clients.tsx`, `plans.$planId.tsx`, dashboards.
-- **i18n EN sweep**: garantir paridade PT/EN nos novos componentes (paywall, billing, templates).
-
----
-
-### Detalhes técnicos
-
-```
-src/
-├── lib/billing-tiers.ts          # mapping tier→price_id
-├── components/PaywallDialog.tsx  # modal de upgrade
-├── components/TrialBanner.tsx    # banner header
-├── hooks/useSubscription.ts      # hook global
-└── routes/billing.tsx            # upgrade
-
-supabase/functions/
-├── create-checkout/
-├── check-subscription/
-└── customer-portal/
-```
-
-Migration nova:
-```sql
-CREATE TABLE public.plan_templates (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  trainer_id uuid NOT NULL,
-  name text NOT NULL,
-  plan_data jsonb NOT NULL,
-  created_at timestamptz DEFAULT now()
-);
-ALTER TABLE public.plan_templates ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "trainers manage own templates" ON public.plan_templates
-  FOR ALL USING (auth.uid() = trainer_id) WITH CHECK (auth.uid() = trainer_id);
-```
-
-### Ordem de execução
-
-1. Fase 4 completa (Stripe + paywall + /billing) — bloqueia receita, vai primeiro
-2. Fase 5.1 (vídeos) → 5.2 (templates) → 5.3 (WhatsApp)
-3. Fase 6 se ainda fizer sentido
-
-Aviso quando acabar (ou quando precisar de input — ex: confirmar prices na Stripe).
+Depois disto, o passo seguinte é o teu — não o meu. É mostrar a alguém.
