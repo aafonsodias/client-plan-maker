@@ -428,6 +428,7 @@ export type Database = {
           intake_submitted_at: string | null
           intake_token: string | null
           intake_token_expires_at: string | null
+          is_demo: boolean
           notes: string | null
           phone: string | null
           photo_url: string | null
@@ -449,6 +450,7 @@ export type Database = {
           intake_submitted_at?: string | null
           intake_token?: string | null
           intake_token_expires_at?: string | null
+          is_demo?: boolean
           notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -470,6 +472,7 @@ export type Database = {
           intake_submitted_at?: string | null
           intake_token?: string | null
           intake_token_expires_at?: string | null
+          is_demo?: boolean
           notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -709,6 +712,7 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          demo_seeded_at: string | null
           full_name: string | null
           id: string
           logo_url: string | null
@@ -727,6 +731,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          demo_seeded_at?: string | null
           full_name?: string | null
           id?: string
           logo_url?: string | null
@@ -745,6 +750,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          demo_seeded_at?: string | null
           full_name?: string | null
           id?: string
           logo_url?: string | null
@@ -874,6 +880,7 @@ export type Database = {
           generation_state: Json
           generation_status: string
           id: string
+          is_demo: boolean
           plan_data: Json
           prior_plan_id: string | null
           programming_variables: Json | null
@@ -902,6 +909,7 @@ export type Database = {
           generation_state?: Json
           generation_status?: string
           id?: string
+          is_demo?: boolean
           plan_data?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
@@ -930,6 +938,7 @@ export type Database = {
           generation_state?: Json
           generation_status?: string
           id?: string
+          is_demo?: boolean
           plan_data?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
