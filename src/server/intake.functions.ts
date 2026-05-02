@@ -90,7 +90,7 @@ const tokenSchema = z.object({ token: z.string().uuid() });
 
 export type IntakeContext = {
   status: "valid" | "expired" | "submitted";
-  client?: { id: string; first_name: string };
+  client?: { id: string; first_name: string; full_name: string | null; email: string | null; phone: string | null; date_of_birth: string | null; needs_identity: boolean };
   trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null; tagline?: string | null };
   assessment?: any | null;
   submittedAt?: string | null;
@@ -102,7 +102,7 @@ export const loadIntake = createServerFn({ method: "POST" })
     rateLimit(`load:${data.token}`);
     const { data: client } = await supabaseAdmin
       .from("clients")
-      .select("id, full_name, trainer_id, intake_token_expires_at, intake_status, intake_submitted_at")
+      .select("id, full_name, email, phone, date_of_birth, trainer_id, intake_token_expires_at, intake_status, intake_submitted_at")
       .eq("intake_token", data.token)
       .maybeSingle();
     if (!client) return { status: "expired" };
@@ -131,9 +131,18 @@ export const loadIntake = createServerFn({ method: "POST" })
     ]);
 
     const firstName = (client.full_name ?? "").split(" ")[0] || "there";
+    const placeholder = !client.full_name || /convite\s*pendente|invite\s*pending/i.test(client.full_name);
     return {
       status: "valid",
-      client: { id: client.id, first_name: firstName },
+      client: {
+        id: client.id,
+        first_name: firstName,
+        full_name: placeholder ? "" : (client.full_name ?? ""),
+        email: (client as any).email ?? null,
+        phone: (client as any).phone ?? null,
+        date_of_birth: (client as any).date_of_birth ?? null,
+        needs_identity: placeholder,
+      },
       trainer: (profile as any) ?? { business_name: null, full_name: null, logo_url: null, primary_color: null, tagline: null },
       assessment: assessment ?? null,
     };
