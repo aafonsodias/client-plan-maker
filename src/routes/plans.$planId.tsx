@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, regeneratePlanSummary } from "@/server/plan.functions";
+import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
@@ -84,6 +85,8 @@ function PlanEditor() {
   const markFinishedFn = useServerFn(markPlanFinished);
   const regenSummaryFn = useServerFn(regeneratePlanSummary);
   const [regenSummaryBusy, setRegenSummaryBusy] = useState(false);
+  const reanchorRpeFn = useServerFn(reanchorPlanRpe);
+  const [reanchorBusy, setReanchorBusy] = useState(false);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
@@ -403,6 +406,43 @@ function PlanEditor() {
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
               )}
               Re-gerar resumo
+            </Button>
+          )}
+          {isPhasedComplete && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              disabled={reanchorBusy}
+              title="Re-aplicar o piso de RPE (tier × apetite) à Semana 1. Útil para planos antigos onde o RPE saiu demasiado baixo."
+              onClick={async () => {
+                setReanchorBusy(true);
+                try {
+                  const r: any = await reanchorRpeFn({ data: { planId } });
+                  if (r?.ok) {
+                    if (r.exercisesBumped > 0) {
+                      toast.success(
+                        `Re-ancorado: ${r.exercisesBumped} exercício(s) em ${r.daysTouched} dia(s) — piso ${r.tier}/${r.appetite} aplicado.`,
+                      );
+                      // Force fresh load so the table re-reads the bumped RPEs.
+                      window.location.reload();
+                    } else {
+                      toast.info("Nada a re-ancorar — todos os exercícios já estão acima do piso.");
+                    }
+                  } else {
+                    toast.error(r?.error ?? "Falhou re-ancorar RPE.");
+                  }
+                } finally {
+                  setReanchorBusy(false);
+                }
+              }}
+            >
+              {reanchorBusy ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Re-ancorar RPE
             </Button>
           )}
           <Button

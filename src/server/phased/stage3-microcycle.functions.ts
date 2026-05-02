@@ -12,6 +12,9 @@ import {
   classifyTier,
   tierGuidelines,
   type TierGuidelines,
+  rpeFloors,
+  isCarryLike,
+  type RpeFloors,
 } from "./programming-tier.server";
 
 /**
@@ -73,6 +76,50 @@ function sanitizePrepBlocks(day: any): any {
     });
   }
   return out;
+}
+
+/**
+ * Parse a free-form RPE string ("7", "7-8", "RPE 6.5", "@8") to a single number.
+ * Returns null when nothing usable is found.
+ */
+function parseRpeNumber(rpe: string | undefined | null): number | null {
+  if (!rpe) return null;
+  const s = String(rpe).toLowerCase();
+  // Range like "7-8" → take the higher number (closer to coach intent).
+  const range = s.match(/(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)/);
+  if (range) return parseFloat(range[2]);
+  const m = s.match(/(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+/**
+ * Deterministic Week-1 RPE floor enforcement.
+ *
+ * Iterates main-block exercises. For each one classifies the role
+ * (main lift = first exercise; carry/core = name-matched; accessory = rest),
+ * looks up the floor for the active tier × appetite and bumps `ex.rpe` up
+ * when it sits below the floor. Original RPE is preserved on `ex.meta.rpe_original`
+ * for auditing.
+ *
+ * Returns the (possibly-mutated) day plus a `floorApplied` count for telemetry.
+ */
+function enforceRpeFloor(
+  day: any,
+  floors: RpeFloors,
+): { day: any; floorApplied: number } {
+  if (!day || !Array.isArray(day.exercises)) return { day, floorApplied: 0 };
+  let applied = 0;
+  const exercises = day.exercises.map((ex: any, idx: number) => {
+    const isMain = idx === 0;
+    const isCarry = isCarryLike(ex?.name);
+    const floor = isMain ? floors.main : isCarry ? floors.carry : floors.accessory;
+    const current = parseRpeNumber(ex?.rpe);
+    if (current != null && current >= floor) return ex;
+    const meta = { ...(ex?.meta ?? {}), rpe_original: ex?.rpe ?? null, rpe_floor_applied: true };
+    applied++;
+    return { ...ex, rpe: String(floor), meta };
+  });
+  return { day: { ...day, exercises }, floorApplied: applied };
 }
 
 // JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
@@ -202,6 +249,13 @@ async function runDay(
   const equipment = (brief?.equipment_constraints ?? []).join(", ") || "no specific constraints";
   const redFlags = (brief?.red_flags ?? []).join("; ") || "none";
 
+  // Resolve role-specific RPE floors from tier × appetite. Both Stage 3
+  // (anchor) and the post-validator below use these same numbers so the
+  // model is told the truth and the truth is enforced after.
+  const tierForFloors = guidelines?.tier ?? "conservative";
+  const appetite = String(brief?.intensity_appetite ?? "padrao");
+  const floors = rpeFloors(tierForFloors, appetite);
+
   const tierBlock = guidelines
     ? `
 
@@ -217,6 +271,15 @@ ${guidelines.requiredAlternatives}`
 }`
     : "";
 
+  const rpeFloorBlock = `
+
+WEEK 1 RPE FLOORS (intensity_appetite = ${appetite.toUpperCase()}):
+- Main lift (the FIRST exercise): RPE >= ${floors.main}. Sit AT or NEAR this number — never below.
+- Secondary / accessory exercises: RPE >= ${floors.accessory}.
+- Carry / Pallof / dead-bug / plank / suitcase / farmer: RPE >= ${floors.carry}.
+RPE 5 is reserved for warm-up / activation / cooldown — NEVER for the main block.
+If a movement is genuinely "supported" or rehab-style, prefer reducing load and KEEPING RPE at the floor (the goal is honest effort, not artificially low numbers).`;
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -231,7 +294,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -277,7 +340,27 @@ Generate ONLY this single day's session.`;
   });
 
   if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true, day: sanitizePrepBlocks(result.data) };
+  // Deterministic post-validation: lift any RPE that came in below the floor.
+  const sanitized = sanitizePrepBlocks(result.data);
+  const { day: floored, floorApplied } = enforceRpeFloor(sanitized, floors);
+  if (floorApplied > 0) {
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      stage: `stage3:day${dayIndex}:rpe_floor`,
+      model_used: "deterministic",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: true,
+      retry_count: 0,
+      duration_ms: 0,
+      error: null,
+      input_snapshot: { tier: tierForFloors, appetite, floors },
+      output_snapshot: { floorApplied },
+    });
+  }
+  return { ok: true, day: floored };
 }
 
 async function upsertDayRow(
@@ -575,4 +658,60 @@ export const updateDayContent = createServerFn({ method: "POST" })
       .eq("id", data.dayId);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
+  });
+
+/**
+ * reanchorPlanRpe — retroactive RPE floor application for an existing plan.
+ *
+ * Use case: Marta's plan was generated before the floor logic existed and
+ * the whole mesocycle reads RPE 5.4 across all 4 weeks. Instead of forcing
+ * the trainer to throw the plan away and regenerate, this fn:
+ *   1. Re-resolves tier × intensity_appetite floors.
+ *   2. Walks every workout_plan_days row (Week 1 only — the anchor).
+ *   3. Applies enforceRpeFloor() determinatively and updates `content`.
+ *   4. Wipes the cached progression_plan so the next view forces re-generation
+ *      OR the trainer re-runs Stage 4 to layer a real wave on top.
+ */
+export const reanchorPlanRpe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ planId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const loaded = await loadPlan(supabase, data.planId, userId);
+    if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const briefP = BriefSchema.safeParse(loaded.plan.brief);
+    if (!briefP.success) return { ok: false as const, error: "Brief inválido — não dá para re-ancorar." };
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const tier = guidelines?.tier ?? "conservative";
+    const appetite = String(briefP.data.intensity_appetite ?? "padrao");
+    const floors = rpeFloors(tier, appetite);
+
+    const { data: rows } = await supabase
+      .from("workout_plan_days")
+      .select("id, content")
+      .eq("plan_id", data.planId)
+      .eq("week_number", 1);
+
+    let touched = 0;
+    let totalApplied = 0;
+    for (const row of (rows ?? []) as any[]) {
+      const { day, floorApplied } = enforceRpeFloor(row.content ?? {}, floors);
+      if (floorApplied > 0) {
+        await supabase
+          .from("workout_plan_days")
+          .update({ content: day })
+          .eq("id", row.id);
+        touched++;
+        totalApplied += floorApplied;
+      }
+    }
+
+    return {
+      ok: true as const,
+      tier,
+      appetite,
+      floors,
+      daysTouched: touched,
+      exercisesBumped: totalApplied,
+    };
   });

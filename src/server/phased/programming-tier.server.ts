@@ -175,6 +175,60 @@ export function tierGuidelines(
 }
 
 /**
+ * Week-1 RPE FLOORS by tier × intensity_appetite, broken down by exercise role.
+ *
+ * Why this exists: Stage 3 used to anchor Week 1 RPE too low because the prompt
+ * only carried a coarse "RPE range" and accessory work defaulted to RPE 5 — even
+ * for a 38yo conservative-tier client on the "padrão" appetite. That dragged
+ * the weekly average to ~5.4 across all 4 weeks (Marta's plan, real example).
+ *
+ * The floors below are honest, role-aware minimums — not ceilings. The main lift
+ * sits at or near the upper number; accessories anchor at the middle; carries /
+ * core stay where they belong (low-load, high-control).
+ */
+export type Appetite = "conservador" | "padrao" | "agressivo";
+
+export interface RpeFloors {
+  /** Main lift (first exercise in the main block). Hard floor. */
+  main: number;
+  /** Secondary / accessory exercises. Hard floor. */
+  accessory: number;
+  /** Carries, isolation core (Pallof, suitcase carry, etc.). Hard floor. */
+  carry: number;
+}
+
+const FLOOR_MATRIX: Record<Tier, Record<Appetite, RpeFloors>> = {
+  remedial: {
+    conservador: { main: 4, accessory: 4, carry: 4 },
+    padrao: { main: 5, accessory: 5, carry: 4 },
+    agressivo: { main: 6, accessory: 5, carry: 4 },
+  },
+  conservative: {
+    conservador: { main: 6.5, accessory: 5, carry: 5 },
+    padrao: { main: 7, accessory: 6, carry: 5.5 },
+    agressivo: { main: 7.5, accessory: 7, carry: 6 },
+  },
+  advanced: {
+    conservador: { main: 7, accessory: 6, carry: 6 },
+    padrao: { main: 8, accessory: 7, carry: 6.5 },
+    agressivo: { main: 8.5, accessory: 8, carry: 7 },
+  },
+};
+
+export function rpeFloors(tier: Tier, appetite: string | undefined | null): RpeFloors {
+  const a = (String(appetite ?? "padrao").toLowerCase() as Appetite);
+  const safeAppetite: Appetite =
+    a === "conservador" || a === "padrao" || a === "agressivo" ? a : "padrao";
+  return FLOOR_MATRIX[tier][safeAppetite];
+}
+
+/** Heuristic: is this exercise a "carry / core control" exercise? */
+export function isCarryLike(name: string): boolean {
+  const n = String(name ?? "").toLowerCase();
+  return /(carry|pallof|dead\s*bug|bird\s*dog|plank|hollow|suitcase|farmer)/.test(n);
+}
+
+/**
  * Validate a Stage-2 blueprint against tier guidelines.
  * Stage-2 has no per-day exercises yet, so we only validate the SHAPE
  * (sessions/week + archetype count). The exercise-count bands are

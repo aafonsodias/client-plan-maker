@@ -118,19 +118,30 @@ export function MesocycleTableView({
     return weekNumbers.map((wn) => {
       const wk = plan.weeks.find((w) => w.week_number === wn);
       let totalReps = 0;
-      let rpeSum = 0;
-      let rpeCount = 0;
+      const rpeValues: number[] = [];
       for (const d of wk?.days ?? []) {
         for (const ex of d.exercises ?? []) {
           totalReps += approxReps(ex);
+          // Honest read: skip optional/accessory chrome that drags the average
+          // down. We want what the trainer SEES the client doing in the main
+          // block, not the warmup/cooldown.
+          if ((ex as any)?.optional === true) continue;
           const r = parseRpe(ex.rpe);
-          if (r != null) {
-            rpeSum += r;
-            rpeCount++;
-          }
+          if (r != null) rpeValues.push(r);
         }
       }
-      return { wn, reps: totalReps, rpe: rpeCount ? rpeSum / rpeCount : null };
+      let rpeMedian: number | null = null;
+      let rpeMin: number | null = null;
+      let rpeMax: number | null = null;
+      if (rpeValues.length) {
+        const sorted = [...rpeValues].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        rpeMedian =
+          sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+        rpeMin = sorted[0];
+        rpeMax = sorted[sorted.length - 1];
+      }
+      return { wn, reps: totalReps, rpe: rpeMedian, rpeMin, rpeMax };
     });
   }, [plan, weekNumbers]);
 
@@ -278,7 +289,9 @@ export function MesocycleTableView({
                     <div>Week {wn}{isDeloadWeek(wn) ? " · deload" : ""}</div>
                     {t?.rpe != null && (
                       <div className="mt-0.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground/70">
-                        RPE alvo {t.rpe.toFixed(1)}
+                        {t.rpeMin != null && t.rpeMax != null && t.rpeMin !== t.rpeMax
+                          ? `RPE ${formatRpe(t.rpeMin)}–${formatRpe(t.rpeMax)} · med ${formatRpe(t.rpe)}`
+                          : `RPE ${formatRpe(t.rpe)}`}
                       </div>
                     )}
                   </th>
@@ -649,6 +662,11 @@ function parseRpe(rpe?: string): number | null {
   if (!rpe) return null;
   const m = rpe.toString().match(/(\d+(?:\.\d+)?)/);
   return m ? Number(m[1]) : null;
+}
+
+/** Strip trailing .0 so "RPE 7.0" reads "RPE 7" but "RPE 7.5" stays whole. */
+function formatRpe(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 function trendArrow(curr: number | null, base: number | null): string {
