@@ -46,6 +46,7 @@ import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
 import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
 import { isPlanFullyLogged, summaryLooksLeaked } from "@/lib/plan-status";
+import { SaveAsTemplateDialog } from "@/components/SaveAsTemplateDialog";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -336,6 +337,7 @@ function PlanEditor() {
             <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
           </Button>
           <ImportLogDialog planId={planId} plan={data} />
+          <SaveAsTemplateDialog planId={planId} defaultName={plan.title} />
           {summaryLooksLeaked(plan?.summary) && plan?.brief && (
             <Button
               size="sm"
