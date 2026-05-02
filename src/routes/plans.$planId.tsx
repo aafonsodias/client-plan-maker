@@ -231,15 +231,6 @@ function PlanEditor() {
     }
   };
 
-  const addWeek = () => {
-    const n = (data.weeks.at(-1)?.week_number ?? 0) + 1;
-    setData({ ...data, weeks: [...data.weeks, { week_number: n, focus: "", days: [] }] });
-  };
-  const updateWeek = (i: number, w: Week) => {
-    const copy = [...data.weeks]; copy[i] = w; setData({ ...data, weeks: copy });
-  };
-  const removeWeek = (i: number) => setData({ ...data, weeks: data.weeks.filter((_, idx) => idx !== i) });
-
   const exportPdf = async () => {
     if (!client || !plan) return;
     let logoDataUrl: string | null = null;
