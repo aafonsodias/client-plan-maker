@@ -4,7 +4,7 @@ import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { DemoOrchestrator } from "@/components/DemoOrchestrator";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Children, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight, Calendar as CalendarIcon, Download, Plus } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -2700,6 +2700,54 @@ function AssessmentSection({
     }
   }, [defaultCollapsed]);
 
+  // Focused mode: render one section at a time with prev/next nav.
+  // Persist toggle per client; default = on (the whole point of #9).
+  const focusKey = `forge_assessment_focus_${clientId}`;
+  const activeKey = `forge_assessment_focus_active_${clientId}`;
+  const [focused, setFocused] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      const v = window.localStorage.getItem(focusKey);
+      return v == null ? true : v === "1";
+    } catch { return true; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(focusKey, focused ? "1" : "0"); } catch { /* ignore */ }
+  }, [focused, focusKey]);
+
+  const [activeId, setActiveId] = useState<string>(() => {
+    if (typeof window === "undefined") return sectionIds[0];
+    try {
+      const v = window.localStorage.getItem(activeKey);
+      if (v && sectionIds.includes(v)) return v;
+    } catch { /* ignore */ }
+    return sectionIds[0];
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(activeKey, activeId); } catch { /* ignore */ }
+  }, [activeId, activeKey]);
+
+  // In focused mode, the active section is always open (never collapsed
+  // inside its own card — the toggle exists for "see all" mode only).
+  useEffect(() => {
+    if (focused) ctx.setOpen(activeId, true);
+  }, [focused, activeId, ctx]);
+
+  // Map child SectionBlocks by their `id` prop so we can pick the active one.
+  const childArray = Children.toArray(children);
+  const sectionChildren = new Map<string, React.ReactNode>();
+  const extras: React.ReactNode[] = [];
+  for (const child of childArray) {
+    if (isValidElement(child) && typeof (child.props as any)?.id === "string" && sectionIds.includes((child.props as any).id)) {
+      sectionChildren.set((child.props as any).id, child);
+    } else {
+      extras.push(child);
+    }
+  }
+  const activeIdx = Math.max(0, sectionIds.indexOf(activeId));
+  const goPrev = () => setActiveId(sectionIds[Math.max(0, activeIdx - 1)]);
+  const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
+
   if (collapsed) {
     return (
       <section className="rounded-2xl border border-border bg-card p-3">
@@ -2737,6 +2785,17 @@ function AssessmentSection({
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
           type="button"
+          onClick={() => setFocused((f) => !f)}
+          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest transition ${focused ? "border-accent/60 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+          title={focused ? "Mostrar todas as secções" : "Focar uma secção de cada vez"}
+        >
+          {focused ? <List className="h-3 w-3" /> : <Focus className="h-3 w-3" />}
+          {focused ? "Ver tudo" : "Modo focado"}
+        </button>
+        {!focused && (
+          <>
+        <button
+          type="button"
           onClick={() => ctx.setAll(true)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
@@ -2749,9 +2808,65 @@ function AssessmentSection({
         >
           <ChevronsDownUp className="h-3 w-3" /> Colapsar tudo
         </button>
+          </>
+        )}
       </div>
+      {focused && (
+        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label="Secções da avaliação">
+          {SECTIONS.map((s, i) => {
+            const isActive = s.id === activeId;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveId(s.id)}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${isActive ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              >
+                <span className="font-mono tabular-nums">{i + 1}</span>
+                <span className="hidden sm:inline">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <SectionCollapseContext.Provider value={ctx}>
-        {children}
+        {focused ? (
+          <>
+            <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
+              {sectionChildren.get(activeId) ?? (
+                <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
+                  Secção indisponível.
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goPrev}
+                disabled={activeIdx === 0}
+              >
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Anterior
+              </Button>
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                {activeIdx + 1} / {sectionIds.length}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goNext}
+                disabled={activeIdx === sectionIds.length - 1}
+              >
+                Próxima <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            </div>
+            {extras.length > 0 && <div className="space-y-3">{extras}</div>}
+          </>
+        ) : (
+          children
+        )}
       </SectionCollapseContext.Provider>
     </section>
   );
