@@ -18,6 +18,7 @@ import type { PlanData } from "@/lib/pdf";
 import { ExerciseSetsCard, type LogEntryV2, type SetLog } from "@/components/log/ExerciseSetsCard";
 import { LogHeader, type SaveState } from "@/components/log/LogHeader";
 import { Confetti } from "@/components/log/Confetti";
+import { ImportFromPhotoButton } from "@/components/log/ImportFromPhotoButton";
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
