@@ -810,6 +810,8 @@ type Slide = {
   subtitle?: string;
   body: React.ReactNode;
   isValid?: () => boolean;
+  canSkip?: boolean;
+  skipKeys?: string[];
 };
 
 function buildSlides(
