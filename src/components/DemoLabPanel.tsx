@@ -41,6 +41,7 @@ export function DemoLabPanel() {
       void navigate({
         to: "/clients/$clientId",
         params: { clientId: res.clientId },
+        search: { demo: undefined },
       });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro inesperado.");
