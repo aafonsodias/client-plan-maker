@@ -75,3 +75,24 @@ function stageFallback(stage: string): string {
       return stage;
   }
 }
+
+/**
+ * Returns true when the trainer has logged at least
+ * `duration_weeks × sessions_per_week` sessions for the plan — i.e. every
+ * prescribed slot has a record. Used to surface the "Bloco concluído na
+ * totalidade" CTA so the next block becomes the obvious next move.
+ */
+export function isPlanFullyLogged(
+  plan: { duration_weeks?: number | null; brief?: any | null } | null | undefined,
+  sessionsCount: number,
+): boolean {
+  if (!plan) return false;
+  const weeks = plan.duration_weeks ?? 0;
+  const perWeek =
+    (plan as any)?.brief?.sessions_per_week?.recommended ??
+    (plan as any)?.brief?.sessions_per_week ??
+    0;
+  const target = Number(weeks) * Number(perWeek);
+  if (!Number.isFinite(target) || target <= 0) return false;
+  return sessionsCount >= target;
+}
