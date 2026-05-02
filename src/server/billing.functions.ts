@@ -15,9 +15,9 @@ export const TIERS = {
     yearlyPrice: "price_1TS4OgAS79xThsnaWDJR5pKJ",
     monthlyAmount: 19,
     yearlyAmount: 190,
-    clientsCap: 10,
-    plansCap: 5,
-    premiumIncluded: 0,
+    clientsCap: 8,
+    plansCap: 8,
+    premiumIncluded: 1,
     premiumOveragePrice: 1.5,
     seats: 1,
   },
@@ -26,12 +26,12 @@ export const TIERS = {
     name: "Forge Pro",
     monthlyPrice: "price_1TS4OyAS79xThsnaGZf6ca2o",
     yearlyPrice: "price_1TS4PNAS79xThsnaI5O4LieY",
-    monthlyAmount: 49,
-    yearlyAmount: 490,
-    clientsCap: 40,
-    plansCap: 20,
-    premiumIncluded: 3,
-    premiumOveragePrice: 1.2,
+    monthlyAmount: 45,
+    yearlyAmount: 450,
+    clientsCap: 25,
+    plansCap: 30,
+    premiumIncluded: 4,
+    premiumOveragePrice: 1.5,
     seats: 1,
   },
   studio: {
@@ -39,19 +39,19 @@ export const TIERS = {
     name: "Forge Studio",
     monthlyPrice: "price_1TS4PmAS79xThsnaNQaPnpvj",
     yearlyPrice: "price_1TS4Q6AS79xThsnalHmNlG2p",
-    monthlyAmount: 129,
-    yearlyAmount: 1290,
-    clientsCap: null, // unlimited
+    monthlyAmount: 119,
+    yearlyAmount: 1190,
+    clientsCap: 60,
     plansCap: 80,
-    premiumIncluded: 10,
-    premiumOveragePrice: 1.0,
+    premiumIncluded: 12,
+    premiumOveragePrice: 1.5,
     seats: 5,
   },
 } as const;
 
 export const TOPUP_PREMIUM_PACK = {
   priceId: "price_1TS4QQAS79xThsnaxBf8YWur",
-  amount: 15,
+  amount: 12,
   escalations: 10,
 };
 
@@ -71,8 +71,16 @@ function priceToTier(priceId: string | null | undefined): TierId | null {
 }
 
 function getStripe() {
+  // Read INSIDE handlers — env is injected per-request in the worker runtime.
+  // Reading at module top-level returns undefined in some worker boots.
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
+  if (!key) {
+    // Soft, user-friendly message — the page catches this and renders a banner
+    // instead of a generic "The app encountered an error" overlay.
+    throw new Error(
+      "Pagamentos temporariamente indisponíveis. A nossa equipa foi notificada — tenta novamente daqui a uns minutos.",
+    );
+  }
   return new Stripe(key, { apiVersion: "2025-08-27.basil" as any });
 }
 

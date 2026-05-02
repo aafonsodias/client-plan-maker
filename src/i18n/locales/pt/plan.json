@@ -11,11 +11,12 @@
       "social_proof": "Construído por um PT, para PTs · Beta privado"
     },
     "mockups": {
-      "client_header": "Maria S. · Semana 5 · Fase de Força",
+      "client_header": "Cliente · 42a · Mesociclo 5 · Fase de Força",
       "session_title": "Segunda — Membros Inferiores (Força)",
       "session_meta": "Estimado 55 min · 6 exercícios",
-      "personalized_for": "Personalizado para a Maria",
+      "personalized_for": "Personalizado a partir do assessment",
       "personalized_hint": "Personalizado a partir do assessment",
+      "constraints_chip": "Lombar sensível · sem axial loading · 2×/sem · ginásio comercial",
       "microcycle_title": "Microciclo de 2 semanas",
       "col_exercise": "Exercício",
       "day1_label": "Dia 1",
@@ -24,6 +25,7 @@
       "day2_focus": "Superior + estabilidade",
       "ex_bench": "Supino",
       "ex_row": "Remada",
+      "ex_face_pull": "Face Pull",
       "badge_warmup": "AQUECIMENTO",
       "badge_main": "PRINCIPAL",
       "badge_accessory": "ACESSÓRIO",
