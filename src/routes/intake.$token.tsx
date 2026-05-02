@@ -1140,6 +1140,32 @@ function buildSlides(
         </div>
       ),
     },
+    // 15a. Reference photos (optional)
+    {
+      title: t("photos_title", { defaultValue: "Fotografias de referência" }),
+      subtitle: t("photos_subtitle", { defaultValue: "Não usamos para diagnosticar postura. Servem para acompanhar a tua evolução visualmente. Podes saltar." }),
+      body: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { slot: "front", label: t("photos_front", { defaultValue: "Frente" }), hint: t("photos_front_hint", { defaultValue: "Braços ao lado do corpo, pés à largura dos ombros." }) },
+            { slot: "side", label: t("photos_side", { defaultValue: "Lateral" }), hint: t("photos_side_hint", { defaultValue: "Olhar em frente, postura natural." }) },
+            { slot: "back", label: t("photos_back", { defaultValue: "Costas" }), hint: t("photos_back_hint", { defaultValue: "Mesma posição, de costas para a câmara." }) },
+            { slot: "face", label: t("photos_face", { defaultValue: "Rosto" }), hint: t("photos_face_hint", { defaultValue: "Foto de perfil simpática :)" }) },
+          ] as const).map((opt) => (
+            <PhotoSlot
+              key={opt.slot}
+              token={token}
+              slot={opt.slot}
+              label={opt.label}
+              hint={opt.hint}
+              tutorial={t("photos_tutorial", { defaultValue: "Distância 2m, parede neutra, roupa justa, telemóvel à altura do peito." })}
+            />
+          ))}
+        </div>
+      ),
+      canSkip: true,
+      skipKeys: ["photos"],
+    },
     // 16. Review
     {
       title: t("review_title"),
