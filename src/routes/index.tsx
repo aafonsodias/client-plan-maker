@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -130,7 +129,7 @@ function Landing() {
           style={{ background: "var(--gradient-accent)" }}
         />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
               {t("plan:landing.hero.title_line1")}
               <span className="block text-accent">{t("plan:landing.hero.title_line2")}</span>
@@ -153,9 +152,17 @@ function Landing() {
               </Button>
             </div>
           </div>
-          <div className="flex flex-col items-center">
-            <div className="origin-top scale-[0.95] opacity-[0.92]">
-              <HeroPlanMockup />
+          <div className="flex min-w-0 flex-col items-center">
+            <div className="relative origin-top scale-[0.95]">
+              {/* Forge glow — replaces the dark drop shadow */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl"
+                style={{ background: "radial-gradient(closest-side, oklch(0.78 0.14 75 / 0.32), transparent 70%)" }}
+              />
+              <div className="rounded-2xl ring-1 ring-amber-400/40 shadow-[0_0_40px_-10px_oklch(0.78_0.14_75/0.6)]">
+                <HeroPlanMockup />
+              </div>
             </div>
             <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
               {t("plan:landing.hero.credibility_caption")}
@@ -344,42 +351,15 @@ function Landing() {
         <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
       </section>
 
-      {/* Founder note */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="grid items-start gap-10 md:grid-cols-[30%_1fr]">
-          <div className="flex justify-center md:justify-start">
-            <img
-              src={andreFounder}
-              alt={t("plan:landing.founder.img_alt")}
-              className="h-[120px] w-[120px] rounded-full border border-muted-foreground/30 object-cover object-[center_top] md:h-[160px] md:w-[160px]"
-              style={{ boxShadow: "0 0 24px rgba(212, 175, 89, 0.08)" }}
-            />
-          </div>
-          <div>
-            <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
-            <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
-              <p>{t("plan:landing.founder.p1")}</p>
-              <p>{t("plan:landing.founder.p2")}</p>
-              <p>{t("plan:landing.founder.p3")}</p>
-              <ul className="space-y-3 pl-0">
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_logic_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_logic_body")}
-                </li>
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_pro_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_pro_body")}
-                </li>
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_filter_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_filter_body")}
-                </li>
-              </ul>
-              <p>{t("plan:landing.founder.p4")}</p>
-            </div>
-            <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
-          </div>
+      {/* Founder note — text-only, short and direct */}
+      <section className="mx-auto max-w-3xl px-6 py-24">
+        <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
+        <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
+          <p>{t("plan:landing.founder.p1")}</p>
+          <p>{t("plan:landing.founder.p2")}</p>
+          <p>{t("plan:landing.founder.p3")}</p>
         </div>
+        <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
       </section>
 
       {/* FAQ */}
@@ -495,24 +475,14 @@ function HowItWorksAnimation() {
                 className="group relative flex gap-4 sm:flex-col sm:gap-3"
                 style={{ animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
               >
-                {/* Sketch-style background scribble */}
-                <svg
-                  aria-hidden
-                  viewBox="0 0 200 80"
-                  preserveAspectRatio="none"
-                  className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07] sm:opacity-[0.10]"
-                >
-                  <path
-                    d={i % 2 === 0
-                      ? "M5,60 Q40,10 90,40 T195,30"
-                      : "M5,30 Q60,70 110,35 T195,55"}
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
+                {/* Chevron between steps (sm+ only) */}
+                {i > 0 && (
+                  <ChevronRight
+                    aria-hidden
+                    className="pointer-events-none absolute -left-3 top-4 hidden h-4 w-4 text-accent/40 sm:block"
+                    strokeWidth={2}
                   />
-                </svg>
-
+                )}
                 {/* Numbered + iconed circle */}
                 <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-accent shadow-[0_4px_14px_-6px_oklch(0.78_0.12_70/0.5)]">
                   <Icon className="h-5 w-5" strokeWidth={1.5} />
