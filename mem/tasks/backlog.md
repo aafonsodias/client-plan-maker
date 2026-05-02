@@ -24,6 +24,17 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 - [ ] #20 add-exercise picker with search (needs new server fn + modal UX)
 - [ ] #23 day-card colour differentiation in SessionDayView (light tinted accent per day index)
 
+## Phase B turn 1 — DONE
+- [x] Founder recognition (AppShell crown chip + DB upgrade for aafonsodias@gmail.com, trial banner suppressed)
+- [x] Day rationale expanded by default + full collapse (SessionDayView)
+- [x] PrepCluster — colour-coded warmup/activation/dynamic in single collapsible card with duration estimate
+- [x] Mobile landing header — overflow menu for currency/lang/theme below sm
+- [x] Landing voice rewrite (PT + EN): coaching workbench, no more "à meia-noite" / "90 segundos"
+- [x] How-it-works visual: stepper with monoline icons, sketch SVG bg, loop indicator
+
+## Phase B turn 2 — pending your call
+- [ ] Drawings/illustrations strategy (6 inline SVGs + 3-tier exercise demo fallback) — awaiting approval
+
 ## Phase B — next turn
 - [ ] #4 Logbook overhaul (coaching station, streaks, PR detection, satisfying check-off)
 - [ ] #3 + #24 MEV/MAV/MRV intelligence + spider charts (per session/week/meso)
