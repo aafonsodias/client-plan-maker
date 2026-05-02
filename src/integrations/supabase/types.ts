@@ -40,6 +40,7 @@ export type Database = {
           hydration_glasses_per_day: number | null
           id: string
           injuries: string | null
+          kind: string
           known_imbalances: string | null
           lifestyle: string | null
           lunge_capacity: Json
@@ -115,6 +116,7 @@ export type Database = {
           hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          kind?: string
           known_imbalances?: string | null
           lifestyle?: string | null
           lunge_capacity?: Json
@@ -190,6 +192,7 @@ export type Database = {
           hydration_glasses_per_day?: number | null
           id?: string
           injuries?: string | null
+          kind?: string
           known_imbalances?: string | null
           lifestyle?: string | null
           lunge_capacity?: Json
@@ -349,6 +352,69 @@ export type Database = {
         }
         Relationships: []
       }
+      client_measurement_prefs: {
+        Row: {
+          client_id: string
+          daily_fields: string[]
+          periodic_fields: string[]
+          periodic_interval_days: number
+          reassessment_interval_days: number
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          daily_fields?: string[]
+          periodic_fields?: string[]
+          periodic_interval_days?: number
+          reassessment_interval_days?: number
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          daily_fields?: string[]
+          periodic_fields?: string[]
+          periodic_interval_days?: number
+          reassessment_interval_days?: number
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_measurements: {
+        Row: {
+          cadence: string
+          client_id: string
+          created_at: string
+          id: string
+          measured_on: string
+          notes: string | null
+          trainer_id: string
+          values: Json
+        }
+        Insert: {
+          cadence: string
+          client_id: string
+          created_at?: string
+          id?: string
+          measured_on?: string
+          notes?: string | null
+          trainer_id: string
+          values?: Json
+        }
+        Update: {
+          cadence?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          measured_on?: string
+          notes?: string | null
+          trainer_id?: string
+          values?: Json
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           age: number | null
@@ -366,6 +432,7 @@ export type Database = {
           photo_url: string | null
           sex: string | null
           trainer_id: string
+          trainer_summary: string | null
           updated_at: string
           weight_kg: number | null
         }
@@ -385,6 +452,7 @@ export type Database = {
           photo_url?: string | null
           sex?: string | null
           trainer_id: string
+          trainer_summary?: string | null
           updated_at?: string
           weight_kg?: number | null
         }
@@ -404,6 +472,7 @@ export type Database = {
           photo_url?: string | null
           sex?: string | null
           trainer_id?: string
+          trainer_summary?: string | null
           updated_at?: string
           weight_kg?: number | null
         }
@@ -743,6 +812,7 @@ export type Database = {
           blueprint: Json | null
           brief: Json | null
           client_id: string
+          completion_state: string | null
           created_at: string
           demo_critique: Json | null
           duration_weeks: number | null
@@ -770,6 +840,7 @@ export type Database = {
           blueprint?: Json | null
           brief?: Json | null
           client_id: string
+          completion_state?: string | null
           created_at?: string
           demo_critique?: Json | null
           duration_weeks?: number | null
@@ -797,6 +868,7 @@ export type Database = {
           blueprint?: Json | null
           brief?: Json | null
           client_id?: string
+          completion_state?: string | null
           created_at?: string
           demo_critique?: Json | null
           duration_weeks?: number | null
