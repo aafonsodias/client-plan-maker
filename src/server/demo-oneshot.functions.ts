@@ -155,7 +155,7 @@ export const startDemoClientFull = createServerFn({ method: "POST" })
     const runId = (runRow as any).id as string;
     // Fire-and-forget: keep the promise alive on the runtime but don't
     // await it inside the HTTP response. Errors are persisted to demo_runs.
-    void runInstantPipeline(userId, runId, data).catch((e) => {
+    void runInstantPipelineForUser(userId, runId, data).catch((e: unknown) => {
       console.error("[demo-oneshot] background pipeline error", e);
     });
     return { ok: true as const, runId, error: null };
