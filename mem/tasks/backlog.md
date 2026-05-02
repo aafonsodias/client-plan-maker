@@ -42,7 +42,7 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 
 ## Phase C — following turn
 - [ ] #1 Landing revamp (first-time-visitor pass)
-- [ ] #5 /manual + /faq + /contacto routes
+- [x] #5 Manual + FAQ + Contacto: consolidados numa só rota `/manual` com 3 modos (Manual, FAQ, Contacto). Sem novas rotas para manter, sem nav extra. Contacto usa `mailto:` (sem backend novo).
 - [ ] #9 Assessment fade-section flow + history pills
 - [ ] #6 + #11 Synthesis enrichment + "digitalizar documento" upload
 - [ ] #14 Speed: Promise.all per-day + Haiku for stage 3
