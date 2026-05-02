@@ -2738,7 +2738,10 @@ function AssessmentSection({
   // inside its own card — the toggle exists for "see all" mode only).
   useEffect(() => {
     if (focused) ctx.setOpen(activeId, true);
-  }, [focused, activeId, ctx]);
+    // Depend only on the stable setOpen callback, NOT the whole ctx object —
+    // ctx is rebuilt every render, which would create an infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focused, activeId, ctx.setOpen]);
 
   // Map child SectionBlocks by their `id` prop so we can pick the active one.
   const childArray = Children.toArray(children);
