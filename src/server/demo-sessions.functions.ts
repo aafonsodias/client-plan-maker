@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { maybePersonaFeedback } from "@/lib/demo-personas";
 
 /**
  * Demo session generator + simulation tick.
@@ -24,22 +25,32 @@ type ExerciseLike = {
   reps?: string | number;
   rest?: string;
   notes?: string;
+  pattern?: string;
+  category?: string;
 };
 
 function jitter(min: number, max: number): number {
   return Math.round((Math.random() * (max - min) + min) * 10) / 10;
 }
 
+function isCardioLike(ex: ExerciseLike): boolean {
+  const blob = `${ex.name ?? ""} ${ex.pattern ?? ""} ${ex.category ?? ""} ${ex.notes ?? ""}`.toLowerCase();
+  return /cardio|condition|carry|farmer|run|bike|row|sprint|airbike|sled|jog/.test(blob);
+}
+
 /** Fabricate a plausible "actual" performance from the planned exercise. */
 function fabricateEntry(ex: ExerciseLike, weekIndex: number) {
   const setsStr = String(ex.sets ?? "");
   const repsStr = String(ex.reps ?? "");
+  const cardio = isCardioLike(ex);
   // Light, deterministic load that bumps with week.
   const baseLoad = 20 + weekIndex * 2.5 + jitter(-2, 4);
-  const weight = `${Math.max(0, baseLoad).toFixed(1)} kg`;
-  // Simulate small misses on later sets occasionally.
-  const repsHit = repsStr || "8-10";
+  const weight = cardio ? "" : `${Math.max(0, baseLoad).toFixed(1)} kg`;
+  const repsHit = repsStr || (cardio ? "" : "8-10");
   const rpe = Math.min(9, 6 + weekIndex * 0.3 + jitter(0, 1.2)).toFixed(1);
+  // Cardio: write distance + time instead of weight.
+  const distance = cardio ? `${(0.8 + weekIndex * 0.1 + jitter(0, 0.3)).toFixed(2)} km` : "";
+  const timeMin = cardio ? `${Math.round(8 + weekIndex * 1 + jitter(0, 3))} min` : "";
   return {
     exercise_name: ex.name ?? "Exercise",
     planned: {
@@ -52,9 +63,24 @@ function fabricateEntry(ex: ExerciseLike, weekIndex: number) {
       sets: setsStr,
       reps: repsHit,
       weight,
-      notes: `RPE ${rpe}`,
+      rpe,
+      distance,
+      time: timeMin,
+      notes: cardio ? `RPE ${rpe} · ${distance} em ${timeMin}` : `RPE ${rpe}`,
     },
   };
+}
+
+/** Pulls the demo persona archetype off the latest assessment for a client. */
+async function getPersonaArchetype(clientId: string): Promise<string | null> {
+  const { data: a } = await supabaseAdmin
+    .from("assessments")
+    .select("extended")
+    .eq("client_id", clientId)
+    .order("performed_on", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return ((a as any)?.extended?.demo_meta?.archetype as string) ?? null;
 }
 
 /**
@@ -74,11 +100,14 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
 
     const { data: plan, error: planErr } = await supabaseAdmin
       .from("workout_plans")
-      .select("id, trainer_id, duration_weeks")
+      .select("id, trainer_id, duration_weeks, client_id")
       .eq("id", data.planId)
       .maybeSingle();
     if (planErr || !plan) return { ok: false as const, inserted: 0, error: "plan_not_found" };
     if (plan.trainer_id !== userId) return { ok: false as const, inserted: 0, error: "forbidden" };
+    const archetype = (plan as any).client_id
+      ? await getPersonaArchetype((plan as any).client_id)
+      : null;
 
     const maxWeek = Math.min(data.weeksToSeed, plan.duration_weeks ?? 4);
 
@@ -112,6 +141,9 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
       // Date = startDate + (week-1)*7 + (day_number-1) days.
       const sessionDate = new Date(startDate);
       sessionDate.setDate(sessionDate.getDate() + (d.week_number - 1) * 7 + (d.day_number - 1));
+      // Seed = stable per (plan, week, day) so re-seeding never moves feedback around.
+      const seed = (data.planId.charCodeAt(0) || 1) + d.week_number * 13 + d.day_number * 7;
+      const feedback = maybePersonaFeedback(archetype, seed, 3);
       rows.push({
         plan_id: data.planId,
         trainer_id: userId,
@@ -124,6 +156,7 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
         entries,
         logged_by: "trainer",
         status: "done" as const,
+        client_feedback: feedback ?? null,
       });
     }
 
@@ -174,7 +207,7 @@ export const advanceSimulation = createServerFn({ method: "POST" })
 
     let ticked = 0;
     for (const [clientId, plan] of planByClient) {
-      void clientId;
+      const archetype = await getPersonaArchetype(clientId);
       // Find next un-logged (week, day) for this plan.
       const { data: days } = await supabaseAdmin
         .from("workout_plan_days")
@@ -198,6 +231,8 @@ export const advanceSimulation = createServerFn({ method: "POST" })
       const entries = exercises.map((ex) => fabricateEntry(ex, next.week_number - 1));
 
       const today = new Date().toISOString().slice(0, 10);
+      const seed = (plan.id.charCodeAt(0) || 1) + next.week_number * 13 + next.day_number * 7 + Date.now() % 100;
+      const feedback = maybePersonaFeedback(archetype, seed, 3);
       const { error } = await supabaseAdmin.from("workout_sessions").insert({
         plan_id: plan.id,
         trainer_id: userId,
@@ -208,6 +243,7 @@ export const advanceSimulation = createServerFn({ method: "POST" })
         entries,
         logged_by: "client",
         status: "done" as const,
+        client_feedback: feedback ?? null,
       });
       if (!error) ticked += 1;
     }
