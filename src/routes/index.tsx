@@ -414,6 +414,7 @@ function Landing() {
 }
 
 function HowItWorksAnimation() {
+  // Existing four-step animation, kept as the visual deep-dive of "how it works"
   const { t } = useTranslation("plan");
   const steps = [
     { label: t("landing.how_it_works.steps.add_client.label"), desc: t("landing.how_it_works.steps.add_client.desc") },
