@@ -743,9 +743,7 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
           {ctx.trainer?.logo_url ? (
             <img src={ctx.trainer.logo_url} alt="" className="h-9 w-9 rounded-md object-cover" />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-muted-foreground">
-              {(trainerName[0] ?? "T").toUpperCase()}
-            </div>
+            <BrandMark size="sm" />
           )}
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{trainerName}</p>
