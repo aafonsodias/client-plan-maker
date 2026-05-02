@@ -217,14 +217,14 @@
     "pricing": {
       "eyebrow": "Pricing",
       "title": "Honest, no surprises.",
-      "beta_badge": "Try it",
-      "beta_title": "Try it — no card",
+      "beta_badge": "Free",
+      "beta_title": "Free to start",
       "beta_price": "€0",
       "beta_period": "for your first plan",
       "beta_features": [
-        "Walk through the full assessment, slide by slide",
-        "Get your first plan as a branded PDF",
-        "One week of logbook to feel the feedback loop",
+        "1 client · 1 complete plan",
+        "PDF with your branding",
+        "No card, no deadline",
         "Keep using it as long as it earns its place"
       ],
       "beta_cta": "Start now",
