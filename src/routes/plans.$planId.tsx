@@ -369,6 +369,7 @@ function PlanEditor() {
           >
             <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
           </Button>
+          <ImportLogDialog planId={planId} plan={data} />
           <Button
             variant="ghost"
             size="sm"
