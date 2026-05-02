@@ -17,6 +17,7 @@ import { Route as ForgeRouteImport } from './routes/forge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as BancadaRouteImport } from './routes/bancada'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansIndexRouteImport } from './routes/plans.index'
@@ -70,6 +71,11 @@ const ClientsRoute = ClientsRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BancadaRoute = BancadaRouteImport.update({
+  id: '/bancada',
+  path: '/bancada',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -147,6 +153,7 @@ const ApiPublicHooksWeeklyDigestRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bancada': typeof BancadaRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bancada': typeof BancadaRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bancada': typeof BancadaRoute
   '/billing': typeof BillingRoute
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/bancada'
     | '/billing'
     | '/clients'
     | '/dashboard'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/bancada'
     | '/billing'
     | '/clients'
     | '/dashboard'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/bancada'
     | '/billing'
     | '/clients'
     | '/dashboard'
@@ -295,6 +307,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  BancadaRoute: typeof BancadaRoute
   BillingRoute: typeof BillingRoute
   ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
@@ -368,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bancada': {
+      id: '/bancada'
+      path: '/bancada'
+      fullPath: '/bancada'
+      preLoaderRoute: typeof BancadaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -494,6 +514,7 @@ const PlansPlanIdRouteWithChildren = PlansPlanIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  BancadaRoute: BancadaRoute,
   BillingRoute: BillingRoute,
   ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,

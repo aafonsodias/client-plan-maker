@@ -1,167 +1,110 @@
-# Plano: avaliação contextual + planos manuais + reassessments
 
-Cinco frentes, todas dentro de `src/routes/clients_.$clientId.tsx` + alguns componentes/migration novos. Ordem: (1) limpeza visual da avaliação, (2) cadência de medições, (3) reassessment lembretes, (4) reorganização do perfil do cliente, (5) novo plano manual + "evoluir do último plano".
+# Próximo lote — Forge
+
+Cinco frentes, todas pequenas e honestas. Sem reinventar o que já existe (o tier system, o BrandMark, o demo lab, o block lineage estão feitos).
 
 ---
 
-## 1. Esconder "Revisão de segurança" + "Descartar rascunho" quando há plano pronto
+## 1. Caminho manual para tudo o que a IA faz
 
-Quando existe pelo menos um `workout_plans` com `generation_status = 'complete'` cuja `assessment_id` corresponde à avaliação atualmente carregada (ou, fallback, com `created_at >= assessment.performed_on`), os botões inferiores da avaliação tornam-se ruído — o trabalho está feito.
+A IA é só atalho. O caminho manual tem de existir e ser visível. O que falta hoje:
 
-Comportamento:
-- Esconder o `AlertDialog` de "Descartar rascunho" e o botão vermelho "Revisão de segurança" / "Gerar plano" quando `hasReadyPlanForCurrentAssessment === true`.
-- Em vez disso, mostrar um chip discreto "Plano pronto · ver" que faz scroll para a secção *Planos*.
-- Reaparecem se o utilizador editar a avaliação (`assessment.updated_at > readyPlan.created_at`) ou criar uma nova reavaliação.
+- **Concluir bloco e iniciar Bloco N+1 (manual).** Hoje só existe `archivePlanAndStartNextBlock` (IA). Adicionar `archivePlanAndStartManualNextBlock` que:
+  - calcula o mesmo `block_transition_summary` (adesão + RPE drift) — reaproveita a lógica;
+  - arquiva o plano anterior;
+  - cria um `workout_plans` em branco com `block_number+1`, `prior_plan_id`, `generation_status='manual'`;
+  - redireciona para `/plans/$id/blueprint` em modo edição manual.
+- **Botão no header do plano** já tem "Concluir e iniciar Bloco N+1 (IA)". Passa a ser dropdown com duas opções: *com IA (rápido)* | *manualmente (tens controlo total)*. A opção manual está sempre visível, a IA só em demo plans.
+- **Resumo de transição editável.** O `block_transition_summary` (gerado pela IA ou pelas métricas) abre num textarea antes de criar o próximo bloco — o treinador edita, valida, confirma. Princípio: a IA propõe, o humano assina.
+- **Manual.json (pt-PT)** ganha uma secção nova "Evolução entre blocos" a explicar o caminho manual passo-a-passo.
 
-## 2. Avaliação inteira colapsa em "Última avaliação 02/05/2026"
+## 2. Bancada — o sítio divertido + útil
 
-Atualmente cada uma das 14 secções aparece sempre expandida em altura (mesmo colapsada o cabeçalho ocupa ~52px x 14 = ~730px de scroll). Mudanças:
-
-- **Container colapsável**: envolver toda a Avaliação num `<details>` (ou um `Collapsible` shadcn). Quando colapsado mostra só o cabeçalho compacto: *"Avaliação · Última 02/05/2026 · 14 secções · 93%"* + chevron.
-- **Default colapsado quando há plano pronto**; default expandido quando não há ou quando há rascunho ativo.
-- **Linhas de secção mais densas**: `py-2 px-3` (em vez de `py-3.5 px-4`), tipografia `text-[11px]`, ícone de info `h-3 w-3`, sem espaçamento extra entre secções (`space-y-1` em vez de `space-y-3`). Mantém apenas 1 linha de altura por secção colapsada.
-- "EXPANDIR TUDO / COLAPSAR TUDO" passa a um par de chips inline mais pequenos no cabeçalho da avaliação, não cards separados.
-
-## 3. Cadência de medições: diárias vs periódicas
-
-Hoje tudo vive na mesma `assessments` row e parece tudo da mesma natureza. Separar:
-
-- **Diárias** (livres, opcionais por cliente): FCR ao acordar, peso, sono (1–10), stress (1–10), sorencia, hidratação. Cada cliente decide quais quer registar.
-- **Periódicas (~bisemanal/mensal)**: circunferências (cintura/anca), %BG, RHR repouso, BP. Lembrete cada 14 ou 30 dias.
-- **Reassessment completa** (~6–12 semanas, configurável): subset da avaliação inicial — objetivo, prontidão, performance, screen de movimento, mobilidade. Não repete PAR-Q+ nem ACSM (a menos que tenha passado >6 meses).
-
-Nova tabela `client_measurements`:
-
-```sql
-create table public.client_measurements (
-  id uuid primary key default gen_random_uuid(),
-  trainer_id uuid not null,
-  client_id uuid not null,
-  measured_on date not null default current_date,
-  cadence text not null check (cadence in ('daily','periodic')),
-  values jsonb not null default '{}'::jsonb,
-  notes text,
-  created_at timestamptz not null default now()
-);
--- index (client_id, measured_on desc), RLS auth.uid() = trainer_id
-```
-
-Nova tabela `client_measurement_prefs` (1 linha por cliente):
-
-```sql
-create table public.client_measurement_prefs (
-  client_id uuid primary key,
-  trainer_id uuid not null,
-  daily_fields text[] not null default '{}',     -- ex: {'rhr_wake','weight','sleep'}
-  periodic_fields text[] not null default '{}',  -- ex: {'waist','hip','bf'}
-  periodic_interval_days int not null default 14,
-  reassessment_interval_days int not null default 56,
-  updated_at timestamptz not null default now()
-);
-```
-
-UI no perfil do cliente:
-- Card *"Medições · diárias"* — lista os 3–5 valores mais recentes em sparklines mini (peso, FCR, sono). Botão "+ registar hoje" abre um drawer pequeno com só os campos ativos.
-- Card *"Medições · periódicas"* — circunferências/composição, com chip *"Devido em X dias"* baseado em `periodic_interval_days - (today - last.measured_on)`.
-- Settings inline (engrenagem) para cada cliente escolher que campos quer.
-
-## 4. Lembretes de reassessment
-
-Banner amber no topo do perfil quando hoje >= `last_full_assessment.performed_on + reassessment_interval_days`:
-
-> *Marta fez a última avaliação completa há 9 semanas. É boa altura para uma reavaliação parcial (objetivo, screen, performance) — leva ~7 min.*
-
-Botão "Iniciar reavaliação" abre o formulário de avaliação mas com 5 secções pré-selecionadas (objetivo, prontidão, screen, mobilidade, performance) e marca `assessments.kind = 'reassessment'` (nova coluna `text` opcional).
-
-Migration adicional:
-```sql
-alter table public.assessments add column if not exists kind text not null default 'full';
--- 'full' | 'reassessment'
-```
-
-## 5. Perfil do cliente: o que ver + "+ Novo plano"
-
-O perfil hoje é um stream linear gigante. Reorganizar para:
+Uma página `/bancada` (em inglês `/workshop`), dentro da app, acessível pelo AppShell. Dois painéis lado a lado:
 
 ```text
-┌──────────────────────────────────────────────────┐
-│ [Avatar] Marta Quintela (demo)         [editar]  │
-│ Snapshot · risco/recuperação/composição          │
-├──────────────────────────────────────────────────┤
-│ Resumo do treinador (3-5 linhas, livres)         │
-│ "Marta foca dorso/posterior, joelho dir. sensí…" │
-├──────────────────────────────────────────────────┤
-│ ▸ Avaliação · 02/05/2026 (colapsada)             │
-├──────────────────────────────────────────────────┤
-│ Medições diárias · sparklines + [+ hoje]         │
-│ Medições periódicas · [devido em 4d]             │
-├──────────────────────────────────────────────────┤
-│ Planos                                  [+ Novo] │
-│   • Bloco 1 · Pronto · 02/05                     │
-│   • Bloco 2 · Em curso ·                         │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────┬──────────────────────────┐
+│   Pesa-papéis            │   Quadro de estudos      │
+│   (calculadora rápida)   │   (PubMed + news feed)   │
+│                          │                          │
+│ 1RM Epley/Brzycki/Lombardi│ Top 10 estudos recentes  │
+│ Carga × reps → estimativa │ em força/hipertrofia     │
+│ Plate math (barra + anilhas)│ + posts de news (RSS)  │
+│ Tempo de descanso ↔ %1RM   │ Filtros: força, hipert.,│
+│ Conversor lb↔kg            │ recuperação, lesão       │
+└──────────────────────────┴──────────────────────────┘
 ```
 
-- **Resumo do treinador**: novo campo `clients.trainer_summary text` (free text, ≤500 chars). Aparece sempre visível como cartão pequeno acima da avaliação.
-- **Planos** ganha um botão `[+ Novo plano]` no header da secção.
+- **Pesa-papéis (fun):** componente client-only, zero backend. Inputs: peso e reps → estimativa de 1RM por três fórmulas com a média destacada. Slider de % do 1RM → carga + plate math (mostra que anilhas pôr de cada lado de uma barra de 20 kg). Tudo em SI, com toggle lb/kg local. Visual: amber under-glow nos resultados, tipografia mono nas cargas.
+- **Quadro de estudos (útil):** server function `getStudiesFeed` que chama [PubMed E-utilities](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/) (sem chave, gratuito) com queries pré-definidas (`"resistance training"[MeSH] AND "2025"[dp]`, idem para "hypertrophy", "rehabilitation"). Cache em memória 6 h. Mostra título, autores, journal, link DOI. Filtros locais por tag. Sem login externo.
+- **Princípio:** a página carrega instantaneamente mesmo sem feed (o pesa-papéis é client). O feed faz fetch progressivo.
+- **Localização:** "Bancada" no AppShell com ícone Hammer, entre Dashboard e Manual.
 
-### Novo plano manual + automático "evoluir do último"
+Esta é a "place that is both fun and serious and useful" — o pesa-papéis é viciante (mexer no slider e ver as anilhas a aparecerem) e o quadro é honesto (literatura real, não conteúdo gerado).
 
-Clicando `+ Novo plano` abre um pequeno popover com duas opções:
+## 3. pt-PT: tu → você (varrer i18n)
 
-1. **Plano em branco (manual)** → cria `workout_plans` row com `generation_status = 'manual'`, `plan_data = { weeks: [] }`, redireciona para `/plans/$planId` em modo `edit`. O editor existente (`MesocycleTableView` em modo `edit`) já permite adicionar dias/exercícios à mão. Sem chamada a IA, sem consumir quota.
-2. **Evoluir do último plano concluído (IA)** → só ativo se existir `workout_plans` com `status in ('archived','complete')` e logbook não-vazio. Reusa `archivePlanAndStartNextBlock({ priorPlanId: lastFinishedPlan.id })` (já existe em `src/server/blocks.functions.ts`). O botão fica desativado com tooltip *"Termina e regista pelo menos 1 sessão para evoluir."* se o último plano não tem sessões.
+O `intake.json`, `review.json`, `common.json`, `manual.json` usam "tu/teu/tua" — formal pt-PT prefere "você/seu/sua" ou impessoal. Sweep:
 
-Status de "concluído pelo cliente" — separar de `archived`. Adicionar `workout_plans.completion_state text` opcional: `'in_progress' | 'finished_logging' | 'archived'`. Botão "Marcar como terminado" no plano (`/plans/$planId`) escreve `finished_logging` quando o cliente diz que acabou de registar. Só com `finished_logging` é que aparece o "Evoluir" em Novo Plano.
+- "o teu treinador" → "o seu treinador"
+- "cria a tua conta" → "crie a sua conta" (imperativo formal)
+- "podes" → "pode"
+- "guardamos o teu progresso" → "guardamos o seu progresso"
 
-Migration:
-```sql
-alter table public.clients add column if not exists trainer_summary text;
-alter table public.workout_plans add column if not exists completion_state text;
-```
+Critério: **toda a comunicação dirigida ao utilizador final (cliente do PT) e ao PT** passa a "você"/imperativo formal. Tooltips internos e debug podem ficar informais. Adicionar à memory como regra (`mem://design/voice-pt`).
+
+## 4. Landing — gráfico + funcional
+
+Não recomeçar. Polir três pontos:
+
+- **Hero mockup:** o cartão à direita (ver imagem 2 que mandou) ganha micro-animação amber: a coluna Δ "+4 kg / +5 kg" pulsa subtil 1×/8 s, dando sinal de vida sem distrair.
+- **Secção nova "Bancada"** entre features e pricing: card pequeno com screenshot do pesa-papéis + estudos. CTA "Experimenta agora — não precisa de conta" se for para anónimos lerem o pesa-papéis (decisão: sim, é uma porta de entrada honesta).
+- **Gráfico evolução (imagem 1 que mandou)** já existe como conceito "EM BREVE". Promovê-lo: quando o treinador tem ≥3 semanas logged num exercício, a chip "EM BREVE" cai e o gráfico fica vivo. Implementar a lógica de hidratação real (já há `workout_sessions.entries`).
+- **OG/twitter image** dedicada por rota (já está parcialmente — confirmar e completar).
+
+## 5. Naming — Forge / símbolo
+
+Não vou trocar nada sem o seu sinal verde. Mas registo aqui as opções para discussão (ficam num doc interno `docs/naming.md`, não muda nada no código):
+
+- **Forge** (atual). A favor: bonito, físico, ressoa com "moldar pela repetição". Contra: nome saturado em SaaS.
+- **Bigorna / Anvil.** A bigorna é o que recebe — o cliente. O treinador é o ferreiro. Símbolo: silhueta de bigorna estilizada. Mais original.
+- **Forja.** Versão pt da mesma metáfora. Mantém o símbolo.
+- **Compasso.** Outro registo: rigor + medida em vez de força + repetição. Mais clínico.
+
+Símbolo atual (logo carregada) tem o amber under-glow. Proposta: manter logo, mas **adicionar uma versão monocromática** (silhueta amber sólida) para favicons e PDFs, garantindo legibilidade pequena. Isto é útil independentemente do nome.
 
 ---
 
 ## Detalhes técnicos
 
-**Ficheiros tocados**
-- `src/routes/clients_.$clientId.tsx` — colapsar avaliação, esconder ações draft, banner reassessment, secção planos com `+ Novo plano`, snapshot já existe.
-- `src/components/AssessmentSection.tsx` (novo wrapper) — extrair as secções colapsáveis, normalizar densidade.
-- `src/components/ClientMeasurementsCard.tsx` (novo) — sparklines (`recharts` mini line) + drawer de input.
-- `src/components/MeasurementPrefsSheet.tsx` (novo) — escolha de campos diários/periódicos.
-- `src/components/NewPlanPopover.tsx` (novo) — duas opções manual/IA.
-- `src/server/measurements.functions.ts` (novo) — `recordMeasurement`, `listMeasurements`, `getPrefs`, `updatePrefs`.
-- `src/server/blocks.functions.ts` — pequena adição: aceitar plans com `completion_state = 'finished_logging'` além de `archived`.
-- `src/integrations/supabase/types.ts` — regenerado pela migration.
+**Ficheiros novos:**
+- `src/routes/bancada.tsx` — página com dois painéis.
+- `src/components/OneRepMaxCalculator.tsx` — pesa-papéis client-only.
+- `src/components/PlateMath.tsx` — visualização das anilhas.
+- `src/components/StudiesFeed.tsx` — quadro de estudos (consome server fn).
+- `src/server/studies.functions.ts` — `getStudiesFeed({ topic })` via PubMed E-utilities, cache 6 h.
+- `src/server/blocks-manual.functions.ts` — `archivePlanAndStartManualNextBlock` (sem IA).
+- `src/components/BlockTransitionDialog.tsx` — diálogo com summary editável + dois botões (manual / IA).
+- `mem://design/voice-pt.md` — regra do "você".
+- `docs/naming.md` — discussão de naming, sem efeito no build.
 
-**Migrations (1 ficheiro)**
-1. `client_measurements` + RLS (trainer-only, `auth.uid() = trainer_id`).
-2. `client_measurement_prefs` + RLS.
-3. `assessments.kind text default 'full'`.
-4. `clients.trainer_summary text`.
-5. `workout_plans.completion_state text`.
+**Ficheiros editados:**
+- `src/routes/plans.$planId.tsx` — substitui o botão único de Bloco N+1 pelo dialog.
+- `src/components/AppShell.tsx` — adiciona link "Bancada" no nav.
+- `src/i18n/locales/pt/{common,intake,review,manual}.json` — sweep tu→você.
+- `src/i18n/locales/pt/manual.json` — secção "Evolução entre blocos".
+- `src/routes/index.tsx` — secção Bancada na landing + micro-animação amber + ativar gráfico real.
+- `src/server/blocks.functions.ts` — extrair `computeTransitionSummary` (puro) para reaproveitar entre IA e manual.
 
-**Lógica de "plano pronto para esta avaliação"**
-```ts
-const readyPlanForAssessment = useMemo(() =>
-  plans.find(p =>
-    p.generation_status === 'complete' &&
-    (p.assessment_id === assessment?.id ||
-     (assessment?.performed_on &&
-      new Date(p.created_at) >= new Date(assessment.performed_on)))
-  ), [plans, assessment]);
-```
+**Sem migrações de base de dados.** Tudo cabe em colunas existentes (`workout_plans.generation_status` aceita 'manual', `block_transition_summary` é texto livre).
 
-**Sparklines** — usar `recharts` (já no bundle) com `<LineChart width={120} height={28}>` sem eixos.
-
-**Pré-selecção de secções na reavaliação** — passar `?kind=reassessment&sections=goal,readiness,screen,mobility,performance` ao formulário; o componente esconde as outras secções e marca `kind` na submissão.
-
-**Out of scope** (próximas iterações, evita drift):
-- Notificações push/email para reassessment.
-- Auto-sync com wearables (Apple Health / Garmin) para FCR e sono.
-- Editor visual drag-and-drop para o plano manual (usa o editor de tabela existente).
-- Versionamento do `trainer_summary`.
+**Acceptance:**
+1. Header de qualquer plano com >1 sessão logged mostra "Concluir bloco" → abre dialog → escolha entre manual e IA → cria Bloco N+1 corretamente em ambos os caminhos.
+2. `/bancada` carrega em <200 ms (pesa-papéis instantâneo). Estudos hidratam em <3 s, com 5+ entradas reais.
+3. `intake` e `auth` já não têm "tu/teu/tua" — só "você/seu/sua" ou impessoal.
+4. Landing mostra a secção Bancada e o gráfico de evolução tem dados reais quando há logs.
+5. Memory atualizada com a regra de voz pt-PT.
 
 ---
 
-Reply **"continua"** para executar pela ordem: (A) migration → (B) colapsar avaliação + esconder draft actions → (C) +Novo plano popover → (D) trainer summary + reorganização do perfil → (E) measurements (cards + drawer + prefs) → (F) reassessment banner + flow.
+Aprovo e começo, ou queres que ajuste alguma frente antes (ex.: trocar PubMed por outra fonte, ou cortar a Bancada para outro turno)?

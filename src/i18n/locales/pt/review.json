@@ -28,12 +28,12 @@
       "field_password": "Palavra-passe",
       "field_full_name": "Nome completo",
       "password_hint": "Pelo menos 10 caracteres. Evita palavras-passe comuns ou comprometidas.",
-      "confirm_email_toast": "Confirma a tua conta no email que recebeste."
+      "confirm_email_toast": "Confirme a sua conta no email que recebeste."
     },
     "shell": {
-      "trial_days_left_one": "Resta {{count}} dia no teu período experimental.",
-      "trial_days_left_other": "Restam {{count}} dias no teu período experimental.",
-      "trial_ended": "O teu período experimental terminou. Faz upgrade para continuar a gerar planos."
+      "trial_days_left_one": "Resta {{count}} dia no seu período experimental.",
+      "trial_days_left_other": "Restam {{count}} dias no seu período experimental.",
+      "trial_ended": "O seu período experimental terminou. Faça upgrade para continuar a gerar planos."
     },
     "language": {
       "switch_aria": "Mudar idioma",
@@ -51,8 +51,8 @@
       "hero": {
         "title_line1": "Para de escrever planos",
         "title_line2": "à meia-noite.",
-        "subtitle": "Faz uma avaliação estruturada, deixa a IA preparar um programa personalizado em 90 segundos e exporta um PDF com a tua marca que os teus clientes vão mesmo abrir.",
-        "cta_primary_signed_out": "Cria o teu primeiro plano",
+        "subtitle": "Faça uma avaliação estruturada, deixa a IA preparar um programa personalizado em 90 segundos e exporta um PDF com a sua marca que os seus clientes vão mesmo abrir.",
+        "cta_primary_signed_out": "Crie o seu primeiro plano",
         "cta_primary_signed_in": "Abrir dashboard",
         "cta_secondary": "Vê como funciona",
         "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador."
@@ -64,12 +64,12 @@
           "add_client": { "label": "Adicionar cliente", "desc": "Regista os dados em segundos." },
           "assessment": { "label": "Fazer a avaliação", "desc": "PAR-Q+, risco, mobilidade, objetivos." },
           "generate": { "label": "Gerar plano", "desc": "A IA cria um programa periodizado." },
-          "export": { "label": "Exportar PDF", "desc": "Com a tua marca, num clique." }
+          "export": { "label": "Exportar PDF", "desc": "Com a sua marca, num clique." }
         }
       },
       "credibility": {
         "title": "Construído sobre a ciência em que já confias.",
-        "subtitle": "A Forge não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeste na tua certificação — para que o resultado seja defensável, não genérico.",
+        "subtitle": "A Forge não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeu na sua certificação — para que o resultado seja defensável, não genérico.",
         "cards": {
           "parq_title": "Triagem PAR-Q+",
           "parq_desc": "Triagem de saúde pré-participação com sinalização de risco cardiovascular, metabólico e renal incluída.",
@@ -90,14 +90,14 @@
         "ai_title": "Programas criados por IA",
         "ai_desc": "Recebe um plano semanal periodizado adaptado à avaliação em segundos.",
         "pdf_title": "Exportação de PDF com marca",
-        "pdf_desc": "Adiciona o teu logótipo e o nome do teu negócio. Envia um plano polido instantaneamente."
+        "pdf_desc": "Adicione o seu logótipo e o nome do seu negócio. Envie um plano polido instantaneamente."
       },
       "founder": {
         "title": "Porquê a Forge?",
         "img_alt": "André, fundador da Forge",
         "p1": "Em quinze anos como personal trainer, percebi duas coisas: a maioria dos planos de treino profissionais são mal montados e, como a parte administrativa é uma chatice, muitos treinadores acabam por desistir e improvisar.",
         "p2": "Programação estruturada e de qualidade demora normalmente demasiado tempo, e por isso não é feita.",
-        "p3": "A Forge foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o teu próprio treino.",
+        "p3": "A Forge foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o seu próprio treino.",
         "bullet_logic_title": "Lógica acima da estética.",
         "bullet_logic_body": "Não é teatro administrativo nem PDFs bonitos. É usar frameworks sólidos (PAR-Q+, estratificação de risco ACSM, Prochaska) para construir uma base que faz sentido.",
         "bullet_pro_title": "Profissional ou pessoal.",
@@ -110,20 +110,20 @@
       "faq": {
         "title": "Perguntas que os treinadores fazem antes de se inscrever.",
         "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
-        "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o teu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o teu critério.",
+        "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vai ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
         "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
         "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
         "q3_q": "Posso usar a minha própria marca no PDF?",
-        "q3_a": "Sim. Carrega o teu logótipo e o nome do teu negócio em Definições. Cada exportação de PDF tem a identidade do teu estúdio, não a da Forge.",
+        "q3_a": "Sim. Carregue o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Forge.",
         "q4_q": "O que acontece aos dados dos meus clientes?",
-        "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
+        "q4_a": "Guardados no Supabase (região UE). Pode exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
       },
       "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
       "closing": {
-        "title": "O teu próximo plano, antes da tua próxima sessão.",
+        "title": "O seu próximo plano, antes da sua próxima sessão.",
         "subtitle": "Grátis durante a fase beta. Sem cartão.",
         "cta_signed_in": "Abrir dashboard",
-        "cta_signed_out": "Cria a tua conta"
+        "cta_signed_out": "Crie a sua conta"
       },
       "footer_copy": "© {{year}} Forge"
     }
