@@ -227,17 +227,20 @@ Output ONLY by calling the record_brief tool.`;
       last_updated_at: new Date().toISOString(),
     });
 
+    const fallbackRow = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
+    const sanitizedBrief = sanitizeMovementCompetencySummary(result.data, fallbackRow);
+
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: result.data as any,
+        brief: sanitizedBrief as any,
         generation_state: newState as any,
         ...clearDownstream("brief"),
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
 
-    return { ok: true as const, brief: result.data };
+    return { ok: true as const, brief: sanitizedBrief };
   });
 
 /**
@@ -559,10 +562,13 @@ Output ONLY by calling the record_brief tool.`;
       last_updated_at: new Date().toISOString(),
     });
 
+    const fallbackRow2 = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
+    const sanitizedBrief2 = sanitizeMovementCompetencySummary(result.data, fallbackRow2);
+
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: result.data as any,
+        brief: sanitizedBrief2 as any,
         generation_state: newState as any,
         blueprint: null,
         progression_plan: null,
