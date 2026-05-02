@@ -1,14 +1,30 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "A ferramenta que eu queria",
-      "title_line2": "ter como treinador.",
-      "subtitle": "Avaliação clínica, mesociclo defensável, PDF para o ginásio, feedback que ajusta a próxima semana. Sem atalhos. Sem caixa preta.",
-      "cta_primary_signed_out": "Cria o teu primeiro plano",
+      "title_line1": "Cria planos de treino",
+      "title_line2": "prontos a enviar em minutos.",
+      "subtitle": "Baseados na avaliação real do teu cliente. Ajustam-se semana a semana com o que ele faz no ginásio.",
+      "cta_primary_signed_out": "Gerar primeiro plano grátis",
       "cta_primary_signed_in": "Abrir dashboard",
-      "cta_secondary": "Como funciona",
+      "cta_secondary": "Ver como funciona",
       "credibility_caption": "Bases que já estão dentro: PAR-Q+, ACSM, Prochaska. As próximas: Helms, Israetel, Schoenfeld.",
-      "social_proof": "Construído por um PT, para PTs · Beta privado"
+      "social_proof": "Feito por um PT, para PTs · Beta privado"
+    },
+    "benefits": {
+      "eyebrow": "Para personal trainers",
+      "time": {
+        "title": "Menos tempo a programar",
+        "desc": "Da avaliação ao PDF em minutos, não em horas."
+      },
+      "consistency": {
+        "title": "Planos consistentes entre clientes",
+        "desc": "A mesma lógica aplicada a cada cliente, ajustada ao caso dele."
+      },
+      "confidence": {
+        "title": "Mais confiança no que envias",
+        "desc": "Vês sempre porque é que cada exercício está ali."
+      },
+      "example_link": "Ver exemplo de plano (PDF)"
     },
     "mockups": {
       "client_header": "Cliente · 42a · Mesociclo 5 · Fase de Força",
