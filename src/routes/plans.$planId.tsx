@@ -13,6 +13,7 @@ import {
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
   ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3, Loader2,
+  TrendingUp,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
