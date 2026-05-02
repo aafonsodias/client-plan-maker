@@ -90,6 +90,8 @@ export function pickSectionPayload(
         available_equipment: a.available_equipment,
         preferences: a.preferences,
         current_capacity_vs_pb: a.current_capacity_vs_pb,
+        injuries: a.injuries,
+        medical_conditions: a.medical_conditions,
       };
     case "lifestyle":
       return {

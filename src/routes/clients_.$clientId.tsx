@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { renderAssessmentPdf } from "@/lib/pdf";
+import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
@@ -1132,6 +1133,69 @@ function ClientDetail() {
     setPlans(p ?? []);
   };
 
+  // Kick off the new 5-stage phased flow. Used both by the normal generate
+  // button and by the safety-gate confirmation, so the safety override stays
+  // on the new pipeline instead of falling back to the legacy day-by-day
+  // generator.
+  const runPhasedStart = useCallback(async () => {
+    if (phasedBusy) return;
+    setPhasedBusy(true);
+    const tId = toast.loading("Synthesizing brief…");
+    try {
+      const res = await startPhasedPlanFn({ data: { clientId } });
+      if (!res.ok) {
+        if (res.error === "quota_exceeded") {
+          toast.error(
+            "Free accounts can build 1 plan. Subscribe to create more.",
+            { id: tId, duration: 6000 }
+          );
+        } else {
+          toast.error(res.error || "Brief synthesis failed.", { id: tId });
+        }
+        return;
+      }
+      const { data: row } = await supabase
+        .from("workout_plans")
+        .select("brief, generation_state, programming_variables, red_flag_accommodations")
+        .eq("id", res.planId)
+        .maybeSingle();
+      const parsed = BriefSchema.safeParse((row as any)?.brief);
+      if (!parsed.success) {
+        toast.error("Brief returned but failed to parse.", { id: tId });
+        return;
+      }
+      const stage = (row as any)?.generation_state?.stage as string | undefined;
+      const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
+      const storedPv = ProgrammingVariablesSchema.safeParse(
+        (row as any)?.programming_variables
+      );
+      const storedAcc = RedFlagAccommodationsSchema.safeParse(
+        (row as any)?.red_flag_accommodations
+      );
+      setInlineBrief({
+        planId: res.planId,
+        brief: parsed.data,
+        approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
+        programmingVariables: storedPv.success
+          ? storedPv.data
+          : defaultProgrammingVariables(parsed.data),
+        accommodations: storedAcc.success
+          ? reconcileAccommodations(parsed.data, storedAcc.data)
+          : reconcileAccommodations(parsed.data, null),
+        approvedStages: approvedList,
+      });
+      void refreshPlans();
+      toast.success(
+        res.reused ? "Brief already ready" : "Brief ready",
+        { id: tId, duration: 4000 }
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
+    } finally {
+      setPhasedBusy(false);
+    }
+  }, [clientId, phasedBusy, startPhasedPlanFn]);
+
   // Delete a single plan (with confirm) from the Plans list.
   const deletePlan = async (planId: string) => {
     const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
@@ -1443,6 +1507,46 @@ function ClientDetail() {
 
           {/* SMART goal */}
           <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
+            <div className="mb-3 space-y-1">
+              <Label className="text-xs">{t("goal_block.templates_label")}</Label>
+              <Select
+                value=""
+                onValueChange={(id) => {
+                  const tpl = SMART_GOAL_TEMPLATES.find((x) => x.id === id);
+                  if (!tpl) return;
+                  setAssessment({
+                    ...assessment,
+                    smart_specific: t(`goal_block.templates.${tpl.id}.specific` as const),
+                    smart_measurable: t(`goal_block.templates.${tpl.id}.measurable` as const),
+                    smart_deadline: deadlineFromWeeks(tpl.default_weeks),
+                  });
+                }}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder={t("goal_block.templates_placeholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["strength","hypertrophy","body_comp","endurance","mobility","skill","health"] as const).map((cat) => {
+                    const items = SMART_GOAL_TEMPLATES.filter((x) => x.category === cat);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={cat}>
+                        <div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {t(`goal_block.categories.${cat}` as const)}
+                        </div>
+                        {items.map((tpl) => (
+                          <SelectItem key={tpl.id} value={tpl.id} className="text-xs">
+                            {t(`goal_block.templates.${tpl.id}.label` as const)}
+                            <span className="ml-2 text-[10px] text-muted-foreground">· {tpl.default_weeks}w</span>
+                          </SelectItem>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">{t("goal_block.templates_hint")}</p>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
               <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
@@ -1752,7 +1856,14 @@ function ClientDetail() {
                         <AlertDialogCancel>{t("generate.safety_cancel")}</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={!safetyOverride}
-                          onClick={() => { setSafetyDialogOpen(false); void generate(); }}
+                          onClick={() => {
+                            setSafetyDialogOpen(false);
+                            if (phasedEnabled) {
+                              void runPhasedStart();
+                            } else {
+                              void generate();
+                            }
+                          }}
                         >
                           {t("generate.safety_proceed")}
                         </AlertDialogAction>
@@ -1800,66 +1911,7 @@ function ClientDetail() {
                     );
                   })() : phasedEnabled ? (
                     <Button
-                      onClick={async () => {
-                        if (phasedBusy) return;
-                        setPhasedBusy(true);
-                        const tId = toast.loading("Synthesizing brief…");
-                        try {
-                          const res = await startPhasedPlanFn({ data: { clientId } });
-                          if (!res.ok) {
-                            if (res.error === "quota_exceeded") {
-                              toast.error(
-                                "Free accounts can build 1 plan. Subscribe to create more.",
-                                { id: tId, duration: 6000 }
-                              );
-                            } else {
-                              toast.error(res.error || "Brief synthesis failed.", { id: tId });
-                            }
-                            return;
-                          }
-                          // Fetch the freshly-written brief and render it inline below.
-                          const { data: row } = await supabase
-                            .from("workout_plans")
-                            .select("brief, generation_state, programming_variables, red_flag_accommodations")
-                            .eq("id", res.planId)
-                            .maybeSingle();
-                          const parsed = BriefSchema.safeParse((row as any)?.brief);
-                          if (!parsed.success) {
-                            toast.error("Brief returned but failed to parse.", { id: tId });
-                            return;
-                          }
-                          const stage = (row as any)?.generation_state?.stage as string | undefined;
-                          const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
-                          const storedPv = ProgrammingVariablesSchema.safeParse(
-                            (row as any)?.programming_variables
-                          );
-                          const storedAcc = RedFlagAccommodationsSchema.safeParse(
-                            (row as any)?.red_flag_accommodations
-                          );
-                          setInlineBrief({
-                            planId: res.planId,
-                            brief: parsed.data,
-                            approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
-                            programmingVariables: storedPv.success
-                              ? storedPv.data
-                              : defaultProgrammingVariables(parsed.data),
-                            accommodations: storedAcc.success
-                              ? reconcileAccommodations(parsed.data, storedAcc.data)
-                              : reconcileAccommodations(parsed.data, null),
-                            approvedStages: approvedList,
-                          });
-                          // Refresh plans list so the new draft shows up.
-                          void refreshPlans();
-                          toast.success(
-                            res.reused ? "Brief already ready" : "Brief ready",
-                            { id: tId, duration: 4000 }
-                          );
-                        } catch (e: any) {
-                          toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
-                        } finally {
-                          setPhasedBusy(false);
-                        }
-                      }}
+                      onClick={() => void runPhasedStart()}
                       disabled={busy || phasedBusy}
                       size="lg"
                       className="w-full sm:w-auto"
