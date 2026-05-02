@@ -261,6 +261,41 @@ export const approveBlueprint = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Set or clear a trainer override for the programming tier. The next
+ * Stage 2 run will pick this up; we don't regenerate here so the trainer
+ * can override + manually trigger blueprint regeneration at their own pace.
+ */
+export const setTierOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        tier: z.enum(["remedial", "conservative", "advanced"]).nullable(),
+      })
+      .parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("trainer_id, generation_meta")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || (plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const meta = ((plan as any).generation_meta ?? {}) as Record<string, any>;
+    const nextMeta = { ...meta, tier_override: data.tier };
+    const { error } = await supabase
+      .from("workout_plans")
+      .update({ generation_meta: nextMeta as any })
+      .eq("id", data.planId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
 // ---- Conversational discussion of the current blueprint -------------------
 // AI may either reply in plain text (advice) or propose a partial patch the
 // user can apply locally before approving. No DB writes happen here.
