@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
 import { rpeTone, parseRpe as parseRpeShared } from "@/lib/rpe-tone";
+import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -308,11 +309,13 @@ export function MesocycleTableView({
                 weekCount={weekNumbers.length}
                 compact={compact}
                 editable={editable && !!planId}
+                planId={planId}
                 editingKey={editingKey}
                 setEditingKey={setEditingKey}
                 patches={patches}
                 onSaveEdit={saveEdit}
                 onRemoveExercise={removeExercise}
+                onAdded={() => onUpdated?.()}
                 deletingName={deletingName}
                 isFirstGroup={gi === 0}
               />
