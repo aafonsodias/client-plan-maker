@@ -628,6 +628,70 @@ function ProgressionMockup() {
   );
 }
 
+/**
+ * LogbookHistoryMockup — multi-week history grid for one exercise's top sets.
+ * Visually distinct from <SetLogMockup /> (today's session) and from
+ * <ProgressionMockup /> (long-arc trend chart).
+ */
+function LogbookHistoryMockup() {
+  const { t } = useTranslation("plan");
+  const rows = [
+    { week: "W1", load: "70 kg", reps: "5 / 5 / 5", note: "RPE 6" },
+    { week: "W2", load: "72.5 kg", reps: "5 / 5 / 5", note: "RPE 7" },
+    { week: "W3", load: "75 kg", reps: "5 / 5 / 4", note: "—" },
+    { week: "W4", load: "77.5 kg", reps: "5 / 5 / 5", note: "deload near" },
+    { week: "W5", load: "80 kg", reps: "5 / 4 / 4", note: "RPE 8" },
+    { week: "W6", load: "82.5 kg", reps: "5 / 5 / 4", note: "PR" },
+  ] as const;
+  return (
+    <div className="rounded-2xl border border-border bg-card/80 p-6">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.mockups.history_title", "Back squat — 6-week history")}
+        </p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {t("landing.mockups.history_subtitle", "Top set per week")}
+        </p>
+      </div>
+      <div className="mt-5 overflow-hidden rounded-md border border-border/60">
+        <table className="w-full font-mono text-[12px]">
+          <thead>
+            <tr className="border-b border-border/60 bg-background/40 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <th className="px-3 py-2 text-left font-medium">Wk</th>
+              <th className="px-3 py-2 text-left font-medium">Load</th>
+              <th className="px-3 py-2 text-left font-medium">Reps</th>
+              <th className="px-3 py-2 text-right font-medium">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr
+                key={r.week}
+                className={
+                  i === rows.length - 1
+                    ? "bg-accent/5 text-foreground"
+                    : "text-foreground/85"
+                }
+              >
+                <td className="px-3 py-2 text-muted-foreground">{r.week}</td>
+                <td className="px-3 py-2">{r.load}</td>
+                <td className="px-3 py-2">{r.reps}</td>
+                <td className="px-3 py-2 text-right text-muted-foreground">{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 flex items-center justify-between font-mono text-[12px]">
+        <span className="text-muted-foreground">{t("landing.mockups.delta_label", "Δ vs W1")}</span>
+        <span className="inline-flex items-center gap-1 text-accent">
+          <ArrowUp className="h-3 w-3" /> +12.5 kg
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function JourneyStrip() {
   const { t } = useTranslation("plan");
   const stages = [
