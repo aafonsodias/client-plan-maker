@@ -72,6 +72,11 @@ function PlanEditor() {
   const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  // Summary expanded by default for the plan page (per founder feedback).
+  // Local state still allows trainers to collapse it.
+  useEffect(() => { setSummaryOpen(true); }, [planId]);
+  const seedFn = useServerFn(seedDemoSessions);
+  const [seeding, setSeeding] = useState(false);
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
   // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
