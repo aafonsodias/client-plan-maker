@@ -1,142 +1,90 @@
 
-## Visão geral
+# Plano de ataque
 
-Hoje a app tem 1 papel (treinador). O cliente é só um registo na tabela `clients` e preenche a avaliação por um link anónimo (`/intake/$token`) que já funciona. Tu queres o cliente como **utilizador com conta própria**, que entra, vê o plano dele, deixa notas, e cuja informação a IA usa para avisar o treinador (lesões novas, aniversário, faltas, etc.).
-
-Isto é um corte grande. Vou faseá-lo para que cada fase seja entregável sozinha e nada do que já funciona quebre.
+Cinco frentes, ordenadas por impacto. Faço tudo num turno.
 
 ---
 
-## Fase 1 — Coach Dashboard guiado + intake mais visível (1 sessão)
+## 1. Crítico: "Adicionar cliente" passa a ser **só convite**
 
-**Sem mexer em auth/roles.** Resolve o problema imediato dos screenshots: dashboard vazio que não guia, e o link de intake escondido dentro do detalhe do cliente.
+Hoje o dialog em `src/routes/clients.tsx` ainda pede nome+email obrigatório antes de gerar link. Tu queres o oposto: **nome opcional, link primeiro, cliente preenche o resto na intake**.
 
-### 1A. Dashboard "Studio" guiado
+Mudanças:
 
-Reescrever `src/routes/dashboard.tsx`:
+- **Novo modo "convite directo"** no dialog `Plus → Adicionar cliente`:
+  - Cria-se um `client` placeholder (`full_name = "Convite pendente"`, sem email) e gera-se logo o intake token.
+  - Ecrã único com o link grande + botões `Copiar / WhatsApp / Email`. Sem step 2.
+  - Se o PT *quiser* pré-preencher nome (porque já sabe), há um campo opcional colapsado "Já sabes o nome dele? (opcional)".
+- **Intake (`src/routes/intake.$token.tsx`)** ganha campos no topo:
+  - Nome completo (obrigatório — substitui o placeholder)
+  - Email (obrigatório — fica como contacto principal)
+  - Telemóvel (opcional)
+  - Data de nascimento (opcional, já existe)
+- Server fn `submitIntake` actualiza `clients.full_name / email / phone / date_of_birth` quando o cliente os submete (hoje só actualiza dados de avaliação).
+- Lista de clientes (`/clients`) mostra estes "Convite pendente" com chip cinzento e ordena-os no topo até serem reclamados.
+- Migration leve: tornar `clients.full_name` aceitar string vazia/placeholder (já é `text`, sem CHECK — ok). Garantir que `email` continua opcional na BD.
 
-- **Quando 0 clientes**: hero claro com 1 ação primária — *"Adicionar primeiro cliente"* — e abaixo um bloco *"Como funciona em 3 passos: 1) Adicionar cliente · 2) Enviar link de avaliação · 3) Gerar plano"*. Cada passo é uma linha, não um wizard modal.
-- **Quando ≥1 clientes mas 0 planos**: hero passa a *"Envia o link de avaliação"* com a lista de clientes que ainda não submeteram.
-- **Quando ≥1 plano**: layout atual (stats + planos recentes), mas no topo uma faixa de **ações rápidas** (3 botões): `Adicionar cliente` · `Copiar link de avaliação` (do último cliente sem submissão) · `Novo plano`.
-- **"Atenção do PT" panel** (novo): lista até 5 itens accionáveis ordenados por urgência:
-  - clientes com intake submetido por rever
-  - clientes sem submissão há >7 dias (re-enviar link)
-  - aniversários nos próximos 7 dias *(precisa de §1C)*
-  - notas novas do cliente *(vem na Fase 3, fica vazio até lá)*
-
-Mantém-se `OnboardingChecklist` e `DropoffAlerts`.
-
-### 1B. "Adicionar cliente" simplificado + link no fim
-
-O dialog atual (screenshot 2) pede 6 campos antes de gravar. Mudar para:
-
-- **Mínimo viável**: só *Nome* e *Email* obrigatórios. *Idade, sexo, altura, peso* movem-se para a intake (cliente preenche).
-- Imediatamente após gravar, abrir um **passo 2** dentro do mesmo dialog: bloco grande com o link de intake já gerado + botões `Copiar`, `WhatsApp`, `Email`. Isto torna óbvio que o próximo passo é enviar o link, não preencher tudo manualmente.
-
-### 1C. Aniversários
-
-- Migration: adicionar `date_of_birth date` à tabela `clients`. `age` continua a existir mas passa a ser derivado / opcional (não removo já para não partir o que usa).
-- Adicionar campo `date_of_birth` ao formulário da intake (`src/routes/intake.$token.tsx`) — opcional mas sugerido.
-- Helper `src/lib/birthdays.ts`: `daysUntilBirthday(dob)`, `upcomingBirthdays(clients, days=7)`.
-- Mostrar no painel "Atenção do PT" — *"🎂 João Silva faz anos em 3 dias."*
-
-### 1D. Knowledge / Manual mais visível
-
-Adicionar card "Manual" no dashboard (lado a lado com stats), e um link **Manual** no nav principal já existe — só ganha mais peso visual na vazia.
+Resultado: criar cliente = 2 cliques + partilhar link. Tudo o resto vem do próprio cliente.
 
 ---
 
-## Fase 2 — Client account & shared link (1-2 sessões)
+## 2. PDF do plano — bugs visíveis + redesign
 
-Aqui o link deixa de ser anónimo. O cliente que abre o link **cria conta** (passwordless por email, ou OAuth Google) e a partir daí o intake fica associado a `auth.users` dele.
+Bugs vistos nas screenshots que mandaste:
 
-### 2A. Schema: roles e ligação cliente↔user
+- **Cover (pág 1)**: o sumário em itálico corre para fora da margem direita ("…Onda de intensidade R"). Causa: `splitTextToSize(..., W-M*2).slice(0,2)` corta a 2 linhas e cospe o resto sem reticências, e nalguns casos a primeira "linha" devolvida ainda excede largura por palavras compridas. Fix: aumentar para até 4 linhas, adicionar "…" se truncado, e baixar fontSize de 9.5→9.
+- **Header da pág 2**: o running-header sobrepõe-se ("HORIZONTAL AND VERTICAL PULLING WITH ECCENTRIC EMPHASIS, SCAPULAR RETRACTION…") e na pág 3/4 chega a invadir o título. Já há `.slice(0,80)` mas não é wrap; passar a *splitTextToSize* com **1 linha máx** + `fitText` honesto (corta a meio da palavra com "…").
+- **Coluna CUE**: textos longos cortados por `fitText` ("10 p…", "30–4…", "Cont…"). Aumentar `colCueW` retirando espaço a slots S1..S4 (de 64→58pt liberta 24pt extra).
+- **Slot headers "S1 — peso × reps @RPE"**: às vezes cortam ("S2 — peso × …"). Reduzir para "S1  kg×reps@RPE".
+- **REGISTO MANUAL** está sempre em PT mesmo no plano EN. i18nizar todos os labels do PDF (`PLAN AT A GLANCE`, `PREP`, `COOL`, `REGISTO MANUAL`, `OBSERVAÇÕES`, `DATA / INÍCIO / FIM / PESO / SONO / RPE ACORDAR`, headers `#`, `EXERCISE`, `CUE`, `SETS`, `REPS`, `REST`, `RPE`, `TEMPO`) — passar `t` para `renderPlanPdf` e adicionar bloco `pdf.*` em `plan.json` PT/EN.
 
-Nova tabela `user_roles` (segue o pattern recomendado):
+Redesign / mais utilidade:
 
-```sql
-create type app_role as enum ('coach', 'client');
-create table user_roles (
-  user_id uuid references auth.users on delete cascade,
-  role app_role not null,
-  primary key (user_id, role)
-);
-```
-
-Adicionar `clients.user_id uuid references auth.users` (nullable — só preenche quando o cliente aceita o convite).
-
-Função `has_role(_uid, _role)` SECURITY DEFINER (já documentada no projeto).
-
-### 2B. Fluxo de aceitação
-
-`/intake/$token` ganha um header novo: *"Esta avaliação é para ti, [nome]. Cria a tua conta para guardares e voltares depois."*
-
-- Botão **"Continuar com Google"** ou **"Continuar com email"** (magic link).
-- No callback, se `clients.user_id IS NULL` para esse token, faz a ligação: `update clients set user_id = auth.uid() where intake_token = X` e adiciona `('client')` em `user_roles`.
-- Depois do login, a intake continua igual mas autenticada — RLS muda de "tem o token no header" para "auth.uid() = clients.user_id".
-- Mantém-se compatibilidade: se o cliente não quiser conta, ainda pode submeter como anónimo (modo legacy).
-
-### 2C. Convite por email
-
-`generateIntakeToken` (server fn já existe) ganha opção `sendEmail`. Usa o sistema de email do Lovable Cloud para mandar um template simples *"O teu PT [nome] convidou-te para preencheres a avaliação inicial. [Botão: Abrir]"*.
-
-(Se não houver domínio de email configurado, mantém-se o WhatsApp/cópia atual.)
+- **Página de "Resumo & Volume" nova (entre cover e archetypes)**:
+  - **Spider chart** de volume semanal por padrão de movimento (push/pull/squat/hinge/carry/core/cardio) — usa o que já existe em `src/components/volume/MuscleVolumeRadar.tsx` mas renderiza em SVG-to-canvas para o PDF (jsPDF aceita imagens; geramos um canvas off-screen).
+  - **Barras** de sets por grupo muscular (primary + 0.5×secondary), com landmarks MEV/MAV em linha tracejada — fonte: `src/lib/volume-compute.ts` + `volume-landmarks.ts`.
+  - **Distribuição de RPE** (mini-histograma) e **% sets ≥ RPE 8** como métrica única.
+  - **Equipamento usado** como chips, alimentado por `equipment_catalog` agregando `exercises[].equipment`.
+- **Cada página de archetype** ganha mini-strip lateral direita (~80pt) com:
+  - 3 chips: padrões dominantes da sessão (ex.: "Hinge · Anti-extensão · Pull")
+  - Volume da sessão (sets totais) e tempo estimado (sets × (work+rest))
+- **Glossário rodapé** na 1ª página: o que é RPE, tempo (formato 3-1-1-0), supersets (bracket lateral), sinal `@6.5 (+0.5rpe)`. Hoje o cliente recebe e não sabe ler.
+- **Legenda**: a barra amarela à esquerda dos exercícios (visível nos screenshots) não está documentada — adicionar nota "barra dourada = exercício prioritário do bloco" ou remover se não tiver semântica.
 
 ---
 
-## Fase 3 — Client-side dashboard (2 sessões)
+## 3. Outros bugs apanhados
 
-Rota nova `/me` (protegida por `_authenticated/_client`), separada do mundo do PT. Layout e tom diferentes — calmo, motivacional, simples.
-
-Conteúdo:
-
-- **O meu plano desta semana** — vista read-only do microciclo atual (reutiliza `SessionDayView`).
-- **Logbook fácil** — registar séries da sessão de hoje (reutiliza `ExerciseSetsCard`).
-- **Notas para o treinador** — textarea simples + lista de notas anteriores. Cada nota grava em nova tabela `client_notes` (id, client_id, body, created_at, seen_by_coach_at).
-- **Métricas básicas** — peso ao longo do tempo, total de sessões registadas. Sem RPE/volume per pattern aqui — manter limpo.
-- **Sem acesso** ao gerador de plano, brief, blueprint, etc.
-
-Schema:
-```sql
-create table client_notes (
-  id uuid primary key default gen_random_uuid(),
-  client_id uuid references clients on delete cascade,
-  body text not null,
-  created_at timestamptz default now(),
-  seen_by_coach_at timestamptz
-);
-```
-
-RLS: cliente lê/escreve só as suas notas (`auth.uid() = (select user_id from clients where id = client_id)`); treinador lê todas as do cliente dele e marca como visto.
-
-### IA awareness
-
-No painel "Atenção do PT" (Fase 1A), aparecem agora notas novas. Botão "Resumir notas" chama uma server fn que passa as últimas N notas ao Lovable AI Gateway (`google/gemini-2.5-flash`) e devolve 1-2 frases — *"Cliente queixa-se de dor lombar há 3 dias; faltou 2 sessões esta semana."*
+- **404 "Page not found"** (screenshot 1): não há `notFoundComponent` no root. Adicionar em `src/routes/__root.tsx` uma página de 404 com brand (BrandMark + link "Voltar ao dashboard"), em vez do plate cinzento default.
+- **"How it works · Ciclo contínuo"** (screenshot 2): o eyebrow do bloco journey/how-it-works está concatenado de forma estranha por causa do separador `·` entre eyebrow e título noutro local. Verificar `src/routes/index.tsx` linhas ~210 — o eyebrow ficou colado ao título do bloco seguinte. Limpar o spacing (gap entre `<section>`s).
+- **Bug EN não-identificado**: vou fazer `rg` por strings PT hardcoded em componentes (`Adicionar`, `Cliente`, `Plano`, `Avaliação`) e converter para `t()`. Já vi um suspeito em `clients.tsx` ("Novo cliente", "Envia o link a…") que não usa i18n.
+- **Link "See an example plan (PDF)"** (screenshot 3): o ficheiro `public/example-plan.pdf` existe e abre — o utilizador disse "essa imagem aparece" referindo-se aos defeitos visuais do PDF, não a um 404. Resolvido pela frente §2.
 
 ---
 
-## Fase 4 — Polimento / engagement (depois)
+## 4. Logo prompt — martelo numa bigorna com faíscas
 
-- Comparação básica vs população (peso, força relativa) na vista do cliente.
-- Notificações por email quando o PT publica novo plano / quando o cliente regista sessão.
-- VO2 max, grip strength, etc. — campos opcionais na intake e métricas, mostrados só se preenchidos.
+A entregar como texto (para colares no Midjourney/Imagen/etc.):
+
+> *Minimalist vector emblem of a heavy blacksmith hammer striking a polished steel anvil at the moment of impact, three or four sharp golden sparks bursting outward in a clean radial pattern, geometric construction with precise straight lines and subtle bevels, monochrome with a single warm-amber accent (#D4A24C) on the sparks and the lower edge of the anvil, flat design with one-pixel stroke weight, generous negative space, centered composition on a deep charcoal background (#0F0F12), inspired by Bauhaus and modern Apple iconography, no gradients, no text, no realistic shading — just confident geometry, suitable as an app icon and a single-color print mark. Aspect ratio 1:1.*
+
+Variante mono (para favicon/print):
+
+> *Same emblem reduced to a single solid colour (#E8E4D8) on transparent background, simplified to two sparks, optimized for legibility at 32×32 px.*
+
+Guardo num `mem://design/brand-mark-prompt` para futuro.
 
 ---
 
-## O que faço **agora** (Fase 1, este turno)
+## 5. Ordem de execução
 
-1. Migration: `clients.date_of_birth date`, helper i18n.
-2. `src/lib/birthdays.ts`.
-3. Reescrever `src/routes/dashboard.tsx` com 3 estados (zero clientes / zero planos / normal), faixa de ações rápidas, painel "Atenção do PT" com aniversários e intakes por rever.
-4. Simplificar o dialog "Adicionar cliente" em `src/routes/clients.tsx` para 2 campos + passo 2 com o link gerado e atalhos de partilha (reutiliza `IntakeLinkPanel`).
-5. Adicionar campo opcional de data de nascimento à intake (`src/routes/intake.$token.tsx`).
-6. i18n PT/EN para todo o copy novo.
+1. Migration mínima (verificar `clients.full_name` aceita placeholder; nada a fazer se já aceita).
+2. Refactor `src/routes/clients.tsx` → modo "convite directo".
+3. `src/routes/intake.$token.tsx` + `src/server/intake.functions.ts` → campos nome/email/telefone na intake.
+4. `src/routes/__root.tsx` → 404 com brand.
+5. i18n sweep + arranjar landing spacing.
+6. `src/lib/pdf.ts` → bug fixes (cover wrap, header truncate, colunas, i18n) + página nova de Volume/Spider + glossário + chips por sessão.
+7. Re-gerar `public/example-plan.pdf` correndo o demo + export, para o link da landing mostrar a versão nova.
+8. Guardar prompt do logo em memória.
 
-Não vou começar a Fase 2 (client accounts) sem confirmação tua, porque mexer em auth/roles é onde se parte coisas em silêncio. Confirma a Fase 1 e, quando estiveres confortável, atacamos a 2.
-
-### Fora de scope (este turno)
-
-- Sem alterar RLS atual.
-- Sem criar `user_roles` table.
-- Sem rota `/me` ainda.
-- Sem email transacional ainda.
+Tudo isto é um turno. Confirmas e avanço?
