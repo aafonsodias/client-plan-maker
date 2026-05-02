@@ -11,11 +11,12 @@
       "social_proof": "Built by a coach, for coaches · Private beta"
     },
     "mockups": {
-      "client_header": "Maria S. · Week 5 · Strength Phase",
+      "client_header": "Client · 42y · Mesocycle 5 · Strength Phase",
       "session_title": "Monday — Lower Body Strength",
       "session_meta": "Est. 55 min · 6 exercises",
-      "personalized_for": "Personalized for Maria",
+      "personalized_for": "Personalised from the assessment",
       "personalized_hint": "Personalised from the assessment",
+      "constraints_chip": "Sensitive lower back · no axial loading · 2×/wk · commercial gym",
       "microcycle_title": "2-week microcycle",
       "col_exercise": "Exercise",
       "day1_label": "Day 1",
@@ -24,6 +25,7 @@
       "day2_focus": "Upper + stability",
       "ex_bench": "Bench Press",
       "ex_row": "Seated Row",
+      "ex_face_pull": "Face Pull",
       "badge_warmup": "WARM-UP",
       "badge_main": "MAIN",
       "badge_accessory": "ACCESSORY",
