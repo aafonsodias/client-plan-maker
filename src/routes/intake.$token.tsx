@@ -3,13 +3,15 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
+import { interpretGoal } from "@/server/intake-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
@@ -30,6 +32,18 @@ type FormState = {
   client_email: string;
   client_phone: string;
   client_dob: string;
+  // Path: who is filling this in
+  intake_path: "" | "coached" | "self";
+  // Scheduling (PT-guided path)
+  sched_days: string[];
+  sched_window: string;
+  // Lifestyle gate decision
+  lifestyle_gate: "" | "yes" | "skip";
+  // AI goal interpretation (cached client-side; source of truth lives in extended)
+  ai_goal_label: string;
+  ai_goal_confirmed: "" | "yes" | "no";
+  // Skipped flags (field key -> true)
+  skipped: Record<string, boolean>;
   smart_specific: string;
   smart_measurable: string;
   smart_deadline: string;
@@ -63,6 +77,11 @@ type FormState = {
 
 const EMPTY: FormState = {
   client_full_name: "", client_email: "", client_phone: "", client_dob: "",
+  intake_path: "",
+  sched_days: [], sched_window: "",
+  lifestyle_gate: "",
+  ai_goal_label: "", ai_goal_confirmed: "",
+  skipped: {},
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
