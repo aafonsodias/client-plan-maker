@@ -149,7 +149,8 @@ export function ProgressionExerciseCard({
                 <span className="mt-0.5 text-[9px] text-muted-foreground">trend</span>
               </div>
               {r.rationale && (
-                <p className="col-span-3 text-[11px] leading-snug text-muted-foreground">
+                <p className="col-span-3 rounded-md border border-border/40 bg-muted/30 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+                  <span className="mr-1 font-semibold uppercase tracking-wider text-[9px] text-accent/80">Why</span>
                   {r.rationale}
                 </p>
               )}
