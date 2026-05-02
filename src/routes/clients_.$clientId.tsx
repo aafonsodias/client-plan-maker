@@ -1212,6 +1212,34 @@ function ClientDetail() {
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
         <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <AssessmentDatePicker
+            value={assessment.performed_on || ""}
+            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
+            label={t("performed_on_label")}
+            placeholder={t("performed_on_placeholder")}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => {
+              try {
+                renderAssessmentPdf({
+                  assessment,
+                  client,
+                  t: t as any,
+                });
+              } catch (e: any) {
+                toast.error(e?.message ?? "PDF error");
+              }
+            }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            {t("download_pdf")}
+          </Button>
+        </div>
       </div>
 
       <IntakeLinkPanel
