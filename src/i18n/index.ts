@@ -6,10 +6,12 @@ import enCommon from "./locales/en/common.json";
 import enPlan from "./locales/en/plan.json";
 import enIntake from "./locales/en/intake.json";
 import enAssessment from "./locales/en/assessment.json";
+import enManual from "./locales/en/manual.json";
 import ptCommon from "./locales/pt/common.json";
 import ptPlan from "./locales/pt/plan.json";
 import ptIntake from "./locales/pt/intake.json";
 import ptAssessment from "./locales/pt/assessment.json";
+import ptManual from "./locales/pt/manual.json";
 
 export const SUPPORTED_LOCALES = ["en", "pt"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -24,11 +26,11 @@ if (!i18n.isInitialized) {
       // EN owns all keys — PT JSON is intentionally sparse and falls back to EN.
       fallbackLng: "en",
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
-      ns: ["common", "plan", "intake", "assessment"],
+      ns: ["common", "plan", "intake", "assessment", "manual"],
       defaultNS: "common",
       resources: {
-        en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment },
-        pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment },
+        en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment, manual: enManual },
+        pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment, manual: ptManual },
       },
       detection: {
         order: ["localStorage", "navigator"],
