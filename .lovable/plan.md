@@ -1,108 +1,73 @@
+## What's broken / missing (from your screenshots & message)
 
-# Phase 2 — Polish, bot realism, and guide AI
+1. **Microcycle stuck at "1/2 done"** — the green "Aprovar microciclo" button lit up while Day 2 hasn't been generated. The gate logic only checks `doneCount === sessionsPerWeek`, so when only `day1` exists in `days[]` for a 2-day plan, the count looks complete the moment Day 1 finishes — but only because we never created the Day 2 row to mark it `pending`. Result: false "ready" state, no Day 2 visible.
+2. **No auto-advance after approving a day** — `approveDay1AndContinue()` just flips a flag; trainer still has to click "Generate Day 2".
+3. **`<UNKNOWN>` everywhere in Movement Competency** — root cause: the demo pipeline (`runDemoPlay`) jumps straight from `createDemoClient` → `startPhasedPlanDraft` (Stage 1) without ever calling `analyzeAssessmentSection` for the per-section pre-stages. Stage 1 reads `assessments.section_analyses` and finds it empty, so the AI has nothing to merge for `movement_competency_summary` → emits "<UNKNOWN>" placeholders. Same reason equipment looks under-filled in the brief rail.
+4. **Bots have no place to complain, and no way for real users to do the same** — `client_feedback` JSONB is being written by the seeder but never rendered anywhere.
+5. **Equipment list is 8 hard-coded items** — needs to grow to a real searchable library used by both intake and the client edit form.
+6. **i18n audit** — you already have the polished prompt; I'll just make sure we don't regress while doing the other work.
 
-Five focused workstreams. All are additive; no schema breakages. We keep tone consistent (status palette, emerald = ready, amber = warn) and reuse existing components.
+## Plan
 
-## 1. "Assessment" drawer on the plan page
+### 1. Fix the microcycle gate + auto-advance (`src/routes/plans.$planId.microcycle.tsx`)
 
-On `/plans/$planId`, add a header button **"Avaliação"** next to Share / Export PDF / Branding. It opens a side `Sheet` showing the latest assessment for the plan's client — read-only, scrollable, summarized like the maquette tab:
+- Replace the `allDone` calculation: it must require **`doneCount === sessionsPerWeek` AND `days.length >= sessionsPerWeek`**. Missing rows (no DB record yet) count as "not done", not "done". This kills the false-ready state.
+- After Day 1 is approved (`approveDay1AndContinue`), immediately fire `regenDay(2)`; when Day 2's realtime payload lands as `done`, fire `regenDay(3)`; etc. — one queued auto-generation triggered by the previous day's success. Trainer still has to **approve** each subsequent day before the next one fires (cheap insurance against a chain of bad days). Add a small per-day `approveDay(n)` affordance that mirrors the Day 1 approve button.
+- Keep "Regenerate" available per-day; never auto-fire if a day is already `pending`/`done`.
 
-- Persona chip if it's a demo client (reads `assessments.extended.demo_meta.archetype`)
-- Risk category + ACSM tier pill (reuse `riskCategory` logic from client page; extract to `src/lib/assessment-summary.ts`)
-- Goal, experience, days/week, session minutes, equipment chips, injuries, meds, PAR-Q+ flags
-- "Open full assessment" link → `/clients/{clientId}` anchored to the assessment section
+### 2. Fill `movement_competency_summary` for demo personas
 
-New file: `src/components/PlanAssessmentSheet.tsx`. Wire it in the plan header (`src/routes/plans.$planId.tsx` around the Share/Export row).
+The honest fix is to **run the per-section pre-stage analyses inside `runDemoPlay` before Stage 1**, not to fake the brief output. That makes the demo represent the real flow.
 
-## 2. Collapse the post-finalization assessment + kill the redundant red button
+- In `src/server/demo-play.functions.ts`, between `createDemoClient` and `startPhasedPlanDraft`, loop over the 7 assessment sections (`anthro`, `goal`, `history`, `lifestyle`, `mobility`, `posture`, `screen`, `parq`, `risk`, `training`) and call `analyzeAssessmentSection({ assessmentId, section })` for each (parallelized). This is what real trainers trigger when they fill the form; the demo should too.
+- Add a step `"section_analyses"` to the `StepKey` enum + HUD so the orchestrator shows it.
+- Cost note: this adds ~10 fast Haiku calls per demo client. Acceptable for a founder-only Dev Lab tool.
 
-Today, after the plan is `ready`, the client page still shows the full assessment form and the prominent "Generate" button. We change that:
+### 3. Bot + user feedback / complaints surface
 
-- When a finalized plan exists for the client (any `workout_plans.status = 'ready'`), replace the entire assessment block + generate button with a single collapsed line:
-  - `Avaliação · 12 May 2026 · ACSM moderate · Goal: hypertrophy · 4×/week · [Persona: cardiac_rehab if demo]`
-  - Right-aligned: `Open plan →` and a chevron to expand the read-only assessment inline
-- Remove the "Regenerate" / red destructive button entirely from this collapsed state. (Re-generation lives only on the plan page via the existing "Regenerate with feedback" dialog.)
-- Expanded view = current form, but rendered read-only (`disabled` inputs) with an "Edit assessment" toggle that re-enables fields. No silent data loss.
+A two-way "Feedback" tab so bots and humans complain in the same place.
 
-Implementation: a `<FinalizedAssessmentSummary />` component gated on `hasReadyPlan`, mounted at the top of the assessment section in `src/routes/clients_.$clientId.tsx`. The existing form stays mounted but collapsed inside a `<Collapsible>`.
+- New table `plan_feedback` (separate from per-session `client_feedback` so general "the app feels X" comments aren't tied to a workout):
+  ```
+  id, client_id, plan_id (nullable), author ("client"|"trainer"|"bot"|"system"),
+  category ("pain"|"question"|"complaint"|"praise"|"app_bug"|"ux"),
+  body text, status ("open"|"acknowledged"|"resolved"),
+  created_at, resolved_at, metadata jsonb
+  ```
+  RLS: trainer can read/write rows for clients they own; bots write via service role inside `seedDemoSessions` and the new "tick".
+- Update `seedDemoSessions` and `advanceSimulation` to insert into `plan_feedback` (not just inside `workout_sessions.client_feedback`) when the persona has a relevant grievance — once per generation event, archetype-flavoured.
+- Render a **Feedback** panel:
+  - On the client detail page (`src/routes/clients_.$clientId.tsx`) as a new tab/section showing all `plan_feedback` for that client + a "Add note as client" textarea (so trainers can simulate / log a real complaint they heard verbally).
+  - Aggregate view at `/forge` (existing leaderboard route) — top-N open complaints across all bots, so you spot patterns ("3 bots complained about Day 3 being too long").
+- Surface per-session `client_feedback` inline in the logged session row on the plan page (small chip + tooltip) so bot grievances don't hide in the JSON.
 
-## 3. Richer demo-bot session logs (weight + RPE + 1 complaint)
+### 4. Searchable equipment library
 
-Current `fabricateEntry` only writes weight + RPE-as-note. We upgrade it so each demo session looks like a real client used the log:
+- New file `src/lib/equipment-catalog.ts` with ~40 items grouped by category: Free weights (barbell, EZ bar, dumbbells, kettlebells, weight plates, hex bar), Machines (cable machine, smith machine, leg press, hack squat, leg curl, leg extension, lat pulldown, seated row, chest press, pec deck, calf raise), Racks/benches (squat rack, power rack, flat/incline/decline bench, GHD), Bodyweight/accessory (pull-up bar, dip station, parallettes, rings, TRX, ab wheel), Conditioning (rower, ski erg, assault bike, treadmill, stationary bike, jump rope), Mobility (bands, foam roller, lacrosse ball, slam ball, med ball), Misc (bodyweight only). Each: `{ id, en, pt, category, aliases[] }`.
+- Replace the 8-item `EQUIPMENT_OPTIONS` in `clients_.$clientId.tsx` and the `EQUIPMENT_IDS` in `intake.$token.tsx` with a shared `<EquipmentMultiSelect>` component (Command/cmdk popover with search across `en`, `pt`, and `aliases`, grouped by category, multi-select with chips).
+- Demo personas: keep their human-readable strings; intake stores stable IDs for new clients but the brief AI normalizes both shapes.
+- Demo seed: now picks 6–10 items per archetype from the catalog (not 4–6) so the brief panel feels populated.
 
-- Always populate `actual.weight` (kg), `actual.reps`, `actual.rpe` (separate field, not just notes)
-- Distance/time fields filled when the planned exercise is `cardio | conditioning | carry`
-- 1 in 3 sessions includes a `client_feedback` entry with one of:
-  - **Question** — "Posso trocar X por Y? Doi-me o ombro nesta semana."
-  - **Complaint** — "Última série não consegui acabar, RPE 10."
-  - **Stress signal** — "Dormi mal, sessão pesada."
-- These go into a new JSONB column `workout_sessions.client_feedback` (nullable) so we can render them in the trainer inbox later.
+### 5. i18n audit handoff
 
-Migration: `ALTER TABLE workout_sessions ADD COLUMN client_feedback JSONB NULL;`
+- I won't touch `clients_.$clientId.tsx` strings this turn (2800-line file, mechanical task — your Opus prompt is the right tool). I'll add a `// TODO(i18n-audit)` marker at the top of the file pointing to `mem://constraints/i18n-audit` so we don't lose track.
+- Save a memory note recording that the audit is delegated and the assessment namespace is the target.
 
-Files touched:
-- `src/server/demo-sessions.functions.ts` — expand `fabricateEntry`, add `maybeFeedback(persona)` helper. Persona pulled from latest assessment's `extended.demo_meta.archetype` so a `cardiac_rehab` bot complains about chest tightness while a `powerlifter` complains about elbow tendinopathy.
-- `src/server/demo-oneshot.functions.ts` — also call the upgraded seeder.
-- New `src/lib/demo-personas.ts` — shared archetype → feedback templates.
+### 6. Out of scope this turn (unless you say otherwise)
+- Concierge AI route navigation chip improvements
+- Assessment-form collapse on the client page (still deferred — risk of regression while feedback surface lands)
+- Stripe/quota changes
 
-Trainer inbox surface: tiny badge on the client row (`clients.tsx`) when any of their sessions has `client_feedback IS NOT NULL`. Click → `/clients/{id}` opens a "Mensagens do cliente" panel listing them. Minimal — just enough to *force us to build a reply UI later*.
+## Technical details
 
-## 4. "Live log → table" collapsed view
+- **Files touched**: `plans.$planId.microcycle.tsx`, `demo-play.functions.ts`, `demo-sessions.functions.ts`, `clients_.$clientId.tsx` (equipment select + feedback panel only), `intake.$token.tsx` (equipment select), `forge.tsx` (complaints widget), new `lib/equipment-catalog.ts`, new `components/EquipmentMultiSelect.tsx`, new `components/FeedbackPanel.tsx`, new migration for `plan_feedback`.
+- **Migration**: create `plan_feedback` with RLS (`trainer owns client`), index on `(client_id, created_at desc)`, FK to `clients.id` cascade.
+- **Auto-advance loop**: implemented as a `useEffect` watching `days` — when the highest-numbered approved day's `n+1` row is missing AND we've hit "approve" for `n`, kick `regenDay(n+1)`. Re-entrancy guarded by `generatingSet`.
 
-When a session is logged (status = `done`), the giant log card in `/plans/$planId` collapses to a single row mirroring the table view:
+## What you'll see when this ships
 
-```
-✓ W2 D1  Full-Body A   8 ex · 24 sets · avg RPE 7.8   12 May  ⌄
-```
+- Margarida's plan generates Day 1 → you click Approve → Day 2 starts immediately, no extra click. Movement Competency rail shows real Portuguese sentences instead of `<UNKNOWN>`.
+- Equipment list in intake/edit is a searchable popover with 40+ items.
+- New "Feedback" tab on each client showing bot complaints + your own notes; `/forge` shows the top open complaints across the whole demo population.
 
-Click expands to the current detailed view. New component `<LoggedSessionCollapsed />` rendered inside the existing log list. Only `done` sessions collapse; `partial`/`missed` stay expanded so they catch the eye.
-
-## 5. In-app guide AI ("Concierge")
-
-A floating `?` button (bottom-left, mirror of demo HUD) opens a small chat dock. Goals:
-
-- Answer free-text questions about the app
-- Point to concrete routes — replies can include `<go to="/plans/new">` tags that render as clickable chips
-- Aware of current route (`useLocation`) so "where do I generate a plan?" gives a deep link
-
-Implementation:
-- New edge function `supabase/functions/concierge/index.ts` calling Lovable AI Gateway (`google/gemini-3-flash-preview`)
-- System prompt embeds a compact route map: every `/route` + 1-line purpose, generated from a hand-curated `src/lib/concierge-routes.ts` (we don't auto-scan)
-- Tool-calling: `navigate(path)`, `highlight(selector)` so it can return structured pointers
-- Client component `src/components/ConciergeDock.tsx` mounted in `AppShell`. Uses `react-markdown` for replies; honours the markdown rule from chatbot best practices.
-- Conversation memory kept in `localStorage` per session (no DB table yet — defer until users ask)
-
-Founder-only at first (`aafonsodias@gmail.com`) so we can iterate without misleading early users.
-
-## Technical notes
-
-- All new components follow the **status palette** (emerald = done, amber = warn, red = blocked), via `toneChip`/`toneDot` helpers in `src/lib/status-tone.ts`.
-- Markdown rendering: install `react-markdown` if not present (`bun add react-markdown`).
-- DB migration is non-destructive: add nullable `client_feedback JSONB` to `workout_sessions`. No RLS change required (existing policies cover it).
-- Concierge edge function added with `verify_jwt = false` since it only needs the user's question + route, no PII.
-
-## Out of scope (next phase)
-
-- Cron-driven simulation tick (still on-demand via Demo Lab button)
-- Real friend graph in Forge
-- Concierge for non-founder users
-
----
-
-## Parallel task prompt for Opus 4.7
-
-Paste this to your other agent — it's tedious cleanup unrelated to the above:
-
-> **Task: i18n audit and extraction for `src/routes/clients_.$clientId.tsx`**
->
-> The file is 3343 lines and mixes hard-coded Portuguese strings with `t()` calls from `react-i18next`. Goals:
-> 1. Find every JSX text node and `toast.*` / `aria-label` / `title` string that is **not** wrapped in `t()`.
-> 2. For each, propose a stable key under the `assessment` namespace (existing file: `src/i18n/locales/{en,pt}/assessment.json`) and produce a unified diff that:
->    - replaces the string with `t("…")`
->    - adds the EN + PT entries to both JSON files
-> 3. Skip strings that are clearly developer-only (console.error, dev panel labels gated on `aafonsodias@gmail.com`).
-> 4. Output as a single PR-style patch with a short summary table: `key | EN | PT | line`.
->
-> Constraints: do not change any logic, only string extraction. Do not touch `src/components/DemoLabPanel.tsx` or anything under `src/server/`. Preserve existing `t()` calls verbatim.
-
-When Opus returns the patch, I'll apply it on top of the work above.
+Reply **continua** to ship it, or tell me which numbered item to drop / reprioritise.
