@@ -8,7 +8,7 @@ import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ConciergeDock } from "@/components/ConciergeDock";
+import { GuideDock } from "@/components/GuideDock";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -348,7 +348,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         </div>
       </footer>
       <ScrollToTopButton />
-      <ConciergeDock enabled={isFounder} />
+      <GuideDock enabled={isFounder} />
     </div>
   );
 }
