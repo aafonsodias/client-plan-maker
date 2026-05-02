@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
+import { DashboardHint } from "@/components/DashboardHint";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { useMemo } from "react";
 import { planStatusInfo } from "@/lib/plan-status";
@@ -169,21 +170,9 @@ function Dashboard() {
       </div>
 
       {/* Empty state — onboarding hero */}
-      {isEmpty && (
-        <div className="rounded-3xl border border-accent/30 bg-card p-8 sm:p-10">
-          <p className="text-xs uppercase tracking-widest text-accent">Começa aqui</p>
-          <h2 className="mt-2 text-2xl font-light tracking-tight sm:text-3xl">Ainda não tens clientes. Em 3 passos estás a enviar um plano.</h2>
-          <ol className="mt-6 space-y-3 text-sm">
-            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">1</span><span><b>Adiciona um cliente</b> — só nome e email.</span></li>
-            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">2</span><span><b>Envia o link de avaliação</b> — ele preenche tudo no telemóvel.</span></li>
-            <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/20 text-xs font-bold text-accent">3</span><span><b>Geras o plano</b> — revês, ajustas, exportas em PDF com a tua marca.</span></li>
-          </ol>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button asChild><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-2 h-4 w-4" /> Adicionar primeiro cliente</Link></Button>
-            <Button variant="outline" asChild><Link to="/manual"><BookOpen className="mr-2 h-4 w-4" /> Ler o manual</Link></Button>
-          </div>
-        </div>
-      )}
+      {/* Always-available, dismissable how-it-works guide (replaces the old
+          empty-state-only hero — no redundancy). */}
+      <DashboardHint />
 
       {/* Quick actions strip — visible once there's at least one client */}
       {!isEmpty && (
