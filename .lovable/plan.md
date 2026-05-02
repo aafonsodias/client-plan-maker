@@ -1,41 +1,63 @@
-## Auditoria
 
-Reproduzi o erro mostrado em runtime: **hydration mismatch** entre SSR e cliente. A mensagem do React aponta dois sintomas:
+# Limpar e aligeirar — foco no que ajuda
 
-1. `<html lang="en">` no SSR vs `lang="pt"` no cliente.
-2. Texto `Loading…` (SSR) vs `A carregar…` (cliente) dentro do `<AppShell>` quando a sessão de auth ainda está a carregar.
+Três frentes, todas a remover peso e a alinhar com "básico bem feito":
 
-### Causa raiz única
+---
 
-O i18n usa `i18next-browser-languagedetector` com `order: ["localStorage", "navigator"]`. Nenhuma destas fontes existe no servidor → SSR resolve sempre para `fallbackLng: "en"`. No browser, o detector lê `localStorage["forge.locale"] = "pt"` e troca para PT após hidratação. Como vários componentes (AppShell, headers, loaders) usam `useTranslation()` no primeiro render, todo o markup traduzido fica diferente em SSR vs cliente.
+## 1. Bug do header do plano (sobreposição "Maria (demo) / Share")
 
-Este é o único erro relevante no console — o aviso `RESET_BLANK_CHECK` é ruído da iframe da Lovable e pode ser ignorado.
+**Problema:** O nome do cliente (link "→ Maria Costa (demo)") e o título estão a colidir com a barra de botões (Share · Avaliação · Exportar PDF · Folha de registo). Quatro botões à direita + título largo + nome empilhado = caos visual em ~1550px.
 
-## Correção
+**Decisões:**
+- **Fundir os dois botões PDF num só.** Em vez de "Exportar PDF" + "Folha de registo" (que confunde — qual escolho?), fica **um botão "PDF" com dropdown** (ou um split-button): "Plano completo" / "Folha de registo (semana X)". Menos botões, escolha clara.
+- **Mover "Avaliação" para dentro de um menu "Mais" (⋯)** junto a Share. A Avaliação é trabalho de bastidor, não acção quotidiana.
+- **Reduzir altura visual do header:** o título usa `<Input>` com `!text-xl` que cresce demais — passa a render-as-text com lápis de edição inline (clicar para editar). Pequena mudança, header fica 30% mais baixo.
 
-Estratégia: **renderizar SSR e primeiro paint do cliente sempre no `fallbackLng`** (igual ao servidor) e só ativar o idioma persistido depois da hidratação. É a solução padrão e mínima — sem cookies, sem alterar SSR profundo.
+Resultado: cliente + título à esquerda numa linha, **dois botões à direita** (PDF, Mais), os chips (Pronto, Bloco N) numa segunda linha discreta.
 
-### Mudanças
+---
 
-1. **`src/i18n/index.ts`**
-   - Remover `LanguageDetector` da inicialização ou desativar deteção até hidratar.
-   - Iniciar sempre com `lng: "en"` (igual ao SSR).
-   - Exportar uma função `applyPersistedLocale()` que lê o `localStorage` e chama `i18n.changeLanguage()`. Continua a ouvir `languageChanged` para sincronizar `<html lang>`.
+## 2. PDF: um só, com folha de registo integrada
 
-2. **`src/routes/__root.tsx`**
-   - Dentro de `RootComponent`, num `useEffect` (corre só no cliente, depois da hidratação), invocar `applyPersistedLocale()`. Isto garante que o primeiro render do cliente é idêntico ao SSR (`en`), evitando mismatch; logo a seguir o idioma do utilizador é aplicado e a UI re-renderiza.
+**Hoje:** dois PDFs. `generatePlanPdf` (paisagem, denso, deixa metade da página em branco como vês na screenshot) + `generateLogsheetPdf` separado (que tu nem usas porque tens de saber que existe).
 
-3. **Loaders consistentes** (limpeza pequena, mesma sessão):
-   - Substituir os `Loading…` hardcoded em `src/routes/plans.$planId.tsx`, `src/routes/plans.index.tsx`, `src/routes/settings.tsx`, `src/routes/log.$token.tsx`, `src/routes/plans.$planId.sessions.tsx`, `src/routes/plans.$planId.progressions.tsx` e `src/routes/forge.tsx` por `t("actions.loading")` (ou string única). Mantém UX coerente assim que a correção principal for aplicada — sem isto, voltaríamos a ter dissonância PT/EN visual no app.
+**Proposta:** **um único PDF do plano** (o "Exportar PDF" actual), em que **cada dia ocupa uma página** assim:
+- **Topo (≈55%):** o que já tens — exercícios, cues, sets/reps/RPE, semanas W2–W4 com progressão (mantém-se igual; é informação de leitura).
+- **Baixo (≈45%, hoje em branco):** uma **grelha de registo manual** com colunas vazias para escrever à mão:
+  - Linhas de campos rápidos: `DATA · INÍCIO · FIM · RPE acordar · Peso hoje · Sono`.
+  - Tabela com uma linha por exercício e **3–4 colunas vazias "S1 / S2 / S3 / S4"** para anotar `peso × reps @RPE` por série.
+  - Espaço de notas livre no fim (~3 linhas).
 
-### O que NÃO mexer
+Assim o PDF que imprimes serve ambos os usos: ler no início + escrever durante a sessão. Depois passas para o software via "Importar log".
 
-- `lang="en"` no `<html>` continua estático — está correto, dado que SSR e primeiro paint cliente são EN. O `useEffect` de sincronização atualiza `document.documentElement.lang` quando o utilizador troca para PT, sem hydration mismatch.
-- `AuthProvider`, `CurrencyProvider`, e o resto do shell ficam intactos.
-- Nenhuma alteração de schema, RLS, ou server functions.
+**O `generateLogsheetPdf` separado deixa de ser necessário** → removemos a função e o segundo botão. Menos código, menos decisões.
 
-## Resultado esperado
+---
 
-- Sem `Hydration failed` no console.
-- Utilizador PT continua a ver a app em PT (com um flash imperceptível de EN no primeiro frame, que é o trade-off aceite por SSR sem cookies).
-- Sem regressões noutras rotas.
+## 3. Secção "Volume semanal" — aligeirar
+
+Conforme a screenshot, o radar está a tocar nas labels e a tabela tem 5 colunas + frases longas em cada linha. Demasiado ruído para uma secção de diagnóstico.
+
+**Mudanças cirúrgicas (sem mudar a lógica de cálculo):**
+- **Radar:** mais respiração — `outerRadius` 78% → 65%, fonte das labels +1pt, abreviar "Quadricípites"→"Quad", "Isquiotibiais"→"Isquios", "Tricípites"→"Tri", "Bicípites"→"Bi". Labels deixam de tocar nos polígonos.
+- **Tabela:** colapsar a coluna "MEV / MAV / MRV" para tooltip no chip "Estado" (já tens o tooltip de explicação no header). Fica: **Grupo · Séries · Estado · Sugestão**. Quatro colunas em vez de cinco.
+- **Sugestão mais curta:** "Adiciona ~2 séries para chegar ao MEV (8)." → "Faltam 2 séries (alvo 8)." A informação útil é a mesma; menos texto.
+- **Manter as cores do `status-tone`** (já está consistente com o resto do app — emerald/amber/red/neutral).
+
+---
+
+## Ficheiros tocados
+
+- `src/routes/plans.$planId.tsx` — header (botões agrupados, título inline-edit), remover dropdown "Folha de registo".
+- `src/lib/pdf.ts` — `generatePlanPdf`: adicionar bloco de registo manual no rodapé de cada página de dia. Remover `generateLogsheetPdf` (e o import).
+- `src/components/volume/MuscleVolumeRadar.tsx` — radius + labels abreviadas.
+- `src/components/volume/VolumeStatusTable.tsx` — eliminar coluna MEV/MAV/MRV, encurtar mensagens.
+
+## O que NÃO mexo (para resistir ao overengineering)
+
+- Cálculo de volume (`volume-compute.ts`, `volume-landmarks.ts`) — está bem.
+- Demo Lab / bots — fica como está, só visível quando precisas de stress-test. Não estorva o fluxo normal.
+- Concierge, studies feed, dropoff alerts — não tocados nesta ronda.
+
+Aprova com "continua" e avanço.

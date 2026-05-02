@@ -9,12 +9,25 @@ import {
 } from "recharts";
 
 import {
-  MUSCLE_GROUP_LABELS_PT,
   MUSCLE_GROUP_ORDER,
   VOLUME_LANDMARKS,
   type MuscleGroup,
 } from "@/lib/volume-landmarks";
 import { roundSets, type VolumeByMuscle } from "@/lib/volume-compute";
+
+// Shortened labels so they don't collide with the radar polygons.
+const MUSCLE_LABEL_SHORT: Record<MuscleGroup, string> = {
+  chest: "Peito",
+  back: "Costas",
+  quads: "Quad",
+  hamstrings: "Isquios",
+  glutes: "Glúteos",
+  shoulders: "Ombros",
+  biceps: "Bi",
+  triceps: "Tri",
+  calves: "Gémeos",
+  core: "Core",
+};
 
 type Props = {
   volume: VolumeByMuscle;
@@ -30,7 +43,7 @@ export function MuscleVolumeRadar({ volume, hideEmpty = false }: Props) {
   const data = groups.map((m) => {
     const lm = VOLUME_LANDMARKS[m];
     return {
-      muscle: MUSCLE_GROUP_LABELS_PT[m],
+      muscle: MUSCLE_LABEL_SHORT[m],
       key: m,
       mev: lm.mev,
       mav: lm.mav,
@@ -48,11 +61,11 @@ export function MuscleVolumeRadar({ volume, hideEmpty = false }: Props) {
   return (
     <div className="h-[340px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} outerRadius="78%">
+        <RadarChart data={data} outerRadius="65%" margin={{ top: 16, right: 24, bottom: 8, left: 24 }}>
           <PolarGrid stroke="hsl(var(--border))" />
           <PolarAngleAxis
             dataKey="muscle"
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
           />
           <PolarRadiusAxis
             angle={90}
