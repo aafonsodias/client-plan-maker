@@ -372,10 +372,15 @@ function PlanEditor() {
           <Eye className="h-3.5 w-3.5" /> View
         </button>
         <button
-          onClick={() => !isPhasedComplete && setMode("edit")}
-          disabled={isPhasedComplete}
-          title={isPhasedComplete ? "Edit not available for phased plans yet" : undefined}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"} ${isPhasedComplete ? "opacity-40 cursor-not-allowed" : ""}`}
+          onClick={() => {
+            if (isPhasedComplete) {
+              navigate({ to: "/plans/$planId/microcycle", params: { planId } });
+              return;
+            }
+            setMode("edit");
+          }}
+          title={isPhasedComplete ? "Open the Microcycle stage to tweak phased plans" : undefined}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
         >
           <Pencil className="h-3.5 w-3.5" /> Edit
         </button>
