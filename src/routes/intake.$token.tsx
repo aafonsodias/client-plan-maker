@@ -149,6 +149,7 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
 
 function IntakePage() {
   const { token } = Route.useParams();
+  const { legacy } = Route.useSearch();
   const { t } = useTranslation("intake");
   const load = useServerFn(loadIntake);
   const save = useServerFn(saveIntake);
@@ -258,6 +259,21 @@ function IntakePage() {
       toast.error(e?.message ?? t("save_failed"));
     }
   };
+
+  if (legacy !== "1") {
+    return (
+      <SlideshowIntake
+        ctx={ctx}
+        form={form}
+        setForm={setForm}
+        trainerName={trainerName}
+        submitting={submitting}
+        onSubmit={submit}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
