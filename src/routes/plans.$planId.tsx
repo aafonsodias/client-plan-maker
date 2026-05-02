@@ -374,6 +374,36 @@ function PlanEditor() {
             <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
           </Button>
           <ImportLogDialog planId={planId} plan={data} />
+          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8"
+              disabled={regenSummaryBusy}
+              title="Re-escrever o resumo a partir do brief (determinístico, sem IA)"
+              onClick={async () => {
+                setRegenSummaryBusy(true);
+                try {
+                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
+                  if (r?.ok && r?.summary) {
+                    setPlan({ ...plan, summary: r.summary });
+                    toast.success("Resumo regenerado a partir do brief.");
+                  } else {
+                    toast.error(r?.error ?? "Falhou regenerar resumo.");
+                  }
+                } finally {
+                  setRegenSummaryBusy(false);
+                }
+              }}
+            >
+              {regenSummaryBusy ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Re-gerar resumo
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
