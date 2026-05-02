@@ -56,7 +56,10 @@
       "ex_db_bench": "DB Bench Press",
       "ex_overhead_press": "DB Overhead Press",
       "ex_pullup_assist": "Assisted Pull-Up",
-      "ex_farmer_carry": "Farmer Carry"
+      "ex_farmer_carry": "Farmer Carry",
+      "history_title": "Back squat — 6-week history",
+      "history_subtitle": "Top set per week",
+      "delta_label": "Δ vs W1"
     },
     "how_it_works": {
       "eyebrow": "How it works",
