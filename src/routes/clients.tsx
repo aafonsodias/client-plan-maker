@@ -48,7 +48,7 @@ function Clients() {
   const filter = search.filter ?? "all";
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", date_of_birth: "" });
   const [createdClient, setCreatedClient] = useState<{ id: string; full_name: string; phone: string | null } | null>(null);
   const [creating, setCreating] = useState(false);
   const phases = useClientPhases(useMemo(() => list.map((c) => c.id), [list]));
@@ -110,11 +110,12 @@ function Clients() {
     if (!user || creating) return;
     setCreating(true);
     try {
-      const payload = {
+      const payload: any = {
         trainer_id: user.id,
         full_name: form.full_name.trim(),
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
+        date_of_birth: form.date_of_birth || null,
       };
       const { data: row, error } = await supabase.from("clients").insert(payload).select("id, full_name, phone").single();
       if (error || !row) return toast.error(error?.message ?? "Não foi possível criar o cliente.");
@@ -130,7 +131,7 @@ function Clients() {
   const closeAndReset = () => {
     setOpen(false);
     setTimeout(() => {
-      setForm({ full_name: "", email: "", phone: "" });
+      setForm({ full_name: "", email: "", phone: "", date_of_birth: "" });
       setCreatedClient(null);
     }, 200);
   };
@@ -186,6 +187,7 @@ function Clients() {
                   <Field label="Nome completo" required value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
                   <Field label="Email" type="email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
                   <Field label="Telemóvel (opcional, para enviar por WhatsApp)" type="tel" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+                  <Field label="Data de nascimento (opcional — para te lembrar de aniversários)" type="date" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} />
                   <DialogFooter>
                     <Button type="submit" disabled={creating || !form.full_name.trim()}>
                       {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
