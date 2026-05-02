@@ -275,12 +275,12 @@ function PlanEditor() {
             planTitle={plan.title}
           />
           <Button
-            variant="ghost"
             size="sm"
-            className="h-8 text-muted-foreground hover:text-foreground"
             onClick={exportPdf}
+            className="h-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm hover:from-amber-500 hover:to-amber-700 hover:shadow-md transition-all"
+            title="Exportar plano em PDF (paisagem, ≤6 páginas)"
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> Export PDF
+            <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar PDF
           </Button>
           <Button
             variant="ghost"
