@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -28,6 +28,7 @@ import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
+import { ResultsPanel } from "@/components/ResultsPanel";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -49,7 +50,7 @@ function PlanRoute() {
   );
 }
 
-type Mode = "view" | "edit" | "log";
+type Mode = "view" | "edit" | "log" | "results";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
