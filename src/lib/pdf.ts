@@ -360,16 +360,21 @@ export async function generatePlanPdf(
       doc.addImage(logoData, "PNG", lx, ly, lw, lh, undefined, "FAST");
     } catch { /* ignore */ }
   }
+  // When a logo image is present it usually already carries the wordmark,
+  // so we skip the duplicated brand text and only render the tagline (if any)
+  // to the right of the mark. Without a logo we keep the text wordmark.
   const brandX = logoData ? M + 52 : M;
-  setText(doc, theme.bannerInk);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text(brand, brandX, 30);
+  if (!logoData) {
+    setText(doc, theme.bannerInk);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(brand, brandX, 30);
+  }
   if (branding.tagline) {
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(fitText(branding.tagline, W / 2 - brandX), brandX, 44);
+    doc.text(fitText(branding.tagline, W / 2 - brandX), brandX, logoData ? 38 : 44);
   }
 
   setText(doc, theme.inkMuted);
