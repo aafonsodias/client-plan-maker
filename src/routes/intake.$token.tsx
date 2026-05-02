@@ -1194,3 +1194,103 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/* ─────────────── Photo slot (reference photos) ─────────────── */
+
+function PhotoSlot({ token, slot, label, hint, tutorial }: {
+  token?: string;
+  slot: "front" | "side" | "back" | "face";
+  label: string;
+  hint: string;
+  tutorial: string;
+}) {
+  const upload = useServerFn(uploadIntakePhoto);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const onFile = async (file: File) => {
+    if (!token) {
+      toast.error("Sem ligação. Tenta novamente.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await resizeToJpegDataUrl(file, 1600, 0.82);
+      setPreview(dataUrl);
+      await upload({ data: { token, slot, dataUrl } });
+      setDone(true);
+      toast.success(`${label} guardada`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falhou. Tenta outra foto.");
+      setPreview(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">{label}</p>
+        {done && <span className="text-[10px] uppercase tracking-widest text-accent">✓</span>}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      <div className="mt-3 aspect-[3/4] overflow-hidden rounded-lg bg-background/50">
+        {preview ? (
+          <img src={preview} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground/60">
+            {tutorial}
+          </div>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant={done ? "outline" : "default"}
+        className="mt-3 w-full"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        {busy ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> A enviar…</> : done ? "Tirar outra" : "Tirar foto"}
+      </Button>
+    </div>
+  );
+}
+
+async function resizeToJpegDataUrl(file: File, maxSide: number, quality: number): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * scale);
+    const h = Math.round(img.naturalHeight * scale);
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d");
+    if (!cx) throw new Error("Canvas não suportado.");
+    cx.drawImage(img, 0, 0, w, h);
+    return c.toDataURL("image/jpeg", quality);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
