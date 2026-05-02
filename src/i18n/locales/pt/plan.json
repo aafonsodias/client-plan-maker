@@ -56,7 +56,10 @@
       "ex_db_bench": "Supino com Halteres",
       "ex_overhead_press": "Press Militar com Halteres",
       "ex_pullup_assist": "Elevação Assistida",
-      "ex_farmer_carry": "Farmer Carry"
+      "ex_farmer_carry": "Farmer Carry",
+      "history_title": "Back squat — 6 semanas de histórico",
+      "history_subtitle": "Top set por semana",
+      "delta_label": "Δ vs Sem 1"
     },
     "how_it_works": {
       "eyebrow": "Como funciona",
