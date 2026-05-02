@@ -673,7 +673,8 @@ function SetLogMockup() {
 
 function ProgressionMockup() {
   const { t } = useTranslation("plan");
-  const weights = [70, 72.5, 75, 77.5, 80, 82.5];
+  // Realistic arc: linear climb, deload at W4, push to PR at W6.
+  const weights = [70, 72.5, 75, 70, 80, 85];
   const w = 280;
   const h = 90;
   const min = Math.min(...weights) - 2;
