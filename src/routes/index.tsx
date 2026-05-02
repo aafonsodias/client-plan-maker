@@ -466,8 +466,9 @@ function Landing() {
 }
 
 function HowItWorksAnimation() {
-  // Existing four-step animation, kept as the visual deep-dive of "how it works"
+  // Continuous loop stepper: clinical briefing → evidence-based programming → edit/print → feedback/adjust
   const { t } = useTranslation("plan");
+  const StepIcons = [ClipboardList, Brain, FileText, RefreshCw];
   const steps = [
     { label: t("landing.how_it_works.steps.add_client.label"), desc: t("landing.how_it_works.steps.add_client.desc") },
     { label: t("landing.how_it_works.steps.assessment.label"), desc: t("landing.how_it_works.steps.assessment.desc") },
@@ -475,42 +476,66 @@ function HowItWorksAnimation() {
     { label: t("landing.how_it_works.steps.export.label"), desc: t("landing.how_it_works.steps.export.desc") },
   ];
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-12">
       <div
         className="absolute -right-32 top-0 h-72 w-72 rounded-full opacity-20 blur-3xl"
         style={{ background: "var(--gradient-accent)" }}
       />
-      <div className="relative grid gap-4 sm:grid-cols-4">
-        {steps.map((s, i) => (
-          <div
-            key={s.label}
-            className="group relative rounded-2xl border border-border bg-background/40 p-5 transition hover:border-accent/40"
-            style={{ animation: `fade-in 0.6s ease-out ${i * 150}ms both` }}
-          >
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-xs font-semibold text-accent">
-              {i + 1}
-            </div>
-            <p className="font-medium">{s.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{s.desc}</p>
-            {i < steps.length - 1 && (
-              <div className="absolute right-0 top-1/2 hidden h-px w-6 translate-x-full bg-gradient-to-r from-accent/60 to-transparent sm:block" />
-            )}
-          </div>
-        ))}
+      {/* Connecting line — horizontal on sm+, vertical (dashed) on mobile */}
+      <div className="relative">
+        <div className="pointer-events-none absolute left-7 top-12 bottom-12 w-px bg-gradient-to-b from-accent/40 via-accent/20 to-accent/40 sm:hidden" />
+        <div className="pointer-events-none absolute left-[12%] right-[12%] top-7 hidden h-px bg-gradient-to-r from-accent/0 via-accent/40 to-accent/0 sm:block" />
+
+        <div className="relative grid gap-6 sm:grid-cols-4 sm:gap-4">
+          {steps.map((s, i) => {
+            const Icon = StepIcons[i] ?? ClipboardList;
+            return (
+              <div
+                key={s.label}
+                className="group relative flex gap-4 sm:flex-col sm:gap-3"
+                style={{ animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
+              >
+                {/* Sketch-style background scribble */}
+                <svg
+                  aria-hidden
+                  viewBox="0 0 200 80"
+                  preserveAspectRatio="none"
+                  className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07] sm:opacity-[0.10]"
+                >
+                  <path
+                    d={i % 2 === 0
+                      ? "M5,60 Q40,10 90,40 T195,30"
+                      : "M5,30 Q60,70 110,35 T195,55"}
+                    fill="none"
+                    stroke="var(--accent)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+
+                {/* Numbered + iconed circle */}
+                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-accent shadow-[0_4px_14px_-6px_oklch(0.78_0.12_70/0.5)]">
+                  <Icon className="h-5 w-5" strokeWidth={1.5} />
+                  <span className="absolute -right-1 -top-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-accent/60 bg-background text-[10px] font-bold text-accent">
+                    {i + 1}
+                  </span>
+                </div>
+
+                <div className="relative z-10 min-w-0 flex-1 sm:pt-1">
+                  <p className="font-medium leading-tight">{s.label}</p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground">{s.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="relative mt-8 h-2 overflow-hidden rounded-full bg-secondary/60">
-        <div
-          className="h-full w-1/3 rounded-full bg-accent"
-          style={{ animation: "slide-progress 4s ease-in-out infinite" }}
-        />
+
+      {/* Loop indicator — emphasises the continuous nature */}
+      <div className="relative mt-8 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+        <RefreshCw className="h-3 w-3 text-accent" strokeWidth={1.5} />
+        <span>{t("landing.how_it_works.eyebrow")} · ciclo contínuo</span>
       </div>
-      <style>{`
-        @keyframes slide-progress {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(150%); }
-          100% { transform: translateX(350%); }
-        }
-      `}</style>
     </div>
   );
 }
