@@ -48,6 +48,7 @@ import {
 import BriefEditor from "@/components/BriefEditor";
 import StageCard from "@/components/StageCard";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
+import { PaywallDialog } from "@/components/PaywallDialog";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
