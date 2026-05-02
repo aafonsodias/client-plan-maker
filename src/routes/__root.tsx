@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { I18nextProvider } from "react-i18next";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import i18n from "@/i18n";
+import i18n, { applyPersistedLocale } from "@/i18n";
 
 import appCss from "../styles.css?url";
 
@@ -98,6 +99,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  // i18n initializes in the SSR fallback locale ("en") so SSR and the first
+  // client paint match. After hydration, swap to the user's persisted locale.
+  useEffect(() => {
+    applyPersistedLocale();
+  }, []);
   return (
     <I18nextProvider i18n={i18n}>
       <AuthProvider>

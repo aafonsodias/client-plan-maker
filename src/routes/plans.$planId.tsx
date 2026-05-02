@@ -309,7 +309,7 @@ function PlanEditor() {
     }
   };
 
-  if (!plan) return <p className="text-muted-foreground">Loading…</p>;
+  if (!plan) return <p className="text-muted-foreground">{tCommon("actions.loading")}</p>;
 
   return (
     <div className="space-y-4">
