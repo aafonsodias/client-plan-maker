@@ -166,6 +166,29 @@ function Landing() {
         </div>
       </section>
 
+      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph) */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logbook_preview.subtitle")}</p>
+        </div>
+        <div className="grid items-start gap-8 md:grid-cols-2">
+          <div>
+            <SetLogMockup />
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.log_caption")}</p>
+          </div>
+          <div>
+            <div className="relative">
+              <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+                {t("common:currency.soon")}
+              </div>
+              <ProgressionMockup />
+            </div>
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
+          </div>
+        </div>
+      </section>
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
@@ -239,6 +262,34 @@ function Landing() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Roadmap — honest "coming next" cards, no CTAs */}
+      <section id="roadmap" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.roadmap.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.roadmap.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.roadmap.subtitle")}</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { icon: LineChart, title: t("plan:landing.roadmap.items.trends.title"), desc: t("plan:landing.roadmap.items.trends.desc") },
+            { icon: MessageSquare, title: t("plan:landing.roadmap.items.prompt.title"), desc: t("plan:landing.roadmap.items.prompt.desc") },
+            { icon: Brain, title: t("plan:landing.roadmap.items.advice.title"), desc: t("plan:landing.roadmap.items.advice.desc") },
+          ].map((r) => (
+            <div key={r.title} className="relative rounded-2xl border border-dashed border-border bg-card/40 p-6">
+              <div className="absolute right-4 top-4 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+                {t("common:currency.soon")}
+              </div>
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
+                <r.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mb-2 text-lg font-medium tracking-tight">{r.title}</h3>
+              <p className="text-sm font-light text-muted-foreground">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
       </section>
 
       {/* Founder note */}
@@ -327,7 +378,7 @@ function Landing() {
         <div className="mx-auto max-w-6xl px-6 grid gap-8 md:grid-cols-3">
           <div>
             <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-xs text-foreground">
-              <Logo className="h-6 w-6" />
+              <BrandMark size="sm" />
               <span>{t("common:brand.name")}</span>
             </Link>
             <p className="mt-3 text-xs">{t("plan:landing.footer.tagline")}</p>
