@@ -8,6 +8,7 @@ import { BriefSchema, type Brief } from "@/server/phased/schemas";
 import { Loader2, RefreshCw, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import BriefEditor from "@/components/BriefEditor";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/plans/$planId/brief")({
   component: () => (
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/plans/$planId/brief")({
 function BriefReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("plan");
   const synthesizeFn = useServerFn(synthesizeBrief);
   const approveFn = useServerFn(approveBrief);
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,7 @@ function BriefReview() {
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
           >
             {regenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Regenerate
+            {t("actions.regenerate")}
           </button>
           <button
             onClick={approve}
@@ -175,7 +177,7 @@ function BriefReview() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Approve brief
+            {t("actions.approve_brief")}
           </button>
         </div>
       </div>
