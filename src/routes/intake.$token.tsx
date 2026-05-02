@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
+  validateSearch: (s: Record<string, unknown>): { legacy?: "1" } => ({
+    legacy: s.legacy === "1" ? "1" : undefined,
+  }),
 });
 
 // Stable IDs persisted in DB; labels resolved via i18n at render time.
