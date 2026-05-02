@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
@@ -13,6 +13,7 @@ import { PriceTag } from "@/components/PriceTag";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CURRENCIES } from "@/lib/currency";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -35,12 +36,14 @@ function Landing() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <BrandMark size="md" />
-            <span className="text-lg">{t("common:brand.name")}</span>
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:h-16 sm:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
+            <span className="sm:hidden"><BrandMark size="sm" /></span>
+            <span className="hidden sm:inline-flex"><BrandMark size="md" /></span>
+            <span className="truncate text-base sm:text-lg">{t("common:brand.name")}</span>
           </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-1.5">
+          {/* Desktop nav (≥ sm): full controls inline */}
+          <nav className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
             <CurrencyMenu>
               <button
                 type="button"
@@ -68,6 +71,54 @@ function Landing() {
               </>
             )}
           </nav>
+          {/* Mobile nav (< sm): primary CTA + overflow menu for prefs */}
+          <div className="flex items-center gap-1.5 sm:hidden">
+            <Button asChild size="sm" className="h-8 px-3 text-xs">
+              <Link to={signedIn ? "/dashboard" : "/auth"}>
+                {signedIn ? t("common:actions.go_to_dashboard") : t("common:actions.start_free")}
+              </Link>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Preferências"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2">
+                {!signedIn && (
+                  <Link
+                    to="/auth"
+                    className="mb-1 block rounded-md px-2 py-2 text-sm font-medium hover:bg-secondary"
+                  >
+                    {t("common:actions.sign_in")}
+                  </Link>
+                )}
+                <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+                  <span className="uppercase tracking-widest">{t("common:currency.title", "Currency")}</span>
+                  <CurrencyMenu>
+                    <button
+                      type="button"
+                      className="inline-flex h-7 min-w-7 items-center justify-center rounded border border-border px-2 text-sm font-medium text-foreground hover:border-accent"
+                    >
+                      <span aria-hidden>{activeSymbol}</span>
+                    </button>
+                  </CurrencyMenu>
+                </div>
+                <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+                  <span className="uppercase tracking-widest">{t("common:language.switch_aria")}</span>
+                  <LanguageSwitcher />
+                </div>
+                <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-muted-foreground">
+                  <span className="uppercase tracking-widest">Tema</span>
+                  <ThemeToggle />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
