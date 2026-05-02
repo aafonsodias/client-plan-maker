@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { I18nextProvider } from "react-i18next";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import i18n from "@/i18n";
 
 import appCss from "../styles.css?url";
@@ -51,7 +52,7 @@ export const Route = createRootRoute({
           "font-src 'self' data: https://fonts.gstatic.com",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "script-src 'self' 'unsafe-inline'",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.app https://*.lovable.app https://api.openai.com https://api.anthropic.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.app https://*.lovable.app https://api.openai.com https://api.anthropic.com https://api.frankfurter.app https://api.coingecko.com",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",
@@ -100,8 +101,10 @@ function RootComponent() {
   return (
     <I18nextProvider i18n={i18n}>
       <AuthProvider>
-        <Outlet />
-        <Toaster />
+        <CurrencyProvider>
+          <Outlet />
+          <Toaster />
+        </CurrencyProvider>
       </AuthProvider>
     </I18nextProvider>
   );
