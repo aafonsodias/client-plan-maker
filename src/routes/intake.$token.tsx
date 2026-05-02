@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
+  validateSearch: (s: Record<string, unknown>): { legacy?: "1" } => ({
+    legacy: s.legacy === "1" ? "1" : undefined,
+  }),
 });
 
 // Stable IDs persisted in DB; labels resolved via i18n at render time.
@@ -146,6 +149,7 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
 
 function IntakePage() {
   const { token } = Route.useParams();
+  const { legacy } = Route.useSearch();
   const { t } = useTranslation("intake");
   const load = useServerFn(loadIntake);
   const save = useServerFn(saveIntake);
@@ -255,6 +259,21 @@ function IntakePage() {
       toast.error(e?.message ?? t("save_failed"));
     }
   };
+
+  if (legacy !== "1") {
+    return (
+      <SlideshowIntake
+        ctx={ctx}
+        form={form}
+        setForm={setForm}
+        trainerName={trainerName}
+        submitting={submitting}
+        onSubmit={submit}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -607,6 +626,419 @@ function SaveIndicator({ status, lastSavedAt }: { status: "idle" | "saving" | "s
     <div className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/80">
       <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
       {text}
+    </div>
+  );
+}
+
+/* ─────────────── Slideshow layout ─────────────── */
+
+type SlideshowProps = {
+  ctx: IntakeContext;
+  form: FormState;
+  setForm: React.Dispatch<React.SetStateAction<FormState>>;
+  trainerName: string;
+  submitting: boolean;
+  onSubmit: () => void;
+  saveStatus: "idle" | "saving" | "saved";
+  lastSavedAt: number | null;
+};
+
+function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit, saveStatus, lastSavedAt }: SlideshowProps) {
+  const { t } = useTranslation("intake");
+  const [step, setStep] = useState(0);
+
+  const steps = useMemo(() => buildSlides(t, form, setForm), [t, form, setForm]);
+  const total = steps.length;
+  const current = steps[step];
+  const isLast = step === total - 1;
+
+  const canAdvance = current?.isValid?.() ?? true;
+
+  const next = useCallback(() => {
+    if (!canAdvance) return;
+    if (isLast) { onSubmit(); return; }
+    setStep((s) => Math.min(total - 1, s + 1));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [canAdvance, isLast, onSubmit, total]);
+
+  const prev = useCallback(() => {
+    setStep((s) => Math.max(0, s - 1));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  // Keyboard: Enter to advance (when not in textarea), Escape to go back.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inTextarea = target?.tagName === "TEXTAREA";
+      if (e.key === "Enter" && !inTextarea && !e.shiftKey) { e.preventDefault(); next(); }
+      if (e.key === "Escape") { e.preventDefault(); prev(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [next, prev]);
+
+  const progress = Math.round(((step + 1) / total) * 100);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Progress bar */}
+      <div className="fixed inset-x-0 top-0 z-20 h-1 bg-border/40">
+        <div className="h-full bg-accent transition-all duration-300" style={{ width: `${progress}%` }} />
+      </div>
+
+      <header className="border-b border-border/60 bg-card/40">
+        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
+          {ctx.trainer?.logo_url ? (
+            <img src={ctx.trainer.logo_url} alt="" className="h-9 w-9 rounded-md object-cover" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-muted-foreground">
+              {(trainerName[0] ?? "T").toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{trainerName}</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {t("step_of", { current: step + 1, total })}
+            </p>
+          </div>
+          <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+        </div>
+      </header>
+
+      <main className="mx-auto flex min-h-[calc(100vh-120px)] max-w-2xl flex-col px-4 pb-32 pt-10 sm:pt-16">
+        <div key={step} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {current.title && (
+            <h1 className="text-2xl font-light tracking-tight sm:text-3xl">{current.title}</h1>
+          )}
+          {current.subtitle && (
+            <p className="mt-3 text-sm text-muted-foreground">{current.subtitle}</p>
+          )}
+          <div className="mt-8 space-y-5">{current.body}</div>
+        </div>
+      </main>
+
+      {/* Sticky footer */}
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background/95 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
+          <Button variant="ghost" size="sm" onClick={prev} disabled={step === 0 || submitting}>
+            <ChevronLeft className="mr-1 h-4 w-4" /> {t("back")}
+          </Button>
+          <p className="hidden flex-1 text-center text-[10px] uppercase tracking-widest text-muted-foreground/60 sm:block">
+            ↵ {t("next")} · Esc {t("back")}
+          </p>
+          <Button onClick={next} disabled={!canAdvance || submitting} size="sm">
+            {submitting && isLast ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("submitting")}</>
+            ) : isLast ? (
+              <>{t("submit")} <Check className="ml-1 h-4 w-4" /></>
+            ) : (
+              <>{t("next")} <ChevronRight className="ml-1 h-4 w-4" /></>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────── Slide definitions ─────────────── */
+
+type Slide = {
+  title?: string;
+  subtitle?: string;
+  body: React.ReactNode;
+  isValid?: () => boolean;
+};
+
+function buildSlides(
+  t: (k: string, opts?: any) => string,
+  form: FormState,
+  setForm: React.Dispatch<React.SetStateAction<FormState>>,
+): Slide[] {
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const enLabels: Record<string, string> = {
+    barbell: "Barbell", dumbbells: "Dumbbells", kettlebells: "Kettlebells",
+    cable_machine: "Cable machine", bench: "Bench", pull_up_bar: "Pull-up bar",
+    bands: "Bands", bodyweight: "Bodyweight only",
+  };
+  const equipmentIds = ["barbell", "dumbbells", "kettlebells", "cable_machine", "bench", "pull_up_bar", "bands", "bodyweight"];
+  const parqKeys = ["q1","q2","q3","q4","q5","q6","q7"] as const;
+  const medFlagIds = ["beta_blockers", "bp_meds", "diabetes", "anticoagulants", "anti_inflammatories", "other"];
+  const readinessIds = ["precontemplation", "contemplation", "preparation", "action", "maintenance"];
+
+  return [
+    // 1. Welcome
+    {
+      title: t("welcome_title", { name: "" }).replace(", ", ""),
+      subtitle: t("intro"),
+      body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
+    },
+    // 2. SMART goal — what
+    {
+      title: t("sections.goal_what"),
+      body: (
+        <Textarea
+          autoFocus
+          rows={3}
+          value={form.smart_specific}
+          placeholder={t("sections.goal_what_placeholder")}
+          onChange={(e) => set("smart_specific", e.target.value)}
+          className="text-base"
+        />
+      ),
+      isValid: () => form.smart_specific.trim().length > 2,
+    },
+    // 3. SMART measure + deadline
+    {
+      title: t("sections.goal_measure"),
+      subtitle: t("sections.goal_when"),
+      body: (
+        <div className="space-y-4">
+          <Input autoFocus value={form.smart_measurable} onChange={(e) => set("smart_measurable", e.target.value)} />
+          <Input type="date" value={form.smart_deadline} onChange={(e) => set("smart_deadline", e.target.value)} />
+        </div>
+      ),
+    },
+    // 4. Readiness
+    {
+      title: t("sections.readiness_title"),
+      body: (
+        <Pills
+          options={readinessIds.map((rid) => ({ id: rid, label: t(`readiness.${rid}`) }))}
+          value={form.readiness_stage}
+          onChange={(v) => set("readiness_stage", v)}
+        />
+      ),
+      isValid: () => !!form.readiness_stage,
+    },
+    // 5. Experience
+    {
+      title: t("sections.training_experience"),
+      body: (
+        <Pills
+          options={[
+            { id: "Beginner", label: t("experience.beginner") },
+            { id: "Intermediate", label: t("experience.intermediate") },
+            { id: "Advanced", label: t("experience.advanced") },
+          ]}
+          value={form.experience_level}
+          onChange={(v) => set("experience_level", v)}
+        />
+      ),
+      isValid: () => !!form.experience_level,
+    },
+    // 6. Days + duration
+    {
+      title: t("sections.training_days"),
+      subtitle: t("sections.training_duration"),
+      body: (
+        <div className="space-y-5">
+          <Pills
+            options={["1","2","3","4","5","6","7"].map((n) => ({ id: n, label: n }))}
+            value={form.training_days_per_week}
+            onChange={(v) => set("training_days_per_week", v)}
+          />
+          <Pills
+            options={["30","45","60","75","90"].map((n) => ({ id: n, label: `${n} min` }))}
+            value={form.session_duration_minutes}
+            onChange={(v) => set("session_duration_minutes", v)}
+          />
+        </div>
+      ),
+      isValid: () => !!form.training_days_per_week && !!form.session_duration_minutes,
+    },
+    // 7. Location
+    {
+      title: t("sections.training_location"),
+      body: (
+        <Pills
+          options={[
+            { id: "Home", label: t("location.home") },
+            { id: "Gym", label: t("location.gym") },
+            { id: "Outdoor", label: t("location.outdoor") },
+            { id: "Mixed", label: t("location.mixed") },
+          ]}
+          value={form.training_location}
+          onChange={(v) => set("training_location", v)}
+        />
+      ),
+      isValid: () => !!form.training_location,
+    },
+    // 8. Equipment
+    {
+      title: t("sections.training_equipment"),
+      body: (
+        <div className="flex flex-wrap gap-2">
+          {equipmentIds.map((eid) => {
+            const persisted = enLabels[eid];
+            const on = form.available_equipment.includes(persisted);
+            return (
+              <button
+                key={eid}
+                type="button"
+                onClick={() => set("available_equipment", on
+                  ? form.available_equipment.filter((x) => x !== persisted)
+                  : [...form.available_equipment, persisted])}
+                className={`rounded-full border px-3 py-2 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+              >{t(`equipment.${eid}`)}</button>
+            );
+          })}
+        </div>
+      ),
+    },
+    // 9. Injuries (optional)
+    {
+      title: t("sections.training_injuries"),
+      subtitle: t("optional"),
+      body: (
+        <Textarea autoFocus rows={3} value={form.injuries} onChange={(e) => set("injuries", e.target.value)} />
+      ),
+    },
+    // 10. PAR-Q
+    {
+      title: t("sections.parq_title"),
+      subtitle: t("sections.parq_intro"),
+      body: (
+        <div className="space-y-3">
+          {parqKeys.map((qk) => (
+            <div key={qk} className="rounded-lg border border-border bg-card p-3">
+              <p className="text-sm">{t(`parq.${qk}`)}</p>
+              <div className="mt-2 flex gap-2">
+                {[{ v: false, label: t("no") }, { v: true, label: t("yes") }].map((opt) => {
+                  const on = form.parq[qk] === opt.v;
+                  return (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, parq: { ...f.parq, [qk]: opt.v } }))}
+                      className={`rounded-full border px-4 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    >{opt.label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {Object.values(form.parq).some((v) => v === true) && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+              {t("sections.parq_warning")}
+            </div>
+          )}
+        </div>
+      ),
+      isValid: () => Object.values(form.parq).every((v) => v === true || v === false),
+    },
+    // 11. Medications + flags (optional)
+    {
+      title: t("sections.medication_label"),
+      subtitle: t("optional"),
+      body: (
+        <div className="space-y-4">
+          <Textarea rows={2} value={form.medications} placeholder={t("sections.medication_placeholder")} onChange={(e) => set("medications", e.target.value)} />
+          <div>
+            <Label className="text-sm">{t("sections.med_flags_label")}</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {medFlagIds.map((mid) => {
+                const label = t(`med_flags.${mid}`);
+                const on = form.med_flags.includes(label);
+                return (
+                  <button
+                    key={mid}
+                    type="button"
+                    onClick={() => set("med_flags", on ? form.med_flags.filter((x) => x !== label) : [...form.med_flags, label])}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
+                  >{label}</button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    // 12. Sleep
+    {
+      title: t("sections.lifestyle_sleep"),
+      body: <SliderField label="" value={form.sleep_quality} min={1} max={10} onChange={(v) => set("sleep_quality", v)} legend={t("sections.lifestyle_sleep_legend")} />,
+    },
+    // 13. Stress
+    {
+      title: t("sections.lifestyle_stress"),
+      body: <SliderField label="" value={form.stress_level} min={1} max={10} onChange={(v) => set("stress_level", v)} legend={t("sections.lifestyle_stress_legend")} />,
+    },
+    // 14. Lifestyle: seated + steps + job
+    {
+      title: t("sections.lifestyle_title"),
+      body: (
+        <div className="space-y-4">
+          <Field label={t("sections.lifestyle_seated")}>
+            <Input inputMode="numeric" value={form.ext_hours_seated} onChange={(e) => set("ext_hours_seated", e.target.value)} />
+          </Field>
+          <Field label={t("sections.lifestyle_steps")} optional optionalLabel={t("optional")}>
+            <Input inputMode="numeric" value={form.ext_daily_steps} onChange={(e) => set("ext_daily_steps", e.target.value)} />
+          </Field>
+          <Field label={t("sections.lifestyle_job")}>
+            <Pills
+              options={[
+                { id: "Desk", label: t("job.desk") },
+                { id: "Manual", label: t("job.manual") },
+                { id: "Mixed", label: t("job.mixed") },
+                { id: "Other", label: t("job.other") },
+              ]}
+              value={form.ext_job_type}
+              onChange={(v) => set("ext_job_type", v)}
+            />
+          </Field>
+        </div>
+      ),
+    },
+    // 15. Nutrition
+    {
+      title: t("sections.nutrition_title"),
+      body: (
+        <div className="space-y-4">
+          <Field label={t("sections.nutrition_meals")}>
+            <Input inputMode="numeric" value={form.ext_meals_per_day} onChange={(e) => set("ext_meals_per_day", e.target.value)} />
+          </Field>
+          <Field label={t("sections.nutrition_water")}>
+            <Input inputMode="decimal" value={form.ext_water_l_per_day} onChange={(e) => set("ext_water_l_per_day", e.target.value)} />
+          </Field>
+          <SliderField label={t("sections.nutrition_processed")} value={form.ext_processed_food} min={1} max={5} onChange={(v) => set("ext_processed_food", v)} legend={t("sections.nutrition_processed_legend")} />
+          <Field label={t("sections.nutrition_alcohol")} optional optionalLabel={t("optional")}>
+            <Input inputMode="numeric" value={form.ext_alcohol_units_week} onChange={(e) => set("ext_alcohol_units_week", e.target.value)} />
+          </Field>
+          <Field label={t("sections.nutrition_habits")} optional optionalLabel={t("optional")}>
+            <Textarea rows={3} value={form.nutrition_habits} onChange={(e) => set("nutrition_habits", e.target.value)} />
+          </Field>
+        </div>
+      ),
+    },
+    // 16. Review
+    {
+      title: t("review_title"),
+      subtitle: t("review_desc"),
+      body: (
+        <div className="space-y-2 rounded-lg border border-border bg-card/60 p-4 text-sm">
+          <ReviewRow label={t("sections.goal_what")} value={form.smart_specific} />
+          <ReviewRow label={t("sections.goal_measure")} value={form.smart_measurable} />
+          <ReviewRow label={t("sections.goal_when")} value={form.smart_deadline} />
+          <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
+          <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
+          <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
+          <ReviewRow label={t("sections.training_location")} value={form.training_location} />
+          <ReviewRow label={t("sections.training_equipment")} value={form.available_equipment.join(", ")} />
+        </div>
+      ),
+    },
+  ];
+}
+
+function ReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-border/40 py-1.5 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right text-foreground">{value || "—"}</span>
     </div>
   );
 }
