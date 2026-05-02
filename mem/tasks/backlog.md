@@ -53,3 +53,6 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 
 ## Won't address again unless raised
 - #12, #13, #21 — meta principles, applied throughout work above (not discrete tasks).
+
+## Parked — only after real-use proof
+- [ ] **Biblioteca de finalizadores opcionais** (dead hang 1×30s para descompressão, ladder drill com dupla tarefa cognitiva, carry variations). 1-click no SessionDayView para anexar ao último bloco. Posicionamento: "saúde através do exercício" — coordenação, cognição motora, descompressão axial. Não implementar até a folha de registo PDF estar afinada e haver ≥10 sessões registadas em uso real.
