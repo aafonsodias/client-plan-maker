@@ -409,6 +409,60 @@ export type Database = {
         }
         Relationships: []
       }
+      demo_runs: {
+        Row: {
+          cancelled: boolean
+          client_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          plan_id: string | null
+          stage: string
+          status: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled?: boolean
+          client_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          plan_id?: string | null
+          stage?: string
+          status?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled?: boolean
+          client_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          plan_id?: string | null
+          stage?: string
+          status?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demo_runs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demo_runs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generation_log: {
         Row: {
           assessment_id: string | null
@@ -684,6 +738,8 @@ export type Database = {
       workout_plans: {
         Row: {
           assessment_id: string | null
+          block_number: number
+          block_transition_summary: string | null
           blueprint: Json | null
           brief: Json | null
           client_id: string
@@ -695,6 +751,7 @@ export type Database = {
           generation_status: string
           id: string
           plan_data: Json
+          prior_plan_id: string | null
           programming_variables: Json | null
           progression_plan: Json | null
           red_flag_accommodations: Json | null
@@ -708,6 +765,8 @@ export type Database = {
         }
         Insert: {
           assessment_id?: string | null
+          block_number?: number
+          block_transition_summary?: string | null
           blueprint?: Json | null
           brief?: Json | null
           client_id: string
@@ -719,6 +778,7 @@ export type Database = {
           generation_status?: string
           id?: string
           plan_data?: Json
+          prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
           red_flag_accommodations?: Json | null
@@ -732,6 +792,8 @@ export type Database = {
         }
         Update: {
           assessment_id?: string | null
+          block_number?: number
+          block_transition_summary?: string | null
           blueprint?: Json | null
           brief?: Json | null
           client_id?: string
@@ -743,6 +805,7 @@ export type Database = {
           generation_status?: string
           id?: string
           plan_data?: Json
+          prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
           red_flag_accommodations?: Json | null
@@ -767,6 +830,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_plans_prior_plan_id_fkey"
+            columns: ["prior_plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
             referencedColumns: ["id"]
           },
         ]
