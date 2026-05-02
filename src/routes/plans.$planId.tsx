@@ -22,8 +22,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
