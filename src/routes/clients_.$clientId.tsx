@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
-import { DemoOrchestrator } from "@/components/DemoOrchestrator";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+const DemoOrchestrator = lazy(() =>
+  import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
+);
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,7 +22,6 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { renderAssessmentPdf } from "@/lib/pdf";
 import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
@@ -72,7 +73,11 @@ function ClientDetailRoute() {
   return (
     <AppShell back={{ to: "/clients", label: t("all_clients") }}>
       <ClientDetail />
-      <DemoOrchestrator clientId={clientId} enabled={demo === "play"} />
+      {demo === "play" && (
+        <Suspense fallback={null}>
+          <DemoOrchestrator clientId={clientId} enabled />
+        </Suspense>
+      )}
     </AppShell>
   );
 }
@@ -1354,8 +1359,9 @@ function ClientDetail() {
             variant="outline"
             size="sm"
             className="h-8 gap-1.5"
-            onClick={() => {
+            onClick={async () => {
               try {
+                const { renderAssessmentPdf } = await import("@/lib/pdf");
                 renderAssessmentPdf({
                   assessment,
                   client,

@@ -24,7 +24,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
+import type { PlanData, Week, Day, Exercise } from "@/lib/pdf";
+import { isLegacyPlan } from "@/lib/pdf-types";
 import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -247,6 +248,7 @@ function PlanEditor() {
         }
       } catch { /* ignore */ }
     }
+    const { generatePlanPdf } = await import("@/lib/pdf");
     await generatePlanPdf(
       { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
       data,

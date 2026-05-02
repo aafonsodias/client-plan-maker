@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useMemo, useState } from "react";
@@ -18,7 +19,9 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
-import { DemoLabPanel } from "@/components/DemoLabPanel";
+const DemoLabPanel = lazy(() =>
+  import("@/components/DemoLabPanel").then((m) => ({ default: m.DemoLabPanel }))
+);
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -130,7 +133,9 @@ function Clients() {
 
   return (
     <div className="space-y-8">
-      <DemoLabPanel />
+      <Suspense fallback={null}>
+        <DemoLabPanel />
+      </Suspense>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("clients.eyebrow")}</p>
