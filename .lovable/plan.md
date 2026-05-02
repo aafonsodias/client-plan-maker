@@ -1,110 +1,149 @@
 
-# Próximo lote — Forge
+# Five fixes to take Forge from "demo" to "vertically integrated"
 
-Cinco frentes, todas pequenas e honestas. Sem reinventar o que já existe (o tier system, o BrandMark, o demo lab, o block lineage estão feitos).
+Scope: four shippable fixes (1-4) + one strategic checklist (5). All in pt-PT, formal address.
 
 ---
 
-## 1. Caminho manual para tudo o que a IA faz
+## 1. PDF: writable "log column" on the A4 (the placa)
 
-A IA é só atalho. O caminho manual tem de existir e ser visível. O que falta hoje:
+**Problem.** The exported PDF (the one you print and stick on the placa) shows W1/W2/W3/W4 prescriptions but no place to write what actually happened in the gym. The trainer/client has to memorise or scribble in the margins.
 
-- **Concluir bloco e iniciar Bloco N+1 (manual).** Hoje só existe `archivePlanAndStartNextBlock` (IA). Adicionar `archivePlanAndStartManualNextBlock` que:
-  - calcula o mesmo `block_transition_summary` (adesão + RPE drift) — reaproveita a lógica;
-  - arquiva o plano anterior;
-  - cria um `workout_plans` em branco com `block_number+1`, `prior_plan_id`, `generation_status='manual'`;
-  - redireciona para `/plans/$id/blueprint` em modo edição manual.
-- **Botão no header do plano** já tem "Concluir e iniciar Bloco N+1 (IA)". Passa a ser dropdown com duas opções: *com IA (rápido)* | *manualmente (tens controlo total)*. A opção manual está sempre visível, a IA só em demo plans.
-- **Resumo de transição editável.** O `block_transition_summary` (gerado pela IA ou pelas métricas) abre num textarea antes de criar o próximo bloco — o treinador edita, valida, confirma. Princípio: a IA propõe, o humano assina.
-- **Manual.json (pt-PT)** ganha uma secção nova "Evolução entre blocos" a explicar o caminho manual passo-a-passo.
-
-## 2. Bancada — o sítio divertido + útil
-
-Uma página `/bancada` (em inglês `/workshop`), dentro da app, acessível pelo AppShell. Dois painéis lado a lado:
+**Fix.** Add a **"REGISTO"** zone on every per-archetype page in `src/lib/pdf.ts`:
 
 ```text
-┌──────────────────────────┬──────────────────────────┐
-│   Pesa-papéis            │   Quadro de estudos      │
-│   (calculadora rápida)   │   (PubMed + news feed)   │
-│                          │                          │
-│ 1RM Epley/Brzycki/Lombardi│ Top 10 estudos recentes  │
-│ Carga × reps → estimativa │ em força/hipertrofia     │
-│ Plate math (barra + anilhas)│ + posts de news (RSS)  │
-│ Tempo de descanso ↔ %1RM   │ Filtros: força, hipert.,│
-│ Conversor lb↔kg            │ recuperação, lesão       │
-└──────────────────────────┴──────────────────────────┘
+EXERCISE         SETS REPS REST RPE TEMPO  │ W2  W3  W4 │ REGISTO (escrever no ginásio)
+                                           │             │ Set 1: __×__ @__   Set 2: __×__ @__   Set 3: __×__ @__   Notas: ____
 ```
 
-- **Pesa-papéis (fun):** componente client-only, zero backend. Inputs: peso e reps → estimativa de 1RM por três fórmulas com a média destacada. Slider de % do 1RM → carga + plate math (mostra que anilhas pôr de cada lado de uma barra de 20 kg). Tudo em SI, com toggle lb/kg local. Visual: amber under-glow nos resultados, tipografia mono nas cargas.
-- **Quadro de estudos (útil):** server function `getStudiesFeed` que chama [PubMed E-utilities](https://eutils.ncbi.nlm.nih.gov/entrez/eutils/) (sem chave, gratuito) com queries pré-definidas (`"resistance training"[MeSH] AND "2025"[dp]`, idem para "hypertrophy", "rehabilitation"). Cache em memória 6 h. Mostra título, autores, journal, link DOI. Filtros locais por tag. Sem login externo.
-- **Princípio:** a página carrega instantaneamente mesmo sem feed (o pesa-papéis é client). O feed faz fetch progressivo.
-- **Localização:** "Bancada" no AppShell com ícone Hammer, entre Dashboard e Manual.
+Two render modes via a `pdfMode: "training" | "logsheet"` toggle in the Export PDF button:
+- **Training sheet** (current): mesocycle prescription, no log column.
+- **Folha de registo (week N)**: collapses W2..W4 deltas, expands a wide right-hand column with one row of blanks per prescribed set (using `sets` × `reps`). Header has `Cliente: Marta Q.   Semana: __   Data: __   Sessão: ___`. One page per session-archetype, one column block per set.
 
-Esta é a "place that is both fun and serious and useful" — o pesa-papéis é viciante (mexer no slider e ver as anilhas a aparecerem) e o quadro é honesto (literatura real, não conteúdo gerado).
+Plus a small "Importar registo" button next to "Exportar PDF" that opens a dialog where the trainer types/pastes the values back into `workout_sessions.entries` for that day (manual mirror of the future OCR path).
 
-## 3. pt-PT: tu → você (varrer i18n)
-
-O `intake.json`, `review.json`, `common.json`, `manual.json` usam "tu/teu/tua" — formal pt-PT prefere "você/seu/sua" ou impessoal. Sweep:
-
-- "o teu treinador" → "o seu treinador"
-- "cria a tua conta" → "crie a sua conta" (imperativo formal)
-- "podes" → "pode"
-- "guardamos o teu progresso" → "guardamos o seu progresso"
-
-Critério: **toda a comunicação dirigida ao utilizador final (cliente do PT) e ao PT** passa a "você"/imperativo formal. Tooltips internos e debug podem ficar informais. Adicionar à memory como regra (`mem://design/voice-pt`).
-
-## 4. Landing — gráfico + funcional
-
-Não recomeçar. Polir três pontos:
-
-- **Hero mockup:** o cartão à direita (ver imagem 2 que mandou) ganha micro-animação amber: a coluna Δ "+4 kg / +5 kg" pulsa subtil 1×/8 s, dando sinal de vida sem distrair.
-- **Secção nova "Bancada"** entre features e pricing: card pequeno com screenshot do pesa-papéis + estudos. CTA "Experimenta agora — não precisa de conta" se for para anónimos lerem o pesa-papéis (decisão: sim, é uma porta de entrada honesta).
-- **Gráfico evolução (imagem 1 que mandou)** já existe como conceito "EM BREVE". Promovê-lo: quando o treinador tem ≥3 semanas logged num exercício, a chip "EM BREVE" cai e o gráfico fica vivo. Implementar a lógica de hidratação real (já há `workout_sessions.entries`).
-- **OG/twitter image** dedicada por rota (já está parcialmente — confirmar e completar).
-
-## 5. Naming — Forge / símbolo
-
-Não vou trocar nada sem o seu sinal verde. Mas registo aqui as opções para discussão (ficam num doc interno `docs/naming.md`, não muda nada no código):
-
-- **Forge** (atual). A favor: bonito, físico, ressoa com "moldar pela repetição". Contra: nome saturado em SaaS.
-- **Bigorna / Anvil.** A bigorna é o que recebe — o cliente. O treinador é o ferreiro. Símbolo: silhueta de bigorna estilizada. Mais original.
-- **Forja.** Versão pt da mesma metáfora. Mantém o símbolo.
-- **Compasso.** Outro registo: rigor + medida em vez de força + repetição. Mais clínico.
-
-Símbolo atual (logo carregada) tem o amber under-glow. Proposta: manter logo, mas **adicionar uma versão monocromática** (silhueta amber sólida) para favicons e PDFs, garantindo legibilidade pequena. Isto é útil independentemente do nome.
+**Files:** `src/lib/pdf.ts` (add `renderLogsheet`), `src/routes/plans.$planId.tsx` (Export dropdown: Training / Folha de registo), new `src/components/ImportLogDialog.tsx`.
 
 ---
 
-## Detalhes técnicos
+## 2. "Plano concluído" lifecycle + Block N → N+1 handoff
 
-**Ficheiros novos:**
-- `src/routes/bancada.tsx` — página com dois painéis.
-- `src/components/OneRepMaxCalculator.tsx` — pesa-papéis client-only.
-- `src/components/PlateMath.tsx` — visualização das anilhas.
-- `src/components/StudiesFeed.tsx` — quadro de estudos (consome server fn).
-- `src/server/studies.functions.ts` — `getStudiesFeed({ topic })` via PubMed E-utilities, cache 6 h.
-- `src/server/blocks-manual.functions.ts` — `archivePlanAndStartManualNextBlock` (sem IA).
-- `src/components/BlockTransitionDialog.tsx` — diálogo com summary editável + dois botões (manual / IA).
-- `mem://design/voice-pt.md` — regra do "você".
-- `docs/naming.md` — discussão de naming, sem efeito no build.
+**Problem.** Marta logged everything; the plan still shows the same buttons and never says "this is over, what's next?". Currently `completion_state` exists but no UI surfaces it from the *plan view*.
 
-**Ficheiros editados:**
-- `src/routes/plans.$planId.tsx` — substitui o botão único de Bloco N+1 pelo dialog.
-- `src/components/AppShell.tsx` — adiciona link "Bancada" no nav.
-- `src/i18n/locales/pt/{common,intake,review,manual}.json` — sweep tu→você.
-- `src/i18n/locales/pt/manual.json` — secção "Evolução entre blocos".
-- `src/routes/index.tsx` — secção Bancada na landing + micro-animação amber + ativar gráfico real.
-- `src/server/blocks.functions.ts` — extrair `computeTransitionSummary` (puro) para reaproveitar entre IA e manual.
+**Fix.** Three states surfaced on the plan header chip (uses existing `toneChip`):
 
-**Sem migrações de base de dados.** Tudo cabe em colunas existentes (`workout_plans.generation_status` aceita 'manual', `block_transition_summary` é texto livre).
+| State | Trigger | Header chip | CTA |
+|---|---|---|---|
+| `in_progress` | sessions logged < scheduled | "EM CURSO · X/Y sessões" | (none — show progress) |
+| `ready_to_close` | ≥ 80% sessions logged **or** trainer clicks "Marcar como concluído" | amber "PRONTO PARA FECHAR" | **Concluir bloco e iniciar Bloco N+1** |
+| `finished_logging` | trainer confirmed | emerald "BLOCO CONCLUÍDO · 02/05/2026" | **Desenhar Bloco N+1 (manual)** primary, **Evoluir do último (IA)** secondary if demo |
 
-**Acceptance:**
-1. Header de qualquer plano com >1 sessão logged mostra "Concluir bloco" → abre dialog → escolha entre manual e IA → cria Bloco N+1 corretamente em ambos os caminhos.
-2. `/bancada` carrega em <200 ms (pesa-papéis instantâneo). Estudos hidratam em <3 s, com 5+ entradas reais.
-3. `intake` e `auth` já não têm "tu/teu/tua" — só "você/seu/sua" ou impessoal.
-4. Landing mostra a secção Bancada e o gráfico de evolução tem dados reais quando há logs.
-5. Memory atualizada com a regra de voz pt-PT.
+Mechanics:
+- Add `markPlanFinished(planId)` server fn (writes `completion_state='finished_logging'`, sets `status='archived'`, snapshots adherence/RPE drift into `block_transition_summary` so the dialog has defaults).
+- Add a "Concluir plano" button next to the existing "Concluir bloco" CTA — same dialog (`BlockTransitionDialog`) but defaults to **Manual** path (your stated rule: manual is the canonical path; AI is the demo shortcut).
+- On the **client page**, when `finished_logging`, the section header changes from "Plano em curso" to "Último bloco concluído · 02/05/2026" (collapsed), and a prominent **"+ Desenhar Bloco 2 (manual)"** appears on top.
+- Logbook keeps showing prior sessions; new sessions roll under the new plan.
+
+This makes results "keep going" because the Bloco 2 plan is created with `prior_plan_id` pointing back, and `ResultsPanel` already aggregates across blocks via `prior_plan_id`.
+
+**Files:** `src/server/blocks-manual.functions.ts` (add `markPlanFinished`), `src/routes/plans.$planId.tsx` (header chip + new CTAs), `src/routes/clients_.$clientId.tsx` (collapsed "último bloco" + new Bloco N+1 CTA), `src/components/PlanStatusChip.tsx` (new — single source for chip rendering), `src/i18n/locales/pt/plan.json` (strings).
 
 ---
 
-Aprovo e começo, ou queres que ajuste alguma frente antes (ex.: trocar PubMed por outra fonte, ou cortar a Bancada para outro turno)?
+## 3. Fix the empty validation report + the lazy summary
+
+**A. The "AI validation report will appear here…" placeholder is permanent.**
+
+Root cause: `generation_meta` for Marta only has `tier` / `tier_guidelines` — no `validation` block was ever written. The phased pipeline never persists the validation/critic output to `generation_meta.validation`.
+
+**Fix.** In `src/server/phased/stage3-microcycle.functions.ts` and `stage4-progressions.functions.ts`, after each critic pass, merge the per-day verdicts into `generation_meta.validation` with shape `{ verdict_counts, unresolved_issues, escalated_days, total_cost_usd, finalized_at }`. Update on `complete`. Also: when no critic ran (legacy plan), show a different message than "will appear" — show **"Sem relatório de validação para este plano (gerado antes do auditor IA). Re-gere para activar."** with a regenerate link.
+
+**B. The brief summary reads like a bot apologising.**
+
+Root cause: when the assessment has no per-section analyses (Marta is a stub demo client), Stage 1 prompt outputs the "Sem análises por secção fornecidas. Estabeleça avaliações…" boilerplate. That's fine as an *internal* `notes_for_next_stage`, but it leaks into the user-visible Summary because `plan.summary` falls back to it.
+
+**Fix.**
+- Stage 1 brief prompt (`stage1-brief.functions.ts`): require `notes_for_next_stage` to be a *programming-relevant* sentence (volume target, tier rationale, deload posture) — never a meta-complaint about missing data. Add a guardrail: if model returns the "Sem análises…" string, post-process to a useful default like "Iniciante sem PRs registados; arrancar com tier remedial, RPE 5–6, foco em padrões básicos com máquinas e bandas; reavaliar competência ao fim do bloco."
+- **Plan summary** (`plan.summary`) must come from the **microcycle stage's** new `program_summary` field (one paragraph: split, intensity logic, deload week), NOT from brief notes. Add to Stage 3 schema + prompt.
+- ValidationReport empty-state copy: replace with **"Validação automática indisponível para este plano. Carregue 'Re-gerar' para correr o auditor."**
+
+**Files:** `stage1-brief.functions.ts`, `stage3-microcycle.functions.ts` (add `program_summary` to schema + persist to `workout_plans.summary`), `schemas.ts`, `ValidationReport.tsx`.
+
+---
+
+## 4. Honest progression curve — push the 38-year-old beginner
+
+**Problem.** Plan shows W1→W2 = +1 rep at RPE 6 → "+0.5rpe" tags. That's a tickle, not a stimulus. A healthy 38-year-old beginner needs ~5–10% weekly progression to actually adapt; deload only at W4.
+
+**Fix in `src/server/phased/stage4-progressions.functions.ts`** (and `programming-defaults.ts`):
+
+- Replace the current "+1 rep / +0.5 RPE" default with a **tier-aware progression policy**:
+  - `remedial` (true rehab): +0 to +1 rep OR +2.5% load, RPE 5→5.5→6→deload
+  - `beginner_general` (Marta): **+1–2 reps OR +2.5–5% load, RPE 6→7→7.5→deload (RPE 5)**. W3 should hit RPE 7.5, not 5.4 (!).
+  - `intermediate`: +5% load or +1 rep at top set, RPE 7→7.5→8→deload
+  - `advanced`: undulating; +2.5% top set, drop volume on accessories
+- Hard-stop the bug where every week shows the same RPE target ("RPE alvo 5.4" for W1–W4 in the screenshot is wrong — W4 is supposed to be the deload).
+- Surface the curve on the plan header: a 4-bar mini-chart "Carga semanal: ▁▃▆▂" so the trainer can spot a flat plan in 1 second.
+- Add a setting on the brief: **"Apetite de intensidade"**: `conservador` / `padrão` / `agressivo` — defaults to `padrão`. Marta would have been on `padrão`; demo currently behaves like `conservador`.
+
+**Files:** `programming-defaults.ts`, `stage4-progressions.functions.ts`, `stage1-brief.functions.ts` (new field), `BriefEditor.tsx`, `MesocycleTableView.tsx` (mini-chart), `pt/plan.json`.
+
+---
+
+## 5. What's missing to be "vertically integrated, golden standard"
+
+Direct answer to your last question. This is a checklist, not a build target for this turn — pick what to attack next.
+
+**a. Closed loop: gym → app**
+- ✅ (this PR) Folha de registo printable.
+- Soon: photo-of-the-sheet → OCR → suggested log entries (Lovable AI Vision).
+- Soon: phone web app for the *client* to tick reps live — share token already exists; needs a "Tocar para registar" mode.
+
+**b. Closed loop: results → next plan**
+- (this PR) Bloco N → Bloco N+1 with adherence + RPE drift baked into transition note.
+- Missing: **trend dashboard per exercise** across blocks (1RM estimate via Epley from logs, volume tonnage line). The data is there in `workout_sessions.entries`; needs a `<ExerciseTrendChart>` on the client page.
+- Missing: **auto-deload trigger**: if average RPE > prescribed +1 for 2 consecutive weeks, suggest a deload week.
+
+**c. Closed loop: client perception**
+- Daily metrics (already migrated: `client_measurements`) need a **client-facing micro-form** (1 minute: HRV/sleep/peso/dor) so the data actually flows in. Right now only the trainer can input.
+- Tie those into the next-plan generator: a week of bad sleep → drop intensity 5%.
+
+**d. Money & ops**
+- Invoicing exists; missing: **automatic invoice on plan finalisation** (one click).
+- Missing: client portal showing remaining sessions / next assessment date.
+
+**e. Knowledge & defensibility**
+- Bancada is good entertainment; promote it: every new exercise added to a plan offers "Ver estudos" (PubMed query auto-built from exercise + topic).
+- Library of trainer-authored notes attached to `exercises_catalog` so cues compound over time.
+
+**f. Trust**
+- ValidationReport (fixed in this PR) is the *credibility wedge*. Once every plan ships with "Auditor IA: 12/12 dias verificados", trainers stop second-guessing.
+- Add a **"Diferença vs último bloco"** auto-summary on every Bloco N+1 (volume %, intensity %, novelty).
+
+---
+
+## What this PR ships (1–4)
+
+```text
+src/lib/pdf.ts                                  + log-sheet renderer
+src/routes/plans.$planId.tsx                    plan completion chip + CTAs + PDF dropdown
+src/routes/clients_.$clientId.tsx               collapsed "último bloco" + Bloco N+1 CTA
+src/components/PlanStatusChip.tsx               NEW — single chip source
+src/components/ImportLogDialog.tsx              NEW — paste back from sheet
+src/components/ValidationReport.tsx             empty-state copy
+src/server/blocks-manual.functions.ts           + markPlanFinished
+src/server/phased/stage1-brief.functions.ts     useful notes_for_next_stage + apetite intensidade
+src/server/phased/stage3-microcycle.functions.ts persist program_summary → plan.summary
+src/server/phased/stage4-progressions.functions.ts tier-aware progression curve
+src/server/phased/programming-defaults.ts       intensity table by tier
+src/server/phased/schemas.ts                    + program_summary, + intensity_appetite
+src/components/MesocycleTableView.tsx           weekly load mini-chart
+src/components/BriefEditor.tsx                  apetite intensidade picker
+src/i18n/locales/pt/plan.json                   strings
+```
+
+No DB migrations needed — `completion_state`, `block_number`, `prior_plan_id`, `block_transition_summary` already exist.
+
+---
+
+Reply **"continua"** para implementar 1–4. Item 5 fica como mapa para os próximos sprints.

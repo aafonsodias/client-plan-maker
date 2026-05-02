@@ -141,3 +141,35 @@ export const computeTransitionSummary = createServerFn({ method: "POST" })
       sessionsLogged: totalLogged,
     };
   });
+
+/**
+ * markPlanFinished — closes a plan's lifecycle.
+ * Sets completion_state="finished_logging" and (optionally) status="archived".
+ * Use this when the trainer says "fechar plano" without yet creating Block N+1.
+ */
+export const markPlanFinished = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ planId: z.string().uuid(), archive: z.boolean().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: prior } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, trainer_id")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!prior || (prior as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const update: { completion_state: string; status?: string } = {
+      completion_state: "finished_logging",
+    };
+    if (data.archive) update.status = "archived";
+    const { error } = await supabaseAdmin
+      .from("workout_plans")
+      .update(update)
+      .eq("id", data.planId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });

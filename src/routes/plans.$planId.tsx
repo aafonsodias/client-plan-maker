@@ -17,7 +17,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
+import { generatePlanPdf, generateLogsheetPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -32,6 +32,7 @@ import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
+import { markPlanFinished } from "@/server/blocks-manual.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -76,6 +77,7 @@ function PlanEditor() {
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
+  const markFinishedFn = useServerFn(markPlanFinished);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
@@ -253,6 +255,39 @@ function PlanEditor() {
     if (user) { void markOnboardingStep(user.id, "export_pdf"); }
   };
 
+  const exportLogsheet = async () => {
+    if (!client || !plan) return;
+    let logoDataUrl: string | null = null;
+    if (profile?.logo_url) {
+      try {
+        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(profile.logo_url, 600);
+        if (signed?.signedUrl) {
+          const res = await fetch(signed.signedUrl);
+          const blob = await res.blob();
+          logoDataUrl = await new Promise<string | null>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(blob);
+          });
+        }
+      } catch { /* ignore */ }
+    }
+    await generateLogsheetPdf(
+      { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
+      data,
+      {
+        business_name: profile?.business_name,
+        full_name: profile?.full_name,
+        tagline: profile?.tagline,
+        contact_email: profile?.contact_email,
+        contact_phone: profile?.contact_phone,
+        logo_data_url: logoDataUrl,
+      },
+      { week: 1 },
+    );
+  };
+
   if (!plan) return <p className="text-muted-foreground">Loading…</p>;
 
   return (
@@ -323,6 +358,15 @@ function PlanEditor() {
             title="Exportar plano em PDF (paisagem, ≤6 páginas)"
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar PDF
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={exportLogsheet}
+            className="h-8"
+            title="Folha de registo A4 com colunas em branco para o ginásio"
+          >
+            <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
           </Button>
           <Button
             variant="ghost"
@@ -442,13 +486,36 @@ function PlanEditor() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
           <div className="flex-1">
             <p className="font-semibold text-foreground">
-              Bloco {(plan as any).block_number ?? 1} pronto para fechar.
+              Bloco {(plan as any).block_number ?? 1}
+              {(plan as any).completion_state === "finished_logging"
+                ? " · concluído pelo treinador"
+                : sessions.length > 0
+                ? ` · ${sessions.length} sessão(ões) registada(s)`
+                : " · pronto para fechar"}.
             </p>
             <p className="mt-0.5 text-muted-foreground">
               Arquive este bloco e desenhe o Bloco {((plan as any).block_number ?? 1) + 1}.
               Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.
             </p>
           </div>
+          {(plan as any).completion_state !== "finished_logging" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const r: any = await markFinishedFn({ data: { planId, archive: false } });
+                if (r?.ok) {
+                  toast.success("Plano marcado como concluído.");
+                  setPlan({ ...plan, completion_state: "finished_logging" });
+                } else {
+                  toast.error(r?.error ?? "Falhou marcar como concluído.");
+                }
+              }}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Marcar como concluído
+            </Button>
+          )}
           <BlockTransitionDialog
             priorPlanId={planId}
             currentBlockNumber={(plan as any).block_number ?? 1}
@@ -456,7 +523,7 @@ function PlanEditor() {
             trigger={
               <Button size="sm">
                 <PlayCircle className="mr-2 h-4 w-4" />
-                Concluir bloco
+                Iniciar Bloco {((plan as any).block_number ?? 1) + 1}
               </Button>
             }
           />

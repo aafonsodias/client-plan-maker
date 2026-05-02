@@ -43,7 +43,7 @@ export function ValidationReport({ generationMeta }: { generationMeta: any }) {
     return (
       <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground flex items-center gap-2">
         <Info className="h-3.5 w-3.5" />
-        AI validation report will appear here once this plan finishes generating.
+        Validação automática indisponível para este plano (gerado antes do auditor IA, ou ainda em geração). Carregue em "Re-gerar com feedback" para correr o auditor.
       </div>
     );
   }
