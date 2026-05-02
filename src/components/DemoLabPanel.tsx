@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Beaker, Zap, Activity, Loader2, Trophy, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createDemoClientFull, getDemoRun, cancelDemoRun } from "@/server/demo-oneshot.functions";
+import { startDemoClientFull, getDemoRun, cancelDemoRun } from "@/server/demo-oneshot.functions";
 import { advanceSimulation } from "@/server/demo-sessions.functions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -30,7 +30,7 @@ const STAGE_ORDER = GATE_LABELS.map((g) => g.key) as readonly string[];
 export function DemoLabPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const oneShotFn = useServerFn(createDemoClientFull);
+  const startFn = useServerFn(startDemoClientFull);
   const pollFn = useServerFn(getDemoRun);
   const cancelFn = useServerFn(cancelDemoRun);
   const tickFn = useServerFn(advanceSimulation);
@@ -68,7 +68,7 @@ export function DemoLabPanel() {
     pollTimerRef.current = null;
   };
 
-  const startPolling = () => {
+  const startPolling = (onComplete: (row: any) => void) => {
     stopPolling();
     pollTimerRef.current = window.setInterval(async () => {
       const id = runIdRef.current;
@@ -77,11 +77,18 @@ export function DemoLabPanel() {
         const row: any = await pollFn({ data: { runId: id } });
         if (!row) return;
         applyStage(row.stage, row.status);
-        if (row.cancelled) stopPolling();
+        const finished =
+          (row.stage === "done" && row.status === "done") ||
+          row.status === "failed" ||
+          row.cancelled;
+        if (finished) {
+          stopPolling();
+          onComplete(row);
+        }
       } catch {
         /* swallow — best-effort */
       }
-    }, 800);
+    }, 1500);
   };
 
   useEffect(() => () => stopPolling(), []);
@@ -92,40 +99,38 @@ export function DemoLabPanel() {
     resetGates();
     applyStage("client", "running");
     try {
-      // Kick off the call. The server writes the demo_runs row almost
-      // immediately; we start polling on the next tick to avoid races.
-      const promise = oneShotFn({
-        data: { durationWeeks, weeksToSeed },
-      });
-      // Light delay so the run row exists before we poll.
-      window.setTimeout(async () => {
-        // Poll once to grab runId from the response we'll await below.
-      }, 200);
-      startPolling();
-      const res: any = await promise;
-      stopPolling();
-      runIdRef.current = res?.runId ?? null;
-      // Final reconciliation poll using the returned runId.
-      if (res?.runId) {
-        try {
-          const row: any = await pollFn({ data: { runId: res.runId } });
-          if (row) applyStage(row.stage, row.status);
-        } catch {/* ignore */}
-      }
-      if (!res?.ok) {
-        applyStage(res?.stage ?? "plan", "failed");
-        toast.error(`Falhou em ${res?.stage ?? "?"}: ${res?.error ?? "erro desconhecido"}`);
+      // Fire-and-poll: the server returns runId in <1s and runs the rest in
+      // background. We follow progress via getDemoRun and only navigate when
+      // the run reaches stage="done". This avoids the upstream timeout that
+      // crashed the long-running response.
+      const res: any = await startFn({ data: { durationWeeks, weeksToSeed } });
+      if (!res?.ok || !res?.runId) {
+        applyStage("client", "failed");
+        toast.error(res?.error ?? "Falhou a iniciar a simulação.");
+        setBusy(null);
         return;
       }
-      setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "done"])));
-      toast.success(`Cliente demo + plano (${durationWeeks} sem) + ${res.sessions} sessões prontos.`);
-      void navigate({ to: "/plans/$planId", params: { planId: res.planId } });
+      runIdRef.current = res.runId;
+      startPolling((row) => {
+        setBusy(null);
+        if (row.cancelled) {
+          toast.info("Simulação cancelada.");
+          return;
+        }
+        if (row.status === "failed") {
+          toast.error(`Falhou em ${row.stage ?? "?"}: ${row.error ?? "erro desconhecido"}`);
+          return;
+        }
+        setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "done"])));
+        toast.success(`Cliente demo + plano (${durationWeeks} sem) prontos.`);
+        if (row.plan_id) {
+          void navigate({ to: "/plans/$planId", params: { planId: row.plan_id } });
+        }
+      });
     } catch (e: any) {
       stopPolling();
-      toast.error(e?.message ?? "Erro inesperado.");
-    } finally {
       setBusy(null);
-      stopPolling();
+      toast.error(e?.message ?? "Erro inesperado.");
     }
   };
 
