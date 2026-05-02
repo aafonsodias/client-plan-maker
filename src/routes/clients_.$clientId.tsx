@@ -2359,7 +2359,57 @@ function ClientDetail() {
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-bold">{t("plans.title")}</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-bold">{t("plans.title")}</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={creatingPlan !== null}
+              onClick={async () => {
+                setCreatingPlan("manual");
+                try {
+                  const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
+                  if (r?.ok && r?.planId) {
+                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                  } else {
+                    toast.error(r?.error ?? "Falhou ao criar plano.");
+                  }
+                } finally { setCreatingPlan(null); }
+              }}
+            >
+              {creatingPlan === "manual"
+                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                : <Plus className="mr-1.5 h-3.5 w-3.5" />}
+              Novo plano (manual)
+            </Button>
+            <Button
+              size="sm"
+              disabled={creatingPlan !== null || !evolvableSourcePlan}
+              title={!evolvableSourcePlan
+                ? "Marca um plano como terminado para evoluir."
+                : "Gerar próximo bloco a partir do último concluído."}
+              onClick={async () => {
+                if (!evolvableSourcePlan) return;
+                setCreatingPlan("evolve");
+                try {
+                  const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
+                  if (r?.ok && r?.planId) {
+                    toast.success("Próximo bloco criado.");
+                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                  } else {
+                    toast.error(r?.error ?? "Falhou a evoluir o plano.");
+                  }
+                } finally { setCreatingPlan(null); }
+              }}
+            >
+              {creatingPlan === "evolve"
+                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+              Evoluir do último (IA)
+            </Button>
+          </div>
+        </div>
         {plans.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
