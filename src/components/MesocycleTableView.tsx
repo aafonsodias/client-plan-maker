@@ -5,6 +5,7 @@ import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X, Tras
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
+import { rpeTone, parseRpe as parseRpeShared } from "@/lib/rpe-tone";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -353,10 +354,15 @@ function DayBlock({
 }) {
   return (
     <>
-      <tr className={`bg-secondary/40 ${isFirstGroup ? "" : "border-t-[6px] border-background"}`}>
+      {!isFirstGroup && (
+        <tr aria-hidden="true">
+          <td colSpan={weekCount + 1} className="h-3 bg-background p-0" />
+        </tr>
+      )}
+      <tr className="bg-muted/25">
         <td
           colSpan={weekCount + 1}
-          className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground border-t border-border"
+          className="rounded-t border-t-2 border-accent/40 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground"
         >
           {day.day_label}
           {day.focus && (
