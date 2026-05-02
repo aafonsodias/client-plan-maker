@@ -664,6 +664,11 @@ function parseRpe(rpe?: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+/** Strip trailing .0 so "RPE 7.0" reads "RPE 7" but "RPE 7.5" stays whole. */
+function formatRpe(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 function trendArrow(curr: number | null, base: number | null): string {
   if (curr == null || base == null || curr === base) return "";
   return curr > base ? "▲" : "▼";
