@@ -270,7 +270,7 @@ function PlanEditor() {
               <ClientAvatar
                 name={client.full_name}
                 photoUrl={client.photo_url ?? null}
-                size="sm"
+                size={28}
               />
               <span>{client.full_name} →</span>
             </Link>
