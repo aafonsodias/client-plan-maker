@@ -74,6 +74,9 @@ function MicrocycleReview() {
   const removeGenerating = (i: number) => setGeneratingSet((s) => { const n = new Set(s); n.delete(i); return n; });
   const [daysLoaded, setDaysLoaded] = useState(false);
   const day1KickedRef = useRef(false);
+  // Days the trainer has explicitly approved. Each approval auto-fires
+  // the next day's generation (one step ahead — never a runaway chain).
+  const [approvedDays, setApprovedDays] = useState<Set<number>>(new Set());
 
   async function loadPlan() {
     const { data } = await supabase
@@ -149,9 +152,12 @@ function MicrocycleReview() {
   }
 
   function approveDay1AndContinue() {
-    // Day 1 is the gate; once approved the trainer generates remaining days
-    // one-at-a-time below. No auto-batching = no surprise costs / vanishing days.
     setDay1Approved(true);
+    setApprovedDays((s) => { const n = new Set(s); n.add(1); return n; });
+  }
+
+  function approveDay(idx: number) {
+    setApprovedDays((s) => { const n = new Set(s); n.add(idx); return n; });
   }
 
   async function approve() {
@@ -179,12 +185,32 @@ function MicrocycleReview() {
   const pendingCount = days.filter(
     (d) => d.day_number <= sessionsPerWeek && d.status === "pending",
   ).length;
-  const allDone = sessionsPerWeek > 0 && doneCount === sessionsPerWeek;
+  // CRITICAL: also require we actually have a row per session — otherwise the
+  // gate lit up with only Day 1 done because Day 2's row didn't exist yet.
+  const haveAllRows = sessionsPerWeek > 0 && days.filter((d) => d.day_number <= sessionsPerWeek).length >= sessionsPerWeek;
+  const allDone = haveAllRows && doneCount === sessionsPerWeek;
   const inFlight = pendingCount > 0 || generatingSet.size > 0;
   const pct = sessionsPerWeek > 0 ? Math.round((doneCount / sessionsPerWeek) * 100) : 0;
   // Rough estimate: sequential per-day ~40s, divided by client-side concurrency=1 here
   // (server batches 5 internally for bulk; we only manually fire one at a time).
   const etaSec = Math.max(0, (sessionsPerWeek - doneCount) * 40);
+
+  // Auto-advance: when a day is approved AND its row is `done`, kick the
+  // next day if it isn't already generating / done. One step at a time.
+  useEffect(() => {
+    if (!sessionsPerWeek || isFinalized) return;
+    for (const idx of approvedDays) {
+      const next = idx + 1;
+      if (next > sessionsPerWeek) continue;
+      const cur = days.find((d) => d.day_number === idx);
+      if (cur?.status !== "done") continue;
+      const nextRow = days.find((d) => d.day_number === next);
+      if (nextRow && (nextRow.status === "done" || nextRow.status === "pending")) continue;
+      if (isGenerating(next)) continue;
+      regenDay(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvedDays, days, sessionsPerWeek, isFinalized]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
@@ -331,6 +357,12 @@ function MicrocycleReview() {
               day={row}
               planId={planId}
               onRegen={() => regenDay(idx)}
+              isGate={!isFinalized && idx < sessionsPerWeek && !approvedDays.has(idx)}
+              onApproveDay1={
+                isFinalized || idx >= sessionsPerWeek || approvedDays.has(idx)
+                  ? undefined
+                  : () => approveDay(idx)
+              }
             />
           );
         })}

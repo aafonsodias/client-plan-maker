@@ -466,6 +466,66 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_feedback: {
+        Row: {
+          author: string
+          body: string
+          category: string
+          client_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          plan_id: string | null
+          resolved_at: string | null
+          status: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          body: string
+          category: string
+          client_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          plan_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          body?: string
+          category?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          plan_id?: string | null
+          resolved_at?: string | null
+          status?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_feedback_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           business_name: string | null
