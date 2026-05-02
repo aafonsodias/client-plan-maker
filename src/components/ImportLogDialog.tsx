@@ -50,10 +50,10 @@ export function ImportLogDialog({
   );
 
   const setEx = (name: string, patch: Partial<{ reps: string; weight: string; notes: string }>) => {
-    setRows((prev) => ({
-      ...prev,
-      [name]: { reps: "", weight: "", notes: "", ...prev[name], ...patch },
-    }));
+    setRows((prev) => {
+      const cur = prev[name] ?? { reps: "", weight: "", notes: "" };
+      return { ...prev, [name]: { ...cur, ...patch } };
+    });
   };
 
   const submit = async () => {
