@@ -8,7 +8,7 @@ import {
   approveMicrocycle,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, Lock } from "lucide-react";
+import { Loader2, ArrowLeft, Sparkles, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { BriefContextRail } from "@/components/BriefContextRail";
