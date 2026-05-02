@@ -57,7 +57,7 @@ function PlanRoute() {
   );
 }
 
-type Mode = "view" | "edit" | "log" | "results";
+type Mode = "view" | "edit" | "log" | "results" | "progress";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
