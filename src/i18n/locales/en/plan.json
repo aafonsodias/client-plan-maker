@@ -251,6 +251,16 @@
       "legal_terms": "Terms",
       "legal_privacy": "Privacy",
       "legal_contact": "Contact"
+    },
+    "workbench": {
+      "eyebrow": "INTELLIGENT WORKBENCH",
+      "title": "Your AI workbench",
+      "subtitle": "Pick a model, pick the credits, get suggestions with full context. Like a chat with a colleague who knows the client."
+    },
+    "logbook_insights": {
+      "eyebrow": "INTELLIGENT LOGBOOK",
+      "title": "Sessions logged. Patterns surfaced.",
+      "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals."
     }
   },
   "briefRail": {

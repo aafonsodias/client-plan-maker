@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { WorkbenchMockup } from "@/components/landing/WorkbenchMockup";
+import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -279,6 +281,39 @@ function Landing() {
             <ProgressionMockup />
           </div>
           <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
+        </div>
+      </section>
+
+      {/* Workbench — AI coaching assistant with model picker */}
+      <section id="workbench" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.workbench.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.workbench.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.workbench.subtitle")}</p>
+        </div>
+        <WorkbenchMockup />
+      </section>
+
+      {/* Logbook intelligently read — AI-derived insights */}
+      <section id="logbook-insights" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_insights.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_insights.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logbook_insights.subtitle")}</p>
+        </div>
+        <div className="grid items-start gap-8 md:grid-cols-2">
+          <LogbookInsightsMockup />
+          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-6">
+            <p className="text-xs uppercase tracking-widest text-accent">Como funciona</p>
+            <ul className="mt-4 space-y-3 text-sm text-foreground/85">
+              <li>1. O cliente regista séries no logbook (web ou voz).</li>
+              <li>2. A IA cruza volume, RPE e velocidade ao longo do tempo.</li>
+              <li>3. Tu vês sinais accionáveis — e decides com contexto.</li>
+            </ul>
+            <p className="mt-4 text-[11px] italic text-muted-foreground/70">
+              Os sinais são sugestões. A decisão é sempre tua.
+            </p>
+          </div>
         </div>
       </section>
 

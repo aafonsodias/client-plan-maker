@@ -6,6 +6,7 @@ Free plan = 1 finalized workout plan per account (profiles.plan_quota_used/limit
 Quota gate enforced server-side via checkPlanQuota() in src/server/quota.server.ts; client surfaces "quota_exceeded" error from createPhasedPlan / startPhasedPlanDraft.
 Subscription truth = subscribers.subscribed/trial_end via has_active_access(); helper can_create_more_plans(uid) combines both.
 Brand mark = <BrandMark size="sm|md|lg" /> from src/components/BrandMark.tsx (amber under-glow ring). Use in app chrome/headers; never on PDFs or auth's bespoke plate.
+FORGE logo = geometric hammer striking a cubic block, 3 amber sparks (#D4A24C). Never anvil/medieval. See [Brand mark](mem://design/brand-mark).
 Founder badge = Sparkles (NOT Crown — too royal/VIP for an honest craft tool). Amber pill in AppShell header for aafonsodias@gmail.com only.
 Pricing tiers: clients cap == plan-generations cap (Starter 8/8, Pro 25/30, Studio 60/80). 1 client = 1 plan baseline; cap mismatch is dishonest.
 Landing page mirrors the 5-stage app journey (Intake → Brief → Blueprint → Microcycle → Progressions). Never advertise unbuilt features without a "Soon" chip.
