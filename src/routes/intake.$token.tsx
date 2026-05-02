@@ -3,13 +3,15 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
+import { interpretGoal } from "@/server/intake-ai.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Loader2, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
@@ -30,6 +32,18 @@ type FormState = {
   client_email: string;
   client_phone: string;
   client_dob: string;
+  // Path: who is filling this in
+  intake_path: "" | "coached" | "self";
+  // Scheduling (PT-guided path)
+  sched_days: string[];
+  sched_window: string;
+  // Lifestyle gate decision
+  lifestyle_gate: "" | "yes" | "skip";
+  // AI goal interpretation (cached client-side; source of truth lives in extended)
+  ai_goal_label: string;
+  ai_goal_confirmed: "" | "yes" | "no";
+  // Skipped flags (field key -> true)
+  skipped: Record<string, boolean>;
   smart_specific: string;
   smart_measurable: string;
   smart_deadline: string;
@@ -63,6 +77,11 @@ type FormState = {
 
 const EMPTY: FormState = {
   client_full_name: "", client_email: "", client_phone: "", client_dob: "",
+  intake_path: "",
+  sched_days: [], sched_window: "",
+  lifestyle_gate: "",
+  ai_goal_label: "", ai_goal_confirmed: "",
+  skipped: {},
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
@@ -80,6 +99,13 @@ function fromAssessment(a: any | null): FormState {
   const ext = a.extended ?? {};
   return {
     ...EMPTY,
+    intake_path: ext.intake_path ?? "",
+    sched_days: ext.sched_days ?? [],
+    sched_window: ext.sched_window ?? "",
+    lifestyle_gate: ext.lifestyle_gate ?? "",
+    ai_goal_label: ext.ai_goal_interpretation?.human_label ?? "",
+    ai_goal_confirmed: ext.ai_goal_confirmed ?? "",
+    skipped: ext.skipped ?? {},
     smart_specific: a.smart_specific ?? "",
     smart_measurable: a.smart_measurable ?? "",
     smart_deadline: a.smart_deadline ?? "",
@@ -147,6 +173,12 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
         ext_processed_food: f.ext_processed_food,
         ext_alcohol_units_week: f.ext_alcohol_units_week ? Number(f.ext_alcohol_units_week) : null,
         parq: f.parq,
+        intake_path: f.intake_path || null,
+        sched_days: f.sched_days,
+        sched_window: f.sched_window || null,
+        lifestyle_gate: f.lifestyle_gate || null,
+        ai_goal_confirmed: f.ai_goal_confirmed || null,
+        skipped: f.skipped,
       },
     },
     sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
@@ -711,9 +743,7 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
           {ctx.trainer?.logo_url ? (
             <img src={ctx.trainer.logo_url} alt="" className="h-9 w-9 rounded-md object-cover" />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-xs font-semibold text-muted-foreground">
-              {(trainerName[0] ?? "T").toUpperCase()}
-            </div>
+            <BrandMark size="sm" />
           )}
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{trainerName}</p>
@@ -746,6 +776,18 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
           <p className="hidden flex-1 text-center text-[10px] uppercase tracking-widest text-muted-foreground/60 sm:block">
             ↵ {t("next")} · Esc {t("back")}
           </p>
+          {current?.canSkip && !canAdvance && (
+            <Button variant="ghost" size="sm" onClick={() => {
+              // Mark all skip-keys, then advance regardless of validity.
+              const keys = current.skipKeys ?? [];
+              if (keys.length) {
+                setForm((f) => ({ ...f, skipped: { ...f.skipped, ...Object.fromEntries(keys.map((k: string) => [k, true])) } }));
+              }
+              if (isLast) onSubmit(); else setStep((s) => Math.min(total - 1, s + 1));
+            }} disabled={submitting}>
+              <SkipForward className="mr-1 h-4 w-4" /> {t("skip")}
+            </Button>
+          )}
           <Button onClick={next} disabled={!canAdvance || submitting} size="sm">
             {submitting && isLast ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("submitting")}</>
@@ -768,6 +810,8 @@ type Slide = {
   subtitle?: string;
   body: React.ReactNode;
   isValid?: () => boolean;
+  canSkip?: boolean;
+  skipKeys?: string[];
 };
 
 function buildSlides(
@@ -794,6 +838,33 @@ function buildSlides(
       title: t("welcome_title", { name: "" }).replace(", ", ""),
       subtitle: t("intro"),
       body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
+    },
+    // 1a. Path selector — coached vs self
+    {
+      title: t("path_title"),
+      subtitle: t("path_subtitle"),
+      body: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { id: "coached", label: t("path_coached"), desc: t("path_coached_desc") },
+            { id: "self", label: t("path_self"), desc: t("path_self_desc") },
+          ] as const).map((opt) => {
+            const on = form.intake_path === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => set("intake_path", opt.id)}
+                className={`rounded-xl border p-4 text-left transition ${on ? "border-accent bg-accent/10" : "border-border bg-card hover:border-accent/40"}`}
+              >
+                <p className="text-sm font-semibold">{opt.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{opt.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      ),
+      isValid: () => !!form.intake_path,
     },
     // 1b. Identity — quem és tu
     {
