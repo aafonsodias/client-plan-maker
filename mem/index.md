@@ -11,7 +11,7 @@ Founder badge = Sparkles (NOT Crown — too royal/VIP for an honest craft tool).
 Pricing tiers: clients cap == plan-generations cap (Starter 8/8, Pro 25/30, Studio 60/80). 1 client = 1 plan baseline; cap mismatch is dishonest.
 Landing page mirrors the 5-stage app journey (Intake → Brief → Blueprint → Microcycle → Progressions). Never advertise unbuilt features without a "Soon" chip.
 Status colour palette = success/emerald, neutral/muted, warn/amber, danger/red. "Ready" plans are emerald (NOT amber). Use src/lib/status-tone.ts (toneChip/toneDot/toneText) for new chips/dots.
-Client photos = private bucket `client-photos`, path `{trainerId}/{clientId}.{ext}`, signed URL stored on clients.photo_url. Use <ClientAvatar/> for display, <ClientAvatarUpload/> for editing.
+Client photos = private bucket `client-photos`. Avatar path `{trainerId}/{clientId}.{ext}` (signed URL on clients.photo_url, use <ClientAvatar/> + <ClientAvatarUpload/>). Reference posture photos path `{trainerId}/{clientId}/posture-{front|side|back|face}.{jpg|png}`, recorded on `assessments.extended.photos[slot]`. Posture photos = honest framing (visual progress, NOT diagnosis). See [Intake photos](mem://features/intake-photos).
 Equipment list = src/lib/equipment-catalog.ts (40+ items, EN canonical persisted to DB). Use <EquipmentMultiSelect/> for inputs; never hardcode equipment lists.
 Plan feedback = public.plan_feedback (RLS by trainer_id). Bots write via admin client; trainers/clients via src/server/feedback.functions.ts. Render with <FeedbackPanel/>.
 Microcycle gate requires haveAllRows AND doneCount===sessionsPerWeek. Auto-advance: approving day N kicks day N+1 (one step ahead, never chains).
