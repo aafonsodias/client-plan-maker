@@ -218,3 +218,32 @@
 .animate-lime-pulse {
   animation: lime-pulse 1.2s ease-out 3;
 }
+
+/* Confetti — used by Confetti.tsx after a session is finalized. */
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
+}
+
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+
+/* Set tick — pulse used when a set is marked complete in the logbook. */
+@keyframes set-tick-pop {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.animate-set-tick {
+  animation: set-tick-pop 240ms ease-out;
+}
