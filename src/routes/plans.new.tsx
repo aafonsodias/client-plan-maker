@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { createPhasedPlan, synthesizeBrief } from "@/server/phased/stage1-brief.functions";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/plans/new")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -24,6 +25,7 @@ function NewPhasedPlan() {
   const synthesizeFn = useServerFn(synthesizeBrief);
   const [status, setStatus] = useState<"creating" | "synthesizing" | "error">("creating");
   const [error, setError] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -37,6 +39,9 @@ function NewPhasedPlan() {
     (async () => {
       const created = await createFn({ data: { clientId } });
       if (!created.ok) {
+        if (created.error === "quota_exceeded") {
+          setQuotaExceeded(true);
+        }
         setStatus("error");
         setError(created.error);
         return;
@@ -56,10 +61,28 @@ function NewPhasedPlan() {
     <div className="mx-auto max-w-xl p-6">
       <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
         {status === "error" ? (
-          <>
-            <h1 className="text-xl font-semibold text-foreground">Couldn't start plan</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{error}</p>
-          </>
+          quotaExceeded ? (
+            <>
+              <h1 className="text-xl font-semibold text-foreground">You've used your free plan</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Free accounts can build one training plan. Subscribe to create more, keep logging,
+                and unlock progressions.
+              </p>
+              <div className="mt-6 flex justify-center gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/dashboard">Back to dashboard</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <a href="mailto:hello@forge.app?subject=Forge%20Pro%20-%20notify%20me">Notify me when Pro launches</a>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-xl font-semibold text-foreground">Couldn't start plan</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{error}</p>
+            </>
+          )
         ) : (
           <>
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
