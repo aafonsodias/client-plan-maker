@@ -503,7 +503,17 @@ function ViewMode({
   sessions: SessionRow[];
   reload: () => Promise<void>;
 }) {
-  const [layout, setLayout] = useState<"cards" | "table">("cards");
+  const [layout, setLayout] = useState<"cards" | "table">(() => {
+    if (typeof window === "undefined") return "table";
+    const saved = window.localStorage.getItem("planLayout");
+    return saved === "cards" ? "cards" : "table";
+  });
+  const setLayoutPersisted = (next: "cards" | "table") => {
+    setLayout(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("planLayout", next);
+    }
+  };
   if (!plan.weeks.length) {
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
@@ -512,16 +522,16 @@ function ViewMode({
       <div className="flex justify-end">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
           <button
-            onClick={() => setLayout("cards")}
-            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setLayout("table")}
+            onClick={() => setLayoutPersisted("table")}
             className={`rounded-md px-3 py-1 transition ${layout === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             Table
+          </button>
+          <button
+            onClick={() => setLayoutPersisted("cards")}
+            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Cards
           </button>
         </div>
       </div>
