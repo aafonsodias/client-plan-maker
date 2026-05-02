@@ -133,7 +133,15 @@ export function DayCardEditable({
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-foreground">
-            Day {idx} · {day.day_label}
+            {/* day_label often already begins with "Day N — …", so strip a leading
+             * "Day N" / "Day N -" / "Day N —" to avoid "Day 1 · Day 1 — …". */}
+            Day {idx}
+            {(() => {
+              const cleaned = (day.day_label ?? "")
+                .replace(/^\s*Day\s*\d+\s*[-–—:·]?\s*/i, "")
+                .trim();
+              return cleaned ? <span className="text-muted-foreground"> · {cleaned}</span> : null;
+            })()}
           </h2>
           {editing ? (
             <input

@@ -1,122 +1,158 @@
-# Redteam + plan: currency fix, logo unification, landing page revamp
 
-## Part A — Redteam of the prompt
+# Big fix pass — plan view, PDF, header controls, blueprint quality, bugs
 
-**1. "Clicking $ doesn't change currency" — root cause is a real bug, not just polish.**
-`CurrencyMenu` wraps its child in `<PopoverTrigger asChild>` with a `<span>`, and the children we pass in (the header `$` icon button and the `PriceTag`) are themselves `<button>` elements. That nests `<button>` inside `<button>` (or inside an interactive trigger), which React/Radix handles inconsistently — the inner button swallows the click in some browsers and the popover never gets a "selection committed" signal that re-renders the trigger. Net effect for the user: menu opens, selection sometimes doesn't apply, prices on the page don't update. **Fix is structural, not cosmetic.**
-
-**2. "Doesn't change the prices on the landing page" — likely the same issue, plus the prices are mid-page and the user may not scroll down to verify.**
-The `PriceTag` *does* subscribe to `useCurrency()`, so once selection commits it should re-render. We'll verify after fixing the nested-button issue. We'll also add a tiny visible confirmation (the trigger shows the active currency code, e.g. `€` / `$` / `₿`) so the user immediately sees the switch worked without scrolling.
-
-**3. "Uniformize the FORGE circle everywhere" — needs scoping or it explodes.**
-The amber under-glow ring lives only in `AppShell` header. Other places that render `<Logo>`: landing page header + footer, auth page, intake page, log page, possibly PDF. Blindly applying the ring everywhere risks: (a) ring on the PDF (bad — print artifact), (b) ring on tiny 24px logos (looks like a smudge), (c) ring on the favicon-style footer logo (visual noise). **Plan: extract a `<BrandMark size="sm|md|lg" glow?>` component, default `glow=true` for header sizes (≥28px), `glow=false` for footer/PDF/intake.** Don't just copy the inline style.
-
-**4. "Reverse-engineer the landing page from the end vision (logbook → graphs → trends → AI advice → prompt-driven adjustments)" — this is the dangerous one.**
-Real risks if we just rewrite the page:
-- **Promising what doesn't exist.** Graphs, trend detection, AI prompt-driven plan adjustments, advice engine — none of those are built. Putting them on the landing page as if they're live = false advertising and erodes trust the moment a user signs up and doesn't find them.
-- **Scope creep masquerading as marketing.** "Let's revamp the landing page" can quietly turn into "let's build the product roadmap." We should separate (i) **what the landing page promises today** from (ii) **the public roadmap** ("coming next") section, clearly labelled, no CTAs on unbuilt features.
-- **Killing what works.** The current "How it works" animation, founder note, credibility cards, and pricing all do real conversion work. A full rewrite throws that away. Better: **restructure around the journey, keep the parts that earn their place.**
-- **The journey IS the product story.** The 5-stage phased generation (intake → brief → blueprint → microcycle → progressions → ready plan) is genuinely the differentiator. The landing page should mirror it: same stages, same vocabulary, so when the user lands inside the app it feels like the brochure came alive. **This is the real insight to lean into.**
-- **Logbook-as-hook, not logbook-as-feature.** Per existing project memory: free = 1 plan, paid = logging + history + progressions. The landing page should make logging the emotional hook ("see your progress, get nudges, adjust on the fly"), not a feature bullet.
-
-**5. Honest labelling.** Anything not built today gets a `Soon` chip. No fake screenshots. No fake graph data unless it's clearly stylised as a preview mock with a caption like "preview of upcoming logbook trends".
+This is a long list, so I've grouped it into 6 waves. Each wave can ship independently and is testable on its own. I'll execute them in order after approval.
 
 ---
 
-## Part B — What I'll build
+## Wave 1 — The compact plan table (highest priority)
 
-### B.1 Fix the currency switcher (Wave 1 — small, ships first)
+**Problem.** The "View training plan" page is a long vertical scroll: every exercise repeats its name, sets, reps, RPE, rest, notes per day. There's no big-picture view.
 
-**Root cause fix in `src/components/CurrencyMenu.tsx`:**
-- Remove the wrapping `<span>` in `<PopoverTrigger asChild>`; render children directly via `asChild` and require the consumer to pass a single focusable element (button).
-- Stop nesting buttons. Update consumers:
-  - `src/components/PriceTag.tsx`: when `interactive`, the `PriceTag` IS the trigger button — pass it directly to `<PopoverTrigger asChild>` instead of wrapping.
-  - `src/routes/index.tsx` header `$` icon: same — the icon button IS the trigger.
-- Keep the right-click affordance via an `onContextMenu` on the trigger button itself.
-- After selection, force the popover to close (`setOpen(false)` already there) and verify the context updates via a small `useEffect` test render.
+**Fix.** Replace the current "long form" plan view with a **two-tier presentation**:
 
-**Visible confirmation (so the user trusts the switch worked):**
-- Header trigger shows the active currency symbol (`€` / `$` / `₿`) instead of always `$`. So picking USD changes the header icon to `$`, EUR to `€`, BTC to `₿`. Tiny but solves the "I don't know if it worked" complaint.
-- `PriceTag` already re-renders from context — once the bug above is fixed, the landing page prices (Beta `0` and Pro `19`) will switch live.
+1. **Compact matrix (default view)** — one horizontal table per week. Rows = exercises (deduplicated by name across the week). Columns = each session in the week. Cells show only the variables that change: `sets×reps @RPE / rest`. If the exercise doesn't appear that day, the cell is blank. Empty rest cell at the right is a logging slot (write-in for paper, will become input field later).
+2. **Expand-on-click** — clicking an exercise row reveals the full row of cues, tempo, technique, notes, equipment, primary/secondary muscles. Defaults collapsed. The exercise name appears once.
 
-**Acceptance check:** open landing page → click `$` → pick USD → header symbol becomes `$`, Pro card shows `$~21`, Beta card shows `$0`. Reload page → selection persists.
+Toggle at the top: `Compact` / `Detailed` (current full view kept as the secondary mode for users who prefer the "session by session" reading).
 
-### B.2 Unify the FORGE glow (Wave 1)
+**Microcycle session label fix.** `DayCardEditable` line 136 currently renders `Day {idx} · {day.day_label}`, but `day_label` already contains "Day 1 - Lower (Squat Focus)" → produces "Day 1 - Day 1 - Lower". Switch to `Week {weekN} · Day {idx} — {focus}` and stop double-prefixing. Same fix applied in the microcycle route header.
 
-- New component `src/components/BrandMark.tsx` with `size` (`sm` 24px, `md` 32px, `lg` 40px) and `glow` (default: true for `md`+, false for `sm`).
-- Replace inline-styled logo wrappers in:
-  - `AppShell.tsx` header → `<BrandMark size="md" glow />`
-  - `src/routes/index.tsx` landing header → `<BrandMark size="md" glow />`
-  - `src/routes/index.tsx` landing footer → `<BrandMark size="sm" />` (no glow, intentional — small + on a darker strip)
-  - `src/routes/auth.tsx` → `<BrandMark size="lg" glow />`
-  - `src/routes/intake.$token.tsx` and `src/routes/log.$token.tsx` → `<BrandMark size="md" glow />`
-- **Do NOT** touch PDF rendering (`src/lib/pdf.ts`) — print should stay flat.
+**"Draft" never clearing in studio.** `plans.index.tsx` shows the chip from `derivePlanStatus()` — fix the status derivation so once Stage 5 (`bulkfill`) marks `generation_status = 'complete'`, the chip flips to `Ready`. (User said all plans show as Draft in their studio.) I'll re-check `lib/plan-status.ts` and `stage5-bulkfill.functions.ts` against actual DB rows for the user.
 
-### B.3 Landing-page revamp (Wave 2 — the big piece)
-
-Structure mirrors the in-app journey. New section order:
-
-```text
-1. Hero                       (kept, light copy refresh)
-2. The journey                (NEW — 5-stage horizontal scroll, mirrors Stage 1→5)
-3. From assessment to plan    (kept "How it works" animation, repositioned as Stage 1–5 deep-dive)
-4. Built on the science       (kept — credibility)
-5. The plan you'll get        (kept — hero plan mockup repositioned)
-6. After the PDF: the logbook (NEW — preview mock of logging + trend chart, "Soon" chip on graph)
-7. Pricing                    (kept, clarify free = 1 plan)
-8. Roadmap (Soon)             (NEW — small honest list of what's next)
-9. Founder note               (kept)
-10. FAQ                       (kept, +2 questions on logging/quota)
-11. Closing CTA + footer      (kept)
-```
-
-**New section: "The journey" (Section 2).**
-A 5-stage strip — Intake · Brief · Blueprint · Microcycle · Progressions — using the same vocabulary as the app. Each stage = 1 line of plain Portuguese/English copy + tiny icon. Click a stage → scrolls to the matching deep-dive in Section 3. This is what makes the brochure feel like the app.
-
-**New section: "After the PDF: the logbook" (Section 6).**
-Two-column:
-- Left: stylised mock of a session log (sets, reps, RPE, a quick "felt heavy today" note). Built with real components (no fake screenshot image), but with placeholder data clearly captioned as preview.
-- Right: stylised trend graph (1 lift over 6 weeks) with a `Soon` chip. Caption: "Trend lines and AI nudges coming next — your logs already feed the engine."
-- One-line copy: "PDF é o ponto de partida. O logbook é o que torna o plano vivo." / "The PDF is where it starts. The logbook is what keeps the plan alive."
-
-**New section: "Roadmap" (Section 8) — honest, no CTAs.**
-Three small cards, each with a `Soon` chip:
-- "Tendências e gráficos" / "Trends & graphs" — auto-detect plateaus, show progress per movement pattern.
-- "Ajustes por prompt" / "Prompt-driven adjustments" — describe a tweak in plain language, the plan adjusts.
-- "Coach AI advice" — weekly nudges based on logged sessions (deload, intensify, swap variation).
-
-These mirror the user's stated vision but are clearly labelled as future work. **No "Notify me" CTA on each — the existing Pro `mailto` covers it**; one note at the bottom of the section: "Subscreve o Pro para entrar na primeira leva." / "Subscribe Pro to be in the first wave."
-
-**FAQ additions (Section 10):**
-- "O que tenho de pagar para começar?" / "What do I have to pay to start?" → 1 plano grátis por conta, log incluído nesse plano, depois Pro.
-- "Os meus dados ficam guardados se cancelar?" / "What happens to my data if I cancel?" → kept, exportable, no lock-in.
-
-### B.4 i18n
-
-All new copy lands in `src/i18n/locales/{pt,en}/plan.json` under `landing.journey.*`, `landing.logbook.*`, `landing.roadmap.*`, plus 2 new FAQ keys. Symbol-only strings (`€`, `$`, `₿`) live in `currency.symbol_*` in `common.json`.
-
-### B.5 Out of scope (flagged for next wave)
-
-- Building the actual logbook trend graph engine (Recharts component reading `workout_sessions`).
-- Building prompt-driven plan adjustments (this is a Stage 6 — needs a new server function + LLM call + diff UI).
-- Building the AI weekly-nudge digest (cron + edge function + email; we already have `weekly-digest.ts` scaffolding to extend).
-- Stripe/Paddle wiring. Pro stays `mailto` until that decision lands.
+**Files touched.** New `src/components/PlanCompactTable.tsx`. Edit `src/routes/plans.$planId.tsx`, `src/routes/plans.$planId.microcycle.tsx`, `src/components/DayCardEditable.tsx`, `src/lib/plan-status.ts`, `src/routes/plans.index.tsx`.
 
 ---
 
-## Part C — Technical notes
+## Wave 2 — PDF: dense, dark/light, mesocycle landscape
 
-- **Currency fix is purely a JSX/Radix structure change** — no schema, no server work, no FX-rate change. Touches 2 files (`CurrencyMenu.tsx`, `PriceTag.tsx`) + 1 site (`index.tsx` header trigger).
-- **`BrandMark` extraction is a refactor** — same visual output where glow already exists, new visual where it didn't. Six call sites updated. PDF deliberately untouched.
-- **Landing revamp is additive** — three new sections inserted into `src/routes/index.tsx`, two existing sections re-ordered, none deleted. No new routes, no new server functions, no DB changes.
-- **`Soon` chip** = small reusable inline component (or just a Tailwind class set + i18n string), defined locally in `index.tsx`. No new dependency.
-- **Logbook preview mock** uses existing `Card` + a stylised inline SVG line (no new chart library). Clearly captioned as preview to avoid promising live data.
-- **Memory updates:** add a Core line — "Landing page mirrors the 5-stage app journey; never advertise unbuilt features without a Soon chip." Add a memory file `mem://design/brandmark` documenting glow rules.
+**Single-session PDF (portrait):**
+- Compact table layout (same model as Wave 1) so a one-week plan fits on **1 cover + 1 page per session**.
+- Drop redundant sentence "rationales" — keep one short coaching cue per exercise, max 1 line.
+- Tighter margins (M=42pt instead of 54pt) and smaller header band.
+- Dedupe exercise names if they recur in the same session (unlikely but possible after warm-ups).
 
-## Part D — One open question
+**Theme picker on download.** When user clicks "Download PDF", show a small popover: `Light · Dark · Match logo (auto)`. Currently theme is auto-derived from logo luminance — keep that as default but let the user override.
 
-For the Roadmap section copy, do you prefer:
-- **(a)** plainspoken and humble ("ainda não, mas vem aí" / "not yet, but coming") — my recommendation, matches the founder voice, or
-- **(b)** more aspirational/bold ("a próxima geração de coaching" / "the next generation of coaching") — sells harder, risks sounding like vapourware.
+**New: full-mesocycle landscape PDF.** New action "Download mesocycle (landscape)". One US-Letter landscape page per week:
+- Rows = exercises (dedup by name).
+- Columns = sessions (Day 1 → Day 6).
+- Each cell: `sets×reps @RPE` on top, blank line for write-in load below.
+- Right-most column = "Notes / progress".
+- Designed to be printed and written on by hand.
 
-Defaulting to (a) unless you say otherwise. Approve the plan and I'll execute Wave 1 (currency fix + brandmark) and Wave 2 (landing revamp) in one pass.
+**Files touched.** Heavy rewrite of `src/lib/pdf.ts` (extract two builders: `generateSessionPdf` and `generateMesocycleLandscapePdf`). Add a download menu component on `plans.$planId.tsx`.
+
+---
+
+## Wave 3 — Header controls everywhere; one icon family
+
+**Currency switcher missing on landing page.** It's actually rendered on the landing header (line 43 of `index.tsx`), but with `className="hidden sm:inline-flex"` — so it disappears below `sm` breakpoint. At the user's current viewport (672px wide), `sm` (640px) just barely passes, but the layout still feels broken because there's no theme toggle on landing at all.
+
+**Fix.**
+- Always show currency symbol button (drop the `hidden sm:inline-flex` gate, just shrink it on mobile).
+- Add `<ThemeToggle />` to the landing-page nav next to the currency button (currently only in `AppShell`, not on `/`).
+- Replace the language flag icon with the globe icon **everywhere** so it's consistent. The mobile chip in `AppShell` already uses globe; the desktop trigger uses globe; `LanguageSwitcher` (used on landing) currently uses the locale code — change it to a globe with the active locale below as a tiny label, matching the currency button pattern.
+- Floating language switcher bug: at the breakpoint where the landing nav collapses but the hamburger hasn't taken over, the language switcher floats centered. Reproducible at 672px. Fix by giving the landing nav a single flex row that wraps to right-aligned at all widths and dropping the `hidden sm:inline-flex` modifiers on the controls.
+
+**Files touched.** `src/components/LanguageSwitcher.tsx`, `src/components/AppShell.tsx`, `src/routes/index.tsx`.
+
+---
+
+## Wave 4 — Blueprint quality: regeneration variation, beginner volume, edit exercises in microcycle
+
+**Problem A — Regeneration repeats the same recipe.** Currently Stage 2 (blueprint) doesn't pass any "vary from previous" hint. When the user clicks Regenerate, the AI sees the same brief and produces the same archetypes.
+
+**Fix.** When `regenerate=true`, pass the previous archetype IDs/foci to the AI as a "previously suggested — produce a meaningfully different valid alternative" instruction. Track regen count and rotate through different valid program shapes (e.g. push/pull/legs ↔ upper/lower ↔ full-body) as variation seeds.
+
+**Problem B — Beginner with 8 exercises Day 1.** Stage 3 (microcycle) doesn't currently scale exercise count by training age. A 1-year trainee getting 8 exercises @ RPE 8 will be wrecked.
+
+**Fix.** Add a hard cap on exercises per session by training age:
+- Beginner (<1y): 4–5 exercises, RPE cap 7
+- Intermediate (1–3y): 5–7 exercises
+- Advanced (3y+): 6–9 exercises
+
+Cap enforced in `programming-defaults.ts` and validated in the Stage 3 schema. If AI returns more, we trim trailing optional/accessory work.
+
+**Problem C — Can't add/remove exercises in microcycle.** `DayCardEditable` only edits sets/reps/etc. for existing exercises.
+
+**Fix.** Add three actions per session:
+- `+ Add exercise` (opens search/picker; pulls from a small starter library + free-text name)
+- Trash icon per exercise to remove
+- Drag handle to reorder
+
+Search input above the exercise list; collapsible to keep screen tight.
+
+**Files touched.** `src/server/phased/stage2-blueprint.functions.ts`, `src/server/phased/programming-defaults.ts`, `src/server/phased/schemas.ts`, `src/components/DayCardEditable.tsx`, new `src/components/ExerciseSearchPicker.tsx` with a small built-in catalog (~100 common movements grouped by pattern).
+
+---
+
+## Wave 5 — Concurrent training, daily steps, brief polish
+
+**Concurrent training as a split.** Add `Concorrente` to the split-type dropdown. The implication for log/microcycle: each week pairs strength sessions with conditioning sessions on separate days (not stacked). Stage 2 will treat `Concorrente` as a directive to interleave at least 1 conditioning session every 2 strength sessions.
+
+**Drop-down readability fix.** The split-type select in the screenshot has unreadable disabled options on dark theme. Fix `<option>` color so non-active items are still legible (currently `text-muted-foreground` on `bg-popover` falls below contrast). Apply the same fix everywhere `<select>` is used (BriefEditor, archetype picker).
+
+**Steps/day recommendation.** Add a new field to the brief: `daily_steps_target` (default derived from goal: fat-loss 10–12k, recomp 8–10k, performance 7–9k, recovery 6–8k). Render in Brief Context Rail, repeat in PDF as part of the "Lifestyle / NEAT" line.
+
+**Brief layout overlap (image 5).** The accommodations section `<select>` overlaps the flag text at narrow widths. The current `flex-col gap-2 sm:flex-row` doesn't actually stack cleanly because `min-w-0 flex-1` on the `<p>` fights with `shrink-0 sm:w-44` on the select. Fix: use `grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 items-start` so columns are predictable and never overlap.
+
+**Brief summary too thin / wrong.** "15 anos experiência treino. Competência técnica excelente" is wrong — the prompt currently flattens self-rated movement competency into "excelente". Adjust the brief generator prompt to:
+- Quote training age numerically.
+- Describe movement competency from the assessment (per-pattern: squat/hinge/push/pull/lunge/carry), not a single global rating.
+- Surface red flags inline.
+- Mention goal + constraints + frequency.
+Target 3–5 sentences, not 1.
+
+**Phased deltas readability.** The current "phased deltas" panel reads as a dense paragraph. Fix:
+- Group by stage with a 2-line max summary per stage.
+- Use icon + colored chip per delta type (added/changed/removed).
+- Empty stages are intentional (they didn't change) — show a muted "Sem alterações nesta fase" instead of leaving blank.
+
+**Files touched.** `src/components/BriefEditor.tsx`, `src/components/BriefContextRail.tsx`, `src/server/phased/stage1-brief.functions.ts`, `src/server/phased/programming-defaults.ts`, `src/i18n/locales/{en,pt}/{common,plan}.json`. DB migration to add `daily_steps_target` to the briefs/plans table (1 column, INTEGER nullable).
+
+---
+
+## Wave 6 — Landing logbook section: stop repeating the same mocks
+
+The "After the PDF" section currently uses `<SetLogMockup />` and `<ProgressionMockup />` — the **same components** also used right above in the "Logging" section. That's why it looks duplicated.
+
+**Fix.** Replace with two new dedicated mocks:
+- `<LogbookHistoryMockup />` — a multi-week history table (week 1–6 of Back Squat top sets), showing weight progression with checkmarks on hit reps.
+- `<TrendChartMockup />` — a clean SVG line chart of e1RM trend, with the existing `Soon` chip kept on the AI advice card below.
+
+Same dark theme, same amber accents, but visually distinct from the upper "Logging" section.
+
+**Files touched.** Add 2 components in `src/routes/index.tsx` (or extract to `src/components/landing/`), update i18n captions.
+
+---
+
+## Progression-model drawings — your question
+
+Quick answer: the SVGs in `ProgressionModelPicker` are **directionally right but oversimplified**:
+- **Linear** is shown as a gentle steady upward line — correct.
+- **Undulating** is shown as a low-amplitude zigzag — should have larger weekly swings (heavy / moderate / light / heavy) to actually look "undulating" rather than noisy.
+- **Block** is shown as a single bump — should be a stepped pattern: accumulation rising → intensification rising higher → realization peak → deload drop.
+
+I'll redraw all three with cleaner amber polylines that match the description text. Folded into Wave 4.
+
+---
+
+## Out-of-scope for this round (logged for later)
+
+- Uploading hand-written PDF logs back into the app via OCR.
+- Trends, AI prompt-driven adjustments, coach AI advice (already on the "Soon" roadmap on the landing page).
+- Full exercise library (Wave 4 ships a starter catalog of ~100; a curated full library is a later effort).
+
+---
+
+## Order of execution
+
+1. Wave 1 — compact plan table + microcycle label fix + draft chip fix (biggest user-visible win)
+2. Wave 3 — header controls (small, unblocks all viewports)
+3. Wave 5 — brief overlaps, summary, deltas, steps target, concurrent split (medium)
+4. Wave 4 — blueprint variation, beginner volume cap, exercise add/remove, progression SVGs (medium-large)
+5. Wave 2 — PDF rewrite + landscape mesocycle + theme picker (largest)
+6. Wave 6 — landing logbook mocks (small polish)
+
+Reply **approve** to start, or pick specific waves to skip / reorder.

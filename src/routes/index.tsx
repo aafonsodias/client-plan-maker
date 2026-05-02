@@ -12,6 +12,7 @@ import { CurrencyMenu } from "@/components/CurrencyMenu";
 import { PriceTag } from "@/components/PriceTag";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CURRENCIES } from "@/lib/currency";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -39,18 +40,19 @@ function Landing() {
             <BrandMark size="md" />
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex flex-wrap items-center justify-end gap-1.5">
             <CurrencyMenu>
               <button
                 type="button"
-                className="hidden sm:inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground hover:text-accent transition"
+                className="inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground transition hover:text-accent"
                 aria-label={t("common:currency.title", "Currency")}
                 title={t("common:currency.title", "Currency")}
               >
                 <span aria-hidden>{activeSymbol}</span>
               </button>
             </CurrencyMenu>
-            <LanguageSwitcher className="mr-1" />
+            <LanguageSwitcher />
+            <ThemeToggle />
             {signedIn ? (
               <Button asChild size="sm">
                 <Link to="/dashboard">{t("common:actions.go_to_dashboard")}</Link>
@@ -153,19 +155,9 @@ function Landing() {
         </div>
       </section>
 
-      {/* Logging / history — beyond the PDF */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 max-w-2xl">
-          <h2 className="text-4xl font-light tracking-tight">{t("plan:landing.logging.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logging.subtitle")}</p>
-        </div>
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          <ProgressionMockup />
-          <SetLogMockup />
-        </div>
-      </section>
-
-      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph) */}
+      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph).
+        * Pairs the live set-log experience with a multi-week history grid so the two
+        * panels feel distinct (no more duplicated mockups). */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
@@ -182,10 +174,20 @@ function Landing() {
               <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
                 {t("common:currency.soon")}
               </div>
-              <ProgressionMockup />
+              <LogbookHistoryMockup />
             </div>
-            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.history_caption")}</p>
           </div>
+        </div>
+        {/* Trend chart: the long-arc story below the side-by-side preview */}
+        <div className="mt-10">
+          <div className="relative">
+            <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+              {t("common:currency.soon")}
+            </div>
+            <ProgressionMockup />
+          </div>
+          <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
         </div>
       </section>
 
@@ -621,6 +623,70 @@ function ProgressionMockup() {
         <p>{t("landing.mockups.top_set_today")} <span className="text-foreground/90">85kg × 5</span></p>
         <p>{t("landing.mockups.pr_vs_week1")} <span className="text-accent">+15kg</span></p>
         <p>{t("landing.mockups.sessions_logged")} <span className="text-foreground/90">18</span></p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * LogbookHistoryMockup — multi-week history grid for one exercise's top sets.
+ * Visually distinct from <SetLogMockup /> (today's session) and from
+ * <ProgressionMockup /> (long-arc trend chart).
+ */
+function LogbookHistoryMockup() {
+  const { t } = useTranslation("plan");
+  const rows = [
+    { week: "W1", load: "70 kg", reps: "5 / 5 / 5", note: "RPE 6" },
+    { week: "W2", load: "72.5 kg", reps: "5 / 5 / 5", note: "RPE 7" },
+    { week: "W3", load: "75 kg", reps: "5 / 5 / 4", note: "—" },
+    { week: "W4", load: "77.5 kg", reps: "5 / 5 / 5", note: "deload near" },
+    { week: "W5", load: "80 kg", reps: "5 / 4 / 4", note: "RPE 8" },
+    { week: "W6", load: "82.5 kg", reps: "5 / 5 / 4", note: "PR" },
+  ] as const;
+  return (
+    <div className="rounded-2xl border border-border bg-card/80 p-6">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.mockups.history_title", "Back squat — 6-week history")}
+        </p>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {t("landing.mockups.history_subtitle", "Top set per week")}
+        </p>
+      </div>
+      <div className="mt-5 overflow-hidden rounded-md border border-border/60">
+        <table className="w-full font-mono text-[12px]">
+          <thead>
+            <tr className="border-b border-border/60 bg-background/40 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <th className="px-3 py-2 text-left font-medium">Wk</th>
+              <th className="px-3 py-2 text-left font-medium">Load</th>
+              <th className="px-3 py-2 text-left font-medium">Reps</th>
+              <th className="px-3 py-2 text-right font-medium">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr
+                key={r.week}
+                className={
+                  i === rows.length - 1
+                    ? "bg-accent/5 text-foreground"
+                    : "text-foreground/85"
+                }
+              >
+                <td className="px-3 py-2 text-muted-foreground">{r.week}</td>
+                <td className="px-3 py-2">{r.load}</td>
+                <td className="px-3 py-2">{r.reps}</td>
+                <td className="px-3 py-2 text-right text-muted-foreground">{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 flex items-center justify-between font-mono text-[12px]">
+        <span className="text-muted-foreground">{t("landing.mockups.delta_label", "Δ vs W1")}</span>
+        <span className="inline-flex items-center gap-1 text-accent">
+          <ArrowUp className="h-3 w-3" /> +12.5 kg
+        </span>
       </div>
     </div>
   );
