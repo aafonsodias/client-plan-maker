@@ -1353,8 +1353,9 @@ function ClientDetail() {
             variant="outline"
             size="sm"
             className="h-8 gap-1.5"
-            onClick={() => {
+            onClick={async () => {
               try {
+                const { renderAssessmentPdf } = await import("@/lib/pdf");
                 renderAssessmentPdf({
                   assessment,
                   client,
