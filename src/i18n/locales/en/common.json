@@ -116,6 +116,7 @@
   },
   "currency": {
     "title": "Currency",
-    "billed_in_eur_note": "Billed in EUR. Other currencies shown for reference."
+    "billed_in_eur_note": "Billed in EUR. Other currencies shown for reference.",
+    "soon": "Soon"
   }
 }
