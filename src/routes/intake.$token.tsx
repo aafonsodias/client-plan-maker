@@ -175,7 +175,14 @@ function IntakePage() {
         const c = await load({ data: { token } });
         setCtx(c);
         if (c.status === "valid") {
-          setForm(fromAssessment(c.assessment));
+          const base = fromAssessment(c.assessment);
+          // Pre-hydrate identity from server (if PT pre-filled) so the
+          // questions only show if missing.
+          base.client_full_name = c.client?.full_name ?? "";
+          base.client_email = c.client?.email ?? "";
+          base.client_phone = c.client?.phone ?? "";
+          base.client_dob = c.client?.date_of_birth ?? "";
+          setForm(base);
           // localStorage backup
           try {
             const saved = localStorage.getItem(`forge_intake_draft_${token}`);
