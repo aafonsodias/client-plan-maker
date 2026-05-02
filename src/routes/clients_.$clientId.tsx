@@ -1915,6 +1915,20 @@ function ClientDetail() {
             />
           )}
 
+          {readyPlanForAssessment ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs">
+              <span className="text-muted-foreground">
+                Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
+              </span>
+              <Link
+                to="/plans/$planId"
+                params={{ planId: readyPlanForAssessment.id }}
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20"
+              >
+                Plano pronto · ver
+              </Link>
+            </div>
+          ) : (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
