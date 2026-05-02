@@ -583,13 +583,6 @@ export async function generatePlanPdf(
 
     // ---- MAIN WORK table ----
     if (baseEx.length > 0) {
-      // Build per-exercise W2/3/4 deltas by matching name across weeks
-      const weekDayMap = new Map<number, Day>();
-      for (const w of arc.weeks) weekDayMap.set(w.week_number, w.day);
-      const w1Day = weekDayMap.get(1) ?? arc.base;
-      const w1Index = new Map<string, Exercise>();
-      for (const ex of w1Day.exercises ?? []) w1Index.set(exKey(ex.name), ex);
-
       // Column geometry — landscape A4 = 842pt wide, M=36 → 770pt usable.
       // We replace the per-week delta columns with 4 handwriting slots S1..S4
       // so the trainer reads and writes on the SAME row. Week-over-week
