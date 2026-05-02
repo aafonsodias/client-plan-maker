@@ -1,89 +1,104 @@
-## Estado atual
+## Goals
 
-Acabámos de:
-- Trocar logo (versão recortada).
-- Centrar opticamente o wordmark FORGE no auth (compensação `paddingLeft` para o `tracking`).
-- Esconder a scrollbar branca dos rails de Brief em microcycle / progressions / blueprint.
-- Polir a página de auth (logo grande + glow + linha accent + language switcher discreto).
+Fix six issues, ordered by impact:
 
-Agora atacamos os atritos da landing page **+** dois bugs estruturais que ficaram pendentes.
+1. After **bulk-fill** ("Approve & build remaining weeks") the user lands on the legacy editor showing "Summary (empty) / No weeks yet" because the new phased flow stores days in `workout_plan_days`, not in `plan_data.weeks`. We need a real "plan complete" view that reads from `workout_plan_days`, lets the user export PDF, and is what the redirect lands on.
+2. The assessment page in `clients_.$clientId.tsx` (line 1745) still says **"Continuar para Blueprint"** even when the plan is past Stage 4. Button should reflect the *actual* current stage of the inline brief's plan (Blueprint / Microcycle / Progressions / Open plan).
+3. **Progression deltas** — most rows render in the default muted color. Only `d3_pull_ups` pops because its sparkline goes up. Make every delta input + sparkline visually meaningful: color-code positive vs zero vs negative deltas and bold the input value.
+4. **Exercise nametags** (`d1_barbell_bench_press`) are technical IDs. Render a friendly name (e.g. "Day 1 · Barbell Bench Press") with the slug as a smaller subtitle.
+5. Add a **"How to read these deltas" guide** at the top of the Progressions page (collapsible info panel, PT/EN).
+6. **Auth page** — square logo: add the platinum/fiery effect *behind* the logo block (a glowing/translucent square plate), not on the symbol. Add a clear **"Back to home"** button on the auth page.
+7. Landing page header: replace the **"Preço"** text link with a small `$` icon button (still anchors to `#pricing`).
 
----
+## Technical Plan
 
-## GOAL
-Aumentar conversão e clareza da landing page, e resolver dois bugs reais no fluxo de geração.
+### 1. Real "plan complete" view (highest priority — unblocks PDF export)
 
-## CONTEXT
-- Landing: `src/routes/index.tsx`. Hero usa o subtítulo i18n `plan:landing.hero.subtitle` (que **já está bom em PT/EN** — afinal não é tão genérico como pensei; revi-o agora).
-- Microcycle: `src/routes/plans.$planId.microcycle.tsx` chama `generateDay` mas o `regenDay` confia 100% no realtime do Supabase para refrescar — em sessões edge isto falha por vezes (= "regenerou mas não vejo nada novo"). Além disso, quando o dia volta, a row tem o **mesmo `id`** mas conteúdo novo → o `useEffect` em `DayCardEditable` que sincroniza com `day` corre, mas o gating `!editing` pode bloquear se o utilizador clicou em qualquer input.
-- FAQ + footer não têm links legais (Termos / Privacidade) — bloqueio para B2B sério.
+Edit `src/routes/plans.$planId.tsx`:
 
-## TASK
+- Extend the stage redirect map so `"complete"` does **not** redirect away — the base `/plans/$planId` route IS the complete view.
+- When `generation_state.stage === "complete"` (or `generation_status === "complete"`), bypass the legacy "weeks from plan_data" rendering and instead:
+  - Load from `workout_plan_days` ordered by `week_number, day_number`.
+  - Build a `PlanData` object on the fly: `{ weeks: [{ week_number, focus, days: [{ day_label, focus, exercises: content.exercises }] }] }`.
+  - Feed that synthesized `data` into the existing `ViewMode` and `exportPdf` so PDF export works again.
+- Keep the existing legacy editor for plans where `generation_state` is null.
 
-### Bloco A — Bugs (alta prioridade)
+Also: in `stage5-bulkfill.functions.ts` we already set `generation_state.stage = "complete"`. Double-check the toast on the progressions page navigates to `/plans/$planId` (it does) — no change needed there.
 
-**A1. Microcycle regen não atualiza UI**
-- Em `regenDay()` (e `kickDay1()`), chamar `loadDays()` explicitamente após o `await` resolver, **mesmo com realtime ativo**. Realtime continua a ser fallback.
-- Em `DayCardEditable`, mudar a key de identidade: passar `key={`${day.id}-${day.updated_at ?? day.status}`}` no parent, para forçar remount quando o conteúdo muda. Isto evita o problema de o `useEffect` não disparar se `day` reference change for raso.
-- Adicionar coluna `updated_at` ao select em `loadDays()` (já existe em `workout_plan_days`).
+### 2. Dynamic CTA on assessment page
 
-**A2. "Generate Day N" pode duplicar pedidos se carregado várias vezes**
-- Trocar `generatingIdx` por um `Set<number>` para suportar múltiplos paralelos sem perder estado.
-- Disable do botão enquanto status === "pending" (não só quando o índice está em geração local).
+In `src/routes/clients_.$clientId.tsx` around line 1738, replace the hard-coded `"Continuar para Blueprint"` with a function that picks label + route from `inlineBrief.stage` (or refetched `generation_state.stage`):
 
-### Bloco B — Landing page conversão
+```text
+brief        → "Continuar para Blueprint"  → /plans/$id/blueprint
+blueprint    → "Continuar para Microciclo" → /plans/$id/microcycle
+microcycle   → "Continuar para Progressões" → /plans/$id/progressions
+progressions → "Rever progressões"          → /plans/$id/progressions
+complete     → "Abrir plano"                → /plans/$id
+```
 
-**B1. Pricing transparente**
-- Adicionar uma secção `#pricing` simples entre "Logging / history" e "Features":
-  - 1 card "Beta" — Grátis, todas as features, sem cartão.
-  - 1 card "Pro (em breve)" — 19€/mês indicativo, lista de features, CTA "Avisar-me".
-- Adicionar link "Preço" no nav header.
-- i18n keys novas em `plan.json` (PT/EN): `landing.pricing.{eyebrow,title,beta_*,pro_*,cta}`.
+Add EN equivalents to `i18n/locales/{pt,en}/plan.json` under `generate.continue_to_*`.
 
-**B2. Prova social acima da fold**
-- Pequeno badge sob o subtítulo do hero: ícone + "Construído por um PT, para PTs · Beta privado" (i18n).
-- Não inventar números. Texto honesto.
+### 3. Color-coded progression deltas
 
-**B3. Hierarquia dos CTAs no hero**
-- Tornar o secundário ("Como funciona") `variant="ghost"` em vez de `outline`, para o primário ressaltar mais.
+In `src/components/ProgressionExerciseCard.tsx`:
 
-**B4. Footer com links legais**
-- Adicionar grid de 3 colunas no footer: Brand · Produto (Features, Pricing, How it works) · Legal (Termos, Privacidade, Contacto).
-- Criar rotas placeholder `src/routes/terms.tsx` e `src/routes/privacy.tsx` com conteúdo básico (lorem ipsum legal genérico — utilizador depois preenche).
-- i18n keys `landing.footer.{links_*,legal_*,product_*}`.
+- Compute sign of each parsed delta. Apply a class on the `<input>`:
+  - positive → `text-emerald-400 font-semibold`
+  - negative → `text-rose-400 font-semibold`
+  - zero/empty → `text-muted-foreground`
+- Make the sparkline color match the cumulative trend direction (up=green, down=red, flat=muted) instead of dimension color, so trend is the dominant signal.
+- Bump input from `text-xs` → `text-sm` and tabular-nums for alignment.
 
-### Bloco C — Polish secundário
+### 4. Friendly exercise names
 
-**C1. Scroll-anchor offset** — quando se clica "Como funciona", o título fica colado por baixo do header sticky. Adicionar `scroll-mt-20` aos `<section id="...">`.
+In `ProgressionExerciseCard.tsx` accept a `displayName` prop. In `plans.$planId.progressions.tsx`, when grouping rows by `exercise_id`, also resolve a display name by looking up the original Week-1 exercise (the page already loads them implicitly via the brief rail — we'll just parse the slug):
 
-**C2. Mockup do hero a ocultar em mobile** — o `HeroPlanMockup` usa `FloatCard` que tem `hidden ... md:block`. Fica vazio em mobile. Adicionar versão simplificada visível em mobile (apenas 3 linhas + título), ou colapsar a coluna.
+- Slug format is `d{N}_{snake_case_name}`. Split → "Day N · Title Case Name".
+- Render at the top of the card: bold "Day N · Bench Press" with the raw slug below in a tiny mono muted line (so power users still see the ID).
 
-## CONSTRAINTS
-- Sem refactors fora dos ficheiros listados.
-- Sem alterar lógica do AI (geração de plano).
-- Sem novos packages.
-- i18n: cada chave nova **tem** de existir em PT e EN.
+### 5. "How to read these deltas" guide
 
-## ACCEPTANCE
-- **A1**: clicar "Regenerate" num dia faz aparecer o conteúdo novo dentro de ≤2s sem refresh manual; reproduzir 3× consecutivas.
-- **A2**: clicar 3× rápido em "Generate Day 2" só dispara 1 geração; botão fica disabled durante.
-- **B1**: secção "Pricing" visível em scroll, link "Preço" no nav vai lá ter.
-- **B2**: badge de prova social visível no hero em PT e EN.
-- **B4**: rodapé tem 3 colunas; `/terms` e `/privacy` carregam sem 404.
-- **C1**: clicar âncora não esconde título atrás do header.
-- **C2**: hero em viewport 375px mostra mockup compacto em vez de coluna vazia.
+Add a collapsible info panel at the top of the Progressions page:
 
-## ROLLBACK
-- A1/A2: reverter `microcycle.tsx` e `DayCardEditable.tsx`.
-- B1–B4: remover secção pricing, badge, rotas legais, links do footer.
-- C1/C2: remover classes `scroll-mt-*` e o mockup mobile.
+```text
+- W2/W3/W4 = the change applied that week vs Week 1.
+- "+2.5kg" = add 2.5kg to the working load.
+- "+1rep" = aim for one extra rep per set.
+- "+0.5rpe" = push 0.5 RPE harder (closer to failure).
+- "" (empty) = no change that week (deload or hold).
+- Conservative > aggressive: when in doubt, lower the delta.
+- The trend sparkline shows cumulative change W1→W4.
+```
 
----
+Localize PT/EN under a new `progressionsGuide` block.
 
-## Ordem de execução proposta
-1. **A1 + A2** primeiro (bug = bloqueador real do utilizador).
-2. **B4** (rotas legais) — rápido e desbloqueia confiança.
-3. **B1** pricing — maior impacto comercial.
-4. **B2 + B3 + C1 + C2** — polish de remate.
+### 6. Auth page square plate + Back to home
 
-Aprovas e avanço, ou queres reorganizar a ordem / cortar algum bloco?
+In `src/routes/auth.tsx`:
+
+- Add a Back-to-home link in the top-left corner of the page (small ghost button with `ArrowLeft` icon, label "Voltar à página inicial" / "Back to home", `<Link to="/">`).
+- Move the platinum/fiery effect from around the logo symbol to a **square plate** behind the logo: replace the circular halo with a rounded-square gradient surface (~120×120) carrying the conic platinum sheen + soft amber glow; the symbol sits cleanly on top with its own current drop-shadow only.
+
+### 7. Landing header `$` button
+
+In `src/routes/index.tsx` (header nav, line ~37): swap the `Preço` text anchor for an icon-only button: a `DollarSign` lucide icon inside a `ghost` `size="icon"` Button that anchors to `#pricing`, with `aria-label` from the existing `pricing.nav_link` translation.
+
+### Files touched
+
+```text
+src/routes/plans.$planId.tsx                  (synthesize PlanData from workout_plan_days when complete)
+src/routes/clients_.$clientId.tsx             (dynamic CTA per stage)
+src/routes/plans.$planId.progressions.tsx     (guide panel + friendly names)
+src/components/ProgressionExerciseCard.tsx    (color-coded deltas, friendly title)
+src/routes/auth.tsx                           (back button + square plate effect)
+src/routes/index.tsx                          ($ icon nav button)
+src/i18n/locales/pt/plan.json                 (continue_to_*, progressionsGuide)
+src/i18n/locales/en/plan.json                 (same)
+src/i18n/locales/pt/common.json               (back_to_home)
+src/i18n/locales/en/common.json               (back_to_home)
+```
+
+No DB migrations, no schema changes, no new packages.
+
+Approve and I implement in one pass, starting with #1 (the blocker for PDF export).

@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
 import { ProgressionExerciseCard } from "@/components/ProgressionExerciseCard";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/plans/$planId/progressions")({
   component: ProgressionsRoute,
@@ -45,6 +46,8 @@ function ProgressionsRoute() {
 function ProgressionsReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("plan");
+  const [guideOpen, setGuideOpen] = useState(false);
   const proposeFn = useServerFn(proposeProgressions);
   const approveFn = useServerFn(approveProgressions);
   const bulkFn = useServerFn(bulkFillRemainingWeeks);
@@ -170,6 +173,32 @@ function ProgressionsReview() {
             Approve & build remaining weeks
           </button>
         </div>
+      </div>
+
+      {/* How to read these deltas — collapsible guide */}
+      <div className="rounded-xl border border-border bg-card/50">
+        <button
+          type="button"
+          onClick={() => setGuideOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-xs"
+        >
+          <span className="font-semibold uppercase tracking-widest text-accent">
+            {t("progressionsGuide.title")}
+          </span>
+          <span className="text-muted-foreground">
+            {guideOpen ? t("progressionsGuide.close") : t("progressionsGuide.open")}
+          </span>
+        </button>
+        {guideOpen && (
+          <ul className="space-y-1.5 border-t border-border/60 px-4 pb-3 pt-3 text-xs leading-relaxed text-muted-foreground">
+            {(t("progressionsGuide.items", { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="mt-1 h-1 w-1 flex-shrink-0 rounded-full bg-accent" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {(() => {

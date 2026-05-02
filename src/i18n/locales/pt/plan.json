@@ -183,5 +183,26 @@
     "stage_notes": "Notas para esta stage",
     "rail_title": "Brief — contexto",
     "capacity_vs_pb": "capacidade atual vs PB"
+  },
+  "continueCta": {
+    "brief": "Continuar para Blueprint",
+    "blueprint": "Continuar para Microciclo",
+    "microcycle": "Continuar para Progressões",
+    "progressions": "Rever progressões",
+    "complete": "Abrir plano"
+  },
+  "progressionsGuide": {
+    "title": "Como ler estes deltas",
+    "open": "Como ler",
+    "close": "Fechar guia",
+    "items": [
+      "W2/W3/W4 = mudança aplicada nessa semana em relação à Semana 1.",
+      "\"+2.5kg\" = adiciona 2.5kg à carga de trabalho.",
+      "\"+1rep\" = procura mais uma repetição por série.",
+      "\"+0.5rpe\" = empurra 0.5 RPE mais perto da falha.",
+      "Vazio = sem alteração nessa semana (manter ou descarga).",
+      "Conservador > agressivo: na dúvida, baixa o delta.",
+      "A linha de tendência mostra a mudança acumulada de W1 a W4."
+    ]
   }
 }

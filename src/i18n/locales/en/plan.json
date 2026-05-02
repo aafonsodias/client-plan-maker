@@ -183,5 +183,26 @@
     "stage_notes": "Notes for this stage",
     "rail_title": "Brief — context",
     "capacity_vs_pb": "current capacity vs PB"
+  },
+  "continueCta": {
+    "brief": "Continue to Blueprint",
+    "blueprint": "Continue to Microcycle",
+    "microcycle": "Continue to Progressions",
+    "progressions": "Review progressions",
+    "complete": "Open plan"
+  },
+  "progressionsGuide": {
+    "title": "How to read these deltas",
+    "open": "How to read",
+    "close": "Close guide",
+    "items": [
+      "W2/W3/W4 = the change applied that week vs Week 1.",
+      "\"+2.5kg\" = add 2.5kg to the working load.",
+      "\"+1rep\" = aim for one extra rep per set.",
+      "\"+0.5rpe\" = push 0.5 RPE harder (closer to failure).",
+      "Empty = no change that week (hold or deload).",
+      "Conservative > aggressive: when in doubt, lower the delta.",
+      "The trend line shows cumulative change W1 → W4."
+    ]
   }
 }

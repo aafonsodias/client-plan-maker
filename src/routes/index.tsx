@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, DollarSign } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
@@ -34,9 +34,18 @@ function Landing() {
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <a href="#pricing" className="hidden sm:inline-block px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("plan:landing.pricing.nav_link")}
-            </a>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-accent"
+              aria-label={t("plan:landing.pricing.nav_link")}
+              title={t("plan:landing.pricing.nav_link")}
+            >
+              <a href="#pricing">
+                <DollarSign className="h-4 w-4" />
+              </a>
+            </Button>
             <LanguageSwitcher className="mr-1" />
             {signedIn ? (
               <Button asChild size="sm">

@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/Logo";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
@@ -61,6 +62,14 @@ function AuthPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12">
+      {/* Back to home — top-left */}
+      <Link
+        to="/"
+        className="group absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-card/40 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur transition-colors hover:border-accent/40 hover:text-foreground sm:left-6 sm:top-6"
+      >
+        <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+        {t("actions.back_to_home")}
+      </Link>
       {/* Ambient platinum/fiery backdrop */}
       <div
         aria-hidden
@@ -85,28 +94,41 @@ function AuthPage() {
           className="group mb-10 flex flex-col items-center justify-center gap-3"
           aria-label={t("brand.name")}
         >
-          <div className="relative">
-            {/* Outer fiery halo */}
+          {/* Square platinum/fiery plate behind the logo. Effects live on the
+              plate, not on the symbol — keeps the logo crisp. */}
+          <div className="relative flex h-32 w-32 items-center justify-center">
+            {/* Soft fiery glow behind the plate */}
             <div
               aria-hidden
-              className="absolute inset-[-30%] -z-20 rounded-full blur-3xl opacity-70 animate-pulse"
+              className="absolute inset-[-20%] -z-20 rounded-3xl blur-2xl opacity-60 animate-pulse"
               style={{
                 background:
-                  "radial-gradient(circle, color-mix(in oklab, var(--accent) 70%, transparent) 0%, color-mix(in oklab, var(--accent) 25%, transparent) 35%, transparent 70%)",
-                animationDuration: "4s",
+                  "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 55%, transparent) 0%, color-mix(in oklab, var(--accent) 18%, transparent) 50%, transparent 80%)",
+                animationDuration: "4.5s",
               }}
             />
-            {/* Platinum metallic ring */}
+            {/* Translucent platinum plate */}
             <div
               aria-hidden
-              className="absolute inset-[-12%] -z-10 rounded-full opacity-50"
+              className="absolute inset-0 -z-10 rounded-2xl border border-border/40 backdrop-blur-sm"
               style={{
                 background:
-                  "conic-gradient(from 140deg, transparent 0deg, color-mix(in oklab, var(--accent) 60%, white) 90deg, transparent 180deg, color-mix(in oklab, var(--accent) 50%, white) 270deg, transparent 360deg)",
-                filter: "blur(8px)",
+                  "linear-gradient(135deg, color-mix(in oklab, var(--accent) 14%, transparent) 0%, color-mix(in oklab, var(--card) 70%, transparent) 45%, color-mix(in oklab, var(--accent) 8%, transparent) 100%)",
+                boxShadow:
+                  "inset 0 1px 0 0 color-mix(in oklab, white 18%, transparent), inset 0 -1px 0 0 color-mix(in oklab, var(--accent) 25%, transparent), 0 8px 32px -8px color-mix(in oklab, var(--accent) 35%, transparent)",
               }}
             />
-            <Logo className="relative h-20 w-20 drop-shadow-[0_0_24px_color-mix(in_oklab,var(--accent)_60%,transparent)] transition-transform duration-500 group-hover:scale-105" />
+            {/* Conic platinum sheen sweeping across the plate */}
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 rounded-2xl opacity-40 mix-blend-screen"
+              style={{
+                background:
+                  "conic-gradient(from 140deg at 50% 50%, transparent 0deg, color-mix(in oklab, var(--accent) 50%, white) 80deg, transparent 160deg, color-mix(in oklab, var(--accent) 40%, white) 280deg, transparent 360deg)",
+                filter: "blur(6px)",
+              }}
+            />
+            <Logo className="relative h-16 w-16 drop-shadow-[0_0_18px_color-mix(in_oklab,var(--accent)_50%,transparent)] transition-transform duration-500 group-hover:scale-105" />
           </div>
           <div className="flex flex-col items-center gap-1.5">
             <span className="h-px w-10 bg-accent/70" />
