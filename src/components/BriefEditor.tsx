@@ -316,8 +316,8 @@ export default function BriefEditor({
             <ul className="divide-y divide-border">
               {accommodations.map((a, idx) => (
                 <li key={`${a.flag}-${idx}`} className="py-3 first:pt-0 last:pb-0">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_180px] sm:items-start sm:gap-3">
+                    <p className="min-w-0 text-sm font-medium leading-snug text-foreground">
                       {a.flag}
                     </p>
                     <select
@@ -327,7 +327,7 @@ export default function BriefEditor({
                           strategy: e.target.value as RedFlagAccommodation["strategy"],
                         })
                       }
-                      className="be-input shrink-0 sm:w-44"
+                      className="be-input w-full sm:w-[180px]"
                     >
                       {(["AVOID", "MODIFY", "MONITOR", "ACCOMMODATE"] as const).map((s) => (
                         <option key={s} value={s}>
