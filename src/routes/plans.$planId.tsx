@@ -18,6 +18,14 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { generatePlanPdf, generateLogsheetPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
@@ -264,7 +272,7 @@ function PlanEditor() {
     if (user) { void markOnboardingStep(user.id, "export_pdf"); }
   };
 
-  const exportLogsheet = async () => {
+  const exportLogsheet = async (week?: number) => {
     if (!client || !plan) return;
     let logoDataUrl: string | null = null;
     if (profile?.logo_url) {
@@ -282,19 +290,31 @@ function PlanEditor() {
         }
       } catch { /* ignore */ }
     }
-    await generateLogsheetPdf(
-      { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
-      data,
-      {
-        business_name: profile?.business_name,
-        full_name: profile?.full_name,
-        tagline: profile?.tagline,
-        contact_email: profile?.contact_email,
-        contact_phone: profile?.contact_phone,
-        logo_data_url: logoDataUrl,
-      },
-      { week: 1 },
-    );
+    const branding = {
+      business_name: profile?.business_name,
+      full_name: profile?.full_name,
+      tagline: profile?.tagline,
+      contact_email: profile?.contact_email,
+      contact_phone: profile?.contact_phone,
+      logo_data_url: logoDataUrl,
+    };
+    const meta = {
+      title: plan.title,
+      summary: plan.summary,
+      client_name: client.full_name,
+      duration_weeks: plan.duration_weeks,
+    };
+    // Single week → one PDF. Undefined "week" means "all weeks": loop and
+    // emit one PDF per week so the trainer gets four physical placas to pin
+    // to the wall (one per microcycle week, deload included).
+    if (typeof week === "number") {
+      await generateLogsheetPdf(meta, data, branding, { week });
+    } else {
+      const weeks = data.weeks.map((w) => w.week_number).sort((a, b) => a - b);
+      for (const wn of weeks) {
+        await generateLogsheetPdf(meta, data, branding, { week: wn });
+      }
+    }
   };
 
   if (!plan) return <p className="text-muted-foreground">Loading…</p>;
@@ -368,15 +388,70 @@ function PlanEditor() {
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar PDF
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={exportLogsheet}
-            className="h-8"
-            title="Folha de registo A4 com colunas em branco para o ginásio"
-          >
-            <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
-          </Button>
+          {(() => {
+            const weeks = data.weeks.map((w) => w.week_number).sort((a, b) => a - b);
+            // Plano sem semanas (raro) → mantém botão simples desactivado.
+            if (weeks.length === 0) {
+              return (
+                <Button size="sm" variant="outline" className="h-8" disabled>
+                  <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
+                </Button>
+              );
+            }
+            // Mesociclo de uma semana → clique directo, sem menu.
+            if (weeks.length === 1) {
+              return (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportLogsheet(weeks[0])}
+                  className="h-8"
+                  title="Folha de registo A4 com colunas em branco para o ginásio"
+                >
+                  <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
+                </Button>
+              );
+            }
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    title="Folha de registo A4 — escolhe a semana ou imprime as quatro placas"
+                  >
+                    <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
+                    <ChevronDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Imprimir folha A4
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {weeks.map((wn) => {
+                    const isDeload = wn === weeks[weeks.length - 1] && weeks.length >= 3;
+                    return (
+                      <DropdownMenuItem key={wn} onClick={() => exportLogsheet(wn)}>
+                        Semana {wn}
+                        {isDeload && (
+                          <span className="ml-auto text-[9px] uppercase tracking-widest text-amber-400">
+                            deload
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => exportLogsheet()}>
+                    <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-400" />
+                    Todas as {weeks.length} semanas
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })()}
           <ImportLogDialog planId={planId} plan={data} />
           {summaryLooksLeaked(plan?.summary) && plan?.brief && (
             <Button
