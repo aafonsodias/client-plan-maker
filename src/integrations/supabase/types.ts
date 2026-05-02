@@ -363,6 +363,7 @@ export type Database = {
           intake_token_expires_at: string | null
           notes: string | null
           phone: string | null
+          photo_url: string | null
           sex: string | null
           trainer_id: string
           updated_at: string
@@ -381,6 +382,7 @@ export type Database = {
           intake_token_expires_at?: string | null
           notes?: string | null
           phone?: string | null
+          photo_url?: string | null
           sex?: string | null
           trainer_id: string
           updated_at?: string
@@ -399,6 +401,7 @@ export type Database = {
           intake_token_expires_at?: string | null
           notes?: string | null
           phone?: string | null
+          photo_url?: string | null
           sex?: string | null
           trainer_id?: string
           updated_at?: string

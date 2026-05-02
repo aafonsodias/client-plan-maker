@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -1271,11 +1272,25 @@ function ClientDetail() {
     <TooltipProvider delayDuration={200}>
     <div className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
-        <div className="flex flex-wrap items-center gap-3 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
-          <ClientPhaseHeaderPill clientId={client.id} />
+        <div className="flex flex-wrap items-center gap-4 min-w-0">
+          {user?.id && (
+            <ClientAvatarUpload
+              clientId={client.id}
+              trainerId={user.id}
+              name={client.full_name}
+              photoUrl={client.photo_url ?? null}
+              onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
+              size={56}
+            />
+          )}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
+              <ClientPhaseHeaderPill clientId={client.id} />
+            </div>
+            <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
+          </div>
         </div>
-        <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AssessmentDatePicker
             value={assessment.performed_on || ""}

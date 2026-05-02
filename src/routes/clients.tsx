@@ -13,6 +13,7 @@ import { Plus, ArrowRight, Trash2 } from "lucide-react";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
+import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/clients")({
   ),
 });
 
-type Client = { id: string; full_name: string; email: string | null; age: number | null; created_at: string };
+type Client = { id: string; full_name: string; email: string | null; age: number | null; created_at: string; photo_url: string | null };
 
 function Clients() {
   const { user } = useAuth();
@@ -66,7 +67,7 @@ function Clients() {
   }, [list, phases]);
 
   const load = async () => {
-    const { data } = await supabase.from("clients").select("id, full_name, email, age, created_at").order("created_at", { ascending: false });
+    const { data } = await supabase.from("clients").select("id, full_name, email, age, created_at, photo_url").order("created_at", { ascending: false });
     setList((data as Client[]) ?? []);
   };
 
@@ -170,6 +171,7 @@ function Clients() {
                 className="flex flex-1 items-center justify-between px-5 py-4"
               >
                 <div className="flex items-center gap-3">
+                  <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
                   <div>
                     <p className="font-semibold">{c.full_name}</p>
                     <p className="text-sm text-muted-foreground">{c.email ?? t("clients.no_email")}</p>

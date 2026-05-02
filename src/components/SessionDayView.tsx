@@ -282,7 +282,11 @@ function estimatePrepMinutes(items: SectionItem[]): number {
       if (!isNaN(n)) totalSec += n * 60; // assume minutes
     }
   }
-  return Math.round(totalSec / 60);
+  const minutes = Math.round(totalSec / 60);
+  // Fallback: when items have no parseable durations, estimate ~1 min per item
+  // so the prep block doesn't show "0 min" for non-zero work.
+  if (minutes === 0 && items.length > 0) return Math.max(1, items.length);
+  return minutes;
 }
 
 /** Compact, colour-coded preparation block (warmup + activation + dynamic). Collapsed by default. */
@@ -464,18 +468,25 @@ function ExerciseCard({
               <StatBlock label="Reps" value={ex.reps} />
               <StatBlock label="Rest" value={ex.rest} />
             </div>
-            {/* RPE / Tempo stack — outside the boxes */}
+            {/* RPE pill + tempo — RPE coloured by intensity tier */}
             {(ex.rpe || ex.tempo) && (
-              <div className="ml-1 flex shrink-0 flex-col items-end justify-center gap-0.5 text-[10px] leading-tight text-muted-foreground">
-                {ex.rpe && (
-                  <span
-                    className={`uppercase tracking-widest ${
-                      rpeHigh ? "font-semibold text-accent" : ""
-                    }`}
-                  >
-                    RPE {ex.rpe}
-                  </span>
-                )}
+              <div className="ml-1 flex shrink-0 flex-col items-end justify-center gap-1 text-[10px] leading-tight text-muted-foreground">
+                {ex.rpe && (() => {
+                  const tone =
+                    rpeNum >= 9
+                      ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+                      : rpeNum >= 7
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        : "border-border bg-secondary/60 text-muted-foreground";
+                  return (
+                    <span
+                      className={`inline-flex items-center rounded-full border px-1.5 py-[2px] text-[9px] font-semibold uppercase tracking-widest leading-none ${tone}`}
+                      title={rpeNum >= 9 ? "Very hard" : rpeNum >= 7 ? "Hard" : "Moderate"}
+                    >
+                      RPE {ex.rpe}
+                    </span>
+                  );
+                })()}
                 {ex.tempo && (
                   <span className="uppercase tracking-widest">Tempo {ex.tempo}</span>
                 )}
@@ -528,7 +539,7 @@ function ExerciseCard({
             aria-expanded={rationaleOpen}
             className="flex w-full items-center justify-between px-4 py-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground"
           >
-            <span>Why this exercise</span>
+            <span>Coaching notes</span>
             {rationaleOpen ? (
               <ChevronUp className="h-3 w-3" />
             ) : (
