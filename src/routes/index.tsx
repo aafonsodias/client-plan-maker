@@ -475,24 +475,14 @@ function HowItWorksAnimation() {
                 className="group relative flex gap-4 sm:flex-col sm:gap-3"
                 style={{ animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
               >
-                {/* Sketch-style background scribble */}
-                <svg
-                  aria-hidden
-                  viewBox="0 0 200 80"
-                  preserveAspectRatio="none"
-                  className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07] sm:opacity-[0.10]"
-                >
-                  <path
-                    d={i % 2 === 0
-                      ? "M5,60 Q40,10 90,40 T195,30"
-                      : "M5,30 Q60,70 110,35 T195,55"}
-                    fill="none"
-                    stroke="var(--accent)"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
+                {/* Chevron between steps (sm+ only) */}
+                {i > 0 && (
+                  <ChevronRight
+                    aria-hidden
+                    className="pointer-events-none absolute -left-3 top-4 hidden h-4 w-4 text-accent/40 sm:block"
+                    strokeWidth={2}
                   />
-                </svg>
-
+                )}
                 {/* Numbered + iconed circle */}
                 <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-accent shadow-[0_4px_14px_-6px_oklch(0.78_0.12_70/0.5)]">
                   <Icon className="h-5 w-5" strokeWidth={1.5} />
