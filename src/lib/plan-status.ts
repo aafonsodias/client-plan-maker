@@ -42,7 +42,7 @@ export function planStatusInfo(p: PlanLike, t?: TFunction): PlanStatusInfo {
       key: "finalized",
       label: t ? t("plan_status.finalized", "Finalised") : "Finalised",
       className:
-        "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
+        "bg-emerald-500/15 text-emerald-300 border border-emerald-500/40",
     };
   }
 
@@ -50,7 +50,7 @@ export function planStatusInfo(p: PlanLike, t?: TFunction): PlanStatusInfo {
     return {
       key: "ready",
       label: t ? t("plan_status.ready", "Ready") : "Ready",
-      className: "bg-amber-500/10 text-amber-300 border border-amber-500/30",
+      className: "bg-emerald-500/10 text-emerald-300 border border-emerald-500/30",
     };
   }
 
