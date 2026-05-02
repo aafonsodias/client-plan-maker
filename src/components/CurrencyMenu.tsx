@@ -4,34 +4,37 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { CURRENCIES, type CurrencyCode } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { cloneElement, isValidElement, useState, type ReactElement } from "react";
 
 type Props = {
-  children: ReactNode;
+  /** Single focusable trigger element (e.g. a <button>). NOT wrapped — passed directly to PopoverTrigger via asChild. */
+  children: ReactElement;
   align?: "start" | "center" | "end";
 };
 
 /**
- * Wraps any trigger element. Left-click opens a small popover with currency
- * choices; right-click opens the same popover (per-request "power-user"
- * affordance) instead of the browser context menu.
+ * Renders a popover anchored to the provided trigger element. The trigger is
+ * passed directly via asChild (NO wrapping span) so we never nest <button>
+ * inside <button> — that was swallowing clicks and preventing currency
+ * selection from committing. Right-click on the trigger also opens the menu.
  */
 export function CurrencyMenu({ children, align = "end" }: Props) {
   const { t } = useTranslation("common");
   const { code, setCode } = useCurrency();
   const [open, setOpen] = useState(false);
 
-  const onContext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setOpen(true);
-  };
+  const trigger = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ onContextMenu?: (e: React.MouseEvent) => void }>, {
+        onContextMenu: (e: React.MouseEvent) => {
+          e.preventDefault();
+          setOpen(true);
+        },
+      })
+    : children;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <span onContextMenu={onContext} className="inline-flex">{children}</span>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent align={align} className="w-56 p-2">
         <p className="px-2 pt-1 pb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
           {t("currency.title", "Currency")}
