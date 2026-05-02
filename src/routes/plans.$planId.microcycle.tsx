@@ -8,12 +8,13 @@ import {
   approveMicrocycle,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
 import { DayCardEditable } from "@/components/DayCardEditable";
+import { InfoHint } from "@/components/InfoHint";
 
 export const Route = createFileRoute("/plans/$planId/microcycle")({
   component: MicrocycleRoute,
@@ -180,7 +181,7 @@ function MicrocycleReview() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <Link
             to="/plans/$planId/blueprint"
@@ -190,18 +191,55 @@ function MicrocycleReview() {
             <ArrowLeft className="h-3 w-3" /> {t("actions.back_blueprint")}
           </Link>
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
-          <p className="text-xs text-muted-foreground">
-            Stage 3 — Microcycle (Week 1) · {doneCount}/{sessionsPerWeek} done
+          <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span>Stage 3 — Microcycle (Week 1) · {doneCount}/{sessionsPerWeek} done</span>
+            <InfoHint tone="neutral" side="bottom" label="O que é um microciclo?">
+              {t("microcycle.stage_hint")}
+            </InfoHint>
           </p>
         </div>
-        <button
-          onClick={approve}
-          disabled={!allDone || busy}
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-          {t("actions.approve_microcycle")}
-        </button>
+        <div className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end">
+          {allDone && !busy && (
+            <span className="inline-flex items-center gap-1 self-center text-[11px] font-medium text-emerald-500 dark:text-emerald-400 sm:self-end">
+              <CheckCircle2 className="h-3 w-3" /> {t("microcycle.ready_to_approve")}
+            </span>
+          )}
+          <button
+            onClick={approve}
+            disabled={!allDone || busy}
+            aria-label={
+              busy
+                ? t("actions.approve_microcycle_busy")
+                : !allDone
+                ? t("actions.approve_microcycle_disabled")
+                : t("actions.approve_microcycle")
+            }
+            className={
+              "group relative inline-flex w-full items-center justify-center gap-2 self-stretch rounded-lg px-4 py-2.5 text-sm font-semibold transition-all sm:w-auto sm:self-end " +
+              (allDone && !busy
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-[0_0_24px_-6px_oklch(0.72_0.16_160/0.55)] ring-1 ring-emerald-400/40 hover:-translate-y-0.5 hover:shadow-[0_0_32px_-6px_oklch(0.72_0.16_160/0.7)] active:translate-y-0"
+                : "bg-muted text-muted-foreground ring-1 ring-border")
+            }
+          >
+            {allDone && !busy && (
+              <span className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-emerald-400/60 animate-pulse" aria-hidden />
+            )}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : !allDone ? (
+              <Lock className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            <span className="relative">
+              {busy
+                ? t("actions.approve_microcycle_busy")
+                : !allDone
+                ? t("actions.approve_microcycle_disabled")
+                : t("actions.approve_microcycle")}
+            </span>
+          </button>
+        </div>
       </div>
 
       {sessionsPerWeek > 0 && (inFlight || !allDone) && (
