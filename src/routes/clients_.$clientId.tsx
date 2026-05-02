@@ -2491,6 +2491,7 @@ function ClientDetail() {
           <ComplianceDashboard clientId={clientId} />
         </section>
       )}
+      <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
     </div>
     </TooltipProvider>
   );
