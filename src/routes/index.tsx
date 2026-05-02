@@ -381,7 +381,9 @@ function Landing() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
+        {t("plan:landing.roadmap.footnote") ? (
+          <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
+        ) : null}
       </section>
 
       {/* Founder note — text-only, short and direct */}
