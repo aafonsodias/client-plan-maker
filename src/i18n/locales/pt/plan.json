@@ -235,5 +235,20 @@
       "Conservador > agressivo: na dúvida, baixa o delta.",
       "A linha de tendência mostra a mudança acumulada de W1 a W4."
     ]
+  },
+  "actions": {
+    "regenerate": "Regenerar",
+    "approve_brief": "Aprovar brief",
+    "approve_blueprint": "Aprovar → Dia 1",
+    "approve_microcycle": "Aprovar microciclo",
+    "ask_ai": "Pedir ajustes à IA",
+    "back_blueprint": "Blueprint",
+    "back_brief": "Brief",
+    "back_all_plans": "Todos os planos"
+  },
+  "microcycleProgress": {
+    "generating": "A gerar microciclo",
+    "remaining": "~{{seconds}}s restantes",
+    "day_quality_gate": "A gerar o Dia 1 — esta é a porta de qualidade."
   }
 }
