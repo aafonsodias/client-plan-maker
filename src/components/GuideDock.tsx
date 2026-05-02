@@ -9,15 +9,16 @@ import { toast } from "sonner";
 type Msg = { role: "user" | "assistant"; content: string; suggestions?: Array<{ path: string; label: string }> };
 
 /**
- * ConciergeDock — floating help chat. Founder-only for now.
+ * GuideDock — floating in-app guide. Answers "where is X?" and points to
+ * the right route. Founder-only for now.
  * Sends current route to the server fn so answers are context-aware.
  */
-export function ConciergeDock({ enabled }: { enabled: boolean }) {
+export function GuideDock({ enabled }: { enabled: boolean }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "Olá! Pergunta-me onde encontrar algo na app." },
+    { role: "assistant", content: "Olá. Diz-me o que procuras na app — eu mostro-te onde está." },
   ]);
   const ask = useServerFn(askConcierge);
   const location = useLocation();
@@ -40,12 +41,12 @@ export function ConciergeDock({ enabled }: { enabled: boolean }) {
         },
       });
       if (!res?.ok) {
-        toast.error(res?.error ?? "Concierge falhou");
+        toast.error(res?.error ?? "Guia falhou");
         return;
       }
       setMessages((m) => [...m, { role: "assistant", content: res.reply, suggestions: res.suggestions }]);
     } catch (e: any) {
-      toast.error(e?.message ?? "Concierge falhou");
+      toast.error(e?.message ?? "Guia falhou");
     } finally {
       setBusy(false);
     }
@@ -58,8 +59,8 @@ export function ConciergeDock({ enabled }: { enabled: boolean }) {
           type="button"
           onClick={() => setOpen(true)}
           className="fixed bottom-4 left-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent/40 bg-card shadow-[var(--shadow-elegant)] hover:border-accent transition"
-          aria-label="Abrir concierge"
-          title="Concierge"
+          aria-label="Abrir guia"
+          title="Guia"
         >
           <HelpCircle className="h-5 w-5 text-accent" />
         </button>
@@ -67,7 +68,7 @@ export function ConciergeDock({ enabled }: { enabled: boolean }) {
       {open && (
         <div className="fixed bottom-4 left-4 z-40 w-80 max-h-[70vh] flex flex-col rounded-2xl border border-accent/40 bg-card/95 backdrop-blur shadow-[var(--shadow-elegant)]">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-            <span className="text-xs font-semibold uppercase tracking-widest text-accent">Concierge</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-accent">Guia</span>
             <button type="button" onClick={() => setOpen(false)} className="rounded-md p-1 hover:bg-muted" aria-label="Fechar">
               <X className="h-3.5 w-3.5" />
             </button>

@@ -1,53 +1,44 @@
-# Próximo passo: tornar a app mostrável
+## O que vou fazer
 
-A mensagem que partilhaste tem razão num ponto operacional concreto: o que falta agora **não é mais lógica interna**, é reduzir o atrito entre "eu" e "outra pessoa a usar isto no telemóvel dela". Três blocos pequenos, todos orientados a exposição.
+### 1. Bugs detetados (scan)
 
-## Bloco A — PWA básica (instalável no telemóvel)
+**Bug A — Hydration mismatch no `CurrencyMenu`** (já no runtime errors)
+O servidor renderiza sempre `EUR / "Currency"` (porque `i18n.lng = "en"` e `useCurrency()` usa fallback `EUR` em SSR), mas o cliente, no primeiro paint, lê `localStorage` + `navigator.language` e mostra `USD / "Moeda"`. Isto rebenta a hidratação em qualquer página com `<PriceTag>` (toda a landing).
 
-Para alguém poder testar a app como se fosse uma app nativa, sem fricção de "abre o browser e cola este link".
+Fix: tal como o `i18n` já faz (lng inicial = "en", muda só depois de hidratar), o `CurrencyProvider` tem de inicializar com o **mesmo valor que o servidor renderizou** (`EUR`) e só aplicar o `localStorage`/`navigator` num `useEffect`. O `PriceTag` também passa a usar `aria-label` traduzido só depois de hidratar (ou fica em EN no primeiro paint).
 
-- `public/manifest.webmanifest` com nome, ícones (192/512), `display: standalone`, `theme_color` alinhado ao token `--background`, `start_url: /dashboard`.
-- Ícones gerados a partir do `BrandMark` existente (PNG 192 + 512 + maskable 512).
-- Service worker mínimo (`public/sw.js`) — apenas cache do shell + offline fallback. **Sem** cache agressivo de dados (RLS-sensitive).
-- Registo do SW em `src/routes/__root.tsx` só em produção (`import.meta.env.PROD`).
-- Meta tags no `<head>` do root: `theme-color`, `apple-mobile-web-app-capable`, `apple-touch-icon`.
-- Componente `<InstallPrompt/>` discreto no `AppShell` (rodapé mobile) que aparece quando `beforeinstallprompt` dispara — dispensável depois.
+**Bug B — 3 chaves i18n em falta** (consola)
+`plan:landing.mockups.history_title`, `history_subtitle`, `delta_label` faltam nos JSON de PT e EN. Estão a ser usadas no `LogbookHistoryMockup` da landing com fallback inline, mas isso polui a consola e em PT mostra a string EN. Adicionar as chaves nos dois locales.
 
-## Bloco B — Share rápido para mostrar a alguém
+**Bug C — `<button>` dentro de `<button>` no Currency popover (potencial)**
+Verificar: no `PriceTag` o trigger é `<button>`, e o `PopoverTrigger asChild` injeta props nele — está OK porque o `CurrencyMenu` já não envolve em span. Mantém-se, só auditoria.
 
-Para reduzir a fricção do "manda-me lá isso para eu ver".
+### 2. Renomear "Concierge"
 
-- Botão "Partilhar app" no `AppShell` (header, ao lado do BrandMark) que usa `navigator.share` (Web Share API) com fallback para copiar link da landing.
-- A landing page (`/`) precisa de um CTA explícito acima da fold: **"Experimenta com 1 cliente — grátis"** que leve ao signup. Já existe a quota de 1 plano gratuito; é só amarrar a copy a essa promessa concreta.
-- Adicionar `og:image` decente nas rotas públicas (`/`, `/manual`, `/privacy`, `/terms`) usando uma imagem do brand já existente — para o link parecer sério quando colado no WhatsApp.
+"Concierge" é frio e estranho. Proponho **"Guia"** (PT) / **"Guide"** (EN) — curto, honesto, descreve o que faz (mostra onde estão as coisas). Alternativas que rejeitei: "Ajuda" (genérico demais), "Atalhos" (não é só isso), "Copiloto" (overhyped).
 
-## Bloco C — Primeiro contacto não embaraçoso
+Mudanças:
+- `ConciergeDock` → `GuideDock` (ficheiro renomeado; export idem).
+- Botão flutuante: aria-label `"Abrir guia"`, header `"GUIA"`, placeholder `"Onde está…?"` (mantém).
+- Mensagem de boas-vindas mais curta e humana, em vez do parágrafo cerimonial atual (ver imagem 2): _"Olá. Diz-me o que procuras na app — eu mostro-te onde está."_
+- `askConcierge` server fn fica com o nome interno (não vale a pena partir tipos), mas o system prompt deixa de dizer "concierge" e passa a "guia da app".
+- Opcional: chips de sugestão começam vazios — só aparecem depois da 1ª pergunta (a lista de 3 chips iniciais "Ver Painel / Manual / Configurar Perfil" do screenshot é ruído).
 
-O que uma pessoa nova vê nos primeiros 30 segundos.
+### 3. Onde começa o "assessment slides"
 
-- Auditoria rápida do dashboard vazio: se não há clientes, mostrar um card "Começa por adicionar o teu primeiro cliente" com CTA único, em vez do estado vazio atual.
-- Garantir que o link do Demo Lab (founder-only) não aparece para outras contas — confirmar gate.
-- Verificar que a página `/templates` (acabada de criar) tem estado vazio decente — já tem, mas confirmar copy.
-- Verificar no preview que o flow `signup → adicionar cliente → enviar intake → criar plano` funciona ponta-a-ponta sem dead-ends.
+Resposta direta para o utilizador (não envolve código): o início está em **Clientes → abrir um cliente**. A rota é `/clients/$clientId` (ficheiro `src/routes/clients_.$clientId.tsx`). Aí aparece o `ClientDetail` com as várias secções (PAR-Q, Antropometria, Objetivo SMART, Treino, Estilo de vida, Nutrição, Mobilidade, Postura, Screen de movimento, Histórico, Performance) renderizadas como `StageCard`s — esse é o "wizard" de assessment. Para um cliente novo: `/clients` → botão "Adicionar cliente". Para o cliente preencher por ele próprio, gera-se um link de intake (`IntakeLinkPanel`) que abre `/intake/:token`.
 
-## Detalhes técnicos
+Vou também adicionar isto às rotas que o Guia conhece (`src/lib/concierge-routes.ts`) para que possa responder esta pergunta sozinho.
 
-- PWA: gerar ícones via script Node (sharp não disponível no Worker, mas o build corre em Node — usar `sharp` em `scripts/gen-icons.mjs` chamado manualmente, output commitado em `public/`).
-- SW: estratégia `network-first` para HTML, `cache-first` para assets com hash. Offline page = `/offline.html` estática.
-- Web Share API: detectar `navigator.share` em runtime, fallback para `navigator.clipboard.writeText` + toast.
-- Não tocar em `routeTree.gen.ts`, `client.ts`, `types.ts`, `.env`.
+### Ficheiros tocados
 
-## O que **não** faço neste sprint
+- `src/contexts/CurrencyContext.tsx` — init SSR-safe + efeito client.
+- `src/components/CurrencyMenu.tsx` — `aria-label`/title só client-side ou em EN no SSR.
+- `src/i18n/locales/{en,pt}/plan.json` — 3 chaves landing.mockups.
+- Renomear `src/components/ConciergeDock.tsx` → `src/components/GuideDock.tsx` + import em `AppShell.tsx`.
+- `src/lib/concierge-routes.ts` — acrescentar hint sobre `/clients/$clientId` e fluxo de assessment.
+- `src/server/concierge.functions.ts` — system prompt: "guia" em vez de "concierge", boas-vindas mais curta.
 
-- Vídeos de exercício (Sprint 5 original) — adia, é otimização interna.
-- Mais tabelas, mais server functions, mais AI.
-- Refactors de design.
+### Fora de scope
 
-## Critério de "feito"
-
-No final consigo:
-1. Abrir a app no telemóvel, "Adicionar ao ecrã principal", e ela abre standalone.
-2. Carregar um botão "Partilhar" e mandar o link a alguém via WhatsApp com preview decente.
-3. Essa pessoa cria conta, adiciona um cliente, e gera 1 plano sem eu intervir.
-
-Depois disto, o passo seguinte é o teu — não o meu. É mostrar a alguém.
+Não vou tocar no nome do server fn (`askConcierge`) nem no path do ficheiro `concierge.functions.ts` para não partir tipos. Só a UI muda de nome.
