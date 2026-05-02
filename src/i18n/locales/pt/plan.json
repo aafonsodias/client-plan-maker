@@ -266,6 +266,8 @@
     "approve_brief": "Aprovar brief",
     "approve_blueprint": "Aprovar → Dia 1",
     "approve_microcycle": "Aprovar microciclo",
+    "approve_microcycle_disabled": "Completa os dias para aprovar",
+    "approve_microcycle_busy": "A aprovar…",
     "ask_ai": "Pedir ajustes à IA",
     "back_blueprint": "Blueprint",
     "back_brief": "Brief",
@@ -275,5 +277,9 @@
     "generating": "A gerar microciclo",
     "remaining": "~{{seconds}}s restantes",
     "day_quality_gate": "A gerar o Dia 1 — esta é a porta de qualidade."
+  },
+  "microcycle": {
+    "ready_to_approve": "Tudo pronto — podes aprovar",
+    "stage_hint": "Microciclo = a tua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes."
   }
 }

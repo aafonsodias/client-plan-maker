@@ -4,6 +4,8 @@ import { BriefContextRail } from "@/components/BriefContextRail";
 import { BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BriefSchema } from "@/server/phased/schemas";
+import { InfoHint } from "@/components/InfoHint";
+import { useTranslation } from "react-i18next";
 
 /**
  * A header button that opens a right-side Sheet with the BriefContextRail.
@@ -12,6 +14,8 @@ import { BriefSchema } from "@/server/phased/schemas";
  */
 export function BriefSheetButton({ planId }: { planId: string }) {
   const [redFlagCount, setRedFlagCount] = useState(0);
+  const { i18n } = useTranslation("plan");
+  const isPt = i18n.language?.startsWith("pt");
 
   useEffect(() => {
     let cancelled = false;
@@ -36,14 +40,31 @@ export function BriefSheetButton({ planId }: { planId: string }) {
         <button
           type="button"
           className="relative inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted xl:hidden"
-          aria-label="Abrir contexto do Brief"
+          aria-label={
+            redFlagCount > 0
+              ? isPt
+                ? `Brief — ${redFlagCount} sinais de alerta`
+                : `Brief — ${redFlagCount} red flags`
+              : isPt
+              ? "Abrir contexto do Brief"
+              : "Open brief context"
+          }
         >
           <BookOpen className="h-3.5 w-3.5" />
           Brief
           {redFlagCount > 0 && (
-            <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500/90 px-1 text-[10px] font-bold text-white">
-              {redFlagCount}
-            </span>
+            <>
+              <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/15 px-1 text-[10px] font-bold text-amber-300">
+                {redFlagCount}
+              </span>
+              <span onClick={(e) => e.stopPropagation()} className="-ml-0.5">
+                <InfoHint tone="warn" side="bottom" label={isPt ? "O que é este número?" : "What is this number?"}>
+                  {isPt
+                    ? "Sinais de alerta detetados no teu brief — toca em \"Brief\" para os rever."
+                    : "Red flags found in your brief — tap \"Brief\" to review them."}
+                </InfoHint>
+              </span>
+            </>
           )}
         </button>
       </SheetTrigger>

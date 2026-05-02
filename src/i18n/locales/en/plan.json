@@ -266,6 +266,8 @@
     "approve_brief": "Approve brief",
     "approve_blueprint": "Approve → Day 1",
     "approve_microcycle": "Approve microcycle",
+    "approve_microcycle_disabled": "Finish all days to approve",
+    "approve_microcycle_busy": "Approving…",
     "ask_ai": "Ask AI for changes",
     "back_blueprint": "Blueprint",
     "back_brief": "Brief",
@@ -275,5 +277,9 @@
     "generating": "Generating microcycle",
     "remaining": "~{{seconds}}s remaining",
     "day_quality_gate": "Generating Day 1 — this is the quality gate."
+  },
+  "microcycle": {
+    "ready_to_approve": "All set — you can approve",
+    "stage_hint": "Microcycle = your template week. It defines order, volume and RPE for each day. Approve once all days look good and the AI will propose progressions for the following weeks."
   }
 }
