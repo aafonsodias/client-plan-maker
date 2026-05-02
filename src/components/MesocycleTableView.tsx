@@ -559,12 +559,24 @@ function CellTd({
         ) : (
           <span className="text-muted-foreground/40">—</span>
         )}
-        <span className={rpe ? tone(rpeChanged) : "text-muted-foreground/40"}>
-          @{rpe || "—"}
-          {rpe && !isFirst && rpeTrend && (
-            <span className="ml-0.5 text-amber-400/80">{rpeTrend}</span>
-          )}
-        </span>
+        {rpe ? (
+          (() => {
+            const tn = rpeTone(parseRpeShared(rpe));
+            return (
+              <span
+                className={`inline-flex items-center rounded-full px-1.5 py-px text-[10px] font-semibold leading-none ${tn.pill} ${rpeChanged ? "ring-2" : ""}`}
+                title={`RPE ${rpe} · ${tn.label}`}
+              >
+                {rpe}
+                {!isFirst && rpeTrend && (
+                  <span className="ml-0.5 opacity-70">{rpeTrend}</span>
+                )}
+              </span>
+            );
+          })()
+        ) : (
+          <span className="text-muted-foreground/40">@—</span>
+        )}
         {rest && <span className={tone(restChanged)}>{rest}</span>}
         {loadChip && (
           <span className="rounded bg-emerald-500/10 px-1 py-px text-[10px] font-medium text-emerald-300">
