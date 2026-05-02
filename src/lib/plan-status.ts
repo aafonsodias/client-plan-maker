@@ -96,3 +96,24 @@ export function isPlanFullyLogged(
   if (!Number.isFinite(target) || target <= 0) return false;
   return sessionsCount >= target;
 }
+
+/**
+ * Client-safe leak detector. Mirror of the server-side helper in
+ * `phased/summary.server.ts` — duplicated intentionally so the route file
+ * (client bundle) can decide whether to surface the "Re-gerar resumo"
+ * button without importing a *.server.ts module.
+ */
+const SUMMARY_LEAK_MARKERS = [
+  "sem análises por secção",
+  "notes_for_next_stage",
+  "stage hint",
+  "internal note",
+  "tbd",
+  "lorem ipsum",
+];
+
+export function summaryLooksLeaked(summary: string | null | undefined): boolean {
+  const s = (summary ?? "").toString().trim().toLowerCase();
+  if (!s) return true;
+  return SUMMARY_LEAK_MARKERS.some((m) => s.includes(m));
+}
