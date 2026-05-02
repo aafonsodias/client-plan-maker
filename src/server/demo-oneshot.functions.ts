@@ -15,7 +15,7 @@ import { PHASED_SECTIONS } from "@/server/phased/section-map";
  * (Cloudflare Workers cap response wall-time at ~30s but keep the
  * invocation alive for pending promises). The UI polls `demo_runs`.
  */
-async function runInstantPipeline(
+export async function runInstantPipelineForUser(
   _userId: string,
   runId: string,
   data: { archetype?: string; durationWeeks?: number },
