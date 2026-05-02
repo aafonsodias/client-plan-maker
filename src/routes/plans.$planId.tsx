@@ -76,6 +76,8 @@ function PlanEditor() {
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
+  const startNextBlockFn = useServerFn(archivePlanAndStartNextBlock);
+  const [startingNextBlock, setStartingNextBlock] = useState(false);
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
   // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
