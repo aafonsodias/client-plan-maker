@@ -486,13 +486,36 @@ function PlanEditor() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
           <div className="flex-1">
             <p className="font-semibold text-foreground">
-              Bloco {(plan as any).block_number ?? 1} pronto para fechar.
+              Bloco {(plan as any).block_number ?? 1}
+              {(plan as any).completion_state === "finished_logging"
+                ? " · concluído pelo treinador"
+                : sessions.length > 0
+                ? ` · ${sessions.length} sessão(ões) registada(s)`
+                : " · pronto para fechar"}.
             </p>
             <p className="mt-0.5 text-muted-foreground">
               Arquive este bloco e desenhe o Bloco {((plan as any).block_number ?? 1) + 1}.
               Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.
             </p>
           </div>
+          {(plan as any).completion_state !== "finished_logging" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const r: any = await markFinishedFn({ data: { planId, archive: false } });
+                if (r?.ok) {
+                  toast.success("Plano marcado como concluído.");
+                  setPlan({ ...plan, completion_state: "finished_logging" });
+                } else {
+                  toast.error(r?.error ?? "Falhou marcar como concluído.");
+                }
+              }}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Marcar como concluído
+            </Button>
+          )}
           <BlockTransitionDialog
             priorPlanId={planId}
             currentBlockNumber={(plan as any).block_number ?? 1}
@@ -500,7 +523,7 @@ function PlanEditor() {
             trigger={
               <Button size="sm">
                 <PlayCircle className="mr-2 h-4 w-4" />
-                Concluir bloco
+                Iniciar Bloco {((plan as any).block_number ?? 1) + 1}
               </Button>
             }
           />
