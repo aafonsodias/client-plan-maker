@@ -16,7 +16,6 @@ import { judgeDemoRun, type DemoCritique } from "@/server/demo-judge.functions";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
 import type { PlanData, Week, Day } from "@/lib/pdf";
 import { toast } from "sonner";
-import { toneChip } from "@/lib/status-tone";
 
 /**
  * DemoMaquetteDialog — shown when the demo orchestrator finishes the
@@ -301,7 +300,7 @@ function CritiqueView({
       )}
 
       <p className="text-xs text-muted-foreground">
-        Gerado a {new Date(critique.generated_at).toLocaleString()} · {toneChip("neutral", "AI critique")}
+        Gerado a {new Date(critique.generated_at).toLocaleString()} · AI critique
       </p>
     </div>
   );
