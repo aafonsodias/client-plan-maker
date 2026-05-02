@@ -235,16 +235,6 @@ export function DemoLabPanel() {
           {busy === "tick" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
           Avançar simulação (+1 sessão / cliente demo)
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => void navigate({ to: "/forge" })}
-          disabled={busy !== null}
-          className="border-amber-500/40"
-        >
-          <Trophy className="mr-2 h-4 w-4" />
-          Forge (leaderboard)
-        </Button>
       </div>
       {(busy === "instant" || Object.values(gates).some((v) => v === "failed")) ? (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-background/40 p-3">
