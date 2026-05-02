@@ -91,6 +91,18 @@ const RPE_PROFILES: Record<string, RpeProfile> = {
   beginner_general: { base: 5.5, delta: 0.25, cap: 7.5, loadBase: 16, loadDelta: 2.0, tone: "Aprender o padrão antes de subir carga." },
   hypertrophy:    { base: 6.5, delta: 0.30, cap: 9.0, loadBase: 22, loadDelta: 3.0, tone: "Sensação boa, bombei a série final." },
   powerlifter:    { base: 7.0, delta: 0.40, cap: 9.5, loadBase: 60, loadDelta: 5.0, tone: "Top set sentido, RPE pesado mas técnica firme." },
+  // New archetypes — calibrated to the persona's actual training context so
+  // demo bots don't all behave like cautious beginners.
+  returner_post_acl:        { base: 6.5, delta: 0.30, cap: 8.5, loadBase: 30, loadDelta: 3.5, tone: "Foco em LSI; carga progressiva mas controlada no membro afectado." },
+  intermediate_male_recomp: { base: 6.5, delta: 0.30, cap: 8.5, loadBase: 32, loadDelta: 3.0, tone: "Subida de carga semanal, RPE no limite mas técnica firme." },
+  beginner_female_disc_history: { base: 5.5, delta: 0.20, cap: 7.5, loadBase: 14, loadDelta: 1.5, tone: "Cauteloso na lombar, prioriza padrão." },
+  senior_female_bone_density: { base: 5.0, delta: 0.20, cap: 7.0, loadBase: 10, loadDelta: 1.0, tone: "RPE conservador, foco em densidade óssea." },
+  post_partum_6mo:          { base: 5.0, delta: 0.20, cap: 7.5, loadBase: 12, loadDelta: 1.5, tone: "Sessão calma, foco em core profundo e pavimento pélvico." },
+  runner_knee_pain:         { base: 6.0, delta: 0.25, cap: 8.0, loadBase: 22, loadDelta: 2.5, tone: "Força de suporte; RPE moderado para não interferir com corridas." },
+  hypertensive_untrained:   { base: 5.0, delta: 0.15, cap: 7.0, loadBase: 14, loadDelta: 1.5, tone: "RPE controlado, evitar Valsalva." },
+  advanced_powerlifter_cut: { base: 7.0, delta: 0.35, cap: 9.0, loadBase: 80, loadDelta: 5.0, tone: "Manter força em défice calórico — RPE alto sustentado." },
+  hypermobile_yoga_teacher: { base: 5.5, delta: 0.25, cap: 8.0, loadBase: 14, loadDelta: 2.0, tone: "Foco em estabilidade activa, RPE moderado." },
+  shift_worker_poor_sleep:  { base: 5.5, delta: 0.20, cap: 8.0, loadBase: 18, loadDelta: 2.0, tone: "Auto-regular RPE conforme sono; carga moderada." },
   default:        { base: 6.0, delta: 0.30, cap: 9.0, loadBase: 20, loadDelta: 2.5, tone: "Boa execução. Subida ligeira de carga." },
 };
 

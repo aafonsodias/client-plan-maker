@@ -203,21 +203,10 @@ export function MesocycleTableView({
     <div className="space-y-4 print:space-y-3">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-          {weekTotals.map((t) => (
-            <span
-              key={t.wn}
-              className={`inline-flex items-center gap-1.5 rounded-full border border-border bg-card/60 px-2 py-1 ${
-                isDeloadWeek(t.wn) ? "text-amber-300" : ""
-              }`}
-            >
-              <span className="font-bold">W{t.wn}</span>
-              <span>~{t.reps} reps</span>
-              {t.rpe != null && <span>· RPE {t.rpe.toFixed(1)}</span>}
-              {isDeloadWeek(t.wn) && <span>· deload</span>}
-            </span>
-          ))}
-        </div>
+        {/* Week summary chips removed — week columns already show RPE and the
+            redundant pills added noise. Volume totals will return as
+            "planned vs logged" comparisons in the Results panel. */}
+        <div />
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -615,14 +604,23 @@ function CellEditor({
 
   const inputCls =
     "w-full rounded border border-border bg-background px-1 py-0.5 text-[11px] focus:border-accent focus:outline-none";
+  const labelCls = "text-[8px] font-bold uppercase tracking-widest text-muted-foreground";
 
   return (
     <td className="px-1.5 py-1 align-top">
-      <div className="grid grid-cols-2 gap-1" onKeyDown={onKey}>
-        <input className={inputCls} value={sets} onChange={(e) => setSets(e.target.value)} placeholder="sets" autoFocus />
-        <input className={inputCls} value={reps} onChange={(e) => setReps(e.target.value)} placeholder="reps" />
-        <input className={inputCls} value={rpe} onChange={(e) => setRpe(e.target.value)} placeholder="rpe" />
-        <input className={inputCls} value={rest} onChange={(e) => setRest(e.target.value)} placeholder="rest" />
+      <div className="grid grid-cols-2 gap-x-1 gap-y-1.5" onKeyDown={onKey}>
+        <label className="flex flex-col gap-0.5"><span className={labelCls}>Sets</span>
+          <input className={inputCls} value={sets} onChange={(e) => setSets(e.target.value)} autoFocus />
+        </label>
+        <label className="flex flex-col gap-0.5"><span className={labelCls}>Reps</span>
+          <input className={inputCls} value={reps} onChange={(e) => setReps(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-0.5"><span className={labelCls}>RPE</span>
+          <input className={inputCls} value={rpe} onChange={(e) => setRpe(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-0.5"><span className={labelCls}>Rest</span>
+          <input className={inputCls} value={rest} onChange={(e) => setRest(e.target.value)} />
+        </label>
       </div>
       <div className="mt-1 flex items-center justify-end gap-1">
         <button onClick={onCancel} className="rounded p-0.5 text-muted-foreground hover:text-foreground" aria-label="Cancel">

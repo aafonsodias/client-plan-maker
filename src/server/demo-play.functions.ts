@@ -126,7 +126,30 @@ export const runDemoPlay = createServerFn({ method: "POST" })
     completed.push("blueprint_approve");
 
     // 4. Microcycle (Week 1 day-by-day generation)
-    const mcGen: any = await generateMicrocycleDays({ data: { planId } });
+    // Derive day count from the approved blueprint so we ask Stage 3 for the
+    // exact number of sessions the persona was scoped for (was crashing with
+    // "dayIndices Required" when the input was omitted).
+    const { data: bpRow2 } = await supabaseAdmin
+      .from("workout_plans")
+      .select("blueprint, brief")
+      .eq("id", planId)
+      .maybeSingle();
+    const bpForDays: any = (bpRow2 as any)?.blueprint ?? {};
+    const briefForDays: any = (bpRow2 as any)?.brief ?? {};
+    const week1Map = bpForDays?.week_to_session_map?.["1"]
+      ?? Object.values(bpForDays?.week_to_session_map ?? {})[0]
+      ?? [];
+    const dayCount = Math.max(
+      1,
+      Math.min(
+        7,
+        Array.isArray(week1Map) && week1Map.length > 0
+          ? week1Map.length
+          : Number(briefForDays?.sessions_per_week?.recommended ?? bpForDays?.sessions_per_week ?? 3),
+      ),
+    );
+    const dayIndices = Array.from({ length: dayCount }, (_, i) => i + 1);
+    const mcGen: any = await generateMicrocycleDays({ data: { planId, dayIndices } });
     if (!mcGen?.ok) {
       return fail("microcycle_generate", mcGen?.error || "Microcycle generation failed");
     }
