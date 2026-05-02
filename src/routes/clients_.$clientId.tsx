@@ -536,6 +536,37 @@ function ClientDetail() {
   const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
+
+  /**
+   * Latest plan that was already finalized for the *current* assessment.
+   * Heuristic: matching `assessment_id` OR (no link) created_at ≥ assessment.performed_on.
+   * Used to hide the "Descartar rascunho" / "Revisão de segurança" buttons —
+   * once there's a ready plan, those CTAs are noise. Also used to default the
+   * assessment block to collapsed.
+   */
+  const readyPlanForAssessment = useMemo(() => {
+    const aId = (assessment as any)?.id as string | undefined;
+    const performedOn = (assessment as any)?.performed_on as string | undefined;
+    return plans.find((p) => {
+      if (p.generation_status !== "complete") return false;
+      if (aId && p.assessment_id === aId) return true;
+      if (!performedOn) return false;
+      try {
+        return new Date(p.created_at).getTime() >= new Date(performedOn).getTime();
+      } catch { return false; }
+    }) ?? null;
+  }, [plans, assessment]);
+
+  /** Most recent plan eligible for "evolve into next block" — must be marked
+   *  finished_logging or already archived, with at least one logged session
+   *  (we trust the marker; the server fn sanity-checks adherence). */
+  const evolvableSourcePlan = useMemo(() => {
+    return plans.find(
+      (p) =>
+        p.generation_status === "complete" &&
+        (p.completion_state === "finished_logging" || p.status === "archived"),
+    ) ?? null;
+  }, [plans]);
   // Track signature of last-analysed payload per section to avoid duplicate fires.
   const lastAnalysedSigRef = useRef<Record<string, string>>({});
 
