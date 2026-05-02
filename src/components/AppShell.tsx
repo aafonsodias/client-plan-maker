@@ -182,6 +182,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
           {/* Desktop right side (≥ md) */}
           <div className="hidden items-center gap-1 md:flex">
+            <ShareAppButton />
             {secondaryNav.map((n) => (
               <Button
                 key={n.to}
