@@ -1,82 +1,83 @@
-# Plan — Status colour system + Assessment date + Assessment PDF
+# Plan: SMART goal templates, training-block injury awareness, safety-gate uses phased flow
 
-Three focused fixes. No scope creep into the other waves still pending.
-
----
-
-## 1. Unify status colours across the app
-
-**Problem.** "Ready / Pronto" is amber (yellow) — same colour we use everywhere else for *warnings* and *attention needed* (intake alerts, validation flags, brief warnings). That makes "ready" look like a problem instead of a success.
-
-**New colour semantics (single source of truth):**
-
-| Meaning | Colour | Used for |
-|---|---|---|
-| Success / done / ready | **Emerald (green)** | Plan ready, plan finalised, intake submitted, checks passed |
-| In progress / neutral stage | **Slate (muted)** | Brief / Blueprint / Microcycle / Progressions stage chips, Draft |
-| Attention / warning | **Amber (yellow)** | Red-flag accommodations, validation issues, trial expiring, unresolved alerts |
-| Critical / error | **Red** | Hard errors, destructive actions |
-
-**Changes:**
-
-- `src/lib/plan-status.ts` — flip `ready` from amber → emerald (lighter shade than `finalized` so the two are still distinguishable). `finalized` stays emerald but slightly bolder/with a check-style border. `draft` and stage chips stay neutral.
-- Audit and align: `IntakeLinkPanel`, `ClientPhasePill`, `BriefSheetButton` badge, `BriefContextRail` warn tone, `AppShell` trial banner, `billing.tsx`, `DropoffAlerts`, `ValidationReport`. Anything that means "good / done" → emerald. Anything that means "watch out" → amber. Nothing in between.
-- Add a tiny helper `src/lib/status-tone.ts` exporting `toneClasses({ tone: "success" | "neutral" | "warn" | "danger" })` so future code uses the palette by intent, not by colour name.
+Three small, surgical fixes — all in scope, no scope creep.
 
 ---
 
-## 2. Assessment date
+## 1. SMART goal templates (drop-down picker)
 
-**Problem.** Today the only timestamp on an assessment is `created_at` (when the row was inserted). The user wants to record **when the assessment was actually performed** (which can differ — e.g. trainer logs it days later).
+**Problem.** The "Objetivo SMART" section is three blank fields and a placeholder. Trainers stare at it. We need a curated picker that fills the SMART fields with one click, then the trainer tweaks numbers.
 
-**Changes:**
+**Approach.**
+- Add a new file `src/lib/smart-goal-templates.ts` exporting ~10 curated templates, each one a small object:
+  ```ts
+  { id, category, label, specific, measurable_template, default_weeks }
+  ```
+  Categories: Strength, Hypertrophy, Body composition, Endurance, Mobility, Skill, Health.
+  Examples (i18n-keyed, EN + PT):
+  - Strength · Squat 1.5×BW for 5 reps · "120 kg @ BW80kg" · 16 wk
+  - Hypertrophy · Add 3 cm to arm circumference · "from 36 → 39 cm" · 12 wk
+  - Body comp · Drop 5 kg fat mass keeping LBM · "from 22% → 17% BF" · 16 wk
+  - Endurance · Run 5 km under 25:00 · "5 km · 24:59" · 10 wk
+  - Endurance · Cooper 12 min ≥ 2400 m · "2400 m" · 8 wk
+  - Mobility · Touch toes pain-free · "fingertips to floor" · 6 wk
+  - Mobility · Full overhead reach (arms vertical against wall) · "wall test pass" · 8 wk
+  - Skill · First strict pull-up · "1 × strict" · 12 wk
+  - Skill · 60-sec freestanding handstand · "60 s hold" · 16 wk
+  - Health · Resting HR < 60 bpm · "current 72 → 58 bpm" · 12 wk
+  - Health · Walk 8 000 steps daily · "8 000 / day, 5 days/wk" · 8 wk
 
-- DB migration: add `assessments.performed_on date` (nullable; backfill with `created_at::date` for existing rows).
-- `clients_.$clientId.tsx` assessment header: add a date picker (shadcn `Calendar` in a `Popover`, with `pointer-events-auto`) labelled "Assessment date / Data da avaliação", defaulting to today on new assessments. Save inline (debounced) like the other assessment fields.
-- Show the date prominently on the assessment summary card, on the brief context rail, and on the PDF.
-- i18n keys in `assessment.json` (EN/PT).
+- In `src/routes/clients_.$clientId.tsx` goal SectionBlock, add a small `<Select>` above the three Fields: "Choose a template…". On select, fill `smart_specific`, `smart_measurable`, and set `smart_deadline` to today + (weeks × 7). Trainer edits afterwards.
+- Show the picker as a subtle `text-xs` chip row "Sugestões: Força · Hipertrofia · …" filterable by category to keep the UI clean. (Use a single Select with grouped options to avoid bloating the layout — we're already on a 672px viewport.)
+- i18n keys under `assessment.json → goal_block.templates.{strength_squat_bw, hypertrophy_arms, …}`. EN owns all; PT translated.
+
+**Acceptance.** Open assessment → SMART section shows a "Sugestões" select. Pick "Força · Squat 1.5×PC" → all three SMART fields populate; trainer can override.
 
 ---
 
-## 3. Downloadable assessment report (PDF)
+## 2. Training-block analysis missed "injuries"
 
-**Problem.** Assessments live only in the app — trainers can't share or archive them.
+**Problem.** Trainer wrote injuries in the Training block; the per-section analysis didn't surface anything because `analyseSection("training", …)` doesn't include `injuries` or `medical_conditions` in the payload sent to the model.
 
-**Scope.** A clean, brand-aware **2-page max** PDF. Not a dump of every field.
+**Approach.**
+- `src/server/phased/section-map.ts`, the `case "training":` branch — extend the returned object with `injuries: a.injuries` and `medical_conditions: a.medical_conditions`.
+- That alone makes the section analyser see them and call them out in the rolling synthesis, the brief generator, and the safety gate.
+- (Sanity-check: `parq` and `risk` already drive their own gates — this only widens what the *training* synthesis sees, which is correct: equipment + injuries + experience belong together.)
 
-**Layout:**
+**Acceptance.** Edit a client, write "knee pain on squats" in Lesões → save → the training section's analysis chip now references the injury.
 
-```text
-Page 1 — Snapshot
-  Header: Logo · Client name · Assessment date · Trainer
-  Block 1 (3 cols): Demographics | Goals (SMART) | Readiness/PAR-Q
-  Block 2 (2 cols): Lifestyle (sleep/stress/nutrition/hydration) | Cardio & BP
-  Block 3: Movement screen — 4 small score chips (squat, hinge, overhead, SL balance) with notes truncated
-  Block 4: Capacity snapshot — squat / hinge / push / pull / carry / lunge as compact rows
+---
 
-Page 2 (only if needed)
-  Red flags & accommodations
-  Section AI analyses (collapsed to bullet summaries, not full paragraphs)
-  Footer: generated date · trainer business name · "Confidential"
+## 3. Safety-gate falls back to legacy generator (the bug in the screenshot)
+
+**Problem.** When PAR-Q+ is flagged or ACSM risk is High, the generate button becomes "Revisão de segurança". Confirming the dialog calls **`generate()`** — the legacy single-shot generator — bypassing the new 5-stage phased flow (brief → blueprint → microcycle → progressions). The screenshot shows the old "A gerar com Claude Haiku 4.5 (por dia)" progress panel because of this.
+
+The branch is in `src/routes/clients_.$clientId.tsx` around line 1755:
+```tsx
+onClick={() => { setSafetyDialogOpen(false); void generate(); }}
 ```
 
-**Implementation:**
+**Approach.**
+- Replace that handler so that, when `phasedEnabled` is true (which it is — that's the new path), the safety confirmation triggers the **same** `startPhasedPlanFn` flow used in the unblocked branch (lines 1801–1873). Extract the existing inline `onClick` into a local `runPhasedStart()` function declared once above the JSX, then both the unblocked Button and the safety AlertDialogAction call it.
+- When `phasedEnabled` is false (legacy mode only), keep calling `generate()`.
+- The phased flow already respects safety internally: PAR-Q flags + ACSM risk feed into the brief synthesis prompt and red-flag accommodations, so the override is honoured without losing the new pipeline.
+- No schema or DB changes.
 
-- Add `renderAssessmentPdf(assessment, client, profile, t)` to `src/lib/pdf.ts` (reuse existing jsPDF setup, fonts, brand-colour helpers).
-- "Download PDF" button on the assessment header in `clients_.$clientId.tsx`, next to the existing intake controls.
-- Filename: `assessment-{client-slug}-{YYYY-MM-DD}.pdf`.
-- Locale-aware (EN/PT) labels.
-- QA: render once, screenshot to JPEG, eyeball for overflow / clipped text / missing glyphs before shipping.
-
----
-
-## Out of scope (still queued from earlier waves)
-Wave 1 PlanCompactTable, Wave 2 plan-PDF rewrite, Wave 4 blueprint volume caps & exercise editing, Wave 5 daily steps + Concorrente split. Reply if you want any of those folded in; otherwise they stay queued.
+**Acceptance.** Trigger safety gate → confirm override → see the new "Synthesizing brief…" toast → land on the inline brief preview, **not** the old day-by-day progress panel.
 
 ---
 
-## Technical notes
+## Files touched
 
-- Migration is small (one column + backfill), no RLS changes needed (existing `trainers manage own assessments` policy covers it). Types regenerate automatically.
-- New `status-tone.ts` is additive — existing code keeps working until callers migrate. We migrate the high-traffic spots in this pass; the long tail can follow later without breakage.
-- PDF reuses `jspdf` already in the bundle — no new deps.
+- `src/lib/smart-goal-templates.ts` (new, ~80 lines)
+- `src/routes/clients_.$clientId.tsx` (goal SectionBlock + extract `runPhasedStart` + safety AlertDialogAction)
+- `src/server/phased/section-map.ts` (add 2 fields to training case)
+- `src/i18n/locales/en/assessment.json` + `src/i18n/locales/pt/assessment.json` (template labels + "Sugestões" UI strings)
+
+No DB migration. No edge-function deploy. Pure client + one server-fn payload widening.
+
+---
+
+## Out of scope (call out so we don't drift)
+
+- Compact plan table (Wave 1), PDF overhaul (Wave 2), beginner volume caps + exercise editing (Wave 4), `Concorrente` split type, daily steps DB column, richer brief summary prompt — all still queued from earlier waves. Pick one next turn.
