@@ -262,8 +262,17 @@ function PlanEditor() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {client && (
-            <Link to="/clients/$clientId" params={{ clientId: client.id }} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              {client.full_name} →
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId: client.id }}
+              className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ClientAvatar
+                name={client.full_name}
+                photoUrl={client.photo_url ?? null}
+                size="sm"
+              />
+              <span>{client.full_name} →</span>
             </Link>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -272,6 +281,18 @@ function PlanEditor() {
               value={plan.title}
               onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             />
+            {(() => {
+              const block = (plan as any).block_number ?? 1;
+              if (block <= 1) return null;
+              return (
+                <span
+                  title={(plan as any).block_transition_summary ?? undefined}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
+                >
+                  Bloco {block} · evoluiu de Bloco {block - 1}
+                </span>
+              );
+            })()}
             {(() => {
               const s = planStatusInfo(plan, tCommon as any);
               if (s.key === "draft") return null;
