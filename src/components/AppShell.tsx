@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -108,8 +109,21 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-2 px-4 sm:px-6">
-          <Link to="/" className="flex min-w-0 items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <Logo className="h-8 w-8" />
+          <Link
+            to="/"
+            className="group flex min-w-0 items-center gap-2.5 font-light tracking-[0.2em] uppercase text-sm"
+            aria-label={t("brand.name")}
+          >
+            {/* Captain-seat logo: amber under-glow ring, slightly larger, sticky in header. */}
+            <span
+              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(232,165,71,0.18), 0 6px 22px -6px rgba(232,165,71,0.45)",
+              }}
+            >
+              <Logo className="h-7 w-7" />
+            </span>
             <span className="truncate">{t("brand.name")}</span>
           </Link>
 
@@ -196,6 +210,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="min-w-0">
               <LogOut className="mr-2 h-4 w-4 shrink-0" />
               <span className="hidden truncate lg:inline">{t("actions.sign_out")}</span>
