@@ -991,6 +991,13 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [rewards, setRewards] = useState<Record<string, number>>({});
+  const [layout, setLayout] = useState<"cards" | "table">(() => {
+    if (typeof window === "undefined") return "cards";
+    return (localStorage.getItem("forge.logLayout") as "cards" | "table") ?? "cards";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("forge.logLayout", layout);
+  }, [layout]);
 
   const week = plan.weeks.find((w) => w.week_number === weekNum) ?? plan.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
