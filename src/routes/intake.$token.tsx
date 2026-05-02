@@ -795,6 +795,40 @@ function buildSlides(
       subtitle: t("intro"),
       body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
     },
+    // 1b. Identity — quem és tu
+    {
+      title: t("identity_title", { defaultValue: "Quem és tu?" }),
+      subtitle: t("identity_subtitle", { defaultValue: "O teu treinador precisa do teu nome e contacto. O resto é a avaliação." }),
+      body: (
+        <div className="space-y-3">
+          <Input
+            autoFocus
+            placeholder={t("identity_full_name", { defaultValue: "Nome completo" })}
+            value={form.client_full_name}
+            onChange={(e) => set("client_full_name", e.target.value)}
+          />
+          <Input
+            type="email"
+            placeholder={t("identity_email", { defaultValue: "Email" })}
+            value={form.client_email}
+            onChange={(e) => set("client_email", e.target.value)}
+          />
+          <Input
+            type="tel"
+            placeholder={t("identity_phone", { defaultValue: "Telemóvel (opcional)" })}
+            value={form.client_phone}
+            onChange={(e) => set("client_phone", e.target.value)}
+          />
+          <Input
+            type="date"
+            placeholder={t("identity_dob", { defaultValue: "Data de nascimento (opcional)" })}
+            value={form.client_dob}
+            onChange={(e) => set("client_dob", e.target.value)}
+          />
+        </div>
+      ),
+      isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
+    },
     // 2. SMART goal — what
     {
       title: t("sections.goal_what"),
