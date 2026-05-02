@@ -277,5 +277,9 @@
     "generating": "A gerar microciclo",
     "remaining": "~{{seconds}}s restantes",
     "day_quality_gate": "A gerar o Dia 1 — esta é a porta de qualidade."
+  },
+  "microcycle": {
+    "ready_to_approve": "Tudo pronto — podes aprovar",
+    "stage_hint": "Microciclo = a tua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes."
   }
 }
