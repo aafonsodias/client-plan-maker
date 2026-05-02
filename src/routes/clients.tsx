@@ -90,7 +90,7 @@ function Clients() {
       if (!res?.clientId) throw new Error("Resposta inválida do servidor");
       toast.success(t("clients.demo_added_toast", { defaultValue: "Cliente de demonstração criado" }));
       void markOnboardingStep(user.id, "add_client");
-      void navigate({ to: "/clients/$clientId", params: { clientId: res.clientId } });
+      void navigate({ to: "/clients/$clientId", params: { clientId: res.clientId }, search: { demo: "play" } });
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível criar o cliente de demo");
     } finally {

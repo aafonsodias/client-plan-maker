@@ -1,83 +1,78 @@
 ## Goal
 
-Turn the demo client into a **theatrical end-to-end stress test** that:
-1. Generates a *truly randomised* persona (no longer just 3 templates) with full assessment coverage — including all the form-criteria / capacity JSON fields the current demo skips.
-2. Plays the journey out visually: opens each gate, fills it, collapses, advances, all the way to the planner.
-3. After the planner finishes, runs an **AI judge** that grades the plan against the persona's red flags and writes a structured "Findings" report we can iterate on.
+Turn the demo client into a self-running showcase. When the trainer scrolls down on a `?demo=play` client, each section auto-collapses, turns golden ("approved"), the next gate auto-runs, and we keep going through Brief → Blueprint → Microcycle → Progressions → Finalize. The journey ends with a popup showing the plan as a `MesocycleTableView` maquette plus developer/client-friendly reasoning notes.
 
-This becomes our regression harness — every turn we run it, fix what it complains about, run it again.
+## Activation
 
----
+- Entry: `/clients/{id}?demo=play` (the "+ Cliente demo" button now navigates with this query) OR a new "▶ Reproduzir demo" button on demo clients (detected via `extended.demo_meta.archetype`).
+- Strictly opt-in. Without `?demo=play` everything behaves as today.
 
-## Phase 1 — Richer demo personas (server)
+## Stage flow (gate-by-gate)
 
-`src/server/demo-client.functions.ts`:
-- Expand from 3 templates to ~10 archetypes covering the realistic edge cases:
-  - Post-partum (6 months), runner with knee pain, desk worker pre-diabetic, masters athlete (60+) on statins, hypertensive untrained, returner after ACL, advanced powerlifter cutting, hypermobile yoga teacher, shift-worker (poor sleep), deconditioned post-COVID.
-- Each archetype declares **expected red-flag tags** (e.g. `["no_axial_loading", "bp_monitoring", "unilateral_emphasis"]`). These become the rubric for the judge later.
-- Fill the JSON fields the current demo leaves empty:
-  - `squat_form_criteria`, `hinge_form_criteria`, `push_form_criteria`, `pull_form_criteria`, `carry_form_criteria`, `lunge_form_criteria` (booleans per criterion)
-  - `*_capacity` (reps / load / time per pattern)
-  - `screen_not_assessed`
-  - `extended.parq_answers`, `extended.risk_factors`, `extended.mobility_scores`, `extended.cardio_test`
-  - `standing_posture_notes`, `known_imbalances`, `body_fat_pct/method`
-- Within each archetype, randomise *within plausible ranges* per field — so two runs of the same archetype still differ.
-- New flag on the function: `createDemoClient({ archetype?: string, seed?: number })` so the harness can request a specific scenario or reproduce a run.
+For each gate the orchestrator does:
+1. Wait until the gate's anchor scrolls into the viewport (IntersectionObserver, threshold ~0.4).
+2. Pulse a soft amber ring on the active card (visual "this is being reviewed").
+3. Run the gate's action.
+4. On success → collapse the section, mark it golden ("approved" tone via `toneChip("success")`).
+5. Auto-scroll just enough to bring the next gate into view, then resume.
 
-## Phase 2 — Theatrical "auto-fill" mode (client)
+Gates, in order:
+1. **Assessment review** — auto-mark `intake_status = "reviewed"` if not already, scroll past the intake panel.
+2. **Synthesis dashboard** — no action, just dwell ~600ms so the trainer reads it, then collapse.
+3. **Generate Brief** — call `runPhasedStart()` (existing). Wait for `inlineBrief` to populate.
+4. **Approve Brief** — call the existing `approveBriefFn` path (the one wired in `StageCard.onApprove`).
+5. **Blueprint** — `runStage("blueprint", false)` then auto-approve once draft exists.
+6. **Microcycle** — same pattern via `generateMicrocycleDaysFn` then approve.
+7. **Progressions** — `proposeProgressionsFn` then approve.
+8. **Finalize** — call `finalizePlanFn` so the plan flips to "ready".
 
-New mode on the client detail route triggered by query param `?demo=play`:
-- When the freshly-created demo client lands on `/clients/:id`, the page detects the flag and runs an orchestrator that, **section by section** in the order of `SECTIONS`:
-  1. Scrolls the section into view + opens it (`setOpenSections`).
-  2. Waits ~600ms (perceptible, not annoying).
-  3. Streams the persona's values into the local form state field-by-field (50ms stagger) so the user sees inputs filling.
-  4. Persists the section (existing autosave / save-section path).
-  5. Collapses the section, marks it green, moves on.
-- Pacing is configurable (`?speed=fast|normal|slow`) — default normal (~1.5s per section).
-- The "+ Cliente demo" button gets a sibling **"+ Demo guiado"** that creates the client with the JSON fields *empty* and triggers `?demo=play` so we actually see the fill-in animation. The plain "+ Cliente demo" stays as today (instant).
+Each step has a 60s timeout and surfaces a toast on failure (so we learn where the flow broke — that *is* the QA signal).
 
-## Phase 3 — Auto-advance to the planner
+## Theatrical details
 
-When all sections are complete, the orchestrator:
-- Clicks "Generate plan" (the existing CTA on the client page).
-- Polls plan generation status (`workout_plans.generation_status`) and surfaces phase progress in a small overlay ("Brief → Blueprint → Microcycle → Progressions → Bulk-fill").
-- On completion, navigates to `/plans/:planId` and triggers Phase 4.
+- A small floating HUD (bottom-right): "Demo · Stage 3/7 · Microcycle" + Pause / Skip buttons. Pause stops the orchestrator; Skip jumps to the next gate.
+- Sections being processed get `ring-2 ring-amber-400/40 animate-pulse`; once done they switch to `tone="success"` chip + collapsed state.
+- A sidebar "trail" shows ✓ for completed gates and ⟳ for the active one — uses the existing `toneDot` helper from `src/lib/status-tone.ts`.
+- `prefers-reduced-motion`: skip the pulse animation, keep instant collapses.
 
-## Phase 4 — AI Judge ("post-mortem")
+## Final maquette popup
 
-New server function `judgeDemoRun` in `src/server/demo-client.functions.ts`:
-- Inputs: `clientId`, `planId`, `expected_red_flags` (from the archetype, stashed in `clients.notes` or a new `extended` field on the assessment).
-- Builds a compact payload: persona summary + assessment red-flag fields + the generated plan (weeks, exercises, RPE/load progressions).
-- Calls Lovable AI (`google/gemini-3-flash-preview`) via tool-calling with this rubric (extracted as structured JSON):
-  - `safety_violations[]` — e.g. axial-loading prescribed despite `no_axial_loading` flag
-  - `progression_realism` — week-to-week deltas plausible? RPE ramp coherent?
-  - `agonist_antagonist_balance` — push/pull and quad/posterior chain ratios
-  - `volume_appropriateness` — given experience level + session minutes
-  - `equipment_adherence` — exercises only use `available_equipment`
-  - `goal_alignment` — does the plan move toward `smart_specific`?
-  - `overall_grade` (A–F) + `top_3_friction_points` (free-text the trainer should prioritise)
-- Persist the verdict to a new column `workout_plans.demo_critique jsonb` (migration) so we can review trends.
+When `finalizePlan` resolves, open a large `Dialog` with:
+- **Header**: persona archetype + expected red flags as chips (read from `assessment.extended.demo_meta`).
+- **Plan tab** (default): `<MesocycleTableView planId={...} />` — the existing main table view, embedded.
+- **Reasoning tab**: rendered from a new server function `judgeDemoRun(planId)` that uses Lovable AI Gateway (`google/gemini-3-flash-preview`, tool-calling for structured output) to produce:
+  - `safety_violations[]` (e.g. "Prescribed back squat despite no_axial_loading flag")
+  - `progression_realism` (A–F + 1-line note)
+  - `equipment_adherence` (A–F + note)
+  - `volume_balance` (agonist/antagonist comment, picking up on the user's earlier feedback)
+  - `top_friction_points[]` (max 3, dev-facing)
+  - `client_summary` (2 sentences a client could read)
+- **Notes tab**: raw archetype JSON + the brief/blueprint/microcycle/progressions JSONs, collapsible — useful when iterating on prompts.
+- Result is persisted to `workout_plans.demo_critique` (column already exists from prior migration) so reopening the dialog doesn't re-bill the AI call.
+- "Recriar avaliação" button → calls `judgeDemoRun({ force: true })`.
 
-## Phase 5 — Findings drawer
+## Files to add / change
 
-A small slide-over UI on `/plans/:planId` that appears only when `demo_critique` exists, showing:
-- Overall grade pill (toned A=success, F=danger via `status-tone.ts`)
-- Each violation grouped by severity
-- "Top 3 friction points" as the prioritised backlog for our next iteration
+New:
+- `src/components/DemoOrchestrator.tsx` — the controller hook + HUD. Exposes `useDemoOrchestrator({ enabled, gates })`.
+- `src/components/DemoMaquetteDialog.tsx` — the final popup with tabs.
+- `src/server/demo-judge.functions.ts` — `judgeDemoRun` server fn (Lovable AI Gateway, tool-calling schema, persists to `workout_plans.demo_critique`).
 
-This is the loop closure: the judge tells us what to fix, we fix it, run again.
+Edit:
+- `src/routes/clients_.$clientId.tsx` — add data attributes (`data-demo-gate="brief"` etc.) on each section/StageCard, mount `<DemoOrchestrator>` when `search.demo === "play"`, and open `<DemoMaquetteDialog>` once finalize resolves.
+- `src/routes/clients.tsx` — make the "+ Cliente demo" navigation append `?demo=play`.
+- `src/i18n/locales/{en,pt}/plan.json` — strings for HUD, dialog tabs, judge labels.
 
----
+No DB migration needed (`demo_critique` column already in place).
 
-## Technical notes
+## Out of scope (for this pass)
 
-- **Why no LLM for the persona itself**: deterministic templates + per-field jitter is faster, cheaper, and lets us assert "this archetype must produce flag X" — an LLM persona makes the rubric non-falsifiable.
-- **Pacing without `setTimeout` spaghetti**: orchestrator is a single async function using a `step(ms)` helper, driven by a Zustand-style local state machine (`idle → opening → typing → saving → next`). Easier to pause/resume than scattered timers.
-- **Persistence during fill**: the route already has section-level save handlers; the orchestrator just calls them — no new write paths.
-- **Judge cost**: ~1 call per run, gemini-flash, structured tool output. Negligible.
-- **No new tables**: critique stored on `workout_plans.demo_critique`, expected flags stored on `assessments.extended.demo_meta`.
+- Fabricating historical logbook data (Phase D from the earlier plan).
+- Running the orchestrator on non-demo clients.
+- Persisting orchestrator progress across reloads — refresh restarts from the current gate state.
 
-## Out of scope this round
+## Acceptance
 
-- Past-workout seeding (Phase D from the deferred list) — still queued.
-- Auto-fixing what the judge complains about. The judge only diagnoses; we drive the fixes.
+- Creating a demo client lands on `/clients/{id}?demo=play` and, on first scroll, the assessment collapses → brief generates → brief approves → blueprint → microcycle → progressions → finalize, all without manual clicks.
+- A failure at any stage stops the run, shows the gate name in the HUD, and surfaces the error toast (so we can iterate).
+- Final popup shows the mesocycle table and the AI judge's grade card, including at least one concrete note tied to the persona's `expected_red_flags`.
