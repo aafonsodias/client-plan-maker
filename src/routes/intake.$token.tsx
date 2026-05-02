@@ -99,6 +99,13 @@ function fromAssessment(a: any | null): FormState {
   const ext = a.extended ?? {};
   return {
     ...EMPTY,
+    intake_path: ext.intake_path ?? "",
+    sched_days: ext.sched_days ?? [],
+    sched_window: ext.sched_window ?? "",
+    lifestyle_gate: ext.lifestyle_gate ?? "",
+    ai_goal_label: ext.ai_goal_interpretation?.human_label ?? "",
+    ai_goal_confirmed: ext.ai_goal_confirmed ?? "",
+    skipped: ext.skipped ?? {},
     smart_specific: a.smart_specific ?? "",
     smart_measurable: a.smart_measurable ?? "",
     smart_deadline: a.smart_deadline ?? "",
