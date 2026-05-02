@@ -1,12 +1,12 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Para de escrever planos",
-      "title_line2": "à meia-noite.",
-      "subtitle": "Faz uma avaliação estruturada, deixa a IA preparar um programa personalizado em 90 segundos e exporta um PDF com a tua marca que os teus clientes vão mesmo abrir.",
+      "title_line1": "Workbench de programação",
+      "title_line2": "baseada em evidência.",
+      "subtitle": "Forge guarda o contexto clínico do teu aluno, calcula MEV/MAV por grupo muscular, e gera mesociclos editáveis. Imprimes a semana, anotas o que aconteceu no ginásio, e a próxima ajusta-se ao feedback real.",
       "cta_primary_signed_out": "Cria o teu primeiro plano",
       "cta_primary_signed_in": "Abrir dashboard",
-      "cta_secondary": "Vê como funciona",
+      "cta_secondary": "Como funciona",
       "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador.",
       "social_proof": "Construído por um PT, para PTs · Beta privado"
     },
@@ -41,23 +41,23 @@
     },
     "how_it_works": {
       "eyebrow": "Como funciona",
-      "title": "Da avaliação ao PDF em quatro passos.",
+      "title": "Da avaliação ao próximo mesociclo, em ciclo contínuo.",
       "steps": {
         "add_client": {
-          "label": "Adicionar cliente",
-          "desc": "Regista os dados em segundos."
+          "label": "Briefing clínico",
+          "desc": "Anamnese, lesões, vontades — todas as semanas à mão."
         },
         "assessment": {
-          "label": "Fazer a avaliação",
-          "desc": "PAR-Q+, risco, mobilidade, objetivos."
+          "label": "Programação por evidência",
+          "desc": "MEV/MAV/MRV por grupo muscular, progressões justificadas."
         },
         "generate": {
-          "label": "Gerar plano",
-          "desc": "A IA cria um programa periodizado."
+          "label": "Edita e imprime",
+          "desc": "Mesociclo editável. PDF com a tua marca para levar para o ginásio."
         },
         "export": {
-          "label": "Exportar PDF",
-          "desc": "Com a tua marca, num clique."
+          "label": "Feedback ↔ ajuste",
+          "desc": "Anotas à mão, a app lê, valida, e gera a próxima semana."
         }
       }
     },
@@ -82,11 +82,26 @@
       "title": "Como se constrói um plano Forge — sempre os mesmos cinco passos.",
       "subtitle": "O que vês dentro da app é exatamente o que descrevemos abaixo. Sem surpresas, sem caixa preta.",
       "stages": {
-        "intake": { "label": "Avaliação", "desc": "PAR-Q+, risco ACSM, mobilidade, objetivos, equipamento." },
-        "brief": { "label": "Brief", "desc": "A IA resume a avaliação num brief defensável que tu aprovas." },
-        "blueprint": { "label": "Blueprint", "desc": "Forma do mesociclo, divisão semanal, volume por padrão de movimento." },
-        "microcycle": { "label": "Microciclo", "desc": "Semana concreta — sessões, exercícios, séries, RPE, descansos." },
-        "progressions": { "label": "Progressões", "desc": "Deltas semana a semana — carga, reps, RPE, deload." }
+        "intake": {
+          "label": "Avaliação",
+          "desc": "PAR-Q+, risco ACSM, mobilidade, objetivos, equipamento."
+        },
+        "brief": {
+          "label": "Brief",
+          "desc": "A IA resume a avaliação num brief defensável que tu aprovas."
+        },
+        "blueprint": {
+          "label": "Blueprint",
+          "desc": "Forma do mesociclo, divisão semanal, volume por padrão de movimento."
+        },
+        "microcycle": {
+          "label": "Microciclo",
+          "desc": "Semana concreta — sessões, exercícios, séries, RPE, descansos."
+        },
+        "progressions": {
+          "label": "Progressões",
+          "desc": "Deltas semana a semana — carga, reps, RPE, deload."
+        }
       }
     },
     "logbook_preview": {
@@ -94,17 +109,26 @@
       "title": "O logbook é o que mantém o plano vivo.",
       "subtitle": "O PDF é o ponto de partida. Registar cada série transforma-o num ciclo de feedback — tu vês o que está a funcionar, o cliente vê o trabalho a acumular.",
       "log_caption": "Pré-visualização — regista uma sessão em segundos.",
-      "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os teus registos já alimentam o motor."
-      ,"history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio."
+      "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os teus registos já alimentam o motor.",
+      "history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio."
     },
     "roadmap": {
       "eyebrow": "A seguir",
       "title": "O que estamos a construir, abertamente.",
       "subtitle": "Ainda não, mas vem aí. Preferimos prometer menos aqui do que vender de mais.",
       "items": {
-        "trends": { "title": "Tendências e gráficos", "desc": "Deteta plateaus automaticamente e mostra o progresso por padrão de movimento a partir dos teus registos." },
-        "prompt": { "title": "Ajustes por prompt", "desc": "Descreve um ajuste em linguagem natural — \"deload na semana 3\", \"trocar squats por split squats\" — e o plano adapta-se." },
-        "advice": { "title": "Conselhos do Coach AI", "desc": "Sugestões semanais a partir dos teus registos — quando empurrar, quando abrandar, o que trocar." }
+        "trends": {
+          "title": "Tendências e gráficos",
+          "desc": "Deteta plateaus automaticamente e mostra o progresso por padrão de movimento a partir dos teus registos."
+        },
+        "prompt": {
+          "title": "Ajustes por prompt",
+          "desc": "Descreve um ajuste em linguagem natural — \"deload na semana 3\", \"trocar squats por split squats\" — e o plano adapta-se."
+        },
+        "advice": {
+          "title": "Conselhos do Coach AI",
+          "desc": "Sugestões semanais a partir dos teus registos — quando empurrar, quando abrandar, o que trocar."
+        }
       },
       "footnote": "Subscreve o Pro para entrar na primeira leva."
     },

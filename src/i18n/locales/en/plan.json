@@ -1,14 +1,14 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Stop writing plans",
-      "title_line2": "at midnight.",
-      "subtitle": "Run a structured intake, let AI draft a personalized program in 90 seconds, and export a branded PDF your clients will actually open.",
+      "title_line1": "An evidence-based",
+      "title_line2": "programming workbench.",
+      "subtitle": "Forge holds your client’s clinical context, computes MEV/MAV by muscle group, and generates editable mesocycles. Print the week, log what happened at the gym, and next week adjusts to real feedback.",
       "cta_primary_signed_out": "Draft your first plan",
       "cta_primary_signed_in": "Open dashboard",
-      "cta_secondary": "See how it works",
+      "cta_secondary": "How it works",
       "credibility_caption": "Built on PAR-Q+, ACSM risk stratification, and the tool I wish I'd had as a coach.",
-      "social_proof": "Built by a PT, for PTs · Private beta"
+      "social_proof": "Built by a coach, for coaches · Private beta"
     },
     "mockups": {
       "client_header": "Maria S. · Week 5 · Strength Phase",
@@ -41,23 +41,23 @@
     },
     "how_it_works": {
       "eyebrow": "How it works",
-      "title": "From intake to PDF in four moves.",
+      "title": "From assessment to next mesocycle, in a continuous loop.",
       "steps": {
         "add_client": {
-          "label": "Add client",
-          "desc": "Capture demographics in seconds."
+          "label": "Clinical briefing",
+          "desc": "History, injuries, wants — at hand every week."
         },
         "assessment": {
-          "label": "Run assessment",
-          "desc": "PAR-Q+, risk, mobility, goals."
+          "label": "Evidence-based programming",
+          "desc": "MEV/MAV/MRV per muscle group, justified progressions."
         },
         "generate": {
-          "label": "Generate plan",
-          "desc": "AI drafts a periodized program."
+          "label": "Edit and print",
+          "desc": "Editable mesocycle. Branded PDF to take to the gym."
         },
         "export": {
-          "label": "Export PDF",
-          "desc": "Branded, sent in one click."
+          "label": "Feedback ↔ adjustment",
+          "desc": "Log by hand, the app reads it, validates, generates next week."
         }
       }
     },
@@ -82,11 +82,26 @@
       "title": "How a Forge plan is built — the same five stages, every time.",
       "subtitle": "What you'll see inside the app is exactly what we describe below. No surprises, no black box.",
       "stages": {
-        "intake": { "label": "Intake", "desc": "PAR-Q+, ACSM risk, mobility, goals, equipment." },
-        "brief": { "label": "Brief", "desc": "AI summarises the assessment into a defensible brief you approve." },
-        "blueprint": { "label": "Blueprint", "desc": "Mesocycle shape, weekly split, movement-pattern volume." },
-        "microcycle": { "label": "Microcycle", "desc": "Concrete week — sessions, exercises, sets, RPE, rest." },
-        "progressions": { "label": "Progressions", "desc": "Week-over-week deltas — load, reps, RPE, deload." }
+        "intake": {
+          "label": "Intake",
+          "desc": "PAR-Q+, ACSM risk, mobility, goals, equipment."
+        },
+        "brief": {
+          "label": "Brief",
+          "desc": "AI summarises the assessment into a defensible brief you approve."
+        },
+        "blueprint": {
+          "label": "Blueprint",
+          "desc": "Mesocycle shape, weekly split, movement-pattern volume."
+        },
+        "microcycle": {
+          "label": "Microcycle",
+          "desc": "Concrete week — sessions, exercises, sets, RPE, rest."
+        },
+        "progressions": {
+          "label": "Progressions",
+          "desc": "Week-over-week deltas — load, reps, RPE, deload."
+        }
       }
     },
     "logbook_preview": {
@@ -102,9 +117,18 @@
       "title": "What we're building, openly.",
       "subtitle": "Not yet, but coming. We'd rather under-promise here than oversell.",
       "items": {
-        "trends": { "title": "Trends & graphs", "desc": "Auto-detect plateaus and progress per movement pattern from your logged sessions." },
-        "prompt": { "title": "Prompt-driven adjustments", "desc": "Describe a tweak in plain language — \"deload week 3\", \"swap squats for split squats\" — and the plan adjusts." },
-        "advice": { "title": "Coach AI advice", "desc": "Weekly nudges from your logs — when to push, when to back off, what to swap." }
+        "trends": {
+          "title": "Trends & graphs",
+          "desc": "Auto-detect plateaus and progress per movement pattern from your logged sessions."
+        },
+        "prompt": {
+          "title": "Prompt-driven adjustments",
+          "desc": "Describe a tweak in plain language — \"deload week 3\", \"swap squats for split squats\" — and the plan adjusts."
+        },
+        "advice": {
+          "title": "Coach AI advice",
+          "desc": "Weekly nudges from your logs — when to push, when to back off, what to swap."
+        }
       },
       "footnote": "Subscribe to Pro to be in the first wave."
     },
