@@ -175,47 +175,98 @@ export function ResultsPanel({
         <KpiCard label="Tonelagem" value={`${(kpis.totalLoadKg / 1000).toFixed(1)} t`} hint={`${kpis.totalReps} reps totais`} />
       </div>
 
-      {/* RPE trend */}
-      <ChartCard
-        icon={<TrendingUp className="h-4 w-4" />}
-        title="Tendência de RPE por sessão"
-        subtitle="Cor segue a intensidade — verde calmo → vermelho máximo."
-      >
-        <div className="h-56 w-full">
-          <ResponsiveContainer>
-            <LineChart data={rpeSeries} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
-              <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis domain={[3, 10]} stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <Tooltip
-                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                formatter={(v: any) => [`RPE ${v}`, "média sessão"]}
-              />
-              <Line
-                type="monotone"
-                dataKey="rpe"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  if (cx == null || cy == null) return <g />;
-                  const tn = rpeTone(payload.rpe);
-                  return <circle cx={cx} cy={cy} r={4} fill={tn.hex} stroke="#0b0b0b" strokeWidth={1} />;
-                }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </ChartCard>
+      {/* Charts row — denser fold: RPE trend + Top lifts side by side on lg+ */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChartCard
+          icon={<TrendingUp className="h-4 w-4" />}
+          title="Tendência de RPE por sessão"
+          subtitle="Cor segue a intensidade — verde calmo → vermelho máximo."
+        >
+          <div className="h-44 w-full">
+            <ResponsiveContainer>
+              <LineChart data={rpeSeries} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <YAxis domain={[3, 10]} stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: any) => [`RPE ${v}`, "média sessão"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="rpe"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  dot={(props: any) => {
+                    const { cx, cy, payload } = props;
+                    if (cx == null || cy == null) return <g />;
+                    const tn = rpeTone(payload.rpe);
+                    return <circle cx={cx} cy={cy} r={4} fill={tn.hex} stroke="#0b0b0b" strokeWidth={1} />;
+                  }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </ChartCard>
 
-      {/* Weekly volume */}
+        {topLifts.length > 0 && liftChartData.length > 1 ? (
+          <ChartCard
+            icon={<TrendingUp className="h-4 w-4" />}
+            title="Top 5 exercícios — progressão de carga"
+          >
+            <div className="h-44 w-full">
+              <ResponsiveContainer>
+                <LineChart data={liftChartData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                  />
+                  {topLifts.map((lift) => (
+                    <Line
+                      key={lift.name}
+                      type="monotone"
+                      dataKey={lift.name}
+                      stroke={lift.color}
+                      strokeWidth={2}
+                      dot={{ r: 3, fill: lift.color }}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {topLifts.map((l) => (
+                <span key={l.name} className="inline-flex items-center gap-1.5 rounded-full bg-muted/40 px-2 py-0.5 text-[10px]">
+                  <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+                  {l.name}
+                </span>
+              ))}
+            </div>
+          </ChartCard>
+        ) : (
+          <ChartCard
+            icon={<TrendingUp className="h-4 w-4" />}
+            title="Top exercícios — progressão de carga"
+            subtitle="Aparece quando o mesmo exercício for registado em ≥2 sessões."
+          >
+            <div className="flex h-44 items-center justify-center text-xs text-muted-foreground">
+              Ainda sem dados suficientes.
+            </div>
+          </ChartCard>
+        )}
+      </div>
+
+      {/* Weekly volume realised — full-width row */}
       <ChartCard
         icon={<Dumbbell className="h-4 w-4" />}
-        title="Volume semanal (tonelagem)"
-        subtitle="Soma de carga × reps × sets por semana."
+        title="Volume semanal realizado (tonelagem)"
+        subtitle="Soma de carga × reps × sets do que foi efectivamente registado. Para volume vs MEV/MAV/MRV (prescrito), abre o modo Edit."
       >
-        <div className="h-48 w-full">
+        <div className="h-40 w-full">
           <ResponsiveContainer>
             <BarChart data={volumeSeries} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
@@ -227,7 +278,7 @@ export function ResultsPanel({
                 labelFormatter={(l) => `Semana ${l}`}
               />
               <Bar dataKey="tonnage" radius={[6, 6, 0, 0]}>
-                {volumeSeries.map((d, i) => (
+                {volumeSeries.map((_d, i) => (
                   <Cell key={i} fill="#84cc16" />
                 ))}
               </Bar>
@@ -235,46 +286,6 @@ export function ResultsPanel({
           </ResponsiveContainer>
         </div>
       </ChartCard>
-
-      {/* Top lifts load progression */}
-      {topLifts.length > 0 && liftChartData.length > 1 && (
-        <ChartCard
-          icon={<TrendingUp className="h-4 w-4" />}
-          title="Top 5 exercícios — progressão de carga"
-        >
-          <div className="h-56 w-full">
-            <ResponsiveContainer>
-              <LineChart data={liftChartData} margin={{ top: 8, right: 12, left: -12, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.25} />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                />
-                {topLifts.map((lift) => (
-                  <Line
-                    key={lift.name}
-                    type="monotone"
-                    dataKey={lift.name}
-                    stroke={lift.color}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: lift.color }}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {topLifts.map((l) => (
-              <span key={l.name} className="inline-flex items-center gap-1.5 rounded-full bg-muted/40 px-2 py-0.5 text-[10px]">
-                <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
-                {l.name}
-              </span>
-            ))}
-          </div>
-        </ChartCard>
-      )}
 
       {/* Full logbook table */}
       <SectionCard title="Logbook" subtitle={`${sessions.length} sessões registadas`}>
