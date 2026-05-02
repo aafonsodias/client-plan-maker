@@ -36,7 +36,7 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 - [ ] Drawings/illustrations strategy (6 inline SVGs + 3-tier exercise demo fallback) — awaiting approval
 
 ## Phase B — next turn
-- [ ] #4 Logbook overhaul (coaching station, streaks, PR detection, satisfying check-off)
+- [x] #4 Logbook overhaul shipped: set-by-set check-off, autosave/restore, PR detection, streak chip, week confetti. Trainer quick-mark from SessionDayView still backlog.
 - [ ] #3 + #24 MEV/MAV/MRV intelligence + spider charts (per session/week/meso)
 - [ ] #24 tail: PDF write-in zone + photo-upload OCR ingestion via Lovable AI vision
 
