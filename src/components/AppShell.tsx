@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Crown, BookOpen } from "lucide-react";
+import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, BookOpen } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
@@ -123,10 +123,10 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             {isFounder && (
               <span
                 title="Conta de fundador · acesso vitalício"
-                className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400"
+                className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-[3px] text-[9px] font-semibold uppercase tracking-widest leading-none text-amber-600 dark:text-amber-400"
               >
-                <Crown className="h-2.5 w-2.5" />
-                <span className="hidden sm:inline">Founder</span>
+                <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
+                <span className="hidden sm:inline leading-none">Founder</span>
               </span>
             )}
           </Link>
