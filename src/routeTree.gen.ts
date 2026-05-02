@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ManualRouteImport } from './routes/manual'
@@ -34,6 +35,11 @@ import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/pub
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
+  '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/clients_/$clientId': typeof ClientsClientIdRoute
   '/intake/$token': typeof IntakeTokenRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/manual'
     | '/privacy'
     | '/settings'
+    | '/templates'
     | '/terms'
     | '/clients/$clientId'
     | '/intake/$token'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/manual'
     | '/privacy'
     | '/settings'
+    | '/templates'
     | '/terms'
     | '/clients/$clientId'
     | '/intake/$token'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/manual'
     | '/privacy'
     | '/settings'
+    | '/templates'
     | '/terms'
     | '/clients_/$clientId'
     | '/intake/$token'
@@ -289,6 +301,7 @@ export interface RootRouteChildren {
   ManualRoute: typeof ManualRoute
   PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
+  TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
   ClientsClientIdRoute: typeof ClientsClientIdRoute
   IntakeTokenRoute: typeof IntakeTokenRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -480,6 +500,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManualRoute: ManualRoute,
   PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
+  TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
   ClientsClientIdRoute: ClientsClientIdRoute,
   IntakeTokenRoute: IntakeTokenRoute,
