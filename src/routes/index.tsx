@@ -351,42 +351,15 @@ function Landing() {
         <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
       </section>
 
-      {/* Founder note */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="grid items-start gap-10 md:grid-cols-[30%_1fr]">
-          <div className="flex justify-center md:justify-start">
-            <img
-              src={andreFounder}
-              alt={t("plan:landing.founder.img_alt")}
-              className="h-[120px] w-[120px] rounded-full border border-muted-foreground/30 object-cover object-[center_top] md:h-[160px] md:w-[160px]"
-              style={{ boxShadow: "0 0 24px rgba(212, 175, 89, 0.08)" }}
-            />
-          </div>
-          <div>
-            <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
-            <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
-              <p>{t("plan:landing.founder.p1")}</p>
-              <p>{t("plan:landing.founder.p2")}</p>
-              <p>{t("plan:landing.founder.p3")}</p>
-              <ul className="space-y-3 pl-0">
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_logic_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_logic_body")}
-                </li>
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_pro_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_pro_body")}
-                </li>
-                <li>
-                  <span className="font-medium text-foreground">{t("plan:landing.founder.bullet_filter_title")}</span>{" "}
-                  {t("plan:landing.founder.bullet_filter_body")}
-                </li>
-              </ul>
-              <p>{t("plan:landing.founder.p4")}</p>
-            </div>
-            <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
-          </div>
+      {/* Founder note — text-only, short and direct */}
+      <section className="mx-auto max-w-3xl px-6 py-24">
+        <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
+        <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
+          <p>{t("plan:landing.founder.p1")}</p>
+          <p>{t("plan:landing.founder.p2")}</p>
+          <p>{t("plan:landing.founder.p3")}</p>
         </div>
+        <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
       </section>
 
       {/* FAQ */}
