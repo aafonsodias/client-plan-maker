@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, DollarSign } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +10,8 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { CurrencyMenu } from "@/components/CurrencyMenu";
 import { PriceTag } from "@/components/PriceTag";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { CURRENCIES } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -18,6 +20,8 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const { user } = useAuth();
   const { t } = useTranslation(["plan", "common"]);
+  const { code: currencyCode } = useCurrency();
+  const activeSymbol = CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? "€";
   const signedIn = !!user;
   const primaryCtaTo = signedIn ? "/dashboard" : "/auth";
   const primaryCtaLabel = signedIn
@@ -32,18 +36,18 @@ function Landing() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-sm">
-            <Logo className="h-8 w-8" />
+            <BrandMark size="md" />
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
             <CurrencyMenu>
               <button
                 type="button"
-                className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-accent transition"
+                className="hidden sm:inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-base font-medium text-muted-foreground hover:text-accent transition"
                 aria-label={t("common:currency.title", "Currency")}
                 title={t("common:currency.title", "Currency")}
               >
-                <DollarSign className="h-4 w-4" />
+                <span aria-hidden>{activeSymbol}</span>
               </button>
             </CurrencyMenu>
             <LanguageSwitcher className="mr-1" />
@@ -116,6 +120,16 @@ function Landing() {
         <HowItWorksAnimation />
       </section>
 
+      {/* The journey — mirrors the 5 stages of the in-app generator */}
+      <section id="journey" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.journey.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.journey.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.journey.subtitle")}</p>
+        </div>
+        <JourneyStrip />
+      </section>
+
       {/* Credibility — built on the science */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-12 max-w-2xl">
@@ -151,6 +165,29 @@ function Landing() {
         </div>
       </section>
 
+      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph) */}
+      <section className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logbook_preview.subtitle")}</p>
+        </div>
+        <div className="grid items-start gap-8 md:grid-cols-2">
+          <div>
+            <SetLogMockup />
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.log_caption")}</p>
+          </div>
+          <div>
+            <div className="relative">
+              <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+                {t("common:currency.soon")}
+              </div>
+              <ProgressionMockup />
+            </div>
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
+          </div>
+        </div>
+      </section>
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
@@ -224,6 +261,34 @@ function Landing() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Roadmap — honest "coming next" cards, no CTAs */}
+      <section id="roadmap" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-10 max-w-2xl">
+          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.roadmap.eyebrow")}</p>
+          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.roadmap.title")}</h2>
+          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.roadmap.subtitle")}</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { icon: LineChart, title: t("plan:landing.roadmap.items.trends.title"), desc: t("plan:landing.roadmap.items.trends.desc") },
+            { icon: MessageSquare, title: t("plan:landing.roadmap.items.prompt.title"), desc: t("plan:landing.roadmap.items.prompt.desc") },
+            { icon: Brain, title: t("plan:landing.roadmap.items.advice.title"), desc: t("plan:landing.roadmap.items.advice.desc") },
+          ].map((r) => (
+            <div key={r.title} className="relative rounded-2xl border border-dashed border-border bg-card/40 p-6">
+              <div className="absolute right-4 top-4 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+                {t("common:currency.soon")}
+              </div>
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
+                <r.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mb-2 text-lg font-medium tracking-tight">{r.title}</h3>
+              <p className="text-sm font-light text-muted-foreground">{r.desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
       </section>
 
       {/* Founder note */}
@@ -312,7 +377,7 @@ function Landing() {
         <div className="mx-auto max-w-6xl px-6 grid gap-8 md:grid-cols-3">
           <div>
             <Link to="/" className="flex items-center gap-2 font-light tracking-[0.2em] uppercase text-xs text-foreground">
-              <Logo className="h-6 w-6" />
+              <BrandMark size="sm" />
               <span>{t("common:brand.name")}</span>
             </Link>
             <p className="mt-3 text-xs">{t("plan:landing.footer.tagline")}</p>
@@ -348,6 +413,7 @@ function Landing() {
 }
 
 function HowItWorksAnimation() {
+  // Existing four-step animation, kept as the visual deep-dive of "how it works"
   const { t } = useTranslation("plan");
   const steps = [
     { label: t("landing.how_it_works.steps.add_client.label"), desc: t("landing.how_it_works.steps.add_client.desc") },
@@ -556,6 +622,53 @@ function ProgressionMockup() {
         <p>{t("landing.mockups.pr_vs_week1")} <span className="text-accent">+15kg</span></p>
         <p>{t("landing.mockups.sessions_logged")} <span className="text-foreground/90">18</span></p>
       </div>
+    </div>
+  );
+}
+
+function JourneyStrip() {
+  const { t } = useTranslation("plan");
+  const stages = [
+    { key: "intake", icon: ClipboardList },
+    { key: "brief", icon: FileSignature },
+    { key: "blueprint", icon: LayoutGrid },
+    { key: "microcycle", icon: CalendarDays },
+    { key: "progressions", icon: TrendingUp },
+  ] as const;
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-10">
+      <div
+        className="absolute -left-32 top-0 h-72 w-72 rounded-full opacity-15 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <ol className="relative grid gap-4 sm:grid-cols-5">
+        {stages.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <li
+              key={s.key}
+              className="group relative rounded-2xl border border-border bg-background/40 p-4 transition hover:border-accent/40"
+              style={{ animation: `fade-in 0.5s ease-out ${i * 100}ms both` }}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
+                  {i + 1}
+                </div>
+                <Icon className="h-4 w-4 text-accent/80" />
+              </div>
+              <p className="text-sm font-medium tracking-tight">
+                {t(`landing.journey.stages.${s.key}.label`)}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {t(`landing.journey.stages.${s.key}.desc`)}
+              </p>
+              {i < stages.length - 1 && (
+                <div className="absolute right-0 top-8 hidden h-px w-4 translate-x-full bg-gradient-to-r from-accent/50 to-transparent sm:block" />
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

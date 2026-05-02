@@ -77,6 +77,36 @@
       "title": "O plano não acaba no PDF.",
       "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que tu e o cliente vejam o trabalho a acumular."
     },
+    "journey": {
+      "eyebrow": "O percurso",
+      "title": "Como se constrói um plano Forge — sempre os mesmos cinco passos.",
+      "subtitle": "O que vês dentro da app é exatamente o que descrevemos abaixo. Sem surpresas, sem caixa preta.",
+      "stages": {
+        "intake": { "label": "Avaliação", "desc": "PAR-Q+, risco ACSM, mobilidade, objetivos, equipamento." },
+        "brief": { "label": "Brief", "desc": "A IA resume a avaliação num brief defensável que tu aprovas." },
+        "blueprint": { "label": "Blueprint", "desc": "Forma do mesociclo, divisão semanal, volume por padrão de movimento." },
+        "microcycle": { "label": "Microciclo", "desc": "Semana concreta — sessões, exercícios, séries, RPE, descansos." },
+        "progressions": { "label": "Progressões", "desc": "Deltas semana a semana — carga, reps, RPE, deload." }
+      }
+    },
+    "logbook_preview": {
+      "eyebrow": "Depois do PDF",
+      "title": "O logbook é o que mantém o plano vivo.",
+      "subtitle": "O PDF é o ponto de partida. Registar cada série transforma-o num ciclo de feedback — tu vês o que está a funcionar, o cliente vê o trabalho a acumular.",
+      "log_caption": "Pré-visualização — regista uma sessão em segundos.",
+      "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os teus registos já alimentam o motor."
+    },
+    "roadmap": {
+      "eyebrow": "A seguir",
+      "title": "O que estamos a construir, abertamente.",
+      "subtitle": "Ainda não, mas vem aí. Preferimos prometer menos aqui do que vender de mais.",
+      "items": {
+        "trends": { "title": "Tendências e gráficos", "desc": "Deteta plateaus automaticamente e mostra o progresso por padrão de movimento a partir dos teus registos." },
+        "prompt": { "title": "Ajustes por prompt", "desc": "Descreve um ajuste em linguagem natural — \"deload na semana 3\", \"trocar squats por split squats\" — e o plano adapta-se." },
+        "advice": { "title": "Conselhos do Coach AI", "desc": "Sugestões semanais a partir dos teus registos — quando empurrar, quando abrandar, o que trocar." }
+      },
+      "footnote": "Subscreve o Pro para entrar na primeira leva."
+    },
     "features": {
       "title": "Feito para treinadores que preferem treinar a copiar e colar folhas de cálculo.",
       "intake_title": "Avaliação estruturada",

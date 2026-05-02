@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -114,16 +115,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             className="group flex min-w-0 items-center gap-2.5 font-light tracking-[0.2em] uppercase text-sm"
             aria-label={t("brand.name")}
           >
-            {/* Captain-seat logo: amber under-glow ring, slightly larger, sticky in header. */}
-            <span
-              className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-              style={{
-                boxShadow:
-                  "0 0 0 1px rgba(232,165,71,0.18), 0 6px 22px -6px rgba(232,165,71,0.45)",
-              }}
-            >
-              <Logo className="h-7 w-7" />
-            </span>
+            {/* Captain-seat brand mark: amber under-glow ring, unified across the app. */}
+            <BrandMark size="md" />
             <span className="truncate">{t("brand.name")}</span>
           </Link>
 

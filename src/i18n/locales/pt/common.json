@@ -113,6 +113,7 @@
   },
   "currency": {
     "title": "Moeda",
-    "billed_in_eur_note": "Cobrado em EUR. Outras moedas mostradas para referência."
+    "billed_in_eur_note": "Cobrado em EUR. Outras moedas mostradas para referência.",
+    "soon": "Em breve"
   }
 }
