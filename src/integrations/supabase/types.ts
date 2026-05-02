@@ -649,6 +649,57 @@ export type Database = {
           },
         ]
       }
+      plan_templates: {
+        Row: {
+          blueprint: Json | null
+          brief: Json | null
+          created_at: string
+          description: string | null
+          duration_weeks: number
+          id: string
+          name: string
+          plan_data: Json
+          programming_variables: Json | null
+          source_plan_id: string | null
+          tags: string[]
+          trainer_id: string
+          updated_at: string
+          use_count: number
+        }
+        Insert: {
+          blueprint?: Json | null
+          brief?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_weeks?: number
+          id?: string
+          name: string
+          plan_data?: Json
+          programming_variables?: Json | null
+          source_plan_id?: string | null
+          tags?: string[]
+          trainer_id: string
+          updated_at?: string
+          use_count?: number
+        }
+        Update: {
+          blueprint?: Json | null
+          brief?: Json | null
+          created_at?: string
+          description?: string | null
+          duration_weeks?: number
+          id?: string
+          name?: string
+          plan_data?: Json
+          programming_variables?: Json | null
+          source_plan_id?: string | null
+          tags?: string[]
+          trainer_id?: string
+          updated_at?: string
+          use_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_name: string | null
