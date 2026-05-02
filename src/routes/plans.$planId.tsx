@@ -269,20 +269,20 @@ function PlanEditor() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="relative z-0 min-w-0 flex-1">
           {client && (
             <Link
               to="/clients/$clientId"
               params={{ clientId: client.id }}
-              className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+              className="inline-flex max-w-full items-center gap-2 truncate text-xs text-muted-foreground hover:text-foreground"
             >
               <ClientAvatar
                 name={client.full_name}
                 photoUrl={client.photo_url ?? null}
-                size={28}
+                size={20}
               />
-              <span>{client.full_name} →</span>
+              <span className="truncate">{client.full_name} →</span>
             </Link>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -317,7 +317,7 @@ function PlanEditor() {
             })()}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="relative z-10 flex shrink-0 items-center gap-2">
           <ShareDialog
             planId={planId}
             initialToken={plan.share_token}
