@@ -37,6 +37,7 @@ import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions"
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
+import { VolumeSection } from "@/components/volume/VolumeSection";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -784,6 +785,7 @@ function PlanEditor() {
       ) : mode === "edit" ? (
         isPhasedComplete ? (
           <>
+            <VolumeSection plan={data} />
             <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
             <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
               <Button onClick={exportPdf}>
@@ -900,6 +902,7 @@ function ViewMode({
   }
   return (
     <div className="space-y-6">
+      <VolumeSection plan={plan} />
       <div className="flex justify-end">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
           <button

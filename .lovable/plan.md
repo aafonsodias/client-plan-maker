@@ -1,108 +1,126 @@
-## Objectivo
+# Phase B — #3 + #24: Inteligência de volume (MEV/MAV/MRV) + spider charts
 
-Fechar os dois últimos itens da Phase A do backlog, sem inventar arquitectura nova:
+## Contexto
 
-1. **#23** — Diferenciação visual subtil por dia em `SessionDayView` (cada dia ganha um tom de acento próprio, suave).
-2. **#20** — Picker de "adicionar exercício" no `MesocycleTableView` (fecha o último gap de edição do mesociclo).
+Hoje cada exercício já tem `primary_muscles[]` e `secondary_muscles[]` (vindos do Stage 4 / schema). O que falta é **transformar isso em sets-por-grupo-muscular semanais** e mostrar ao trainer (e ao cliente) se está abaixo do MEV (volume mínimo eficaz), no MAV (sweet spot), ou a aproximar-se do MRV (recoverable max). Hoje voa-se às cegas — adicionar 4 séries de Bench pode acidentalmente partir o MRV de "chest".
 
-Pequeno, satisfatório, sem mexer em pipeline de IA. Bom para um turno de baixa energia.
+Sem mexer no pipeline de IA. Tudo derivado do plano que já existe no DB. Determinístico, instantâneo.
 
----
+## Escopo deste turno
 
-## 1. Tom por dia no SessionDayView
+1. Tabela canónica de landmarks por grupo muscular (Helms/Israetel range médio).
+2. Função `computeWeeklyVolume(plan)` — derivada client-side do `plan_data`/`workout_plan_days`.
+3. `MuscleVolumeRadar` — spider chart com 8-10 eixos (chest, back, quads, hams, glutes, shoulders, arms, core, calves), com 3 anéis de referência (MEV/MAV/MRV) e o polígono "esta semana".
+4. `VolumeStatusTable` — companion table que para cada grupo mostra: sets actuais, status (under/optimal/over), sugestão curta.
+5. Integrar na rota `/plans/$planId` numa nova secção "Volume semanal", com selector de semana (W1/W2/.../Wn).
+6. Reuso no logbook (futuro — fora deste turno): mostrar volume executado vs prescrito.
 
-Hoje todos os cartões de dia partilham a mesma paleta neutra. A ideia é dar a cada dia índice (0..6) um **acento muito subtil** — só o suficiente para o olho separar Day 1 de Day 2 numa página com vários dias (microcycle review, /sessions, PDF preview).
+Fora deste turno (#24 tail): write-in zone no PDF + OCR de fotos. Próximo turno.
 
-### Onde
+## Decisões honestas
 
-`src/components/SessionDayView.tsx` — o componente já recebe `index: number`.
+- **Counting policy**: cada série conta 1.0 para `primary_muscles` e 0.5 para `secondary_muscles`. Standard Renaissance Periodization. Trainer pode discordar — documentamos no tooltip.
+- **Reps range**: ignoramos AMRAPs / drop sets / rest-pause (somar séries planeadas, parsing simples de "3" / "3-4" → média).
+- **Landmarks são padrão**, não personalizados ao cliente. v1 usa tabela única para "intermediate". Personalização por experience_level fica para mais tarde — caso contrário o radar vira ciência ficção.
+- **NÃO** vamos sugerir alterações automáticas ao plano. Só diagnosticar. Lovable não toma decisões de carga sem o trainer.
 
-### Como
+## Arquitectura técnica
 
-- Adicionar uma palette pequena de 5 hues (HSL com `--foreground` luminance, opacidade ~0.10):
-
-  ```ts
-  const DAY_ACCENTS = [
-    "oklch(0.72 0.10 85)",   // amber soft (Day 1)
-    "oklch(0.70 0.10 200)",  // teal       (Day 2)
-    "oklch(0.72 0.10 320)",  // mauve      (Day 3)
-    "oklch(0.72 0.10 145)",  // sage       (Day 4)
-    "oklch(0.72 0.10 30)",   // terracotta (Day 5)
-  ];
-  const dayAccent = DAY_ACCENTS[index % DAY_ACCENTS.length];
-  ```
-
-- Aplicar em **três sítios discretos**:
-  1. O número-fantasma `{dayNumber}` recebe `color: ${dayAccent}` com a opacidade já existente (`/[0.06]` ou `/[0.10]`).
-  2. A `divider` (`<div className="mt-3 h-px w-full bg-border" />`) passa a ter um gradient: `linear-gradient(to right, ${dayAccent}/40, transparent)`.
-  3. O ícone do `day_label` (se existir um marker pequeno) ou um chip mínimo `Day N` à esquerda do título com `background: ${dayAccent}/15` e `color: ${dayAccent}`.
-
-- **Não tocar** em fundos de cartão, nem cores de RPE/superset (já têm semântica). Só decoração leve.
-
-### Critério de aceitação
-
-Numa página com 4 dias renderizados, percebe-se de relance que são dias diferentes sem ler. Em dark + light. Sem prejudicar contraste do superset_id (já usa cores próprias).
-
----
-
-## 2. Add-exercise picker no MesocycleTableView
-
-Hoje o `MesocycleTableView` deixa eliminar exercícios em todas as semanas (`deleteExerciseAcrossWeeks`) mas não permite adicionar. Falta para fechar o ciclo de edição manual.
-
-### Server fn nova
-
-`src/server/phased/microcycle-edit.functions.ts` — adicionar `addExerciseAcrossWeeks`:
+### 1. Landmarks — `src/lib/volume-landmarks.ts` (novo)
 
 ```ts
-export const addExerciseAcrossWeeks = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({
-    planId: z.string().uuid(),
-    dayLabel: z.string(),
-    exercise: z.object({
-      name: z.string().min(1),
-      sets: z.string().default("3"),
-      reps: z.string().default("10"),
-      rpe: z.string().default("7"),
-      rest: z.string().default("90s"),
-      notes: z.string().optional(),
-      insertAfterIndex: z.number().int().min(-1).default(-1), // -1 = append
-    }),
-  }).parse(d))
-  .handler(async ({ data, context }) => {
-    // Fetch all rows for plan+dayLabel, verify trainer_id, insert at insertAfterIndex+1
-    // (or append) into content.exercises across every week. Return touched count.
-  });
+// Sets/week per muscle group (intermediate trainee, Helms/Israetel consensus)
+export const VOLUME_LANDMARKS = {
+  chest:     { mev: 8,  mav: 14, mrv: 22 },
+  back:      { mev: 10, mav: 16, mrv: 25 },
+  quads:     { mev: 8,  mav: 14, mrv: 20 },
+  hamstrings:{ mev: 6,  mav: 12, mrv: 18 },
+  glutes:    { mev: 6,  mav: 12, mrv: 18 },
+  shoulders: { mev: 8,  mav: 16, mrv: 26 },
+  biceps:    { mev: 6,  mav: 12, mrv: 20 },
+  triceps:   { mev: 6,  mav: 12, mrv: 20 },
+  calves:    { mev: 6,  mav: 12, mrv: 18 },
+  core:      { mev: 0,  mav: 8,  mrv: 16 },
+} as const;
+
+// Synonym table — IA escreve "pectorals" / "peitorais" / "chest" → normalizar
+export const MUSCLE_ALIASES: Record<string, MuscleGroup> = {
+  chest: "chest", pectorals: "chest", peitoral: "chest", peitorais: "chest", pecs: "chest",
+  back: "back", lats: "back", "latissimus": "back", "rhomboids": "back", traps: "back", dorsal: "back", costas: "back",
+  // ... etc
+};
 ```
 
-A inserção é determinística (mesmo objecto em todas as semanas) — sem chamar IA. A `intensity_rpe` da onda fica para o trainer ajustar manualmente ou re-correr Stage 4 se quiser.
+### 2. Compute helper — `src/lib/volume-compute.ts` (novo)
 
-### UI no MesocycleTableView
+```ts
+export function computeWeeklyVolume(days: WorkoutPlanDayRow[]): {
+  byWeek: Map<number, Record<MuscleGroup, number>>;
+} {
+  // For each day: parse sets ("3" / "3-4" → mean), add 1.0 to each primary
+  // muscle (normalized via MUSCLE_ALIASES) and 0.5 to each secondary.
+  // Returns { 1: { chest: 12, back: 14, ... }, 2: {...} }
+}
 
-- Botão `+ Adicionar exercício` no fim de cada bloco de dia (já há rows agrupadas por dia).
-- Click abre um `Dialog` simples com:
-  - Input `name` (autocomplete com fetch de exercícios já usados no plano — opcional, primeiro v1 só campo livre).
-  - Inputs `sets`, `reps`, `rpe`, `rest` com defaults sensatos (3 / 10 / 7 / 90s).
-  - Selector `Inserir depois de…` com lista dos exercícios actuais do dia (default: "no fim").
-- Submit chama `addExerciseAcrossWeeks`, faz `router.invalidate()` ou refetch local.
+export function statusFor(sets: number, lm: VolumeLandmark): "under"|"optimal"|"over"|"danger" {
+  if (sets < lm.mev) return "under";
+  if (sets <= lm.mav) return "optimal";
+  if (sets <= lm.mrv) return "over";   // above MAV but recoverable
+  return "danger";                     // exceeds MRV
+}
+```
 
-### Critério de aceitação
+### 3. Componentes — `src/components/volume/`
 
-Posso adicionar "Face pull" depois de "Bench press" no Day "Push" e ele aparece em W1, W2, W3, W4 com os mesmos sets/reps/rpe. Refresh confirma persistência. Eliminar com o ✕ existente continua a funcionar e remove de todas as semanas.
+- **`MuscleVolumeRadar.tsx`** — recharts `RadarChart` com:
+  - eixo angular = grupos musculares (filtra os com landmark > 0).
+  - 3 polígonos de referência (MEV ténue cinza, MAV verde-translúcido, MRV âmbar tracejado).
+  - polígono "actual" desta semana (azul preenchido).
+  - axis ticks = sets/sem.
+- **`VolumeStatusTable.tsx`** — para cada grupo: chip de status (toneChip do `status-tone.ts`), sets actuais / MAV alvo, mensagem PT curta:
+  - under: "Abaixo do MEV — adiciona ~{n} séries para começar a estimular".
+  - optimal: "Dentro do MAV — sweet spot."
+  - over: "Acima do MAV — atenção a recuperação."
+  - danger: "Acima do MRV — risco de overreaching."
+- **`VolumeWeekTabs.tsx`** — Tabs com W1/W2/.../Wn (`duration_weeks`), default = última semana com dados.
 
----
+### 4. Integração — `src/routes/plans.$planId.tsx`
 
-## Ficheiros tocados
+Nova secção "Volume semanal" entre o "Mesociclo" e o "Logbook" (ou onde fizer sentido visualmente). Header com `BrandMark` discreto + título + tooltip a explicar landmarks. Collapsible (default expandido).
 
-- `src/components/SessionDayView.tsx` — palette + 3 aplicações subtis.
-- `src/server/phased/microcycle-edit.functions.ts` — `addExerciseAcrossWeeks`.
-- `src/components/MesocycleTableView.tsx` — botão + dialog de adicionar.
-- `mem/tasks/backlog.md` — marcar #20 e #23 como done.
+Sem novas server functions: o cálculo é trivial e roda no cliente sobre os dados já carregados em `plan.days`.
+
+### 5. Sem mudanças de DB
+
+Toda a lógica é derivada. `primary_muscles` e `secondary_muscles` já existem em `workout_plan_days.content.exercises[]`.
+
+## Critério de aceitação
+
+- Abrir um plano com 4 semanas → vejo radar para W1, posso clicar W2/W3/W4.
+- Cada grupo muscular mostra status correcto vs landmark.
+- Se um exercício não tiver `primary_muscles` preenchido (planos antigos), o grupo aparece a 0 sem rebentar.
+- Tooltip explica o que é MEV/MAV/MRV em PT (linguagem de coach, não académica).
+- Funciona em dark + light, mobile responsivo (radar empilha em cima da tabela < md).
+
+## Ficheiros
+
+Novos:
+- `src/lib/volume-landmarks.ts`
+- `src/lib/volume-compute.ts`
+- `src/components/volume/MuscleVolumeRadar.tsx`
+- `src/components/volume/VolumeStatusTable.tsx`
+- `src/components/volume/VolumeWeekTabs.tsx`
+- `src/components/volume/VolumeSection.tsx` (wrapper que junta tudo)
+
+Editados:
+- `src/routes/plans.$planId.tsx` — montar `<VolumeSection days={plan.days} weeks={plan.duration_weeks} />`
+- `mem/tasks/backlog.md` — marcar #3 como done (parcial: sem personalização por experience_level), deixar #24 tail aberto.
 
 ## Fora deste turno
 
-- Autocomplete inteligente de nomes (ML / lista canónica). Fica num backlog item próprio se quiseres.
-- Coluna RPE mostrar "RPE 6 – 8 (med 7)" — já está implementada do turno anterior.
-- Tudo o que está em Phase B/C/D.
+- Personalização de landmarks por experience_level / sex / age.
+- Volume executado (do logbook) sobreposto ao prescrito.
+- Sugestões automáticas de ajuste (não fazemos — princípio honesto).
+- PDF write-in zone + OCR (#24 tail).
 
-Responde **"continua"** que avanço com isto.
+Responde **"continua"** que avanço.
