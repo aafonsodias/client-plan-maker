@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   generateBlueprint,
   approveBlueprint,
+  setTierOverride,
 } from "@/server/phased/stage2-blueprint.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
 import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle } from "lucide-react";
@@ -16,6 +17,9 @@ import { BlueprintArchetypesList } from "@/components/BlueprintArchetypesList";
 import { BlueprintAiChat } from "@/components/BlueprintAiChat";
 import { WeekMatrixGrid } from "@/components/WeekMatrixGrid";
 import { ProgressionModelPicker } from "@/components/ProgressionModelPicker";
+import { TierChip, type TierGuidelinesShape } from "@/components/TierChip";
+import { useTranslation } from "react-i18next";
+import type { Tier } from "@/server/phased/programming-tier.server";
 
 export const Route = createFileRoute("/plans/$planId/blueprint")({
   component: BlueprintRoute,
@@ -46,6 +50,9 @@ function BlueprintReview() {
   const navigate = useNavigate();
   const generateFn = useServerFn(generateBlueprint);
   const approveFn = useServerFn(approveBlueprint);
+  const overrideFn = useServerFn(setTierOverride);
+  const { i18n } = useTranslation();
+  const locale: "en" | "pt" = i18n.language?.startsWith("pt") ? "pt" : "en";
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
@@ -53,13 +60,16 @@ function BlueprintReview() {
   const [lastError, setLastError] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
   const [briefApproved, setBriefApproved] = useState(false);
+  const [tier, setTier] = useState<Tier | null>(null);
+  const [tierGuide, setTierGuide] = useState<TierGuidelinesShape | null>(null);
+  const [tierOverridden, setTierOverridden] = useState(false);
 
   async function load() {
     setLoading(true);
     setLastError(null);
     const { data } = await supabase
       .from("workout_plans")
-      .select("title, blueprint, generation_state, client_id")
+      .select("title, blueprint, generation_state, client_id, generation_meta")
       .eq("id", planId)
       .maybeSingle();
     if (!data) {
@@ -76,6 +86,12 @@ function BlueprintReview() {
     setBriefApproved(hasBrief);
     const parsed = BlueprintSchema.safeParse((data as any).blueprint);
     setBlueprint(parsed.success ? parsed.data : null);
+    const meta = ((data as any).generation_meta ?? {}) as any;
+    if (meta?.tier) {
+      setTier(meta.tier);
+      setTierGuide(meta.tier_guidelines ?? null);
+      setTierOverridden(Boolean(meta.tier_override));
+    }
     setLoading(false);
     // Only auto-generate if brief is approved. Otherwise show actionable error.
     if (!parsed.success) {
@@ -261,6 +277,28 @@ function BlueprintReview() {
           </button>
         </div>
       </div>
+
+      {tier && (
+        <TierChip
+          tier={tier}
+          guidelines={tierGuide}
+          locale={locale}
+          overridden={tierOverridden}
+          onOverride={async (next) => {
+            const res = await overrideFn({ data: { planId, tier: next } });
+            if (!res.ok) {
+              toast.error(res.error || "Override failed");
+              return;
+            }
+            toast.success(
+              locale === "pt"
+                ? `Override aplicado: ${next}. Carrega Regenerate para refazer a Blueprint.`
+                : `Override applied: ${next}. Hit Regenerate to rebuild the Blueprint.`,
+            );
+            await load();
+          }}
+        />
+      )}
 
       {hasIntegrityError && (
         <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">

@@ -114,7 +114,19 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       assessment = (a as any) ?? null;
     }
 
-    const tier = classifyTier(brief, assessment ?? {});
+    // Trainer override wins over the auto-classifier when present.
+    const { data: planMeta } = await supabase
+      .from("workout_plans")
+      .select("generation_meta")
+      .eq("id", data.planId)
+      .maybeSingle();
+    const overrideTier = (planMeta as any)?.generation_meta?.tier_override as
+      | "remedial"
+      | "conservative"
+      | "advanced"
+      | undefined;
+    const autoTier = classifyTier(brief, assessment ?? {});
+    const tier = overrideTier ?? autoTier;
     const guidelines = tierGuidelines(
       tier,
       brief.sessions_per_week.recommended,
@@ -204,7 +216,12 @@ ${tierBlock}`;
         blueprint: result.data as any,
         generation_state: newState as any,
         // Persist tier so Stage 3 + 4 don't re-classify and so the UI can show it
-        generation_meta: { tier, tier_guidelines: guidelines } as any,
+        generation_meta: {
+          tier,
+          tier_auto: autoTier,
+          tier_override: overrideTier ?? null,
+          tier_guidelines: guidelines,
+        } as any,
         ...clearDownstream("blueprint"),
       })
       .eq("id", data.planId);
@@ -239,6 +256,41 @@ export const approveBlueprint = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("workout_plans")
       .update({ blueprint: data.blueprint as any, generation_state: newState as any })
+      .eq("id", data.planId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
+/**
+ * Set or clear a trainer override for the programming tier. The next
+ * Stage 2 run will pick this up; we don't regenerate here so the trainer
+ * can override + manually trigger blueprint regeneration at their own pace.
+ */
+export const setTierOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        tier: z.enum(["remedial", "conservative", "advanced"]).nullable(),
+      })
+      .parse(d)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("trainer_id, generation_meta")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (!plan || (plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "forbidden" };
+    }
+    const meta = ((plan as any).generation_meta ?? {}) as Record<string, any>;
+    const nextMeta = { ...meta, tier_override: data.tier };
+    const { error } = await supabase
+      .from("workout_plans")
+      .update({ generation_meta: nextMeta as any })
       .eq("id", data.planId);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
