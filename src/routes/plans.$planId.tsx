@@ -30,6 +30,8 @@ import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
+import { ClientAvatar } from "@/components/ClientAvatar";
+import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
