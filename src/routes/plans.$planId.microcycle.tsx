@@ -290,13 +290,13 @@ function MicrocycleReview() {
           key={`day1-${day1.updated_at ?? day1.status}`}
           day={day1}
           planId={planId}
-          isGate={!day1Approved}
+          isGate={!isFinalized && !day1Approved}
           onRegen={() => regenDay(1)}
-          onApproveDay1={approveDay1AndContinue}
+          onApproveDay1={isFinalized ? undefined : approveDay1AndContinue}
         />
       )}
 
-      {day1Approved &&
+      {(isFinalized || day1Approved) &&
         Array.from({ length: sessionsPerWeek - 1 }, (_, i) => i + 2).map((idx) => {
           const row = days.find((d) => d.day_number === idx);
           if (!row) {
