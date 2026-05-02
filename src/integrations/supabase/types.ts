@@ -628,6 +628,7 @@ export type Database = {
           brief: Json | null
           client_id: string
           created_at: string
+          demo_critique: Json | null
           duration_weeks: number | null
           generation_meta: Json
           generation_state: Json
@@ -651,6 +652,7 @@ export type Database = {
           brief?: Json | null
           client_id: string
           created_at?: string
+          demo_critique?: Json | null
           duration_weeks?: number | null
           generation_meta?: Json
           generation_state?: Json
@@ -674,6 +676,7 @@ export type Database = {
           brief?: Json | null
           client_id?: string
           created_at?: string
+          demo_critique?: Json | null
           duration_weeks?: number | null
           generation_meta?: Json
           generation_state?: Json

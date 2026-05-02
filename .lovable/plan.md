@@ -1,54 +1,83 @@
-# Founder badge fix + Phase B & C execution
+## Goal
 
-## 1. Founder badge — centering + icon rethink
+Turn the demo client into a **theatrical end-to-end stress test** that:
+1. Generates a *truly randomised* persona (no longer just 3 templates) with full assessment coverage — including all the form-criteria / capacity JSON fields the current demo skips.
+2. Plays the journey out visually: opens each gate, fills it, collapses, advances, all the way to the planner.
+3. After the planner finishes, runs an **AI judge** that grades the plan against the persona's red flags and writes a structured "Findings" report we can iterate on.
 
-**Why it looks off today:** The badge uses `py-0.5` with a `Crown` icon at `h-2.5 w-2.5` while the text is `text-[9px]`. The crown's visual weight sits in its top half (the spikes), so its optical centre lands above the text baseline → text reads "low" inside the pill.
+This becomes our regression harness — every turn we run it, fix what it complains about, run it again.
 
-**Fixes (both applied):**
-- Replace `py-0.5` with `py-[3px]` and add `leading-none` on both the icon wrapper and text so the cap-height of "FOUNDER" centres against the icon's optical middle.
-- Wrap the icon in `inline-flex items-center justify-center h-3 w-3` and drop the icon to `h-[11px] w-[11px]` so it doesn't dominate.
+---
 
-**Icon: drop the crown.** The crown reads royal/VIP, which clashes with the honest, craft-tool tone of the rest of the app. Three alternatives, ranked:
+## Phase 1 — Richer demo personas (server)
 
-1. **`Sparkles` (recommended)** — small, asymmetric, reads as "early/special build" without status connotations. Matches the existing "Personalised from assessment" Sparkles already on the landing mockup, so it ties the founder badge visually to the product's own language.
-2. **`Anchor`** — fits the captain-seat / helm metaphor of `BrandMark`; reads "early crew, here from the start." Slightly heavier silhouette.
-3. **`Flame`** — "early adopter / pilot light." Warm with the amber palette but a bit generic.
+`src/server/demo-client.functions.ts`:
+- Expand from 3 templates to ~10 archetypes covering the realistic edge cases:
+  - Post-partum (6 months), runner with knee pain, desk worker pre-diabetic, masters athlete (60+) on statins, hypertensive untrained, returner after ACL, advanced powerlifter cutting, hypermobile yoga teacher, shift-worker (poor sleep), deconditioned post-COVID.
+- Each archetype declares **expected red-flag tags** (e.g. `["no_axial_loading", "bp_monitoring", "unilateral_emphasis"]`). These become the rubric for the judge later.
+- Fill the JSON fields the current demo leaves empty:
+  - `squat_form_criteria`, `hinge_form_criteria`, `push_form_criteria`, `pull_form_criteria`, `carry_form_criteria`, `lunge_form_criteria` (booleans per criterion)
+  - `*_capacity` (reps / load / time per pattern)
+  - `screen_not_assessed`
+  - `extended.parq_answers`, `extended.risk_factors`, `extended.mobility_scores`, `extended.cardio_test`
+  - `standing_posture_notes`, `known_imbalances`, `body_fat_pct/method`
+- Within each archetype, randomise *within plausible ranges* per field — so two runs of the same archetype still differ.
+- New flag on the function: `createDemoClient({ archetype?: string, seed?: number })` so the harness can request a specific scenario or reproduce a run.
 
-**On the blue pill:** in The Matrix, *blue = stay asleep, red = see the truth*. So a blue pill badge would (unintentionally) say "the founder chose comfortable ignorance." Bad metaphor for the person building the product. If you ever want a Matrix nod for a different surface, **red** is the one — but I'd avoid it here because red also means "danger/destructive" everywhere else in the UI palette.
+## Phase 2 — Theatrical "auto-fill" mode (client)
 
-**Plan:** ship `Sparkles` + the centring fix. If you dislike it after seeing it, swapping to `Anchor` or `Flame` is a one-line change.
+New mode on the client detail route triggered by query param `?demo=play`:
+- When the freshly-created demo client lands on `/clients/:id`, the page detects the flag and runs an orchestrator that, **section by section** in the order of `SECTIONS`:
+  1. Scrolls the section into view + opens it (`setOpenSections`).
+  2. Waits ~600ms (perceptible, not annoying).
+  3. Streams the persona's values into the local form state field-by-field (50ms stagger) so the user sees inputs filling.
+  4. Persists the section (existing autosave / save-section path).
+  5. Collapses the section, marks it green, moves on.
+- Pacing is configurable (`?speed=fast|normal|slow`) — default normal (~1.5s per section).
+- The "+ Cliente demo" button gets a sibling **"+ Demo guiado"** that creates the client with the JSON fields *empty* and triggers `?demo=play` so we actually see the fill-in animation. The plain "+ Cliente demo" stays as today (instant).
 
-## 2. Phase B — Assessment & Session polish
+## Phase 3 — Auto-advance to the planner
 
-- **`src/routes/clients_.$clientId.tsx`** — tighten vertical rhythm (consistent `space-y-4`), collapse a finalised assessment into a single amber summary line ("Avaliação concluída · 12 mar · ver detalhes ▾"), and hide the safety-review block once `plan.status === "finalized"`.
-- **Synthesis dashboard** (same route, top strip) — add an ACSM risk pill (low / moderate / high) derived from existing assessment fields, and a 3-segment recovery donut fusing `sleep_quality + stress + soreness` into a single 0–100 readiness score.
-- **`src/components/SessionDayView.tsx`**:
-  - Fix prep timer: default to `warmup_minutes ?? 8` and `mobility_minutes ?? 5` instead of `NaN` when fields are absent.
-  - Move RPE from inline text to a coloured pill (`toneChip` from `src/lib/status-tone.ts`): RPE ≤6 neutral, 7–8 warn, 9–10 danger.
-  - "Why this exercise" — currently shows technique cues by mistake; switch the source field to `exercise.rationale` (the AI-generated reason), with technique cues moved to a separate "Execução" disclosure.
+When all sections are complete, the orchestrator:
+- Clicks "Generate plan" (the existing CTA on the client page).
+- Polls plan generation status (`workout_plans.generation_status`) and surfaces phase progress in a small overlay ("Brief → Blueprint → Microcycle → Progressions → Bulk-fill").
+- On completion, navigates to `/plans/:planId` and triggers Phase 4.
 
-## 3. Phase C — PDF + client management
+## Phase 4 — AI Judge ("post-mortem")
 
-- **`src/lib/pdf.ts`** — remove the duplicated wordmark and tagline under the cover logo. Replace the generic "Plano de Treino" title with the programming label: `"{block_name} · Mesociclo {n}"` (e.g. "Strength Foundation · Mesociclo 3").
-- **`src/components/MesocycleTableView.tsx`** — add an RPE sub-line under each set column header ("Set 1 · RPE alvo 7"), and a Table ⇄ Cards toggle stored in `localStorage` (`mesocycle.view`).
-- **Client avatars** — migration: add `photo_url text` to `public.clients`. Add upload widget on the client detail page (Supabase Storage bucket `client-photos`, RLS: only the owning trainer can read/write). Render a 32×32 circular avatar in the client list with a `User` icon fallback.
+New server function `judgeDemoRun` in `src/server/demo-client.functions.ts`:
+- Inputs: `clientId`, `planId`, `expected_red_flags` (from the archetype, stashed in `clients.notes` or a new `extended` field on the assessment).
+- Builds a compact payload: persona summary + assessment red-flag fields + the generated plan (weeks, exercises, RPE/load progressions).
+- Calls Lovable AI (`google/gemini-3-flash-preview`) via tool-calling with this rubric (extracted as structured JSON):
+  - `safety_violations[]` — e.g. axial-loading prescribed despite `no_axial_loading` flag
+  - `progression_realism` — week-to-week deltas plausible? RPE ramp coherent?
+  - `agonist_antagonist_balance` — push/pull and quad/posterior chain ratios
+  - `volume_appropriateness` — given experience level + session minutes
+  - `equipment_adherence` — exercises only use `available_equipment`
+  - `goal_alignment` — does the plan move toward `smart_specific`?
+  - `overall_grade` (A–F) + `top_3_friction_points` (free-text the trainer should prioritise)
+- Persist the verdict to a new column `workout_plans.demo_critique jsonb` (migration) so we can review trends.
 
-## 4. Pricing reality-check (per your note)
+## Phase 5 — Findings drawer
 
-You're right that "8 clients but only 5 plans/month" was incoherent. Phase A already aligned them (Starter 8/8, Pro 25/30, Studio 60/80). I'll add a one-line note in the pricing FAQ explaining the **cost honesty:** AI inference (~€0.06 per plan generation at current Gemini Pro rates) and long-term storage (~€0.02/client/month) are why the per-client price floors where it does. No upsell theatre.
+A small slide-over UI on `/plans/:planId` that appears only when `demo_critique` exists, showing:
+- Overall grade pill (toned A=success, F=danger via `status-tone.ts`)
+- Each violation grouped by severity
+- "Top 3 friction points" as the prioritised backlog for our next iteration
 
-## Files touched
+This is the loop closure: the judge tells us what to fix, we fix it, run again.
 
-- `src/components/AppShell.tsx` (badge)
-- `src/routes/clients_.$clientId.tsx` (assessment polish, synthesis)
-- `src/components/SessionDayView.tsx` (timer, RPE pill, rationale)
-- `src/components/MesocycleTableView.tsx` (RPE header, view toggle)
-- `src/lib/pdf.ts` (cover cleanup)
-- `src/components/ClientAvatar.tsx` (new), client list + detail
-- migration: `clients.photo_url`, storage bucket `client-photos`
-- `src/routes/billing.tsx` (one FAQ line)
-- locale updates in `pt/` and `en/` for new labels
+---
 
-## Open question
+## Technical notes
 
-Pick the founder icon — I'll default to **Sparkles** unless you say otherwise. Reply "go" to execute.
+- **Why no LLM for the persona itself**: deterministic templates + per-field jitter is faster, cheaper, and lets us assert "this archetype must produce flag X" — an LLM persona makes the rubric non-falsifiable.
+- **Pacing without `setTimeout` spaghetti**: orchestrator is a single async function using a `step(ms)` helper, driven by a Zustand-style local state machine (`idle → opening → typing → saving → next`). Easier to pause/resume than scattered timers.
+- **Persistence during fill**: the route already has section-level save handlers; the orchestrator just calls them — no new write paths.
+- **Judge cost**: ~1 call per run, gemini-flash, structured tool output. Negligible.
+- **No new tables**: critique stored on `workout_plans.demo_critique`, expected flags stored on `assessments.extended.demo_meta`.
+
+## Out of scope this round
+
+- Past-workout seeding (Phase D from the deferred list) — still queued.
+- Auto-fixing what the judge complains about. The judge only diagnoses; we drive the fixes.
