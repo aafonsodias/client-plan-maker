@@ -9,6 +9,7 @@ import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, 
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { DashboardHint } from "@/components/DashboardHint";
+import { DemoClientBanner } from "@/components/DemoClientBanner";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { useMemo } from "react";
 import { planStatusInfo } from "@/lib/plan-status";
@@ -157,6 +158,7 @@ function Dashboard() {
   return (
     <div className="space-y-10">
       <OnboardingChecklist />
+      <DemoClientBanner />
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>

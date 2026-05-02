@@ -15,10 +15,10 @@ import { PHASED_SECTIONS } from "@/server/phased/section-map";
  * (Cloudflare Workers cap response wall-time at ~30s but keep the
  * invocation alive for pending promises). The UI polls `demo_runs`.
  */
-async function runInstantPipeline(
+export async function runInstantPipelineForUser(
   _userId: string,
   runId: string,
-  data: { archetype?: string; durationWeeks?: number; weeksToSeed?: number },
+  data: { archetype?: string; durationWeeks?: number },
 ): Promise<void> {
   const setStage = async (
     stage: string,
@@ -49,6 +49,8 @@ async function runInstantPipeline(
     }
     const clientId = created.clientId as string;
     await supabaseAdmin.from("demo_runs").update({ client_id: clientId }).eq("id", runId);
+    // Mark this client as demo so it's excluded from quotas and easy to wipe.
+    await supabaseAdmin.from("clients").update({ is_demo: true }).eq("id", clientId);
     if (await isCancelled()) { await setStage("client", "failed", "Cancelled."); return; }
 
     // 1b) Pre-Stage 0 — analyze each assessment section in parallel batches.
@@ -87,6 +89,9 @@ async function runInstantPipeline(
       .from("demo_runs")
       .update({ plan_id: planId, client_id: clientId })
       .eq("id", runId);
+    // Mark plan as demo BEFORE setting generation_status=complete elsewhere so
+    // the quota trigger never bumps the trainer's used quota for demo content.
+    await supabaseAdmin.from("workout_plans").update({ is_demo: true }).eq("id", planId);
 
     // Apply duration override.
     if (data.durationWeeks && data.durationWeeks !== 4) {
@@ -96,10 +101,12 @@ async function runInstantPipeline(
         .eq("id", planId);
     }
 
-    // 3) Seed N weeks of sessions.
+    // 3) Seed sessions for the FULL plan duration — we always want a complete
+    // ecosystem, no half-empty logbooks. The duration the user picks is also
+    // how many weeks of history we generate.
     await setStage("logbook", "running");
     try {
-      const weeksToSeed = data.weeksToSeed ?? 2;
+      const weeksToSeed = data.durationWeeks ?? 4;
       await seedDemoSessions({ data: { planId, weeksToSeed } });
     } catch (e) {
       console.error("[demo-oneshot] seed sessions failed", e);
@@ -132,7 +139,6 @@ export const startDemoClientFull = createServerFn({ method: "POST" })
       .object({
         archetype: z.string().optional(),
         durationWeeks: z.number().int().min(2).max(12).optional(),
-        weeksToSeed: z.number().int().min(1).max(8).optional(),
       })
       .parse(d ?? {}),
   )
@@ -149,7 +155,7 @@ export const startDemoClientFull = createServerFn({ method: "POST" })
     const runId = (runRow as any).id as string;
     // Fire-and-forget: keep the promise alive on the runtime but don't
     // await it inside the HTTP response. Errors are persisted to demo_runs.
-    void runInstantPipeline(userId, runId, data).catch((e) => {
+    void runInstantPipelineForUser(userId, runId, data).catch((e: unknown) => {
       console.error("[demo-oneshot] background pipeline error", e);
     });
     return { ok: true as const, runId, error: null };

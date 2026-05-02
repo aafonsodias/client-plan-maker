@@ -37,7 +37,6 @@ export function DemoLabPanel() {
   const [busy, setBusy] = useState<"instant" | "tick" | null>(null);
   const [gates, setGates] = useState<Record<string, GateState>>({});
   const [durationWeeks, setDurationWeeks] = useState<4 | 6 | 8>(4);
-  const [weeksToSeed, setWeeksToSeed] = useState<1 | 2 | 4>(2);
   const runIdRef = useRef<string | null>(null);
   const pollTimerRef = useRef<number | null>(null);
 
@@ -103,7 +102,9 @@ export function DemoLabPanel() {
       // background. We follow progress via getDemoRun and only navigate when
       // the run reaches stage="done". This avoids the upstream timeout that
       // crashed the long-running response.
-      const res: any = await startFn({ data: { durationWeeks, weeksToSeed } });
+      // Logbook always equals duration — we want the full ecosystem populated
+      // so we can mine the data for fusion / insights.
+      const res: any = await startFn({ data: { durationWeeks } });
       if (!res?.ok || !res?.runId) {
         applyStage("client", "failed");
         toast.error(res?.error ?? "Falhou a iniciar a simulação.");
@@ -196,16 +197,12 @@ export function DemoLabPanel() {
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Duração</span>
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Duração (= semanas de logbook)
+          </span>
           <SegBtn value={4} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>4 sem</SegBtn>
           <SegBtn value={6} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>6 sem</SegBtn>
           <SegBtn value={8} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>8 sem</SegBtn>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Logbook</span>
-          <SegBtn value={1} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>1 sem</SegBtn>
-          <SegBtn value={2} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>2 sem</SegBtn>
-          <SegBtn value={4} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>4 sem</SegBtn>
         </div>
       </div>
 
@@ -264,7 +261,8 @@ export function DemoLabPanel() {
         </div>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Instant cria um cliente fictício realista, gera o plano completo (com brief + blueprint + microciclo + progressões) e enche o logbook com a duração escolhida.
+        Cria um cliente fictício realista, gera o plano completo (brief → blueprint → microciclo → progressões)
+        e enche o logbook até ao fim da duração escolhida. Não conta para a tua quota.
       </p>
     </div>
   );

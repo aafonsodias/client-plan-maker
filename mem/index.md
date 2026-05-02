@@ -18,3 +18,6 @@ Microcycle gate requires haveAllRows AND doneCount===sessionsPerWeek. Auto-advan
 i18n audit of src/routes/clients_.$clientId.tsx delegated to external Opus run (assessment namespace). Don't auto-wrap strings there until that lands.
 workout_sessions.client_feedback (jsonb, nullable) = {kind: question|complaint|stress, text}. Demo bots write it via maybePersonaFeedback() (src/lib/demo-personas.ts) ~1 in 3 sessions, persona-aware.
 Concierge AI = founder-only chat dock (src/components/ConciergeDock.tsx + src/server/concierge.functions.ts). Routes hand-curated in src/lib/concierge-routes.ts; suggestions are filtered to allow-list before render.
+
+Demo content = clients.is_demo + workout_plans.is_demo. Quota trigger bump_plan_quota_on_complete skips is_demo plans. Auto-seeded once per trainer via ensureDemoClient (gated by profiles.demo_seeded_at). Demo Lab Instant: logbook always = duration (fill-to-end).
+In-app AI = <AskForgeDock /> (replaces GuideDock). Tabs: Navegar (askConcierge) + Perguntar à IA (askForge — model picker + credit cost). Available to every signed-in trainer.
