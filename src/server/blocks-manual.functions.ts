@@ -162,7 +162,7 @@ export const markPlanFinished = createServerFn({ method: "POST" })
     if (!prior || (prior as any).trainer_id !== userId) {
       return { ok: false as const, error: "forbidden" };
     }
-    const update: Record<string, unknown> = {
+    const update: { completion_state: string; status?: string } = {
       completion_state: "finished_logging",
     };
     if (data.archive) update.status = "archived";
