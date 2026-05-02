@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
