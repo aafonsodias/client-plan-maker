@@ -24,6 +24,7 @@ import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft } from "@/server/plan.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
+import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
