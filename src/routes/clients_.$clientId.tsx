@@ -377,6 +377,7 @@ function ClientDetail() {
   const proposeProgressionsFn = useServerFn(proposeProgressions);
   const [stageBusy, setStageBusy] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   const [phasedBusy, setPhasedBusy] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
   // Inline brief panel: rendered below the action row. Replaces the toast-link banner.
   const [inlineBrief, setInlineBrief] = useState<{
     planId: string;
@@ -1203,10 +1204,8 @@ function ClientDetail() {
       const res = await startPhasedPlanFn({ data: { clientId } });
       if (!res.ok) {
         if (res.error === "quota_exceeded") {
-          toast.error(
-            "Free accounts can build 1 plan. Subscribe to create more.",
-            { id: tId, duration: 6000 }
-          );
+          toast.dismiss(tId);
+          setPaywallOpen(true);
         } else {
           toast.error(res.error || "Brief synthesis failed.", { id: tId });
         }
