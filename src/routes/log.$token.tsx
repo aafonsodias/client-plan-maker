@@ -18,6 +18,7 @@ import type { PlanData } from "@/lib/pdf";
 import { ExerciseSetsCard, type LogEntryV2, type SetLog } from "@/components/log/ExerciseSetsCard";
 import { LogHeader, type SaveState } from "@/components/log/LogHeader";
 import { Confetti } from "@/components/log/Confetti";
+import { ImportFromPhotoButton } from "@/components/log/ImportFromPhotoButton";
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
@@ -296,6 +297,27 @@ function ClientLogPage() {
       </div>
 
       <div className="space-y-3">
+        {entries.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
+            <span>
+              Treinaste com a folha impressa? Tira foto e a IA importa os valores.
+            </span>
+            <ImportFromPhotoButton
+              token={token}
+              planId={info.id}
+              weekNumber={weekNum}
+              dayLabel={dayLabel}
+              entries={entries}
+              onApply={(merged, notesAppend) => {
+                dirtyRef.current = true;
+                setEntries(merged);
+                if (notesAppend) {
+                  setNotes((cur) => (cur.trim() ? `${cur}\n\n${notesAppend}` : notesAppend));
+                }
+              }}
+            />
+          </div>
+        )}
         {entries.map((e, i) => (
           <ExerciseSetsCard
             key={`${e.exercise_name}-${i}`}
