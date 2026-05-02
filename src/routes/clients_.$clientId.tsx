@@ -544,6 +544,7 @@ function ClientDetail() {
     void (async () => {
       const { data: c } = await supabase.from("clients").select("*").eq("id", clientId).single();
       setClient(c);
+      setTrainerSummaryDraft((c as any)?.trainer_summary ?? "");
       const { data: a } = await supabase.from("assessments").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle();
       let dbState: any = null;
       let dbTs = 0;
