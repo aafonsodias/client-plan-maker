@@ -605,7 +605,7 @@ function ClientDetail() {
 
       const { data: p } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, brief, generation_state, generation_status")
+        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
