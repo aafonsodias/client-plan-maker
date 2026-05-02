@@ -785,6 +785,7 @@ function PlanEditor() {
       ) : mode === "edit" ? (
         isPhasedComplete ? (
           <>
+            <VolumeSection plan={data} />
             <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
             <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
               <Button onClick={exportPdf}>
