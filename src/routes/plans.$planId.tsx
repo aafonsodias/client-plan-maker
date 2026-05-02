@@ -640,6 +640,13 @@ function PlanEditor() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setMode("progress")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "progress" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+          title="Gráfico de progressão por exercício a partir do logbook"
+        >
+          <TrendingUp className="h-3.5 w-3.5" /> Progresso
+        </button>
         </div>
         {plan?.status !== "finalized" && client && (
           <RegenerateWithFeedbackDialog
