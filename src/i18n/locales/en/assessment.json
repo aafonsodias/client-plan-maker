@@ -167,7 +167,6 @@
       "health_steps":          { "label": "8 000 daily steps",             "specific": "Average 8 000 steps/day across the week",                     "measurable": "8 000 steps/day on ≥ 5 days/week" }
     }
   },
-  },
   "readiness_block": {
     "title": "Readiness to change (Prochaska)",
     "hint": "Stage of behavioral change — calibrates coaching approach.",
