@@ -12,7 +12,7 @@ import {
   Download, Plus, Save, Trash2, CheckCircle2,
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle,
+  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -28,6 +28,7 @@ import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
+import { ResultsPanel } from "@/components/ResultsPanel";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -49,7 +50,7 @@ function PlanRoute() {
   );
 }
 
-type Mode = "view" | "edit" | "log";
+type Mode = "view" | "edit" | "log" | "results";
 type SessionRow = {
   id: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
@@ -170,6 +171,18 @@ function PlanEditor() {
       setSessions((list as unknown as SessionRow[]) ?? []);
     } catch { /* ignore */ }
   };
+
+  // Auto-land on Resultados once a plan has enough logged sessions to feel
+  // "filled". Per-plan flag in sessionStorage so back-nav still respects user
+  // intent if they manually click View/Edit/Log later.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessions.length < 3) return;
+    const flag = `planAutoResults:${planId}`;
+    if (window.sessionStorage.getItem(flag)) return;
+    window.sessionStorage.setItem(flag, "1");
+    setMode("results");
+  }, [sessions.length, planId]);
 
   const save = async (extra: Partial<{ status: string }> = {}) => {
     setSaving(true);
@@ -389,6 +402,17 @@ function PlanEditor() {
         >
           <NotebookPen className="h-3.5 w-3.5" /> Log
         </button>
+        <button
+          onClick={() => setMode("results")}
+          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "results" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <BarChart3 className="h-3.5 w-3.5" /> Resultados
+          {sessions.length > 0 && (
+            <span className="rounded-full bg-emerald-500/20 px-1.5 py-px text-[9px] font-semibold text-emerald-300">
+              {sessions.length}
+            </span>
+          )}
+        </button>
         </div>
         {plan?.status !== "finalized" && client && (
           <RegenerateWithFeedbackDialog
@@ -447,6 +471,8 @@ function PlanEditor() {
           </div>
         </>
         )
+      ) : mode === "results" ? (
+        <ResultsPanel plan={data} sessions={sessions as any} />
       ) : (
         <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
@@ -503,7 +529,17 @@ function ViewMode({
   sessions: SessionRow[];
   reload: () => Promise<void>;
 }) {
-  const [layout, setLayout] = useState<"cards" | "table">("cards");
+  const [layout, setLayout] = useState<"cards" | "table">(() => {
+    if (typeof window === "undefined") return "table";
+    const saved = window.localStorage.getItem("planLayout");
+    return saved === "cards" ? "cards" : "table";
+  });
+  const setLayoutPersisted = (next: "cards" | "table") => {
+    setLayout(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("planLayout", next);
+    }
+  };
   if (!plan.weeks.length) {
     return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
   }
@@ -512,16 +548,16 @@ function ViewMode({
       <div className="flex justify-end">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
           <button
-            onClick={() => setLayout("cards")}
-            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Cards
-          </button>
-          <button
-            onClick={() => setLayout("table")}
+            onClick={() => setLayoutPersisted("table")}
             className={`rounded-md px-3 py-1 transition ${layout === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             Table
+          </button>
+          <button
+            onClick={() => setLayoutPersisted("cards")}
+            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Cards
           </button>
         </div>
       </div>

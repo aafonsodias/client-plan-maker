@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { maybePersonaFeedback } from "@/lib/demo-personas";
+import { maybePersonaFeedback, getRpeProfile, rpeForWeek, loadForWeek, type RpeProfile } from "@/lib/demo-personas";
 
 /**
  * Demo session generator + simulation tick.
@@ -38,19 +38,26 @@ function isCardioLike(ex: ExerciseLike): boolean {
   return /cardio|condition|carry|farmer|run|bike|row|sprint|airbike|sled|jog/.test(blob);
 }
 
-/** Fabricate a plausible "actual" performance from the planned exercise. */
-function fabricateEntry(ex: ExerciseLike, weekIndex: number) {
+/** Fabricate a plausible "actual" performance from the planned exercise.
+ *  Persona-aware: RPE/load curves come from the persona profile so each
+ *  archetype rides its own progression band. */
+function fabricateEntry(
+  ex: ExerciseLike,
+  weekNumber: number,
+  profile: RpeProfile,
+  isDeload = false,
+) {
   const setsStr = String(ex.sets ?? "");
   const repsStr = String(ex.reps ?? "");
   const cardio = isCardioLike(ex);
-  // Light, deterministic load that bumps with week.
-  const baseLoad = 20 + weekIndex * 2.5 + jitter(-2, 4);
+  const baseLoad = loadForWeek(profile, weekNumber, isDeload) + jitter(-1.5, 2.5);
   const weight = cardio ? "" : `${Math.max(0, baseLoad).toFixed(1)} kg`;
   const repsHit = repsStr || (cardio ? "" : "8-10");
-  const rpe = Math.min(9, 6 + weekIndex * 0.3 + jitter(0, 1.2)).toFixed(1);
-  // Cardio: write distance + time instead of weight.
-  const distance = cardio ? `${(0.8 + weekIndex * 0.1 + jitter(0, 0.3)).toFixed(2)} km` : "";
-  const timeMin = cardio ? `${Math.round(8 + weekIndex * 1 + jitter(0, 3))} min` : "";
+  // Tiny ±0.3 jitter so it doesn't look mechanical, but never above cap.
+  const rpeNum = Math.min(profile.cap, rpeForWeek(profile, weekNumber, isDeload) + jitter(-0.2, 0.3));
+  const rpe = rpeNum.toFixed(1);
+  const distance = cardio ? `${(0.8 + (weekNumber - 1) * 0.12 + jitter(0, 0.3)).toFixed(2)} km` : "";
+  const timeMin = cardio ? `${Math.round(8 + (weekNumber - 1) * 1 + jitter(0, 3))} min` : "";
   return {
     exercise_name: ex.name ?? "Exercise",
     planned: {
@@ -108,6 +115,8 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
     const archetype = (plan as any).client_id
       ? await getPersonaArchetype((plan as any).client_id)
       : null;
+    const profile = getRpeProfile(archetype);
+    const totalWeeks = plan.duration_weeks ?? 4;
 
     const maxWeek = Math.min(data.weeksToSeed, plan.duration_weeks ?? 4);
 
@@ -137,7 +146,8 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
       if (seen.has(key)) continue;
       const exercises: ExerciseLike[] = Array.isArray(d.content?.exercises) ? d.content.exercises : [];
       if (exercises.length === 0) continue;
-      const entries = exercises.map((ex) => fabricateEntry(ex, d.week_number - 1));
+      const isDeload = totalWeeks >= 3 && d.week_number === totalWeeks;
+      const entries = exercises.map((ex) => fabricateEntry(ex, d.week_number, profile, isDeload));
       // Date = startDate + (week-1)*7 + (day_number-1) days.
       const sessionDate = new Date(startDate);
       sessionDate.setDate(sessionDate.getDate() + (d.week_number - 1) * 7 + (d.day_number - 1));
@@ -151,8 +161,10 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
         day_label: d.day_label,
         session_date: sessionDate.toISOString().slice(0, 10),
         session_notes: d.week_number === 1
-          ? "Sessão de baseline. Foco em técnica e RPE conservador."
-          : "Boa execução. Subida ligeira de carga conforme progressão.",
+          ? `Sessão de baseline. ${profile.tone}`
+          : isDeload
+            ? "Semana de deload. Carga e RPE recuados ~15%."
+            : profile.tone,
         entries,
         logged_by: "trainer",
         status: "done" as const,
@@ -208,6 +220,8 @@ export const advanceSimulation = createServerFn({ method: "POST" })
     let ticked = 0;
     for (const [clientId, plan] of planByClient) {
       const archetype = await getPersonaArchetype(clientId);
+      const profile = getRpeProfile(archetype);
+      const totalWeeks = plan.duration_weeks ?? 4;
       // Find next un-logged (week, day) for this plan.
       const { data: days } = await supabaseAdmin
         .from("workout_plan_days")
@@ -228,7 +242,8 @@ export const advanceSimulation = createServerFn({ method: "POST" })
 
       const exercises: ExerciseLike[] = Array.isArray(next.content?.exercises) ? next.content.exercises : [];
       if (exercises.length === 0) continue;
-      const entries = exercises.map((ex) => fabricateEntry(ex, next.week_number - 1));
+      const isDeload = totalWeeks >= 3 && next.week_number === totalWeeks;
+      const entries = exercises.map((ex) => fabricateEntry(ex, next.week_number, profile, isDeload));
 
       const today = new Date().toISOString().slice(0, 10);
       const seed = (plan.id.charCodeAt(0) || 1) + next.week_number * 13 + next.day_number * 7 + Date.now() % 100;
