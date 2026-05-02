@@ -99,7 +99,9 @@ async function urlToDataUrl(url: string): Promise<string | null> {
  * Compute mean perceptual luminance of an image (0=black, 1=white),
  * ignoring near-transparent pixels. Used to pick a contrasting PDF theme.
  */
-async function computeLogoLuminance(dataUrl: string): Promise<number | null> {
+async function loadLogoMeta(
+  dataUrl: string,
+): Promise<{ luminance: number | null; width: number; height: number } | null> {
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const i = new Image();
@@ -116,7 +118,7 @@ async function computeLogoLuminance(dataUrl: string): Promise<number | null> {
     cv.width = w;
     cv.height = h;
     const ctx = cv.getContext("2d");
-    if (!ctx) return null;
+    if (!ctx) return { luminance: null, width: img.width, height: img.height };
     ctx.drawImage(img, 0, 0, w, h);
     const { data } = ctx.getImageData(0, 0, w, h);
     let sum = 0;
@@ -132,8 +134,11 @@ async function computeLogoLuminance(dataUrl: string): Promise<number | null> {
       sum += l;
       count++;
     }
-    if (!count) return null;
-    return sum / count;
+    return {
+      luminance: count ? sum / count : null,
+      width: img.width,
+      height: img.height,
+    };
   } catch {
     return null;
   }
