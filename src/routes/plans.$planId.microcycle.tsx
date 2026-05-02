@@ -160,23 +160,6 @@ function MicrocycleReview() {
     setApprovedDays((s) => { const n = new Set(s); n.add(idx); return n; });
   }
 
-  // Auto-advance: when a day is approved AND its row is `done`, kick the
-  // next day if it isn't already generating / done. One step at a time.
-  useEffect(() => {
-    if (!sessionsPerWeek) return;
-    for (const idx of approvedDays) {
-      const next = idx + 1;
-      if (next > sessionsPerWeek) continue;
-      const cur = days.find((d) => d.day_number === idx);
-      if (cur?.status !== "done") continue;
-      const nextRow = days.find((d) => d.day_number === next);
-      if (nextRow && nextRow.status === "done") continue;
-      if (isGenerating(next)) continue;
-      regenDay(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approvedDays, days]);
-
   async function approve() {
     setBusy(true);
     const res = await approveFn({ data: { planId } });
@@ -211,6 +194,23 @@ function MicrocycleReview() {
   // Rough estimate: sequential per-day ~40s, divided by client-side concurrency=1 here
   // (server batches 5 internally for bulk; we only manually fire one at a time).
   const etaSec = Math.max(0, (sessionsPerWeek - doneCount) * 40);
+
+  // Auto-advance: when a day is approved AND its row is `done`, kick the
+  // next day if it isn't already generating / done. One step at a time.
+  useEffect(() => {
+    if (!sessionsPerWeek || isFinalized) return;
+    for (const idx of approvedDays) {
+      const next = idx + 1;
+      if (next > sessionsPerWeek) continue;
+      const cur = days.find((d) => d.day_number === idx);
+      if (cur?.status !== "done") continue;
+      const nextRow = days.find((d) => d.day_number === next);
+      if (nextRow && (nextRow.status === "done" || nextRow.status === "pending")) continue;
+      if (isGenerating(next)) continue;
+      regenDay(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvedDays, days, sessionsPerWeek, isFinalized]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
