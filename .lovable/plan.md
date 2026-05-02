@@ -1,99 +1,64 @@
-# Plan-page polish + demo "Results" view
+I’ll fix this as an urgent “demo/logbook reliability + plan readability” pass. The goal is: clicking Instant should visibly progress through gates, produce a complete plan, fill logbook rows automatically, then show Results without you needing to babysit it.
 
-Four focused changes, all in service of: **a finished demo should land on a flashy, filled-up results view — not on the empty daily logbook.**
+Implementation plan:
 
-## 1. Table is the default plan view
+1. Fix the Instant demo pipeline crash
+- Update `createDemoClientFull` / `runDemoPlay` so `generateMicrocycleDays` is called with the required `dayIndices` array.
+- Derive the exact day list from the generated blueprint/session frequency instead of assuming defaults.
+- Make the one-shot path report the failing gate clearly instead of leaving a draft plan stuck in microcycle.
+- Add rollback/cleanup for incomplete instant runs where possible, so failed demos don’t leave confusing half-created clients/plans.
 
-In `src/routes/plans.$planId.tsx` (`ViewMode`):
+2. Add visible processing gates under “Instant”
+- Replace the single spinner with a compact progress panel in `DemoLabPanel`.
+- Gates: Create client → Brief → Blueprint → Microcycle → Progressions → Finalize → Fill logbook → Results ready.
+- Show each gate as pending/running/done/failed, with a stop/cancel control that stops the client-side chain from continuing.
+- For reliability, I’ll move from one opaque server call to step-by-step orchestration from the panel, while still using the existing server functions.
 
-- Change `useState<"cards" | "table">("cards")` → `("table")`.
-- Reorder the toggle so **Table** is the first/left button (matches image 3 mental model).
-- Persist last choice in `localStorage("planLayout")` so a user who prefers cards isn't fought every visit.
+3. Make logbook auto-fill actually happen
+- Ensure `seedDemoSessions` runs after finalization and inserts realistic `workout_sessions` for at least the first 2 weeks.
+- Add better return reporting: sessions inserted, sessions skipped, and any seeding error.
+- Make Results auto-open after seeding and navigate directly to the generated plan/results state when Instant finishes.
+- Add a “Fill demo logbook now” recovery button on plans with zero sessions, so existing broken demo plans can be populated without recreating everything.
 
-## 2. Color-graded RPE + visible day spacing in `MesocycleTableView`
+4. Improve Results/logbook table usefulness
+- Upgrade the Results logbook from a session summary into a table that shows plan-vs-actual: date, week/day, exercise, planned sets/reps/RPE/rest, actual sets/reps/load/RPE, estimated volume/tonnage, and feedback.
+- Keep RPE pills color-coded using the existing `rpe-tone` scale.
+- Add planned vs logged weekly volume comparison so the old “W1 ~561 reps” idea becomes a useful calculation instead of decorative noise.
 
-In `src/components/MesocycleTableView.tsx`:
+5. Clean the mesocycle table header and editing confusion
+- Remove the top week chips that currently show `W1 ~reps · RPE` because the week columns already show RPE context.
+- Replace them with a subtle note or compact metric only when it’s meaningful for prediction/plan-vs-actual.
+- Improve the cell editor: label the four fields clearly (`sets`, `reps`, `RPE`, `rest`) so it doesn’t look like “3 things but 4 values”.
+- Make RPE coloring more obvious and consistent in table cells.
 
-- **RPE color ramp** — replace the plain `@x` text with a small pill whose background interpolates by RPE value:
-  - ≤ 5 → emerald/40, 6 → lime, 7 → amber, 8 → orange, 9 → red/80, 10 → red.
-  - Use `parseRpe()` (already exists) → map to a tailwind class table. Keeps semantic palette (success → warn → danger).
-  - Pill renders in every week column so the eye can scan the intensity wave horizontally.
-- **Day separators** — between day blocks (the `dayGroups.map`), insert a `tr` with a 12-px transparent spacer + a thin `border-t border-border/30`. Today they're glued together.
-- **Day-header row** gets a subtle `bg-muted/20` band so each day reads as its own card inside the table.
+6. Cap preparation duration and stop 33-minute warmups
+- Add a deterministic sanitizer for generated days before saving them.
+- Preparation (`warmup + activation + dynamic stretches`) will be capped at 15 minutes maximum; normal default target will be 8–12 minutes.
+- If AI returns too much prep, compress it into: 3–5 min general warmup, 2–4 min mobility/dynamic, 2–4 min activation/inhibition, then first-exercise potentiation.
+- Apply the same sanitizer in bulk/finalization paths so new plans cannot keep inflated prep blocks.
 
-## 3. Persona-aware RPE progression in seeded sessions
+7. Make RPE/progression less “snail-like” but still client-aware
+- Adjust demo RPE/load profiles for athletic/intermediate personas like return-to-sport ACL so they don’t start like a frail beginner.
+- Add missing archetypes (`returner_post_acl`, `advanced_powerlifter_cut`, `hypermobile_yoga_teacher`, `shift_worker_poor_sleep`, etc.) to the demo progression profiles.
+- Update progression generation guidance so RPE progression depends on age, training age, stress, sleep, injuries, and current capacity: conservative only when the data justifies it.
 
-Today `seedDemoSessions` always bumps RPE by `+0.3 / week`. That's flat and ignores the persona. Update `fabricateEntry` in `src/server/demo-sessions.functions.ts`:
+8. Improve plan summary and default expansion
+- Make the plan summary expanded by default.
+- Add a compact client context strip in the summary: age, sex, training age/experience, main goal, injury/medical flags, recovery/stress/sleep markers, and key movement limitations.
+- Fix the “no section analysis / UNKNOWN” issue for demo clients by building the brief from raw assessment data when section analyses are empty, instead of letting Stage 1 hallucinate an empty generic beginner profile.
 
-- Accept `archetype` and pass it through from `seedDemoSessions` / `advanceSimulation`.
-- Lookup table (in `src/lib/demo-personas.ts`):
+Files I expect to touch:
+- `src/components/DemoLabPanel.tsx`
+- `src/server/demo-oneshot.functions.ts`
+- `src/server/demo-play.functions.ts`
+- `src/server/demo-sessions.functions.ts`
+- `src/lib/demo-personas.ts`
+- `src/server/phased/stage1-brief.functions.ts`
+- `src/server/phased/stage3-microcycle.functions.ts`
+- `src/server/phased/stage5-bulkfill.functions.ts`
+- `src/components/MesocycleTableView.tsx`
+- `src/components/ResultsPanel.tsx`
+- `src/components/SessionDayView.tsx`
+- `src/routes/plans.$planId.tsx`
 
-  ```ts
-  // baseline RPE + weekly delta + ceiling, tuned per persona
-  rpeProfile: {
-    postpartum:  { base: 5.0, delta: 0.2, cap: 7.5 },
-    deskbound:   { base: 5.5, delta: 0.25, cap: 8.0 },
-    masters:     { base: 5.0, delta: 0.15, cap: 7.5 },
-    youth_athlete:{ base: 6.5, delta: 0.4, cap: 9.5 },
-    return_to_lift:{ base: 5.5, delta: 0.3, cap: 8.5 },
-    stressed_exec:{ base: 5.0, delta: 0.2, cap: 7.5 },
-    default:     { base: 6.0, delta: 0.3, cap: 9.0 },
-  }
-  ```
-
-- RPE then **always increases week-to-week** (clamped at the cap, deload week subtracts 1.0).
-- Weight ramp also keys off persona (`youth_athlete` +5kg/wk, `masters` +1kg/wk, etc.).
-- Notes get a persona-flavored line ("Sessão calma, foco em técnica" for masters; "Empurrei mais hoje" for youth_athlete).
-
-## 4. The missing piece — `Results` tab + auto-route to it for finished demos
-
-The user's core complaint: after demo seeding they still land on an empty daily logbook. We add a **Results** view per plan that surfaces what the bots produced.
-
-**New route**: `src/routes/plans.$planId.results.tsx`
-
-Pulls `workout_sessions` for the plan and renders:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Results · 14 sessions logged · adherence 87% · avg RPE 6.8 │
-├─────────────────────────────────────────────────────────────┤
-│  [LineChart]  Weekly RPE trend (per session, colored dots)  │
-│  [BarChart]   Weekly volume (total reps × load)             │
-│  [LineChart]  Top-5 lifts: load progression                 │
-├─────────────────────────────────────────────────────────────┤
-│  Logbook table — one row per session, columns:              │
-│    date · day_label · sets · reps · load · RPE pill · 💬    │
-│    expandable to per-exercise actuals                       │
-├─────────────────────────────────────────────────────────────┤
-│  Client feedback feed (from workout_sessions.client_feedback│
-│   + plan_feedback) — chips by category, oldest → newest     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-- All charts use the existing `recharts` setup (`src/components/ui/chart.tsx`).
-- RPE dots reuse the same color ramp from §2 — visual continuity between plan and results.
-- The logbook section IS the table-format filled logbook the user asked for: when sessions exist, render compact table; when empty, render the inline daily-log card view (image 1) for live entry.
-- "Top-5 lifts" picks exercises by frequency in `entries`, plots first-set load over time.
-
-**Routing into it**:
-
-- Add `Resultados` tab to the plan header next to Brief / Blueprint / Microcycle / Progressions.
-- In `src/routes/plans.$planId.tsx`, when the plan loads: if `sessions.length >= 3`, **auto-redirect** to `/plans/$planId/results` on first arrival (use `sessionStorage` flag so back-nav still works).
-- Demo plans created via `createDemoClientFull` always have ≥ 8 seeded sessions, so they'll land directly on Results — exactly the "finished demo" experience the user described.
-
-## Out of scope (intentionally deferred)
-
-- Equipment-tier branching (least → most equipment, regressions). Big enough to deserve its own pass once Results is live and we can see what the bots actually struggle with.
-- Concierge AI deep-routing. Already shipped basic version.
-
-## Files touched
-
-- `src/routes/plans.$planId.tsx` — default-table, auto-redirect when seeded.
-- `src/components/MesocycleTableView.tsx` — RPE pill + day spacing.
-- `src/server/demo-sessions.functions.ts` — persona-keyed RPE ramp.
-- `src/lib/demo-personas.ts` — `rpeProfile` table + helper.
-- `src/routes/plans.$planId.results.tsx` — **new**, the filled results view.
-- `src/components/AppShell` plan tabs — add Resultados link.
-- `src/lib/rpe-tone.ts` — **new**, single source of truth for the RPE color ramp (reused by table + results charts).
-
-Reply **continua** to ship.
+No database schema change should be required for this pass; the needed `workout_sessions` and feedback structures already exist.
