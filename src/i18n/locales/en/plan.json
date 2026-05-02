@@ -77,6 +77,36 @@
       "title": "The plan doesn't end at the PDF.",
       "subtitle": "Log every set, track every session. Forge keeps the history so you and the client see the work pile up."
     },
+    "journey": {
+      "eyebrow": "The journey",
+      "title": "How a Forge plan is built — the same five stages, every time.",
+      "subtitle": "What you'll see inside the app is exactly what we describe below. No surprises, no black box.",
+      "stages": {
+        "intake": { "label": "Intake", "desc": "PAR-Q+, ACSM risk, mobility, goals, equipment." },
+        "brief": { "label": "Brief", "desc": "AI summarises the assessment into a defensible brief you approve." },
+        "blueprint": { "label": "Blueprint", "desc": "Mesocycle shape, weekly split, movement-pattern volume." },
+        "microcycle": { "label": "Microcycle", "desc": "Concrete week — sessions, exercises, sets, RPE, rest." },
+        "progressions": { "label": "Progressions", "desc": "Week-over-week deltas — load, reps, RPE, deload." }
+      }
+    },
+    "logbook_preview": {
+      "eyebrow": "After the PDF",
+      "title": "The logbook is what keeps the plan alive.",
+      "subtitle": "PDF is the starting point. Logging every set turns it into a feedback loop — you see what's working, the client sees the work pile up.",
+      "log_caption": "Preview — log a session in seconds.",
+      "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine."
+    },
+    "roadmap": {
+      "eyebrow": "Coming next",
+      "title": "What we're building, openly.",
+      "subtitle": "Not yet, but coming. We'd rather under-promise here than oversell.",
+      "items": {
+        "trends": { "title": "Trends & graphs", "desc": "Auto-detect plateaus and progress per movement pattern from your logged sessions." },
+        "prompt": { "title": "Prompt-driven adjustments", "desc": "Describe a tweak in plain language — \"deload week 3\", \"swap squats for split squats\" — and the plan adjusts." },
+        "advice": { "title": "Coach AI advice", "desc": "Weekly nudges from your logs — when to push, when to back off, what to swap." }
+      },
+      "footnote": "Subscribe to Pro to be in the first wave."
+    },
     "features": {
       "title": "Built for trainers who'd rather coach than copy-paste spreadsheets.",
       "intake_title": "Structured intake",
