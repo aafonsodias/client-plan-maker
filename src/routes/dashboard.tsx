@@ -68,8 +68,17 @@ function Dashboard() {
   const removePlan = async (id: string) => {
     const { error } = await supabase.from("workout_plans").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    // Find the deleted plan so we can also update the status bar optimistically.
+    const removed = recent.find((p) => p.id === id);
     setRecent((r) => r.filter((p) => p.id !== id));
     setPlans((n) => Math.max(0, n - 1));
+    if (removed) {
+      const k = planStatusInfo(removed as any).key;
+      setStatusCounts((c) => ({
+        ...c,
+        [k]: Math.max(0, (c as any)[k] - 1),
+      }));
+    }
     toast.success("Plan deleted");
   };
 
