@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import type { PlanData, Day, Exercise } from "@/lib/pdf";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X } from "lucide-react";
+import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { updateExerciseInWeek } from "@/server/phased/microcycle-edit.functions";
+import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -33,6 +33,8 @@ export function MesocycleTableView({
 }) {
   const [compact, setCompact] = useState(true);
   const updateFn = useServerFn(updateExerciseInWeek);
+  const deleteFn = useServerFn(deleteExerciseAcrossWeeks);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
 
   // Local optimistic patches: keyed by `${week}|${dayLabel}|${exIdx}` → patch
   const [patches, setPatches] = useState<Record<string, Partial<Exercise>>>({});
@@ -182,6 +184,20 @@ export function MesocycleTableView({
     }
   };
 
+  const removeExercise = async (dayLabel: string, exerciseName: string) => {
+    if (!planId) return;
+    if (!confirm(`Apagar "${exerciseName}" de todas as semanas (${dayLabel})?`)) return;
+    setDeletingName(`${dayLabel}|${exerciseName}`);
+    const res = await deleteFn({ data: { planId, dayLabel, exerciseName } });
+    setDeletingName(null);
+    if (!res.ok) {
+      toast.error(res.error || "Falhou ao apagar");
+      return;
+    }
+    toast.success(`Removido de ${(res as any).touched ?? 0} semana(s)`);
+    onUpdated?.();
+  };
+
   return (
     <div className="space-y-4 print:space-y-3">
       {/* Toolbar */}
@@ -286,6 +302,9 @@ export function MesocycleTableView({
                 setEditingKey={setEditingKey}
                 patches={patches}
                 onSaveEdit={saveEdit}
+                onRemoveExercise={removeExercise}
+                deletingName={deletingName}
+                isFirstGroup={gi === 0}
               />
             ))}
           </tbody>
