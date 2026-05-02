@@ -1,87 +1,142 @@
 
-## Reescrita da landing — clareza primeiro, profundidade depois
+## Visão geral
 
-Mantém-se toda a estrutura técnica e os mockups que já funcionam. O que muda é **o que aparece nos primeiros 5 segundos** e a **ordem da narrativa**. Sem mexer em rotas, auth, pricing real ou backend.
+Hoje a app tem 1 papel (treinador). O cliente é só um registo na tabela `clients` e preenche a avaliação por um link anónimo (`/intake/$token`) que já funciona. Tu queres o cliente como **utilizador com conta própria**, que entra, vê o plano dele, deixa notas, e cuja informação a IA usa para avisar o treinador (lesões novas, aniversário, faltas, etc.).
 
-### 1. Hero (primeira dobra) — benefício em vez de manifesto
+Isto é um corte grande. Vou faseá-lo para que cada fase seja entregável sozinha e nada do que já funciona quebre.
 
-Substituir headline e subheadline atuais por linguagem direta, focada no PT:
+---
 
-- **H1**: "Cria planos de treino prontos a enviar em minutos."
-- **Sub**: "Baseados na avaliação real do teu cliente. Ajustam-se semana a semana com o que ele faz no ginásio."
-- **CTA primário**: "Gerar primeiro plano grátis" (em vez de "Draft your first plan").
-- **CTA secundário**: "Ver como funciona" (âncora para a secção `journey`).
-- **Micro-prova abaixo do CTA** (já existe, mantém): *"Conta grátis · 1 cliente · 1 plano completo · sem cartão."*
-- **Remover da primeira dobra**: a linha "credibility_caption" com "PAR-Q+, ACSM, Prochaska / Helms, Israetel, Schoenfeld". Move para a secção `credibility` mais abaixo, onde já é o sítio certo.
+## Fase 1 — Coach Dashboard guiado + intake mais visível (1 sessão)
 
-### 2. Tira jargão de cima — "três benefícios" antes da ciência
+**Sem mexer em auth/roles.** Resolve o problema imediato dos screenshots: dashboard vazio que não guia, e o link de intake escondido dentro do detalhe do cliente.
 
-Inserir, **logo a seguir ao hero e antes dos mockups**, uma faixa nova com 3 cartões curtos (uma frase cada):
+### 1A. Dashboard "Studio" guiado
 
-- "Menos tempo a programar" — *"Da avaliação ao PDF em minutos, não em horas."*
-- "Planos consistentes entre clientes" — *"A mesma lógica aplicada a cada cliente, ajustada ao caso dele."*
-- "Mais confiança no que envias" — *"Vês sempre porque é que cada exercício está ali."*
+Reescrever `src/routes/dashboard.tsx`:
 
-(Substitui efetivamente a tagline "sem caixa preta" por "percebes sempre porque é que o plano foi criado", como pedido.)
+- **Quando 0 clientes**: hero claro com 1 ação primária — *"Adicionar primeiro cliente"* — e abaixo um bloco *"Como funciona em 3 passos: 1) Adicionar cliente · 2) Enviar link de avaliação · 3) Gerar plano"*. Cada passo é uma linha, não um wizard modal.
+- **Quando ≥1 clientes mas 0 planos**: hero passa a *"Envia o link de avaliação"* com a lista de clientes que ainda não submeteram.
+- **Quando ≥1 plano**: layout atual (stats + planos recentes), mas no topo uma faixa de **ações rápidas** (3 botões): `Adicionar cliente` · `Copiar link de avaliação` (do último cliente sem submissão) · `Novo plano`.
+- **"Atenção do PT" panel** (novo): lista até 5 itens accionáveis ordenados por urgência:
+  - clientes com intake submetido por rever
+  - clientes sem submissão há >7 dias (re-enviar link)
+  - aniversários nos próximos 7 dias *(precisa de §1C)*
+  - notas novas do cliente *(vem na Fase 3, fica vazio até lá)*
 
-### 3. Reordenar a página
+Mantém-se `OnboardingChecklist` e `DropoffAlerts`.
 
-Ordem nova, do mais concreto ao mais técnico:
+### 1B. "Adicionar cliente" simplificado + link no fim
 
-1. Hero (acima)
-2. **3 benefícios** (novo)
-3. **Mockups** (já existe — mostrar produto cedo é prova visual)
-4. **Como funciona / journey** (5 fases — manter, mas com intro reescrita em PT-claro)
-5. **Logbook preview** (manter)
-6. **Credibilidade científica** (PAR-Q+, ACSM, Prochaska — agora aqui, não no hero)
-7. **Founder** (manter — a história do André é prova humana)
-8. **Pricing** (simplificado, ver §5)
-9. **FAQ** (manter)
-10. **Closing CTA** + footer
+O dialog atual (screenshot 2) pede 6 campos antes de gravar. Mudar para:
 
-### 4. Linguagem orientada a PTs
+- **Mínimo viável**: só *Nome* e *Email* obrigatórios. *Idade, sexo, altura, peso* movem-se para a intake (cliente preenche).
+- Imediatamente após gravar, abrir um **passo 2** dentro do mesmo dialog: bloco grande com o link de intake já gerado + botões `Copiar`, `WhatsApp`, `Email`. Isto torna óbvio que o próximo passo é enviar o link, não preencher tudo manualmente.
 
-Auditoria curta dos copy-blocks já existentes para alinhar tom:
+### 1C. Aniversários
 
-- "mesocycle" / "microcycle" → manter só a partir da secção `journey` (público técnico já está engajado nesse ponto).
-- Hero, 3-benefícios e mockup captions usam apenas: *plano*, *avaliação*, *cliente*, *semana*, *sessão*, *PDF*.
-- Substituir "Clinical assessment, defensible mesocycle" da subheadline atual pela versão simples acima.
+- Migration: adicionar `date_of_birth date` à tabela `clients`. `age` continua a existir mas passa a ser derivado / opcional (não removo já para não partir o que usa).
+- Adicionar campo `date_of_birth` ao formulário da intake (`src/routes/intake.$token.tsx`) — opcional mas sugerido.
+- Helper `src/lib/birthdays.ts`: `daysUntilBirthday(dob)`, `upcomingBirthdays(clients, days=7)`.
+- Mostrar no painel "Atenção do PT" — *"🎂 João Silva faz anos em 3 dias."*
 
-### 5. Pricing simplificado e honesto
+### 1D. Knowledge / Manual mais visível
 
-A secção atual já tem 2 colunas (Beta grátis + Pro €19). Ajustes:
+Adicionar card "Manual" no dashboard (lado a lado com stats), e um link **Manual** no nav principal já existe — só ganha mais peso visual na vazia.
 
-- **Renomear** "Try it — no card" → "Grátis para começar".
-- **Linhas claras** no card grátis: *"1 cliente · 1 plano completo · PDF com a tua marca · sem cartão."*
-- **Pro** mantém-se como "Em breve · €19/mês (indicativo)" — não inventar features que não existem.
-- Remover a linha "Subscribe to Pro to be in the first wave" do roadmap (duplica o pricing).
+---
 
-### 6. Prova concreta
+## Fase 2 — Client account & shared link (1-2 sessões)
 
-Adicionar duas peças honestas, sem inventar testemunhos:
+Aqui o link deixa de ser anónimo. O cliente que abre o link **cria conta** (passwordless por email, ou OAuth Google) e a partir daí o intake fica associado a `auth.users` dele.
 
-- **Exemplo real**: já existem dois PDFs no repositório (`André_Periquito…_1_Week_Plan.pdf`, `Test_User_Test_Plan.pdf`). Adicionar na secção logbook/mockups um link discreto **"Ver exemplo de plano (PDF)"** que abre um deles num separador novo. Prova tangível > screenshots.
-- **Linha de honestidade beta** já existe na secção `credibility` ("There are bugs. Things still missing…") — manter. Não fabricar testemunhos.
+### 2A. Schema: roles e ligação cliente↔user
 
-### 7. i18n
+Nova tabela `user_roles` (segue o pattern recomendado):
 
-Todo o copy novo entra em `src/i18n/locales/{en,pt}/plan.json` sob:
+```sql
+create type app_role as enum ('coach', 'client');
+create table user_roles (
+  user_id uuid references auth.users on delete cascade,
+  role app_role not null,
+  primary key (user_id, role)
+);
+```
 
-- `landing.hero.*` (override das chaves existentes)
-- `landing.benefits.{time,consistency,confidence}.{title,desc}` (novo)
-- `landing.credibility.intro` (mover a antiga credibility_caption para aqui)
-- `landing.pricing.beta_*` (refraseado)
+Adicionar `clients.user_id uuid references auth.users` (nullable — só preenche quando o cliente aceita o convite).
 
-PT é a referência de tom (mem `voice-pt`); EN segue o mesmo registo direto.
+Função `has_role(_uid, _role)` SECURITY DEFINER (já documentada no projeto).
 
-### Ficheiros tocados
+### 2B. Fluxo de aceitação
 
-- `src/routes/index.tsx` — reordenar secções, novo bloco `Benefits`, link para PDF de exemplo, hero novo.
-- `src/i18n/locales/pt/plan.json` e `src/i18n/locales/en/plan.json` — chaves novas + reescritas.
-- (Opcional) `public/example-plan.pdf` — copiar um dos PDFs existentes da raiz para `public/` para servir como link.
+`/intake/$token` ganha um header novo: *"Esta avaliação é para ti, [nome]. Cria a tua conta para guardares e voltares depois."*
 
-### Fora de scope
+- Botão **"Continuar com Google"** ou **"Continuar com email"** (magic link).
+- No callback, se `clients.user_id IS NULL` para esse token, faz a ligação: `update clients set user_id = auth.uid() where intake_token = X` e adiciona `('client')` em `user_roles`.
+- Depois do login, a intake continua igual mas autenticada — RLS muda de "tem o token no header" para "auth.uid() = clients.user_id".
+- Mantém-se compatibilidade: se o cliente não quiser conta, ainda pode submeter como anónimo (modo legacy).
 
-- Sem mexer em auth, pricing real (Stripe), Guide/dock, ou no funil de criação de plano.
-- Sem testemunhos fabricados.
-- Sem alterar o esquema de cores ou o `BrandMark`.
+### 2C. Convite por email
+
+`generateIntakeToken` (server fn já existe) ganha opção `sendEmail`. Usa o sistema de email do Lovable Cloud para mandar um template simples *"O teu PT [nome] convidou-te para preencheres a avaliação inicial. [Botão: Abrir]"*.
+
+(Se não houver domínio de email configurado, mantém-se o WhatsApp/cópia atual.)
+
+---
+
+## Fase 3 — Client-side dashboard (2 sessões)
+
+Rota nova `/me` (protegida por `_authenticated/_client`), separada do mundo do PT. Layout e tom diferentes — calmo, motivacional, simples.
+
+Conteúdo:
+
+- **O meu plano desta semana** — vista read-only do microciclo atual (reutiliza `SessionDayView`).
+- **Logbook fácil** — registar séries da sessão de hoje (reutiliza `ExerciseSetsCard`).
+- **Notas para o treinador** — textarea simples + lista de notas anteriores. Cada nota grava em nova tabela `client_notes` (id, client_id, body, created_at, seen_by_coach_at).
+- **Métricas básicas** — peso ao longo do tempo, total de sessões registadas. Sem RPE/volume per pattern aqui — manter limpo.
+- **Sem acesso** ao gerador de plano, brief, blueprint, etc.
+
+Schema:
+```sql
+create table client_notes (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid references clients on delete cascade,
+  body text not null,
+  created_at timestamptz default now(),
+  seen_by_coach_at timestamptz
+);
+```
+
+RLS: cliente lê/escreve só as suas notas (`auth.uid() = (select user_id from clients where id = client_id)`); treinador lê todas as do cliente dele e marca como visto.
+
+### IA awareness
+
+No painel "Atenção do PT" (Fase 1A), aparecem agora notas novas. Botão "Resumir notas" chama uma server fn que passa as últimas N notas ao Lovable AI Gateway (`google/gemini-2.5-flash`) e devolve 1-2 frases — *"Cliente queixa-se de dor lombar há 3 dias; faltou 2 sessões esta semana."*
+
+---
+
+## Fase 4 — Polimento / engagement (depois)
+
+- Comparação básica vs população (peso, força relativa) na vista do cliente.
+- Notificações por email quando o PT publica novo plano / quando o cliente regista sessão.
+- VO2 max, grip strength, etc. — campos opcionais na intake e métricas, mostrados só se preenchidos.
+
+---
+
+## O que faço **agora** (Fase 1, este turno)
+
+1. Migration: `clients.date_of_birth date`, helper i18n.
+2. `src/lib/birthdays.ts`.
+3. Reescrever `src/routes/dashboard.tsx` com 3 estados (zero clientes / zero planos / normal), faixa de ações rápidas, painel "Atenção do PT" com aniversários e intakes por rever.
+4. Simplificar o dialog "Adicionar cliente" em `src/routes/clients.tsx` para 2 campos + passo 2 com o link gerado e atalhos de partilha (reutiliza `IntakeLinkPanel`).
+5. Adicionar campo opcional de data de nascimento à intake (`src/routes/intake.$token.tsx`).
+6. i18n PT/EN para todo o copy novo.
+
+Não vou começar a Fase 2 (client accounts) sem confirmação tua, porque mexer em auth/roles é onde se parte coisas em silêncio. Confirma a Fase 1 e, quando estiveres confortável, atacamos a 2.
+
+### Fora de scope (este turno)
+
+- Sem alterar RLS atual.
+- Sem criar `user_roles` table.
+- Sem rota `/me` ainda.
+- Sem email transacional ainda.
