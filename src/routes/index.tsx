@@ -129,7 +129,7 @@ function Landing() {
           style={{ background: "var(--gradient-accent)" }}
         />
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
               {t("plan:landing.hero.title_line1")}
               <span className="block text-accent">{t("plan:landing.hero.title_line2")}</span>
@@ -152,9 +152,17 @@ function Landing() {
               </Button>
             </div>
           </div>
-          <div className="flex flex-col items-center">
-            <div className="origin-top scale-[0.95] opacity-[0.92]">
-              <HeroPlanMockup />
+          <div className="flex min-w-0 flex-col items-center">
+            <div className="relative origin-top scale-[0.95]">
+              {/* Forge glow — replaces the dark drop shadow */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl"
+                style={{ background: "radial-gradient(closest-side, oklch(0.78 0.14 75 / 0.32), transparent 70%)" }}
+              />
+              <div className="rounded-2xl ring-1 ring-amber-400/40 shadow-[0_0_40px_-10px_oklch(0.78_0.14_75/0.6)]">
+                <HeroPlanMockup />
+              </div>
             </div>
             <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
               {t("plan:landing.hero.credibility_caption")}
