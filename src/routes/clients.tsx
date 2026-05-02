@@ -13,6 +13,7 @@ import { Plus, ArrowRight, Trash2 } from "lucide-react";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
+import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
