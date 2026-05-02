@@ -839,6 +839,33 @@ function buildSlides(
       subtitle: t("intro"),
       body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
     },
+    // 1a. Path selector — coached vs self
+    {
+      title: t("path_title"),
+      subtitle: t("path_subtitle"),
+      body: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { id: "coached", label: t("path_coached"), desc: t("path_coached_desc") },
+            { id: "self", label: t("path_self"), desc: t("path_self_desc") },
+          ] as const).map((opt) => {
+            const on = form.intake_path === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => set("intake_path", opt.id)}
+                className={`rounded-xl border p-4 text-left transition ${on ? "border-accent bg-accent/10" : "border-border bg-card hover:border-accent/40"}`}
+              >
+                <p className="text-sm font-semibold">{opt.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{opt.desc}</p>
+              </button>
+            );
+          })}
+        </div>
+      ),
+      isValid: () => !!form.intake_path,
+    },
     // 1b. Identity — quem és tu
     {
       title: t("identity_title", { defaultValue: "Quem és tu?" }),
