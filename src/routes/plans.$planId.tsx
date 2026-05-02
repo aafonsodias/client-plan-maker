@@ -408,7 +408,7 @@ function PlanEditor() {
       ) : mode === "edit" ? (
         isPhasedComplete ? (
           <>
-            <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={() => void reload()} />
+            <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
             <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
               <Button onClick={exportPdf}>
                 <Download className="mr-2 h-4 w-4" /> Export PDF
