@@ -459,6 +459,8 @@ function PlanEditor() {
           </div>
         </>
         )
+      ) : mode === "results" ? (
+        <ResultsPanel plan={data} sessions={sessions as any} />
       ) : (
         <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
