@@ -113,5 +113,9 @@
     "page_not_found_title": "Page not found",
     "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",
     "go_home": "Go home"
+  },
+  "currency": {
+    "title": "Currency",
+    "billed_in_eur_note": "Billed in EUR. Other currencies shown for reference."
   }
 }
