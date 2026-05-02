@@ -34,6 +34,32 @@ export const generateIntakeToken = createServerFn({ method: "POST" })
     return row;
   });
 
+/* ─────────────── Trainer-side: one-shot invite (creates placeholder client) ─────────────── */
+
+export const createInviteClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { fullName?: string | null }) =>
+    z.object({ fullName: z.string().trim().max(120).nullable().optional() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const expires = newExpiry();
+    const placeholder = (data.fullName ?? "").trim() || "Convite pendente";
+    const { data: row, error } = await supabaseAdmin
+      .from("clients")
+      .insert({
+        trainer_id: userId,
+        full_name: placeholder,
+        intake_token: crypto.randomUUID(),
+        intake_token_expires_at: expires,
+        intake_status: "sent",
+      } as any)
+      .select("id, full_name, phone, intake_token, intake_token_expires_at, intake_status")
+      .single();
+    if (error || !row) throw new Error("Could not create invite.");
+    return row;
+  });
+
 export const markIntakeReviewed = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { clientId: string }) => z.object({ clientId: z.string().uuid() }).parse(d))
@@ -64,7 +90,7 @@ const tokenSchema = z.object({ token: z.string().uuid() });
 
 export type IntakeContext = {
   status: "valid" | "expired" | "submitted";
-  client?: { id: string; first_name: string };
+  client?: { id: string; first_name: string; full_name: string | null; email: string | null; phone: string | null; date_of_birth: string | null; needs_identity: boolean };
   trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null; tagline?: string | null };
   assessment?: any | null;
   submittedAt?: string | null;
@@ -76,7 +102,7 @@ export const loadIntake = createServerFn({ method: "POST" })
     rateLimit(`load:${data.token}`);
     const { data: client } = await supabaseAdmin
       .from("clients")
-      .select("id, full_name, trainer_id, intake_token_expires_at, intake_status, intake_submitted_at")
+      .select("id, full_name, email, phone, date_of_birth, trainer_id, intake_token_expires_at, intake_status, intake_submitted_at")
       .eq("intake_token", data.token)
       .maybeSingle();
     if (!client) return { status: "expired" };
@@ -105,9 +131,18 @@ export const loadIntake = createServerFn({ method: "POST" })
     ]);
 
     const firstName = (client.full_name ?? "").split(" ")[0] || "there";
+    const placeholder = !client.full_name || /convite\s*pendente|invite\s*pending/i.test(client.full_name);
     return {
       status: "valid",
-      client: { id: client.id, first_name: firstName },
+      client: {
+        id: client.id,
+        first_name: firstName,
+        full_name: placeholder ? "" : (client.full_name ?? ""),
+        email: (client as any).email ?? null,
+        phone: (client as any).phone ?? null,
+        date_of_birth: (client as any).date_of_birth ?? null,
+        needs_identity: placeholder,
+      },
       trainer: (profile as any) ?? { business_name: null, full_name: null, logo_url: null, primary_color: null, tagline: null },
       assessment: assessment ?? null,
     };
@@ -172,6 +207,14 @@ const saveSchema = z.object({
   // sections the client filled this save — used to mark provenance
   sections: z.array(z.enum(PROVENANCE_SECTIONS)).default([]),
   submit: z.boolean().default(false),
+  identity: z
+    .object({
+      full_name: z.string().trim().min(1).max(120).optional(),
+      email: z.string().trim().email().max(254).optional().or(z.literal("")),
+      phone: z.string().trim().max(40).optional().or(z.literal("")),
+      date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
+    })
+    .optional(),
 });
 
 export const saveIntake = createServerFn({ method: "POST" })
@@ -258,6 +301,25 @@ export const saveIntake = createServerFn({ method: "POST" })
         .from("clients")
         .update({ intake_status: "submitted", intake_submitted_at: new Date().toISOString() })
         .eq("id", client.id);
+    }
+
+    // Apply identity patch (name / email / phone / dob) — only fields the
+    // client actually provided on this save. Empty strings clear optional
+    // fields; full_name is only overwritten if a non-empty value comes in
+    // (so we never blank a name the trainer pre-filled).
+    if (data.identity) {
+      const patch: Record<string, any> = {};
+      if (data.identity.full_name && data.identity.full_name.trim().length > 0) {
+        patch.full_name = data.identity.full_name.trim();
+      }
+      if (data.identity.email !== undefined) patch.email = data.identity.email || null;
+      if (data.identity.phone !== undefined) patch.phone = data.identity.phone || null;
+      if (data.identity.date_of_birth !== undefined) {
+        patch.date_of_birth = data.identity.date_of_birth || null;
+      }
+      if (Object.keys(patch).length > 0) {
+        await supabaseAdmin.from("clients").update(patch as any).eq("id", client.id);
+      }
     }
 
     return { ok: true, submitted: data.submit };

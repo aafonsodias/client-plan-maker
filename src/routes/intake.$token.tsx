@@ -25,6 +25,11 @@ const PARQ_KEYS = ["q1","q2","q3","q4","q5","q6","q7"] as const;
 const MED_FLAG_IDS = ["beta_blockers", "bp_meds", "diabetes", "anticoagulants", "anti_inflammatories", "other"] as const;
 
 type FormState = {
+  // Identity (cliente preenche aqui — substitui o placeholder do PT)
+  client_full_name: string;
+  client_email: string;
+  client_phone: string;
+  client_dob: string;
   smart_specific: string;
   smart_measurable: string;
   smart_deadline: string;
@@ -57,6 +62,7 @@ type FormState = {
 };
 
 const EMPTY: FormState = {
+  client_full_name: "", client_email: "", client_phone: "", client_dob: "",
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
@@ -105,7 +111,7 @@ function fromAssessment(a: any | null): FormState {
   };
 }
 
-function toPayload(f: FormState): { fields: Record<string, any>; sections: string[] } {
+function toPayload(f: FormState): { fields: Record<string, any>; sections: string[]; identity: { full_name?: string; email?: string; phone?: string; date_of_birth?: string } } {
   const parqAnswered = Object.values(f.parq).every((v) => v === true || v === false);
   const parqHasYes = Object.values(f.parq).some((v) => v === true);
   return {
@@ -144,6 +150,12 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       },
     },
     sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
+    identity: {
+      full_name: f.client_full_name?.trim() || undefined,
+      email: f.client_email?.trim() || undefined,
+      phone: f.client_phone?.trim() || undefined,
+      date_of_birth: f.client_dob || undefined,
+    },
   };
 }
 
@@ -169,7 +181,14 @@ function IntakePage() {
         const c = await load({ data: { token } });
         setCtx(c);
         if (c.status === "valid") {
-          setForm(fromAssessment(c.assessment));
+          const base = fromAssessment(c.assessment);
+          // Pre-hydrate identity from server (if PT pre-filled) so the
+          // questions only show if missing.
+          base.client_full_name = c.client?.full_name ?? "";
+          base.client_email = c.client?.email ?? "";
+          base.client_phone = c.client?.phone ?? "";
+          base.client_dob = c.client?.date_of_birth ?? "";
+          setForm(base);
           // localStorage backup
           try {
             const saved = localStorage.getItem(`forge_intake_draft_${token}`);
@@ -775,6 +794,40 @@ function buildSlides(
       title: t("welcome_title", { name: "" }).replace(", ", ""),
       subtitle: t("intro"),
       body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
+    },
+    // 1b. Identity — quem és tu
+    {
+      title: t("identity_title", { defaultValue: "Quem és tu?" }),
+      subtitle: t("identity_subtitle", { defaultValue: "O teu treinador precisa do teu nome e contacto. O resto é a avaliação." }),
+      body: (
+        <div className="space-y-3">
+          <Input
+            autoFocus
+            placeholder={t("identity_full_name", { defaultValue: "Nome completo" })}
+            value={form.client_full_name}
+            onChange={(e) => set("client_full_name", e.target.value)}
+          />
+          <Input
+            type="email"
+            placeholder={t("identity_email", { defaultValue: "Email" })}
+            value={form.client_email}
+            onChange={(e) => set("client_email", e.target.value)}
+          />
+          <Input
+            type="tel"
+            placeholder={t("identity_phone", { defaultValue: "Telemóvel (opcional)" })}
+            value={form.client_phone}
+            onChange={(e) => set("client_phone", e.target.value)}
+          />
+          <Input
+            type="date"
+            placeholder={t("identity_dob", { defaultValue: "Data de nascimento (opcional)" })}
+            value={form.client_dob}
+            onChange={(e) => set("client_dob", e.target.value)}
+          />
+        </div>
+      ),
+      isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
     },
     // 2. SMART goal — what
     {

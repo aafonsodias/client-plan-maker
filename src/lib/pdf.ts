@@ -394,10 +394,17 @@ export async function generatePlanPdf(
   if (meta.summary) {
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(9.5);
-    const sumLines = doc.splitTextToSize(meta.summary, W - M * 2).slice(0, 2);
+    doc.setFontSize(9);
+    // Reserve a small right gutter so wrapped lines never bleed past the page.
+    const sumWidth = W - M * 2 - 8;
+    const allLines = doc.splitTextToSize(meta.summary, sumWidth) as string[];
+    const maxLines = 4;
+    const sumLines = allLines.slice(0, maxLines);
+    if (allLines.length > maxLines && sumLines.length > 0) {
+      sumLines[sumLines.length - 1] = (sumLines[sumLines.length - 1] || "").replace(/\s*\S{0,2}$/, "") + "…";
+    }
     doc.text(sumLines, M, y);
-    y += sumLines.length * 12 + 10;
+    y += sumLines.length * 11 + 10;
   }
 
   // KPI strip
@@ -521,8 +528,12 @@ export async function generatePlanPdf(
 
   for (const arc of archetypes) {
     // Truncate the running header so a long focus phrase never bleeds onto the next page.
-    const headerFocus = (arc.focus || "Session").slice(0, 80);
-    newPage(`${arc.label.toUpperCase()} · ${headerFocus.toUpperCase()}`);
+    // Truncate by measured width, not character count, so the running header
+    // never bleeds past the right margin or onto a second line.
+    const rawHeader = `${arc.label} · ${arc.focus || "Session"}`.toUpperCase();
+    const headerMaxW = W - M * 2 - 60;
+    const headerLine = fitText(rawHeader, headerMaxW);
+    newPage(headerLine);
 
     // Session header — single row
     setText(doc, theme.inkMuted);
