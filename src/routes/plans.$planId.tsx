@@ -120,7 +120,13 @@ function PlanEditor() {
             focus: row.focus ?? "",
             rationale: row.rationale ?? undefined,
             exercises,
-            sections: Array.isArray(content.sections) ? content.sections : undefined,
+            warmup: Array.isArray(content.warmup) ? content.warmup : undefined,
+            activation: Array.isArray(content.activation) ? content.activation : undefined,
+            dynamic_stretches: Array.isArray(content.dynamic_stretches) ? content.dynamic_stretches : undefined,
+            cooldown: Array.isArray(content.cooldown) ? content.cooldown : undefined,
+            finisher: Array.isArray(content.finisher) ? content.finisher : undefined,
+            finisher_enabled: typeof content.finisher_enabled === "boolean" ? content.finisher_enabled : undefined,
+            cardio: Array.isArray(content.cardio) ? content.cardio : undefined,
           } as Day);
         }
         const weeks = Array.from(weeksMap.values()).sort((a, b) => a.week_number - b.week_number);
