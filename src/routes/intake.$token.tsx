@@ -819,6 +819,7 @@ function buildSlides(
   t: (k: string, opts?: any) => string,
   form: FormState,
   setForm: React.Dispatch<React.SetStateAction<FormState>>,
+  token?: string,
 ): Slide[] {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
