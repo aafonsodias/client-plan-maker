@@ -31,7 +31,7 @@ import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
-import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
+import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -76,8 +76,7 @@ function PlanEditor() {
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
-  const startNextBlockFn = useServerFn(archivePlanAndStartNextBlock);
-  const [startingNextBlock, setStartingNextBlock] = useState(false);
+  // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
   // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
