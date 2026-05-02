@@ -8,7 +8,7 @@ import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { GuideDock } from "@/components/GuideDock";
+import { AskForgeDock } from "@/components/AskForgeDock";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -348,7 +348,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         </div>
       </footer>
       <ScrollToTopButton />
-      <GuideDock enabled={isFounder} />
+      {/* Available to every signed-in trainer; isFounder no longer gates it. */}
+      <AskForgeDock enabled={!!user} />
     </div>
   );
 }
