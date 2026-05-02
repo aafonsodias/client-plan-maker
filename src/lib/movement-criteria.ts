@@ -260,6 +260,88 @@ export function formScore(criteria: Record<string, unknown> | null | undefined):
   return Object.values(criteria).filter(Boolean).length;
 }
 
+/**
+ * Derive a 1–5 competency score from form-criteria booleans + capacity values.
+ *
+ * Form: 0–5 criteria pass → maps to 1–5 (we add 1 floor so a totally failed
+ * pattern still shows on the radar at level 1 instead of looking unassessed).
+ * Capacity: light bonus when at least one capacity field is filled and above
+ * a per-pattern "novice" floor; never lifts the score above 5.
+ */
+const NOVICE_FLOORS: Record<PatternId, Record<string, number>> = {
+  squat: { reps_to_failure: 12, one_rm_kg: 60 },
+  hinge: { kb_swings_60s: 25, rdl_one_rm_kg: 40 },
+  push: { strict_pushups: 10, shoulder_press_one_rm_kg: 20 },
+  pull: { dead_hang_seconds: 20, pullups: 1 },
+  carry: { load_kg: 16, distance_m: 20 },
+  lunge: { walking_lunge_reps_per_side: 8, bulgarian_one_rm_kg: 16 },
+};
+
+export function derivePatternScore(
+  pattern: PatternId,
+  formCriteria: Record<string, unknown> | null | undefined,
+  capacity: Record<string, number | null> | null | undefined,
+): number | null {
+  const criteria = FORM_CRITERIA[pattern];
+  const totalCrits = criteria.length;
+  const pass = formScore(formCriteria);
+  // No data at all on either axis → un-assessed.
+  const hasAnyCriteria = formCriteria && Object.keys(formCriteria).length > 0;
+  const hasAnyCapacity = capacity && Object.values(capacity).some((v) => v != null);
+  if (!hasAnyCriteria && !hasAnyCapacity) return null;
+  // Map pass count (0..N) to 1..5 score.
+  const formPart = totalCrits > 0 ? Math.round(1 + (pass / totalCrits) * 4) : 3;
+  // Capacity nudge: +1 if any capacity field meets/exceeds the novice floor.
+  let capBoost = 0;
+  if (hasAnyCapacity) {
+    const floors = NOVICE_FLOORS[pattern];
+    for (const [k, v] of Object.entries(capacity ?? {})) {
+      if (v == null) continue;
+      const floor = floors[k];
+      if (floor != null && (v as number) >= floor) {
+        capBoost = 1;
+        break;
+      }
+    }
+  }
+  return Math.max(1, Math.min(5, formPart + (formPart < 5 ? capBoost : 0)));
+}
+
+/**
+ * Build a one-sentence Portuguese summary per pattern from raw assessment
+ * data. Used as a deterministic fallback when Pre-Stage 0 hasn't run and the
+ * Stage 1 brief would otherwise emit "<UNKNOWN>" placeholders.
+ */
+export function buildPatternSentence(
+  pattern: PatternId,
+  formCriteria: Record<string, unknown> | null | undefined,
+  capacity: Record<string, number | null> | null | undefined,
+  notAssessed?: boolean,
+): string {
+  if (notAssessed) return `${PATTERN_LABELS_PT[pattern]} não avaliado.`;
+  const score = derivePatternScore(pattern, formCriteria, capacity);
+  if (score == null) return `${PATTERN_LABELS_PT[pattern]} sem dados registados.`;
+  const totalCrits = FORM_CRITERIA[pattern].length;
+  const pass = formScore(formCriteria);
+  const capBits: string[] = [];
+  if (capacity) {
+    for (const def of CAPACITY_FIELDS[pattern]) {
+      const v = capacity[def.key];
+      if (v != null) capBits.push(`${def.label_pt}: ${v}`);
+    }
+  }
+  const verdict =
+    score >= 4
+      ? "padrão sólido — pode carregar"
+      : score === 3
+        ? "padrão funcional com pontos a refinar"
+        : score === 2
+          ? "padrão a regredir antes de carregar"
+          : "padrão a reconstruir desde zero";
+  const capStr = capBits.length ? ` · ${capBits.join(" · ")}` : "";
+  return `${PATTERN_LABELS_PT[pattern]}: ${pass}/${totalCrits} critérios — ${verdict}${capStr}.`;
+}
+
 export function FORM_FIELD(pattern: PatternId): string {
   return `${pattern}_form_criteria`;
 }
