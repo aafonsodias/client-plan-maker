@@ -781,7 +781,7 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
               // Mark all skip-keys, then advance regardless of validity.
               const keys = current.skipKeys ?? [];
               if (keys.length) {
-                setForm((f) => ({ ...f, skipped: { ...f.skipped, ...Object.fromEntries(keys.map((k) => [k, true])) } }));
+                setForm((f) => ({ ...f, skipped: { ...f.skipped, ...Object.fromEntries(keys.map((k: string) => [k, true])) } }));
               }
               if (isLast) onSubmit(); else setStep((s) => Math.min(total - 1, s + 1));
             }} disabled={submitting}>
