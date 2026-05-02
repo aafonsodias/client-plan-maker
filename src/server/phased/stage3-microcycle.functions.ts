@@ -659,3 +659,59 @@ export const updateDayContent = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
+
+/**
+ * reanchorPlanRpe — retroactive RPE floor application for an existing plan.
+ *
+ * Use case: Marta's plan was generated before the floor logic existed and
+ * the whole mesocycle reads RPE 5.4 across all 4 weeks. Instead of forcing
+ * the trainer to throw the plan away and regenerate, this fn:
+ *   1. Re-resolves tier × intensity_appetite floors.
+ *   2. Walks every workout_plan_days row (Week 1 only — the anchor).
+ *   3. Applies enforceRpeFloor() determinatively and updates `content`.
+ *   4. Wipes the cached progression_plan so the next view forces re-generation
+ *      OR the trainer re-runs Stage 4 to layer a real wave on top.
+ */
+export const reanchorPlanRpe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ planId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const loaded = await loadPlan(supabase, data.planId, userId);
+    if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const briefP = BriefSchema.safeParse(loaded.plan.brief);
+    if (!briefP.success) return { ok: false as const, error: "Brief inválido — não dá para re-ancorar." };
+    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const tier = guidelines?.tier ?? "conservative";
+    const appetite = String(briefP.data.intensity_appetite ?? "padrao");
+    const floors = rpeFloors(tier, appetite);
+
+    const { data: rows } = await supabase
+      .from("workout_plan_days")
+      .select("id, content")
+      .eq("plan_id", data.planId)
+      .eq("week_number", 1);
+
+    let touched = 0;
+    let totalApplied = 0;
+    for (const row of (rows ?? []) as any[]) {
+      const { day, floorApplied } = enforceRpeFloor(row.content ?? {}, floors);
+      if (floorApplied > 0) {
+        await supabase
+          .from("workout_plan_days")
+          .update({ content: day })
+          .eq("id", row.id);
+        touched++;
+        totalApplied += floorApplied;
+      }
+    }
+
+    return {
+      ok: true as const,
+      tier,
+      appetite,
+      floors,
+      daysTouched: touched,
+      exercisesBumped: totalApplied,
+    };
+  });
