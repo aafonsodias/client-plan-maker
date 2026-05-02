@@ -68,26 +68,40 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     const weeks = (plan as any).duration_weeks ?? 4;
     const model = resolveModel("FORGE_MODEL_STAGE_4", "claude-haiku-4-5-20251001");
     const progModel = (plan as any).blueprint?.progression_model_proposal?.model ?? "linear";
+    // Tier-derived RPE ceiling — falls back to 8 if not present on the blueprint.
+    const tierRaw = String(
+      (plan as any).blueprint?.programming_tier ??
+        (plan as any).generation_meta?.tier_override ??
+        "conservative"
+    ).toLowerCase();
+    const rpeCeiling =
+      tierRaw === "remedial" ? 7 : tierRaw === "advanced" ? 8.5 : 7.5;
 
-    const system = `You are a senior strength coach proposing PROGRESSION DELTAS for weeks 2..${weeks}.
+    const system = `You are a senior strength coach writing PROGRESSION DELTAS for weeks 2..${weeks} of a ${tierRaw.toUpperCase()} tier mesocycle.
 
-Output ONE row per exercise per dimension that should change. Use the delta DSL:
+Delta DSL (use empty string "" only for the deload week or when truly nothing should change):
 - load: "+2.5kg" / "+5lb" / "-5%"
-- reps: "+1rep" / "-2reps"
+- reps: "+1rep" / "+2reps" / "-1rep"
 - sets: "+1set"
 - intensity_rpe: "+0.5rpe"
-- tempo: explicit string like "3-1-1-0"
+- tempo: explicit "3-1-1-0"
 - complexity_variant: text describing variant swap
 
-RULES:
-- Progression model: ${progModel}.
-- Be conservative for beginners. Skip exercises that are already at target intensity.
-- Output empty deltas ("") for weeks where nothing should change.
-- Most exercises only need 1 row. Multi-row only when load AND rpe both shift.
-- Keep "rationale" under 12 words. Be terse.
-- You MUST output AT LEAST ONE row for the main compound lifts (squat/hinge/push/pull patterns) — never return an empty rows array.
+HARD RULES — apply to EVERY exercise:
+1. Each exercise MUST have at least ONE non-empty delta across W2/W3/W4. No exceptions, including accessory work.
+2. Bias by exercise type:
+   - Machine / cable / bodyweight: prefer reps (+1-2/wk) and intensity_rpe waves. Load deltas optional (auto-regulated).
+   - Free-weight compounds (DB press, goblet squat, RDL, trap-bar DL, row): prefer load (+2.5kg/wk small, +5kg/wk strong lifters), keep reps stable.
+   - Isolation / arms / calves: prefer reps and sets. Load is secondary.
+3. RPE ceiling for this tier: ${rpeCeiling}. Never propose intensity_rpe that would push an exercise above this number. Only main compounds may touch the ceiling.
+4. Progression model: ${progModel}.
+   - linear: each week +1 small step (reps OR load OR rpe). Steady climb.
+   - undulating: alternate reps-up weeks with intensity-up weeks. W2 may differ from W3.
+   - block: W2 accumulation (+reps), W3 intensification (+load / +rpe).
+5. Week ${weeks} is a DELOAD: use "-1set" OR "-20%" load OR drop intensity_rpe by 1.0. Never empty across the board.
+6. Keep "rationale" ≤ 10 words.
 
-Call record_progressions exactly once.`;
+Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.`;
 
     const user = `Mesocycle length: ${weeks} weeks.\nWeek 1 exercise list:\n${JSON.stringify(exerciseList, null, 2)}`;
 
@@ -124,12 +138,67 @@ Call record_progressions exactly once.`;
       return { ok: false as const, error: "AI returned no progression deltas. Try Regenerate." };
     }
 
+    // Post-validation: ensure most exercises have at least one non-empty delta.
+    // If ≥30% of exercises are flat across W2-W4, retry once with a stricter message.
+    const evaluateCoverage = (rows: any[]) => {
+      const covered = new Set<string>();
+      for (const r of rows) {
+        const hasAny =
+          (r.week_2_delta && String(r.week_2_delta).trim() !== "") ||
+          (r.week_3_delta && String(r.week_3_delta).trim() !== "") ||
+          (r.week_4_delta && String(r.week_4_delta).trim() !== "");
+        if (hasAny && r.exercise_id) covered.add(String(r.exercise_id));
+      }
+      const total = exerciseList.length || 1;
+      const flat = exerciseList.filter((e) => !covered.has(e.id));
+      return { coveredCount: covered.size, total, flatRatio: flat.length / total, flat };
+    };
+
+    let progressionData: any = result.data;
+    let coverage = evaluateCoverage((progressionData as any).rows ?? []);
+    if (coverage.flatRatio >= 0.3 && coverage.flat.length > 0) {
+      const retrySystem = `${system}\n\nYour previous attempt left ${coverage.flat.length} exercises with ZERO non-empty deltas across W2-W${weeks}. That violates Hard Rule 1. Re-issue ALL exercises (not just the flat ones) with at least one non-empty delta each. Specifically these exercise_ids were flat: ${coverage.flat.map((e) => e.id).join(", ")}.`;
+      const retry = await callAnthropicWithSchema({
+        model,
+        system: retrySystem,
+        userMessage: user,
+        toolName: "record_progressions",
+        toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
+        toolJsonSchema: PROG_TOOL_SCHEMA,
+        schema: ProgressionPlanSchema,
+        maxTokens: 8000,
+      });
+      await logGeneration(supabase, {
+        trainer_id: userId,
+        plan_id: data.planId,
+        stage: "stage4:progressions:retry",
+        model_used: model,
+        input_tokens: retry.inputTokens,
+        output_tokens: retry.outputTokens,
+        cost_usd: retry.costUsd,
+        zod_passed: retry.ok,
+        retry_count: retry.retryCount,
+        duration_ms: retry.durationMs,
+        error: retry.ok ? null : retry.error,
+        input_snapshot: { reason: "flat_coverage", flatCount: coverage.flat.length, flatRatio: coverage.flatRatio },
+        output_snapshot: retry.ok ? { rowCount: (retry.data as any)?.rows?.length ?? 0 } : null,
+      });
+      if (retry.ok && retry.data) {
+        const retryCoverage = evaluateCoverage((retry.data as any).rows ?? []);
+        // Keep retry if it improved coverage; otherwise keep original.
+        if (retryCoverage.flatRatio < coverage.flatRatio) {
+          progressionData = retry.data;
+          coverage = retryCoverage;
+        }
+      }
+    }
+
     const { error: updErr } = await supabase
       .from("workout_plans")
-      .update({ progression_plan: result.data as any })
+      .update({ progression_plan: progressionData as any })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, progressionPlan: result.data, exerciseList };
+    return { ok: true as const, progressionPlan: progressionData, exerciseList };
   });
 
 export const approveProgressions = createServerFn({ method: "POST" })

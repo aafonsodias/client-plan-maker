@@ -10,6 +10,7 @@ import {
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
 import { Loader2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { BriefContextRail } from "@/components/BriefContextRail";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
 import { DayCardEditable } from "@/components/DayCardEditable";
@@ -55,6 +56,7 @@ type DayRow = {
 function MicrocycleReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("plan");
   const generateDayFn = useServerFn(generateDay);
   const approveFn = useServerFn(approveMicrocycle);
 
@@ -178,14 +180,14 @@ function MicrocycleReview() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <Link
             to="/plans/$planId/blueprint"
             params={{ planId }}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-3 w-3" /> Blueprint
+            <ArrowLeft className="h-3 w-3" /> {t("actions.back_blueprint")}
           </Link>
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
           <p className="text-xs text-muted-foreground">
@@ -195,10 +197,10 @@ function MicrocycleReview() {
         <button
           onClick={approve}
           disabled={!allDone || busy}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-          Approve microcycle
+          {t("actions.approve_microcycle")}
         </button>
       </div>
 
@@ -207,9 +209,9 @@ function MicrocycleReview() {
           <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-2">
               {inFlight && <Loader2 className="h-3 w-3 animate-spin" />}
-              A gerar microciclo · {doneCount} / {sessionsPerWeek}
+              {t("microcycleProgress.generating")} · {doneCount} / {sessionsPerWeek}
             </span>
-            {inFlight && etaSec > 0 && <span>~{etaSec}s restantes</span>}
+            {inFlight && etaSec > 0 && <span>{t("microcycleProgress.remaining", { seconds: etaSec })}</span>}
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -223,7 +225,7 @@ function MicrocycleReview() {
       {!day1 && generating && (
         <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
           <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-          <p className="mt-2">Generating Day 1 — this is the quality gate.</p>
+          <p className="mt-2">{t("microcycleProgress.day_quality_gate")}</p>
         </div>
       )}
 

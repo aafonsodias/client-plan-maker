@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { BriefSchema, type Brief } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, RefreshCw, ArrowRight, ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import BriefEditor from "@/components/BriefEditor";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/plans/$planId/brief")({
   component: () => (
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/plans/$planId/brief")({
 function BriefReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation("plan");
   const synthesizeFn = useServerFn(synthesizeBrief);
   const approveFn = useServerFn(approveBrief);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,7 @@ function BriefReview() {
   const [brief, setBrief] = useState<Brief | null>(null);
   const [planTitle, setPlanTitle] = useState("");
   const [clientId, setClientId] = useState<string | null>(null);
+  const [approved, setApproved] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -89,7 +92,12 @@ function BriefReview() {
       return;
     }
     toast.success("Brief approved — moving to blueprint");
-    navigate({ to: "/plans/$planId/blueprint", params: { planId } });
+    setApproved(true);
+    // Show the collapsed "approved" confirmation briefly so the trainer
+    // sees the state change before we navigate to the blueprint stage.
+    window.setTimeout(() => {
+      navigate({ to: "/plans/$planId/blueprint", params: { planId } });
+    }, 700);
   }
 
   if (loading) {
@@ -119,6 +127,25 @@ function BriefReview() {
     );
   }
 
+  if (approved) {
+    return (
+      <div className="mx-auto max-w-3xl p-6 sm:p-8">
+        <div className="flex items-center justify-between rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+              <Check className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Stage 1 — Brief approved</p>
+              <p className="text-xs text-muted-foreground">Loading blueprint…</p>
+            </div>
+          </div>
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
       <div className="flex items-center justify-between">
@@ -142,7 +169,7 @@ function BriefReview() {
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50"
           >
             {regenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Regenerate
+            {t("actions.regenerate")}
           </button>
           <button
             onClick={approve}
@@ -150,7 +177,7 @@ function BriefReview() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {approving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Approve brief
+            {t("actions.approve_brief")}
           </button>
         </div>
       </div>

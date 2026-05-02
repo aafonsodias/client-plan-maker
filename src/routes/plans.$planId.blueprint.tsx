@@ -51,7 +51,7 @@ function BlueprintReview() {
   const generateFn = useServerFn(generateBlueprint);
   const approveFn = useServerFn(approveBlueprint);
   const overrideFn = useServerFn(setTierOverride);
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation("plan");
   const locale: "en" | "pt" = i18n.language?.startsWith("pt") ? "pt" : "en";
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -236,7 +236,7 @@ function BlueprintReview() {
             params={{ planId }}
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-3 w-3" /> Brief
+            <ArrowLeft className="h-3 w-3" /> {t("actions.back_brief")}
           </Link>
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
           <p className="text-xs text-muted-foreground">Stage 2 — Mesocycle blueprint</p>
@@ -248,7 +248,7 @@ function BlueprintReview() {
             title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            Approve → Day 1
+            {t("actions.approve_blueprint")}
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -273,7 +273,7 @@ function BlueprintReview() {
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Regenerate
+            {t("actions.regenerate")}
           </button>
         </div>
       </div>
