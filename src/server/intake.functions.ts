@@ -173,7 +173,17 @@ const intRange = (min: number, max: number) =>
   z.number().int().min(min).max(max);
 const stringArray = z.array(z.string().trim().max(120)).max(50);
 const extendedSchema = z
-  .record(z.string().max(60), z.union([z.string().max(2000), z.number(), z.boolean(), z.null()]))
+  .record(
+    z.string().max(60),
+    z.union([
+      z.string().max(2000),
+      z.number(),
+      z.boolean(),
+      z.null(),
+      z.array(z.union([z.string().max(500), z.number(), z.boolean()])).max(50),
+      z.record(z.string().max(60), z.union([z.string().max(2000), z.number(), z.boolean(), z.null()])),
+    ]),
+  )
   .refine((o) => Object.keys(o).length <= 80, "extended too large");
 
 const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
