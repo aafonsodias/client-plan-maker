@@ -11,6 +11,7 @@ import {
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { checkPlanQuota } from "@/server/quota.server";
+import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
 
 const BRIEF_TOOL_SCHEMA = {
   type: "object",
