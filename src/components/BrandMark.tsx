@@ -10,9 +10,9 @@ import logoUrl from "@/assets/forge-logo.png";
 type Size = "sm" | "md" | "lg";
 
 const sizeMap: Record<Size, { wrap: string; logo: string }> = {
-  sm: { wrap: "h-7 w-7", logo: "h-5 w-5" },
-  md: { wrap: "h-9 w-9", logo: "h-7 w-7" },
-  lg: { wrap: "h-12 w-12", logo: "h-9 w-9" },
+  sm: { wrap: "h-9 w-9", logo: "h-8 w-8" },
+  md: { wrap: "h-12 w-12", logo: "h-11 w-11" },
+  lg: { wrap: "h-16 w-16", logo: "h-14 w-14" },
 };
 
 // Cached so we only sample the logo image once per session.
@@ -82,12 +82,12 @@ export function BrandMark({
   }, []);
 
   const platedBg = logoIsDark
-    ? "bg-[oklch(0.94_0.04_85)] dark:bg-[oklch(0.94_0.04_85)]"
+    ? ""
     : "";
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center rounded-full",
+        "relative inline-flex shrink-0 items-center justify-center",
         s.wrap,
         platedBg,
         className,
@@ -95,8 +95,8 @@ export function BrandMark({
       style={
         showGlow
           ? {
-              boxShadow:
-                "0 0 0 1px rgba(232,165,71,0.18), 0 6px 22px -6px rgba(232,165,71,0.45)",
+              filter:
+                "drop-shadow(0 0 14px rgba(232,165,71,0.35)) drop-shadow(0 4px 10px rgba(232,165,71,0.25))",
             }
           : undefined
       }

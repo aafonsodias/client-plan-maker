@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
 import { interpretGoal } from "@/server/intake-ai.functions";
+import { uploadIntakePhoto } from "@/server/intake-photos.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -694,11 +695,11 @@ type SlideshowProps = {
   lastSavedAt: number | null;
 };
 
-function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit, saveStatus, lastSavedAt }: SlideshowProps) {
+function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit, saveStatus, lastSavedAt }: SlideshowProps & { token?: string }) {
   const { t } = useTranslation("intake");
   const [step, setStep] = useState(0);
-
-  const steps = useMemo(() => buildSlides(t, form, setForm), [t, form, setForm]);
+  const { token } = Route.useParams();
+  const steps = useMemo(() => buildSlides(t, form, setForm, token), [t, form, setForm, token]);
   const total = steps.length;
   const current = steps[step];
   const isLast = step === total - 1;
@@ -818,6 +819,7 @@ function buildSlides(
   t: (k: string, opts?: any) => string,
   form: FormState,
   setForm: React.Dispatch<React.SetStateAction<FormState>>,
+  token?: string,
 ): Slide[] {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -1138,6 +1140,32 @@ function buildSlides(
         </div>
       ),
     },
+    // 15a. Reference photos (optional)
+    {
+      title: t("photos_title", { defaultValue: "Fotografias de referência" }),
+      subtitle: t("photos_subtitle", { defaultValue: "Não usamos para diagnosticar postura. Servem para acompanhar a tua evolução visualmente. Podes saltar." }),
+      body: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { slot: "front", label: t("photos_front", { defaultValue: "Frente" }), hint: t("photos_front_hint", { defaultValue: "Braços ao lado do corpo, pés à largura dos ombros." }) },
+            { slot: "side", label: t("photos_side", { defaultValue: "Lateral" }), hint: t("photos_side_hint", { defaultValue: "Olhar em frente, postura natural." }) },
+            { slot: "back", label: t("photos_back", { defaultValue: "Costas" }), hint: t("photos_back_hint", { defaultValue: "Mesma posição, de costas para a câmara." }) },
+            { slot: "face", label: t("photos_face", { defaultValue: "Rosto" }), hint: t("photos_face_hint", { defaultValue: "Foto de perfil simpática :)" }) },
+          ] as const).map((opt) => (
+            <PhotoSlot
+              key={opt.slot}
+              token={token}
+              slot={opt.slot}
+              label={opt.label}
+              hint={opt.hint}
+              tutorial={t("photos_tutorial", { defaultValue: "Distância 2m, parede neutra, roupa justa, telemóvel à altura do peito." })}
+            />
+          ))}
+        </div>
+      ),
+      canSkip: true,
+      skipKeys: ["photos"],
+    },
     // 16. Review
     {
       title: t("review_title"),
@@ -1165,4 +1193,104 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
       <span className="text-right text-foreground">{value || "—"}</span>
     </div>
   );
+}
+
+/* ─────────────── Photo slot (reference photos) ─────────────── */
+
+function PhotoSlot({ token, slot, label, hint, tutorial }: {
+  token?: string;
+  slot: "front" | "side" | "back" | "face";
+  label: string;
+  hint: string;
+  tutorial: string;
+}) {
+  const upload = useServerFn(uploadIntakePhoto);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const onFile = async (file: File) => {
+    if (!token) {
+      toast.error("Sem ligação. Tenta novamente.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await resizeToJpegDataUrl(file, 1600, 0.82);
+      setPreview(dataUrl);
+      await upload({ data: { token, slot, dataUrl } });
+      setDone(true);
+      toast.success(`${label} guardada`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falhou. Tenta outra foto.");
+      setPreview(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">{label}</p>
+        {done && <span className="text-[10px] uppercase tracking-widest text-accent">✓</span>}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      <div className="mt-3 aspect-[3/4] overflow-hidden rounded-lg bg-background/50">
+        {preview ? (
+          <img src={preview} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground/60">
+            {tutorial}
+          </div>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          if (inputRef.current) inputRef.current.value = "";
+        }}
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant={done ? "outline" : "default"}
+        className="mt-3 w-full"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        {busy ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> A enviar…</> : done ? "Tirar outra" : "Tirar foto"}
+      </Button>
+    </div>
+  );
+}
+
+async function resizeToJpegDataUrl(file: File, maxSide: number, quality: number): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = url;
+    });
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * scale);
+    const h = Math.round(img.naturalHeight * scale);
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const cx = c.getContext("2d");
+    if (!cx) throw new Error("Canvas não suportado.");
+    cx.drawImage(img, 0, 0, w, h);
+    return c.toDataURL("image/jpeg", quality);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
