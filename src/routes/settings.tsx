@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, Save, ArrowLeft, LayoutDashboard, Users } from "lucide-react";
+import { BrandMark } from "@/components/BrandMark";
 import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/settings")({
@@ -96,8 +97,11 @@ function Settings() {
       </div>
 
       <div>
-        <p className="text-sm uppercase tracking-widest text-muted-foreground">Settings</p>
-        <h1 className="mt-1 text-4xl font-light tracking-tight">PDF branding</h1>
+        <div className="flex items-center gap-3">
+          <BrandMark size="sm" />
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">Settings</p>
+        </div>
+        <h1 className="mt-2 text-4xl font-light tracking-tight">PDF branding</h1>
         <p className="mt-2 text-muted-foreground">Appears on every workout plan PDF you export.</p>
       </div>
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Beaker, Zap, Activity, Loader2, Trophy, Check, X, Square } from "lucide-react";
+import { Beaker, Zap, Activity, Loader2, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startDemoClientFull, getDemoRun, cancelDemoRun } from "@/server/demo-oneshot.functions";
 import { advanceSimulation } from "@/server/demo-sessions.functions";
@@ -234,16 +234,6 @@ export function DemoLabPanel() {
         >
           {busy === "tick" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
           Avançar simulação (+1 sessão / cliente demo)
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => void navigate({ to: "/forge" })}
-          disabled={busy !== null}
-          className="border-amber-500/40"
-        >
-          <Trophy className="mr-2 h-4 w-4" />
-          Forge (leaderboard)
         </Button>
       </div>
       {(busy === "instant" || Object.values(gates).some((v) => v === "failed")) ? (
