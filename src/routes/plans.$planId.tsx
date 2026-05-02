@@ -798,6 +798,196 @@ function PlanEditor() {
 }
 
 
+function ViewMode({
+  plan,
+  planId,
+  sessions,
+  reload,
+}: {
+  plan: PlanData;
+  planId: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
+  const [layout, setLayout] = useState<"cards" | "table">(() => {
+    if (typeof window === "undefined") return "table";
+    const saved = window.localStorage.getItem("planLayout");
+    return saved === "cards" ? "cards" : "table";
+  });
+  const setLayoutPersisted = (next: "cards" | "table") => {
+    setLayout(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("planLayout", next);
+    }
+  };
+  if (!plan.weeks.length) {
+    return <p className="text-sm text-muted-foreground">No weeks yet. Switch to Edit to build the plan.</p>;
+  }
+  return (
+    <div className="space-y-6">
+      <VolumeSection plan={plan} />
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+          <button
+            onClick={() => setLayoutPersisted("table")}
+            className={`rounded-md px-3 py-1 transition ${layout === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Table
+          </button>
+          <button
+            onClick={() => setLayoutPersisted("cards")}
+            className={`rounded-md px-3 py-1 transition ${layout === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Cards
+          </button>
+        </div>
+      </div>
+      {layout === "table" ? (
+        <MesocycleTableView plan={plan} planId={planId} editable={true} onUpdated={() => void reload()} />
+      ) : (
+        <div className="space-y-12">
+      {plan.weeks.map((w, wi) => (
+        <div key={wi} className="space-y-10">
+          {/* Week marker — minimal, lets the day headers carry the weight */}
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent">
+              Week {w.week_number}
+            </span>
+            {w.focus && (
+              <>
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs text-muted-foreground">{w.focus}</span>
+              </>
+            )}
+          </div>
+          {w.rationale && (
+            <p className="-mt-6 max-w-2xl border-l-2 border-accent/40 pl-3 text-[11px] italic leading-relaxed text-muted-foreground">
+              {w.rationale}
+            </p>
+          )}
+          {w.days.map((d, di) => (
+            <SessionDayView
+              key={di}
+              week={w}
+              day={d}
+              index={di}
+              rightSlot={
+                <DayQuickMark
+                  planId={planId}
+                  weekNumber={w.week_number}
+                  dayLabel={d.day_label}
+                  sessions={sessions}
+                  reload={reload}
+                />
+              }
+            />
+          ))}
+        </div>
+      ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Quick plan-vs-actual marker for a day. One click writes a workout_sessions
+ * row with status=done|partial|missed and empty entries — the trainer can
+ * always open Log mode later to add detail. Re-clicking the same status
+ * removes the latest mark for that day.
+ */
+function DayQuickMark({
+  planId,
+  weekNumber,
+  dayLabel,
+  sessions,
+  reload,
+}: {
+  planId: string;
+  weekNumber: number;
+  dayLabel: string;
+  sessions: SessionRow[];
+  reload: () => Promise<void>;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  // Latest session for this exact day cell
+  const latest = sessions
+    .filter((s) => s.week_number === weekNumber && s.day_label === dayLabel)
+    .sort((a, b) => b.session_date.localeCompare(a.session_date))[0];
+
+  const current = (latest?.status ?? null) as "done" | "partial" | "missed" | null;
+
+  const mark = async (status: "done" | "partial" | "missed") => {
+    setBusy(true);
+    try {
+      // Toggle off if clicking the same status that's already set
+      if (current === status && latest) {
+        const { error } = await supabase.from("workout_sessions").delete().eq("id", latest.id);
+        if (error) throw error;
+        toast.success("Mark cleared");
+      } else {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: u } = await supabase.auth.getUser();
+        const trainerId = u.user?.id;
+        if (!trainerId) throw new Error("Not authenticated");
+        const { error } = await supabase.from("workout_sessions").insert({
+          plan_id: planId,
+          trainer_id: trainerId,
+          week_number: weekNumber,
+          day_label: dayLabel,
+          session_date: today,
+          status,
+          entries: [],
+          logged_by: "trainer",
+        });
+        if (error) throw error;
+        toast.success(
+          status === "done" ? "Marked done" : status === "partial" ? "Marked partial" : "Marked missed",
+        );
+        void markOnboardingStep(trainerId, "log_session");
+      }
+      await reload();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to mark");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const btn = (
+    val: "done" | "partial" | "missed",
+    Icon: typeof Check,
+    label: string,
+    activeClass: string,
+  ) => {
+    const active = current === val;
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => mark(val)}
+        title={active ? `${label} — click to clear` : label}
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors disabled:opacity-50 ${
+          active
+            ? activeClass
+            : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    );
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      {btn("done", Check, "Done", "border-emerald-500/40 bg-emerald-500/15 text-emerald-600")}
+      {btn("partial", MinusCircle, "Partial", "border-amber-500/40 bg-amber-500/15 text-amber-600")}
+      {btn("missed", XCircle, "Missed", "border-rose-500/40 bg-rose-500/15 text-rose-600")}
+    </div>
+  );
+}
+
 /* ─────────── Share dialog ─────────── */
 
 function ShareDialog({
