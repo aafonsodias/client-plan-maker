@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
+import { DemoOrchestrator } from "@/components/DemoOrchestrator";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,13 +56,21 @@ import { planStatusInfo } from "@/lib/plan-status";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
+  validateSearch: zodValidator(
+    z.object({
+      demo: fallback(z.enum(["play"]).optional(), undefined),
+    })
+  ),
 });
 
 function ClientDetailRoute() {
   const { t } = useTranslation("assessment");
+  const { clientId } = Route.useParams();
+  const { demo } = Route.useSearch();
   return (
     <AppShell back={{ to: "/clients", label: t("all_clients") }}>
       <ClientDetail />
+      <DemoOrchestrator clientId={clientId} enabled={demo === "play"} />
     </AppShell>
   );
 }
