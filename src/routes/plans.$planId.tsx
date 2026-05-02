@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { generatePlanPdf, generateLogsheetPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
+import { generatePlanPdf, generateLogsheetPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise } from "@/lib/pdf";
 import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -230,15 +230,6 @@ function PlanEditor() {
       });
     }
   };
-
-  const addWeek = () => {
-    const n = (data.weeks.at(-1)?.week_number ?? 0) + 1;
-    setData({ ...data, weeks: [...data.weeks, { week_number: n, focus: "", days: [] }] });
-  };
-  const updateWeek = (i: number, w: Week) => {
-    const copy = [...data.weeks]; copy[i] = w; setData({ ...data, weeks: copy });
-  };
-  const removeWeek = (i: number) => setData({ ...data, weeks: data.weeks.filter((_, idx) => idx !== i) });
 
   const exportPdf = async () => {
     if (!client || !plan) return;
@@ -783,46 +774,15 @@ function PlanEditor() {
       {mode === "view" ? (
         <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
       ) : mode === "edit" ? (
-        isPhasedComplete ? (
-          <>
-            <VolumeSection plan={data} />
-            <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
-            <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
-              <Button onClick={exportPdf}>
-                <Download className="mr-2 h-4 w-4" /> Export PDF
-              </Button>
-            </div>
-          </>
-        ) : (
         <>
-          <div className="space-y-3">
-            {data.weeks.map((w, wi) => (
-              <WeekBlock key={wi} week={w} onChange={(nw) => updateWeek(wi, nw)} onRemove={() => removeWeek(wi)} />
-            ))}
-            <Button variant="outline" onClick={addWeek}>
-              <Plus className="mr-2 h-4 w-4" /> Add week
-            </Button>
-          </div>
-
+          {isPhasedComplete && <VolumeSection plan={data} />}
+          <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
           <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
-            <Button variant="outline" onClick={() => save()} disabled={saving}>
-              <Save className="mr-2 h-4 w-4" /> Save
-            </Button>
-            {plan.status === "finalized" ? (
-              <Button variant="outline" onClick={() => save({ status: "draft" })} disabled={saving}>
-                <LockOpen className="mr-2 h-4 w-4" /> Un-finalize
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={() => save({ status: "finalized" })} disabled={saving}>
-                <Lock className="mr-2 h-4 w-4" /> Finalize
-              </Button>
-            )}
             <Button onClick={exportPdf}>
               <Download className="mr-2 h-4 w-4" /> Export PDF
             </Button>
           </div>
         </>
-        )
       ) : mode === "results" ? (
         <ResultsPanel plan={data} sessions={sessions as any} />
       ) : mode === "progress" ? (
@@ -837,43 +797,6 @@ function PlanEditor() {
   );
 }
 
-/* ─────────── Edit-mode blocks (layered: week = darkest, day = medium, ex = lightest) ─────────── */
-
-function WeekBlock({ week, onChange, onRemove }: { week: Week; onChange: (w: Week) => void; onRemove: () => void }) {
-  const addDay = () => onChange({ ...week, days: [...week.days, { day_label: `Day ${week.days.length + 1}`, focus: "", exercises: [] }] });
-  const updateDay = (i: number, d: Day) => { const c = [...week.days]; c[i] = d; onChange({ ...week, days: c }); };
-  const removeDay = (i: number) => onChange({ ...week, days: week.days.filter((_, idx) => idx !== i) });
-
-  return (
-      <div className="rounded-xl border border-border bg-muted/40 p-3">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="rounded-md border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-widest text-accent">Week {week.week_number}</span>
-        <Input value={week.focus} onChange={(e) => onChange({ ...week, focus: e.target.value })} placeholder="Focus (e.g. Hypertrophy block)" className="h-8 flex-1" />
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRemove}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="mb-3 -mt-1">
-        <Input
-          value={week.rationale ?? ""}
-          onChange={(e) => onChange({ ...week, rationale: e.target.value })}
-          placeholder="Why this block now? (e.g. accumulation phase — sleep 8/10, no deload yet)"
-          className="h-7 border-dashed bg-transparent text-xs italic text-muted-foreground placeholder:text-muted-foreground/50"
-        />
-      </div>
-      <div className="space-y-3">
-        {week.days.map((d, di) => (
-          <DayBlock key={di} day={d} onChange={(nd) => updateDay(di, nd)} onRemove={() => removeDay(di)} />
-        ))}
-        <Button variant="outline" size="sm" onClick={addDay}>
-          <Plus className="mr-2 h-3 w-3" /> Add day
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────── View mode (compact, read-only render) ─────────── */
 
 function ViewMode({
   plan,
@@ -1061,204 +984,6 @@ function DayQuickMark({
       {btn("done", Check, "Done", "border-emerald-500/40 bg-emerald-500/15 text-emerald-600")}
       {btn("partial", MinusCircle, "Partial", "border-amber-500/40 bg-amber-500/15 text-amber-600")}
       {btn("missed", XCircle, "Missed", "border-rose-500/40 bg-rose-500/15 text-rose-600")}
-    </div>
-  );
-}
-
-function DayBlock({ day, onChange, onRemove }: { day: Day; onChange: (d: Day) => void; onRemove: () => void }) {
-  const addEx = () =>
-    onChange({
-      ...day,
-      exercises: [
-        ...day.exercises,
-        {
-          name: "", sets: "3", reps: "10", rest: "60s", notes: "",
-          primary_muscles: [], secondary_muscles: [],
-          rpe: "", tempo: "", technique_cues: "", equipment: [],
-        },
-      ],
-    });
-  const updateEx = (i: number, e: Exercise) => { const c = [...day.exercises]; c[i] = e; onChange({ ...day, exercises: c }); };
-  const removeEx = (i: number) => onChange({ ...day, exercises: day.exercises.filter((_, idx) => idx !== i) });
-
-  const setSection = (key: "warmup" | "activation" | "dynamic_stretches" | "cooldown" | "finisher", items: SectionItem[]) =>
-    onChange({ ...day, [key]: items });
-
-  const finisherEnabled = day.finisher_enabled !== false;
-
-  return (
-    <div className="rounded-lg border border-border/60 bg-card p-2.5">
-      <div className="mb-2 flex items-center gap-2">
-        <Input className="h-7 w-24 text-sm" value={day.day_label} onChange={(e) => onChange({ ...day, day_label: e.target.value })} />
-        <Input value={day.focus} onChange={(e) => onChange({ ...day, focus: e.target.value })} placeholder="Focus (e.g. Push)" className="h-7 flex-1 text-sm" />
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <div className="mb-2">
-        <Input
-          value={day.rationale ?? ""}
-          onChange={(e) => onChange({ ...day, rationale: e.target.value })}
-          placeholder="Why this session shape? (e.g. hinge after 48h CNS recovery; hip hinge 3/5 → RDL not deadlift)"
-          className="h-6 border-dashed bg-transparent text-[11px] italic text-muted-foreground placeholder:text-muted-foreground/50"
-        />
-      </div>
-
-      <SectionEditor title="Warmup" items={day.warmup ?? []} onChange={(it) => setSection("warmup", it)} placeholder="e.g. Rower" />
-      <SectionEditor title="Activation" items={day.activation ?? []} onChange={(it) => setSection("activation", it)} placeholder="e.g. Glute bridge" />
-      <SectionEditor title="Dynamic stretches" items={day.dynamic_stretches ?? []} onChange={(it) => setSection("dynamic_stretches", it)} placeholder="e.g. Leg swings" />
-
-      <div className="mb-1.5 mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Main work</div>
-      <div className="space-y-1.5">
-        {day.exercises.map((ex, ei) => (
-          <ExerciseRow key={ei} ex={ex} onChange={(e) => updateEx(ei, e)} onRemove={() => removeEx(ei)} />
-        ))}
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addEx}>
-          <Plus className="mr-1 h-3 w-3" /> Add exercise
-        </Button>
-      </div>
-
-      <SectionEditor title="Cooldown" items={day.cooldown ?? []} onChange={(it) => setSection("cooldown", it)} placeholder="e.g. Pigeon stretch" />
-
-      <div className="mt-2 rounded-md border border-border/60 bg-background/40 p-2">
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-accent">Optional finisher</span>
-          <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={finisherEnabled}
-              onChange={(e) => onChange({ ...day, finisher_enabled: e.target.checked })}
-              className="h-3 w-3 accent-accent"
-            />
-            Show on plan & PDF
-          </label>
-        </div>
-        <SectionEditor title="" items={day.finisher ?? []} onChange={(it) => setSection("finisher", it)} placeholder="e.g. Vibroplate or agility ladder" hideTitle />
-      </div>
-    </div>
-  );
-}
-
-function SectionEditor({
-  title, items, onChange, placeholder, hideTitle = false,
-}: {
-  title: string;
-  items: SectionItem[];
-  onChange: (items: SectionItem[]) => void;
-  placeholder?: string;
-  hideTitle?: boolean;
-}) {
-  const update = (i: number, key: keyof SectionItem, v: string) => {
-    const c = [...items]; c[i] = { ...c[i], [key]: v }; onChange(c);
-  };
-  const add = () => onChange([...items, { name: "", duration: "", notes: "" }]);
-  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
-  return (
-    <div className="mt-2">
-      {!hideTitle && (
-        <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{title}</div>
-      )}
-      <div className="space-y-1">
-        {items.map((it, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <Input
-              className="h-7 flex-1 text-xs"
-              placeholder={placeholder || "Movement / drill"}
-              value={it.name}
-              onChange={(e) => update(i, "name", e.target.value)}
-            />
-            <Input
-              className="h-7 w-20 text-center text-xs"
-              placeholder="time / reps"
-              value={it.duration ?? ""}
-              onChange={(e) => update(i, "duration", e.target.value)}
-            />
-            <Input
-              className="h-7 flex-1 text-xs"
-              placeholder="Cue / note"
-              value={it.notes ?? ""}
-              onChange={(e) => update(i, "notes", e.target.value)}
-            />
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(i)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        ))}
-        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]" onClick={add}>
-          <Plus className="mr-1 h-3 w-3" /> Add
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function ExerciseRow({ ex, onChange, onRemove }: { ex: Exercise; onChange: (e: Exercise) => void; onRemove: () => void }) {
-  const csv = (arr?: string[]) => (arr ?? []).join(", ");
-  const fromCsv = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
-  return (
-    <div className="rounded-md border border-border/50 bg-background p-2">
-      <div className="flex items-end gap-2">
-        <FieldStack label="Exercise name" className="flex-1 min-w-0">
-          <Input className="h-8 text-sm" placeholder="e.g. Barbell back squat" value={ex.name} onChange={(e) => onChange({ ...ex, name: e.target.value })} />
-        </FieldStack>
-        <FieldStack label="Sets" className="w-16 shrink-0">
-          <Input className="h-8 text-center text-sm" placeholder="3" value={ex.sets} onChange={(e) => onChange({ ...ex, sets: e.target.value })} />
-        </FieldStack>
-        <FieldStack label="Reps" className="w-20 shrink-0">
-          <Input className="h-8 text-center text-sm" placeholder="8-10" value={ex.reps} onChange={(e) => onChange({ ...ex, reps: e.target.value })} />
-        </FieldStack>
-        <FieldStack label="Rest" className="w-20 shrink-0">
-          <Input className="h-8 text-center text-sm" placeholder="60s" value={ex.rest} onChange={(e) => onChange({ ...ex, rest: e.target.value })} />
-        </FieldStack>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onRemove}>
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <FieldStack label="RPE">
-          <Input className="h-7 text-sm" placeholder="7-8" value={ex.rpe ?? ""} onChange={(e) => onChange({ ...ex, rpe: e.target.value })} />
-        </FieldStack>
-        <FieldStack label="Tempo">
-          <Input className="h-7 text-sm" placeholder="3-1-1-0" value={ex.tempo ?? ""} onChange={(e) => onChange({ ...ex, tempo: e.target.value })} />
-        </FieldStack>
-        <FieldStack label="Primary muscles" className="col-span-2">
-          <Input className="h-7 text-sm" placeholder="quadriceps, glutes" value={csv(ex.primary_muscles)} onChange={(e) => onChange({ ...ex, primary_muscles: fromCsv(e.target.value) })} />
-        </FieldStack>
-        <FieldStack label="Secondary muscles" className="col-span-2">
-          <Input className="h-7 text-sm" placeholder="hamstrings, core" value={csv(ex.secondary_muscles)} onChange={(e) => onChange({ ...ex, secondary_muscles: fromCsv(e.target.value) })} />
-        </FieldStack>
-        <FieldStack label="Equipment" className="col-span-2">
-          <Input className="h-7 text-sm" placeholder="barbell, rack" value={csv(ex.equipment)} onChange={(e) => onChange({ ...ex, equipment: fromCsv(e.target.value) })} />
-        </FieldStack>
-      </div>
-      <div className="mt-1.5">
-        <FieldStack label="Technique cues">
-          <Input
-            className="h-7 text-sm italic"
-            placeholder="Brace and exhale on press; pause 1s at peak stretch"
-            value={ex.technique_cues ?? ""}
-            onChange={(e) => onChange({ ...ex, technique_cues: e.target.value })}
-          />
-        </FieldStack>
-      </div>
-      <div className="mt-1.5">
-        <AutoTextarea
-          minRows={1}
-          className="text-sm py-1.5"
-          placeholder="Notes — programming or substitutions"
-          value={ex.notes ?? ""}
-          onChange={(e) => onChange({ ...ex, notes: e.target.value })}
-        />
-      </div>
-    </div>
-  );
-}
-
-function FieldStack({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
-      {children}
     </div>
   );
 }
