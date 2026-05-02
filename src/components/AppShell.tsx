@@ -7,6 +7,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConciergeDock } from "@/components/ConciergeDock";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -329,6 +330,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         {children}
       </main>
       <ScrollToTopButton />
+      <ConciergeDock enabled={isFounder} />
     </div>
   );
 }

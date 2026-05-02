@@ -713,6 +713,7 @@ export type Database = {
       }
       workout_sessions: {
         Row: {
+          client_feedback: Json | null
           created_at: string
           day_label: string
           entries: Json
@@ -727,6 +728,7 @@ export type Database = {
           week_number: number
         }
         Insert: {
+          client_feedback?: Json | null
           created_at?: string
           day_label: string
           entries?: Json
@@ -741,6 +743,7 @@ export type Database = {
           week_number: number
         }
         Update: {
+          client_feedback?: Json | null
           created_at?: string
           day_label?: string
           entries?: Json
