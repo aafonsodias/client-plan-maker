@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
 import { logGeneration } from "./ai.server";
+import { buildDeterministicSummary } from "./summary.server";
 
 // Apply a single delta string to a value string. Returns the new value string.
 // Supported deltas: "+2.5kg", "-5lb", "+1rep", "-2reps", "+1set", "+0.5rpe", "-5%"
