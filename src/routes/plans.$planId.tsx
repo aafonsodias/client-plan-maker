@@ -360,6 +360,15 @@ function PlanEditor() {
             <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar PDF
           </Button>
           <Button
+            size="sm"
+            variant="outline"
+            onClick={exportLogsheet}
+            className="h-8"
+            title="Folha de registo A4 com colunas em branco para o ginásio"
+          >
+            <NotebookPen className="mr-1.5 h-3.5 w-3.5" /> Folha de registo
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             className="h-8 text-muted-foreground hover:text-destructive"
