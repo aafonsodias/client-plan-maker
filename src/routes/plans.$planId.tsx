@@ -264,51 +264,6 @@ function PlanEditor() {
     if (user) { void markOnboardingStep(user.id, "export_pdf"); }
   };
 
-  const exportLogsheet = async (week?: number) => {
-    if (!client || !plan) return;
-    let logoDataUrl: string | null = null;
-    if (profile?.logo_url) {
-      try {
-        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(profile.logo_url, 600);
-        if (signed?.signedUrl) {
-          const res = await fetch(signed.signedUrl);
-          const blob = await res.blob();
-          logoDataUrl = await new Promise<string | null>((resolve) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result as string);
-            r.onerror = () => resolve(null);
-            r.readAsDataURL(blob);
-          });
-        }
-      } catch { /* ignore */ }
-    }
-    const branding = {
-      business_name: profile?.business_name,
-      full_name: profile?.full_name,
-      tagline: profile?.tagline,
-      contact_email: profile?.contact_email,
-      contact_phone: profile?.contact_phone,
-      logo_data_url: logoDataUrl,
-    };
-    const meta = {
-      title: plan.title,
-      summary: plan.summary,
-      client_name: client.full_name,
-      duration_weeks: plan.duration_weeks,
-    };
-    // Single week → one PDF. Undefined "week" means "all weeks": loop and
-    // emit one PDF per week so the trainer gets four physical placas to pin
-    // to the wall (one per microcycle week, deload included).
-    if (typeof week === "number") {
-      await generateLogsheetPdf(meta, data, branding, { week });
-    } else {
-      const weeks = data.weeks.map((w) => w.week_number).sort((a, b) => a - b);
-      for (const wn of weeks) {
-        await generateLogsheetPdf(meta, data, branding, { week: wn });
-      }
-    }
-  };
-
   if (!plan) return <p className="text-muted-foreground">{tCommon("actions.loading")}</p>;
 
   return (
