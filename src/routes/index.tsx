@@ -552,6 +552,7 @@ function HeroPlanMockup() {
       rows: [
         { name: t("landing.mockups.ex_bench"), w1: "4×6 @RPE 7", w2: "4×6 @RPE 7", delta: "+2.5kg", tone: "up" },
         { name: t("landing.mockups.ex_row"), w1: "3×10 @RPE 7", w2: "3×11 @RPE 7", delta: "+1rep", tone: "up" },
+        { name: t("landing.mockups.ex_face_pull"), w1: "3×12 @RPE 6", w2: "3×12 @RPE 6.5", delta: "+0.5RPE", tone: "up" },
         { name: t("landing.mockups.ex_kb_swing"), w1: "3×15", w2: "3×15", delta: "hold", tone: "flat" },
       ],
     },
@@ -561,6 +562,12 @@ function HeroPlanMockup() {
     if (tone === "down") return "bg-rose-500/10 text-rose-500 border-rose-500/30";
     return "bg-amber-500/10 text-amber-500 border-amber-500/30";
   };
+  // Day-stripe accent: alternates the warmup-orange / activation-green palette
+  // already used in SessionDayView so the mockup feels alive without going carnival.
+  const dayStripe = (di: number) =>
+    di === 0
+      ? { borderColor: "oklch(0.78 0.12 70 / 0.45)", background: "oklch(0.78 0.12 70 / 0.10)" }
+      : { borderColor: "oklch(0.72 0.13 160 / 0.45)", background: "oklch(0.72 0.13 160 / 0.10)" };
   return (
     <FloatCard>
       <div
@@ -569,17 +576,22 @@ function HeroPlanMockup() {
       />
       {/* Client header */}
       <div className="flex items-center gap-2.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-medium text-accent">
-          M
+        <span className="flex h-6 w-6 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[10px] font-bold text-accent">
+          42
         </span>
         <span>{t("landing.mockups.client_header")}</span>
       </div>
       {/* Microcycle title + personalisation hint */}
       <div className="mt-3">
         <p className="text-base font-medium text-foreground">{t("landing.mockups.microcycle_title")}</p>
-        <p className="mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
-          <Sparkles className="h-3 w-3" /> {t("landing.mockups.personalized_hint")}
-        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
+            <Sparkles className="h-3 w-3" /> {t("landing.mockups.personalized_hint")}
+          </span>
+          <span className="inline-flex max-w-full items-center rounded-full border border-amber-500/30 bg-amber-500/5 px-2 py-0.5 text-[10px] normal-case tracking-normal text-amber-300/80">
+            {t("landing.mockups.constraints_chip")}
+          </span>
+        </div>
       </div>
       <div className="my-4 h-px bg-border" />
       {/* 2-week microcycle slice */}
@@ -593,8 +605,18 @@ function HeroPlanMockup() {
         </div>
         {days.map((d, di) => (
           <div key={di}>
-            <div className="flex items-center gap-2 border-b border-border/40 bg-secondary/30 px-2 py-1.5">
-              <span className="rounded-sm border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+            <div
+              className="flex items-center gap-2 border-b px-2 py-1.5"
+              style={{ borderColor: dayStripe(di).borderColor, background: dayStripe(di).background }}
+            >
+              <span
+                className="rounded-sm border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                style={{
+                  borderColor: dayStripe(di).borderColor,
+                  background: "var(--card)",
+                  color: dayStripe(di).borderColor.replace(" / 0.45", ""),
+                }}
+              >
                 {d.label}
               </span>
               <span className="truncate text-[11px] text-muted-foreground">{d.focus}</span>
