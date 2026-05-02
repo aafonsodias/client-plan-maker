@@ -135,7 +135,7 @@ export function SessionDayView({
 
       {/* WARMUP / ACTIVATION / DYNAMIC — light cluster */}
       {(hasWarmup || hasActivation || hasDynamic) && (
-        <div className="mt-6 space-y-6">
+        <div className="mt-4 space-y-3">
           {hasWarmup && <PrepSection label="Warmup" items={day.warmup!} />}
           {hasActivation && <PrepSection label="Activation" items={day.activation!} />}
           {hasDynamic && <PrepSection label="Dynamic stretches" items={day.dynamic_stretches!} />}
@@ -143,12 +143,12 @@ export function SessionDayView({
       )}
 
       {/* MAIN WORK — the heavy section */}
-      <div className="mt-10">
+      <div className="mt-6">
         <MainSectionHeader label="Main work" />
         {day.exercises.length === 0 ? (
-          <p className="mt-6 text-xs text-muted-foreground">No exercises programmed.</p>
+          <p className="mt-3 text-xs text-muted-foreground">No exercises programmed.</p>
         ) : (
-          <ul className="mt-6 space-y-3">
+          <ul className="mt-4 space-y-3">
             {day.exercises.map((ex, ei) => (
               <li key={ei}>
                 <ExerciseCard
@@ -165,14 +165,14 @@ export function SessionDayView({
 
       {/* COOLDOWN */}
       {hasCooldown && (
-        <div className="mt-10">
+        <div className="mt-6">
           <PrepSection label="Cooldown" items={day.cooldown!} italic />
         </div>
       )}
 
       {/* OPTIONAL FINISHER (legacy section-based finisher, separate from per-exercise optional flag) */}
       {hasFinisher && (
-        <div className="mt-10">
+        <div className="mt-6">
           <SectionHeaderMuted label="Optional finisher" />
           <div className="mt-3 rounded-lg border-2 border-accent/30 bg-accent/[0.04] p-4">
             <span className="float-right rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
@@ -200,7 +200,7 @@ function MainSectionHeader({ label }: { label: string }) {
   return (
     <div className="relative">
       <div className="h-px w-full bg-border" />
-      <div className="mt-3 flex items-center gap-2.5">
+      <div className="mt-2 flex items-center gap-2.5">
         <span
           aria-hidden
           className="inline-block h-4 w-[3px] rounded-sm"
@@ -238,11 +238,11 @@ function PrepSection({
   return (
     <div>
       <SectionHeaderMuted label={label} />
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+      <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
         {items.map((it, i) => (
           <li
             key={i}
-            className="flex items-center justify-between gap-3 rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2"
+            className="flex items-center justify-between gap-3 rounded-md border border-dashed border-border bg-secondary/40 px-3 py-1.5"
           >
             <span
               className={`min-w-0 truncate text-sm font-medium text-foreground/90 ${
