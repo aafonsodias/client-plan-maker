@@ -235,5 +235,20 @@
       "Conservative > aggressive: when in doubt, lower the delta.",
       "The trend line shows cumulative change W1 → W4."
     ]
+  },
+  "actions": {
+    "regenerate": "Regenerate",
+    "approve_brief": "Approve brief",
+    "approve_blueprint": "Approve → Day 1",
+    "approve_microcycle": "Approve microcycle",
+    "ask_ai": "Ask AI for changes",
+    "back_blueprint": "Blueprint",
+    "back_brief": "Brief",
+    "back_all_plans": "All plans"
+  },
+  "microcycleProgress": {
+    "generating": "Generating microcycle",
+    "remaining": "~{{seconds}}s remaining",
+    "day_quality_gate": "Generating Day 1 — this is the quality gate."
   }
 }
