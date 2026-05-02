@@ -2612,17 +2612,62 @@ function AssessmentSection({
   clientId,
   headerProgress,
   children,
+  defaultCollapsed = false,
+  summaryLine,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
   children: React.ReactNode;
+  defaultCollapsed?: boolean;
+  summaryLine?: string;
 }) {
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
+  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  // Keep in sync when the default flips from "no plan" → "plan ready" while
+  // the user is on the page; trainer's local override (after first toggle)
+  // wins, so we only auto-update on the initial transition.
+  const lastDefaultRef = useRef(defaultCollapsed);
+  useEffect(() => {
+    if (lastDefaultRef.current !== defaultCollapsed) {
+      setCollapsed(defaultCollapsed);
+      lastDefaultRef.current = defaultCollapsed;
+    }
+  }, [defaultCollapsed]);
+
+  if (collapsed) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-3">
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+          aria-expanded={false}
+        >
+          <div className="flex items-center gap-2">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-bold">Avaliação</span>
+            {summaryLine && (
+              <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
+            )}
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">expandir</span>
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+        >
+          <ChevronDown className="h-3 w-3" /> Recolher avaliação
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
