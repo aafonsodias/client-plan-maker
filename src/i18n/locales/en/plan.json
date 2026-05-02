@@ -94,7 +94,8 @@
       "title": "The logbook is what keeps the plan alive.",
       "subtitle": "PDF is the starting point. Logging every set turns it into a feedback loop — you see what's working, the client sees the work pile up.",
       "log_caption": "Preview — log a session in seconds.",
-      "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine."
+      "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine.",
+      "history_caption": "Week-over-week history — watch load climb without opening the gym."
     },
     "roadmap": {
       "eyebrow": "Coming next",
