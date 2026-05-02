@@ -1735,17 +1735,33 @@ function ClientDetail() {
                       })}
                     </span>
                   )}
-                  {phasedEnabled && inlineBrief?.approved ? (
-                    <Button asChild size="lg" className="w-full sm:w-auto">
-                      <Link
-                        to="/plans/$planId/blueprint"
-                        params={{ planId: inlineBrief.planId }}
-                      >
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Continuar para Blueprint
-                      </Link>
-                    </Button>
-                  ) : phasedEnabled ? (
+                  {phasedEnabled && inlineBrief?.approved ? (() => {
+                    const stages = inlineBrief.approvedStages ?? ["brief"];
+                    // Pick deepest approved stage to decide where to go next.
+                    let next: "brief" | "blueprint" | "microcycle" | "progressions" | "complete" = "brief";
+                    if (stages.includes("complete")) next = "complete";
+                    else if (stages.includes("progressions")) next = "progressions";
+                    else if (stages.includes("microcycle")) next = "microcycle";
+                    else if (stages.includes("blueprint")) next = "blueprint";
+                    const routeMap = {
+                      brief: "/plans/$planId/blueprint",
+                      blueprint: "/plans/$planId/microcycle",
+                      microcycle: "/plans/$planId/progressions",
+                      progressions: "/plans/$planId/progressions",
+                      complete: "/plans/$planId",
+                    } as const;
+                    return (
+                      <Button asChild size="lg" className="w-full sm:w-auto">
+                        <Link
+                          to={routeMap[next]}
+                          params={{ planId: inlineBrief.planId }}
+                        >
+                          <ArrowRight className="mr-2 h-4 w-4" />
+                          {t(`plan:continueCta.${next}`)}
+                        </Link>
+                      </Button>
+                    );
+                  })() : phasedEnabled ? (
                     <Button
                       onClick={async () => {
                         if (phasedBusy) return;
