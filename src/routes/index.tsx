@@ -8,6 +8,8 @@ import andreFounder from "@/assets/andre-founder.png";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import { CurrencyMenu } from "@/components/CurrencyMenu";
+import { PriceTag } from "@/components/PriceTag";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -34,18 +36,16 @@ function Landing() {
             <span className="text-lg">{t("common:brand.name")}</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-accent"
-              aria-label={t("plan:landing.pricing.nav_link")}
-              title={t("plan:landing.pricing.nav_link")}
-            >
-              <a href="#pricing">
+            <CurrencyMenu>
+              <button
+                type="button"
+                className="hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-accent transition"
+                aria-label={t("common:currency.title", "Currency")}
+                title={t("common:currency.title", "Currency")}
+              >
                 <DollarSign className="h-4 w-4" />
-              </a>
-            </Button>
+              </button>
+            </CurrencyMenu>
             <LanguageSwitcher className="mr-1" />
             {signedIn ? (
               <Button asChild size="sm">
