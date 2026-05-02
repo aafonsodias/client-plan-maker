@@ -278,6 +278,28 @@ function BlueprintReview() {
         </div>
       </div>
 
+      {tier && (
+        <TierChip
+          tier={tier}
+          guidelines={tierGuide}
+          locale={locale}
+          overridden={tierOverridden}
+          onOverride={async (next) => {
+            const res = await overrideFn({ data: { planId, tier: next } });
+            if (!res.ok) {
+              toast.error(res.error || "Override failed");
+              return;
+            }
+            toast.success(
+              locale === "pt"
+                ? `Override aplicado: ${next}. Carrega Regenerate para refazer a Blueprint.`
+                : `Override applied: ${next}. Hit Regenerate to rebuild the Blueprint.`,
+            );
+            await load();
+          }}
+        />
+      )}
+
       {hasIntegrityError && (
         <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
           <strong>Atenção:</strong> a matriz Week × Day refere ids que já não existem em Session Archetypes:{" "}
