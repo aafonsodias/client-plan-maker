@@ -1,13 +1,13 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Workbench de programação",
-      "title_line2": "baseada em evidência.",
-      "subtitle": "Forge guarda o contexto clínico do teu aluno, calcula MEV/MAV por grupo muscular, e gera mesociclos editáveis. Imprimes a semana, anotas o que aconteceu no ginásio, e a próxima ajusta-se ao feedback real.",
+      "title_line1": "A ferramenta que eu queria",
+      "title_line2": "ter como treinador.",
+      "subtitle": "Avaliação clínica, mesociclo defensável, PDF para o ginásio, feedback que ajusta a próxima semana. Sem atalhos. Sem caixa preta.",
       "cta_primary_signed_out": "Cria o teu primeiro plano",
       "cta_primary_signed_in": "Abrir dashboard",
       "cta_secondary": "Como funciona",
-      "credibility_caption": "Construído sobre PAR-Q+, estratificação de risco ACSM e a ferramenta que eu queria ter tido como treinador.",
+      "credibility_caption": "Bases que já estão dentro: PAR-Q+, ACSM, Prochaska. As próximas: Helms, Israetel, Schoenfeld.",
       "social_proof": "Construído por um PT, para PTs · Beta privado"
     },
     "mockups": {
@@ -62,15 +62,15 @@
       }
     },
     "credibility": {
-      "title": "Construído sobre a ciência em que já confias.",
-      "subtitle": "A Forge não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeste na tua certificação — para que o resultado seja defensável, não genérico.",
+      "title": "Em desenvolvimento e refinamento contínuo.",
+      "subtitle": "Há bugs. Há coisas por fazer. Mas como tu és o filtro humano, o resultado sai sempre defensável — basta ter paciência. As bases já estão dentro; vamos integrando o resto à medida que ganha forma.",
       "cards": {
         "parq_title": "Triagem PAR-Q+",
-        "parq_desc": "Triagem de saúde pré-participação com sinalização de risco cardiovascular, metabólico e renal incluída.",
+        "parq_desc": "Já dentro. Sinalização de risco cardiovascular, metabólico e renal pré-participação.",
         "acsm_title": "Estratificação de risco ACSM",
-        "acsm_desc": "Categorização baixa / moderada / alta para guiar a prescrição de intensidade em segurança desde a primeira sessão.",
+        "acsm_desc": "Já dentro. Categorização baixa / moderada / alta para prescrever intensidade em segurança desde a primeira sessão.",
         "prochaska_title": "Estágios de mudança de Prochaska",
-        "prochaska_desc": "Prontidão para mudança de comportamento mapeada para o tom de coaching e velocidade de progressão de cada cliente."
+        "prochaska_desc": "Já dentro. Prontidão para mudança mapeada para o tom de coaching e a velocidade de progressão. Próximas integrações: Helms, Israetel, Schoenfeld, RP, NSCA — passo a passo."
       }
     },
     "logging": {
@@ -78,9 +78,9 @@
       "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que tu e o cliente vejam o trabalho a acumular."
     },
     "journey": {
-      "eyebrow": "O percurso",
-      "title": "Como se constrói um plano Forge — sempre os mesmos cinco passos.",
-      "subtitle": "O que vês dentro da app é exatamente o que descrevemos abaixo. Sem surpresas, sem caixa preta.",
+      "eyebrow": "Em construção contínua",
+      "title": "Cinco fases hoje — e a refinar todas as semanas.",
+      "subtitle": "É isto que vês dentro da app, agora. A forma e o detalhe vão evoluindo à medida que aprendemos com cada plano gerado. Objetivo de longo prazo: integrar todo o conhecimento humano relevante para programação de treino.",
       "stages": {
         "intake": {
           "label": "Avaliação",
@@ -106,11 +106,19 @@
     },
     "logbook_preview": {
       "eyebrow": "Depois do PDF",
-      "title": "O logbook é o que mantém o plano vivo.",
-      "subtitle": "O PDF é o ponto de partida. Registar cada série transforma-o num ciclo de feedback — tu vês o que está a funcionar, o cliente vê o trabalho a acumular.",
+      "title": "Cada série registada vira combustível para a próxima semana.",
+      "subtitle": "O PDF é o ponto de partida. Cada registo — manual hoje, por voz e sensores amanhã — alimenta a próxima geração. Tudo opcional, tudo via toggle: dás o que tens, recebes o que dá para fazer.",
       "log_caption": "Pré-visualização — regista uma sessão em segundos.",
       "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os teus registos já alimentam o motor.",
-      "history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio."
+      "history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio.",
+      "signals_title": "O que entra (hoje e em breve)",
+      "signal_load": "Carga acumulada por padrão de movimento",
+      "signal_deltas": "Deltas semana-a-semana automáticos",
+      "signal_context": "Contexto guardado: sono, stress, RPE percebido",
+      "signals_soon_title": "A seguir, opcional",
+      "signal_voice": "Notas de voz → texto → ajuste",
+      "signal_devices": "Balança, passos, sono, frequência cardíaca",
+      "signal_uploads": "Bioimpedância, tensão arterial — foto, PDF ou Excel"
     },
     "roadmap": {
       "eyebrow": "A seguir",
@@ -144,16 +152,9 @@
     "founder": {
       "title": "Porquê a Forge?",
       "img_alt": "André, fundador da Forge",
-      "p1": "Em quinze anos como personal trainer, percebi duas coisas: a maioria dos planos de treino profissionais são mal montados e, como a parte administrativa é uma chatice, muitos treinadores acabam por desistir e improvisar.",
-      "p2": "Programação estruturada e de qualidade demora normalmente demasiado tempo, e por isso não é feita.",
-      "p3": "A Forge foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o teu próprio treino.",
-      "bullet_logic_title": "Lógica acima da estética.",
-      "bullet_logic_body": "Não é teatro administrativo nem PDFs bonitos. É usar frameworks sólidos (PAR-Q+, estratificação de risco ACSM, Prochaska) para construir uma base que faz sentido.",
-      "bullet_pro_title": "Profissional ou pessoal.",
-      "bullet_pro_body": "Funciona como assistente profissional para acelerar a entrega ao cliente, ou como ferramenta pessoal para quem quer um programa estruturado sem dor de cabeça manual.",
-      "bullet_filter_title": "Tu és o filtro.",
-      "bullet_filter_body": "A IA trata da escrita repetitiva. Tu revês, corriges e assumes a autoria.",
-      "p4": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
+      "p1": "Em quinze anos como PT vi a mesma coisa repetir-se: planos mal montados porque programar com critério dá demasiado trabalho.",
+      "p2": "A Forge existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), tu como filtro humano, IA só para o trabalho repetitivo.",
+      "p3": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
       "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
     },
     "faq": {
@@ -179,14 +180,14 @@
       "eyebrow": "Preço",
       "title": "Honesto e sem surpresas.",
       "beta_badge": "Beta",
-      "beta_title": "Grátis durante a beta",
+      "beta_title": "Beta fechada — entras pelo onboarding",
       "beta_price": "0€",
-      "beta_period": "/ enquanto durar a beta",
+      "beta_period": "/ avaliação + 1 plano + 1 semana de logbook",
       "beta_features": [
-        "Avaliações ilimitadas",
-        "Geração de planos com IA",
-        "PDFs com a tua marca",
-        "Histórico de sessões e progressões"
+        "Subscreves com email e fazes a avaliação completa, slide a slide",
+        "1 plano de treino gerado + PDF com a tua marca",
+        "1 semana de logbook para sentir o ciclo de feedback",
+        "Para continuar: ou és Founder, ou aderes ao Pro"
       ],
       "beta_cta": "Começar grátis",
       "pro_badge": "Em breve",
@@ -194,7 +195,7 @@
       "pro_price": "19€",
       "pro_period": "/ mês (preço indicativo)",
       "pro_features": [
-        "Tudo da beta",
+        "Tudo da beta, sem limite de planos",
         "Clientes ilimitados",
         "Domínio próprio nos PDFs",
         "Suporte prioritário"
