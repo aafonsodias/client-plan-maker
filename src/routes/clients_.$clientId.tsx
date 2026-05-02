@@ -12,7 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight, Calendar as CalendarIcon, Download } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { renderAssessmentPdf } from "@/lib/pdf";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
@@ -294,6 +298,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
     readiness_stage: assessment.readiness_stage || null,
     medications: assessment.medications || null,
     med_flags: assessment.med_flags ?? [],
+    performed_on: assessment.performed_on || null,
     extended: {
       parq: assessment.parq,
       risk: assessment.risk,
@@ -466,6 +471,8 @@ function ClientDetail() {
     cardio_capacity: "",
     // Per-section provenance: "client" (filled via intake) or "trainer-edited"
     provenance: {} as Record<string, "client" | "trainer-edited">,
+    // When the assessment was actually performed (separate from row created_at).
+    performed_on: "" as string,
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
@@ -1205,6 +1212,34 @@ function ClientDetail() {
           <ClientPhaseHeaderPill clientId={client.id} />
         </div>
         <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <AssessmentDatePicker
+            value={assessment.performed_on || ""}
+            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
+            label={t("performed_on_label")}
+            placeholder={t("performed_on_placeholder")}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => {
+              try {
+                renderAssessmentPdf({
+                  assessment,
+                  client,
+                  t: t as any,
+                });
+              } catch (e: any) {
+                toast.error(e?.message ?? "PDF error");
+              }
+            }}
+          >
+            <Download className="h-3.5 w-3.5" />
+            {t("download_pdf")}
+          </Button>
+        </div>
       </div>
 
       <IntakeLinkPanel
@@ -3115,4 +3150,65 @@ function numScore(v: unknown): number | null {
   if (typeof v !== "number") return null;
   if (!Number.isFinite(v) || v <= 0) return null;
   return Math.max(1, Math.min(5, v));
+}
+
+/**
+ * Date picker for `assessments.performed_on`.
+ * Stores ISO YYYY-MM-DD strings (matches Postgres `date` column).
+ */
+function AssessmentDatePicker({
+  value,
+  onChange,
+  label,
+  placeholder,
+}: {
+  value: string;
+  onChange: (iso: string) => void;
+  label: string;
+  placeholder: string;
+}) {
+  const date = value ? new Date(value + "T00:00:00") : undefined;
+  const formatted = date
+    ? date.toLocaleDateString(undefined, {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : placeholder;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className={cn(
+            "h-8 gap-1.5 font-normal",
+            !value && "text-muted-foreground"
+          )}
+        >
+          <CalendarIcon className="h-3.5 w-3.5" />
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">
+            {label}:
+          </span>
+          {formatted}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(d) => {
+            if (!d) return;
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            onChange(`${y}-${m}-${day}`);
+          }}
+          initialFocus
+          className={cn("p-3 pointer-events-auto")}
+        />
+      </PopoverContent>
+    </Popover>
+  );
 }

@@ -53,6 +53,7 @@ export type Database = {
           overhead_reach_note: string | null
           overhead_reach_score: number | null
           parq_passed: boolean | null
+          performed_on: string | null
           preferences: string | null
           previous_program_style: string | null
           primary_goal: string | null
@@ -127,6 +128,7 @@ export type Database = {
           overhead_reach_note?: string | null
           overhead_reach_score?: number | null
           parq_passed?: boolean | null
+          performed_on?: string | null
           preferences?: string | null
           previous_program_style?: string | null
           primary_goal?: string | null
@@ -201,6 +203,7 @@ export type Database = {
           overhead_reach_note?: string | null
           overhead_reach_score?: number | null
           parq_passed?: boolean | null
+          performed_on?: string | null
           preferences?: string | null
           previous_program_style?: string | null
           primary_goal?: string | null
