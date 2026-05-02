@@ -1357,6 +1357,57 @@ function ClientDetail() {
         </a>
       )}
 
+      {/* Readiness strip — at-a-glance ACSM risk + recovery score from latest data.
+          Hidden until at least one signal exists so it doesn't render as "Baixo / —". */}
+      {(() => {
+        const sleep = Number(assessment.sleep_quality);
+        const stress = Number(assessment.stress_level);
+        const sore = Number((assessment as any).soreness ?? 0);
+        const haveSignals = Number.isFinite(sleep) && sleep > 0;
+        const haveRisk = !!assessment.acsm_risk_category || riskCategory !== "low" || parqYes;
+        if (!haveSignals && !haveRisk) return null;
+        // Readiness 0-100: sleep (1-10) drives 50%, low stress 30%, low soreness 20%.
+        const sleepPart = Number.isFinite(sleep) && sleep > 0 ? (sleep / 10) * 50 : 25;
+        const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
+        const sorePart = Number.isFinite(sore) && sore > 0 ? ((11 - sore) / 10) * 20 : 10;
+        const readiness = Math.round(sleepPart + stressPart + sorePart);
+        const readyTone =
+          readiness >= 75
+            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            : readiness >= 50
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
+        const riskTone =
+          riskCategory === "high"
+            ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+            : riskCategory === "moderate"
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+        const riskLabel =
+          riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+        return (
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
+              title="Categoria de risco ACSM (Pré-participação)"
+            >
+              <span className="text-[9px] uppercase tracking-widest opacity-70">ACSM</span>
+              {riskLabel}
+              {parqYes && <span className="opacity-70">· PAR-Q+</span>}
+            </span>
+            {haveSignals && (
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums ${readyTone}`}
+                title={`Sono ${sleep || "—"}/10 · Stress ${stress || "—"}/10 · Soreness ${sore || "—"}/10`}
+              >
+                <span className="text-[9px] uppercase tracking-widest opacity-70">Recuperação</span>
+                {readiness}/100
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
       <div className="grid gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
