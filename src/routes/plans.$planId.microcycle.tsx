@@ -163,9 +163,18 @@ function MicrocycleReview() {
 
   const day1 = days.find((d) => d.day_number === 1);
   const sessionsPerWeek = blueprint?.sessions_per_week ?? 0;
-  const allDone =
-    sessionsPerWeek > 0 &&
-    days.filter((d) => d.day_number <= sessionsPerWeek && d.status === "done").length === sessionsPerWeek;
+  const doneCount = days.filter(
+    (d) => d.day_number <= sessionsPerWeek && d.status === "done",
+  ).length;
+  const pendingCount = days.filter(
+    (d) => d.day_number <= sessionsPerWeek && d.status === "pending",
+  ).length;
+  const allDone = sessionsPerWeek > 0 && doneCount === sessionsPerWeek;
+  const inFlight = pendingCount > 0 || generatingSet.size > 0;
+  const pct = sessionsPerWeek > 0 ? Math.round((doneCount / sessionsPerWeek) * 100) : 0;
+  // Rough estimate: sequential per-day ~40s, divided by client-side concurrency=1 here
+  // (server batches 5 internally for bulk; we only manually fire one at a time).
+  const etaSec = Math.max(0, (sessionsPerWeek - doneCount) * 40);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
@@ -180,8 +189,7 @@ function MicrocycleReview() {
           </Link>
           <h1 className="truncate text-xl font-semibold text-foreground">{planTitle}</h1>
           <p className="text-xs text-muted-foreground">
-            Stage 3 — Microcycle (Week 1) · {days.filter((d) => d.status === "done").length}/
-            {sessionsPerWeek} done
+            Stage 3 — Microcycle (Week 1) · {doneCount}/{sessionsPerWeek} done
           </p>
         </div>
         <button
@@ -193,6 +201,24 @@ function MicrocycleReview() {
           Approve microcycle
         </button>
       </div>
+
+      {sessionsPerWeek > 0 && (inFlight || !allDone) && (
+        <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
+          <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-2">
+              {inFlight && <Loader2 className="h-3 w-3 animate-spin" />}
+              A gerar microciclo · {doneCount} / {sessionsPerWeek}
+            </span>
+            {inFlight && etaSec > 0 && <span>~{etaSec}s restantes</span>}
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {!day1 && generating && (
         <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
