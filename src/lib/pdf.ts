@@ -294,27 +294,6 @@ export async function generatePlanPdf(
   const norm = (s: string) =>
     String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "");
-  const exKey = (name: string) => norm(name);
-
-  /** Compute a short delta string by diffing W2/3/4 against W1 for the same exercise. */
-  const diffDelta = (
-    base: Exercise | undefined,
-    later: Exercise | undefined,
-  ): string => {
-    if (!later) return "—";
-    if (!base) return "new";
-    const out: string[] = [];
-    const a = (v?: string) => String(v ?? "").trim();
-    if (a(base.sets) !== a(later.sets) && a(later.sets)) out.push(`${later.sets} sets`);
-    if (a(base.reps) !== a(later.reps) && a(later.reps)) out.push(`${later.reps} reps`);
-    if (a(base.rpe) !== a(later.rpe) && a(later.rpe)) out.push(`@${later.rpe}`);
-    if (a(base.rest) !== a(later.rest) && a(later.rest)) out.push(`rest ${later.rest}`);
-    // Detect load chip baked into notes (e.g. "+2.5kg")
-    const loadM = (later.notes ?? "").match(/(?:^|\s)([+\-]\s*\d+(?:\.\d+)?\s*(?:kg|lb|%))/i);
-    if (loadM) out.push(loadM[1].replace(/\s+/g, ""));
-    return out.length ? out.join(" · ") : "—";
-  };
-
   // Group sessions by archetype (day_label + focus). One archetype = one PDF page.
   // Each archetype carries an array of (week → day) so we can emit delta columns.
   type Archetype = {
