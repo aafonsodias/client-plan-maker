@@ -16,9 +16,13 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 - [x] #25 BrandMark adaptive cream plate when logo luminance < 0.45
 
 ## Phase A — DEFERRED (ran out of time this turn, do first next turn)
-- [ ] #20 SessionDayView: × delete + + add exercise with search
-- [ ] #23 rest: ProgressionExerciseCard sparkline `currentColor`, day-card differentiation, per-row rationale visible by default
-- [ ] #24 partial: MesocycleTableView day-row breathability (mt-6), unconditional RPE column, SS chip in subtitle, big gradient Export PDF CTA
+- [x] #20 partial: MesocycleTableView delete-exercise (across all weeks) via deleteExerciseAcrossWeeks. Add-exercise picker still deferred.
+- [x] #23 ProgressionExerciseCard already shows rationale by default + signed-trend coloured sparkline (better than currentColor).
+- [x] #24 MesocycleTableView day-row breathability (6px gap), unconditional RPE column (already in place), SS chip in name cell, big amber-gradient Exportar PDF CTA.
+
+## Still pending after this turn
+- [ ] #20 add-exercise picker with search (needs new server fn + modal UX)
+- [ ] #23 day-card colour differentiation in SessionDayView (light tinted accent per day index)
 
 ## Phase B — next turn
 - [ ] #4 Logbook overhaul (coaching station, streaks, PR detection, satisfying check-off)

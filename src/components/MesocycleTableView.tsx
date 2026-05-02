@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import type { PlanData, Day, Exercise } from "@/lib/pdf";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X } from "lucide-react";
+import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { updateExerciseInWeek } from "@/server/phased/microcycle-edit.functions";
+import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -33,6 +33,8 @@ export function MesocycleTableView({
 }) {
   const [compact, setCompact] = useState(true);
   const updateFn = useServerFn(updateExerciseInWeek);
+  const deleteFn = useServerFn(deleteExerciseAcrossWeeks);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
 
   // Local optimistic patches: keyed by `${week}|${dayLabel}|${exIdx}` → patch
   const [patches, setPatches] = useState<Record<string, Partial<Exercise>>>({});
@@ -182,6 +184,20 @@ export function MesocycleTableView({
     }
   };
 
+  const removeExercise = async (dayLabel: string, exerciseName: string) => {
+    if (!planId) return;
+    if (!confirm(`Apagar "${exerciseName}" de todas as semanas (${dayLabel})?`)) return;
+    setDeletingName(`${dayLabel}|${exerciseName}`);
+    const res = await deleteFn({ data: { planId, dayLabel, exerciseName } });
+    setDeletingName(null);
+    if (!res.ok) {
+      toast.error(res.error || "Falhou ao apagar");
+      return;
+    }
+    toast.success(`Removido de ${(res as any).touched ?? 0} semana(s)`);
+    onUpdated?.();
+  };
+
   return (
     <div className="space-y-4 print:space-y-3">
       {/* Toolbar */}
@@ -286,6 +302,9 @@ export function MesocycleTableView({
                 setEditingKey={setEditingKey}
                 patches={patches}
                 onSaveEdit={saveEdit}
+                onRemoveExercise={removeExercise}
+                deletingName={deletingName}
+                isFirstGroup={gi === 0}
               />
             ))}
           </tbody>
@@ -308,6 +327,9 @@ function DayBlock({
   setEditingKey,
   patches,
   onSaveEdit,
+  onRemoveExercise,
+  deletingName,
+  isFirstGroup,
 }: {
   day: Day;
   rows: { exercise: Exercise; cells: { ex: Exercise | null; weekNumber: number; dayLabel: string; exIdx: number }[] }[];
@@ -318,13 +340,16 @@ function DayBlock({
   setEditingKey: (k: string | null) => void;
   patches: Record<string, Partial<Exercise>>;
   onSaveEdit: (key: string, weekNumber: number, dayLabel: string, exIdx: number, patch: Partial<Exercise>) => void;
+  onRemoveExercise: (dayLabel: string, exerciseName: string) => void;
+  deletingName: string | null;
+  isFirstGroup: boolean;
 }) {
   return (
     <>
-      <tr className="border-t border-border bg-secondary/30">
+      <tr className={`bg-secondary/40 ${isFirstGroup ? "" : "border-t-[6px] border-background"}`}>
         <td
           colSpan={weekCount + 1}
-          className="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-foreground"
+          className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground border-t border-border"
         >
           {day.day_label}
           {day.focus && (
@@ -343,6 +368,8 @@ function DayBlock({
           setEditingKey={setEditingKey}
           patches={patches}
           onSaveEdit={onSaveEdit}
+          onRemove={() => onRemoveExercise(day.day_label, exercise.name)}
+          isDeleting={deletingName === `${day.day_label}|${exercise.name}`}
         />
       ))}
     </>
@@ -358,6 +385,8 @@ function ExerciseRowPair({
   setEditingKey,
   patches,
   onSaveEdit,
+  onRemove,
+  isDeleting,
 }: {
   exercise: Exercise;
   cells: { ex: Exercise | null; weekNumber: number; dayLabel: string; exIdx: number }[];
@@ -367,13 +396,37 @@ function ExerciseRowPair({
   setEditingKey: (k: string | null) => void;
   patches: Record<string, Partial<Exercise>>;
   onSaveEdit: (key: string, weekNumber: number, dayLabel: string, exIdx: number, patch: Partial<Exercise>) => void;
+  onRemove: () => void;
+  isDeleting: boolean;
 }) {
   const baseline = cells[0]?.ex ?? exercise;
+  const supersetId = (exercise as any).superset_id as string | undefined;
   return (
     <>
       <tr className="border-t border-border/40">
         <td className="bg-card px-3 py-1.5 align-top text-foreground break-words">
-          <div className="font-medium">{exercise.name}</div>
+          <div className="group/name flex items-center gap-1.5">
+            <span className="font-medium">{exercise.name}</span>
+            {supersetId && (
+              <span
+                className="inline-flex items-center gap-0.5 rounded-full bg-accent/15 px-1.5 py-px text-[9px] font-bold uppercase tracking-widest text-accent"
+                title={`Superset ${supersetId}`}
+              >
+                <Link2 className="h-2.5 w-2.5" /> SS
+              </span>
+            )}
+            {editable && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                disabled={isDeleting}
+                title="Apagar este exercício de todas as semanas"
+                className="ml-auto opacity-0 transition group-hover/name:opacity-100 focus:opacity-100 text-muted-foreground hover:text-destructive disabled:opacity-50"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            )}
+          </div>
           {!compact && (exercise as any).cue && (
             <div className="mt-0.5 line-clamp-2 text-[10px] italic text-muted-foreground">
               {String((exercise as any).cue)}
