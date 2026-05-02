@@ -530,6 +530,12 @@ function ClientDetail() {
   const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
+  const createManualPlanFn = useServerFn(createManualPlan);
+  const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
+  const evolvePlanFn = useServerFn(archivePlanAndStartNextBlock);
+  const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
+  const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
+  const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
   // Track signature of last-analysed payload per section to avoid duplicate fires.
   const lastAnalysedSigRef = useRef<Record<string, string>>({});
 
