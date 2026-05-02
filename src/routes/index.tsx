@@ -169,10 +169,38 @@ function Landing() {
                 <HeroPlanMockup />
               </div>
             </div>
-            <p className="mt-4 hidden max-w-md text-center text-[11px] font-light italic text-muted-foreground/70 md:block">
-              {t("plan:landing.hero.credibility_caption")}
-            </p>
           </div>
+        </div>
+      </section>
+
+      {/* Benefits — three plain-language outcomes (PT-first) */}
+      <section className="mx-auto max-w-6xl px-6 pt-4 pb-16">
+        <p className="mb-6 text-xs uppercase tracking-widest text-accent">{t("plan:landing.benefits.eyebrow")}</p>
+        <div className="grid gap-6 md:grid-cols-3">
+          {[
+            { icon: Zap, title: t("plan:landing.benefits.time.title"), desc: t("plan:landing.benefits.time.desc") },
+            { icon: LayoutGrid, title: t("plan:landing.benefits.consistency.title"), desc: t("plan:landing.benefits.consistency.desc") },
+            { icon: ShieldCheck, title: t("plan:landing.benefits.confidence.title"), desc: t("plan:landing.benefits.confidence.desc") },
+          ].map((b) => (
+            <div key={b.title} className="rounded-2xl border border-border bg-card/60 p-6">
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
+                <b.icon className="h-5 w-5" />
+              </div>
+              <h3 className="mb-2 text-lg font-medium tracking-tight">{b.title}</h3>
+              <p className="text-sm font-light text-muted-foreground">{b.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6">
+          <a
+            href="/example-plan.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
+          >
+            <FileText className="h-4 w-4" />
+            {t("plan:landing.benefits.example_link")}
+          </a>
         </div>
       </section>
 
@@ -353,7 +381,9 @@ function Landing() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
+        {t("plan:landing.roadmap.footnote") ? (
+          <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
+        ) : null}
       </section>
 
       {/* Founder note — text-only, short and direct */}

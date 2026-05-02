@@ -1,14 +1,30 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "The tool I wish I'd had",
-      "title_line2": "as a coach.",
-      "subtitle": "Clinical assessment, defensible mesocycle, branded PDF for the gym, feedback that adjusts next week. No shortcuts. No black box.",
-      "cta_primary_signed_out": "Draft your first plan",
+      "title_line1": "Build training plans",
+      "title_line2": "ready to send in minutes.",
+      "subtitle": "Built from your client's real assessment. Adjusted week after week from what they actually do in the gym.",
+      "cta_primary_signed_out": "Generate your first plan — free",
       "cta_primary_signed_in": "Open dashboard",
-      "cta_secondary": "How it works",
+      "cta_secondary": "See how it works",
       "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
       "social_proof": "Built by a coach, for coaches · Private beta"
+    },
+    "benefits": {
+      "eyebrow": "For personal trainers",
+      "time": {
+        "title": "Less time programming",
+        "desc": "From assessment to PDF in minutes, not hours."
+      },
+      "consistency": {
+        "title": "Consistent plans across clients",
+        "desc": "The same logic applied to every client, adapted to their case."
+      },
+      "confidence": {
+        "title": "More confidence in what you send",
+        "desc": "You always see why each exercise is there."
+      },
+      "example_link": "See an example plan (PDF)"
     },
     "mockups": {
       "client_header": "Client · 42y · Mesocycle 5 · Strength Phase",
@@ -160,7 +176,7 @@
           "desc": "Weekly nudges from your logs — when to push, when to back off, what to swap."
         }
       },
-      "footnote": "Subscribe to Pro to be in the first wave."
+      "footnote": ""
     },
     "features": {
       "title": "Built for trainers who'd rather coach than copy-paste spreadsheets.",
@@ -201,14 +217,14 @@
     "pricing": {
       "eyebrow": "Pricing",
       "title": "Honest, no surprises.",
-      "beta_badge": "Try it",
-      "beta_title": "Try it — no card",
+      "beta_badge": "Free",
+      "beta_title": "Free to start",
       "beta_price": "€0",
       "beta_period": "for your first plan",
       "beta_features": [
-        "Walk through the full assessment, slide by slide",
-        "Get your first plan as a branded PDF",
-        "One week of logbook to feel the feedback loop",
+        "1 client · 1 complete plan",
+        "PDF with your branding",
+        "No card, no deadline",
         "Keep using it as long as it earns its place"
       ],
       "beta_cta": "Start now",
