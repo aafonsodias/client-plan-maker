@@ -1911,66 +1911,7 @@ function ClientDetail() {
                     );
                   })() : phasedEnabled ? (
                     <Button
-                      onClick={async () => {
-                        if (phasedBusy) return;
-                        setPhasedBusy(true);
-                        const tId = toast.loading("Synthesizing brief…");
-                        try {
-                          const res = await startPhasedPlanFn({ data: { clientId } });
-                          if (!res.ok) {
-                            if (res.error === "quota_exceeded") {
-                              toast.error(
-                                "Free accounts can build 1 plan. Subscribe to create more.",
-                                { id: tId, duration: 6000 }
-                              );
-                            } else {
-                              toast.error(res.error || "Brief synthesis failed.", { id: tId });
-                            }
-                            return;
-                          }
-                          // Fetch the freshly-written brief and render it inline below.
-                          const { data: row } = await supabase
-                            .from("workout_plans")
-                            .select("brief, generation_state, programming_variables, red_flag_accommodations")
-                            .eq("id", res.planId)
-                            .maybeSingle();
-                          const parsed = BriefSchema.safeParse((row as any)?.brief);
-                          if (!parsed.success) {
-                            toast.error("Brief returned but failed to parse.", { id: tId });
-                            return;
-                          }
-                          const stage = (row as any)?.generation_state?.stage as string | undefined;
-                          const approvedList: string[] = (row as any)?.generation_state?.approved_stages ?? [];
-                          const storedPv = ProgrammingVariablesSchema.safeParse(
-                            (row as any)?.programming_variables
-                          );
-                          const storedAcc = RedFlagAccommodationsSchema.safeParse(
-                            (row as any)?.red_flag_accommodations
-                          );
-                          setInlineBrief({
-                            planId: res.planId,
-                            brief: parsed.data,
-                            approved: approvedList.includes("brief") || (stage && stage !== "brief") ? true : false,
-                            programmingVariables: storedPv.success
-                              ? storedPv.data
-                              : defaultProgrammingVariables(parsed.data),
-                            accommodations: storedAcc.success
-                              ? reconcileAccommodations(parsed.data, storedAcc.data)
-                              : reconcileAccommodations(parsed.data, null),
-                            approvedStages: approvedList,
-                          });
-                          // Refresh plans list so the new draft shows up.
-                          void refreshPlans();
-                          toast.success(
-                            res.reused ? "Brief already ready" : "Brief ready",
-                            { id: tId, duration: 4000 }
-                          );
-                        } catch (e: any) {
-                          toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
-                        } finally {
-                          setPhasedBusy(false);
-                        }
-                      }}
+                      onClick={() => void runPhasedStart()}
                       disabled={busy || phasedBusy}
                       size="lg"
                       className="w-full sm:w-auto"
