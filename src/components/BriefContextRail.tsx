@@ -99,15 +99,16 @@ export function BriefContextRail({ planId }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
         <div className="mb-1 flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <h3 className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-emerald-300">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
             {t("briefRail.approved")}
           </h3>
           <Link
             to="/plans/$planId/brief"
             params={{ planId }}
-            className="text-[11px] text-muted-foreground hover:text-foreground"
+            className="text-[11px] text-emerald-200/70 hover:text-emerald-100"
           >
             {t("briefRail.view")}
           </Link>

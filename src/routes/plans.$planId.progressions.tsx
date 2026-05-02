@@ -47,7 +47,8 @@ function ProgressionsReview() {
   const { planId } = Route.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation("plan");
-  const [guideOpen, setGuideOpen] = useState(false);
+  // Default expanded — the user explicitly asked the guide to teach as they go.
+  const [guideOpen, setGuideOpen] = useState(true);
   const proposeFn = useServerFn(proposeProgressions);
   const approveFn = useServerFn(approveProgressions);
   const bulkFn = useServerFn(bulkFillRemainingWeeks);

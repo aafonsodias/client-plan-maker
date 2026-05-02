@@ -1,116 +1,122 @@
-# Phase 2 — PDF rewrite + Log table
 
-Two self-contained changes that hit the loudest current pain points: 17-page PDFs and the long card-based session log. No DB migrations, no schema changes, no new server functions.
+# Plan: Triage 25 requests, ship in 4 phases
 
----
+You gave me 25 items. Trying to do them all in one turn would mean each one is half-done. Instead I'm grouping by **impact ÷ effort** and proposing we ship **Phase A** now, then come back for B/C/D in later turns. You can re-order at any time.
 
-## 1. Plan PDF — landscape A4 "training booklet"
-
-**File:** `src/lib/pdf.ts` (rewrite `generatePlanPdf`; keep types and `renderAssessmentPdf` untouched)
-
-### Page model
-
-Switch from `letter` portrait (612×792 pt) to `a4` landscape (842×595 pt). Landscape gives ~70% more horizontal room, which is what the dense exercise table needs and is why current rows clip.
-
-Target page budget for a 4-week × 2-day plan: **≤6 pages** (cover + 1 page per session + optional 1 cycle-overview page). Hard ceiling: 1 session = 1 page. If a session does not fit, drop the rationale lines and the second cue line before spilling.
-
-### Cover page (1 page, was ~1.5)
-
-- Header band 70 pt tall (was 110). Logo 40×40 (was 50×50). Brand + client on the same row.
-- Title 22pt (was 28). Single-line summary, italic, capped at 2 lines via `splitTextToSize` then `slice(0, 2)`.
-- KPI strip: 4 tiles, height 38 pt (was 50).
-- "Plan at a glance" becomes a true table: columns = Day | Focus | #Ex | Volume estimate. One row per session across all weeks. This replaces the per-week sub-headers and saves vertical space.
-
-### Session page (1 page each, was bleeding to 2)
-
-Session header line (single row, 18 pt total height):
-```
-W2 · DAY 1            UPPER PUSH                                    8 ex · ~24 sets
-```
-
-Below that, 4 horizontal "rails" of content, each in its own band:
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ PREP   • Cat-cow 1×10 · • Band pull-apart 2×15 · • Scap push-up 2×8         │  <- warmup+activation+dyn merged into ONE shaded inline strip
-├──────────────────────────────────────────────────────────────────────────────┤
-│ #  EXERCISE                CUE                          SETS  REPS  REST RPE TEMPO  W2Δ  W3Δ  W4Δ │
-│ 01 DB Bench Press          Drive feet, ribs down       4     8     90s  7   3-1-1   +reps +load -1set │
-│ ┐  Incline DB Press        Pause 1s at chest           3     10    60s  7   2-0-1   +reps +load -1set │  <- superset bracket
-│ ┘  Cable Fly               Squeeze, no shrug           3     12    60s  7   2-0-1   +1rep +1rep deload │
-│ 02 Tricep Pushdown         Elbows pinned               3     12    60s  8   —       +reps +reps deload │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ COOL  • Pec doorway stretch 30s × 2 · • Lat hang 30s                         │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-Concrete rules to enforce density:
-
-- **Merge prep sections.** Render `warmup + activation + dynamic_stretches` as one shaded strip ("PREP"), comma-separated inline bullets (`• name dur · • name dur`), wrapped to 2 lines max. Same for `cooldown + finisher` ("COOL"). This removes 3 section headers per page.
-- **Add 3 progression delta columns** (W2Δ, W3Δ, W4Δ). Read from `progression_plan.rows` (which `MesocycleTableView` already consumes). Falls back to `—` when no row exists. This is the primary value-add: trainers can hand a single page to the client showing all 4 weeks.
-- **Fix superset clipping.** Today the `SUPERSET A` label is drawn at `y + 2` while the previous row's bottom hairline is at the same y, which is what cuts the top off. New approach: no banner row. Instead, draw a 2 pt amber bracket connecting the left edges of all rows in the superset (top-cap, vertical rule, bottom-cap, drawn AFTER the rows). Optionally prefix the row number with `┐ / │ / ┘`.
-- **Row geometry.** Single-line rows by default (12 pt). Cue is rendered in the dedicated CUE column (truncated with ellipsis), NOT below the name. That alone removes ~10 pt per exercise × 8 exercises = 80 pt = a quarter of a page.
-- **Tighten typography.** Body 9pt (was 10). Headers 6.5pt unchanged. `setLineHeightFactor(1.15)` on the table (was implicit 1.5).
-- **Remove decoration.** Drop the per-row bottom hairline (use alternating `bgSubtle` zebra fill at 30% opacity instead — reads as a row separator without spending a pixel of height).
-- **No empty sections.** Already done; verify the prep-merge respects this.
-- **No standalone overview-per-week pages.** The cover's at-a-glance table covers it.
-
-### Logo aspect ratio
-
-Current code calls `doc.addImage(logoData, "PNG", M, 30, 50, 50)` — forces square. Decode width/height from the data URL via the `Image` we already create in `computeLogoLuminance`, cache the dims, then fit into a 40×40 box preserving aspect ratio (`min(40/w, 40/h)`).
-
-### Filename
-
-Keep current naming, no change.
-
-### QA loop
-
-After implementing, regenerate a known plan, render to JPEG with `pdftoppm -jpeg -r 150`, view every page. Hunt for: superset clipping (the original bug), overflowing exercise names, RPE column rendering "—" everywhere (means delta lookup failed), missing PREP strip on day-1, KPI tiles overlapping at long client names. Fix and re-render until clean.
-
-### Acceptance
-
-- 4-week × 2-day plan renders in ≤6 pages (was 17).
-- Zero superset rows clipped on the top edge.
-- Every session page shows W2/W3/W4 deltas next to the W1 prescription.
-- Logo respects aspect ratio (no squishing for wide logos).
+I'm also creating a persistent task list so nothing is forgotten between turns (item #21).
 
 ---
 
-## 2. Client log view — table replaces cards
+## Phase A — Ship NOW (high impact, low effort, ~1 turn)
 
-**File:** `src/routes/log.$token.tsx`
+These are the "polish + intuitiveness" wins that touch many of your 25 items at once.
 
-Currently the log renders one `<Card>` per exercise with stacked planned/actual fields. For a 10-exercise day this is ~3 screens of scroll. User explicitly asked for a table.
+**A1. Brief stage compaction & UX (items #7, #8, #15, #16, #18, #10)**
+- Tighten vertical spacing on `plans.$planId.brief.tsx` and `BriefEditor.tsx` by ~30% (smaller padding on cards, smaller gaps, denser inputs).
+- Replace fixed-height textareas (the ones with grey scrollbars in "Sinais de alerta" and "Segurança e equipamento") with `AutoTextarea` so content always shows in full.
+- Add **"Expandir tudo / Colapsar tudo"** controls at top of brief, mirroring the assessment page.
+- Make the entire section header clickable (not just the chevron) for collapse/expand.
+- After Brief is approved: swap the `[Regenerate] [Approve]` button row for `[✓ Aprovado · há Xm] [Editar] [→ Próximo: Blueprint]`.
+- **Add a "Conclusão para a programação" footer to each brief section** — 1–2 line AI-generated takeaway (e.g. "Priorizar movimento unilateral por instabilidade do joelho direito").
 
-New layout (mobile: same cards because table doesn't fit < 640px; desktop: table):
+**A2. Plans list reactivity (item #2)**
+- After delete in `plans.index.tsx`, optimistically remove the row + recompute the quota bar without a refresh.
 
-```
-EXERCISE                    PLANNED                    ACTUAL
-                            sets reps rest             sets reps weight  notes
-DB Bench Press              4    8    90s              [4]  [8]  [22.5]  [easier than W1]
-Incline DB Press            3    10   60s              [_]  [_]  [_____] [_______________]
-```
+**A3. Rename "Phased Plan" everywhere (item #22)**
+- Rename to **"Plano Faseado"** / **"Phased build"** → just **"Plano de treino"** in user-facing strings. Internal route names stay (`plans.$planId.microcycle` etc.).
+- Update i18n keys in `plan.json` (en + pt) and any visible labels.
 
-Implementation:
+**A4. Day-level UX in microcycle (items #20 partial, #23 partial)**
+- On each exercise row in `SessionDayView.tsx`, add a small `×` (circled) on hover to delete it (we already have the server fn `microcycle-edit.functions.ts`).
+- Add a `+ Adicionar exercício` button at the bottom of the day with a search input (filters by name/muscle/equipment from a static list — no AI call).
+- Day cards get a subtle alternating accent stripe (Day 1 amber-tinted left border, Day 2 emerald, Day 3 sky) so they're visually distinct.
 
-- Extract a new `<SessionLogTable>` component co-located in the route (no need for `src/components/` since it's only used here).
-- Use `<table>` with `tabular-nums` on the inputs so numbers align.
-- Keep the existing `entries`/`updateActual` state shape — the table is purely a presentation swap.
-- `hidden md:table` for the table, `md:hidden` for the existing cards (kept as the mobile fallback).
-- Inputs become `<input>` (not `<Input>` from shadcn) sized `w-12` for sets/reps, `w-16` for weight, `w-full` for notes. Use the same border/focus tokens as `<Input>` so theming holds.
+**A5. Deltas page polish (item #23)**
+- "Como ler estes deltas" → expanded by default, button flips to "Colapsar".
+- Fix the broken-looking black sparkline in `ProgressionExerciseCard` (use `currentColor` + theme-aware stroke).
+- Add a per-exercise rationale line (already in schema as `notes`/`rationale` — just render it).
+- Make "Brief aprovado" pill on the right rail use the success-emerald tone (`status-tone.ts`), not muted grey.
 
-### Acceptance
+**A6. BrandMark adaptive contrast (item #25)**
+- `BrandMark.tsx` currently uses a fixed amber glow plate. Detect logo luminance once at upload (or accept a `tone="light"|"dark"` prop) and switch the plate background:
+  - dark logo on dark mode → cream/parchment plate
+  - light logo on dark mode → keep current dark plate
+- Default heuristic: if logo's average luminance < 0.4, use a light plate in dark mode.
 
-- A 10-exercise session fits in roughly one viewport on desktop (~700 px tall).
-- Mobile experience unchanged (cards still render).
-- All actuals still save through `saveClientSession`.
+**A7. View page breathability + PDF button (item #24 partial)**
+- `MesocycleTableView.tsx`: add `mt-6` between day rows, render RPE column unconditionally (currently hidden when undefined — show `—`), show a "SS" chip on grouped supersets in subtitles.
+- Promote the "Export PDF" button to a large gradient amber CTA with the BrandMark icon.
 
 ---
 
-## What I'm explicitly NOT doing this turn
+## Phase B — Next turn (high impact, medium effort)
 
-- Phase 3 PT Toolkit (Tanita upload, posture photos, senior testing). Next turn — they each need a storage bucket + UI + likely a migration.
-- Inline PDF editing or "copy to clipboard" of the PDF table (the on-screen `MesocycleTableView` already has TSV/Markdown copy from last turn).
-- Landing page rewrite. Should follow toolkit features so the new copy can name them.
+**B1. Logbook overhaul (item #4) — your "coaching station"**
+- Redesign `log.$token.tsx`:
+  - Big satisfying check-off interaction (haptic-style animation + tone) on each set logged.
+  - Streak counter, weekly compliance ring, "logged X/Y sets this week".
+  - History timeline per exercise with mini-line chart of weight×reps progression.
+  - "Quick log" mode: tap-to-fill last week's values, then adjust.
+- New `client_logs` summary view with PR detection (auto-flag "🏆 PR!" when actuals > previous best).
 
-Reply "approve" and I'll ship both. Reply with edits to the scope if you want to drop or add anything (e.g. "skip the log table, just do the PDF" is a valid trim).
+**B2. Volume / MEV intelligence + spider charts (item #3, #24)**
+- New `src/lib/muscle-volume.ts`:
+  - Exercise → muscle map (primary 1.0 / secondary 0.5 / stabilizer 0.25 weights).
+  - Compute weekly sets per muscle group, compare against MEV/MAV/MRV thresholds (Israetel-style table).
+- New `<MuscleVolumeRadar />` and `<MesoFocusRadar />` components — render in:
+  - View page (per week + per meso)
+  - Microcycle page (per session)
+  - Dashboard ("Esta semana")
+- Volume vs MEV bar with green/amber/red tone via `status-tone.ts`.
+
+**B3. Logbook camera ingestion (item #24 last sub-bullet)**
+- Print PDF gets a "write-in" zone (sets done / RPE / notes columns left blank with thick rules).
+- New flow: upload photo of marked-up sheet → Lovable AI vision (gemini-2.5-flash) → parse handwritten cells → preview & confirm → bulk insert into `session_actuals`. Single feature, single edge function.
+
+---
+
+## Phase C — Following turn (medium impact, larger effort)
+
+**C1. Landing/website overhaul + manual + FAQ (items #1, #5)**
+- Rewrite `index.tsx` with a 5-stage journey hero, a proper "Como funciona" section, screenshots, social proof slot.
+- New routes: `/manual` (step-by-step from signup → first plan), `/faq`, `/contacto` (contact form → emails you / inserts into `feedback` table).
+
+**C2. Assessment fade-section flow + history (item #9)**
+- One-section-at-a-time scroll with framer-motion fade transitions; completed sections collapse to gold pill with date.
+- "+" button on left to start a new assessment, with auto-recommended next-assessment date.
+
+**C3. Synthesis enrichment (items #6, #11)**
+- Add empty-state graphs for Blood pressure, Resting HR, Body composition trend, etc. — placeholders with "Adicionar dados" CTA so the user is guided to capture more.
+- "Digitalizar documento" upload in security-review (PDF/photo of medical clearance) → stored in `client_documents` for legal cover.
+
+**C4. Speed up day generation (item #14)**
+- Move from sequential per-day Anthropic calls to a single parallelized batch using `Promise.all`, with shared system-prompt cache. Switch Stage 3 to Haiku for the per-day draft (Sonnet only for blueprint + critic). Should cut wall-time ~50%.
+
+---
+
+## Phase D — Deeper R&D (item #17, #19, #3 deep)
+
+**D1. AI training-data improvements (#17, #19)**
+- Add a `coach_corrections` table — every time you edit an exercise/delta, store the diff. Use as few-shot examples in future prompts.
+- Codify "golden standard" progression heuristics (Helms/Israetel/Schoenfeld) into `src/server/phased/programming-defaults.ts` as deterministic guardrails the AI must respect.
+- Periodic "exercise library refresh" — pull a curated list with primary/secondary/stabilizer tagging.
+
+**D2. PDF beauty pass (#24 PDF tail)**
+- Add tasteful color (1 accent + 2 muscle-group tones), print-cost-aware (≤15% ink coverage). Keep one-page-per-workout rule.
+
+---
+
+## Task tracking (item #21)
+
+I'll create a `mem://tasks/backlog.md` file holding all 25 items with status `done | in-progress | next | backlog` so we never lose context across turns. Each phase ship will update statuses.
+
+---
+
+## What I need from you
+
+Reply with one of:
+- **"go"** → I ship **Phase A** (items 2, 7, 8, 10, 15, 16, 18, 20-partial, 22, 23, 24-partial, 25). One turn, ~10 files.
+- **"go + B1"** → Phase A plus the logbook overhaul (heavier turn, ~15 files).
+- **re-order** → tell me which item from B/C/D you want pulled into Phase A, and which Phase A item to drop.
+
+Recommended: just say **"go"** so we land a clean polish pass and then attack the logbook + MEV charts with full attention next turn.

@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { ChevronDown, Lightbulb } from "lucide-react";
+import { AutoTextarea } from "@/components/AutoTextarea";
 import type {
   Brief,
   ProgrammingVariables,
@@ -39,8 +42,11 @@ export default function BriefEditor({
   };
 
   return (
-    <div className={`space-y-4 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
-      <Card title="Objetivo">
+    <div className={`space-y-3 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
+      <Card
+        title="Objetivo"
+        conclusion={buildObjectiveConclusion(brief)}
+      >
         <Field label="Objetivo principal">
           <select
             value={brief.primary_goal}
@@ -88,7 +94,7 @@ export default function BriefEditor({
         </Field>
       </Card>
 
-      <Card title="Agenda e ênfase">
+      <Card title="Agenda e ênfase" conclusion={buildEmphasisConclusion(brief)}>
         {typeof brief.current_capacity_vs_pb === "number" && (
           <div className="mb-2">
             <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -155,7 +161,7 @@ export default function BriefEditor({
         </div>
       </Card>
 
-      <Card title="Competência de movimento">
+      <Card title="Competência de movimento" conclusion={buildMovementConclusion(brief)}>
         {([
           ["squat", "Agachamento"],
           ["hinge", "Dobra de anca"],
@@ -180,9 +186,9 @@ export default function BriefEditor({
         ))}
       </Card>
 
-      <Card title="Segurança e equipamento">
+      <Card title="Segurança e equipamento" conclusion={buildSafetyConclusion(brief)}>
         <Field label="Sinais de alerta (um por linha)">
-          <textarea
+          <AutoTextarea
             value={brief.red_flags.join("\n")}
             onChange={(e) =>
               set(
@@ -190,12 +196,12 @@ export default function BriefEditor({
                 e.target.value.split("\n").map((s) => s.trim()).filter(Boolean)
               )
             }
-            rows={3}
+            minRows={2}
             className="be-input"
           />
         </Field>
         <Field label="Restrições de equipamento (uma por linha)">
-          <textarea
+          <AutoTextarea
             value={brief.equipment_constraints.join("\n")}
             onChange={(e) =>
               set(
@@ -203,15 +209,15 @@ export default function BriefEditor({
                 e.target.value.split("\n").map((s) => s.trim()).filter(Boolean)
               )
             }
-            rows={3}
+            minRows={2}
             className="be-input"
           />
         </Field>
         <Field label="Notas para a próxima etapa">
-          <textarea
+          <AutoTextarea
             value={brief.notes_for_next_stage}
             onChange={(e) => set("notes_for_next_stage", e.target.value)}
-            rows={4}
+            minRows={3}
             className="be-input"
           />
         </Field>
@@ -356,18 +362,65 @@ export default function BriefEditor({
       )}
 
       <style>{`
-        .be-input { width: 100%; border-radius: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); padding: 6px 10px; font-size: 14px; color: hsl(var(--foreground)); }
+        .be-input { width: 100%; border-radius: 8px; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); padding: 5px 9px; font-size: 13.5px; color: hsl(var(--foreground)); }
         .be-input:focus { outline: 2px solid hsl(var(--primary) / 0.4); outline-offset: 1px; }
       `}</style>
     </div>
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  children,
+  conclusion,
+}: {
+  title: string;
+  children: React.ReactNode;
+  /** One-line takeaway shown in a soft amber footer to brief the AI / trainer. */
+  conclusion?: string | null;
+}) {
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const onExp = () => setOpen(true);
+    const onCol = () => setOpen(false);
+    window.addEventListener("brief:expand-all", onExp);
+    window.addEventListener("brief:collapse-all", onCol);
+    return () => {
+      window.removeEventListener("brief:expand-all", onExp);
+      window.removeEventListener("brief:collapse-all", onCol);
+    };
+  }, []);
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h3>
-      <div className="space-y-3">{children}</div>
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left transition hover:bg-muted/30 sm:px-5"
+      >
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h3>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && (
+        <div className="space-y-2.5 px-4 pb-3 sm:px-5 sm:pb-4">{children}</div>
+      )}
+      {open && conclusion && (
+        <div className="border-t border-amber-500/20 bg-amber-500/[0.05] px-4 py-2 sm:px-5">
+          <div className="flex items-start gap-2">
+            <Lightbulb className="mt-0.5 h-3 w-3 shrink-0 text-amber-400" />
+            <p className="text-[11px] leading-snug text-amber-100/80">
+              <span className="font-semibold uppercase tracking-wider text-amber-300/90">
+                Conclusão para a programação ·{" "}
+              </span>
+              {conclusion}
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -408,4 +461,69 @@ function NumInput({
       className="be-input"
     />
   );
+}
+
+/* ─────────── Conclusion builders ───────────
+ * Deterministic one-liners derived from the brief itself — no extra AI call.
+ * Each gives the trainer (and downstream prompts) a crisp practical takeaway. */
+
+function buildObjectiveConclusion(b: Brief): string {
+  const goalMap: Record<string, string> = {
+    hypertrophy: "priorizar volume mecânico e proximidade da falha",
+    strength: "priorizar carga e qualidade de séries baixas em reps",
+    conditioning: "priorizar densidade, descansos curtos e variabilidade aeróbia",
+    mixed: "balancear força e condicionamento por dia",
+    fat_loss: "manter intensidade, gerir fadiga, dieta como driver principal",
+    general: "padrões fundamentais, sem especialização",
+  };
+  const exp =
+    b.training_age_band === "beginner"
+      ? "técnica antes de carga"
+      : b.training_age_band === "intermediate"
+      ? "progressão linear sustentável"
+      : "stress periodizado e variação";
+  return `${goalMap[b.primary_goal] ?? b.primary_goal}; ${exp}.`;
+}
+
+function buildEmphasisConclusion(b: Brief): string {
+  const e = b.emphasis_split;
+  const total = (e.upper ?? 0) + (e.lower ?? 0) + (e.conditioning ?? 0);
+  if (total === 0) return "Sem ênfase definida — assumir distribuição equilibrada.";
+  const pct = (n: number) => Math.round((n / total) * 100);
+  const parts = [
+    e.upper > 0 ? `${pct(e.upper)}% superior` : null,
+    e.lower > 0 ? `${pct(e.lower)}% inferior` : null,
+    e.conditioning > 0 ? `${pct(e.conditioning)}% condição` : null,
+  ].filter(Boolean);
+  return `${b.sessions_per_week.recommended}× por semana · ${parts.join(" · ")}.`;
+}
+
+function buildMovementConclusion(b: Brief): string {
+  const failed: string[] = [];
+  const PT: Record<string, string> = {
+    squat: "agachamento",
+    hinge: "anca",
+    push: "empurrar",
+    pull: "puxar",
+    lunge: "avanço",
+    carry: "transporte",
+  };
+  for (const k of Object.keys(PT) as (keyof typeof PT)[]) {
+    const txt = (b.movement_competency_summary as any)?.[k] ?? "";
+    if (/falh|restri|défice|dor|insuficien/i.test(txt)) failed.push(PT[k]);
+  }
+  if (failed.length === 0) return "Padrões fundamentais sem falhas críticas — pode-se carregar.";
+  if (failed.length >= 4)
+    return `Falhas em ${failed.length} padrões — começar com versões assistidas / regredidas e enfatizar controlo motor.`;
+  return `Atenção a: ${failed.join(", ")}. Usar variantes regredidas e cuidar amplitude antes de carga.`;
+}
+
+function buildSafetyConclusion(b: Brief): string {
+  const flags = b.red_flags.length;
+  const eq = b.equipment_constraints.length;
+  if (flags === 0 && eq === 0) return "Sem restrições — escolha de exercícios livre.";
+  const bits: string[] = [];
+  if (flags > 0) bits.push(`${flags} sinal${flags === 1 ? "" : "is"} de alerta a acomodar`);
+  if (eq > 0) bits.push(`${eq} restrição${eq === 1 ? "" : "ões"} de equipamento`);
+  return `${bits.join(" · ")}. Aplicar estratégias AVOID/MODIFY antes de prescrever.`;
 }
