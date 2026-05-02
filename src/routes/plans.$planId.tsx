@@ -519,19 +519,29 @@ function PlanEditor() {
           em planos de demonstração (mantém a IA como atalho honesto). */}
       {plan?.generation_status === "complete"
         && plan?.status !== "archived" && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+        (() => {
+          const fullyLogged = isPlanFullyLogged(plan, sessions.length);
+          const wrapClass = fullyLogged
+            ? "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs"
+            : "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs";
+          return (
+        <div className={wrapClass}>
           <div className="flex-1">
-            <p className="font-semibold text-foreground">
+            <p className="font-semibold text-foreground inline-flex items-center gap-1.5">
+              {fullyLogged && <Sparkles className="h-3.5 w-3.5 text-amber-400" />}
               Bloco {(plan as any).block_number ?? 1}
-              {(plan as any).completion_state === "finished_logging"
+              {fullyLogged
+                ? " concluído na totalidade — todas as sessões registadas."
+                : (plan as any).completion_state === "finished_logging"
                 ? " · concluído pelo treinador"
                 : sessions.length > 0
                 ? ` · ${sessions.length} sessão(ões) registada(s)`
-                : " · pronto para fechar"}.
+                : " · pronto para fechar"}
             </p>
             <p className="mt-0.5 text-muted-foreground">
-              Arquive este bloco e desenhe o Bloco {((plan as any).block_number ?? 1) + 1}.
-              Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.
+              {fullyLogged
+                ? `Pronto para fechar e desenhar o Bloco ${((plan as any).block_number ?? 1) + 1}? A nota de transição traz adesão e variação de RPE pré-preenchidas — você assina.`
+                : `Arquive este bloco e desenhe o Bloco ${((plan as any).block_number ?? 1) + 1}. Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.`}
             </p>
           </div>
           {(plan as any).completion_state !== "finished_logging" && (
@@ -557,13 +567,18 @@ function PlanEditor() {
             currentBlockNumber={(plan as any).block_number ?? 1}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
             trigger={
-              <Button size="sm">
+              <Button
+                size="sm"
+                className={fullyLogged ? "bg-amber-500 text-black hover:bg-amber-400" : undefined}
+              >
                 <PlayCircle className="mr-2 h-4 w-4" />
                 Iniciar Bloco {((plan as any).block_number ?? 1) + 1}
               </Button>
             }
           />
         </div>
+          );
+        })()
       )}
 
       {/* AI Validation Report — always visible to the trainer */}
