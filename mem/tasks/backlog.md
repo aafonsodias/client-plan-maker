@@ -37,7 +37,7 @@ Source: user message 2026-05-02. See `.lovable/plan.md` for the phasing rational
 
 ## Phase B — next turn
 - [x] #4 Logbook overhaul shipped: set-by-set check-off, autosave/restore, PR detection, streak chip, week confetti. Trainer quick-mark from SessionDayView still backlog.
-- [ ] #3 + #24 MEV/MAV/MRV intelligence + spider charts (per session/week/meso)
+- [x] #3 MEV/MAV/MRV intelligence + spider chart (per week, on /plans/$id). Counting policy: 1.0 primary + 0.5 secondary. Landmarks: single intermediate profile (Helms/Israetel). Diagnostic only — no auto-edits. Personalisation by experience_level deferred.
 - [ ] #24 tail: PDF write-in zone + photo-upload OCR ingestion via Lovable AI vision
 
 ## Phase C — following turn
