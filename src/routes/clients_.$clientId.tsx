@@ -2070,6 +2070,7 @@ function ClientDetail() {
               );
             })()}
           </div>
+          )}
 
           {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
           <AssessmentSynthesisDashboard
