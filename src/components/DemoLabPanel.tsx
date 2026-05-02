@@ -54,7 +54,7 @@ export function DemoLabPanel() {
     if (busy) return;
     setBusy("tick");
     try {
-      const res: any = await tickFn({ data: {} });
+      const res: any = await tickFn();
       if (res?.ticked > 0) toast.success(`${res.ticked} sessões adicionadas.`);
       else toast.info(res?.message ?? "Nada para avançar.");
     } catch (e: any) {
