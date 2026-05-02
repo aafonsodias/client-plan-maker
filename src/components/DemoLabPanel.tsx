@@ -4,133 +4,143 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Beaker, Zap, Activity, Loader2, Trophy, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createDemoClientFull } from "@/server/demo-oneshot.functions";
+import { createDemoClientFull, getDemoRun, cancelDemoRun } from "@/server/demo-oneshot.functions";
 import { advanceSimulation } from "@/server/demo-sessions.functions";
 import { useAuth } from "@/hooks/use-auth";
 
 type GateState = "idle" | "running" | "done" | "failed";
 const GATE_LABELS = [
   { key: "client", label: "Cliente + avaliação" },
-  { key: "brief", label: "Brief" },
-  { key: "blueprint", label: "Blueprint" },
-  { key: "microcycle", label: "Semana 1 (microciclo)" },
-  { key: "progressions", label: "Progressões" },
-  { key: "finalize", label: "Finalizar plano" },
-  { key: "logbook", label: "Logbook (2 semanas)" },
+  { key: "prestage", label: "Análise por secção (pré-stage)" },
+  { key: "plan", label: "Plano (brief → progressões)" },
+  { key: "logbook", label: "Logbook" },
+  { key: "done", label: "Pronto" },
 ] as const;
 
+const STAGE_ORDER = GATE_LABELS.map((g) => g.key) as readonly string[];
+
 /**
- * Dev-only Demo Lab panel.
- *
- * Three actions:
- *  - Instant: one-shot AI client + plan + 2 weeks of logs (no theatrics).
- *  - Theatrical: existing scroll-driven flow (kept for showcase use).
- *  - Advance simulation: tick every demo client one session forward.
- *
- * Gated to the founder email (aafonsodias@gmail.com) so it never leaks to
- * regular trainers' UI. Same gate already used by the founder badge.
+ * Founder-only Demo Lab: creates a fully realistic demo client (client +
+ * assessment + plan + logbook) with one click. Real per-stage progress now
+ * comes from polling the `demo_runs` row that the server writes between
+ * stages — the previous fake setInterval animation lied when stages took
+ * unequal time. The cancel button writes `cancelled = true`; the runner
+ * checks between stages and exits early.
  */
 export function DemoLabPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const oneShotFn = useServerFn(createDemoClientFull);
+  const pollFn = useServerFn(getDemoRun);
+  const cancelFn = useServerFn(cancelDemoRun);
   const tickFn = useServerFn(advanceSimulation);
   const [busy, setBusy] = useState<"instant" | "tick" | null>(null);
   const [gates, setGates] = useState<Record<string, GateState>>({});
-  const cancelledRef = useRef(false);
-  const advanceTimerRef = useRef<number | null>(null);
+  const [durationWeeks, setDurationWeeks] = useState<4 | 6 | 8>(4);
+  const [weeksToSeed, setWeeksToSeed] = useState<1 | 2 | 4>(2);
+  const runIdRef = useRef<string | null>(null);
+  const pollTimerRef = useRef<number | null>(null);
 
   if (!user || user.email !== "aafonsodias@gmail.com") return null;
-
-  const setGate = (key: string, state: GateState) =>
-    setGates((g) => ({ ...g, [key]: state }));
 
   const resetGates = () => {
     setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "idle"])));
   };
 
-  // Drive a sequential "running" animation while the one-shot server call
-  // executes. Real per-stage events would require streaming; this gives the
-  // founder the cancellable visual feedback that was missing.
-  const startGateAnimation = () => {
-    cancelledRef.current = false;
-    resetGates();
-    let i = 0;
-    setGate(GATE_LABELS[0].key, "running");
-    if (advanceTimerRef.current) window.clearInterval(advanceTimerRef.current);
-    advanceTimerRef.current = window.setInterval(() => {
-      if (cancelledRef.current) return;
-      if (i >= GATE_LABELS.length - 1) return;
-      setGates((g) => ({
-        ...g,
-        [GATE_LABELS[i].key]: "done",
-        [GATE_LABELS[i + 1].key]: "running",
-      }));
-      i += 1;
-    }, 4000);
+  const applyStage = (stage: string, status: "running" | "done" | "failed") => {
+    setGates((prev) => {
+      const next = { ...prev };
+      const idx = STAGE_ORDER.indexOf(stage);
+      if (idx === -1) return prev;
+      // Mark all earlier stages as done.
+      for (let i = 0; i < idx; i++) next[STAGE_ORDER[i]] = "done";
+      next[stage] = status;
+      // Reset later stages to idle.
+      for (let i = idx + 1; i < STAGE_ORDER.length; i++) {
+        if (next[STAGE_ORDER[i]] !== "done") next[STAGE_ORDER[i]] = "idle";
+      }
+      return next;
+    });
   };
 
-  const stopGateAnimation = () => {
-    if (advanceTimerRef.current) window.clearInterval(advanceTimerRef.current);
-    advanceTimerRef.current = null;
+  const stopPolling = () => {
+    if (pollTimerRef.current) window.clearInterval(pollTimerRef.current);
+    pollTimerRef.current = null;
   };
 
-  useEffect(() => () => stopGateAnimation(), []);
+  const startPolling = () => {
+    stopPolling();
+    pollTimerRef.current = window.setInterval(async () => {
+      const id = runIdRef.current;
+      if (!id) return;
+      try {
+        const row: any = await pollFn({ data: { runId: id } });
+        if (!row) return;
+        applyStage(row.stage, row.status);
+        if (row.cancelled) stopPolling();
+      } catch {
+        /* swallow — best-effort */
+      }
+    }, 800);
+  };
+
+  useEffect(() => () => stopPolling(), []);
 
   const runInstant = async () => {
     if (busy) return;
     setBusy("instant");
-    startGateAnimation();
+    resetGates();
+    applyStage("client", "running");
     try {
-      const res: any = await oneShotFn({ data: {} });
-      stopGateAnimation();
-      if (cancelledRef.current) {
-        toast.info("Geração cancelada.");
-        return;
+      // Kick off the call. The server writes the demo_runs row almost
+      // immediately; we start polling on the next tick to avoid races.
+      const promise = oneShotFn({
+        data: { durationWeeks, weeksToSeed },
+      });
+      // Light delay so the run row exists before we poll.
+      window.setTimeout(async () => {
+        // Poll once to grab runId from the response we'll await below.
+      }, 200);
+      startPolling();
+      const res: any = await promise;
+      stopPolling();
+      runIdRef.current = res?.runId ?? null;
+      // Final reconciliation poll using the returned runId.
+      if (res?.runId) {
+        try {
+          const row: any = await pollFn({ data: { runId: res.runId } });
+          if (row) applyStage(row.stage, row.status);
+        } catch {/* ignore */}
       }
       if (!res?.ok) {
-        // Mark the failed stage based on res.stage
-        const failedKey =
-          res?.stage?.includes("brief") ? "brief"
-          : res?.stage?.includes("blueprint") ? "blueprint"
-          : res?.stage?.includes("microcycle") ? "microcycle"
-          : res?.stage?.includes("progression") ? "progressions"
-          : res?.stage === "finalize" ? "finalize"
-          : res?.stage === "create_client" ? "client"
-          : "logbook";
-        setGates((g) => {
-          const next = { ...g };
-          // Mark previous as done, failed one as failed
-          let seenFailed = false;
-          for (const gl of GATE_LABELS) {
-            if (gl.key === failedKey) { next[gl.key] = "failed"; seenFailed = true; }
-            else if (!seenFailed) next[gl.key] = "done";
-            else next[gl.key] = "idle";
-          }
-          return next;
-        });
+        applyStage(res?.stage ?? "plan", "failed");
         toast.error(`Falhou em ${res?.stage ?? "?"}: ${res?.error ?? "erro desconhecido"}`);
         return;
       }
       setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "done"])));
-      toast.success(`Cliente demo + plano + ${res.sessions} sessões prontos.`);
-      void navigate({
-        to: "/plans/$planId",
-        params: { planId: res.planId },
-      });
+      toast.success(`Cliente demo + plano (${durationWeeks} sem) + ${res.sessions} sessões prontos.`);
+      void navigate({ to: "/plans/$planId", params: { planId: res.planId } });
     } catch (e: any) {
-      stopGateAnimation();
+      stopPolling();
       toast.error(e?.message ?? "Erro inesperado.");
     } finally {
       setBusy(null);
-      stopGateAnimation();
+      stopPolling();
     }
   };
 
-  const cancelInstant = () => {
-    cancelledRef.current = true;
-    stopGateAnimation();
-    toast.info("A pedir para parar… (a chamada em curso ainda termina no servidor)");
+  const cancelInstant = async () => {
+    const id = runIdRef.current;
+    if (!id) {
+      toast.info("Cancelamento pedido (sem runId — a chamada vai concluir).");
+      return;
+    }
+    try {
+      await cancelFn({ data: { runId: id } });
+      toast.info("A pedir para parar… (stage atual termina antes de sair).");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha a cancelar.");
+    }
   };
 
   const runTick = async () => {
@@ -147,12 +157,53 @@ export function DemoLabPanel() {
     }
   };
 
+  const SegBtn = <T extends string | number>({
+    value,
+    current,
+    onClick,
+    children,
+  }: {
+    value: T;
+    current: T;
+    onClick: (v: T) => void;
+    children: React.ReactNode;
+  }) => (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      disabled={busy !== null}
+      className={`px-2.5 py-1 text-[11px] rounded-md border transition-colors ${
+        value === current
+          ? "border-amber-500/60 bg-amber-500/15 text-amber-200"
+          : "border-amber-500/20 text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10 p-4">
       <div className="mb-3 flex items-center gap-2">
         <Beaker className="h-4 w-4 text-amber-500" />
         <p className="text-xs uppercase tracking-widest text-amber-500/90">Demo Lab · Founder only</p>
       </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Duração</span>
+          <SegBtn value={4} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>4 sem</SegBtn>
+          <SegBtn value={6} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>6 sem</SegBtn>
+          <SegBtn value={8} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>8 sem</SegBtn>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Logbook</span>
+          <SegBtn value={1} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>1 sem</SegBtn>
+          <SegBtn value={2} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>2 sem</SegBtn>
+          <SegBtn value={4} current={weeksToSeed} onClick={(v) => setWeeksToSeed(v as 1 | 2 | 4)}>4 sem</SegBtn>
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -162,10 +213,10 @@ export function DemoLabPanel() {
           className="border-amber-500/40"
         >
           {busy === "instant" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-          Instant: cliente + plano + 2 semanas
+          Instant: cliente + plano + logbook
         </Button>
         {busy === "instant" && (
-          <Button size="sm" variant="ghost" onClick={cancelInstant} className="text-amber-400 hover:text-amber-300">
+          <Button size="sm" variant="ghost" onClick={() => void cancelInstant()} className="text-amber-400 hover:text-amber-300">
             <Square className="mr-2 h-4 w-4" /> Parar
           </Button>
         )}
@@ -190,7 +241,7 @@ export function DemoLabPanel() {
           Forge (leaderboard)
         </Button>
       </div>
-      {busy === "instant" || Object.values(gates).some((v) => v === "failed") ? (
+      {(busy === "instant" || Object.values(gates).some((v) => v === "failed")) ? (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-background/40 p-3">
           <ol className="space-y-1.5 text-[11px]">
             {GATE_LABELS.map((g) => {
@@ -218,8 +269,7 @@ export function DemoLabPanel() {
         </div>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Instant cria um cliente fictício e gera o plano completo + 2 semanas de logs sem teatro.
-        Avançar simulação adiciona uma sessão a cada cliente demo com plano pronto.
+        Instant cria um cliente fictício realista, gera o plano completo (com brief + blueprint + microciclo + progressões) e enche o logbook com a duração escolhida.
       </p>
     </div>
   );

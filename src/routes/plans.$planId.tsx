@@ -30,6 +30,8 @@ import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
+import { ClientAvatar } from "@/components/ClientAvatar";
+import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -74,6 +76,8 @@ function PlanEditor() {
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
+  const startNextBlockFn = useServerFn(archivePlanAndStartNextBlock);
+  const [startingNextBlock, setStartingNextBlock] = useState(false);
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
   // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
@@ -258,8 +262,17 @@ function PlanEditor() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {client && (
-            <Link to="/clients/$clientId" params={{ clientId: client.id }} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              {client.full_name} →
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId: client.id }}
+              className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <ClientAvatar
+                name={client.full_name}
+                photoUrl={client.photo_url ?? null}
+                size={28}
+              />
+              <span>{client.full_name} →</span>
             </Link>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -268,6 +281,18 @@ function PlanEditor() {
               value={plan.title}
               onChange={(e) => setPlan({ ...plan, title: e.target.value })}
             />
+            {(() => {
+              const block = (plan as any).block_number ?? 1;
+              if (block <= 1) return null;
+              return (
+                <span
+                  title={(plan as any).block_transition_summary ?? undefined}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
+                >
+                  Bloco {block} · evoluiu de Bloco {block - 1}
+                </span>
+              );
+            })()}
             {(() => {
               const s = planStatusInfo(plan, tCommon as any);
               if (s.key === "draft") return null;
@@ -406,6 +431,46 @@ function PlanEditor() {
           >
             {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Preencher logbook agora
+          </Button>
+        </div>
+      )}
+
+      {/* Founder demo: close the current block and spawn Block N+1.
+          Visible only on demo clients with a finalized plan + at least
+          some logged sessions, so the transition note has signal to use. */}
+      {plan?.generation_status === "complete"
+        && /\(demo\)$/i.test(client?.full_name ?? "")
+        && sessions.length > 0
+        && plan?.status !== "archived" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">
+              Bloco {(plan as any).block_number ?? 1} pronto para fechar.
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Arquiva este bloco e gera o Bloco {((plan as any).block_number ?? 1) + 1} —
+              o sistema vai propor uma evolução baseada na adesão e no RPE registado.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            disabled={startingNextBlock}
+            onClick={async () => {
+              if (!confirm("Concluir este bloco e iniciar o próximo?")) return;
+              setStartingNextBlock(true);
+              try {
+                const r: any = await startNextBlockFn({ data: { priorPlanId: planId } });
+                if (r?.ok && r?.planId) {
+                  toast.success(`Bloco ${r.blockNumber} criado.`);
+                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                } else {
+                  toast.error(r?.error ?? "Falhou a iniciar o próximo bloco.");
+                }
+              } finally { setStartingNextBlock(false); }
+            }}
+          >
+            {startingNextBlock ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+            Concluir e iniciar Bloco {((plan as any).block_number ?? 1) + 1}
           </Button>
         </div>
       )}
