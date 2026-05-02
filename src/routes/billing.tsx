@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Check, Loader2, Sparkles, Zap, Info, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/billing")({
   component: BillingPage,
@@ -240,8 +241,11 @@ function BillingPage() {
     <AppShell back={{ to: "/dashboard", label: "Voltar ao dashboard" }}>
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Billing</p>
-          <h1 className="mt-1 text-2xl font-semibold">A tua subscrição</h1>
+          <div className="flex items-center gap-3">
+            <BrandMark size="sm" />
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Billing</p>
+          </div>
+          <h1 className="mt-2 text-2xl font-semibold">A tua subscrição</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Preço por <span className="text-foreground">clientes activos + gerações de plano</span> — um cliente que treina sempre o mesmo mesociclo
             <span className="italic"> não </span>conta como geração nova. Sem letras pequenas.

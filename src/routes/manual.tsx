@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/manual")({
   component: ManualPage,
@@ -81,9 +82,12 @@ function ManualPage() {
     <AppShell>
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <header className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            <BookOpen className="h-3 w-3" />
-            {t("title")}
+          <div className="flex items-center gap-3">
+            <BrandMark size="sm" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <BookOpen className="h-3 w-3" />
+              {t("title")}
+            </div>
           </div>
           <h1 className="mt-3 text-3xl font-light tracking-tight text-foreground sm:text-4xl">
             {t("title")}
