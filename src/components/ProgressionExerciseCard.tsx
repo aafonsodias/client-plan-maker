@@ -17,14 +17,18 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   for (const v of values) cum.push(cum[cum.length - 1] + v);
   const min = Math.min(...cum);
   const max = Math.max(...cum);
-  const range = max - min || 1;
+  const flat = max === min;
+  const range = flat ? 1 : max - min;
   const w = 88;
   const h = 28;
   const step = w / (cum.length - 1);
   const points = cum
     .map((v, i) => {
       const x = i * step;
-      const y = h - ((v - min) / range) * h;
+      // When all deltas are 0, lock the line to the vertical centre so the
+      // polyline still has a visible 88px-wide stroke instead of collapsing
+      // to a single point (which renders as just dots in some browsers).
+      const y = flat ? h / 2 : h - ((v - min) / range) * h;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
     .join(" ");
@@ -34,13 +38,13 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
         points={points}
         fill="none"
         stroke={color}
-        strokeWidth={1.5}
+        strokeWidth={1.75}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {cum.map((_, i) => {
         const [x, y] = points.split(" ")[i].split(",").map(Number);
-        return <circle key={i} cx={x} cy={y} r={1.6} fill={color} />;
+        return <circle key={i} cx={x} cy={y} r={1.2} fill={color} />;
       })}
     </svg>
   );
@@ -48,10 +52,10 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 
 // Sign-based palette: trend direction beats dimension category — the user
 // needs to spot at a glance whether a row is progressing, holding, or
-// deloading.
+// deloading. "Flat" uses amber so it never reads as broken / greyed-out.
 const TREND_UP = "hsl(142 70% 45%)"; // emerald
 const TREND_DOWN = "hsl(0 72% 55%)"; // rose
-const TREND_FLAT = "hsl(var(--muted-foreground))";
+const TREND_FLAT = "hsl(38 92% 55%)"; // amber — hold / deload signal
 
 function deltaClass(v: number): string {
   if (v > 0) return "text-emerald-400 font-semibold";
@@ -145,7 +149,8 @@ export function ProgressionExerciseCard({
                 <span className="mt-0.5 text-[9px] text-muted-foreground">trend</span>
               </div>
               {r.rationale && (
-                <p className="col-span-3 text-[11px] leading-snug text-muted-foreground">
+                <p className="col-span-3 rounded-md border border-border/40 bg-muted/30 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+                  <span className="mr-1 font-semibold uppercase tracking-wider text-[9px] text-accent/80">Why</span>
                   {r.rationale}
                 </p>
               )}

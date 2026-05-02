@@ -62,6 +62,7 @@ function MicrocycleReview() {
   const approveFn = useServerFn(approveMicrocycle);
 
   const [planTitle, setPlanTitle] = useState("");
+  const [planStatus, setPlanStatus] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [days, setDays] = useState<DayRow[]>([]);
   const [day1Approved, setDay1Approved] = useState(false);
@@ -77,11 +78,12 @@ function MicrocycleReview() {
   async function loadPlan() {
     const { data } = await supabase
       .from("workout_plans")
-      .select("title, blueprint")
+      .select("title, blueprint, status")
       .eq("id", planId)
       .maybeSingle();
     if (!data) return;
     setPlanTitle((data as any).title ?? "");
+    setPlanStatus((data as any).status ?? null);
     const bp = BlueprintSchema.safeParse((data as any).blueprint);
     if (bp.success) setBlueprint(bp.data);
   }
@@ -166,6 +168,11 @@ function MicrocycleReview() {
 
   const day1 = days.find((d) => d.day_number === 1);
   const sessionsPerWeek = blueprint?.sessions_per_week ?? 0;
+  // When the trainer comes back to a finalized plan via Edit, the gate +
+  // green approval CTA make no sense — the plan is already approved.
+  // We render every day inline and let DayCardEditable's own Edit button
+  // carry the only mutation affordance.
+  const isFinalized = planStatus === "finalized";
   const doneCount = days.filter(
     (d) => d.day_number <= sessionsPerWeek && d.status === "done",
   ).length;
@@ -199,11 +206,12 @@ function MicrocycleReview() {
           </p>
         </div>
         <div className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end">
-          {allDone && !busy && (
+          {!isFinalized && allDone && !busy && (
             <span className="inline-flex items-center gap-1 self-center text-[11px] font-medium text-emerald-500 dark:text-emerald-400 sm:self-end">
               <CheckCircle2 className="h-3 w-3" /> {t("microcycle.ready_to_approve")}
             </span>
           )}
+          {!isFinalized && (
           <button
             onClick={approve}
             disabled={!allDone || busy}
@@ -239,10 +247,20 @@ function MicrocycleReview() {
                 : t("actions.approve_microcycle")}
             </span>
           </button>
+          )}
+          {isFinalized && (
+            <Link
+              to="/plans/$planId"
+              params={{ planId }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted-foreground transition hover:text-foreground"
+            >
+              <ArrowLeft className="h-3 w-3" /> Back to plan
+            </Link>
+          )}
         </div>
       </div>
 
-      {sessionsPerWeek > 0 && (inFlight || !allDone) && (
+      {!isFinalized && sessionsPerWeek > 0 && (inFlight || !allDone) && (
         <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
           <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-2">
@@ -272,13 +290,13 @@ function MicrocycleReview() {
           key={`day1-${day1.updated_at ?? day1.status}`}
           day={day1}
           planId={planId}
-          isGate={!day1Approved}
+          isGate={!isFinalized && !day1Approved}
           onRegen={() => regenDay(1)}
-          onApproveDay1={approveDay1AndContinue}
+          onApproveDay1={isFinalized ? undefined : approveDay1AndContinue}
         />
       )}
 
-      {day1Approved &&
+      {(isFinalized || day1Approved) &&
         Array.from({ length: sessionsPerWeek - 1 }, (_, i) => i + 2).map((idx) => {
           const row = days.find((d) => d.day_number === idx);
           if (!row) {

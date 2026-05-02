@@ -529,22 +529,37 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
 
 function HeroPlanMockup() {
   const { t } = useTranslation("plan");
-  type Row = { badge: string; tone: "warmup" | "main" | "accessory" | "finisher"; name: string; sets: string; note?: string; sub?: string };
-  const rows: Row[] = [
-    { badge: t("landing.mockups.badge_warmup"), tone: "warmup", name: t("landing.mockups.ex_goblet_squat"), sets: "2 × 8", note: t("landing.mockups.at_light") },
-    { badge: t("landing.mockups.badge_main"), tone: "main", name: t("landing.mockups.ex_back_squat"), sets: "4 × 6", note: t("landing.mockups.at_rpe7"), sub: t("landing.mockups.rest_tempo_squat") },
-    { badge: t("landing.mockups.badge_main"), tone: "main", name: t("landing.mockups.ex_rdl"), sets: "3 × 8", note: t("landing.mockups.at_rpe7"), sub: t("landing.mockups.rest_tempo_rdl") },
-    { badge: t("landing.mockups.badge_accessory"), tone: "accessory", name: t("landing.mockups.ex_step_up"), sets: "3 × 10" },
-    { badge: t("landing.mockups.badge_accessory"), tone: "accessory", name: t("landing.mockups.ex_leg_curl"), sets: "3 × 12", note: t("landing.mockups.at_rpe7") },
-    { badge: t("landing.mockups.badge_finisher"), tone: "finisher", name: t("landing.mockups.ex_kb_swing"), sets: "3 × 15" },
+  // Two-week microcycle slice: shows W1 baseline → W2 deltas as the trainer
+  // would see them in MesocycleTableView. Mixed deltas (load up, reps up,
+  // one deload) deliberately avoid the "linear pump" look.
+  type DeltaTone = "up" | "down" | "flat";
+  type Row = { name: string; w1: string; w2: string; delta?: string; tone: DeltaTone };
+  type Day = { label: string; focus: string; rows: Row[] };
+  const days: Day[] = [
+    {
+      label: t("landing.mockups.day1_label"),
+      focus: t("landing.mockups.day1_focus"),
+      rows: [
+        { name: t("landing.mockups.ex_back_squat"), w1: "4×6 @RPE 7", w2: "4×6 @RPE 7", delta: "+5kg", tone: "up" },
+        { name: t("landing.mockups.ex_rdl"), w1: "3×8 @RPE 7", w2: "3×9 @RPE 7", delta: "+1rep", tone: "up" },
+        { name: t("landing.mockups.ex_leg_curl"), w1: "3×12 @RPE 7", w2: "3×12 @RPE 7", delta: "hold", tone: "flat" },
+        { name: t("landing.mockups.ex_step_up"), w1: "3×10", w2: "3×10", delta: "−1 set", tone: "down" },
+      ],
+    },
+    {
+      label: t("landing.mockups.day2_label"),
+      focus: t("landing.mockups.day2_focus"),
+      rows: [
+        { name: t("landing.mockups.ex_bench"), w1: "4×6 @RPE 7", w2: "4×6 @RPE 7", delta: "+2.5kg", tone: "up" },
+        { name: t("landing.mockups.ex_row"), w1: "3×10 @RPE 7", w2: "3×11 @RPE 7", delta: "+1rep", tone: "up" },
+        { name: t("landing.mockups.ex_kb_swing"), w1: "3×15", w2: "3×15", delta: "hold", tone: "flat" },
+      ],
+    },
   ];
-  const badgeClass = (t: Row["tone"]) => {
-    switch (t) {
-      case "main": return "bg-accent/15 text-accent border border-accent/30";
-      case "finisher": return "border border-accent/40 text-accent/80";
-      case "warmup": return "bg-secondary/60 text-muted-foreground border border-border";
-      default: return "bg-secondary/40 text-muted-foreground border border-border";
-    }
+  const toneClass = (tone: DeltaTone) => {
+    if (tone === "up") return "bg-emerald-500/10 text-emerald-500 border-emerald-500/30";
+    if (tone === "down") return "bg-rose-500/10 text-rose-500 border-rose-500/30";
+    return "bg-amber-500/10 text-amber-500 border-amber-500/30";
   };
   return (
     <FloatCard>
@@ -559,27 +574,48 @@ function HeroPlanMockup() {
         </span>
         <span>{t("landing.mockups.client_header")}</span>
       </div>
-      {/* Session title */}
+      {/* Microcycle title + personalisation hint */}
       <div className="mt-3">
-        <p className="text-base font-medium text-foreground">{t("landing.mockups.session_title")}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{t("landing.mockups.session_meta")}</p>
+        <p className="text-base font-medium text-foreground">{t("landing.mockups.microcycle_title")}</p>
+        <p className="mt-0.5 inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
+          <Sparkles className="h-3 w-3" /> {t("landing.mockups.personalized_hint")}
+        </p>
       </div>
       <div className="my-4 h-px bg-border" />
-      {/* Exercise list */}
-      <div className="space-y-2">
-        {rows.map((r, i) => (
-          <div key={i}>
-            <div className="flex items-center gap-3 rounded-md px-2 py-1.5 hover:bg-background/40">
-              <span className={`shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${badgeClass(r.tone)}`}>
-                {r.badge}
+      {/* 2-week microcycle slice */}
+      <div className="overflow-hidden rounded-lg border border-border/60">
+        {/* Column header */}
+        <div className="grid grid-cols-[minmax(0,1fr)_72px_72px_64px] items-center gap-1 border-b border-border/60 bg-background/40 px-2 py-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <span>{t("landing.mockups.col_exercise")}</span>
+          <span className="text-right">W1</span>
+          <span className="text-right">W2</span>
+          <span className="text-center">Δ</span>
+        </div>
+        {days.map((d, di) => (
+          <div key={di}>
+            <div className="flex items-center gap-2 border-b border-border/40 bg-secondary/30 px-2 py-1.5">
+              <span className="rounded-sm border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+                {d.label}
               </span>
-              <span className="flex-1 truncate text-sm font-medium text-foreground">{r.name}</span>
-              <span className="font-mono text-xs text-muted-foreground">{r.sets}</span>
-              {r.note && <span className="font-mono text-[11px] text-muted-foreground/80">{r.note}</span>}
+              <span className="truncate text-[11px] text-muted-foreground">{d.focus}</span>
             </div>
-            {r.sub && (
-              <p className="ml-[4.25rem] mt-0.5 text-[11px] italic text-muted-foreground/70">{r.sub}</p>
-            )}
+            {d.rows.map((r, ri) => (
+              <div
+                key={ri}
+                className="grid grid-cols-[minmax(0,1fr)_72px_72px_64px] items-center gap-1 border-b border-border/30 px-2 py-1.5 last:border-b-0 hover:bg-background/40"
+              >
+                <span className="truncate text-[12px] font-medium text-foreground">{r.name}</span>
+                <span className="text-right font-mono text-[10px] tabular-nums text-muted-foreground">{r.w1}</span>
+                <span className="text-right font-mono text-[10px] tabular-nums text-foreground/85">{r.w2}</span>
+                <span className="flex justify-center">
+                  {r.delta && (
+                    <span className={`rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold ${toneClass(r.tone)}`}>
+                      {r.delta}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -637,7 +673,8 @@ function SetLogMockup() {
 
 function ProgressionMockup() {
   const { t } = useTranslation("plan");
-  const weights = [70, 72.5, 75, 77.5, 80, 82.5];
+  // Realistic arc: linear climb, deload at W4, push to PR at W6.
+  const weights = [70, 72.5, 75, 70, 80, 85];
   const w = 280;
   const h = 90;
   const min = Math.min(...weights) - 2;
