@@ -328,6 +328,22 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         )}
         {children}
       </main>
+      <footer className="mt-12 border-t border-border">
+        <div className="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-[11px] uppercase tracking-widest text-muted-foreground sm:px-6">
+          <span className="opacity-70">{t("brand.name")}</span>
+          <nav className="flex flex-wrap items-center gap-4">
+            <Link to="/manual" className="transition hover:text-foreground">
+              {t("nav.manual")}
+            </Link>
+            <Link to="/privacy" className="transition hover:text-foreground">
+              Privacidade
+            </Link>
+            <Link to="/terms" className="transition hover:text-foreground">
+              Termos
+            </Link>
+          </nav>
+        </div>
+      </footer>
       <ScrollToTopButton />
       <ConciergeDock enabled={isFounder} />
     </div>

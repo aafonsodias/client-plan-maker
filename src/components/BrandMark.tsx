@@ -1,13 +1,12 @@
+/**
+ * BrandMark — internal app chrome only (AppShell header, route headers under
+ * authentication). NEVER use in PDFs/print or on the /auth bespoke plate.
+ * For landing/auth contexts use <Logo /> directly.
+ */
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import logoUrl from "@/assets/forge-logo.png";
-
-/**
- * Unified FORGE brand mark — the logo with the amber under-glow ring.
- * Use this everywhere the logo appears in app chrome (headers).
- * Footer/PDF/print contexts should pass `glow={false}` or use `<Logo />` directly.
- */
 type Size = "sm" | "md" | "lg";
 
 const sizeMap: Record<Size, { wrap: string; logo: string }> = {
