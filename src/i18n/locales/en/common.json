@@ -97,6 +97,18 @@
     "english": "English",
     "portuguese": "Português"
   },
+  "theme": {
+    "toggle_aria": "Toggle theme"
+  },
+  "plan_status": {
+    "draft": "Draft",
+    "ready": "Ready",
+    "finalized": "Finalised",
+    "stage_brief": "Brief",
+    "stage_blueprint": "Blueprint",
+    "stage_microcycle": "Microcycle",
+    "stage_progressions": "Progressions"
+  },
   "errors": {
     "page_not_found_title": "Page not found",
     "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",

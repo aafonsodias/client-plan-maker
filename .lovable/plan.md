@@ -1,104 +1,145 @@
-## Goals
+There's a lot here — I've sorted it into 3 implementation waves so we ship value fast and keep momentum. Wave 1 unblocks you (status label, theme, captain-seat logo, branding contrast, PDF look). Wave 2 attacks the meatier UX (table-first plan, slimmer microcycle, logging UI). Wave 3 is the bigger health-metrics & benchmarks platform — I'll scope it as a roadmap so we don't over-build before you validate.
 
-Fix six issues, ordered by impact:
+---
 
-1. After **bulk-fill** ("Approve & build remaining weeks") the user lands on the legacy editor showing "Summary (empty) / No weeks yet" because the new phased flow stores days in `workout_plan_days`, not in `plan_data.weeks`. We need a real "plan complete" view that reads from `workout_plan_days`, lets the user export PDF, and is what the redirect lands on.
-2. The assessment page in `clients_.$clientId.tsx` (line 1745) still says **"Continuar para Blueprint"** even when the plan is past Stage 4. Button should reflect the *actual* current stage of the inline brief's plan (Blueprint / Microcycle / Progressions / Open plan).
-3. **Progression deltas** — most rows render in the default muted color. Only `d3_pull_ups` pops because its sparkline goes up. Make every delta input + sparkline visually meaningful: color-code positive vs zero vs negative deltas and bold the input value.
-4. **Exercise nametags** (`d1_barbell_bench_press`) are technical IDs. Render a friendly name (e.g. "Day 1 · Barbell Bench Press") with the slug as a smaller subtitle.
-5. Add a **"How to read these deltas" guide** at the top of the Progressions page (collapsible info panel, PT/EN).
-6. **Auth page** — square logo: add the platinum/fiery effect *behind* the logo block (a glowing/translucent square plate), not on the symbol. Add a clear **"Back to home"** button on the auth page.
-7. Landing page header: replace the **"Preço"** text link with a small `$` icon button (still anchors to `#pricing`).
+## Wave 1 — Quick wins (ship in this pass)
 
-## Technical Plan
+### 1. "DRAFT" → "READY" / proper status
 
-### 1. Real "plan complete" view (highest priority — unblocks PDF export)
+- A finished phased plan currently keeps `status = "draft"` because nothing flips it on bulkfill completion.
+- Fix: when `generation_state.stage === "complete"`, treat it as **READY** in every UI label (`plans.index.tsx`, `clients_.$clientId.tsx` line ~2159, `plans.$planId.tsx` header). Show `READY` (amber) until coach hits **Finalize**, then `FINALIZED` (green) — matching the existing finalized chip.
+- No DB migration needed; derive from `generation_status === "complete"` in the render layer.
 
-Edit `src/routes/plans.$planId.tsx`:
+### 2. Yin/Yang theme toggle (no religious symbols)
 
-- Extend the stage redirect map so `"complete"` does **not** redirect away — the base `/plans/$planId` route IS the complete view.
-- When `generation_state.stage === "complete"` (or `generation_status === "complete"`), bypass the legacy "weeks from plan_data" rendering and instead:
-  - Load from `workout_plan_days` ordered by `week_number, day_number`.
-  - Build a `PlanData` object on the fly: `{ weeks: [{ week_number, focus, days: [{ day_label, focus, exercises: content.exercises }] }] }`.
-  - Feed that synthesized `data` into the existing `ViewMode` and `exportPdf` so PDF export works again.
-- Keep the existing legacy editor for plans where `generation_state` is null.
+- Add a 24px round toggle: half cream, half deep navy, hairline rule down the middle, smooth rotation animation on click.
+- Place in AppShell header next to the Globe button.
+- Persist choice in `localStorage` (`forge_theme`) and toggle the `dark` class on `<html>`. `styles.css` already has `:root` (light) and `.dark` (dark) tokens, so all components react automatically.
 
-Also: in `stage5-bulkfill.functions.ts` we already set `generation_state.stage = "complete"`. Double-check the toast on the progressions page navigates to `/plans/$planId` (it does) — no change needed there.
+### 3. Captain-seat logo + Branding chip contrast
 
-### 2. Dynamic CTA on assessment page
+- AppShell already has a `<Logo>` left-aligned at the top — that IS the captain-seat slot. Make it more deliberate: 36×36 with a soft amber under-glow ring, sticky to the top-left corner of every page (no longer scrolling out of view on long pages — already in `sticky top-0`, just needs the glow + a touch larger).
+- **Branding pill** in `plans.$planId.tsx`: it currently uses the user's logo as background, which kills contrast. Compute mean luminance of the logo (we already have `computeLogoLuminance` in `lib/pdf.ts` — extract to `lib/luminance.ts`) and set chip text/border color to whichever contrasts.
 
-In `src/routes/clients_.$clientId.tsx` around line 1738, replace the hard-coded `"Continuar para Blueprint"` with a function that picks label + route from `inlineBrief.stage` (or refetched `generation_state.stage`):
+### 4. PDF redesign: dark, tight, breathable
+
+Replace the current adaptive light/dark with a single **FORGE dark** theme matching the app:
 
 ```text
-brief        → "Continuar para Blueprint"  → /plans/$id/blueprint
-blueprint    → "Continuar para Microciclo" → /plans/$id/microcycle
-microcycle   → "Continuar para Progressões" → /plans/$id/progressions
-progressions → "Rever progressões"          → /plans/$id/progressions
-complete     → "Abrir plano"                → /plans/$id
+bg          #0E0F13
+panel       #16181E
+ink         #F2EEE6
+ink_muted   #8E8C84
+rule        #2A2C33
+accent      #E8A547  (FORGE amber)
 ```
 
-Add EN equivalents to `i18n/locales/{pt,en}/plan.json` under `generate.continue_to_*`.
+Layout changes in `lib/pdf.ts`:
+- Cover page only (1 page) — title, client, KPI strip, week-at-a-glance.
+- Per-week page (not per-session). Each session = one compact 4-column block: name · sets×reps · RPE/tempo · cue. ~6 sessions per A4 page.
+- Optional appendix page: blank set/rep table for hand-logging if coach wants to print.
+- Cut the "rationale paragraph" per day to a single italic line. Skip warmup/cooldown text in PDF — they live in the app.
+- Result target: 1-week plan = **2–3 pages**, 4-week plan = **5–7 pages** (vs current ~12+).
 
-### 3. Color-coded progression deltas
+### 5. Edit-not-available-for-phased-edits message
 
-In `src/components/ProgressionExerciseCard.tsx`:
+- Currently we hide Edit on phased plans because data lives in `workout_plan_days`. Either:
+  - **(A)** Show a one-line tooltip "Phased plans are edited per stage — open Microcycle to tweak". Keep Edit disabled.
+  - **(B)** Wire Edit on phased plans to redirect to `/plans/$planId/microcycle`.
+- I recommend **(B)**; cleaner.
 
-- Compute sign of each parsed delta. Apply a class on the `<input>`:
-  - positive → `text-emerald-400 font-semibold`
-  - negative → `text-rose-400 font-semibold`
-  - zero/empty → `text-muted-foreground`
-- Make the sparkline color match the cumulative trend direction (up=green, down=red, flat=muted) instead of dimension color, so trend is the dominant signal.
-- Bump input from `text-xs` → `text-sm` and tabular-nums for alignment.
+### 6. Empty Summary
 
-### 4. Friendly exercise names
+- `meta.summary` is generated by Stage 1 brief but never persisted onto `workout_plans.summary` for phased plans. Backfill on bulkfill completion in `stage5-bulkfill.functions.ts`: pull `brief.summary` (or first 2 sentences of brief rationale) and write to `workout_plans.summary`.
 
-In `ProgressionExerciseCard.tsx` accept a `displayName` prop. In `plans.$planId.progressions.tsx`, when grouping rows by `exercise_id`, also resolve a display name by looking up the original Week-1 exercise (the page already loads them implicitly via the brief rail — we'll just parse the slug):
+---
 
-- Slug format is `d{N}_{snake_case_name}`. Split → "Day N · Title Case Name".
-- Render at the top of the card: bold "Day N · Bench Press" with the raw slug below in a tiny mono muted line (so power users still see the ID).
+## Wave 2 — Plan view + microcycle tuning + logging polish
 
-### 5. "How to read these deltas" guide
+### 7. Table-first plan view (desktop)
 
-Add a collapsible info panel at the top of the Progressions page:
+On `plans.$planId.tsx` (complete state), add a tab switcher: **Table | Detail**. Default = Table.
+- **Table view**: dense matrix (rows = exercises, columns = W1 / W2 / W3 / W4) showing `sets × reps @ RPE` per cell. Use a single color cell when the prescription is identical to W1; highlight only the **deltas** (e.g. W3 cell shows `+2.5kg`).
+- **Detail view** = current expanded layout.
+- Trends sub-tab: small Recharts line chart of weekly tonnage per movement pattern.
+
+### 8. Microcycle redundancy + volume
+
+- The plan currently regenerates full session JSON for every week. Instead, after Stage 3 we already have W1 sessions; for W2–W4 we should store ONLY the delta vs W1 in `workout_plan_days.content.delta` and render W2+ as `W1 prescription + delta` in the UI / PDF. Reduces token cost and visual noise.
+- **Volume taper for naturals**: in `stage3-microcycle.functions.ts` system prompt, add hard caps:
+  - Beginner: 8–12 working sets / muscle / week, ≤4 exercises per session.
+  - Intermediate: 10–16 working sets / muscle / week, ≤5 exercises per session.
+  - Advanced: 12–20 working sets / muscle / week, ≤6 exercises per session.
+  - W1 starts at the LOWER bound; W4 reaches the upper bound. Phrase as "start conservative, ramp".
+- Add a coach-facing "Volume preset" knob in the Programming Setup card: `Conservative / Moderate / Aggressive`.
+
+### 9. Logging page UI refinement
+
+(`plans.$planId.tsx` log mode + screenshot you sent)
+- Cell row height: 44px → 36px. Label column width capped, `truncate` + tooltip on overflow (fixes "Day 1 description goes out of bound").
+- Reps/Weight inputs: 80px wide each, right-aligned, `text-sm tabular-nums`.
+- Set number column: 28px, muted.
+- Day banner: single line, ellipsis after focus text — full description in a hover/expand chevron.
+
+### 10. Yearly side-scrolling calendar on logging page
+
+- Above the session header, add a horizontal mini-calendar: ~52 squares (one per week of the year), today centered, scroll-snap. Each square colored by training status: green (logged), amber (partial), grey (rest), red (missed scheduled session). Click to jump to that week's session.
+- Component: `YearStripCalendar.tsx`. Data: aggregate `workout_sessions` by ISO week.
+
+---
+
+## Wave 3 — Health metrics & benchmarks (roadmap stub)
+
+This is a meaningful platform addition; I'll only scaffold in this pass and we plan the rest after you validate Wave 1+2.
+
+### 11. Toggleable health metrics
+
+Architecture (DB):
 
 ```text
-- W2/W3/W4 = the change applied that week vs Week 1.
-- "+2.5kg" = add 2.5kg to the working load.
-- "+1rep" = aim for one extra rep per set.
-- "+0.5rpe" = push 0.5 RPE harder (closer to failure).
-- "" (empty) = no change that week (deload or hold).
-- Conservative > aggressive: when in doubt, lower the delta.
-- The trend sparkline shows cumulative change W1→W4.
+metric_definitions     id, slug, name_pt, name_en, unit, group, is_default
+client_metric_prefs    client_id, metric_slug, enabled, source ('manual'|'xiaomi'|...)
+client_metric_entries  client_id, metric_slug, value, recorded_at, source, raw
 ```
 
-Localize PT/EN under a new `progressionsGuide` block.
+- Seed `metric_definitions` with: morning HRV, resting HR, weight, body-fat %, daily steps, VO2max, sleep score, perimetry per body part (calf, thigh, hip, waist, chest, biceps, neck), grip strength L/R, dead-hang time, farmer's walk distance, sit-to-stand time, single-leg balance time, 6-min walk distance.
+- On the client page, add a **Metrics** section with a "+ Track" picker (searchable, collapsible by group: Cardio / Body / Strength / Mobility / Other) — stays out of the way until enabled.
+- Each enabled metric renders as a small card with sparkline + "+ entry" button.
+- Manual entry first; integrations (Xiaomi, scale) come after we validate the schema.
 
-### 6. Auth page square plate + Back to home
+### 12. Population benchmarks
 
-In `src/routes/auth.tsx`:
+- Add `population_norms` table: `metric_slug, age_band, sex, percentile_p10, p25, p50, p75, p90`.
+- Seed initial norms for: VO2max (ACSM tables), grip strength (Mathiowetz), dead-hang time (rough age-banded targets), sit-to-stand (CDC). Cite source in a `source_url` column.
+- On each metric card, show "You are at the **62nd percentile** for 30–34 M" with a small histogram. No data → muted "No norm available yet".
 
-- Add a Back-to-home link in the top-left corner of the page (small ghost button with `ArrowLeft` icon, label "Voltar à página inicial" / "Back to home", `<Link to="/">`).
-- Move the platinum/fiery effect from around the logo symbol to a **square plate** behind the logo: replace the circular halo with a rounded-square gradient surface (~120×120) carrying the conic platinum sheen + soft amber glow; the symbol sits cleanly on top with its own current drop-shadow only.
+### 13. Searchable equipment library
 
-### 7. Landing header `$` button
+- DB: `equipment_catalog (slug, name_pt, name_en, category, common)`. Seed ~80 items grouped (Free weights, Machines, Cables, Bodyweight, Cardio, Suspension, Mobility, Recovery, Wearables).
+- Replace the multi-select textareas in the brief / blueprint with a `<EquipmentPicker>` combobox (cmdk) — type to filter, click to add as chip. Collapses by default.
 
-In `src/routes/index.tsx` (header nav, line ~37): swap the `Preço` text anchor for an icon-only button: a `DollarSign` lucide icon inside a `ghost` `size="icon"` Button that anchors to `#pricing`, with `aria-label` from the existing `pricing.nav_link` translation.
+---
 
-### Files touched
+## Files this will touch (Wave 1 only — what I'd implement now)
 
 ```text
-src/routes/plans.$planId.tsx                  (synthesize PlanData from workout_plan_days when complete)
-src/routes/clients_.$clientId.tsx             (dynamic CTA per stage)
-src/routes/plans.$planId.progressions.tsx     (guide panel + friendly names)
-src/components/ProgressionExerciseCard.tsx    (color-coded deltas, friendly title)
-src/routes/auth.tsx                           (back button + square plate effect)
-src/routes/index.tsx                          ($ icon nav button)
-src/i18n/locales/pt/plan.json                 (continue_to_*, progressionsGuide)
-src/i18n/locales/en/plan.json                 (same)
-src/i18n/locales/pt/common.json               (back_to_home)
-src/i18n/locales/en/common.json               (back_to_home)
+src/components/AppShell.tsx                  (theme toggle, captain-seat logo polish)
+src/components/ThemeToggle.tsx               (new)
+src/lib/luminance.ts                         (extracted)
+src/lib/pdf.ts                               (forge-dark theme + compact layout)
+src/routes/plans.$planId.tsx                 (status label, edit→microcycle redirect)
+src/routes/plans.index.tsx                   (status label)
+src/routes/clients_.$clientId.tsx            (status label in plans list)
+src/server/phased/stage5-bulkfill.functions.ts (persist summary)
+src/i18n/locales/{pt,en}/{common,plan}.json  (new strings)
 ```
 
-No DB migrations, no schema changes, no new packages.
+No DB migrations in Wave 1. Wave 2 needs none. Wave 3 needs the three new tables.
 
-Approve and I implement in one pass, starting with #1 (the blocker for PDF export).
+---
+
+## Open question before I start
+
+Wave 1 is ~6 small fixes and is self-contained. Wave 2 is bigger (table view, microcycle volume re-prompting, calendar component). Wave 3 is roadmap.
+
+**Approve and I'll execute Wave 1 in one pass**, then we look at the result together and decide whether to dive straight into Wave 2 or iterate on Wave 1 first. Reply "Wave 1" (or "Wave 1 + table view" / "all of Wave 2", etc.) to scope the next pass.

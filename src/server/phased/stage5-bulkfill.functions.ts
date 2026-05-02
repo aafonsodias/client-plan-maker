@@ -93,7 +93,7 @@ export const bulkFillRemainingWeeks = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("trainer_id, duration_weeks, progression_plan, generation_state")
+      .select("trainer_id, duration_weeks, progression_plan, generation_state, brief, summary")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
@@ -171,10 +171,29 @@ export const bulkFillRemainingWeeks = createServerFn({ method: "POST" })
       approved_stages: ["brief", "blueprint", "microcycle", "progressions", "complete"],
       last_updated_at: new Date().toISOString(),
     });
-    await supabase
-      .from("workout_plans")
-      .update({ generation_state: newState as any, generation_status: "complete" })
-      .eq("id", data.planId);
+    // Backfill plan.summary from the brief if it's still empty — phased flow
+    // never touches this column otherwise and the cover card renders "(empty)".
+    const update: Record<string, unknown> = {
+      generation_state: newState as any,
+      generation_status: "complete",
+      status: "ready",
+    };
+    const existingSummary = ((plan as any).summary ?? "").toString().trim();
+    if (!existingSummary) {
+      const brief = (plan as any).brief ?? {};
+      const candidate =
+        (brief?.summary as string | undefined) ||
+        (brief?.rationale as string | undefined) ||
+        (brief?.notes_for_next_stage as string | undefined) ||
+        "";
+      const trimmed = candidate.toString().trim();
+      if (trimmed) {
+        // Keep ~2 sentences max for the card.
+        const sentences = trimmed.match(/[^.!?]+[.!?]+/g);
+        update.summary = sentences ? sentences.slice(0, 2).join(" ").trim() : trimmed.slice(0, 360);
+      }
+    }
+    await supabase.from("workout_plans").update(update as any).eq("id", data.planId);
 
     const durMs = Date.now() - t0;
     await logGeneration(supabase, {
