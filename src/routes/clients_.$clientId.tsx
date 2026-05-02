@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight, Calendar as CalendarIcon, Download } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowRight, Calendar as CalendarIcon, Download, Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,8 @@ import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templa
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
+import { createManualPlan, updateTrainerSummary } from "@/server/measurements.functions";
+import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
 import { generateMicrocycleDays } from "@/server/phased/stage3-microcycle.functions";
@@ -528,6 +530,43 @@ function ClientDetail() {
   const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
+  const createManualPlanFn = useServerFn(createManualPlan);
+  const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
+  const evolvePlanFn = useServerFn(archivePlanAndStartNextBlock);
+  const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
+  const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
+  const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
+
+  /**
+   * Latest plan that was already finalized for the *current* assessment.
+   * Heuristic: matching `assessment_id` OR (no link) created_at ≥ assessment.performed_on.
+   * Used to hide the "Descartar rascunho" / "Revisão de segurança" buttons —
+   * once there's a ready plan, those CTAs are noise. Also used to default the
+   * assessment block to collapsed.
+   */
+  const readyPlanForAssessment = useMemo(() => {
+    const aId = (assessment as any)?.id as string | undefined;
+    const performedOn = (assessment as any)?.performed_on as string | undefined;
+    return plans.find((p) => {
+      if (p.generation_status !== "complete") return false;
+      if (aId && p.assessment_id === aId) return true;
+      if (!performedOn) return false;
+      try {
+        return new Date(p.created_at).getTime() >= new Date(performedOn).getTime();
+      } catch { return false; }
+    }) ?? null;
+  }, [plans, assessment]);
+
+  /** Most recent plan eligible for "evolve into next block" — must be marked
+   *  finished_logging or already archived, with at least one logged session
+   *  (we trust the marker; the server fn sanity-checks adherence). */
+  const evolvableSourcePlan = useMemo(() => {
+    return plans.find(
+      (p) =>
+        p.generation_status === "complete" &&
+        (p.completion_state === "finished_logging" || p.status === "archived"),
+    ) ?? null;
+  }, [plans]);
   // Track signature of last-analysed payload per section to avoid duplicate fires.
   const lastAnalysedSigRef = useRef<Record<string, string>>({});
 
@@ -536,6 +575,7 @@ function ClientDetail() {
     void (async () => {
       const { data: c } = await supabase.from("clients").select("*").eq("id", clientId).single();
       setClient(c);
+      setTrainerSummaryDraft((c as any)?.trainer_summary ?? "");
       const { data: a } = await supabase.from("assessments").select("*").eq("client_id", clientId).order("created_at", { ascending: false }).limit(1).maybeSingle();
       let dbState: any = null;
       let dbTs = 0;
@@ -605,7 +645,7 @@ function ClientDetail() {
 
       const { data: p } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, brief, generation_state, generation_status")
+        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
@@ -1439,6 +1479,12 @@ function ClientDetail() {
 
         <AssessmentSection
           clientId={clientId}
+          defaultCollapsed={!!readyPlanForAssessment}
+          summaryLine={
+            (assessment as any)?.performed_on
+              ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
+              : `${totalSections} secções · ${pct}%`
+          }
           headerProgress={
             <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -1869,6 +1915,20 @@ function ClientDetail() {
             />
           )}
 
+          {readyPlanForAssessment ? (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs">
+              <span className="text-muted-foreground">
+                Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
+              </span>
+              <Link
+                to="/plans/$planId"
+                params={{ planId: readyPlanForAssessment.id }}
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20"
+              >
+                Plano pronto · ver
+              </Link>
+            </div>
+          ) : (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -2010,6 +2070,7 @@ function ClientDetail() {
               );
             })()}
           </div>
+          )}
 
           {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
           <AssessmentSynthesisDashboard
@@ -2298,7 +2359,57 @@ function ClientDetail() {
       </div>
 
       <section>
-        <h2 className="mb-4 text-lg font-bold">{t("plans.title")}</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-bold">{t("plans.title")}</h2>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={creatingPlan !== null}
+              onClick={async () => {
+                setCreatingPlan("manual");
+                try {
+                  const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
+                  if (r?.ok && r?.planId) {
+                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                  } else {
+                    toast.error(r?.error ?? "Falhou ao criar plano.");
+                  }
+                } finally { setCreatingPlan(null); }
+              }}
+            >
+              {creatingPlan === "manual"
+                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                : <Plus className="mr-1.5 h-3.5 w-3.5" />}
+              Novo plano (manual)
+            </Button>
+            <Button
+              size="sm"
+              disabled={creatingPlan !== null || !evolvableSourcePlan}
+              title={!evolvableSourcePlan
+                ? "Marca um plano como terminado para evoluir."
+                : "Gerar próximo bloco a partir do último concluído."}
+              onClick={async () => {
+                if (!evolvableSourcePlan) return;
+                setCreatingPlan("evolve");
+                try {
+                  const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
+                  if (r?.ok && r?.planId) {
+                    toast.success("Próximo bloco criado.");
+                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                  } else {
+                    toast.error(r?.error ?? "Falhou a evoluir o plano.");
+                  }
+                } finally { setCreatingPlan(null); }
+              }}
+            >
+              {creatingPlan === "evolve"
+                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
+              Evoluir do último (IA)
+            </Button>
+          </div>
+        </div>
         {plans.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
         ) : (
@@ -2566,17 +2677,62 @@ function AssessmentSection({
   clientId,
   headerProgress,
   children,
+  defaultCollapsed = false,
+  summaryLine,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
   children: React.ReactNode;
+  defaultCollapsed?: boolean;
+  summaryLine?: string;
 }) {
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
+  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  // Keep in sync when the default flips from "no plan" → "plan ready" while
+  // the user is on the page; trainer's local override (after first toggle)
+  // wins, so we only auto-update on the initial transition.
+  const lastDefaultRef = useRef(defaultCollapsed);
+  useEffect(() => {
+    if (lastDefaultRef.current !== defaultCollapsed) {
+      setCollapsed(defaultCollapsed);
+      lastDefaultRef.current = defaultCollapsed;
+    }
+  }, [defaultCollapsed]);
+
+  if (collapsed) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-3">
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+          aria-expanded={false}
+        >
+          <div className="flex items-center gap-2">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-bold">Avaliação</span>
+            {summaryLine && (
+              <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
+            )}
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">expandir</span>
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+        >
+          <ChevronDown className="h-3 w-3" /> Recolher avaliação
+        </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
