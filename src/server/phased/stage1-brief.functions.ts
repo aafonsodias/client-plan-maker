@@ -10,6 +10,7 @@ import {
   type GenerationStage,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { checkPlanQuota } from "@/server/quota.server";
 
 const BRIEF_TOOL_SCHEMA = {
   type: "object",
@@ -278,6 +279,12 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
       return { ok: true as const, planId: (existing as any).id, reused: true as const };
     }
 
+    // Quota gate: only enforced when we'd actually insert a NEW plan row.
+    const quota = await checkPlanQuota(supabase as any, userId);
+    if (!quota.ok) {
+      return { ok: false as const, error: "quota_exceeded", used: quota.used, limit: quota.limit };
+    }
+
     const { data: assessment } = await supabase
       .from("assessments")
       .select("id, updated_at")
@@ -364,6 +371,12 @@ export const startPhasedPlanDraft = createServerFn({ method: "POST" })
         };
       }
     } else {
+      // Quota gate: only enforced when we'd actually insert a NEW plan row.
+      const quota = await checkPlanQuota(supabase as any, userId);
+      if (!quota.ok) {
+        return { ok: false as const, error: "quota_exceeded", used: quota.used, limit: quota.limit };
+      }
+
       const { data: assessment } = await supabase
         .from("assessments")
         .select("id, updated_at")

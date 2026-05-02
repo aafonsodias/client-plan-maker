@@ -1,145 +1,102 @@
-There's a lot here — I've sorted it into 3 implementation waves so we ship value fast and keep momentum. Wave 1 unblocks you (status label, theme, captain-seat logo, branding contrast, PDF look). Wave 2 attacks the meatier UX (table-first plan, slimmer microcycle, logging UI). Wave 3 is the bigger health-metrics & benchmarks platform — I'll scope it as a roadmap so we don't over-build before you validate.
+# Redteam first, then a clean execution plan
+
+You asked me to red‑team the prompt before doing anything. Here's what I'd push back on, then a tight plan that addresses it.
+
+## Red‑team — what's risky in the request
+
+1. **Right‑click to change currency is a UX trap.**
+   - Right‑click on desktop = browser context menu. Hijacking it confuses users and is invisible on touch devices (most of your traffic).
+   - Better: a small currency chip next to the price (click / tap), with right‑click as a *bonus* power‑user shortcut — not the primary affordance.
+
+2. **"Bitcoin pricing" needs a definition.**
+   - Showing a BTC equivalent (display only) is easy and free — fetch a rate, show `≈ 0.00021 ₿`.
+   - *Accepting* BTC is a different project (wallet, on‑chain confirmations, refunds, accounting, tax). Out of scope for this pass — Stripe / Paddle don't natively settle BTC.
+   - Recommendation: **display BTC equivalent now, defer "pay with BTC" until after we pick a payment provider.**
+
+3. **IP‑based free‑plan limiting is a bad idea.**
+   - False positives: families, dorms, coworking, corporate NAT, mobile carriers (CGNAT) — all share IPs.
+   - False negatives: VPN / incognito / mobile data flip defeats it in 10 seconds.
+   - GDPR: IP is personal data; storing it for abuse prevention needs a lawful basis and a privacy notice update.
+   - **Better gate:** 1 free plan per *authenticated account* (email). It's the same friction for abusers (make a new email) but zero collateral damage. Add email verification + Google sign‑in (already in the stack) so throwaway emails cost something.
+   - If abuse becomes real, layer on: device fingerprint (FingerprintJS), Turnstile/hCaptcha on signup, or rate‑limit by `email_domain + ASN`. Not now.
+
+4. **"Free only gives one training plan" needs to be enforced server‑side.**
+   - Client checks are theatre. The Stage‑5 bulk‑fill server function is where the gate has to live, otherwise anyone with devtools bypasses it.
+
+5. **Pricing change without a payment provider is premature.**
+   - You don't have Stripe/Paddle wired yet. Switching the *displayed* currency is fine, but be honest with users — show "billed in EUR" in fine print so we don't promise USD billing we can't deliver.
+
+6. **"Subscribe to log and reap benefits" — define "benefits" before gating.**
+   - If logging is gated, free users get a PDF and… nothing. That kills the activation loop (no logs = no progressions = no reason to come back = no conversion).
+   - **Recommended gate instead:** free = 1 plan + read‑only PDF. Paid = unlimited plans + logging + progressions + history + future health metrics. Logging is the hook, not the wall.
 
 ---
 
-## Wave 1 — Quick wins (ship in this pass)
+## Plan — what I'll actually build
 
-### 1. "DRAFT" → "READY" / proper status
+### Wave A — Currency switcher (display‑only, no payment yet)
 
-- A finished phased plan currently keeps `status = "draft"` because nothing flips it on bulkfill completion.
-- Fix: when `generation_state.stage === "complete"`, treat it as **READY** in every UI label (`plans.index.tsx`, `clients_.$clientId.tsx` line ~2159, `plans.$planId.tsx` header). Show `READY` (amber) until coach hits **Finalize**, then `FINALIZED` (green) — matching the existing finalized chip.
-- No DB migration needed; derive from `generation_status === "complete"` in the render layer.
+**Files**
+- `src/lib/currency.ts` (new) — currency registry, formatters, FX fetch + 24h cache in `localStorage`.
+- `src/components/PriceTag.tsx` (new) — renders `19€`, `$21`, or `≈ 0.00021 ₿` based on selected currency.
+- `src/components/CurrencyMenu.tsx` (new) — small popover triggered by **left‑click** on the `$` header icon AND on either price number; right‑click on those same targets opens it too (bonus, not required).
+- `src/contexts/CurrencyContext.tsx` (new) — selected currency persisted in `localStorage`, default = browser locale (EUR for `pt-*`, USD otherwise).
+- `src/routes/index.tsx` — replace static `t("…pricing.beta_price")` / `pro_price` strings with `<PriceTag eur={0} />` and `<PriceTag eur={19} />`. Keep Portuguese/English copy for the period suffix ("/ enquanto durar a beta", "/ mês").
+- `src/components/AppShell.tsx` (or wherever the header `$` lives) — wire the icon to open `CurrencyMenu`.
+- i18n: add `currency.billed_in_eur_note` ("Billed in EUR · USD/BTC shown for reference") in `pt` + `en`.
 
-### 2. Yin/Yang theme toggle (no religious symbols)
+**FX source**
+- Free, no key: `https://api.frankfurter.app/latest?from=EUR&to=USD` (ECB rates, EUR → USD).
+- BTC: `https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur` (no key, generous free tier).
+- Both fetched once, cached 24h. If fetch fails, fall back to a hardcoded approximate rate and show a tiny "rates approx." tooltip. Never block render on the network call.
 
-- Add a 24px round toggle: half cream, half deep navy, hairline rule down the middle, smooth rotation animation on click.
-- Place in AppShell header next to the Globe button.
-- Persist choice in `localStorage` (`forge_theme`) and toggle the `dark` class on `<html>`. `styles.css` already has `:root` (light) and `.dark` (dark) tokens, so all components react automatically.
+**UX**
+- Header `$` icon → opens menu with EUR / USD / BTC radio + "Billed in EUR" footnote.
+- Right‑click on the `$` icon or on the price numbers → same menu (kept as a discoverability bonus per your request).
+- Selection persists across pages.
 
-### 3. Captain-seat logo + Branding chip contrast
+### Wave B — "1 free plan per account" gate
 
-- AppShell already has a `<Logo>` left-aligned at the top — that IS the captain-seat slot. Make it more deliberate: 36×36 with a soft amber under-glow ring, sticky to the top-left corner of every page (no longer scrolling out of view on long pages — already in `sticky top-0`, just needs the glow + a touch larger).
-- **Branding pill** in `plans.$planId.tsx`: it currently uses the user's logo as background, which kills contrast. Compute mean luminance of the logo (we already have `computeLogoLuminance` in `lib/pdf.ts` — extract to `lib/luminance.ts`) and set chip text/border color to whichever contrasts.
+**Schema** (one migration)
+- `profiles` already exists per your DB. Add:
+  - `plan_quota_used INT NOT NULL DEFAULT 0`
+  - `plan_quota_limit INT NOT NULL DEFAULT 1`
+  - `subscription_status TEXT NOT NULL DEFAULT 'free'` (`free` | `active` | `canceled`) — placeholder until payments land.
+- Trigger `after_workout_plan_finalized` on `workout_plans`: when `generation_status` flips to `complete` for the first time, increment `profiles.plan_quota_used` for the trainer.
 
-### 4. PDF redesign: dark, tight, breathable
+**Server enforcement**
+- `src/server/phased/stage5-bulkfill.functions.ts` — at the top of the handler, fetch the caller's `profiles` row; if `subscription_status === 'free'` AND `plan_quota_used >= plan_quota_limit`, return a structured error `{ error: "quota_exceeded" }` instead of running the LLM.
+- Same guard at the *start* of stage 1 (intake → blueprint) so we don't waste tokens on plans the user can't finish.
 
-Replace the current adaptive light/dark with a single **FORGE dark** theme matching the app:
+**Client UX**
+- On `quota_exceeded`, show a modal: "You've used your free plan. Subscribe to create more, keep logging, and unlock progressions." with a CTA that today links to a "Notify me" mailto (matches the existing Pro card behavior) and tomorrow becomes the Stripe/Paddle checkout.
+- Plans index page: if quota used and free, the "New plan" button becomes "Upgrade to create more" (same modal).
 
-```text
-bg          #0E0F13
-panel       #16181E
-ink         #F2EEE6
-ink_muted   #8E8C84
-rule        #2A2C33
-accent      #E8A547  (FORGE amber)
-```
+**What I'm NOT doing in this pass**
+- No IP capture, no fingerprinting, no captcha. Pure account‑level gate.
+- No actual payment integration — that's a separate decision (Paddle vs Stripe). I'll surface the recommendation in a follow‑up message after this lands.
+- No "pay with BTC". Display only.
+- Logging stays free for the user's one free plan (so they experience the hook). The wall is on *creating a second plan*, not on logging the first.
 
-Layout changes in `lib/pdf.ts`:
-- Cover page only (1 page) — title, client, KPI strip, week-at-a-glance.
-- Per-week page (not per-session). Each session = one compact 4-column block: name · sets×reps · RPE/tempo · cue. ~6 sessions per A4 page.
-- Optional appendix page: blank set/rep table for hand-logging if coach wants to print.
-- Cut the "rationale paragraph" per day to a single italic line. Skip warmup/cooldown text in PDF — they live in the app.
-- Result target: 1-week plan = **2–3 pages**, 4-week plan = **5–7 pages** (vs current ~12+).
-
-### 5. Edit-not-available-for-phased-edits message
-
-- Currently we hide Edit on phased plans because data lives in `workout_plan_days`. Either:
-  - **(A)** Show a one-line tooltip "Phased plans are edited per stage — open Microcycle to tweak". Keep Edit disabled.
-  - **(B)** Wire Edit on phased plans to redirect to `/plans/$planId/microcycle`.
-- I recommend **(B)**; cleaner.
-
-### 6. Empty Summary
-
-- `meta.summary` is generated by Stage 1 brief but never persisted onto `workout_plans.summary` for phased plans. Backfill on bulkfill completion in `stage5-bulkfill.functions.ts`: pull `brief.summary` (or first 2 sentences of brief rationale) and write to `workout_plans.summary`.
-
----
-
-## Wave 2 — Plan view + microcycle tuning + logging polish
-
-### 7. Table-first plan view (desktop)
-
-On `plans.$planId.tsx` (complete state), add a tab switcher: **Table | Detail**. Default = Table.
-- **Table view**: dense matrix (rows = exercises, columns = W1 / W2 / W3 / W4) showing `sets × reps @ RPE` per cell. Use a single color cell when the prescription is identical to W1; highlight only the **deltas** (e.g. W3 cell shows `+2.5kg`).
-- **Detail view** = current expanded layout.
-- Trends sub-tab: small Recharts line chart of weekly tonnage per movement pattern.
-
-### 8. Microcycle redundancy + volume
-
-- The plan currently regenerates full session JSON for every week. Instead, after Stage 3 we already have W1 sessions; for W2–W4 we should store ONLY the delta vs W1 in `workout_plan_days.content.delta` and render W2+ as `W1 prescription + delta` in the UI / PDF. Reduces token cost and visual noise.
-- **Volume taper for naturals**: in `stage3-microcycle.functions.ts` system prompt, add hard caps:
-  - Beginner: 8–12 working sets / muscle / week, ≤4 exercises per session.
-  - Intermediate: 10–16 working sets / muscle / week, ≤5 exercises per session.
-  - Advanced: 12–20 working sets / muscle / week, ≤6 exercises per session.
-  - W1 starts at the LOWER bound; W4 reaches the upper bound. Phrase as "start conservative, ramp".
-- Add a coach-facing "Volume preset" knob in the Programming Setup card: `Conservative / Moderate / Aggressive`.
-
-### 9. Logging page UI refinement
-
-(`plans.$planId.tsx` log mode + screenshot you sent)
-- Cell row height: 44px → 36px. Label column width capped, `truncate` + tooltip on overflow (fixes "Day 1 description goes out of bound").
-- Reps/Weight inputs: 80px wide each, right-aligned, `text-sm tabular-nums`.
-- Set number column: 28px, muted.
-- Day banner: single line, ellipsis after focus text — full description in a hover/expand chevron.
-
-### 10. Yearly side-scrolling calendar on logging page
-
-- Above the session header, add a horizontal mini-calendar: ~52 squares (one per week of the year), today centered, scroll-snap. Each square colored by training status: green (logged), amber (partial), grey (rest), red (missed scheduled session). Click to jump to that week's session.
-- Component: `YearStripCalendar.tsx`. Data: aggregate `workout_sessions` by ISO week.
+### Out of scope for this PR (flagged for later)
+- Payment provider selection + checkout (needs your call: Paddle for global tax handling vs Stripe for flexibility).
+- Subscription webhooks + entitlement sync.
+- Per‑country pricing (USD ≠ EUR × FX in real SaaS pricing — usually you set it manually).
+- Any fingerprint / IP / captcha layer.
 
 ---
 
-## Wave 3 — Health metrics & benchmarks (roadmap stub)
+## Technical notes
 
-This is a meaningful platform addition; I'll only scaffold in this pass and we plan the rest after you validate Wave 1+2.
+- All FX/BTC fetches are client‑side (no secrets, public endpoints, cached). No server function needed for Wave A.
+- Wave B gate is enforced inside `createServerFn` handlers using the existing `requireSupabaseAuth` middleware, so RLS still applies and the check can't be bypassed from the client.
+- Migration uses a `BEFORE UPDATE` trigger on `workout_plans` to detect the `generation_status` transition `!= 'complete' → 'complete'` and increment the trainer's quota atomically. No race because it runs in the same transaction as the update.
+- `PriceTag` accepts `eur: number` as the source of truth so we never store prices in multiple currencies.
 
-### 11. Toggleable health metrics
+## Open question (one)
 
-Architecture (DB):
+For BTC display, do you want:
+- **(a)** the *symbolic* equivalent of the EUR price (`19€ ≈ 0.00021 ₿`) — honest, useful, no commitment, **my recommendation**, or
+- **(b)** a separate "BTC tier" priced in sats that doesn't move with FX?
 
-```text
-metric_definitions     id, slug, name_pt, name_en, unit, group, is_default
-client_metric_prefs    client_id, metric_slug, enabled, source ('manual'|'xiaomi'|...)
-client_metric_entries  client_id, metric_slug, value, recorded_at, source, raw
-```
-
-- Seed `metric_definitions` with: morning HRV, resting HR, weight, body-fat %, daily steps, VO2max, sleep score, perimetry per body part (calf, thigh, hip, waist, chest, biceps, neck), grip strength L/R, dead-hang time, farmer's walk distance, sit-to-stand time, single-leg balance time, 6-min walk distance.
-- On the client page, add a **Metrics** section with a "+ Track" picker (searchable, collapsible by group: Cardio / Body / Strength / Mobility / Other) — stays out of the way until enabled.
-- Each enabled metric renders as a small card with sparkline + "+ entry" button.
-- Manual entry first; integrations (Xiaomi, scale) come after we validate the schema.
-
-### 12. Population benchmarks
-
-- Add `population_norms` table: `metric_slug, age_band, sex, percentile_p10, p25, p50, p75, p90`.
-- Seed initial norms for: VO2max (ACSM tables), grip strength (Mathiowetz), dead-hang time (rough age-banded targets), sit-to-stand (CDC). Cite source in a `source_url` column.
-- On each metric card, show "You are at the **62nd percentile** for 30–34 M" with a small histogram. No data → muted "No norm available yet".
-
-### 13. Searchable equipment library
-
-- DB: `equipment_catalog (slug, name_pt, name_en, category, common)`. Seed ~80 items grouped (Free weights, Machines, Cables, Bodyweight, Cardio, Suspension, Mobility, Recovery, Wearables).
-- Replace the multi-select textareas in the brief / blueprint with a `<EquipmentPicker>` combobox (cmdk) — type to filter, click to add as chip. Collapses by default.
-
----
-
-## Files this will touch (Wave 1 only — what I'd implement now)
-
-```text
-src/components/AppShell.tsx                  (theme toggle, captain-seat logo polish)
-src/components/ThemeToggle.tsx               (new)
-src/lib/luminance.ts                         (extracted)
-src/lib/pdf.ts                               (forge-dark theme + compact layout)
-src/routes/plans.$planId.tsx                 (status label, edit→microcycle redirect)
-src/routes/plans.index.tsx                   (status label)
-src/routes/clients_.$clientId.tsx            (status label in plans list)
-src/server/phased/stage5-bulkfill.functions.ts (persist summary)
-src/i18n/locales/{pt,en}/{common,plan}.json  (new strings)
-```
-
-No DB migrations in Wave 1. Wave 2 needs none. Wave 3 needs the three new tables.
-
----
-
-## Open question before I start
-
-Wave 1 is ~6 small fixes and is self-contained. Wave 2 is bigger (table view, microcycle volume re-prompting, calendar component). Wave 3 is roadmap.
-
-**Approve and I'll execute Wave 1 in one pass**, then we look at the result together and decide whether to dive straight into Wave 2 or iterate on Wave 1 first. Reply "Wave 1" (or "Wave 1 + table view" / "all of Wave 2", etc.) to scope the next pass.
+I'll default to (a) unless you say otherwise. Approve the plan and I'll execute Wave A + Wave B in one pass.

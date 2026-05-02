@@ -1772,7 +1772,14 @@ function ClientDetail() {
                         try {
                           const res = await startPhasedPlanFn({ data: { clientId } });
                           if (!res.ok) {
-                            toast.error(res.error || "Brief synthesis failed.", { id: tId });
+                            if (res.error === "quota_exceeded") {
+                              toast.error(
+                                "Free accounts can build 1 plan. Subscribe to create more.",
+                                { id: tId, duration: 6000 }
+                              );
+                            } else {
+                              toast.error(res.error || "Brief synthesis failed.", { id: tId });
+                            }
                             return;
                           }
                           // Fetch the freshly-written brief and render it inline below.

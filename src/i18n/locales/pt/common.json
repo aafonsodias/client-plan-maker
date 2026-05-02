@@ -110,5 +110,9 @@
     "page_not_found_title": "Página não encontrada",
     "page_not_found_desc": "A página que procuras não existe ou foi movida.",
     "go_home": "Ir para a página inicial"
+  },
+  "currency": {
+    "title": "Moeda",
+    "billed_in_eur_note": "Cobrado em EUR. Outras moedas mostradas para referência."
   }
 }
