@@ -17,7 +17,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { generatePlanPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
+import { generatePlanPdf, generateLogsheetPdf, isLegacyPlan, type PlanData, type Week, type Day, type Exercise, type SectionItem } from "@/lib/pdf";
 import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
@@ -32,6 +32,7 @@ import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
+import { markPlanFinished } from "@/server/blocks-manual.functions";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
@@ -76,6 +77,7 @@ function PlanEditor() {
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
+  const markFinishedFn = useServerFn(markPlanFinished);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
@@ -251,6 +253,39 @@ function PlanEditor() {
       }
     );
     if (user) { void markOnboardingStep(user.id, "export_pdf"); }
+  };
+
+  const exportLogsheet = async () => {
+    if (!client || !plan) return;
+    let logoDataUrl: string | null = null;
+    if (profile?.logo_url) {
+      try {
+        const { data: signed } = await supabase.storage.from("logos").createSignedUrl(profile.logo_url, 600);
+        if (signed?.signedUrl) {
+          const res = await fetch(signed.signedUrl);
+          const blob = await res.blob();
+          logoDataUrl = await new Promise<string | null>((resolve) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result as string);
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(blob);
+          });
+        }
+      } catch { /* ignore */ }
+    }
+    await generateLogsheetPdf(
+      { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
+      data,
+      {
+        business_name: profile?.business_name,
+        full_name: profile?.full_name,
+        tagline: profile?.tagline,
+        contact_email: profile?.contact_email,
+        contact_phone: profile?.contact_phone,
+        logo_data_url: logoDataUrl,
+      },
+      { week: 1 },
+    );
   };
 
   if (!plan) return <p className="text-muted-foreground">Loading…</p>;
