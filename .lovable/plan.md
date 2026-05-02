@@ -1,63 +1,78 @@
+## Diagnóstico do PDF da Sofia (4 páginas)
 
-# Limpar e aligeirar — foco no que ajuda
+Olhei página a página. Está a funcionar — mas tem ruído que estraga a folha como ferramenta de ginásio.
 
-Três frentes, todas a remover peso e a alinhar com "básico bem feito":
+**Problemas reais que vi:**
 
----
+1. **Página 4, cabeçalho cortado.** A primeira linha começa com "INE), PUSH-FORGE VARIATION, ANTI-ROTATION…" — é o resto do título do dia anterior a fugir para a página seguinte. O wrap do título do bloco está a transbordar.
 
-## 1. Bug do header do plano (sobreposição "Maria (demo) / Share")
+2. **REGISTO MANUAL duplica a tabela de cima.** Hoje o plano tem:
+   - Tabela principal: # · EXERCISE · CUE · SETS · REPS · REST · RPE · TEMPO · W2 · W3 · W4
+   - Logo abaixo: outra tabela com # · EXERCÍCIO · S1 · S2 · S3 · S4 (vazia)
+   
+   O PT lê em cima, escreve em baixo, e tem de procurar o número do exercício duas vezes. Para uma folha A4 que vai amassada no bolso, isto é demasiado.
 
-**Problema:** O nome do cliente (link "→ Maria Costa (demo)") e o título estão a colidir com a barra de botões (Share · Avaliação · Exportar PDF · Folha de registo). Quatro botões à direita + título largo + nome empilhado = caos visual em ~1550px.
+3. **As colunas W2/W3/W4 só fazem sentido a partir da semana 2.** Na página da semana 1, ocupam 3 colunas com "—" ou progressões que ainda não interessam.
 
-**Decisões:**
-- **Fundir os dois botões PDF num só.** Em vez de "Exportar PDF" + "Folha de registo" (que confunde — qual escolho?), fica **um botão "PDF" com dropdown** (ou um split-button): "Plano completo" / "Folha de registo (semana X)". Menos botões, escolha clara.
-- **Mover "Avaliação" para dentro de um menu "Mais" (⋯)** junto a Share. A Avaliação é trabalho de bastidor, não acção quotidiana.
-- **Reduzir altura visual do header:** o título usa `<Input>` com `!text-xl` que cresce demais — passa a render-as-text com lápis de edição inline (clicar para editar). Pequena mudança, header fica 30% mais baixo.
+4. **Falta um campo "OBSERVAÇÕES"** — o que o PT escreve à mão (joelho hoje, dormiu mal, mudei o exercício 3) hoje não tem onde caber.
 
-Resultado: cliente + título à esquerda numa linha, **dois botões à direita** (PDF, Mais), os chips (Pronto, Bloco N) numa segunda linha discreta.
+5. **Título do dia 3 fica "Horizontal pressing (DB neutral-grip, landmine), push-up variation, anti-r…"** — truncado. Ou cabe inteiro em duas linhas, ou usamos o nome curto "Upper Push & Stability".
 
----
+## Proposta — uma só tabela, leitura + escrita
 
-## 2. PDF: um só, com folha de registo integrada
+Em vez de duas tabelas, uma só. As colunas W2/W3/W4 desaparecem em folhas da semana 1 e dão lugar a **S1 · S2 · S3 · S4** (slots de mão escritos pelo PT). Para a semana 2+, as colunas de progressão voltam mas mais magras e os slots de escrita ficam por baixo de cada linha como uma sub-linha fina.
 
-**Hoje:** dois PDFs. `generatePlanPdf` (paisagem, denso, deixa metade da página em branco como vês na screenshot) + `generateLogsheetPdf` separado (que tu nem usas porque tens de saber que existe).
+Layout proposto (semana 1):
 
-**Proposta:** **um único PDF do plano** (o "Exportar PDF" actual), em que **cada dia ocupa uma página** assim:
-- **Topo (≈55%):** o que já tens — exercícios, cues, sets/reps/RPE, semanas W2–W4 com progressão (mantém-se igual; é informação de leitura).
-- **Baixo (≈45%, hoje em branco):** uma **grelha de registo manual** com colunas vazias para escrever à mão:
-  - Linhas de campos rápidos: `DATA · INÍCIO · FIM · RPE acordar · Peso hoje · Sono`.
-  - Tabela com uma linha por exercício e **3–4 colunas vazias "S1 / S2 / S3 / S4"** para anotar `peso × reps @RPE` por série.
-  - Espaço de notas livre no fim (~3 linhas).
+```text
+# EXERCÍCIO          CUE              SETS REPS REST RPE  S1        S2        S3        S4
+01 Dead bug          Ribs down…       3    8/s  60s  6.5  ___ ___   ___ ___   ___ ___   ___ ___
+02 Goblet squat      Knees out…       4    8    120s 6.5  ___ ___   ___ ___   ___ ___   ___ ___
+…
+```
 
-Assim o PDF que imprimes serve ambos os usos: ler no início + escrever durante a sessão. Depois passas para o software via "Importar log".
+Cabeçalho da página (uma linha apenas):
 
-**O `generateLogsheetPdf` separado deixa de ser necessário** → removemos a função e o segundo botão. Menos código, menos decisões.
+```text
+DATA ____  INÍCIO ____  FIM ____  PESO ____ kg  SONO ____ h  RPE ACORDAR ____
+OBSERVAÇÕES ___________________________________________________________________
+              ___________________________________________________________________
+```
 
----
+Vantagens:
+- O PT lê e escreve na mesma linha do mesmo exercício — zero deslocação visual
+- Cabe na mesma página A4 sem aperto
+- Uma linha de "OBSERVAÇÕES" no topo resolve os recados gerais; tempo já não exige duas tabelas
+- Para semanas 2+ mantemos uma coluna fina "alvo" (ex: `@6.5 +0.5`) ao lado dos slots em vez de 3 colunas separadas
 
-## 3. Secção "Volume semanal" — aligeirar
+## Mudanças concretas no código
 
-Conforme a screenshot, o radar está a tocar nas labels e a tabela tem 5 colunas + frases longas em cada linha. Demasiado ruído para uma secção de diagnóstico.
+**`src/lib/pdf.ts`** (substituir o bloco actual de duas tabelas):
+- Remover o segundo bloco `REGISTO MANUAL` (linhas ~735-834)
+- Na tabela principal, substituir as colunas `W2 · W3 · W4` por `S1 · S2 · S3 · S4` quando `weekNumber === 1`
+- Para `weekNumber >= 2`, manter uma única coluna fina "alvo desta semana" + slots S1–S4 escritos
+- Adicionar tira fina por cima da tabela: `DATA · INÍCIO · FIM · PESO · SONO · RPE ACORDAR` (já existe, manter — mas integrada com a tabela, não separada)
+- Adicionar 2 linhas para "OBSERVAÇÕES" abaixo da tira de campos rápidos
+- Garantir que o título da sessão faz `splitTextToSize` correcto (corrige o overflow da página 4)
+- Truncar/pular o subtítulo longo: usar `arc.short_name || arc.name` se existir; fallback ao nome longo com `splitTextToSize` em 2 linhas máximas
 
-**Mudanças cirúrgicas (sem mudar a lógica de cálculo):**
-- **Radar:** mais respiração — `outerRadius` 78% → 65%, fonte das labels +1pt, abreviar "Quadricípites"→"Quad", "Isquiotibiais"→"Isquios", "Tricípites"→"Tri", "Bicípites"→"Bi". Labels deixam de tocar nos polígonos.
-- **Tabela:** colapsar a coluna "MEV / MAV / MRV" para tooltip no chip "Estado" (já tens o tooltip de explicação no header). Fica: **Grupo · Séries · Estado · Sugestão**. Quatro colunas em vez de cinco.
-- **Sugestão mais curta:** "Adiciona ~2 séries para chegar ao MEV (8)." → "Faltam 2 séries (alvo 8)." A informação útil é a mesma; menos texto.
-- **Manter as cores do `status-tone`** (já está consistente com o resto do app — emerald/amber/red/neutral).
+**Não tocar agora em:**
+- Esquema da BD
+- Lógica de geração de plano (Anthropic)
+- Como o PT importa de volta (foto / OCR continua igual)
 
----
+## Sobre os "desafios extra" (escada de agilidade, dead hang, dupla tarefa cognitiva)
 
-## Ficheiros tocados
+Esta pergunta é de produto, não de código. A minha leitura honesta:
 
-- `src/routes/plans.$planId.tsx` — header (botões agrupados, título inline-edit), remover dropdown "Folha de registo".
-- `src/lib/pdf.ts` — `generatePlanPdf`: adicionar bloco de registo manual no rodapé de cada página de dia. Remover `generateLogsheetPdf` (e o import).
-- `src/components/volume/MuscleVolumeRadar.tsx` — radius + labels abreviadas.
-- `src/components/volume/VolumeStatusTable.tsx` — eliminar coluna MEV/MAV/MRV, encurtar mensagens.
+- **Sim, faz sentido** — encaixa no posicionamento "saúde através de exercício" (dead hang = descompressão da coluna; dupla tarefa = cognição motora; escada = coordenação)
+- **Mas não agora.** O software ainda está a fazer o básico bem feito. Adicionar uma biblioteca de "challenges" agora é peso morto até a folha de registo estar afinada e o PT estar a usar a app em sessões reais.
+- **Sugestão:** guardar como nota no `mem/tasks/backlog.md` com a tag `[depois-de-prova-de-uso]`. Quando voltarmos, fazemos uma "biblioteca de finalizadores" opcional que o PT puxa para o último bloco de uma sessão (1 click → adiciona dead hang 1×30s ou ladder drill 3×). Não é uma feature pesada quando chegarmos lá.
 
-## O que NÃO mexo (para resistir ao overengineering)
+## O que peço para confirmares antes de avançar
 
-- Cálculo de volume (`volume-compute.ts`, `volume-landmarks.ts`) — está bem.
-- Demo Lab / bots — fica como está, só visível quando precisas de stress-test. Não estorva o fluxo normal.
-- Concierge, studies feed, dropoff alerts — não tocados nesta ronda.
+1. **Layout da nova tabela única** (S1–S4 ao lado dos campos planeados, não em tabela separada) — ok?
+2. **Campo OBSERVAÇÕES no topo** com 2 linhas em branco — ok? Ou preferes no rodapé da página?
+3. **"Desafios extra" para o backlog** — confirmo que parqueio sem implementar?
 
-Aprova com "continua" e avanço.
+Diz "continua" se concordas com tudo, ou aponta o que mudar.
