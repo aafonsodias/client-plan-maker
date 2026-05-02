@@ -10,61 +10,197 @@
       "title": "Get started",
       "intro": "In 5 minutes you have your account ready and your first client filling an intake.",
       "steps": [
-        { "h": "Create your account", "p": "At /auth, sign up with email + password or Google. Confirm the email to unlock the app." },
-        { "h": "Open the Dashboard", "p": "Your hub: active clients, recent plans, and the status of each (draft, ready, in progress)." },
-        { "h": "Add your first client", "p": "Clients → \"Add client\". Name is enough — the rest fills from the intake." },
-        { "h": "Send the intake", "p": "On the client card, copy the intake link and send it. The client fills it on their phone; you receive everything structured." }
+        {
+          "h": "Create your account",
+          "p": "At /auth, sign up with email + password or Google. Confirm the email to unlock the app."
+        },
+        {
+          "h": "Open the Dashboard",
+          "p": "Your hub: active clients, recent plans, and the status of each (draft, ready, in progress)."
+        },
+        {
+          "h": "Add your first client",
+          "p": "Clients → \"Add client\". Name is enough — the rest fills from the intake."
+        },
+        {
+          "h": "Send the intake",
+          "p": "On the client card, copy the intake link and send it. The client fills it on their phone; you receive everything structured."
+        }
       ]
     },
     "intake": {
       "title": "Intake & Brief",
       "intro": "The intake is the client's answers. The Brief is the professional reading of those answers — it feeds the whole plan.",
       "steps": [
-        { "h": "Intake (client)", "p": "Goals, history, equipment, injuries, PAR-Q+. The client does this alone — 4–7 minutes." },
-        { "h": "Brief (you)", "p": "At /plans/{id}/brief you review what the AI extracted: primary goal, emphasis, training band, red flags. Adjust anything." },
-        { "h": "Red flags", "p": "The amber number ⓘ next to \"Brief\" is red flags (pain, recent injury, contraindication). Read them before approving." },
-        { "h": "Approve", "p": "When the brief reflects the client, approve to unlock the Blueprint." }
+        {
+          "h": "Intake (client)",
+          "p": "Goals, history, equipment, injuries, PAR-Q+. The client does this alone — 4–7 minutes."
+        },
+        {
+          "h": "Brief (you)",
+          "p": "At /plans/{id}/brief you review what the AI extracted: primary goal, emphasis, training band, red flags. Adjust anything."
+        },
+        {
+          "h": "Red flags",
+          "p": "The amber number ⓘ next to \"Brief\" is red flags (pain, recent injury, contraindication). Read them before approving."
+        },
+        {
+          "h": "Approve",
+          "p": "When the brief reflects the client, approve to unlock the Blueprint."
+        }
       ]
     },
     "plan": {
       "title": "Blueprint, Microcycle & Progressions",
       "intro": "Where the training is designed. Three stages, from structure to detail.",
       "steps": [
-        { "h": "Blueprint", "p": "Defines the shape of the mesocycle: number of weeks, days per week, focus per day (push, pull, lower, full, etc.)." },
-        { "h": "Microcycle (Week 1)", "p": "Exercise-by-exercise detail of Day 1. You approve Day 1 — the \"quality gate\" — and the AI generates the rest at the same level." },
-        { "h": "Approve microcycle", "p": "Once all days are ready, the \"Approve microcycle\" button turns emerald. Click it for the AI to propose W2–W4 progressions." },
-        { "h": "Progressions", "p": "You see weekly deltas (+kg, +rep, +RPE). Conservative > aggressive. Approve and the plan is ready for the client to train." }
+        {
+          "h": "Blueprint",
+          "p": "Defines the shape of the mesocycle: number of weeks, days per week, focus per day (push, pull, lower, full, etc.)."
+        },
+        {
+          "h": "Microcycle (Week 1)",
+          "p": "Exercise-by-exercise detail of Day 1. You approve Day 1 — the \"quality gate\" — and the AI generates the rest at the same level."
+        },
+        {
+          "h": "Approve microcycle",
+          "p": "Once all days are ready, the \"Approve microcycle\" button turns emerald. Click it for the AI to propose W2–W4 progressions."
+        },
+        {
+          "h": "Progressions",
+          "p": "You see weekly deltas (+kg, +rep, +RPE). Conservative > aggressive. Approve and the plan is ready for the client to train."
+        }
       ]
     },
     "logs": {
       "title": "Training logs",
       "intro": "The client logs each session. You see everything in real time.",
       "steps": [
-        { "h": "Log link", "p": "Each client has a stable link (/log/{token}) you can save in their contact. Works on any phone." },
-        { "h": "Mark sets", "p": "On each set, log load and reps. Optionally RPE (0–10). RPE-less also works." },
-        { "h": "Mark day done", "p": "Only enables once at least one set is logged — prevents marking empty days by mistake." },
-        { "h": "Print sheet (soon)", "p": "Printable PDF for those who prefer paper at the gym. Bring the sheet, write by hand, photograph it and the app reads it back." }
+        {
+          "h": "Log link",
+          "p": "Each client has a stable link (/log/{token}) you can save in their contact. Works on any phone."
+        },
+        {
+          "h": "Mark sets",
+          "p": "On each set, log load and reps. Optionally RPE (0–10). RPE-less also works."
+        },
+        {
+          "h": "Mark day done",
+          "p": "Only enables once at least one set is logged — prevents marking empty days by mistake."
+        },
+        {
+          "h": "Print sheet (soon)",
+          "p": "Printable PDF for those who prefer paper at the gym. Bring the sheet, write by hand, photograph it and the app reads it back."
+        }
       ]
     },
     "feedback": {
       "title": "Reading feedback",
       "intro": "The app isn't just logging — it's a continuous improvement loop.",
       "steps": [
-        { "h": "Colors", "p": "Emerald = ready / done. Amber = attention (red flag, exceeding RPE). Red = error / critical drift. Grey = neutral / in progress." },
-        { "h": "Progression trend", "p": "Shows cumulative change W1 → W4. If the line stalls for 2 weeks, consider desensitisation (deload or exercise swap)." },
-        { "h": "When to adjust?", "p": "Conservative: if the client hits the RPE target 2 sessions in a row, raise next week's delta. If they miss, hold or back off." },
-        { "h": "Next week", "p": "Based on logs, generate the next week's sheet (soon — full loop automation). For now, edit the microcycle manually." }
+        {
+          "h": "Colors",
+          "p": "Emerald = ready / done. Amber = attention (red flag, exceeding RPE). Red = error / critical drift. Grey = neutral / in progress."
+        },
+        {
+          "h": "Progression trend",
+          "p": "Shows cumulative change W1 → W4. If the line stalls for 2 weeks, consider desensitisation (deload or exercise swap)."
+        },
+        {
+          "h": "When to adjust?",
+          "p": "Conservative: if the client hits the RPE target 2 sessions in a row, raise next week's delta. If they miss, hold or back off."
+        },
+        {
+          "h": "Next week",
+          "p": "Based on logs, generate the next week's sheet (soon — full loop automation). For now, edit the microcycle manually."
+        }
       ]
     },
     "billing": {
       "title": "Billing & limits",
       "intro": "Free vs full plan.",
       "steps": [
-        { "h": "Free plan", "p": "1 finalized training plan. Enough to validate if Forge fits your workflow." },
-        { "h": "Trial", "p": "Unlocks unlimited generation for X days to test multiple clients." },
-        { "h": "Subscription", "p": "Unlimited access, all clients, all iterations. Cancel anytime." },
-        { "h": "Founder", "p": "Permanent access for the Forge founder — no trial, no limit, no upgrade banners." }
+        {
+          "h": "Free plan",
+          "p": "1 finalized training plan. Enough to validate if Forge fits your workflow."
+        },
+        {
+          "h": "Trial",
+          "p": "Unlocks unlimited generation for X days to test multiple clients."
+        },
+        {
+          "h": "Subscription",
+          "p": "Unlimited access, all clients, all iterations. Cancel anytime."
+        },
+        {
+          "h": "Founder",
+          "p": "Permanent access for the Forge founder — no trial, no limit, no upgrade banners."
+        }
       ]
     }
+  },
+  "modes": {
+    "manual": "Manual",
+    "faq": "FAQ",
+    "contact": "Contact"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "subtitle": "The things everyone asks in the first few days.",
+    "items": [
+      {
+        "q": "Do I have to pay to use it?",
+        "a": "Not to try. The free plan lets you build one full plan end-to-end — enough to see if Forge fits your workflow. You only pay when you scale to more clients."
+      },
+      {
+        "q": "Do my clients need an account?",
+        "a": "No. Each client gets a stable link (intake and log) that opens on their phone without login. You're the only authenticated user."
+      },
+      {
+        "q": "Can I edit what the AI generated?",
+        "a": "Yes, at every stage. The Brief, Blueprint, Microcycle and Progressions are editable. The AI proposes — you decide."
+      },
+      {
+        "q": "What if the AI gets it wrong?",
+        "a": "Hit \"Regenerate\" on the stage you're in. If it persists, email me: every reported mistake becomes a regression test."
+      },
+      {
+        "q": "Can I use it offline or print?",
+        "a": "Yes. From any plan you can export a PDF with blanks for handwritten logging. The client photographs the sheet afterwards and the app reads it (OCR) — useful for trainers who don't want phones between sets."
+      },
+      {
+        "q": "Is my client data safe?",
+        "a": "Each trainer only sees their own clients (database-level RLS). Client photos live in a private bucket with signed URLs. No sensitive data leaks."
+      },
+      {
+        "q": "Can I cancel anytime?",
+        "a": "Yes, no questions asked. You keep access to your data (clients, plans, historical logs) until the end of the paid period, and you can come back anytime — nothing is wiped."
+      },
+      {
+        "q": "What languages does it support?",
+        "a": "Interface: Portuguese and English. AI-generated plans follow the trainer's language and adapt technical terminology."
+      },
+      {
+        "q": "Does it support multiple mesocycle blocks?",
+        "a": "Yes. When you approve the last cycle, you can start Block 2 — Forge archives the previous one, keeps the history, and uses it as context for the new generation."
+      },
+      {
+        "q": "Does it work on mobile?",
+        "a": "The trainer app is designed for desktop or tablet (workbench). The client log is mobile-first."
+      }
+    ]
+  },
+  "contact": {
+    "title": "Talk to me",
+    "subtitle": "Forge is under active construction. Bug, suggestion, or just to say hi — I read everything.",
+    "email_label": "Direct email",
+    "email_value": "aafonsodias@gmail.com",
+    "email_hint": "Usually a reply within 24h (EN/PT).",
+    "form_subject": "Subject",
+    "form_subject_placeholder": "In one line, what's this about?",
+    "form_body": "Message",
+    "form_body_placeholder": "Give me the context. If it's a bug, say what you were doing and what you expected.",
+    "form_send": "Open in email",
+    "form_hint": "This opens your email client with the message pre-filled — I don't send anything behind your back."
   }
 }
