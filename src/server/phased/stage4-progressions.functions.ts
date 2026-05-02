@@ -121,6 +121,7 @@ HARD RULES — apply to EVERY exercise:
    - block: W2 accumulation (+reps), W3 intensification (+load / +rpe).
 5. Week ${weeks} is a DELOAD: use "-1set" OR "-20%" load OR drop intensity_rpe by 1.0–1.5. Never empty across the board. The deload week MUST clearly read lower than W3.
 6. Keep "rationale" ≤ 10 words.
+7. RPE WAVE COVERAGE: at least 70% of all exercises MUST receive a non-empty intensity_rpe delta in W2 OR W3. Flat RPE across the mesocycle is the #1 failure mode — do NOT repeat it. If a main compound is already at the ceiling in W1, keep RPE flat for W2 and use reps/load deltas instead, but accessory work should still ride the wave.
 
 Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.`;
 
@@ -177,6 +178,23 @@ Call record_progressions exactly once with one or more rows per exercise. Aim fo
 
     let progressionData: any = result.data;
     let coverage = evaluateCoverage((progressionData as any).rows ?? []);
+
+    // RPE-wave coverage: % of distinct exercises that received a non-empty
+    // intensity_rpe delta in W2 or W3. Stage 4's whole purpose is to make the
+    // mesocycle *progress*, so flat RPE across all weeks is a hard failure.
+    const evaluateRpeWave = (rows: any[]) => {
+      const moved = new Set<string>();
+      for (const r of rows) {
+        if (r?.dimension !== "intensity_rpe") continue;
+        const w2 = String(r?.week_2_delta ?? "").trim();
+        const w3 = String(r?.week_3_delta ?? "").trim();
+        if ((w2 || w3) && r?.exercise_id) moved.add(String(r.exercise_id));
+      }
+      const total = exerciseList.length || 1;
+      return { movedCount: moved.size, total, ratio: moved.size / total };
+    };
+    let rpeWave = evaluateRpeWave((progressionData as any).rows ?? []);
+
     if (coverage.flatRatio >= 0.3 && coverage.flat.length > 0) {
       const retrySystem = `${system}\n\nYour previous attempt left ${coverage.flat.length} exercises with ZERO non-empty deltas across W2-W${weeks}. That violates Hard Rule 1. Re-issue ALL exercises (not just the flat ones) with at least one non-empty delta each. Specifically these exercise_ids were flat: ${coverage.flat.map((e) => e.id).join(", ")}.`;
       const retry = await callAnthropicWithSchema({
@@ -210,6 +228,47 @@ Call record_progressions exactly once with one or more rows per exercise. Aim fo
         if (retryCoverage.flatRatio < coverage.flatRatio) {
           progressionData = retry.data;
           coverage = retryCoverage;
+          rpeWave = evaluateRpeWave((progressionData as any).rows ?? []);
+        }
+      }
+    }
+
+    // Second-pass guard: even if delta coverage is fine, ensure the RPE WAVE
+    // is real. < 50% wave coverage triggers a retry that says exactly that.
+    if (rpeWave.ratio < 0.5) {
+      const waveRetrySystem = `${system}\n\nYour previous attempt waved intensity_rpe on only ${rpeWave.movedCount} of ${rpeWave.total} exercises (${Math.round(
+        rpeWave.ratio * 100,
+      )}%). That violates Hard Rule 7. Re-issue progressions so AT LEAST 70% of exercises have a non-empty intensity_rpe in W2 or W3, matching the target ramp ${ramp}. Pair RPE deltas with reps/load only when both genuinely move together.`;
+      const retry = await callAnthropicWithSchema({
+        model,
+        system: waveRetrySystem,
+        userMessage: user,
+        toolName: "record_progressions",
+        toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
+        toolJsonSchema: PROG_TOOL_SCHEMA,
+        schema: ProgressionPlanSchema,
+        maxTokens: 8000,
+      });
+      await logGeneration(supabase, {
+        trainer_id: userId,
+        plan_id: data.planId,
+        stage: "stage4:progressions:retry_wave",
+        model_used: model,
+        input_tokens: retry.inputTokens,
+        output_tokens: retry.outputTokens,
+        cost_usd: retry.costUsd,
+        zod_passed: retry.ok,
+        retry_count: retry.retryCount,
+        duration_ms: retry.durationMs,
+        error: retry.ok ? null : retry.error,
+        input_snapshot: { reason: "flat_rpe_wave", waveRatio: rpeWave.ratio, movedCount: rpeWave.movedCount },
+        output_snapshot: retry.ok ? { rowCount: (retry.data as any)?.rows?.length ?? 0 } : null,
+      });
+      if (retry.ok && retry.data) {
+        const retryWave = evaluateRpeWave((retry.data as any).rows ?? []);
+        if (retryWave.ratio > rpeWave.ratio) {
+          progressionData = retry.data;
+          rpeWave = retryWave;
         }
       }
     }
