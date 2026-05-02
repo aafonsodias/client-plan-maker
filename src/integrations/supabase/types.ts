@@ -472,6 +472,8 @@ export type Database = {
           onboarding_completed: boolean
           onboarding_steps: Json
           phased_generation_enabled: boolean
+          plan_quota_limit: number
+          plan_quota_used: number
           primary_color: string | null
           tagline: string | null
           updated_at: string
@@ -488,6 +490,8 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_steps?: Json
           phased_generation_enabled?: boolean
+          plan_quota_limit?: number
+          plan_quota_used?: number
           primary_color?: string | null
           tagline?: string | null
           updated_at?: string
@@ -504,6 +508,8 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_steps?: Json
           phased_generation_enabled?: boolean
+          plan_quota_limit?: number
+          plan_quota_used?: number
           primary_color?: string | null
           tagline?: string | null
           updated_at?: string
@@ -754,6 +760,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_more_plans: { Args: { _user_id: string }; Returns: boolean }
       get_intake_branding: {
         Args: { _token: string }
         Returns: {
