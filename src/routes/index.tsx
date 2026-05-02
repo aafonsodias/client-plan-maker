@@ -155,19 +155,9 @@ function Landing() {
         </div>
       </section>
 
-      {/* Logging / history — beyond the PDF */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 max-w-2xl">
-          <h2 className="text-4xl font-light tracking-tight">{t("plan:landing.logging.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logging.subtitle")}</p>
-        </div>
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          <ProgressionMockup />
-          <SetLogMockup />
-        </div>
-      </section>
-
-      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph) */}
+      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph).
+        * Pairs the live set-log experience with a multi-week history grid so the two
+        * panels feel distinct (no more duplicated mockups). */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
@@ -184,10 +174,20 @@ function Landing() {
               <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
                 {t("common:currency.soon")}
               </div>
-              <ProgressionMockup />
+              <LogbookHistoryMockup />
             </div>
-            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.history_caption")}</p>
           </div>
+        </div>
+        {/* Trend chart: the long-arc story below the side-by-side preview */}
+        <div className="mt-10">
+          <div className="relative">
+            <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
+              {t("common:currency.soon")}
+            </div>
+            <ProgressionMockup />
+          </div>
+          <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
         </div>
       </section>
 
