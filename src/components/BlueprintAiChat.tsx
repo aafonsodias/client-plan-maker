@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { discussBlueprint } from "@/server/phased/stage2-blueprint.functions";
 import type { Blueprint } from "@/server/phased/schemas";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type ChatMsg = { role: "user" | "assistant"; content: string; patch?: Partial<Blueprint> | null; costUsd?: number };
 
@@ -18,6 +19,7 @@ export function BlueprintAiChat({
   onApplyPatch: (patch: Partial<Blueprint>) => void;
 }) {
   const discussFn = useServerFn(discussBlueprint);
+  const { t } = useTranslation("plan");
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -64,7 +66,7 @@ export function BlueprintAiChat({
           className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/20"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          Pedir à IA
+          {t("actions.ask_ai")}
         </button>
       </SheetTrigger>
       <SheetContent side="left" className="flex w-full flex-col overflow-hidden p-0 sm:max-w-md">
