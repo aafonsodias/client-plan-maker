@@ -43,6 +43,7 @@ import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, type PatternId } from "@/lib/movement-criteria";
 import { Slider } from "@/components/ui/slider";
+import { planStatusInfo } from "@/lib/plan-status";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -2155,9 +2156,16 @@ function ClientDetail() {
                         <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase">
-                      {isPhasedDraft ? `Stage: ${stage}` : p.status}
-                    </span>
+                    {(() => {
+                      const s = planStatusInfo(p as any, t as any);
+                      return (
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
+                        >
+                          {isPhasedDraft ? `${t("plans.stage_prefix", { defaultValue: "Stage" })}: ${s.label}` : s.label}
+                        </span>
+                      );
+                    })()}
                   </Link>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
