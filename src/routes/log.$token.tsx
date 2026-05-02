@@ -116,6 +116,8 @@ function ClientLogPage() {
       </div>
 
       <div className="space-y-2">
+        {/* Mobile cards (existing) */}
+        <div className="space-y-2 md:hidden">
         {entries.map((e, i) => (
           <div key={i} className="rounded-lg border border-border/60 bg-card p-3">
             <div className="mb-2 flex items-center justify-between gap-2">
@@ -143,6 +145,85 @@ function ClientLogPage() {
             <AutoTextarea minRows={1} className="mt-1.5 text-sm py-1.5" placeholder="Notes…" value={e.actual.notes} onChange={(ev) => updateActual(i, "notes", ev.target.value)} />
           </div>
         ))}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-x-auto rounded-lg border border-border/60 bg-card md:block">
+          <table className="w-full text-sm tabular-nums">
+            <thead className="border-b border-border/60 bg-muted/40 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left font-semibold">Exercise</th>
+                <th className="px-2 py-2 text-center font-semibold" colSpan={3}>Planned</th>
+                <th className="px-2 py-2 text-center font-semibold" colSpan={4}>Actual</th>
+              </tr>
+              <tr className="border-t border-border/40 text-[9px] text-muted-foreground/80">
+                <th></th>
+                <th className="px-1 py-1 text-center font-medium">Sets</th>
+                <th className="px-1 py-1 text-center font-medium">Reps</th>
+                <th className="px-1 py-1 text-center font-medium">Rest</th>
+                <th className="px-1 py-1 text-center font-medium">Sets</th>
+                <th className="px-1 py-1 text-center font-medium">Reps</th>
+                <th className="px-1 py-1 text-center font-medium">Weight</th>
+                <th className="px-1 py-1 text-left font-medium">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e, i) => (
+                <tr key={i} className="border-b border-border/30 last:border-b-0 hover:bg-muted/30">
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{e.exercise_name}</span>
+                      {exerciseDemoUrl(e.exercise_name) && (
+                        <a
+                          href={exerciseDemoUrl(e.exercise_name) ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-secondary/60 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:border-accent hover:text-accent"
+                          title="Watch demo on YouTube"
+                        >
+                          <PlayCircle className="h-2.5 w-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.sets || "—"}</td>
+                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.reps || "—"}</td>
+                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.rest || "—"}</td>
+                  <td className="px-1 py-1">
+                    <input
+                      className="h-7 w-12 rounded border border-input bg-background px-1 text-center text-sm"
+                      value={e.actual.sets}
+                      onChange={(ev) => updateActual(i, "sets", ev.target.value)}
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <input
+                      className="h-7 w-12 rounded border border-input bg-background px-1 text-center text-sm"
+                      value={e.actual.reps}
+                      onChange={(ev) => updateActual(i, "reps", ev.target.value)}
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <input
+                      className="h-7 w-20 rounded border border-input bg-background px-1.5 text-sm"
+                      placeholder="80kg"
+                      value={e.actual.weight}
+                      onChange={(ev) => updateActual(i, "weight", ev.target.value)}
+                    />
+                  </td>
+                  <td className="px-1 py-1">
+                    <input
+                      className="h-7 w-full rounded border border-input bg-background px-1.5 text-sm"
+                      placeholder="Notes…"
+                      value={e.actual.notes}
+                      onChange={(ev) => updateActual(i, "notes", ev.target.value)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="space-y-1">
