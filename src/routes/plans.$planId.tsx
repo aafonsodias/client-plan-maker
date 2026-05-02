@@ -65,18 +65,24 @@ function PlanEditor() {
   const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  // True when this plan was built by the phased generator and is now complete.
+  // In that case `plan_data.weeks` is empty by design — the source of truth is
+  // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
+  const [isPhasedComplete, setIsPhasedComplete] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
       const { data: p } = await supabase.from("workout_plans").select("*").eq("id", planId).single();
       setPlan(p);
-      // Phased plan redirect: if this plan was created with the new
-      // staged generator, jump straight to its current stage instead of
-      // showing the legacy "Summary (empty)" editor.
+      // Phased plan routing:
+      //   - in-progress stages (brief / blueprint / microcycle / progressions)
+      //     → redirect to that stage's editor
+      //   - "complete" → stay here and render the finished plan from
+      //     workout_plan_days (the new source of truth)
       const gs: any = (p as any)?.generation_state;
       const stage: string | undefined = gs?.stage;
-      if (stage) {
+      if (stage && stage !== "complete") {
         const stageRoute: Record<string, "/plans/$planId/brief" | "/plans/$planId/blueprint" | "/plans/$planId/microcycle" | "/plans/$planId/progressions" | "/plans/$planId/sessions"> = {
           brief: "/plans/$planId/brief",
           blueprint: "/plans/$planId/blueprint",
@@ -91,7 +97,37 @@ function PlanEditor() {
           return;
         }
       }
-      setData((p?.plan_data as unknown as PlanData) ?? { weeks: [] });
+      const phasedComplete = stage === "complete" || (p as any)?.generation_status === "complete";
+      if (phasedComplete) {
+        setIsPhasedComplete(true);
+        const { data: dayRows } = await supabase
+          .from("workout_plan_days")
+          .select("week_number, day_number, day_label, focus, rationale, content")
+          .eq("plan_id", planId)
+          .order("week_number", { ascending: true })
+          .order("day_number", { ascending: true });
+        const weeksMap = new Map<number, Week>();
+        for (const row of (dayRows ?? []) as any[]) {
+          const wn = row.week_number as number;
+          if (!weeksMap.has(wn)) {
+            weeksMap.set(wn, { week_number: wn, focus: "", days: [] } as Week);
+          }
+          const wk = weeksMap.get(wn)!;
+          const content = row.content ?? {};
+          const exercises = Array.isArray(content.exercises) ? content.exercises : [];
+          wk.days.push({
+            day_label: row.day_label ?? `Day ${row.day_number}`,
+            focus: row.focus ?? "",
+            rationale: row.rationale ?? undefined,
+            exercises,
+            sections: Array.isArray(content.sections) ? content.sections : undefined,
+          } as Day);
+        }
+        const weeks = Array.from(weeksMap.values()).sort((a, b) => a.week_number - b.week_number);
+        setData({ weeks });
+      } else {
+        setData((p?.plan_data as unknown as PlanData) ?? { weeks: [] });
+      }
       if (p?.client_id) {
         const { data: c } = await supabase.from("clients").select("*").eq("id", p.client_id).single();
         setClient(c);
