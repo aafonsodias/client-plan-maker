@@ -214,19 +214,22 @@ export async function generatePlanPdf(
   plan: PlanData,
   branding: PdfBranding,
 ) {
-  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  // Landscape A4 — 842 × 595 pt. Wider canvas means the dense exercise
+  // table no longer clips and we can fit one whole session per page.
+  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const M = 54;
+  const M = 36;
 
   // Resolve logo + theme
   let logoData = branding.logo_data_url ?? null;
   if (!logoData && branding.logo_url) logoData = await urlToDataUrl(branding.logo_url);
 
   let theme: Theme = LIGHT_THEME;
+  let logoMeta: { luminance: number | null; width: number; height: number } | null = null;
   if (logoData) {
-    const lum = await computeLogoLuminance(logoData);
-    if (lum != null && lum >= 0.55) theme = DARK_THEME;
+    logoMeta = await loadLogoMeta(logoData);
+    if (logoMeta?.luminance != null && logoMeta.luminance >= 0.55) theme = DARK_THEME;
     else theme = LIGHT_THEME;
   }
 
