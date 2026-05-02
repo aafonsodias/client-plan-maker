@@ -251,6 +251,16 @@
       "legal_terms": "Termos",
       "legal_privacy": "Privacidade",
       "legal_contact": "Contacto"
+    },
+    "workbench": {
+      "eyebrow": "BANCADA INTELIGENTE",
+      "title": "O teu workbench com IA",
+      "subtitle": "Escolhe o modelo, escolhe os créditos, recebe sugestões com contexto. Como uma conversa com um colega que conhece o cliente."
+    },
+    "logbook_insights": {
+      "eyebrow": "LOGBOOK INTELIGENTE",
+      "title": "Sessões anotadas. Padrões revelados.",
+      "subtitle": "O logbook não é só registo — a IA lê os teus dados e devolve sinais accionáveis."
     }
   },
   "briefRail": {
