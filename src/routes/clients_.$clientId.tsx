@@ -471,6 +471,8 @@ function ClientDetail() {
     cardio_capacity: "",
     // Per-section provenance: "client" (filled via intake) or "trainer-edited"
     provenance: {} as Record<string, "client" | "trainer-edited">,
+    // When the assessment was actually performed (separate from row created_at).
+    performed_on: "" as string,
   });
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
