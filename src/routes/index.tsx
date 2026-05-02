@@ -535,25 +535,32 @@ function HeroPlanMockup() {
   type DeltaTone = "up" | "down" | "flat";
   type Row = { name: string; w1: string; w2: string; delta?: string; tone: DeltaTone };
   type Day = { label: string; focus: string; rows: Row[] };
+  // 6 exercises/day = 4 compound + 2 accessory, agonist/antagonist balanced.
+  // Day 1 (Lower + Pull): no axial loading because of the "lombar sensível" constraint.
+  // W1 baseline starts at RPE 7 and progresses to RPE 8 in W2 (more honest than RPE 7→7).
   const days: Day[] = [
     {
       label: t("landing.mockups.day1_label"),
       focus: t("landing.mockups.day1_focus"),
       rows: [
-        { name: t("landing.mockups.ex_back_squat"), w1: "4×6 @RPE 7", w2: "4×6 @RPE 7", delta: "+5kg", tone: "up" },
-        { name: t("landing.mockups.ex_rdl"), w1: "3×8 @RPE 7", w2: "3×9 @RPE 7", delta: "+1rep", tone: "up" },
-        { name: t("landing.mockups.ex_leg_curl"), w1: "3×12 @RPE 7", w2: "3×12 @RPE 7", delta: "hold", tone: "flat" },
-        { name: t("landing.mockups.ex_step_up"), w1: "3×10", w2: "3×10", delta: "−1 set", tone: "down" },
+        { name: t("landing.mockups.ex_goblet_squat"),   w1: "4×8 @RPE 7",  w2: "4×8 @RPE 8",   delta: "+4kg",   tone: "up" },
+        { name: t("landing.mockups.ex_hip_thrust"),     w1: "4×8 @RPE 7",  w2: "4×8 @RPE 8",   delta: "+5kg",   tone: "up" },
+        { name: t("landing.mockups.ex_chest_pull"),     w1: "4×8 @RPE 7",  w2: "4×9 @RPE 7.5", delta: "+1 rep", tone: "up" },
+        { name: t("landing.mockups.ex_split_squat"),    w1: "3×10 @RPE 7", w2: "3×10 @RPE 8",  delta: "+2kg",   tone: "up" },
+        { name: t("landing.mockups.ex_leg_curl"),       w1: "3×12 @RPE 7", w2: "3×12 @RPE 7",  delta: "hold",   tone: "flat" },
+        { name: t("landing.mockups.ex_pallof"),         w1: "3×10/lado",   w2: "3×10/lado",    delta: "+pausa", tone: "up" },
       ],
     },
     {
       label: t("landing.mockups.day2_label"),
       focus: t("landing.mockups.day2_focus"),
       rows: [
-        { name: t("landing.mockups.ex_bench"), w1: "4×6 @RPE 7", w2: "4×6 @RPE 7", delta: "+2.5kg", tone: "up" },
-        { name: t("landing.mockups.ex_row"), w1: "3×10 @RPE 7", w2: "3×11 @RPE 7", delta: "+1rep", tone: "up" },
-        { name: t("landing.mockups.ex_face_pull"), w1: "3×12 @RPE 6", w2: "3×12 @RPE 6.5", delta: "+0.5RPE", tone: "up" },
-        { name: t("landing.mockups.ex_kb_swing"), w1: "3×15", w2: "3×15", delta: "hold", tone: "flat" },
+        { name: t("landing.mockups.ex_db_bench"),       w1: "4×8 @RPE 7",  w2: "4×8 @RPE 8",   delta: "+2kg",   tone: "up" },
+        { name: t("landing.mockups.ex_row"),            w1: "4×8 @RPE 7",  w2: "4×9 @RPE 7.5", delta: "+1 rep", tone: "up" },
+        { name: t("landing.mockups.ex_overhead_press"), w1: "3×8 @RPE 7",  w2: "3×8 @RPE 8",   delta: "+1.5kg", tone: "up" },
+        { name: t("landing.mockups.ex_pullup_assist"),  w1: "3×6 @RPE 8",  w2: "3×7 @RPE 8",   delta: "+1 rep", tone: "up" },
+        { name: t("landing.mockups.ex_face_pull"),      w1: "3×12 @RPE 6", w2: "3×12 @RPE 7",  delta: "+1 RPE", tone: "up" },
+        { name: t("landing.mockups.ex_farmer_carry"),   w1: "3×30m",       w2: "3×30m",        delta: "+4kg",   tone: "up" },
       ],
     },
   ];

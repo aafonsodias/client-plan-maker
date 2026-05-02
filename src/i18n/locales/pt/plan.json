@@ -30,7 +30,7 @@
       "badge_main": "PRINCIPAL",
       "badge_accessory": "ACESSÓRIO",
       "badge_finisher": "FINISHER",
-      "ex_goblet_squat": "Goblet Squat",
+      "ex_goblet_squat": "Agachamento Goblet",
       "ex_back_squat": "Back Squat",
       "ex_rdl": "Peso Morto Romeno",
       "ex_step_up": "Step-Up",
@@ -48,7 +48,15 @@
       "pr_vs_week1": "PR vs semana 1:",
       "sessions_logged": "Sessões registadas:",
       "rest_tempo_squat": "Descanso 2:30 · tempo 3-1-X",
-      "rest_tempo_rdl": "Descanso 2:00 · excêntrico controlado"
+      "rest_tempo_rdl": "Descanso 2:00 · excêntrico controlado",
+      "ex_hip_thrust": "Hip Thrust",
+      "ex_chest_pull": "Remada com Apoio Peitoral",
+      "ex_split_squat": "Split Squat com Halteres",
+      "ex_pallof": "Pallof Press",
+      "ex_db_bench": "Supino com Halteres",
+      "ex_overhead_press": "Press Militar com Halteres",
+      "ex_pullup_assist": "Elevação Assistida",
+      "ex_farmer_carry": "Farmer Carry"
     },
     "how_it_works": {
       "eyebrow": "Como funciona",
