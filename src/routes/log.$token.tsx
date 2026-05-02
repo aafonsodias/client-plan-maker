@@ -1,42 +1,89 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
-import { Save, PlayCircle } from "lucide-react";
+import { Save } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { getSharedPlan, saveClientSession } from "@/server/sessions.functions";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  getSharedPlan,
+  saveClientSession,
+  getOpenSession,
+  getSessionStreak,
+} from "@/server/sessions.functions";
 import type { PlanData } from "@/lib/pdf";
-import { exerciseDemoUrl } from "@/lib/exercise-demo";
+import { ExerciseSetsCard, type LogEntryV2, type SetLog } from "@/components/log/ExerciseSetsCard";
+import { LogHeader, type SaveState } from "@/components/log/LogHeader";
+import { Confetti } from "@/components/log/Confetti";
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
 });
 
-type LogEntry = {
-  exercise_name: string;
-  planned: { sets: string; reps: string; rest: string; notes: string };
-  actual: { sets: string; reps: string; weight: string; notes: string };
-};
+/* Parse a "3" / "3-4" sets string into an integer count, default 3. */
+function plannedSetCount(planned?: string): number {
+  if (!planned) return 3;
+  const m = String(planned).match(/\d+/);
+  if (!m) return 3;
+  const n = Number(m[0]);
+  return Number.isFinite(n) && n > 0 && n <= 10 ? n : 3;
+}
+
+function emptyEntriesForDay(day: PlanData["weeks"][number]["days"][number]): LogEntryV2[] {
+  return day.exercises.map((e) => {
+    const count = plannedSetCount(e.sets);
+    return {
+      exercise_name: e.name,
+      planned: {
+        sets: e.sets ?? "",
+        reps: e.reps ?? "",
+        rpe: (e as any).rpe ?? "",
+        rest: e.rest ?? "",
+        notes: e.notes ?? "",
+      },
+      sets: Array.from({ length: count }, (): SetLog => ({ reps: "", weight: "", rpe: "", done: false, ts: null })),
+      notes: "",
+    };
+  });
+}
 
 function ClientLogPage() {
   const { token } = Route.useParams();
+  const getSharedPlanFn = useServerFn(getSharedPlan);
+  const saveFn = useServerFn(saveClientSession);
+  const getOpenSessionFn = useServerFn(getOpenSession);
+  const getStreakFn = useServerFn(getSessionStreak);
+
   const [info, setInfo] = useState<{ id: string; title: string; summary: string | null; plan_data: PlanData; client_name: string | null; trainer_name: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [weekNum, setWeekNum] = useState<number>(1);
   const [dayLabel, setDayLabel] = useState<string>("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
-  const [entries, setEntries] = useState<LogEntry[]>([]);
+  const [entries, setEntries] = useState<LogEntryV2[]>([]);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [streak, setStreak] = useState<{ currentStreak: number; weekDone: number; weekTotal: number; totalSessions: number }>({
+    currentStreak: 0,
+    weekDone: 0,
+    weekTotal: 0,
+    totalSessions: 0,
+  });
+
+  // Track whether the user has interacted yet (no autosave on read-only loads)
+  const dirtyRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const res = (await getSharedPlan({ data: { token } })) as any;
+        const res = (await getSharedPlanFn({ data: { token } })) as any;
         setInfo(res);
         const w0 = res.plan_data?.weeks?.[0];
         if (w0) {
@@ -47,202 +94,235 @@ function ClientLogPage() {
         setError(e.message || "Invalid link");
       }
     })();
-  }, [token]);
+  }, [token, getSharedPlanFn]);
 
   const week = info?.plan_data.weeks.find((w) => w.week_number === weekNum) ?? info?.plan_data.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
 
+  // When week/day/date changes: rebuild entries from plan, then try to
+  // restore an in-progress draft for this exact slot.
   useEffect(() => {
-    if (!day) { setEntries([]); return; }
-    setEntries(day.exercises.map((e) => ({
-      exercise_name: e.name,
-      planned: { sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "" },
-      actual: { sets: "", reps: "", weight: "", notes: "" },
-    })));
-  }, [weekNum, dayLabel, info]);
+    if (!day || !info) {
+      setEntries([]);
+      return;
+    }
+    dirtyRef.current = false;
+    const fresh = emptyEntriesForDay(day);
+    setEntries(fresh);
+    setNotes("");
+    setSaveState("idle");
+    setLastSavedAt(null);
+
+    void (async () => {
+      try {
+        const draft = await getOpenSessionFn({
+          data: {
+            token,
+            plan_id: info.id,
+            week_number: weekNum,
+            day_label: dayLabel,
+            session_date: date,
+          },
+        });
+        if (!draft) return;
+        // Merge: prefer stored entries when names match (positionally), keep
+        // freshly built ones otherwise. Old v1 drafts have `actual` instead
+        // of `sets[]` — skip them rather than mis-render.
+        const stored = Array.isArray((draft as any).entries) ? (draft as any).entries : [];
+        const next = fresh.map((f, i) => {
+          const s = stored[i];
+          if (!s || s.exercise_name !== f.exercise_name) return f;
+          if (!Array.isArray(s.sets)) return f;
+          return {
+            ...f,
+            sets: f.sets.map((ss, si) => ({
+              ...ss,
+              ...(s.sets[si] ?? {}),
+            })),
+            felt: s.felt,
+            notes: typeof s.notes === "string" ? s.notes : f.notes,
+          } as LogEntryV2;
+        });
+        setEntries(next);
+        if (typeof (draft as any).session_notes === "string") {
+          setNotes((draft as any).session_notes);
+        }
+        setSaveState("saved");
+        setLastSavedAt(new Date((draft as any).updated_at ?? Date.now()).getTime());
+        toast.success("Continuámos de onde paraste.");
+      } catch {
+        /* draft restore is best-effort */
+      }
+    })();
+  }, [weekNum, dayLabel, info, date, day, token, getOpenSessionFn]);
+
+  // Streak refresh whenever the plan or current week changes
+  useEffect(() => {
+    if (!info) return;
+    void (async () => {
+      try {
+        const s = await getStreakFn({
+          data: { token, plan_id: info.id, current_week: weekNum },
+        });
+        setStreak(s);
+      } catch {
+        /* decorative — silent */
+      }
+    })();
+  }, [info, weekNum, token, getStreakFn]);
+
+  /* ─────────── Autosave (debounced 1.2s after change) ─────────── */
+  useEffect(() => {
+    if (!dirtyRef.current || !info || !day) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveState("saving");
+    debounceRef.current = setTimeout(async () => {
+      try {
+        await saveFn({
+          data: {
+            token,
+            plan_id: info.id,
+            week_number: weekNum,
+            day_label: dayLabel,
+            session_date: date,
+            session_notes: notes,
+            entries,
+            status: "in_progress",
+          },
+        });
+        setSaveState("saved");
+        setLastSavedAt(Date.now());
+      } catch (e) {
+        setSaveState(navigator.onLine === false ? "offline" : "idle");
+      }
+    }, 1200);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [entries, notes, info, day, weekNum, dayLabel, date, token, saveFn]);
+
+  const updateEntry = (i: number, next: LogEntryV2) => {
+    dirtyRef.current = true;
+    setEntries((prev) => prev.map((e, idx) => (idx === i ? next : e)));
+  };
 
   if (error) return <Centered><p className="text-destructive">{error}</p></Centered>;
   if (!info) return <Centered><p className="text-muted-foreground">Loading…</p></Centered>;
   if (done) return (
-    <Centered>
-      <div className="space-y-3 text-center">
-        <Logo className="mx-auto h-12 w-12" />
-        <h1 className="text-2xl font-bold">Session logged 💪</h1>
-        <p className="text-muted-foreground">Thanks — your trainer can see it now.</p>
-        <Button onClick={() => setDone(false)}>Log another session</Button>
-      </div>
-    </Centered>
+    <>
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+      <Centered>
+        <div className="space-y-3 text-center">
+          <Logo className="mx-auto h-12 w-12" />
+          <h1 className="text-2xl font-bold">Sessão registada 💪</h1>
+          <p className="text-muted-foreground">Obrigado — o teu treinador já vê.</p>
+          <Button onClick={() => { setDone(false); setShowConfetti(false); }}>Registar outra sessão</Button>
+        </div>
+      </Centered>
+    </>
   );
-
-  const updateActual = (i: number, k: keyof LogEntry["actual"], v: string) => {
-    const c = [...entries]; c[i] = { ...c[i], actual: { ...c[i].actual, [k]: v } }; setEntries(c);
-  };
 
   const submit = async () => {
     setSaving(true);
     try {
-      await saveClientSession({
-        data: { token, plan_id: info.id, week_number: weekNum, day_label: dayLabel, session_date: date, session_notes: notes, entries },
+      await saveFn({
+        data: {
+          token,
+          plan_id: info.id,
+          week_number: weekNum,
+          day_label: dayLabel,
+          session_date: date,
+          session_notes: notes,
+          entries,
+          status: "done",
+        },
       });
+      // Re-pull streak to know if we just closed the week
+      try {
+        const s = await getStreakFn({
+          data: { token, plan_id: info.id, current_week: weekNum },
+        });
+        setStreak(s);
+        if (s.weekTotal > 0 && s.weekDone >= s.weekTotal) {
+          setShowConfetti(true);
+          toast.success("Semana completa 🎯");
+        }
+      } catch { /* ignore */ }
       setDone(true);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
+  const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
+  const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
+  const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
-      <div>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">{info.trainer_name ?? "Workout log"}</p>
-        <h1 className="text-2xl font-bold tracking-tight">{info.title}</h1>
-        {info.client_name && <p className="text-sm text-muted-foreground">For {info.client_name}</p>}
-      </div>
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
+      <LogHeader
+        trainerName={info.trainer_name}
+        planTitle={info.title}
+        clientName={info.client_name}
+        currentStreak={streak.currentStreak}
+        weekDone={streak.weekDone}
+        weekTotal={streak.weekTotal}
+        saveState={saveState}
+        lastSavedAt={lastSavedAt}
+      />
 
       <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-muted/70 p-3">
         <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Week</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Semana</span>
           <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
             {info.plan_data.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Week {w.week_number}</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Day</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Dia</span>
           <select value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
             {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Date</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Data</span>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
+        </div>
+        <div className="ml-auto flex flex-col gap-1">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Progresso</span>
+          <span className="text-sm font-semibold tabular-nums">
+            {doneSets}/{totalSets} sets · {sessionPct}%
+          </span>
         </div>
       </div>
 
-      <div className="space-y-2">
-        {/* Mobile cards (existing) */}
-        <div className="space-y-2 md:hidden">
+      <div className="space-y-3">
         {entries.map((e, i) => (
-          <div key={i} className="rounded-lg border border-border/60 bg-card p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold">{e.exercise_name}</p>
-              {exerciseDemoUrl(e.exercise_name) && (
-                <a
-                  href={exerciseDemoUrl(e.exercise_name) ?? "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:border-accent hover:text-accent"
-                  title="Watch demo on YouTube"
-                >
-                  <PlayCircle className="h-3 w-3" /> Demo
-                </a>
-              )}
-            </div>
-            <p className="mb-2 text-xs text-muted-foreground">
-              Target: {e.planned.sets || "—"} × {e.planned.reps || "—"} · rest {e.planned.rest || "—"}
-            </p>
-            <div className="flex gap-1.5">
-              <Stack label="Sets" className="w-14"><Input className="h-8 text-center text-sm" value={e.actual.sets} onChange={(ev) => updateActual(i, "sets", ev.target.value)} /></Stack>
-              <Stack label="Reps" className="w-20"><Input className="h-8 text-center text-sm" value={e.actual.reps} onChange={(ev) => updateActual(i, "reps", ev.target.value)} /></Stack>
-              <Stack label="Weight" className="flex-1"><Input className="h-8 text-sm" placeholder="e.g. 80kg" value={e.actual.weight} onChange={(ev) => updateActual(i, "weight", ev.target.value)} /></Stack>
-            </div>
-            <AutoTextarea minRows={1} className="mt-1.5 text-sm py-1.5" placeholder="Notes…" value={e.actual.notes} onChange={(ev) => updateActual(i, "notes", ev.target.value)} />
-          </div>
+          <ExerciseSetsCard
+            key={`${e.exercise_name}-${i}`}
+            entry={e}
+            index={i}
+            onChange={(idx, next) => updateEntry(idx, next)}
+            token={token}
+            planId={info.id}
+          />
         ))}
-        </div>
-
-        {/* Desktop table */}
-        <div className="hidden overflow-x-auto rounded-lg border border-border/60 bg-card md:block">
-          <table className="w-full text-sm tabular-nums">
-            <thead className="border-b border-border/60 bg-muted/40 text-[10px] uppercase tracking-widest text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 text-left font-semibold">Exercise</th>
-                <th className="px-2 py-2 text-center font-semibold" colSpan={3}>Planned</th>
-                <th className="px-2 py-2 text-center font-semibold" colSpan={4}>Actual</th>
-              </tr>
-              <tr className="border-t border-border/40 text-[9px] text-muted-foreground/80">
-                <th></th>
-                <th className="px-1 py-1 text-center font-medium">Sets</th>
-                <th className="px-1 py-1 text-center font-medium">Reps</th>
-                <th className="px-1 py-1 text-center font-medium">Rest</th>
-                <th className="px-1 py-1 text-center font-medium">Sets</th>
-                <th className="px-1 py-1 text-center font-medium">Reps</th>
-                <th className="px-1 py-1 text-center font-medium">Weight</th>
-                <th className="px-1 py-1 text-left font-medium">Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e, i) => (
-                <tr key={i} className="border-b border-border/30 last:border-b-0 hover:bg-muted/30">
-                  <td className="px-3 py-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{e.exercise_name}</span>
-                      {exerciseDemoUrl(e.exercise_name) && (
-                        <a
-                          href={exerciseDemoUrl(e.exercise_name) ?? "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border bg-secondary/60 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:border-accent hover:text-accent"
-                          title="Watch demo on YouTube"
-                        >
-                          <PlayCircle className="h-2.5 w-2.5" />
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.sets || "—"}</td>
-                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.reps || "—"}</td>
-                  <td className="px-1 py-1.5 text-center text-xs text-muted-foreground">{e.planned.rest || "—"}</td>
-                  <td className="px-1 py-1">
-                    <input
-                      className="h-7 w-12 rounded border border-input bg-background px-1 text-center text-sm"
-                      value={e.actual.sets}
-                      onChange={(ev) => updateActual(i, "sets", ev.target.value)}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      className="h-7 w-12 rounded border border-input bg-background px-1 text-center text-sm"
-                      value={e.actual.reps}
-                      onChange={(ev) => updateActual(i, "reps", ev.target.value)}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      className="h-7 w-20 rounded border border-input bg-background px-1.5 text-sm"
-                      placeholder="80kg"
-                      value={e.actual.weight}
-                      onChange={(ev) => updateActual(i, "weight", ev.target.value)}
-                    />
-                  </td>
-                  <td className="px-1 py-1">
-                    <input
-                      className="h-7 w-full rounded border border-input bg-background px-1.5 text-sm"
-                      placeholder="Notes…"
-                      value={e.actual.notes}
-                      onChange={(ev) => updateActual(i, "notes", ev.target.value)}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <div className="space-y-1">
-        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">How did it feel?</Label>
-        <AutoTextarea minRows={1} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">Notas da sessão</Label>
+        <AutoTextarea
+          minRows={1}
+          value={notes}
+          onChange={(e) => {
+            dirtyRef.current = true;
+            setNotes(e.target.value);
+          }}
+        />
       </div>
 
       <Button onClick={submit} disabled={saving || entries.length === 0} className="w-full">
-        <Save className="mr-2 h-4 w-4" /> Save session
+        <Save className="mr-2 h-4 w-4" /> Concluir sessão
       </Button>
-    </div>
-  );
-}
-
-function Stack({ label, children, className = "" }: { label: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
-      {children}
     </div>
   );
 }

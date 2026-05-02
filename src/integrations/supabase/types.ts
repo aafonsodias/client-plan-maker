@@ -989,7 +989,7 @@ export type Database = {
     }
     Enums: {
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
-      session_status: "done" | "partial" | "missed"
+      session_status: "done" | "partial" | "missed" | "in_progress"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1118,7 +1118,7 @@ export const Constants = {
   public: {
     Enums: {
       intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
-      session_status: ["done", "partial", "missed"],
+      session_status: ["done", "partial", "missed", "in_progress"],
     },
   },
 } as const
