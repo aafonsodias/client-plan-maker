@@ -172,6 +172,18 @@ function PlanEditor() {
     } catch { /* ignore */ }
   };
 
+  // Auto-land on Resultados once a plan has enough logged sessions to feel
+  // "filled". Per-plan flag in sessionStorage so back-nav still respects user
+  // intent if they manually click View/Edit/Log later.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessions.length < 3) return;
+    const flag = `planAutoResults:${planId}`;
+    if (window.sessionStorage.getItem(flag)) return;
+    window.sessionStorage.setItem(flag, "1");
+    setMode("results");
+  }, [sessions.length, planId]);
+
   const save = async (extra: Partial<{ status: string }> = {}) => {
     setSaving(true);
     const { error } = await supabase
