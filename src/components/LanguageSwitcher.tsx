@@ -1,15 +1,22 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_LOCALES, LOCALE_STORAGE_KEY, type Locale } from "@/i18n";
+import { Globe, Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
- * Segmented control: pt | en.
- * Persists to localStorage under "forge.locale" via i18next-browser-languagedetector.
- * No page reload — react-i18next re-renders subscribed components.
+ * Globe-icon dropdown — matches the AppShell language menu so the icon is
+ * consistent across landing and the in-app chrome (no flags / no segmented
+ * control). Persists to localStorage under "forge.locale" via
+ * i18next-browser-languagedetector.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {
   const { i18n, t } = useTranslation("common");
-  const localeOptions: Locale[] = ["pt", "en"];
   const activeLanguage = (i18n.language ?? i18n.resolvedLanguage ?? "en").slice(0, 2);
   const current = (
     SUPPORTED_LOCALES.includes(activeLanguage as Locale)
@@ -33,33 +40,33 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   };
 
   return (
-    <div
-      role="group"
-      aria-label={t("language.switch_aria")}
-      className={cn(
-        "inline-flex items-center rounded-md border border-border bg-secondary/40 p-0.5 text-xs font-medium",
-        className,
-      )}
-    >
-      {localeOptions.map((code) => {
-        const active = code === current;
-        return (
-          <button
-            key={code}
-            type="button"
-            onClick={() => change(code)}
-            aria-pressed={active}
-            className={cn(
-              "rounded-sm px-2 py-1 tracking-wider transition",
-              active
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={t("language.switch_aria")}
+          title={t("language.switch_aria")}
+          className={cn(
+            "inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground transition hover:text-foreground",
+            className,
+          )}
+        >
+          <Globe className="h-4 w-4" />
+          <span>{current}</span>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {SUPPORTED_LOCALES.map((code) => (
+          <DropdownMenuItem key={code} onSelect={() => change(code)}>
+            {current === code ? (
+              <Check className="mr-2 h-4 w-4" />
+            ) : (
+              <span className="mr-2 inline-block h-4 w-4" />
             )}
-          >
-            {code}
-          </button>
-        );
-      })}
-    </div>
+            {code === "pt" ? t("language.portuguese") : t("language.english")}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
