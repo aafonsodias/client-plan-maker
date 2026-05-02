@@ -114,7 +114,19 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       assessment = (a as any) ?? null;
     }
 
-    const tier = classifyTier(brief, assessment ?? {});
+    // Trainer override wins over the auto-classifier when present.
+    const { data: planMeta } = await supabase
+      .from("workout_plans")
+      .select("generation_meta")
+      .eq("id", data.planId)
+      .maybeSingle();
+    const overrideTier = (planMeta as any)?.generation_meta?.tier_override as
+      | "remedial"
+      | "conservative"
+      | "advanced"
+      | undefined;
+    const autoTier = classifyTier(brief, assessment ?? {});
+    const tier = overrideTier ?? autoTier;
     const guidelines = tierGuidelines(
       tier,
       brief.sessions_per_week.recommended,
@@ -204,7 +216,12 @@ ${tierBlock}`;
         blueprint: result.data as any,
         generation_state: newState as any,
         // Persist tier so Stage 3 + 4 don't re-classify and so the UI can show it
-        generation_meta: { tier, tier_guidelines: guidelines } as any,
+        generation_meta: {
+          tier,
+          tier_auto: autoTier,
+          tier_override: overrideTier ?? null,
+          tier_guidelines: guidelines,
+        } as any,
         ...clearDownstream("blueprint"),
       })
       .eq("id", data.planId);
