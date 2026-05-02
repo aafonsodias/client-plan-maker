@@ -1,44 +1,87 @@
-## O que vou fazer
 
-### 1. Bugs detetados (scan)
+## Reescrita da landing — clareza primeiro, profundidade depois
 
-**Bug A — Hydration mismatch no `CurrencyMenu`** (já no runtime errors)
-O servidor renderiza sempre `EUR / "Currency"` (porque `i18n.lng = "en"` e `useCurrency()` usa fallback `EUR` em SSR), mas o cliente, no primeiro paint, lê `localStorage` + `navigator.language` e mostra `USD / "Moeda"`. Isto rebenta a hidratação em qualquer página com `<PriceTag>` (toda a landing).
+Mantém-se toda a estrutura técnica e os mockups que já funcionam. O que muda é **o que aparece nos primeiros 5 segundos** e a **ordem da narrativa**. Sem mexer em rotas, auth, pricing real ou backend.
 
-Fix: tal como o `i18n` já faz (lng inicial = "en", muda só depois de hidratar), o `CurrencyProvider` tem de inicializar com o **mesmo valor que o servidor renderizou** (`EUR`) e só aplicar o `localStorage`/`navigator` num `useEffect`. O `PriceTag` também passa a usar `aria-label` traduzido só depois de hidratar (ou fica em EN no primeiro paint).
+### 1. Hero (primeira dobra) — benefício em vez de manifesto
 
-**Bug B — 3 chaves i18n em falta** (consola)
-`plan:landing.mockups.history_title`, `history_subtitle`, `delta_label` faltam nos JSON de PT e EN. Estão a ser usadas no `LogbookHistoryMockup` da landing com fallback inline, mas isso polui a consola e em PT mostra a string EN. Adicionar as chaves nos dois locales.
+Substituir headline e subheadline atuais por linguagem direta, focada no PT:
 
-**Bug C — `<button>` dentro de `<button>` no Currency popover (potencial)**
-Verificar: no `PriceTag` o trigger é `<button>`, e o `PopoverTrigger asChild` injeta props nele — está OK porque o `CurrencyMenu` já não envolve em span. Mantém-se, só auditoria.
+- **H1**: "Cria planos de treino prontos a enviar em minutos."
+- **Sub**: "Baseados na avaliação real do teu cliente. Ajustam-se semana a semana com o que ele faz no ginásio."
+- **CTA primário**: "Gerar primeiro plano grátis" (em vez de "Draft your first plan").
+- **CTA secundário**: "Ver como funciona" (âncora para a secção `journey`).
+- **Micro-prova abaixo do CTA** (já existe, mantém): *"Conta grátis · 1 cliente · 1 plano completo · sem cartão."*
+- **Remover da primeira dobra**: a linha "credibility_caption" com "PAR-Q+, ACSM, Prochaska / Helms, Israetel, Schoenfeld". Move para a secção `credibility` mais abaixo, onde já é o sítio certo.
 
-### 2. Renomear "Concierge"
+### 2. Tira jargão de cima — "três benefícios" antes da ciência
 
-"Concierge" é frio e estranho. Proponho **"Guia"** (PT) / **"Guide"** (EN) — curto, honesto, descreve o que faz (mostra onde estão as coisas). Alternativas que rejeitei: "Ajuda" (genérico demais), "Atalhos" (não é só isso), "Copiloto" (overhyped).
+Inserir, **logo a seguir ao hero e antes dos mockups**, uma faixa nova com 3 cartões curtos (uma frase cada):
 
-Mudanças:
-- `ConciergeDock` → `GuideDock` (ficheiro renomeado; export idem).
-- Botão flutuante: aria-label `"Abrir guia"`, header `"GUIA"`, placeholder `"Onde está…?"` (mantém).
-- Mensagem de boas-vindas mais curta e humana, em vez do parágrafo cerimonial atual (ver imagem 2): _"Olá. Diz-me o que procuras na app — eu mostro-te onde está."_
-- `askConcierge` server fn fica com o nome interno (não vale a pena partir tipos), mas o system prompt deixa de dizer "concierge" e passa a "guia da app".
-- Opcional: chips de sugestão começam vazios — só aparecem depois da 1ª pergunta (a lista de 3 chips iniciais "Ver Painel / Manual / Configurar Perfil" do screenshot é ruído).
+- "Menos tempo a programar" — *"Da avaliação ao PDF em minutos, não em horas."*
+- "Planos consistentes entre clientes" — *"A mesma lógica aplicada a cada cliente, ajustada ao caso dele."*
+- "Mais confiança no que envias" — *"Vês sempre porque é que cada exercício está ali."*
 
-### 3. Onde começa o "assessment slides"
+(Substitui efetivamente a tagline "sem caixa preta" por "percebes sempre porque é que o plano foi criado", como pedido.)
 
-Resposta direta para o utilizador (não envolve código): o início está em **Clientes → abrir um cliente**. A rota é `/clients/$clientId` (ficheiro `src/routes/clients_.$clientId.tsx`). Aí aparece o `ClientDetail` com as várias secções (PAR-Q, Antropometria, Objetivo SMART, Treino, Estilo de vida, Nutrição, Mobilidade, Postura, Screen de movimento, Histórico, Performance) renderizadas como `StageCard`s — esse é o "wizard" de assessment. Para um cliente novo: `/clients` → botão "Adicionar cliente". Para o cliente preencher por ele próprio, gera-se um link de intake (`IntakeLinkPanel`) que abre `/intake/:token`.
+### 3. Reordenar a página
 
-Vou também adicionar isto às rotas que o Guia conhece (`src/lib/concierge-routes.ts`) para que possa responder esta pergunta sozinho.
+Ordem nova, do mais concreto ao mais técnico:
+
+1. Hero (acima)
+2. **3 benefícios** (novo)
+3. **Mockups** (já existe — mostrar produto cedo é prova visual)
+4. **Como funciona / journey** (5 fases — manter, mas com intro reescrita em PT-claro)
+5. **Logbook preview** (manter)
+6. **Credibilidade científica** (PAR-Q+, ACSM, Prochaska — agora aqui, não no hero)
+7. **Founder** (manter — a história do André é prova humana)
+8. **Pricing** (simplificado, ver §5)
+9. **FAQ** (manter)
+10. **Closing CTA** + footer
+
+### 4. Linguagem orientada a PTs
+
+Auditoria curta dos copy-blocks já existentes para alinhar tom:
+
+- "mesocycle" / "microcycle" → manter só a partir da secção `journey` (público técnico já está engajado nesse ponto).
+- Hero, 3-benefícios e mockup captions usam apenas: *plano*, *avaliação*, *cliente*, *semana*, *sessão*, *PDF*.
+- Substituir "Clinical assessment, defensible mesocycle" da subheadline atual pela versão simples acima.
+
+### 5. Pricing simplificado e honesto
+
+A secção atual já tem 2 colunas (Beta grátis + Pro €19). Ajustes:
+
+- **Renomear** "Try it — no card" → "Grátis para começar".
+- **Linhas claras** no card grátis: *"1 cliente · 1 plano completo · PDF com a tua marca · sem cartão."*
+- **Pro** mantém-se como "Em breve · €19/mês (indicativo)" — não inventar features que não existem.
+- Remover a linha "Subscribe to Pro to be in the first wave" do roadmap (duplica o pricing).
+
+### 6. Prova concreta
+
+Adicionar duas peças honestas, sem inventar testemunhos:
+
+- **Exemplo real**: já existem dois PDFs no repositório (`André_Periquito…_1_Week_Plan.pdf`, `Test_User_Test_Plan.pdf`). Adicionar na secção logbook/mockups um link discreto **"Ver exemplo de plano (PDF)"** que abre um deles num separador novo. Prova tangível > screenshots.
+- **Linha de honestidade beta** já existe na secção `credibility` ("There are bugs. Things still missing…") — manter. Não fabricar testemunhos.
+
+### 7. i18n
+
+Todo o copy novo entra em `src/i18n/locales/{en,pt}/plan.json` sob:
+
+- `landing.hero.*` (override das chaves existentes)
+- `landing.benefits.{time,consistency,confidence}.{title,desc}` (novo)
+- `landing.credibility.intro` (mover a antiga credibility_caption para aqui)
+- `landing.pricing.beta_*` (refraseado)
+
+PT é a referência de tom (mem `voice-pt`); EN segue o mesmo registo direto.
 
 ### Ficheiros tocados
 
-- `src/contexts/CurrencyContext.tsx` — init SSR-safe + efeito client.
-- `src/components/CurrencyMenu.tsx` — `aria-label`/title só client-side ou em EN no SSR.
-- `src/i18n/locales/{en,pt}/plan.json` — 3 chaves landing.mockups.
-- Renomear `src/components/ConciergeDock.tsx` → `src/components/GuideDock.tsx` + import em `AppShell.tsx`.
-- `src/lib/concierge-routes.ts` — acrescentar hint sobre `/clients/$clientId` e fluxo de assessment.
-- `src/server/concierge.functions.ts` — system prompt: "guia" em vez de "concierge", boas-vindas mais curta.
+- `src/routes/index.tsx` — reordenar secções, novo bloco `Benefits`, link para PDF de exemplo, hero novo.
+- `src/i18n/locales/pt/plan.json` e `src/i18n/locales/en/plan.json` — chaves novas + reescritas.
+- (Opcional) `public/example-plan.pdf` — copiar um dos PDFs existentes da raiz para `public/` para servir como link.
 
 ### Fora de scope
 
-Não vou tocar no nome do server fn (`askConcierge`) nem no path do ficheiro `concierge.functions.ts` para não partir tipos. Só a UI muda de nome.
+- Sem mexer em auth, pricing real (Stripe), Guide/dock, ou no funil de criação de plano.
+- Sem testemunhos fabricados.
+- Sem alterar o esquema de cores ou o `BrandMark`.
