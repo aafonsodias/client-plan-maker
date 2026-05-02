@@ -166,7 +166,7 @@ function Landing() {
             </div>
             <h3 className="text-xl font-medium">{t("plan:landing.pricing.beta_title")}</h3>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-4xl font-light tracking-tight">{t("plan:landing.pricing.beta_price")}</span>
+              <PriceTag eur={0} className="text-4xl font-light tracking-tight" />
               <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.beta_period")}</span>
             </div>
             <ul className="mt-6 space-y-3 text-sm">
@@ -188,7 +188,7 @@ function Landing() {
             </div>
             <h3 className="text-xl font-medium text-muted-foreground">{t("plan:landing.pricing.pro_title")}</h3>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-4xl font-light tracking-tight text-muted-foreground">{t("plan:landing.pricing.pro_price")}</span>
+              <PriceTag eur={19} className="text-4xl font-light tracking-tight text-muted-foreground" />
               <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.pro_period")}</span>
             </div>
             <ul className="mt-6 space-y-3 text-sm">
