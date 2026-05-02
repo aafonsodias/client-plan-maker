@@ -81,6 +81,8 @@ function PlanEditor() {
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
   const markFinishedFn = useServerFn(markPlanFinished);
+  const regenSummaryFn = useServerFn(regeneratePlanSummary);
+  const [regenSummaryBusy, setRegenSummaryBusy] = useState(false);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
