@@ -714,7 +714,6 @@ function ViewMode({
   }
   return (
     <div className="space-y-6">
-      <VolumeSection plan={plan} />
       <div className="flex justify-end">
         <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
           <button

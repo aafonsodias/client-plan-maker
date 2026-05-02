@@ -35,9 +35,14 @@ export function VolumeSection({ plan }: Props) {
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elegant)]">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-accent" />
-          <h2 className="text-base font-bold tracking-tight">Volume semanal</h2>
+        <div className="flex items-start gap-2">
+          <Activity className="mt-0.5 h-4 w-4 text-accent" />
+          <div>
+            <h2 className="text-base font-bold tracking-tight">Volume prescrito vs landmarks</h2>
+            <p className="text-[11px] text-muted-foreground">
+              Verifica antes de aprovar — séries por grupo muscular face a MEV/MAV/MRV (Israetel/Helms). Não inclui o que o cliente realizou.
+            </p>
+          </div>
           <TooltipProvider delayDuration={150}>
             <Tooltip>
               <TooltipTrigger asChild>
