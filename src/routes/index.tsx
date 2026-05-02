@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation, Trans } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain } from "lucide-react";
-import { Logo } from "@/components/Logo";
 import { BrandMark } from "@/components/BrandMark";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import andreFounder from "@/assets/andre-founder.png";
