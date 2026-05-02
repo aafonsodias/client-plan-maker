@@ -20,7 +20,6 @@ import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle,
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { renderAssessmentPdf } from "@/lib/pdf";
 import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
