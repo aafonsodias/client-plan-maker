@@ -708,6 +708,11 @@ function PlanEditor() {
         )
       ) : mode === "results" ? (
         <ResultsPanel plan={data} sessions={sessions as any} />
+      ) : mode === "progress" ? (
+        <ExerciseTrendChart
+          sessions={sessions as any}
+          blockNumber={(plan as any).block_number ?? 1}
+        />
       ) : (
         <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
