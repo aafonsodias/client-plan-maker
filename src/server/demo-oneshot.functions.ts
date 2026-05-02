@@ -9,89 +9,47 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PHASED_SECTIONS } from "@/server/phased/section-map";
 
 /**
- * createDemoClientFull — INSTANT mode.
- *
- * One-click: AI client + assessment + Pre-Stage analyses + full phased plan
- * + N weeks of logged sessions. Writes a `demo_runs` row up-front so the
- * Demo Lab UI can poll real per-stage progress and trigger a soft cancel.
- *
- * The Pre-Stage 0 fan-out is what fixes the "<UNKNOWN>" placeholders the
- * brief used to emit when its inputs were sparse — Stage 1 now reads cached
- * per-section analyses (esp. mobility / posture / screen) before synthesis.
+ * Inner pipeline — runs the full instant demo (client + pre-stage + plan +
+ * logbook) and writes per-stage progress to `demo_runs`. Designed to be
+ * fire-and-forget: callers should NOT await this inside an HTTP handler
+ * (Cloudflare Workers cap response wall-time at ~30s but keep the
+ * invocation alive for pending promises). The UI polls `demo_runs`.
  */
-export const createDemoClientFull = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        archetype: z.string().optional(),
-        durationWeeks: z.number().int().min(2).max(12).optional(),
-        weeksToSeed: z.number().int().min(1).max(8).optional(),
-      })
-      .parse(d ?? {}),
-  )
-  .handler(async ({ data, context }) => {
-    const { userId } = context;
-
-    // Live-progress row for the Demo Lab. Failures here are non-fatal — we
-    // still run the demo without a poll handle.
-    const { data: runRow } = await supabaseAdmin
+async function runInstantPipeline(
+  _userId: string,
+  runId: string,
+  data: { archetype?: string; durationWeeks?: number; weeksToSeed?: number },
+): Promise<void> {
+  const setStage = async (
+    stage: string,
+    status: "running" | "done" | "failed" = "running",
+    error?: string,
+  ) => {
+    await supabaseAdmin
       .from("demo_runs")
-      .insert({ trainer_id: userId, stage: "client", status: "running" })
-      .select("id")
-      .single();
-    const runId = (runRow as any)?.id as string | undefined;
+      .update({ stage, status, error: error ?? null })
+      .eq("id", runId);
+  };
+  const isCancelled = async (): Promise<boolean> => {
+    const { data: r } = await supabaseAdmin
+      .from("demo_runs")
+      .select("cancelled")
+      .eq("id", runId)
+      .maybeSingle();
+    return Boolean((r as any)?.cancelled);
+  };
 
-    const setStage = async (
-      stage: string,
-      status: "running" | "done" | "failed" = "running",
-      error?: string,
-    ) => {
-      if (!runId) return;
-      await supabaseAdmin
-        .from("demo_runs")
-        .update({ stage, status, error: error ?? null })
-        .eq("id", runId);
-    };
-    const isCancelled = async (): Promise<boolean> => {
-      if (!runId) return false;
-      const { data: r } = await supabaseAdmin
-        .from("demo_runs")
-        .select("cancelled")
-        .eq("id", runId)
-        .maybeSingle();
-      return Boolean((r as any)?.cancelled);
-    };
-    const cancelExit = (clientId: string | null, stage: string) => ({
-      ok: false as const,
-      stage,
-      error: "Cancelled.",
-      clientId,
-      planId: null,
-      sessions: 0,
-      runId: runId ?? null,
-    });
-
+  try {
     // 1) Create the client + assessment.
     await setStage("client", "running");
     const created: any = await createDemoClient({ data: { archetype: data.archetype } });
     if (!created?.clientId) {
       await setStage("client", "failed", "Failed to create demo client.");
-      return {
-        ok: false as const,
-        stage: "create_client",
-        error: "Failed to create demo client.",
-        clientId: null,
-        planId: null,
-        sessions: 0,
-        runId: runId ?? null,
-      };
+      return;
     }
     const clientId = created.clientId as string;
-    if (await isCancelled()) {
-      await setStage("client", "failed", "Cancelled.");
-      return cancelExit(clientId, "cancelled");
-    }
+    await supabaseAdmin.from("demo_runs").update({ client_id: clientId }).eq("id", runId);
+    if (await isCancelled()) { await setStage("client", "failed", "Cancelled."); return; }
 
     // 1b) Pre-Stage 0 — analyze each assessment section in parallel batches.
     await setStage("prestage", "running");
@@ -112,10 +70,7 @@ export const createDemoClientFull = createServerFn({ method: "POST" })
             analyzeAssessmentSection({ data: { assessmentId, section: s } }),
           ),
         );
-        if (await isCancelled()) {
-          await setStage("prestage", "failed", "Cancelled.");
-          return cancelExit(clientId, "cancelled");
-        }
+        if (await isCancelled()) { await setStage("prestage", "failed", "Cancelled."); return; }
       }
     }
     await setStage("prestage", "done");
@@ -125,27 +80,15 @@ export const createDemoClientFull = createServerFn({ method: "POST" })
     const ran: any = await runDemoPlay({ data: { clientId } });
     if (!ran?.ok || !ran?.planId) {
       await setStage(ran?.failedStep ?? "plan", "failed", ran?.error ?? "Plan generation failed.");
-      return {
-        ok: false as const,
-        stage: ran?.failedStep ?? "plan",
-        error: ran?.error ?? "Plan generation failed.",
-        clientId,
-        planId: null,
-        sessions: 0,
-        runId: runId ?? null,
-      };
+      return;
     }
     const planId = ran.planId as string;
-    if (runId) {
-      await supabaseAdmin
-        .from("demo_runs")
-        .update({ plan_id: planId, client_id: clientId })
-        .eq("id", runId);
-    }
+    await supabaseAdmin
+      .from("demo_runs")
+      .update({ plan_id: planId, client_id: clientId })
+      .eq("id", runId);
 
-    // Apply duration override (logbook seed honors it; full bulk-fill at
-    // 6/8 weeks is a follow-up that already works because Stage 5 reads
-    // duration_weeks before fanning out the remaining weeks).
+    // Apply duration override.
     if (data.durationWeeks && data.durationWeeks !== 4) {
       await supabaseAdmin
         .from("workout_plans")
@@ -155,34 +98,66 @@ export const createDemoClientFull = createServerFn({ method: "POST" })
 
     // 3) Seed N weeks of sessions.
     await setStage("logbook", "running");
-    let sessions = 0;
     try {
       const weeksToSeed = data.weeksToSeed ?? 2;
-      const seeded: any = await seedDemoSessions({
-        data: { planId, weeksToSeed },
-      });
-      sessions = seeded?.inserted ?? 0;
+      await seedDemoSessions({ data: { planId, weeksToSeed } });
     } catch (e) {
       console.error("[demo-oneshot] seed sessions failed", e);
     }
     await setStage("logbook", "done");
     await setStage("done", "done");
+  } catch (e: any) {
+    console.error("[demo-oneshot] pipeline crashed", e);
+    try {
+      await supabaseAdmin
+        .from("demo_runs")
+        .update({ status: "failed", error: e?.message ?? "Pipeline error" })
+        .eq("id", runId);
+    } catch { /* ignore */ }
+  }
+}
 
-    return {
-      ok: true as const,
-      stage: "done" as const,
-      error: null,
-      clientId,
-      planId,
-      sessions,
-      runId: runId ?? null,
-    };
+/**
+ * startDemoClientFull — fire-and-poll INSTANT mode.
+ *
+ * Inserts a `demo_runs` row, kicks off the full pipeline WITHOUT awaiting
+ * it, and returns `{ runId }` immediately. The UI polls `getDemoRun` to
+ * follow progress and reads `plan_id` to navigate when the run completes.
+ * This avoids the upstream timeout that crashed the long-running response.
+ */
+export const startDemoClientFull = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        archetype: z.string().optional(),
+        durationWeeks: z.number().int().min(2).max(12).optional(),
+        weeksToSeed: z.number().int().min(1).max(8).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: runRow, error } = await supabaseAdmin
+      .from("demo_runs")
+      .insert({ trainer_id: userId, stage: "client", status: "running" })
+      .select("id")
+      .single();
+    if (error || !runRow) {
+      return { ok: false as const, runId: null, error: error?.message ?? "Failed to start run." };
+    }
+    const runId = (runRow as any).id as string;
+    // Fire-and-forget: keep the promise alive on the runtime but don't
+    // await it inside the HTTP response. Errors are persisted to demo_runs.
+    void runInstantPipeline(userId, runId, data).catch((e) => {
+      console.error("[demo-oneshot] background pipeline error", e);
+    });
+    return { ok: true as const, runId, error: null };
   });
 
 /**
  * Cancel an in-flight demo run. Sets `cancelled = true`; the runner checks
- * between stages and exits early. Returns the latest known stage so the UI
- * can render the partial state.
+ * between stages and exits early.
  */
 export const cancelDemoRun = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -201,8 +176,8 @@ export const cancelDemoRun = createServerFn({ method: "POST" })
   });
 
 /**
- * Poll a demo run's current stage. Used by the Demo Lab to render a real
- * progress list (no fake setInterval animation).
+ * Poll a demo run's current stage. Used by the Demo Lab to render real
+ * progress and to detect when the plan is ready for navigation.
  */
 export const getDemoRun = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
