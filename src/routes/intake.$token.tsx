@@ -111,7 +111,7 @@ function fromAssessment(a: any | null): FormState {
   };
 }
 
-function toPayload(f: FormState): { fields: Record<string, any>; sections: string[] } {
+function toPayload(f: FormState): { fields: Record<string, any>; sections: string[]; identity: { full_name?: string; email?: string; phone?: string; date_of_birth?: string } } {
   const parqAnswered = Object.values(f.parq).every((v) => v === true || v === false);
   const parqHasYes = Object.values(f.parq).some((v) => v === true);
   return {
@@ -150,6 +150,12 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       },
     },
     sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
+    identity: {
+      full_name: f.client_full_name?.trim() || undefined,
+      email: f.client_email?.trim() || undefined,
+      phone: f.client_phone?.trim() || undefined,
+      date_of_birth: f.client_dob || undefined,
+    },
   };
 }
 
