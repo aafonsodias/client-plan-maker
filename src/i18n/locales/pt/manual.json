@@ -8,12 +8,12 @@
   "sections": {
     "start": {
       "title": "Começar",
-      "intro": "Em 5 minutos tens a tua conta pronta e o primeiro cliente a preencher um intake.",
+      "intro": "Em 5 minutos tem a sua conta pronta e o primeiro cliente a preencher um intake.",
       "steps": [
-        { "h": "Cria a tua conta", "p": "Em /auth, cria conta com email + palavra-passe ou Google. Confirma o email para desbloquear a app." },
-        { "h": "Abre o Dashboard", "p": "É o teu hub: clientes ativos, planos recentes e o estado de cada um (rascunho, pronto, em curso)." },
-        { "h": "Adiciona o primeiro cliente", "p": "Clientes → \"Adicionar cliente\". Basta nome — o resto preenche-se com o intake." },
-        { "h": "Envia o intake", "p": "No cartão do cliente, copia o link de intake e envia. O cliente preenche pelo telemóvel; tu recebes tudo estruturado." }
+        { "h": "Crie a sua conta", "p": "Em /auth, cria conta com email + palavra-passe ou Google. Confirma o email para desbloquear a app." },
+        { "h": "Abre o Dashboard", "p": "É o seu hub: clientes ativos, planos recentes e o estado de cada um (rascunho, pronto, em curso)." },
+        { "h": "Adicione o primeiro cliente", "p": "Clientes → \"Adicionar cliente\". Basta nome — o resto preenche-se com o intake." },
+        { "h": "Envie o intake", "p": "No cartão do cliente, copia o link de intake e envia. O cliente preenche pelo telemóvel; tu recebes tudo estruturado." }
       ]
     },
     "intake": {
@@ -60,9 +60,9 @@
       "title": "Faturação & limites",
       "intro": "Plano gratuito vs plano completo.",
       "steps": [
-        { "h": "Plano gratuito", "p": "1 plano de treino finalizado. Suficiente para validares se a Forge serve para o teu fluxo." },
+        { "h": "Plano gratuito", "p": "1 plano de treino finalizado. Suficiente para validares se a Forge serve para o seu fluxo." },
         { "h": "Trial", "p": "Desbloqueia geração ilimitada por X dias para testares vários clientes." },
-        { "h": "Subscrição", "p": "Acesso ilimitado, todos os clientes, todas as iterações. Cancelas quando quiseres." },
+        { "h": "Subscrição", "p": "Acesso ilimitado, todos os clientes, todas as iterações. Cancelas quando quiser." },
         { "h": "Founder", "p": "Acesso permanente para o fundador da Forge — sem trial, sem limite, sem banners de upgrade." }
       ]
     }

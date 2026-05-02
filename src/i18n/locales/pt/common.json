@@ -29,22 +29,22 @@
     "field_password": "Palavra-passe",
     "field_full_name": "Nome completo",
     "password_hint": "Pelo menos 10 caracteres. Evita palavras-passe comuns ou comprometidas.",
-    "confirm_email_toast": "Confirma a tua conta no email que recebeste."
+    "confirm_email_toast": "Confirme a sua conta no email que recebeste."
   },
   "shell": {
-    "trial_days_left_one": "Resta {{count}} dia no teu período experimental.",
-    "trial_days_left_other": "Restam {{count}} dias no teu período experimental.",
-    "trial_ended": "O teu período experimental terminou. Faz upgrade para continuar a gerar planos."
+    "trial_days_left_one": "Resta {{count}} dia no seu período experimental.",
+    "trial_days_left_other": "Restam {{count}} dias no seu período experimental.",
+    "trial_ended": "O seu período experimental terminou. Faça upgrade para continuar a gerar planos."
   },
   "dashboard": {
     "eyebrow": "Bem-vindo de volta",
-    "title": "O teu estúdio de treino",
+    "title": "O seu estúdio de treino",
     "new_client": "Novo cliente",
     "stat_clients": "Clientes",
     "stat_plans": "Planos criados",
     "recent_plans": "Planos recentes",
     "no_plans": "Ainda não há planos",
-    "no_plans_hint": "Adiciona um cliente e faz uma avaliação para criares o teu primeiro plano.",
+    "no_plans_hint": "Adicione um cliente e faz uma avaliação para criares o seu primeiro plano.",
     "add_a_client": "Adicionar cliente",
     "seg_active": "{{count}} ativo(s)",
     "seg_ready": "{{count}} prontos para plano",
@@ -64,7 +64,7 @@
     "field_height": "Altura (cm)",
     "field_weight": "Peso (kg)",
     "no_email": "Sem email",
-    "no_clients_empty": "Ainda não tens clientes. Adiciona o primeiro para começar.",
+    "no_clients_empty": "Ainda não tem clientes. Adicione o primeiro para começar.",
     "added_toast": "Cliente adicionado",
     "removed_toast": "Cliente removido",
     "delete_aria": "Eliminar cliente",
@@ -84,10 +84,10 @@
     "remind_later": "Lembrar mais tarde",
     "got_it": "Já percebi",
     "steps": {
-      "add_client": { "title": "Adiciona o teu primeiro cliente", "desc": "Cria um perfil de cliente para acompanhares tudo.", "cta": "Ir para Clientes" },
-      "run_assessment": { "title": "Faz uma avaliação", "desc": "Completa a avaliação alinhada com ACSM na página do cliente.", "cta": "Abrir um cliente" },
-      "generate_plan": { "title": "Gera um plano", "desc": "Deixa a IA preparar um programa periodizado a partir da avaliação.", "cta": "Gerar agora" },
-      "export_pdf": { "title": "Exporta um PDF com a tua marca", "desc": "Envia o plano polido ao teu cliente.", "cta": "Abrir Planos" }
+      "add_client": { "title": "Adicione o seu primeiro cliente", "desc": "Cria um perfil de cliente para acompanhares tudo.", "cta": "Ir para Clientes" },
+      "run_assessment": { "title": "Faça uma avaliação", "desc": "Completa a avaliação alinhada com ACSM na página do cliente.", "cta": "Abrir um cliente" },
+      "generate_plan": { "title": "Gera um plano", "desc": "Deixe a IA preparar um programa periodizado a partir da avaliação.", "cta": "Gerar agora" },
+      "export_pdf": { "title": "Exporte um PDF com a sua marca", "desc": "Envie o plano polido ao seu cliente.", "cta": "Abrir Planos" }
     }
   },
   "language": {
