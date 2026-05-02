@@ -129,13 +129,13 @@ export function SessionDayView({
         )}
       </header>
 
-      {/* WARMUP / ACTIVATION / DYNAMIC — light cluster */}
+      {/* WARMUP / ACTIVATION / DYNAMIC — single colour-coded collapsible card */}
       {(hasWarmup || hasActivation || hasDynamic) && (
-        <div className="mt-4 space-y-3">
-          {hasWarmup && <PrepSection label="Warmup" items={day.warmup!} />}
-          {hasActivation && <PrepSection label="Activation" items={day.activation!} />}
-          {hasDynamic && <PrepSection label="Dynamic stretches" items={day.dynamic_stretches!} />}
-        </div>
+        <PrepCluster
+          warmup={hasWarmup ? day.warmup! : []}
+          activation={hasActivation ? day.activation! : []}
+          dynamic={hasDynamic ? day.dynamic_stretches! : []}
+        />
       )}
 
       {/* MAIN WORK — the heavy section */}
