@@ -282,7 +282,11 @@ function estimatePrepMinutes(items: SectionItem[]): number {
       if (!isNaN(n)) totalSec += n * 60; // assume minutes
     }
   }
-  return Math.round(totalSec / 60);
+  const minutes = Math.round(totalSec / 60);
+  // Fallback: when items have no parseable durations, estimate ~1 min per item
+  // so the prep block doesn't show "0 min" for non-zero work.
+  if (minutes === 0 && items.length > 0) return Math.max(1, items.length);
+  return minutes;
 }
 
 /** Compact, colour-coded preparation block (warmup + activation + dynamic). Collapsed by default. */
