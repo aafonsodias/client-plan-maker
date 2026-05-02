@@ -11,6 +11,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTranslation } from "react-i18next";
+import { planStatusInfo } from "@/lib/plan-status";
 
 export const Route = createFileRoute("/plans/")({
   component: () => (
@@ -25,6 +27,8 @@ type PlanRow = {
   title: string;
   status: string;
   updated_at: string;
+  generation_state: { stage?: string } | null;
+  generation_status: string | null;
   client: { full_name: string } | null;
 };
 
@@ -35,13 +39,14 @@ function PlansIndex() {
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
       const { data } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, client:clients(full_name)")
+        .select("id, title, status, updated_at, generation_state, generation_status, client:clients(full_name)")
         .order("updated_at", { ascending: false });
       setList((data as any) ?? []);
       setLoading(false);
@@ -121,9 +126,16 @@ function PlansIndex() {
                   <p className="text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase tracking-wider text-secondary-foreground">
-                    {p.status}
-                  </span>
+                  {(() => {
+                    const s = planStatusInfo(p, t);
+                    return (
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
+                      >
+                        {s.label}
+                      </span>
+                    );
+                  })()}
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
               </Link>
