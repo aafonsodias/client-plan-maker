@@ -74,10 +74,31 @@ export const proposeProgressions = createServerFn({ method: "POST" })
         (plan as any).generation_meta?.tier_override ??
         "conservative"
     ).toLowerCase();
-    const rpeCeiling =
-      tierRaw === "remedial" ? 7 : tierRaw === "advanced" ? 8.5 : 7.5;
+    const appetite = String(
+      (plan as any).brief?.intensity_appetite ?? "padrao",
+    ).toLowerCase();
+    const tierCeiling =
+      tierRaw === "remedial" ? 7 : tierRaw === "advanced" ? 9 : 8;
+    const appetiteShift =
+      appetite === "conservador" ? -0.5 : appetite === "agressivo" ? +0.5 : 0;
+    const rpeCeiling = Math.min(9.5, Math.max(6, tierCeiling + appetiteShift));
+    const ramp =
+      appetite === "conservador"
+        ? `RPE W1→W2→W3 = 5 → 6 → 6.5; W${weeks} deload (RPE 4).`
+        : appetite === "agressivo"
+        ? `RPE W1→W2→W3 = 7 → 8 → 8.5; W${weeks} deload (RPE 6).`
+        : `RPE W1→W2→W3 = 6 → 7 → 7.5; W${weeks} deload (RPE 5).`;
+    const loadStep =
+      appetite === "conservador"
+        ? "+2.5kg every other week on free-weight compounds; +1 rep/wk on accessories."
+        : appetite === "agressivo"
+        ? "+5kg/wk on free-weight compounds (or +5%); +2 reps/wk on accessories."
+        : "+2.5kg/wk on free-weight compounds (or +2.5–5%); +1–2 reps/wk on accessories.";
 
     const system = `You are a senior strength coach writing PROGRESSION DELTAS for weeks 2..${weeks} of a ${tierRaw.toUpperCase()} tier mesocycle.
+Coach intensity appetite: ${appetite.toUpperCase()}.
+Target RPE wave: ${ramp}
+Target load step: ${loadStep}
 
 Delta DSL (use empty string "" only for the deload week or when truly nothing should change):
 - load: "+2.5kg" / "+5lb" / "-5%"
@@ -93,12 +114,12 @@ HARD RULES — apply to EVERY exercise:
    - Machine / cable / bodyweight: prefer reps (+1-2/wk) and intensity_rpe waves. Load deltas optional (auto-regulated).
    - Free-weight compounds (DB press, goblet squat, RDL, trap-bar DL, row): prefer load (+2.5kg/wk small, +5kg/wk strong lifters), keep reps stable.
    - Isolation / arms / calves: prefer reps and sets. Load is secondary.
-3. RPE ceiling for this tier: ${rpeCeiling}. Never propose intensity_rpe that would push an exercise above this number. Only main compounds may touch the ceiling.
+3. RPE ceiling for this tier+appetite: ${rpeCeiling}. Never propose intensity_rpe that would push an exercise above this number. Only main compounds may touch the ceiling. Match the RPE wave above — do NOT leave RPE flat across all 4 weeks.
 4. Progression model: ${progModel}.
    - linear: each week +1 small step (reps OR load OR rpe). Steady climb.
    - undulating: alternate reps-up weeks with intensity-up weeks. W2 may differ from W3.
    - block: W2 accumulation (+reps), W3 intensification (+load / +rpe).
-5. Week ${weeks} is a DELOAD: use "-1set" OR "-20%" load OR drop intensity_rpe by 1.0. Never empty across the board.
+5. Week ${weeks} is a DELOAD: use "-1set" OR "-20%" load OR drop intensity_rpe by 1.0–1.5. Never empty across the board. The deload week MUST clearly read lower than W3.
 6. Keep "rationale" ≤ 10 words.
 
 Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.`;
