@@ -435,6 +435,46 @@ function PlanEditor() {
         </div>
       )}
 
+      {/* Founder demo: close the current block and spawn Block N+1.
+          Visible only on demo clients with a finalized plan + at least
+          some logged sessions, so the transition note has signal to use. */}
+      {plan?.generation_status === "complete"
+        && /\(demo\)$/i.test(client?.full_name ?? "")
+        && sessions.length > 0
+        && plan?.status !== "archived" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">
+              Bloco {(plan as any).block_number ?? 1} pronto para fechar.
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Arquiva este bloco e gera o Bloco {((plan as any).block_number ?? 1) + 1} —
+              o sistema vai propor uma evolução baseada na adesão e no RPE registado.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            disabled={startingNextBlock}
+            onClick={async () => {
+              if (!confirm("Concluir este bloco e iniciar o próximo?")) return;
+              setStartingNextBlock(true);
+              try {
+                const r: any = await startNextBlockFn({ data: { priorPlanId: planId } });
+                if (r?.ok && r?.planId) {
+                  toast.success(`Bloco ${r.blockNumber} criado.`);
+                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                } else {
+                  toast.error(r?.error ?? "Falhou a iniciar o próximo bloco.");
+                }
+              } finally { setStartingNextBlock(false); }
+            }}
+          >
+            {startingNextBlock ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+            Concluir e iniciar Bloco {((plan as any).block_number ?? 1) + 1}
+          </Button>
+        </div>
+      )}
+
       {/* AI Validation Report — always visible to the trainer */}
       <ValidationReport generationMeta={plan.generation_meta} />
 
