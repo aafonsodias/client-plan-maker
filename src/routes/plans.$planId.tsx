@@ -35,7 +35,7 @@ import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
 import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
-import { isPlanFullyLogged } from "@/lib/plan-status";
+import { isPlanFullyLogged, summaryLooksLeaked } from "@/lib/plan-status";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
