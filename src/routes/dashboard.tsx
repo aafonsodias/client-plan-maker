@@ -194,7 +194,7 @@ function Dashboard() {
               <Copy className="mr-1.5 h-4 w-4" /> Copiar link de avaliação · {quickIntakeClient.full_name.split(" ")[0]}
             </Button>
           )}
-          <Button asChild size="sm" variant="outline"><Link to="/plans/new" search={{}}><FileText className="mr-1.5 h-4 w-4" /> Novo plano</Link></Button>
+          <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> Ver planos</Link></Button>
           <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> Manual</Link></Button>
         </div>
       )}
