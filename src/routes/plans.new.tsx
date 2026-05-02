@@ -6,6 +6,7 @@ import { createPhasedPlan, synthesizeBrief } from "@/server/phased/stage1-brief.
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PaywallDialog } from "@/components/PaywallDialog";
 
 export const Route = createFileRoute("/plans/new")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -63,19 +64,19 @@ function NewPhasedPlan() {
         {status === "error" ? (
           quotaExceeded ? (
             <>
-              <h1 className="text-xl font-semibold text-foreground">You've used your free plan</h1>
+              <h1 className="text-xl font-semibold text-foreground">Atingiste o limite gratuito</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Free accounts can build one training plan. Subscribe to create more, keep logging,
-                and unlock progressions.
+                Contas gratuitas geram 1 plano. Subscreve para continuar a criar mais.
               </p>
               <div className="mt-6 flex justify-center gap-2">
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/dashboard">Back to dashboard</Link>
+                  <Link to="/dashboard">Voltar</Link>
                 </Button>
-                <Button asChild size="sm">
-                  <a href="mailto:hello@forge.app?subject=Forge%20Pro%20-%20notify%20me">Notify me when Pro launches</a>
+                <Button size="sm" onClick={() => setQuotaExceeded(true)}>
+                  Ver planos
                 </Button>
               </div>
+              <PaywallDialog open={quotaExceeded} onOpenChange={setQuotaExceeded} reason="quota" />
             </>
           ) : (
             <>
