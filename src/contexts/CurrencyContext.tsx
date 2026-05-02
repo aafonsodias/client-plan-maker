@@ -30,8 +30,17 @@ function readStored(): CurrencyCode | null {
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [code, setCodeState] = useState<CurrencyCode>(() => readStored() ?? detectDefault());
+  // SSR renders with EUR (no localStorage / navigator). To avoid React
+  // hydration mismatches, the FIRST client render MUST also use EUR; we
+  // only switch to the persisted/auto-detected currency in a useEffect
+  // after hydration. Same pattern as i18n (lng = "en" until hydrated).
+  const [code, setCodeState] = useState<CurrencyCode>("EUR");
   const [rates, setRates] = useState(() => getCachedRates());
+
+  useEffect(() => {
+    const next = readStored() ?? detectDefault();
+    if (next !== "EUR") setCodeState(next);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
