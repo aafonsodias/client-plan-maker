@@ -2727,6 +2727,12 @@ function AssessmentSection({
     try { window.localStorage.setItem(activeKey, activeId); } catch { /* ignore */ }
   }, [activeId, activeKey]);
 
+  // In focused mode, the active section is always open (never collapsed
+  // inside its own card — the toggle exists for "see all" mode only).
+  useEffect(() => {
+    if (focused) ctx.setOpen(activeId, true);
+  }, [focused, activeId, ctx]);
+
   // Map child SectionBlocks by their `id` prop so we can pick the active one.
   const childArray = Children.toArray(children);
   const sectionChildren = new Map<string, React.ReactNode>();
