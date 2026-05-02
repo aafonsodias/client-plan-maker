@@ -336,6 +336,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "offline";
 function ClientDetail() {
   const { clientId } = Route.useParams();
   const { t } = useTranslation("assessment");
+  const { t: tCommon } = useTranslation("common");
   const { user } = useAuth();
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
@@ -2157,12 +2158,12 @@ function ClientDetail() {
                       </div>
                     </div>
                     {(() => {
-                      const s = planStatusInfo(p as any, t as any);
+                      const s = planStatusInfo(p as any, tCommon as any);
                       return (
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
                         >
-                          {isPhasedDraft ? `${t("plans.stage_prefix", { defaultValue: "Stage" })}: ${s.label}` : s.label}
+                          {isPhasedDraft ? `Stage: ${s.label}` : s.label}
                         </span>
                       );
                     })()}
