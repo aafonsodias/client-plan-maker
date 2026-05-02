@@ -309,7 +309,7 @@ export const saveIntake = createServerFn({ method: "POST" })
         patch.date_of_birth = data.identity.date_of_birth || null;
       }
       if (Object.keys(patch).length > 0) {
-        await supabaseAdmin.from("clients").update(patch).eq("id", client.id);
+        await supabaseAdmin.from("clients").update(patch as any).eq("id", client.id);
       }
     }
 
