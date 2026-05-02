@@ -71,10 +71,7 @@ function PlanEditor() {
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<Mode>("view");
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  // Summary expanded by default for the plan page (per founder feedback).
-  // Local state still allows trainers to collapse it.
-  useEffect(() => { setSummaryOpen(true); }, [planId]);
+  const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
   // True when this plan was built by the phased generator and is now complete.
