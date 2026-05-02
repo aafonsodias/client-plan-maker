@@ -341,6 +341,23 @@ function PlanEditor() {
         </button>
         {summaryOpen && (
           <div className="border-t border-border px-3 pb-3 pt-2 animate-fade-in">
+            {client && (
+              <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+                {client.age != null && <span><b className="text-foreground">{client.age}</b> anos</span>}
+                {client.sex && <span className="capitalize">{client.sex}</span>}
+                {client.height_cm && <span><b className="text-foreground">{client.height_cm}</b> cm</span>}
+                {client.weight_kg && <span><b className="text-foreground">{client.weight_kg}</b> kg</span>}
+                {plan.brief?.training_age_band && (
+                  <span>Experiência: <b className="text-foreground">{plan.brief.training_age_band}</b></span>
+                )}
+                {plan.brief?.primary_goal && (
+                  <span>Objectivo: <b className="text-foreground">{plan.brief.primary_goal}</b></span>
+                )}
+                {Array.isArray(plan.brief?.red_flags) && plan.brief.red_flags.length > 0 && (
+                  <span className="text-amber-300">⚠ {plan.brief.red_flags.slice(0, 3).join(" · ")}</span>
+                )}
+              </div>
+            )}
             {mode === "edit" ? (
               <AutoTextarea
                 minRows={2}
@@ -356,6 +373,42 @@ function PlanEditor() {
           </div>
         )}
       </div>
+
+      {/* Demo recovery: if this is a demo client with a finalized plan and zero
+          logged sessions, offer one-click logbook seeding instead of forcing a
+          full demo recreation. */}
+      {plan?.generation_status === "complete"
+        && /\(demo\)$/i.test(client?.full_name ?? "")
+        && sessions.length === 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <div className="flex-1">
+            <p className="font-semibold text-foreground">Logbook vazio.</p>
+            <p className="mt-0.5 text-muted-foreground">
+              Este é um cliente demo mas o logbook não foi populado. Carrega para gerar 2 semanas de sessões realistas.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            disabled={seeding}
+            onClick={async () => {
+              setSeeding(true);
+              try {
+                const r: any = await seedFn({ data: { planId, weeksToSeed: 2 } });
+                if (r?.ok) {
+                  toast.success(`${r.inserted ?? 0} sessões adicionadas.`);
+                  await reloadSessions();
+                  setMode("results");
+                } else {
+                  toast.error(r?.error ?? "Falhou ao popular logbook.");
+                }
+              } finally { setSeeding(false); }
+            }}
+          >
+            {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            Preencher logbook agora
+          </Button>
+        </div>
+      )}
 
       {/* AI Validation Report — always visible to the trainer */}
       <ValidationReport generationMeta={plan.generation_meta} />
