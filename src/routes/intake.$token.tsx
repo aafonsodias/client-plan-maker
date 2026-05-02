@@ -695,11 +695,11 @@ type SlideshowProps = {
   lastSavedAt: number | null;
 };
 
-function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit, saveStatus, lastSavedAt }: SlideshowProps) {
+function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit, saveStatus, lastSavedAt }: SlideshowProps & { token?: string }) {
   const { t } = useTranslation("intake");
   const [step, setStep] = useState(0);
-
-  const steps = useMemo(() => buildSlides(t, form, setForm), [t, form, setForm]);
+  const { token } = Route.useParams();
+  const steps = useMemo(() => buildSlides(t, form, setForm, token), [t, form, setForm, token]);
   const total = steps.length;
   const current = steps[step];
   const isLast = step === total - 1;
