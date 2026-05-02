@@ -198,6 +198,14 @@ const saveSchema = z.object({
   // sections the client filled this save — used to mark provenance
   sections: z.array(z.enum(PROVENANCE_SECTIONS)).default([]),
   submit: z.boolean().default(false),
+  identity: z
+    .object({
+      full_name: z.string().trim().min(1).max(120).optional(),
+      email: z.string().trim().email().max(254).optional().or(z.literal("")),
+      phone: z.string().trim().max(40).optional().or(z.literal("")),
+      date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("")),
+    })
+    .optional(),
 });
 
 export const saveIntake = createServerFn({ method: "POST" })
@@ -284,6 +292,25 @@ export const saveIntake = createServerFn({ method: "POST" })
         .from("clients")
         .update({ intake_status: "submitted", intake_submitted_at: new Date().toISOString() })
         .eq("id", client.id);
+    }
+
+    // Apply identity patch (name / email / phone / dob) — only fields the
+    // client actually provided on this save. Empty strings clear optional
+    // fields; full_name is only overwritten if a non-empty value comes in
+    // (so we never blank a name the trainer pre-filled).
+    if (data.identity) {
+      const patch: Record<string, any> = {};
+      if (data.identity.full_name && data.identity.full_name.trim().length > 0) {
+        patch.full_name = data.identity.full_name.trim();
+      }
+      if (data.identity.email !== undefined) patch.email = data.identity.email || null;
+      if (data.identity.phone !== undefined) patch.phone = data.identity.phone || null;
+      if (data.identity.date_of_birth !== undefined) {
+        patch.date_of_birth = data.identity.date_of_birth || null;
+      }
+      if (Object.keys(patch).length > 0) {
+        await supabaseAdmin.from("clients").update(patch).eq("id", client.id);
+      }
     }
 
     return { ok: true, submitted: data.submit };
