@@ -62,6 +62,7 @@ function MicrocycleReview() {
   const approveFn = useServerFn(approveMicrocycle);
 
   const [planTitle, setPlanTitle] = useState("");
+  const [planStatus, setPlanStatus] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [days, setDays] = useState<DayRow[]>([]);
   const [day1Approved, setDay1Approved] = useState(false);
@@ -77,11 +78,12 @@ function MicrocycleReview() {
   async function loadPlan() {
     const { data } = await supabase
       .from("workout_plans")
-      .select("title, blueprint")
+      .select("title, blueprint, status")
       .eq("id", planId)
       .maybeSingle();
     if (!data) return;
     setPlanTitle((data as any).title ?? "");
+    setPlanStatus((data as any).status ?? null);
     const bp = BlueprintSchema.safeParse((data as any).blueprint);
     if (bp.success) setBlueprint(bp.data);
   }
