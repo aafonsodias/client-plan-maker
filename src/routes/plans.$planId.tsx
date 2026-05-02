@@ -517,7 +517,7 @@ function ViewMode({
         </div>
       </div>
       {layout === "table" ? (
-        <MesocycleTableView plan={plan} />
+        <MesocycleTableView plan={plan} planId={planId} editable={true} onUpdated={() => void reload()} />
       ) : (
         <div className="space-y-12">
       {plan.weeks.map((w, wi) => (

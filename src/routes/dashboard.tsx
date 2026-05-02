@@ -5,11 +5,17 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, FileText, Sparkles } from "lucide-react";
+import { Plus, Users, FileText, Sparkles, Trash2 } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { useMemo } from "react";
+import { planStatusInfo } from "@/lib/plan-status";
+import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/dashboard")({
   component: () => (
@@ -26,26 +32,46 @@ function Dashboard() {
   const [plans, setPlans] = useState<number>(0);
   const [clientIds, setClientIds] = useState<string[]>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
+  const [statusCounts, setStatusCounts] = useState<{ draft: number; ready: number; finalized: number }>({ draft: 0, ready: 0, finalized: 0 });
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [{ data: clientRows }, { count: p }, { data: r }] = await Promise.all([
+      const [{ data: clientRows }, { count: p }, { data: r }, { data: allPlans }] = await Promise.all([
         supabase.from("clients").select("id"),
         supabase.from("workout_plans").select("id", { count: "exact", head: true }),
         supabase
           .from("workout_plans")
-          .select("id, title, status, updated_at, client:clients(full_name)")
+          .select("id, title, status, updated_at, generation_state, generation_status, client:clients(full_name)")
           .order("updated_at", { ascending: false })
           .limit(5),
+        supabase
+          .from("workout_plans")
+          .select("status, generation_state, generation_status"),
       ]);
       const ids = (clientRows ?? []).map((c: any) => c.id);
       setClientIds(ids);
       setClients(ids.length);
       setPlans(p ?? 0);
       setRecent((r as any) ?? []);
+      const counts = { draft: 0, ready: 0, finalized: 0 };
+      for (const pl of (allPlans ?? []) as any[]) {
+        const k = planStatusInfo(pl).key;
+        if (k === "finalized") counts.finalized++;
+        else if (k === "ready") counts.ready++;
+        else counts.draft++;
+      }
+      setStatusCounts(counts);
     })();
   }, [user]);
+
+  const removePlan = async (id: string) => {
+    const { error } = await supabase.from("workout_plans").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRecent((r) => r.filter((p) => p.id !== id));
+    setPlans((n) => Math.max(0, n - 1));
+    toast.success("Plan deleted");
+  };
 
   const phases = useClientPhases(useMemo(() => clientIds, [clientIds]));
   const counts = useMemo(() => {
@@ -99,6 +125,10 @@ function Dashboard() {
         <StatCard icon={FileText} label={t("dashboard.stat_plans")} value={plans} to="/plans" />
       </div>
 
+      {(statusCounts.draft + statusCounts.ready + statusCounts.finalized) > 0 && (
+        <PlansStatusBar counts={statusCounts} />
+      )}
+
       <DropoffAlerts />
 
       <section>
@@ -115,24 +145,91 @@ function Dashboard() {
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {recent.map((p) => (
-              <Link
+              <div
                 key={p.id}
-                to="/plans/$planId"
-                params={{ planId: p.id }}
-                className="flex items-center justify-between border-b border-border px-5 py-4 last:border-b-0 hover:bg-secondary/50"
+                className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50"
               >
-                <div>
-                  <p className="font-semibold">{p.title}</p>
-                  <p className="text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
-                </div>
-                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium uppercase tracking-wider text-secondary-foreground">
-                  {p.status}
-                </span>
-              </Link>
+                <Link
+                  to="/plans/$planId"
+                  params={{ planId: p.id }}
+                  className="flex flex-1 items-center justify-between px-5 py-4"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{p.title}</p>
+                    <p className="truncate text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
+                  </div>
+                  {(() => {
+                    const s = planStatusInfo(p as any, t as any);
+                    return (
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
+                      >
+                        {s.label}
+                      </span>
+                    );
+                  })()}
+                </Link>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); }}
+                      className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+                      aria-label="Delete plan"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete "{p.title}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This permanently removes the plan and all logged sessions. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => void removePlan(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             ))}
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function PlansStatusBar({ counts }: { counts: { draft: number; ready: number; finalized: number } }) {
+  const total = counts.draft + counts.ready + counts.finalized;
+  if (total === 0) return null;
+  const segs = [
+    { key: "finalized", label: "Finalised", n: counts.finalized, cls: "bg-emerald-500" },
+    { key: "ready", label: "Ready", n: counts.ready, cls: "bg-emerald-400/60" },
+    { key: "draft", label: "Draft", n: counts.draft, cls: "bg-muted-foreground/40" },
+  ];
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-widest text-muted-foreground">
+        <span>Plans by status</span>
+        <span>{total} total</span>
+      </div>
+      <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
+        {segs.map((s) => s.n > 0 && (
+          <div key={s.key} className={s.cls} style={{ width: `${(s.n / total) * 100}%` }} title={`${s.label}: ${s.n}`} />
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+        {segs.map((s) => (
+          <span key={s.key} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-2 w-2 rounded-full ${s.cls}`} />
+            {s.label} <span className="text-foreground">{s.n}</span>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

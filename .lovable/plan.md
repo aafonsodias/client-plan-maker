@@ -1,88 +1,99 @@
-## Goal
+## What we're fixing
 
-Address the four concrete issues from the screenshots and finish the tier-system work that's already wired up but not yet visible to the trainer.
+Three workstreams plus the in-flight tier/PDF/log work:
 
-```text
-1. Table view  → no W2/W3/W4 progression visible + overflows on tight screens
-2. Log view    → cards too long; trainer wants a compact table for logging
-3. PDF         → too long, lots of empty space, weak hierarchy
-4. Tier system → classifier exists but no UI chip, no override, no validation visibility
-```
+1. **Dashboard polish** — recent-plan rows are missing the delete icon and the status pill is colourless (READY/DRAFT both grey).
+2. **Session view density** — vertical whitespace between Day header → Warmup → Activation → Main work and inside the Warmup list itself is too generous on a 700px viewport.
+3. **Mesocycle table — the real fixes** — make it copy-pasteable, inline-editable, surface RPE clearly, and (most importantly) **diagnose & fix why W2–W4 are identical to W1**.
 
----
-
-## 1. Mesocycle table — make progressions actually show
-
-**Root cause**: `MesocycleTableView` reads `plan.weeks`. For phased plans, weeks 2-4 only exist after Stage 5 bulkfill runs. When it does run, the rows are near-identical to W1 because the progression deltas (sets/reps/rest) get applied silently — the table currently shows the *resolved* numbers in every column, so the eye sees "3×8-10 · 3×8-10 · 3×8-10" and reads it as no progression.
-
-Fixes:
-- **Diff highlighting**: in `MesocycleTableView.tsx`, compare each week's cell to W1. If sets/reps/RPE/rest changed, render the changed token in `text-foreground` + a small ▲/▼ glyph; unchanged tokens stay muted. Makes progression visible at a glance even when the underlying numbers move only slightly.
-- **Show RPE explicitly** as its own column slice (`@RPE`) plus a `Δ` chip when intensity climbs week-over-week.
-- **Mark Week 4 deload reliably**: tag from `progression_plan.weeks[i].deload === true` (already in schema) instead of "max week number". Falls back to current heuristic if missing.
-- **Hide exercise descriptions toggle**: add a "Compact / Detailed" pill above the table. Compact = name only (no cue, no log row). Default = Compact, since the user asked for a sleeker view.
-- **Toggle the "log:" write-in row** off when in Compact mode — it's the main contributor to vertical bloat.
-- **Overflow fix** (screenshot 2): the sticky exercise column was set to `min-w-[720px]` which pushes off-screen on tight desktops. Switch to `min-w-full` + `table-fixed` with explicit column widths (exercise: 38%, weeks share remainder), and make exercise text `break-words` so multi-line wraps instead of clipping. Add `max-w-[18ch]` truncation on cue text only.
-- **Add a "Volume / Intensity" mini header strip** above the table: per-week totals (sets×reps summed, mean RPE), so trainers see W1→W4 trend at a glance.
-
-## 2. Log view — table format
-
-The trainer specifically said: cards in Log are too tall. Add a Log table mode.
-
-- Create `src/components/SessionLogTable.tsx`. One row per exercise of the selected day; columns = Set 1, Set 2, Set 3, Notes. Cells are inline `<input>` elements that update the same workout_session entries that the existing card form writes to.
-- Add `Cards | Table` toggle inside Log mode, mirroring the View-mode toggle. Persist preference to `localStorage` per user.
-- Show planned target (e.g. `8-10 @ RPE 5`) as muted placeholder text in each input so the trainer knows what to aim for without leaving the row.
-- Keep the date picker + history button at the top (reused from current SessionDayView).
-
-## 3. PDF redesign — compact + denser
-
-`src/lib/pdf.ts` currently renders one full page per session with large hero typography and only one table. Switch to a true booklet layout:
-
-- **Letter → A4 landscape** for the main work table; cover stays portrait. Landscape gives room for week columns side by side.
-- **Cover (1 page)**: keep KPIs + "Plan at a glance" — already good — but tighten vertical spacing (remove the 50pt KPI height → 36pt; drop top padding by 12pt) so a 4-week / 3-day plan fits cover + 4 session pages instead of 7+.
-- **Session pages → mesocycle table pages**: instead of one page per (week,day), output one **landscape page per archetype** (e.g. "Day 1 — Upper") with the full W1-W4 matrix. This collapses 12 pages into 3 for a typical 3-day plan.
-- **Remove**: the per-exercise rationale block (saves ~40% vertical space), the second pass of "intent" paragraphs, the empty cooldown spacing on short days.
-- **Add**: a footer legend — "▲ = volume up, ◆ = deload, RPE column = intensity target" so the dense table is readable.
-- **Print-safe colors**: drop the dark theme branch from PDF (always use light cream); dark PDFs waste ink and read poorly when printed.
-
-## 4. Tier system — make it visible + correctable
-
-Backend logic is wired (`programming-tier.server.ts` is called from Stage 2 + 3). Surface it:
-
-- **Tier chip** on `/plans/$planId/blueprint` and on the plan header in `/plans/$planId`. Use existing `status-tone.ts` palette: Remedial = info/blue, Conservative = warn/amber, Advanced = success/emerald.
-- **Tier explainer**: small accordion under the chip — shows the trigger ("3 red flags + sleep < 6h → conservative"), forbidden-exercise list, and target frequency band. Helps the trainer understand *why* the AI capped at 4 days.
-- **Override**: button "Force advanced" (or downgrade) that writes `tier_override` into `generation_meta`. Stage 2 + 3 already read `meta.tier`; add a 1-line check that prefers `tier_override` when present. Confirmation dialog warns about recovery capacity.
-- **Validation report**: when blueprint validation fails (sessions outside band, forbidden exercise leaked through), surface the error in the existing `ValidationReport` component instead of silently retrying. Trainer sees "AI tried 6×/wk for conservative tier — auto-corrected to 4×/wk".
-
-## 5. Status & i18n cleanup (carry-over)
-
-- Add tier strings to `pt/plan.json` + `en/plan.json` (`tier.remedial/conservative/advanced`, `tier.label`, `tier.override_confirm`, `tier.explainer.*`).
-- Microcycle progress strip: localize "A gerar microciclo" / "restantes" via `t()` (currently hard-coded PT — visible in screenshot 1 as PT-only on EN locale).
+Then continue: compact log table, landscape PDF redesign, finish localising the progress strip.
 
 ---
 
-## Files
+## 1. Dashboard recent-plans list
 
-**Edit**
-- `src/components/MesocycleTableView.tsx` — diff highlighting, deload from progression_plan, compact toggle, layout fix, volume/intensity header
-- `src/lib/pdf.ts` — landscape mesocycle pages, tighter cover, drop dark theme, remove rationale blocks
-- `src/routes/plans.$planId.tsx` — tier chip in header, Cards|Table toggle for Log mode, mount SessionLogTable
-- `src/routes/plans.$planId.blueprint.tsx` — tier chip + explainer + override button
-- `src/routes/plans.$planId.microcycle.tsx` — i18n the progress strip
-- `src/server/phased/stage2-blueprint.functions.ts` — read `tier_override` from generation_meta; surface validation failures in meta
-- `src/server/phased/stage3-microcycle.functions.ts` — same override read
-- `src/components/ValidationReport.tsx` — render tier-validation entries
-- `src/i18n/locales/{en,pt}/plan.json` — tier + progress strings
+`src/routes/dashboard.tsx` lines 116–133 render rows with only the plan title and a flat grey pill (`bg-secondary`).
 
-**Create**
-- `src/components/SessionLogTable.tsx` — compact per-day log table
-- `src/components/TierChip.tsx` — chip + popover explainer (reused in 2+ routes)
+- Replace the inline `<span>` with `planStatusInfo(p, t)` from `src/lib/plan-status.ts` — that helper already returns coloured chips (emerald for READY/finalized, neutral for draft, grey for in-progress stages). Same chip already used on the plan editor header.
+- Add a `Trash2` icon button on the right (mirrors `src/routes/plans.index.tsx:146`) wired through an `AlertDialog` (don't use `window.confirm`). Place chip + delete in a flex row so the row layout is `title/client | chip | delete`.
+- Card click still navigates to the plan; the delete button must `e.stopPropagation()` and `e.preventDefault()` so it doesn't bubble to the `<Link>`.
 
-No DB migrations — `tier` and `tier_override` live in `generation_meta` JSONB which already exists.
+**"Add a chart/data?"** — keep it lean; the dashboard already has DropoffAlerts and stat cards. Proposing **one** small addition only: a *Plans by status* mini bar (Draft / Ready / Finalised) computed from the same recent fetch, rendered as three thin coloured bars under the stat cards. No new dependency. Skip if you'd rather defer.
 
-## Out of scope (call out so we don't drift)
+## 2. Session/Day view spacing trim
 
-- Dropping concurrency further or moving Stage 3 to a queue — current 5-wide concurrency + per-day progress is enough; revisit if real plans still take > 3 min after this batch.
-- Reworking the SMART goals templates — already shipped last turn.
-- Cloud / Stripe / auth changes — none.
+`src/components/SessionDayView.tsx` — current rhythm:
 
-Reply **approve** to start, or tell me which sections to skip / reorder.
+- `header` `pb-3` then divider, then `mt-3` rationale → fine.
+- `WARMUP/ACTIVATION/DYNAMIC` cluster: `mt-6 space-y-6` (96 + 96 px gaps).
+- `Main work`: `mt-10` (40 px).
+- Inside `PrepSection`: header → `ul mt-3` and `gap-2` items.
+
+Tighten to:
+- Cluster wrapper: `mt-4 space-y-3` (was `mt-6 space-y-6`).
+- `MainSectionHeader` spacing: `mt-6` (was `mt-10`) and inner `mt-2` (was `mt-3`).
+- `PrepSection` list: `mt-2 gap-1.5` (was `mt-3 gap-2`); reduce item `py-2` → `py-1.5`.
+- `Cooldown` and `Optional finisher` blocks: `mt-6` (was `mt-10`).
+
+Net effect: ~24–32 px shaved per section without crowding the heavy main-work block.
+
+## 3. Mesocycle table — the meat
+
+### 3a. Why W2–W4 look identical (root cause)
+
+`src/server/phased/stage5-bulkfill.functions.ts` *does* apply progression deltas (load/reps/sets/rpe) when copying W1 sessions into W2…N. So if the table cells are identical across weeks for an existing plan, one of these is true:
+
+1. The plan was finalised **before** Stage 4 (Progressions) ran or with an empty `progression_plan.rows` → bulkfill copied W1 verbatim.
+2. The progression plan only changed `load`/`tempo` (which we don't show in the table — we only render `sets/reps/rpe/rest`).
+
+**Fixes:**
+- In `MesocycleTableView`, also display the `notes`/load delta when present (cell shows `3×8 @7 · +2.5kg` if the exercise's `notes` carries the load tag from `applyDelta`). Render load as a small chip.
+- Add an empty-state banner above the table when every W2+ cell equals W1: *"No progression deltas were applied to this plan. [Re-run progressions]"* button → links to `/plans/$planId/progressions`. This makes the silent failure visible.
+- Always render the RPE column even when blank — show a dim `@—` so the trainer sees the gap and can fill it in (today missing RPE is invisible).
+
+### 3b. Make the table copy-pasteable
+
+- Wrap the `<table>` so it's selectable as plain text (already is via browser select-all on the table). Add a small "Copy as TSV" button next to the Compact toggle that builds a tab-separated string `Day\tExercise\tW1\tW2\tW3\tW4` and writes to `navigator.clipboard.writeText`. Pasting into Sheets/Excel will land cleanly in cells.
+- Also offer "Copy as Markdown" (pipe table) for trainers who paste into Notion/WhatsApp.
+
+### 3c. Inline editing
+
+Make every cell editable:
+- Click the cell → it swaps to a tiny inline editor with three fields (sets, reps, rpe) and a rest input below; pressing Enter or blurring saves. Use the existing pattern from `DayCardEditable`.
+- Persistence: call a new server fn `updateExerciseInWeek({ planId, weekNumber, dayLabel, exerciseIndex, patch })` that updates the matching row in `workout_plan_days.content.exercises[i]`. Keep it RLS-scoped.
+- Add a thin "side panel" (Sheet) toggle: when open, the selected exercise shows full editable fields (tempo, notes, technique cues) — this gives the trainer the "instructions on the side" pattern they asked about.
+- Dirty state: cells touched in the current session get a faint amber dot until saved.
+
+### 3d. Other audit findings I noticed
+
+- `dayGroups` matches W2+ exercises by `name`. If Stage 5 ever swapped a `complexity_variant` (e.g. "Goblet squat → Front squat W3"), the cell would show `—`. Fall back to index match (already done) but also surface a "(swapped)" tag when the resolved exercise's name differs from baseline.
+- `weekTotals` reps math treats AMRAP as 0 → totals look artificially low for any AMRAP-heavy day. Treat AMRAP as 8 reps for estimation and show a `~` prefix (already prefixed, good — just fix the count).
+- Deload heuristic is currently "last week of 3+". Pull the real `progression_plan.deload_week` if present in `blueprint.progression_model_proposal`; fall back to the heuristic.
+
+## 4. Continuing the previously approved scope
+
+Still owed from last turn:
+
+- **`SessionLogTable`** — matrix view for the Log tab (one row per exercise, columns = sets done, reps done, RPE done, with quick-toggle done/partial/missed at the row level). Replace card view in Log mode (keep cards behind the Detailed toggle).
+- **PDF rewrite** — `src/lib/pdf.ts` to landscape A4 with one mesocycle matrix per archetype + a single summary page; remove the per-session double pages.
+- **i18n** — finish localising the progress strip strings in `src/routes/plans.$planId.microcycle.tsx` (currently has hard-coded PT) and add EN copies in `src/i18n/locales/en/plan.json`.
+
+---
+
+## Technical surface (file-level)
+
+- `src/routes/dashboard.tsx` — chip via `planStatusInfo`, add delete `AlertDialog`, optional status mini-bar.
+- `src/components/SessionDayView.tsx` — spacing tokens (`mt-*`, `space-y-*`, `gap-*`, `py-*`) only.
+- `src/components/MesocycleTableView.tsx` — empty-deltas banner, always-show RPE column, load chip, "Copy TSV/MD" buttons, cell click → inline editor, side panel; AMRAP fix; swap tag.
+- `src/server/phased/stage5-bulkfill.functions.ts` — no logic change; just a server fn `updateExerciseInWeek` added to `src/server/phased/microcycle-edit.functions.ts` (new file) so we don't bloat existing files.
+- `src/components/SessionLogTable.tsx` — new.
+- `src/lib/pdf.ts` — landscape rewrite, separate commit.
+- `src/i18n/locales/{en,pt}/plan.json` — progress strip keys.
+
+## Out of scope this round
+
+- Tier override UI is already shipped; no further changes.
+- Stage 2/3 prompt tweaks — leave alone unless the empty-deltas banner shows up on every plan, in which case we revisit Stage 4.
+- Charts in dashboard beyond the optional mini-bar.
+
+Reply **approve** to ship; or tell me which sections to drop (e.g. "skip the side panel, just inline cells" or "skip the dashboard mini-bar").
