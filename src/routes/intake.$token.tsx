@@ -25,6 +25,11 @@ const PARQ_KEYS = ["q1","q2","q3","q4","q5","q6","q7"] as const;
 const MED_FLAG_IDS = ["beta_blockers", "bp_meds", "diabetes", "anticoagulants", "anti_inflammatories", "other"] as const;
 
 type FormState = {
+  // Identity (cliente preenche aqui — substitui o placeholder do PT)
+  client_full_name: string;
+  client_email: string;
+  client_phone: string;
+  client_dob: string;
   smart_specific: string;
   smart_measurable: string;
   smart_deadline: string;
@@ -57,6 +62,7 @@ type FormState = {
 };
 
 const EMPTY: FormState = {
+  client_full_name: "", client_email: "", client_phone: "", client_dob: "",
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
