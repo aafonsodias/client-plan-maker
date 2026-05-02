@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, BookOpen, Bookmark } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -181,6 +182,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
           {/* Desktop right side (≥ md) */}
           <div className="hidden items-center gap-1 md:flex">
+            <ShareAppButton />
             {secondaryNav.map((n) => (
               <Button
                 key={n.to}
