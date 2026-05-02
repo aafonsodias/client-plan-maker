@@ -22,7 +22,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft } from "@/server/plan.functions";
+import { generatePlanDraft, regeneratePlanSummary } from "@/server/plan.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
@@ -34,6 +34,9 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
+import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
+import { isPlanFullyLogged } from "@/lib/plan-status";
+import { summaryLooksLeaked } from "@/server/phased/summary.server";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
