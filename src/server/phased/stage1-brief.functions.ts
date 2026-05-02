@@ -11,6 +11,7 @@ import {
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { checkPlanQuota } from "@/server/quota.server";
+import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
 
 const BRIEF_TOOL_SCHEMA = {
   type: "object",
@@ -81,6 +82,60 @@ function clearDownstream(stage: GenerationStage) {
   if (downstream.includes("blueprint")) out.blueprint = null;
   if (downstream.includes("progressions")) out.progression_plan = null;
   return out;
+}
+
+/**
+ * The Stage-1 Haiku call sometimes emits literal "<UNKNOWN>" placeholders
+ * for the per-pattern movement summary when its inputs are sparse (e.g.
+ * Pre-Stage 0 hasn't run for the assessment yet). Replace any empty /
+ * placeholder string with a deterministic sentence built from the raw
+ * `*_form_criteria` + `*_capacity` columns so trainers always see real
+ * Portuguese text in the brief rail.
+ */
+const PLACEHOLDER_RE = /^\s*(<?\s*unknown\s*>?|—|-|n\/?a|null|undefined)\s*$/i;
+
+export function sanitizeMovementCompetencySummary(
+  brief: any,
+  assessmentRow: Record<string, any> | null | undefined,
+): any {
+  if (!brief || typeof brief !== "object") return brief;
+  const summary = { ...(brief.movement_competency_summary ?? {}) };
+  const notAssessed = (assessmentRow?.screen_not_assessed ?? {}) as Record<string, boolean>;
+  for (const p of PATTERN_IDS) {
+    const cur = summary[p];
+    const isPlaceholder = !cur || (typeof cur === "string" && PLACEHOLDER_RE.test(cur));
+    if (!isPlaceholder) continue;
+    if (assessmentRow) {
+      summary[p] = buildPatternSentence(
+        p,
+        assessmentRow[`${p}_form_criteria`],
+        assessmentRow[`${p}_capacity`],
+        Boolean(notAssessed[p]),
+      );
+    } else {
+      summary[p] = `${p} sem dados registados.`;
+    }
+  }
+  return { ...brief, movement_competency_summary: summary };
+}
+
+/**
+ * Loads the relevant assessment columns needed for the movement-summary
+ * fallback. Single round-trip; safe to call from any stage-1 path.
+ */
+async function loadAssessmentForFallback(
+  supabase: any,
+  assessmentId: string | null | undefined,
+): Promise<Record<string, any> | null> {
+  if (!assessmentId) return null;
+  const { data } = await supabase
+    .from("assessments")
+    .select(
+      "squat_form_criteria, hinge_form_criteria, push_form_criteria, pull_form_criteria, carry_form_criteria, lunge_form_criteria, squat_capacity, hinge_capacity, push_capacity, pull_capacity, carry_capacity, lunge_capacity, screen_not_assessed",
+    )
+    .eq("id", assessmentId)
+    .maybeSingle();
+  return data ?? null;
 }
 
 /**
@@ -172,17 +227,20 @@ Output ONLY by calling the record_brief tool.`;
       last_updated_at: new Date().toISOString(),
     });
 
+    const fallbackRow = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
+    const sanitizedBrief = sanitizeMovementCompetencySummary(result.data, fallbackRow);
+
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: result.data as any,
+        brief: sanitizedBrief as any,
         generation_state: newState as any,
         ...clearDownstream("brief"),
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
 
-    return { ok: true as const, brief: result.data };
+    return { ok: true as const, brief: sanitizedBrief };
   });
 
 /**
@@ -504,10 +562,13 @@ Output ONLY by calling the record_brief tool.`;
       last_updated_at: new Date().toISOString(),
     });
 
+    const fallbackRow2 = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
+    const sanitizedBrief2 = sanitizeMovementCompetencySummary(result.data, fallbackRow2);
+
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: result.data as any,
+        brief: sanitizedBrief2 as any,
         generation_state: newState as any,
         blueprint: null,
         progression_plan: null,

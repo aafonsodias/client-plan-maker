@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { FORM_CRITERIA, CAPACITY_FIELDS, PATTERN_IDS, type PatternId } from "@/lib/movement-criteria";
+import { FORM_CRITERIA, CAPACITY_FIELDS, PATTERN_IDS, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
+import { pickDemoAvatar } from "@/lib/demo-avatars";
 
 /**
  * Creates a fully-populated demo client + assessment so trainers can preview
@@ -645,6 +646,13 @@ export const createDemoClient = createServerFn({ method: "POST" })
     const sleepQuality = randInt(persona.sleep);
     const stressLevel = randInt(persona.stress);
 
+    // Deterministic portrait → makes demo lists feel like real humans.
+    const photoUrl = pickDemoAvatar({
+      sex: persona.sex,
+      archetype: persona.archetype_label,
+      fullName,
+    });
+
     // 1) Create the client row
     const { data: client, error: clientErr } = await supabaseAdmin
       .from("clients")
@@ -658,6 +666,7 @@ export const createDemoClient = createServerFn({ method: "POST" })
         weight_kg: weightKg,
         notes: persona.notes,
         intake_status: "reviewed",
+        photo_url: photoUrl,
       })
       .select("id")
       .single();
@@ -697,6 +706,14 @@ export const createDemoClient = createServerFn({ method: "POST" })
       }
     }
 
+    // Back-fill the legacy 1–5 score columns so the radar + PDF + Stage-1
+    // prompts that still read squat_depth_score / hip_hinge_score / etc.
+    // get coherent numbers instead of nulls.
+    const squatScore = derivePatternScore("squat", formCriteriaCols.squat_form_criteria, capacityCols.squat_capacity);
+    const hingeScore = derivePatternScore("hinge", formCriteriaCols.hinge_form_criteria, capacityCols.hinge_capacity);
+    const pushScore = derivePatternScore("push", formCriteriaCols.push_form_criteria, capacityCols.push_capacity);
+    const lungeScore = derivePatternScore("lunge", formCriteriaCols.lunge_form_criteria, capacityCols.lunge_capacity);
+
     const assessment = {
       trainer_id: userId,
       client_id: client.id,
@@ -733,6 +750,11 @@ export const createDemoClient = createServerFn({ method: "POST" })
       ...formCriteriaCols,
       ...capacityCols,
       screen_not_assessed: screenNotAssessed,
+      // Legacy 1–5 scores (kept for radar / PDF readers)
+      squat_depth_score: squatScore,
+      hip_hinge_score: hingeScore,
+      overhead_reach_score: pushScore,
+      single_leg_balance_score: lungeScore,
       // Anthropometry
       waist_cm: persona.sex === "female" ? randFloat([68, 82]) : randFloat([82, 96]),
       hip_cm: persona.sex === "female" ? randFloat([92, 104]) : randFloat([95, 105]),

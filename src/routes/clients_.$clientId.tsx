@@ -50,7 +50,7 @@ import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 import MovementPatternCard from "@/components/MovementPatternCard";
-import { PATTERN_IDS, formScore, type PatternId } from "@/lib/movement-criteria";
+import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
 import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 
@@ -3171,12 +3171,12 @@ function MovementCompetencyRadar({
   // push → overhead reach is the closest proxy until pull/carry land in item 11.
   const lungeNote = sectionAnalyses?.["screen"]?.movement_competency_summary?.lunge ?? "";
   const axes: Array<{ label: string; score: number | null }> = [
-    { label: "Squat", score: numScore(assessment?.squat_depth_score) },
-    { label: "Hinge", score: numScore(assessment?.hip_hinge_score) },
-    { label: "Push", score: numScore(assessment?.overhead_reach_score) },
-    { label: "Pull", score: numScore(assessment?.pull_pattern_score) },
-    { label: "Carry", score: numScore(assessment?.carry_pattern_score) },
-    { label: "Lunge", score: numScore(assessment?.single_leg_balance_score) || (lungeNote ? 3 : null) },
+    { label: "Squat", score: numScore(assessment?.squat_depth_score) ?? derivePatternScore("squat", assessment?.squat_form_criteria, assessment?.squat_capacity) },
+    { label: "Hinge", score: numScore(assessment?.hip_hinge_score) ?? derivePatternScore("hinge", assessment?.hinge_form_criteria, assessment?.hinge_capacity) },
+    { label: "Push", score: numScore(assessment?.overhead_reach_score) ?? derivePatternScore("push", assessment?.push_form_criteria, assessment?.push_capacity) },
+    { label: "Pull", score: numScore(assessment?.pull_pattern_score) ?? derivePatternScore("pull", assessment?.pull_form_criteria, assessment?.pull_capacity) },
+    { label: "Carry", score: numScore(assessment?.carry_pattern_score) ?? derivePatternScore("carry", assessment?.carry_form_criteria, assessment?.carry_capacity) },
+    { label: "Lunge", score: numScore(assessment?.single_leg_balance_score) ?? derivePatternScore("lunge", assessment?.lunge_form_criteria, assessment?.lunge_capacity) ?? (lungeNote ? 3 : null) },
   ];
 
   const SIZE = 220;
