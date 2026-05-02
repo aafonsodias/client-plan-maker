@@ -151,6 +151,11 @@ function Landing() {
                 <a href="#how-it-works">{t("plan:landing.hero.cta_secondary")}</a>
               </Button>
             </div>
+            {!signedIn && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Conta grátis · 1 cliente · 1 plano completo · sem cartão.
+              </p>
+            )}
           </div>
           <div className="flex min-w-0 flex-col items-center">
             <div className="relative origin-top scale-[0.95]">
