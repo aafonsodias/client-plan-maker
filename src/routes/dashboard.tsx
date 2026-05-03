@@ -342,18 +342,19 @@ function Dashboard() {
 }
 
 function PlansStatusBar({ counts }: { counts: { draft: number; ready: number; finalized: number } }) {
+  const { t } = useTranslation("common");
   const total = counts.draft + counts.ready + counts.finalized;
   if (total === 0) return null;
   const segs = [
-    { key: "finalized", label: "Finalised", n: counts.finalized, cls: "bg-emerald-500" },
-    { key: "ready", label: "Ready", n: counts.ready, cls: "bg-emerald-400/60" },
-    { key: "draft", label: "Draft", n: counts.draft, cls: "bg-muted-foreground/40" },
+    { key: "finalized", label: t("dashboard.plan_status_finalized"), n: counts.finalized, cls: "bg-emerald-500" },
+    { key: "ready", label: t("dashboard.plan_status_ready"), n: counts.ready, cls: "bg-emerald-400/60" },
+    { key: "draft", label: t("dashboard.plan_status_draft"), n: counts.draft, cls: "bg-muted-foreground/40" },
   ];
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-2 flex items-center justify-between text-[11px] uppercase tracking-widest text-muted-foreground">
-        <span>Plans by status</span>
-        <span>{total} total</span>
+        <span>{t("dashboard.plans_by_status")}</span>
+        <span>{t("dashboard.plans_total", { n: total })}</span>
       </div>
       <div className="flex h-2 overflow-hidden rounded-full bg-secondary">
         {segs.map((s) => s.n > 0 && (
@@ -389,6 +390,7 @@ function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<
 }
 
 function EvolutionChip({ evo }: { evo?: { hasPrior: boolean; deltaPct: number | null; verdict: "gain" | "flat" | "regression" | "unknown" } }) {
+  const { t } = useTranslation("common");
   if (!evo || !evo.hasPrior) return null;
   const v = evo.verdict;
   const Icon = v === "gain" ? TrendingUp : v === "regression" ? TrendingDown : Minus;
@@ -403,7 +405,7 @@ function EvolutionChip({ evo }: { evo?: { hasPrior: boolean; deltaPct: number | 
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums ${cls}`}
-      title={`Evolução vs bloco anterior · ${label}`}
+      title={t("dashboard.evo_title", { label })}
     >
       <Icon className="h-3 w-3" /> {label}
     </span>
