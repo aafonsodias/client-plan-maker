@@ -4,8 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runInstantPipelineForUser } from "@/server/demo-oneshot.server";
 
-export { runInstantPipelineForUser };
-
 /**
  * startDemoClientFull — fire-and-poll INSTANT mode.
  *
