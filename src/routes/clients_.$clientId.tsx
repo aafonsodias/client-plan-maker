@@ -2864,7 +2864,7 @@ function AssessmentSection({
             <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
               {sectionChildren.get(activeId) ?? (
                 <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
-                  Secção indisponível.
+                  {t("detail.section.unavailable")}
                 </div>
               )}
             </div>
@@ -2875,7 +2875,7 @@ function AssessmentSection({
                 onClick={goPrev}
                 disabled={activeIdx === 0}
               >
-                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Anterior
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> {t("detail.section.prev")}
               </Button>
               <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                 {activeIdx + 1} / {sectionIds.length}
@@ -2886,7 +2886,7 @@ function AssessmentSection({
                 onClick={goNext}
                 disabled={activeIdx === sectionIds.length - 1}
               >
-                Próxima <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                {t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
             {extras.length > 0 && <div className="space-y-3">{extras}</div>}
