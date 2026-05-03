@@ -2519,7 +2519,7 @@ type CollapseCtx = {
 };
 const SectionCollapseContext = createContext<CollapseCtx | null>(null);
 
-function deriveRecoveryProfile(a: any): { label: string; caption: string } | null {
+function deriveRecoveryProfile(a: any, t: (k: string, opts?: any) => string): { label: string; caption: string } | null {
   const sleep = a?.sleep_quality ? Number(a.sleep_quality) : null;
   const stress = a?.stress_level ? Number(a.stress_level) : null;
   const cap = (a?.recovery_capacity ?? "").toString().toLowerCase();
@@ -2532,10 +2532,10 @@ function deriveRecoveryProfile(a: any): { label: string; caption: string } | nul
   else if (cap.includes("low") || cap.includes("baixa")) { score += 3; n++; }
   else if (cap) { score += 5; n++; }
   const avg = n ? score / n : 0;
-  const label = avg >= 7 ? "Alta" : avg >= 5 ? "Moderada" : "Baixa";
+  const label = avg >= 7 ? t("detail.recovery.high") : avg >= 5 ? t("detail.recovery.moderate") : t("detail.recovery.low");
   const parts: string[] = [];
-  if (sleep != null) parts.push(`sono ${sleep}/10`);
-  if (stress != null) parts.push(`stress ${stress}/10`);
+  if (sleep != null) parts.push(t("detail.recovery.sleep_part", { n: sleep }));
+  if (stress != null) parts.push(t("detail.recovery.stress_part", { n: stress }));
   return { label, caption: parts.join(" · ") || "—" };
 }
 
