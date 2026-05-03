@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 8 (3 Mai 2026)
+Atualizado: Round 9 (3 Mai 2026)
 
 | # | P | Área | Item | Estado |
 |---|---|---|---|---|
@@ -23,11 +23,13 @@ Atualizado: Round 8 (3 Mai 2026)
 | 10 | P0 | Motor | Pós-validação rotação: retry 1× se <40% + rotation_audit em generation_meta | ✅ Round 8 |
 | 12 | P2 | Demo | Passo "step_capacity" no tour ancorado em CapacityGainCard | ✅ Round 8 |
 | 13 | P1 | Logbook | Confetti + toast 1×/sessão ao detectar PR e1RM | ✅ Round 8 |
-| 14 | P1 | Plan page | "Próximo bloco" sugerido com CTA arquivar+gerar | 🔜 Round 9 |
+| 14 | P1 | Plan page | NextBlockCard (deload/normal/push por adesão+RPE) com CTA Iniciar Bloco N+1 | ✅ Round 9 |
+| 17 | P2 | Motor | Chip "Rotação N%" no header do plano (rotation_audit.finalPct) | ✅ Round 9 |
 | 11 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 9 |
 | 15 | P1 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 9 |
 | 16 | P1 | Dashboard | Sparkline e1RM (top lift) ao lado do chip Δ% para contar a história em 1 linha | 🔜 Round 9 |
-| 17 | P2 | Motor | Surfacing rotation_audit no header do plano (chip "Rotação 72%") + tooltip | 🔜 Round 9 |
+| 18 | P2 | Plan page | Tooltip do chip Rotação mostra exercícios banidos + dias regenerados | 🔜 Round 10 |
+| 19 | P1 | Motor | Variação principal-lift opcional após 3 blocos (anti-stale) | 🔜 Round 10 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
