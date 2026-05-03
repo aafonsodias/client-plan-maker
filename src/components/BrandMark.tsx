@@ -10,9 +10,9 @@ import logoUrl from "@/assets/forge-logo.png";
 type Size = "sm" | "md" | "lg";
 
 const sizeMap: Record<Size, { wrap: string; logo: string }> = {
-  sm: { wrap: "h-9 w-9", logo: "h-8 w-8" },
-  md: { wrap: "h-12 w-12", logo: "h-11 w-11" },
-  lg: { wrap: "h-16 w-16", logo: "h-14 w-14" },
+  sm: { wrap: "h-10 w-10", logo: "h-9 w-9" },
+  md: { wrap: "h-14 w-14", logo: "h-13 w-13" },
+  lg: { wrap: "h-24 w-24", logo: "h-22 w-22" },
 };
 
 // Cached so we only sample the logo image once per session.
