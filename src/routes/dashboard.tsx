@@ -381,3 +381,25 @@ function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<
     </Link>
   );
 }
+
+function EvolutionChip({ evo }: { evo?: { hasPrior: boolean; deltaPct: number | null; verdict: "gain" | "flat" | "regression" | "unknown" } }) {
+  if (!evo || !evo.hasPrior) return null;
+  const v = evo.verdict;
+  const Icon = v === "gain" ? TrendingUp : v === "regression" ? TrendingDown : Minus;
+  const cls = v === "gain"
+    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+    : v === "regression"
+    ? "bg-red-500/15 text-red-300 border-red-500/30"
+    : v === "flat"
+    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+    : "bg-muted/30 text-muted-foreground border-border";
+  const label = evo.deltaPct == null ? "—" : `${evo.deltaPct > 0 ? "+" : ""}${evo.deltaPct}%`;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums ${cls}`}
+      title={`Evolução vs bloco anterior · ${label}`}
+    >
+      <Icon className="h-3 w-3" /> {label}
+    </span>
+  );
+}
