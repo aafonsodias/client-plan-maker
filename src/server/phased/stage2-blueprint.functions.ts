@@ -165,7 +165,7 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
-    const model = resolveModel("FORGE_MODEL_STAGE_2", "claude-haiku-4-5-20251001");
+    const model = resolveModel("FORGE_MODEL_STAGE_2", "openai/gpt-5-mini");
 
     // Up to 2 attempts: first run, then a stricter retry if the shape fails
     // the tier validator.
