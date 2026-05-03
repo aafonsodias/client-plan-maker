@@ -117,7 +117,10 @@ export function DemoClientBanner() {
     void navigate({ to: "/clients/$clientId", params: { clientId: demoClient.id } });
   };
   const startTour = () => {
-    if (!demoClient) return;
+    if (!demoClient) {
+      toast.info(t("demo.preparing_title"));
+      return;
+    }
     tour.start({ clientId: demoClient.id, planId: demoClient.planId });
   };
 
