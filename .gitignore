@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Reference PDFs (IP-protected, server-side only, never committed)
+/mnt/documents/acsm-12e.pdf
+/mnt/documents/bompa-buzzichelli-6e.pdf
