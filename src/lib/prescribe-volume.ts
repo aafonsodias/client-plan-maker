@@ -23,6 +23,7 @@ import {
   type MuscleGroup,
   type VolumeLandmark,
 } from "./volume-landmarks";
+import type { BlockSummary, MuscleVerdict } from "./block-feedback";
 
 export type PrescriptionRow = {
   muscle: MuscleGroup;
@@ -47,27 +48,41 @@ function targetForWeek(
   week: number,
   totalWeeks: number,
   isDeload: boolean,
+  verdict: MuscleVerdict = "on_target",
 ): { target: number; min: number; max: number } {
   if (isDeload) {
     const t = Math.max(0, Math.round(lm.mev * 0.6));
     return { target: t, min: Math.max(0, t - 1), max: t + 1 };
   }
-  // 0 → MEV, 1 → MRV, with MAV at ~2/3 of the way
+  // 0 → start, 1 → ceiling, with MAV at the inflection (~2/3 by default).
+  // Verdict from prior block shifts both endpoints and inflection so
+  // sub-recovered muscles re-enter at MEV with shorter accumulation, and
+  // under-loaded muscles start above MEV and reach MRV faster.
   const accumWeeks = Math.max(1, totalWeeks - 1); // last week is deload
   const phase = (week - 1) / accumWeeks; // 0..1 across the accumulation
+  let startLandmark = lm.mev;
+  let ceilingLandmark = lm.mrv;
+  let inflection = 0.66;
+  if (verdict === "under_recovered") {
+    startLandmark = lm.mev;
+    ceilingLandmark = lm.mav; // never push past MAV in a recovery block
+    inflection = 0.85; // most of the block sits between MEV and MAV
+  } else if (verdict === "under_loaded") {
+    startLandmark = Math.min(lm.mav, lm.mev + 2);
+    ceilingLandmark = lm.mrv;
+    inflection = 0.5; // hit MAV by mid-block, then push to MRV
+  }
   let target: number;
-  if (phase <= 0.66) {
-    // MEV → MAV across the first 2/3 of the block
-    target = lerp(lm.mev, lm.mav, phase / 0.66);
+  if (phase <= inflection) {
+    target = lerp(startLandmark, lm.mav, phase / inflection);
   } else {
-    // MAV → MRV during the intensification third
-    target = lerp(lm.mav, lm.mrv, (phase - 0.66) / 0.34);
+    target = lerp(lm.mav, ceilingLandmark, (phase - inflection) / Math.max(0.01, 1 - inflection));
   }
   const rounded = Math.round(target);
   return {
     target: rounded,
     min: Math.max(lm.mev, rounded - 2),
-    max: Math.min(lm.mrv, rounded + 2),
+    max: Math.min(ceilingLandmark, rounded + 2),
   };
 }
 
@@ -76,15 +91,26 @@ function targetForWeek(
  * `blockNumber` is reserved for future progressive-overload bumps across
  * mesocycles (block 2 nudges MAV by +1, etc.) — currently a no-op.
  */
+type PrescribeOpts = {
+  isDeload?: boolean;
+  blockNumber?: number;
+  priorSummary?: BlockSummary | null;
+};
+
+function verdictFor(opts: PrescribeOpts, muscle: MuscleGroup): MuscleVerdict {
+  const row = opts.priorSummary?.perMuscle.find((p) => p.muscle === muscle);
+  return row?.verdict ?? "on_target";
+}
+
 export function prescribeWeek(
   week: number,
   totalWeeks: number,
-  opts: { isDeload?: boolean; blockNumber?: number } = {},
+  opts: PrescribeOpts = {},
 ): WeekPrescription {
   const isDeload = opts.isDeload ?? week === totalWeeks;
   const rows: PrescriptionRow[] = MUSCLE_GROUP_ORDER.map((muscle) => {
     const lm = VOLUME_LANDMARKS[muscle];
-    const t = targetForWeek(lm, week, totalWeeks, isDeload);
+    const t = targetForWeek(lm, week, totalWeeks, isDeload, verdictFor(opts, muscle));
     return { muscle, ...t, landmark: lm };
   });
   return { week, isDeload, rows };
@@ -92,10 +118,10 @@ export function prescribeWeek(
 
 export function prescribeMesocycle(
   totalWeeks: number,
-  opts: { blockNumber?: number } = {},
+  opts: PrescribeOpts = {},
 ): WeekPrescription[] {
   return Array.from({ length: totalWeeks }, (_, i) =>
-    prescribeWeek(i + 1, totalWeeks, { blockNumber: opts.blockNumber }),
+    prescribeWeek(i + 1, totalWeeks, opts),
   );
 }
 
@@ -105,13 +131,19 @@ export function prescribeMesocycle(
  */
 export function prescriptionPromptBlock(
   totalWeeks: number,
-  opts: { blockNumber?: number } = {},
+  opts: PrescribeOpts = {},
 ): string {
   const meso = prescribeMesocycle(totalWeeks, opts);
   const header =
     "VOLUME PRESCRIPTION (weekly sets per muscle — HARD CONSTRAINT, not a suggestion)";
   const legend =
     "Format: muscle: w1=target(min..max) w2=... · deload weeks marked [D]";
+  const adaptationNote = opts.priorSummary
+    ? `\nADAPTATION CONTEXT: prior block adherence ${opts.priorSummary.adherencePct}%. Per-muscle verdicts: ${opts.priorSummary.perMuscle
+        .filter((p) => p.verdict !== "on_target")
+        .map((p) => `${p.muscle}=${p.verdict}`)
+        .join(", ") || "all on target"}.`
+    : "";
   const lines = MUSCLE_GROUP_ORDER.map((m) => {
     const cells = meso.map((w) => {
       const row = w.rows.find((r) => r.muscle === m)!;
@@ -120,5 +152,5 @@ export function prescriptionPromptBlock(
     }).join(" ");
     return `- ${m.padEnd(10)} ${cells}`;
   }).join("\n");
-  return `${header}\n${legend}\n${lines}\nIf an exercise hits multiple muscles, primary counts 1.0 set, secondary counts 0.5 set. Stay inside (min..max) for every muscle every week.`;
+  return `${header}${adaptationNote}\n${legend}\n${lines}\nIf an exercise hits multiple muscles, primary counts 1.0 set, secondary counts 0.5 set. Stay inside (min..max) for every muscle every week.`;
 }
