@@ -334,6 +334,24 @@ function PlanEditor() {
               );
             })()}
             {(() => {
+              const audit = (plan as any).generation_meta?.rotation_audit;
+              if (!audit || typeof audit.finalPct !== "number") return null;
+              const pct = Math.round(audit.finalPct);
+              const tone = pct >= 60
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                : pct >= 40
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                : "border-red-500/40 bg-red-500/10 text-red-200";
+              return (
+                <span
+                  title={`Acessórios rodados vs bloco anterior · ${pct}%${audit.retried ? " (após retry)" : ""}`}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${tone}`}
+                >
+                  Rotação {pct}%
+                </span>
+              );
+            })()}
+            {(() => {
               const s = planStatusInfo(plan, tCommon as any);
               if (s.key === "draft") return null;
               return (
