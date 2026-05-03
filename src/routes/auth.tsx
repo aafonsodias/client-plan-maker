@@ -27,7 +27,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/dashboard" });
+    if (!loading && user) navigate({ to: "/welcome" });
   }, [user, loading, navigate]);
 
   const signIn = async (e: React.FormEvent) => {
@@ -36,13 +36,13 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return toast.error(error.message);
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/welcome" });
   };
 
   const signUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const redirectTo = `${window.location.origin}/dashboard`;
+    const redirectTo = `${window.location.origin}/welcome`;
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -55,7 +55,7 @@ function AuthPage() {
 
   const google = async () => {
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
+      redirect_uri: `${window.location.origin}/welcome`,
     });
     if (error) toast.error(error.message);
   };
