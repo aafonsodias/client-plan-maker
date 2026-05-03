@@ -257,6 +257,19 @@ async function runDay(
   const appetite = String(brief?.intensity_appetite ?? "padrao");
   const floors = rpeFloors(tierForFloors, appetite);
 
+  // Volume prescription — Stage 3 generates the WEEK-1 anchor day. Tell the
+  // model both the full meso curve (so progression sense is right) and the
+  // week-1 targets it must meet via this single day's contribution.
+  const totalWeeks = Math.max(
+    4,
+    Number(blueprint?.mesocycle_length_weeks) || Number(brief?.mesocycle_length_weeks) || 4,
+  );
+  const week1 = prescribeWeek(1, totalWeeks);
+  const week1TargetsLine = week1.rows
+    .map((r) => `${r.muscle}=${r.target}(${r.min}..${r.max})`)
+    .join(" ");
+  const volumeBlock = `\n\nWEEKLY VOLUME PRESCRIPTION (full mesocycle, hard constraint):\n${prescriptionPromptBlock(totalWeeks)}\n\nTHIS DAY contributes to WEEK 1 totals: ${week1TargetsLine}.\nPick exercises whose primary/secondary muscles move the day toward those weekly targets without overshooting on any single muscle.`;
+
   const tierBlock = guidelines
     ? `
 
