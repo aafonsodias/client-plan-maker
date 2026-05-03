@@ -142,8 +142,7 @@ export function DemoClientBanner() {
           ) : demoClient ? (
             <>
               <p className="text-sm font-medium">
-                {t("demo.ready_title", { name: "" })}
-                <span className="text-accent">{demoClient.name}</span>
+                {t("demo.ready_title", { name: demoClient.name })}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {t("demo.ready_desc")}
