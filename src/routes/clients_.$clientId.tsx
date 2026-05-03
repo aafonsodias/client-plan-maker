@@ -2806,7 +2806,7 @@ function AssessmentSection({
           onClick={() => setCollapsed(true)}
           className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronDown className="h-3 w-3" /> Recolher avaliação
+          <ChevronDown className="h-3 w-3" /> {t("detail.section.collapse")}
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
@@ -2814,10 +2814,10 @@ function AssessmentSection({
           type="button"
           onClick={() => setFocused((f) => !f)}
           className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest transition ${focused ? "border-accent/60 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-          title={focused ? "Mostrar todas as secções" : "Focar uma secção de cada vez"}
+          title={focused ? t("detail.section.focus_tip_show_all") : t("detail.section.focus_tip_focus")}
         >
           {focused ? <List className="h-3 w-3" /> : <Focus className="h-3 w-3" />}
-          {focused ? "Ver tudo" : "Modo focado"}
+          {focused ? t("detail.section.view_all") : t("detail.section.focus_mode")}
         </button>
         {!focused && (
           <>
@@ -2826,20 +2826,20 @@ function AssessmentSection({
           onClick={() => ctx.setAll(true)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsUpDown className="h-3 w-3" /> Expandir tudo
+          <ChevronsUpDown className="h-3 w-3" /> {t("detail.section.expand_all")}
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsDownUp className="h-3 w-3" /> Colapsar tudo
+          <ChevronsDownUp className="h-3 w-3" /> {t("detail.section.collapse_all")}
         </button>
           </>
         )}
       </div>
       {focused && (
-        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label="Secções da avaliação">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label={t("detail.section.tabs_aria")}>
           {SECTIONS.map((s, i) => {
             const isActive = s.id === activeId;
             return (
