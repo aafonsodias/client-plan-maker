@@ -3,7 +3,7 @@
     "hero": {
       "title_line1": "Cria planos de treino",
       "title_line2": "prontos a enviar em minutos.",
-      "subtitle": "Baseados na avaliação real do teu cliente. Ajustam-se semana a semana com o que ele faz no ginásio.",
+      "subtitle": "Baseados na avaliação real do seu cliente. Ajustam-se semana a semana com o que ele faz no ginásio.",
       "cta_primary_signed_out": "Gerar primeiro plano grátis",
       "cta_primary_signed_in": "Abrir dashboard",
       "cta_secondary": "Ver como funciona",
@@ -91,7 +91,7 @@
         },
         "generate": {
           "label": "Edita e imprime",
-          "desc": "Mesociclo editável. PDF com a tua marca para levar para o ginásio."
+          "desc": "Mesociclo editável. PDF com a sua marca para levar para o ginásio."
         },
         "export": {
           "label": "Feedback ↔ ajuste",
@@ -101,7 +101,7 @@
     },
     "credibility": {
       "title": "Em desenvolvimento e refinamento contínuo.",
-      "subtitle": "Há bugs. Há coisas por fazer. Mas como tu és o filtro humano, o resultado sai sempre defensável — basta ter paciência. As bases já estão dentro; vamos integrando o resto à medida que ganha forma.",
+      "subtitle": "Há bugs. Há coisas por fazer. Mas como você é o filtro humano, o resultado sai sempre defensável — basta ter paciência. As bases já estão dentro; vamos integrando o resto à medida que ganha forma.",
       "cards": {
         "parq_title": "Triagem PAR-Q+",
         "parq_desc": "Já dentro. Sinalização de risco cardiovascular, metabólico e renal pré-participação.",
@@ -113,7 +113,7 @@
     },
     "logging": {
       "title": "O plano não acaba no PDF.",
-      "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que tu e o cliente vejam o trabalho a acumular."
+      "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que você e o cliente vejam o trabalho a acumular."
     },
     "journey": {
       "eyebrow": "Em construção contínua",
@@ -126,7 +126,7 @@
         },
         "brief": {
           "label": "Brief",
-          "desc": "A IA resume a avaliação num brief defensável que tu aprovas."
+          "desc": "A IA resume a avaliação num brief defensável que você aprova."
         },
         "blueprint": {
           "label": "Blueprint",
@@ -145,9 +145,9 @@
     "logbook_preview": {
       "eyebrow": "Depois do PDF",
       "title": "Cada série registada vira combustível para a próxima semana.",
-      "subtitle": "O PDF é o ponto de partida. Cada registo — manual hoje, por voz e sensores amanhã — alimenta a próxima geração. Tudo opcional, tudo via toggle: dás o que tens, recebes o que dá para fazer.",
+      "subtitle": "O PDF é o ponto de partida. Cada registo — manual hoje, por voz e sensores amanhã — alimenta a próxima geração. Tudo opcional, tudo via toggle: dás o que tens, recebe o que dá para fazer.",
       "log_caption": "Pré-visualização — regista uma sessão em segundos.",
-      "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os teus registos já alimentam o motor.",
+      "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os seus registos já alimentam o motor.",
       "history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio.",
       "signals_title": "O que entra (hoje e em breve)",
       "signal_load": "Carga acumulada por padrão de movimento",
@@ -165,7 +165,7 @@
       "items": {
         "trends": {
           "title": "Tendências e gráficos",
-          "desc": "Deteta plateaus automaticamente e mostra o progresso por padrão de movimento a partir dos teus registos."
+          "desc": "Deteta plateaus automaticamente e mostra o progresso por padrão de movimento a partir dos seus registos."
         },
         "prompt": {
           "title": "Ajustes por prompt",
@@ -173,7 +173,7 @@
         },
         "advice": {
           "title": "Conselhos do Coach AI",
-          "desc": "Sugestões semanais a partir dos teus registos — quando empurrar, quando abrandar, o que trocar."
+          "desc": "Sugestões semanais a partir dos seus registos — quando empurrar, quando abrandar, o que trocar."
         }
       },
       "footnote": ""
@@ -185,33 +185,33 @@
       "ai_title": "Programas criados por IA",
       "ai_desc": "Recebe um plano semanal periodizado adaptado à avaliação em segundos.",
       "pdf_title": "Exportação de PDF com marca",
-      "pdf_desc": "Adiciona o teu logótipo e o nome do teu negócio. Envia um plano polido instantaneamente."
+      "pdf_desc": "Adiciona o seu logótipo e o nome do seu negócio. Envia um plano polido instantaneamente."
     },
     "founder": {
       "title": "Porquê a Forge?",
       "img_alt": "André, fundador da Forge",
       "p1": "Em quinze anos como PT vi a mesma coisa repetir-se: planos mal montados porque programar com critério dá demasiado trabalho.",
-      "p2": "A Forge existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), tu como filtro humano, IA só para o trabalho repetitivo.",
+      "p2": "A Forge existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), você como filtro humano, IA só para o trabalho repetitivo.",
       "p3": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
       "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
     },
     "faq": {
       "title": "Perguntas que os treinadores fazem antes de se inscrever.",
       "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
-      "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o teu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o teu critério.",
+      "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
       "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
       "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
       "q3_q": "Posso usar a minha própria marca no PDF?",
-      "q3_a": "Sim. Carrega o teu logótipo e o nome do teu negócio em Definições. Cada exportação de PDF tem a identidade do teu estúdio, não a da Forge.",
+      "q3_a": "Sim. Carrega o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Forge.",
       "q4_q": "O que acontece aos dados dos meus clientes?",
       "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
     },
     "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
     "closing": {
-      "title": "O teu próximo plano, antes da tua próxima sessão.",
+      "title": "O seu próximo plano, antes da sua próxima sessão.",
       "subtitle": "Grátis durante a fase beta. Sem cartão.",
       "cta_signed_in": "Abrir dashboard",
-      "cta_signed_out": "Cria a tua conta"
+      "cta_signed_out": "Cria a sua conta"
     },
     "footer_copy": "© {{year}} Forge",
     "pricing": {
@@ -220,10 +220,10 @@
       "beta_badge": "Grátis",
       "beta_title": "Grátis para começar",
       "beta_price": "0€",
-      "beta_period": "para o teu primeiro plano",
+      "beta_period": "para o seu primeiro plano",
       "beta_features": [
         "1 cliente · 1 plano completo",
-        "PDF com a tua marca",
+        "PDF com a sua marca",
         "Sem cartão, sem prazo",
         "Continuas a usar enquanto fizer sentido"
       ],
@@ -234,8 +234,8 @@
       "pro_period": "/ mês (preço indicativo)",
       "pro_features": [
         "Planos ilimitados, sem fila de espera",
-        "Sugestões semanais da IA a partir das tuas sessões registadas",
-        "PDFs no teu domínio próprio",
+        "Sugestões semanais da IA a partir das suas sessões registadas",
+        "PDFs no seu domínio próprio",
         "Suporte prioritário"
       ],
       "pro_cta": "Avisa-me",
@@ -254,13 +254,13 @@
     },
     "workbench": {
       "eyebrow": "BANCADA INTELIGENTE",
-      "title": "O teu workbench com IA",
+      "title": "O seu workbench com IA",
       "subtitle": "Escolhe o modelo, escolhe os créditos, recebe sugestões com contexto. Como uma conversa com um colega que conhece o cliente."
     },
     "logbook_insights": {
       "eyebrow": "LOGBOOK INTELIGENTE",
       "title": "Sessões anotadas. Padrões revelados.",
-      "subtitle": "O logbook não é só registo — a IA lê os teus dados e devolve sinais accionáveis."
+      "subtitle": "O logbook não é só registo — a IA lê os seus dados e devolve sinais accionáveis."
     }
   },
   "briefRail": {
@@ -328,6 +328,6 @@
   },
   "microcycle": {
     "ready_to_approve": "Tudo pronto — podes aprovar",
-    "stage_hint": "Microciclo = a tua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes."
+    "stage_hint": "Microciclo = a sua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes."
   }
 }

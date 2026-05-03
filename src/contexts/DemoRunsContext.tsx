@@ -37,6 +37,8 @@ type Ctx = {
   registerRun: (run: { runId: string; kind: "demo_lab" | "demo_seed"; title?: string; durationWeeks?: number }) => void;
   cancelRun: (runId: string) => Promise<void>;
   getRun: (runId: string) => ActiveDemoRun | undefined;
+  /** Pause/resume the auto-cleanup of terminal runs (popover open). */
+  holdRuns: (hold: boolean) => void;
 };
 
 const DemoRunsCtx = createContext<Ctx>({
@@ -45,6 +47,7 @@ const DemoRunsCtx = createContext<Ctx>({
   registerRun: () => {},
   cancelRun: async () => {},
   getRun: () => undefined,
+  holdRuns: () => {},
 });
 
 const STORAGE_PREFIX = "forge.demoRuns.";
@@ -79,6 +82,18 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
   const cancelFn = useServerFn(cancelDemoRun);
   const pollTimerRef = useRef<number | null>(null);
   const userIdRef = useRef<string | null>(null);
+  const holdRef = useRef(false);
+  // Pending terminal-run ids waiting to be cleaned up after their flash.
+  const pendingCleanupRef = useRef<Set<string>>(new Set());
+
+  const holdRuns = useCallback((hold: boolean) => {
+    holdRef.current = hold;
+    if (!hold && pendingCleanupRef.current.size > 0) {
+      const ids = Array.from(pendingCleanupRef.current);
+      pendingCleanupRef.current.clear();
+      setRuns((cur) => cur.filter((x) => !ids.includes(x.runId)));
+    }
+  }, []);
 
   // Hydrate from storage on user change
   useEffect(() => {
@@ -158,8 +173,13 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
                     : undefined,
                 });
               }
-              // remove terminal runs after a beat so the indicator can flash done
+              // remove terminal runs after a beat so the indicator can flash done.
+              // Skip removal while the popover is open so users can read it.
               window.setTimeout(() => {
+                if (holdRef.current) {
+                  pendingCleanupRef.current.add(id);
+                  return;
+                }
                 setRuns((cur) => cur.filter((x) => x.runId !== id));
               }, 4000);
             }
@@ -231,6 +251,9 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
     async (runId) => {
       try {
         await cancelFn({ data: { runId } });
+        // Optimistically flag the run as cancelled so the indicator flips
+        // immediately; the next poll will reconcile with the server.
+        setRuns((prev) => prev.map((r) => (r.runId === runId ? { ...r, cancelled: true, status: "failed" } : r)));
         toast.info("A pedir para parar… (a stage atual termina antes de sair).");
       } catch (e: any) {
         toast.error(e?.message ?? "Falha a cancelar.");
@@ -242,7 +265,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
   const getRun = useCallback((runId: string) => runs.find((r) => r.runId === runId), [runs]);
 
   return (
-    <DemoRunsCtx.Provider value={{ runs, startRun, registerRun, cancelRun, getRun }}>
+    <DemoRunsCtx.Provider value={{ runs, startRun, registerRun, cancelRun, getRun, holdRuns }}>
       {children}
     </DemoRunsCtx.Provider>
   );

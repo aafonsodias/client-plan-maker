@@ -24,7 +24,7 @@
         },
         {
           "h": "Envie o intake",
-          "p": "No cartão do cliente, copia o link de intake e envia. O cliente preenche pelo telemóvel; tu recebes tudo estruturado."
+          "p": "No cartão do cliente, copie o link de intake e envie. O cliente preenche pelo telemóvel; recebe tudo estruturado."
         }
       ]
     },
@@ -37,7 +37,7 @@
           "p": "Objetivos, histórico, equipamento, lesões, PAR-Q+. O cliente faz isto sozinho — leva 4–7 minutos."
         },
         {
-          "h": "Brief (tu)",
+          "h": "Brief (você)",
           "p": "Em /plans/{id}/brief revês o que a IA extraiu: objetivo primário, ênfase, faixa de treino, sinais de alerta. Ajustas qualquer coisa."
         },
         {
@@ -150,7 +150,7 @@
     "items": [
       {
         "q": "Tenho mesmo de pagar para usar?",
-        "a": "Não para experimentar. O plano gratuito deixa-te criar 1 plano completo do zero, suficiente para perceberes se a Forge encaixa no teu fluxo. Só pagas quando decides escalar para mais clientes."
+        "a": "Não para experimentar. O plano gratuito permite-lhe criar 1 plano completo do zero, suficiente para perceber se a Forge encaixa no seu fluxo. Só pagas quando decides escalar para mais clientes."
       },
       {
         "q": "Os meus clientes precisam de criar conta?",
@@ -158,7 +158,7 @@
       },
       {
         "q": "Posso editar o que a IA gerou?",
-        "a": "Sim, em todas as etapas. O Brief, o Blueprint, o Microciclo e as Progressões são editáveis. A IA propõe — tu decides."
+        "a": "Sim, em todas as etapas. O Brief, o Blueprint, o Microciclo e as Progressões são editáveis. A IA propõe — você decide."
       },
       {
         "q": "E se a IA gerar uma asneira?",
@@ -174,7 +174,7 @@
       },
       {
         "q": "Posso cancelar a subscrição quando quiser?",
-        "a": "Sim, sem perguntas. Mantens acesso aos teus dados (clientes, planos, logs históricos) até ao final do período pago, e podes voltar quando quiseres — nada é apagado."
+        "a": "Sim, sem perguntas. Mantém acesso aos seus dados (clientes, planos, logs históricos) até ao final do período pago, e podes voltar quando quiseres — nada é apagado."
       },
       {
         "q": "Em que idiomas funciona?",
@@ -201,6 +201,6 @@
     "form_body": "Mensagem",
     "form_body_placeholder": "Conta-me o contexto. Se for um bug, diz o que estavas a fazer e o que esperavas.",
     "form_send": "Abrir no email",
-    "form_hint": "Vai abrir o teu cliente de email com a mensagem pré-preenchida — não envio nada nas tuas costas."
+    "form_hint": "Vai abrir o seu cliente de email com a mensagem pré-preenchida — não envio nada nas suas costas."
   }
 }

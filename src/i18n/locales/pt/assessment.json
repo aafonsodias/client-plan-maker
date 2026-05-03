@@ -56,11 +56,11 @@
     "complete_flagged": "✓ Pré-rastreio completo. {{count}} alertas — orientação abaixo",
     "questions": {
       "q1": "Algum médico já te disse que tens uma condição cardíaca ou que só deves fazer atividade física recomendada por um médico?",
-      "q2": "Sentes dores no peito quando fazes atividade física?",
+      "q2": "Sente dores no peito quando faz atividade física?",
       "q3": "No último mês, tiveste dores no peito sem estar a fazer atividade física?",
       "q4": "Perdes o equilíbrio devido a tonturas ou já perdeste a consciência?",
       "q5": "Tens algum problema ósseo ou articular que possa ser agravado por uma mudança na atividade física?",
-      "q6": "O teu médico está a prescrever-te medicamentos para a tensão arterial ou para uma condição cardíaca?",
+      "q6": "O seu médico está a prescrever-te medicamentos para a tensão arterial ou para uma condição cardíaca?",
       "q7": "Conheces alguma outra razão para não deveres fazer atividade física?"
     },
     "rationale": {
@@ -150,21 +150,81 @@
       "health": "Saúde"
     },
     "templates": {
-      "strength_squat_bw":     { "label": "Agachar 1,5×PC para 5 reps",     "specific": "Agachamento 1,5× peso corporal para 5 reps limpas",          "measurable": "ex.: 120 kg @ PC 80 kg" },
-      "strength_bench_bw":     { "label": "Supino peso corporal × 5 reps",  "specific": "Supino plano com peso corporal para 5 reps limpas",          "measurable": "ex.: 80 kg @ PC 80 kg" },
-      "strength_deadlift_2bw": { "label": "Peso-morto 2×PC para 3 reps",    "specific": "Peso-morto convencional 2× peso corporal para 3 reps",       "measurable": "ex.: 160 kg @ PC 80 kg" },
-      "hypertrophy_arms":      { "label": "+3 cm perímetro de braço",       "specific": "Aumentar 3 cm no perímetro de braço relaxado",               "measurable": "de 36 → 39 cm (média E/D)" },
-      "hypertrophy_legs":      { "label": "+4 cm perímetro de coxa",        "specific": "Aumentar 4 cm no perímetro médio da coxa",                   "measurable": "de 55 → 59 cm (média E/D)" },
-      "body_comp_lose_fat":    { "label": "Perder 5 kg de massa gorda",     "specific": "Perder 5 kg de massa gorda preservando massa magra",         "measurable": "de 22% → 17% MG (mesmo método)" },
-      "body_comp_recomp":      { "label": "Recomp: −3% MG, +2 kg MM",       "specific": "Reduzir % gordura e ganhar massa magra em simultâneo",       "measurable": "−3% MG e +2 kg MM (DEXA ou BIA)" },
-      "endurance_5k":          { "label": "5 km abaixo de 25:00",           "specific": "Correr 5 km contínuos em menos de 25 minutos",               "measurable": "5 km · 24:59 (com GPS)" },
-      "endurance_cooper":      { "label": "Cooper 12 min ≥ 2400 m",         "specific": "Cobrir ≥ 2400 m no teste de Cooper de 12 min",               "measurable": "≥ 2400 m em 12 min" },
-      "mobility_toe_touch":    { "label": "Tocar nos pés sem dor",          "specific": "Flexão à frente em pé, dedos no chão, sem dor",              "measurable": "Pontas dos dedos no chão (joelhos macios)" },
-      "mobility_overhead":     { "label": "Alcance overhead completo",      "specific": "Braços verticais contra a parede, lombar plana",             "measurable": "Wall-test passa (lombar plana, cotovelos travados)" },
-      "skill_first_pullup":    { "label": "Primeira elevação estrita",      "specific": "Completar uma elevação estrita, dead-hang",                  "measurable": "1 × estrita, amplitude completa" },
-      "skill_handstand":       { "label": "Pino livre 60 s",                "specific": "Aguentar pino livre durante 60 segundos",                    "measurable": "60 s sem parede" },
-      "health_resting_hr":     { "label": "FC repouso < 60 bpm",            "specific": "Baixar a FC de repouso para menos de 60 bpm",                "measurable": "de 72 → ≤ 58 bpm (manhã, deitado)" },
-      "health_steps":          { "label": "8 000 passos diários",           "specific": "Manter média de 8 000 passos/dia ao longo da semana",        "measurable": "8 000 passos/dia em ≥ 5 dias/semana" }
+      "strength_squat_bw": {
+        "label": "Agachar 1,5×PC para 5 reps",
+        "specific": "Agachamento 1,5× peso corporal para 5 reps limpas",
+        "measurable": "ex.: 120 kg @ PC 80 kg"
+      },
+      "strength_bench_bw": {
+        "label": "Supino peso corporal × 5 reps",
+        "specific": "Supino plano com peso corporal para 5 reps limpas",
+        "measurable": "ex.: 80 kg @ PC 80 kg"
+      },
+      "strength_deadlift_2bw": {
+        "label": "Peso-morto 2×PC para 3 reps",
+        "specific": "Peso-morto convencional 2× peso corporal para 3 reps",
+        "measurable": "ex.: 160 kg @ PC 80 kg"
+      },
+      "hypertrophy_arms": {
+        "label": "+3 cm perímetro de braço",
+        "specific": "Aumentar 3 cm no perímetro de braço relaxado",
+        "measurable": "de 36 → 39 cm (média E/D)"
+      },
+      "hypertrophy_legs": {
+        "label": "+4 cm perímetro de coxa",
+        "specific": "Aumentar 4 cm no perímetro médio da coxa",
+        "measurable": "de 55 → 59 cm (média E/D)"
+      },
+      "body_comp_lose_fat": {
+        "label": "Perder 5 kg de massa gorda",
+        "specific": "Perder 5 kg de massa gorda preservando massa magra",
+        "measurable": "de 22% → 17% MG (mesmo método)"
+      },
+      "body_comp_recomp": {
+        "label": "Recomp: −3% MG, +2 kg MM",
+        "specific": "Reduzir % gordura e ganhar massa magra em simultâneo",
+        "measurable": "−3% MG e +2 kg MM (DEXA ou BIA)"
+      },
+      "endurance_5k": {
+        "label": "5 km abaixo de 25:00",
+        "specific": "Correr 5 km contínuos em menos de 25 minutos",
+        "measurable": "5 km · 24:59 (com GPS)"
+      },
+      "endurance_cooper": {
+        "label": "Cooper 12 min ≥ 2400 m",
+        "specific": "Cobrir ≥ 2400 m no teste de Cooper de 12 min",
+        "measurable": "≥ 2400 m em 12 min"
+      },
+      "mobility_toe_touch": {
+        "label": "Tocar nos pés sem dor",
+        "specific": "Flexão à frente em pé, dedos no chão, sem dor",
+        "measurable": "Pontas dos dedos no chão (joelhos macios)"
+      },
+      "mobility_overhead": {
+        "label": "Alcance overhead completo",
+        "specific": "Braços verticais contra a parede, lombar plana",
+        "measurable": "Wall-test passa (lombar plana, cotovelos travados)"
+      },
+      "skill_first_pullup": {
+        "label": "Primeira elevação estrita",
+        "specific": "Completar uma elevação estrita, dead-hang",
+        "measurable": "1 × estrita, amplitude completa"
+      },
+      "skill_handstand": {
+        "label": "Pino livre 60 s",
+        "specific": "Aguentar pino livre durante 60 segundos",
+        "measurable": "60 s sem parede"
+      },
+      "health_resting_hr": {
+        "label": "FC repouso < 60 bpm",
+        "specific": "Baixar a FC de repouso para menos de 60 bpm",
+        "measurable": "de 72 → ≤ 58 bpm (manhã, deitado)"
+      },
+      "health_steps": {
+        "label": "8 000 passos diários",
+        "specific": "Manter média de 8 000 passos/dia ao longo da semana",
+        "measurable": "8 000 passos/dia em ≥ 5 dias/semana"
+      }
     }
   },
   "readiness_block": {
@@ -322,7 +382,7 @@
     "step_save": "A guardar avaliação",
     "step_generate": "A gerar cada dia em paralelo",
     "step_assemble": "A montar o plano",
-    "step_open": "A abrir o teu plano",
+    "step_open": "A abrir o seu plano",
     "days_progress": "{{done}}/{{total}} dias",
     "week_label": "S{{n}}",
     "cell_title": "Semana {{w}}, Dia {{d}} — {{status}}"

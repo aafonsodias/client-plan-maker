@@ -61,10 +61,22 @@
         "eyebrow": "Como funciona",
         "title": "Da avaliação ao PDF em quatro passos.",
         "steps": {
-          "add_client": { "label": "Adicionar cliente", "desc": "Regista os dados em segundos." },
-          "assessment": { "label": "Fazer a avaliação", "desc": "PAR-Q+, risco, mobilidade, objetivos." },
-          "generate": { "label": "Gerar plano", "desc": "A IA cria um programa periodizado." },
-          "export": { "label": "Exportar PDF", "desc": "Com a sua marca, num clique." }
+          "add_client": {
+            "label": "Adicionar cliente",
+            "desc": "Regista os dados em segundos."
+          },
+          "assessment": {
+            "label": "Fazer a avaliação",
+            "desc": "PAR-Q+, risco, mobilidade, objetivos."
+          },
+          "generate": {
+            "label": "Gerar plano",
+            "desc": "A IA cria um programa periodizado."
+          },
+          "export": {
+            "label": "Exportar PDF",
+            "desc": "Com a sua marca, num clique."
+          }
         }
       },
       "credibility": {
@@ -81,7 +93,7 @@
       },
       "logging": {
         "title": "O plano não acaba no PDF.",
-        "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que tu e o cliente vejam o trabalho a acumular."
+        "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que você e o cliente vejam o trabalho a acumular."
       },
       "features": {
         "title": "Feito para treinadores que preferem treinar a copiar e colar folhas de cálculo.",
