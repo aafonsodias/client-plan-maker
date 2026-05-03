@@ -1214,10 +1214,52 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
   tutorial: string;
 }) {
   const upload = useServerFn(uploadIntakePhoto);
+  const fetchUrls = useServerFn(getIntakePhotoUrls);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Hydrate: if a photo for this slot was already uploaded, mark done and
+  // show the signed URL preview so the user knows it's saved.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const urls = await fetchUrls({ data: { token } });
+        if (cancelled) return;
+        const url = (urls as Record<string, string>)[slot];
+        if (url) {
+          setPreview(url);
+          setDone(true);
+        } else {
+          // Pending IDB upload? Try to flush.
+          const pending = await idbGet(`forge_intake_photo_${token}_${slot}`);
+          if (pending && typeof pending === "string") {
+            setPreview(pending);
+            void retryUpload(pending);
+          }
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, slot]);
+
+  const retryUpload = async (dataUrl: string, attempt = 0): Promise<void> => {
+    try {
+      await upload({ data: { token: token!, slot, dataUrl } });
+      await idbDel(`forge_intake_photo_${token}_${slot}`);
+      setDone(true);
+    } catch (e) {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 800 * Math.pow(2, attempt)));
+        return retryUpload(dataUrl, attempt + 1);
+      }
+      throw e;
+    }
+  };
 
   const onFile = async (file: File) => {
     if (!token) {
@@ -1228,12 +1270,12 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
     try {
       const dataUrl = await resizeToJpegDataUrl(file, 1600, 0.82);
       setPreview(dataUrl);
-      await upload({ data: { token, slot, dataUrl } });
-      setDone(true);
+      // Stash locally BEFORE upload so a crash doesn't lose the capture.
+      await idbSet(`forge_intake_photo_${token}_${slot}`, dataUrl);
+      await retryUpload(dataUrl);
       toast.success(`${label} guardada`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Falhou. Tenta outra foto.");
-      setPreview(null);
+      toast.error(e?.message ?? "Falhou — guardada localmente, tenta enviar de novo.");
     } finally {
       setBusy(false);
     }
