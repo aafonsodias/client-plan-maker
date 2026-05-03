@@ -167,5 +167,40 @@
       "open": "Abrir",
       "no_jobs": "Nada a correr."
     }
+  },
+  "blocks": {
+    "next": {
+      "deload_title": "Sugestão: deload no próximo bloco",
+      "deload_sub": "RPE alto ou adesão baixa — recua para MEV, baixa 1 ponto de RPE e volta a construir.",
+      "normal_title": "Sugestão: progressão normal",
+      "normal_sub": "Continuar curva MEV → MAV, variar acessórios e manter ancoragem.",
+      "push_title": "Sugestão: pisar acelerador",
+      "push_sub": "RPE baixo + adesão alta — subir para MAV/MRV e adicionar 1–2 séries por padrão.",
+      "adherence": "Adesão",
+      "avg_rpe": "RPE médio",
+      "block": "Bloco",
+      "start_next": "Iniciar Bloco {{n}}"
+    },
+    "rotation": {
+      "chip": "Rotação {{pct}}%",
+      "popover_title": "Rotação de acessórios vs bloco anterior",
+      "after_retry": "Tentativa inicial {{first}}% → {{final}}% após retry.",
+      "no_retry": "{{final}}% dos acessórios mudaram entre blocos.",
+      "days_regenerated": "Dias regenerados: {{days}}.",
+      "pool_label": "Pool do bloco anterior (top 6)"
+    },
+    "main_lift": {
+      "refreshed": "Main lift refrescado",
+      "kept": "Main lift mantido",
+      "refreshed_desc": "Pelo menos um padrão tem main lift novo vs o bloco anterior — variação anti-stale aplicada.",
+      "kept_desc": "A IA recebeu o pedido de variar o main lift mas manteve os mesmos. Sem ação automática — pode ajustar manualmente se quiser variar.",
+      "new_label": "Novos main lifts",
+      "prior_label": "Bloco anterior"
+    }
+  },
+  "volume": {
+    "weekly_bars_label": "Prescrito vs realizado · séries",
+    "prescribed": "Prescrito",
+    "actual": "Realizado"
   }
 }
