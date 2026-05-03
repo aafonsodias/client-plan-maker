@@ -345,23 +345,28 @@ function PlanEditor() {
                       type="button"
                       className={`inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${view.toneClass}`}
                     >
-                      Rotação {Math.round(view.finalPct ?? 0)}%
+                      {tCommon("blocks.rotation.chip", { pct: Math.round(view.finalPct ?? 0) })}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
-                    <p className="font-semibold">Rotação de acessórios vs bloco anterior</p>
+                    <p className="font-semibold">{tCommon("blocks.rotation.popover_title")}</p>
                     <p className="text-muted-foreground">
                       {view.retried
-                        ? `Tentativa inicial ${Math.round(view.firstPct ?? 0)}% → ${Math.round(view.finalPct ?? 0)}% após retry.`
-                        : `${Math.round(view.finalPct ?? 0)}% dos acessórios mudaram entre blocos.`}
+                        ? tCommon("blocks.rotation.after_retry", {
+                            first: Math.round(view.firstPct ?? 0),
+                            final: Math.round(view.finalPct ?? 0),
+                          })
+                        : tCommon("blocks.rotation.no_retry", {
+                            final: Math.round(view.finalPct ?? 0),
+                          })}
                       {view.daysRegenerated.length > 0 && (
-                        <> Dias regenerados: {view.daysRegenerated.join(", ")}.</>
+                        <> {tCommon("blocks.rotation.days_regenerated", { days: view.daysRegenerated.join(", ") })}</>
                       )}
                     </p>
                     {pool.length > 0 && (
                       <div>
                         <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                          Pool do bloco anterior (top 6)
+                          {tCommon("blocks.rotation.pool_label")}
                         </p>
                         <ul className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
                           {pool.slice(0, 6).map((n) => (
@@ -383,8 +388,8 @@ function PlanEditor() {
                 ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
                 : "border-muted bg-muted/20 text-muted-foreground";
               const label = honored
-                ? `Main lift refrescado${audit?.swappedCount ? ` · ${audit.swappedCount}` : ""}`
-                : "Main lift mantido";
+                ? `${tCommon("blocks.main_lift.refreshed")}${audit?.swappedCount ? ` · ${audit.swappedCount}` : ""}`
+                : tCommon("blocks.main_lift.kept");
               return (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -397,16 +402,18 @@ function PlanEditor() {
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
                     <p className="font-semibold">
-                      {honored ? "Main lift refrescado" : "Main lift mantido"}
+                      {honored ? tCommon("blocks.main_lift.refreshed") : tCommon("blocks.main_lift.kept")}
                     </p>
                     <p className="text-muted-foreground">
                       {honored
-                        ? "Pelo menos um padrão tem main lift novo vs o bloco anterior — variação anti-stale aplicada."
-                        : "A IA recebeu o pedido de variar o main lift mas manteve os mesmos. Sem ação automática — pode ajustar manualmente se quiser variar."}
+                        ? tCommon("blocks.main_lift.refreshed_desc")
+                        : tCommon("blocks.main_lift.kept_desc")}
                     </p>
                     {swapped.length > 0 && (
                       <div>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Novos main lifts</p>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {tCommon("blocks.main_lift.new_label")}
+                        </p>
                         <ul className="mt-1 space-y-0.5">
                           {swapped.slice(0, 6).map((n) => (
                             <li key={n} className="truncate text-foreground/80">{n}</li>
@@ -416,7 +423,9 @@ function PlanEditor() {
                     )}
                     {prior.length > 0 && (
                       <div>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Bloco anterior</p>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {tCommon("blocks.main_lift.prior_label")}
+                        </p>
                         <ul className="mt-1 space-y-0.5">
                           {prior.slice(0, 6).map((n) => (
                             <li key={n} className="truncate text-foreground/60">{n}</li>
