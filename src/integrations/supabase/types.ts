@@ -238,6 +238,48 @@ export type Database = {
           },
         ]
       }
+      acsm_thresholds: {
+        Row: {
+          applies_to: string
+          citation: string
+          created_at: string
+          id: string
+          notes: string | null
+          parameter: string
+          severity: string
+          unit: string | null
+          updated_at: string
+          value_high: number | null
+          value_low: number | null
+        }
+        Insert: {
+          applies_to: string
+          citation: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parameter: string
+          severity?: string
+          unit?: string | null
+          updated_at?: string
+          value_high?: number | null
+          value_low?: number | null
+        }
+        Update: {
+          applies_to?: string
+          citation?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parameter?: string
+          severity?: string
+          unit?: string | null
+          updated_at?: string
+          value_high?: number | null
+          value_low?: number | null
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           acsm_risk_category: string | null
@@ -251,9 +293,11 @@ export type Database = {
           client_id: string
           created_at: string
           current_capacity_vs_pb: number | null
+          cvd_risk_factors: Json
           diastolic_bp_mmhg: number | null
           dominant_side: string | null
           energy_levels: string | null
+          exerciser_status: string | null
           experience_level: string | null
           extended: Json
           hinge_capacity: Json
@@ -271,6 +315,8 @@ export type Database = {
           lunge_form_criteria: Json
           max_lifts: string | null
           med_flags: string[] | null
+          medical_clearance_reason: string | null
+          medical_clearance_required: boolean | null
           medical_conditions: string | null
           medications: string | null
           mobility_limitations: string | null
@@ -295,6 +341,7 @@ export type Database = {
           section_analyses_locale: Json
           sections_analysed_at: Json
           session_duration_minutes: number | null
+          signs_symptoms: Json
           single_leg_balance_note: string | null
           single_leg_balance_score: number | null
           sleep_quality: number | null
@@ -307,6 +354,7 @@ export type Database = {
           squat_form_criteria: Json
           standing_posture_notes: string | null
           stress_level: number | null
+          submax_test: Json
           systolic_bp_mmhg: number | null
           trainer_id: string
           training_days_per_week: number | null
@@ -327,9 +375,11 @@ export type Database = {
           client_id: string
           created_at?: string
           current_capacity_vs_pb?: number | null
+          cvd_risk_factors?: Json
           diastolic_bp_mmhg?: number | null
           dominant_side?: string | null
           energy_levels?: string | null
+          exerciser_status?: string | null
           experience_level?: string | null
           extended?: Json
           hinge_capacity?: Json
@@ -347,6 +397,8 @@ export type Database = {
           lunge_form_criteria?: Json
           max_lifts?: string | null
           med_flags?: string[] | null
+          medical_clearance_reason?: string | null
+          medical_clearance_required?: boolean | null
           medical_conditions?: string | null
           medications?: string | null
           mobility_limitations?: string | null
@@ -371,6 +423,7 @@ export type Database = {
           section_analyses_locale?: Json
           sections_analysed_at?: Json
           session_duration_minutes?: number | null
+          signs_symptoms?: Json
           single_leg_balance_note?: string | null
           single_leg_balance_score?: number | null
           sleep_quality?: number | null
@@ -383,6 +436,7 @@ export type Database = {
           squat_form_criteria?: Json
           standing_posture_notes?: string | null
           stress_level?: number | null
+          submax_test?: Json
           systolic_bp_mmhg?: number | null
           trainer_id: string
           training_days_per_week?: number | null
@@ -403,9 +457,11 @@ export type Database = {
           client_id?: string
           created_at?: string
           current_capacity_vs_pb?: number | null
+          cvd_risk_factors?: Json
           diastolic_bp_mmhg?: number | null
           dominant_side?: string | null
           energy_levels?: string | null
+          exerciser_status?: string | null
           experience_level?: string | null
           extended?: Json
           hinge_capacity?: Json
@@ -423,6 +479,8 @@ export type Database = {
           lunge_form_criteria?: Json
           max_lifts?: string | null
           med_flags?: string[] | null
+          medical_clearance_reason?: string | null
+          medical_clearance_required?: boolean | null
           medical_conditions?: string | null
           medications?: string | null
           mobility_limitations?: string | null
@@ -447,6 +505,7 @@ export type Database = {
           section_analyses_locale?: Json
           sections_analysed_at?: Json
           session_duration_minutes?: number | null
+          signs_symptoms?: Json
           single_leg_balance_note?: string | null
           single_leg_balance_score?: number | null
           sleep_quality?: number | null
@@ -459,6 +518,7 @@ export type Database = {
           squat_form_criteria?: Json
           standing_posture_notes?: string | null
           stress_level?: number | null
+          submax_test?: Json
           systolic_bp_mmhg?: number | null
           trainer_id?: string
           training_days_per_week?: number | null
@@ -1111,6 +1171,7 @@ export type Database = {
           id: string
           is_demo: boolean
           plan_data: Json
+          prescription_parameters: Json
           prior_plan_id: string | null
           programming_variables: Json | null
           progression_plan: Json | null
@@ -1140,6 +1201,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           plan_data?: Json
+          prescription_parameters?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
@@ -1169,6 +1231,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           plan_data?: Json
+          prescription_parameters?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
