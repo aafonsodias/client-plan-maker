@@ -470,6 +470,12 @@ function Landing() {
             { q: t("plan:landing.faq.q2_q"), a: t("plan:landing.faq.q2_a") },
             { q: t("plan:landing.faq.q3_q"), a: t("plan:landing.faq.q3_a") },
             { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
+            { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
+            { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
+            { q: t("plan:landing.faq.q7_q"), a: t("plan:landing.faq.q7_a") },
+            { q: t("plan:landing.faq.q8_q"), a: t("plan:landing.faq.q8_a") },
+            { q: t("plan:landing.faq.q9_q"), a: t("plan:landing.faq.q9_a") },
+            { q: t("plan:landing.faq.q10_q"), a: t("plan:landing.faq.q10_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
