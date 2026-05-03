@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload, X, Minus, Shield } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload, X, Minus } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { WorkbenchMockup } from "@/components/landing/WorkbenchMockup";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
@@ -1109,10 +1109,6 @@ function TierBadgesSection() {
             >
               <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
               {t(`landing.tier_badges.items.${tier.key}.name`)}
-            </div>
-            <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-              <Shield className="h-3.5 w-3.5" />
-              {t("landing.tier_badges.title")}
             </div>
             <p className="text-sm font-light text-muted-foreground">
               {t(`landing.tier_badges.items.${tier.key}.desc`)}
