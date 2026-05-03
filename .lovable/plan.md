@@ -1,108 +1,72 @@
-# **PLAN** — só revisão final, sem código.
+## Princípio
+**Técnica > força bruta.** Modelo deep só onde o raciocínio clínico/programático justifica. Modelo fast em tudo o resto. Caching de prompts (system prompt estável → cache hit em todas as chamadas do mesmo plan).
 
----
+## Model routing por stage (custo/inteligência optimizado)
 
-Sequência aprovada. Plano respeita os guardrails sem desvios. Três notas finas antes de avançares:
+| Stage | Trabalho | Modelo | Justificação |
+|---|---|---|---|
+| Stage 1 — Brief | Resumo estruturado do assessment | `google/gemini-3-flash-preview` | Schema apertado, zero raciocínio criativo. Flash chega. |
+| Stage 2 — Blueprint | Periodização, archetypes, progression model | `openai/gpt-5-mini` | Decisão arquitectural mas constrangida por FITT-VP. Mini é mais que suficiente. |
+| Stage 3 — Microcycle | Geração de dias com selecção de exercícios + validator FITT-VP | `openai/gpt-5` | Único lugar onde raciocínio multi-constraint paga. Stage mais caro mas mais crítico. |
+| Stage 4 — Progressions | Aplicação de regras de progressão sobre output do Stage 3 | `openai/gpt-5-mini` | Quase determinístico. Mini. |
+| `discussBlueprint` (chat) | Conversa com o trainer | `google/gemini-3-flash-preview` | UX rápida importa mais que raciocínio profundo. |
+| `repair` (validator retry) | Corrigir output que falhou Zod ou FITT-VP | mesmo modelo do stage que falhou | Manter consistência. |
 
-### Nota 1 — Custo esperado do Smoke #2
+**Custo estimado por plan completo (Sofia full pipeline):** ~$0.08–0.15 em créditos Lovable (vs. ~$0.30–0.60 com Sonnet em todos os stages). **2–4× mais barato** sem perder qualidade onde importa.
 
-Disseste `$0.10–0.30` para uma persona end-to-end. Confirma que isso inclui retry caso o validator dispare. Se o validator falhar e disparar 1× retry, o custo dobra parcialmente (Stage 3 corre 2x). Se for o caso, ajusta a estimativa para `$0.20–0.50` worst case e aprova mesmo assim — vale a pena. Só quero o número honesto.
+## Ficheiros tocados (cirúrgico, aditivo onde possível)
 
-### Nota 2 — Persistência do `prescription_parameters`
+**Novos:**
+- `src/server/phased/ai-gateway.server.ts` — `callLovableAiWithTool()`. Mesma assinatura de `callAnthropicWithSchema`, body OpenAI-compatible, parsing de `tool_calls[0].function.arguments` (string JSON). Retorna o mesmo `AiCallResult<T>`.
+- `src/server/phased/model-routing.server.ts` — mapa central `STAGE_MODELS = { stage1: 'google/gemini-3-flash-preview', stage2: 'openai/gpt-5-mini', stage3: 'openai/gpt-5', stage4: 'openai/gpt-5-mini', discuss: 'google/gemini-3-flash-preview' }`. Único sítio onde se mexe para tunar custo/qualidade no futuro.
 
-Disseste "coluna já existente ou via `generation_meta` — confirmar no wire-up". A coluna `workout_plans.prescription_parameters jsonb NOT NULL DEFAULT '{}'::jsonb` foi criada em R2.1 (Migration A). É lá que vai. Não é via `generation_meta`. Confirma que apontas para a coluna direta — senão temos dois sítios para o mesmo dado.
+**Editados:**
+- `src/server/phased/stage1-brief.functions.ts` — trocar `callAnthropicWithSchema` → `callLovableAiWithTool`, modelo via `STAGE_MODELS.stage1`.
+- `src/server/phased/stage2-blueprint.functions.ts` — idem stage2 (incluindo `discussBlueprint` → STAGE_MODELS.discuss).
+- `src/server/phased/stage3-microcycle.functions.ts` — idem stage3. Validator retry mantém o mesmo modelo. **Não toca** `validateDayAgainstFittVp` nem `fittVpPromptBlock` — esses são deterministic.
+- `src/server/phased/stage4-progressions.functions.ts` — idem stage4.
+- `src/server/plan-cost.server.ts` — adicionar pricing dos 3 novos modelos para `generation_log.cost_usd` continuar correcto. Manter pricing Anthropic durante a transição.
+- `scripts/r2.2-smoke2.ts` — switch para gateway, mantém estrutura.
 
-`generation_meta.fitt_vp_audit` é um sítio diferente: lá vão os resultados do **validator** (violations, retry counts, audit trail). São dois sítios distintos:
+**NÃO tocados (zero risco):**
+- `src/server/screening/preparticipation.server.ts`
+- `src/server/fitt-vp/derive.server.ts`
+- `src/server/phased/programming-tier.server.ts`
+- `src/server/phased/schemas.ts`
+- `acsm_thresholds` table, qualquer lógica DB
+- Smoke #1 report (já aprovado, fica como baseline)
+- `callAnthropicWithSchema` — **mantido** em `ai.server.ts` para rollback até Smoke #2 passar.
 
-- `prescription_parameters` → o block FITT-VP gerado pelo derive (input para Stage 3)
-- `generation_meta.fitt_vp_audit` → o resultado da validação post-Stage-3
+## Sequência de execução
 
-Se já tinhas isto claro, ignora. Mas vi a frase "ou via generation_meta" e quero confirmar antes de cementares.
+1. **Adicionar** os 2 ficheiros novos (`ai-gateway.server.ts`, `model-routing.server.ts`).
+2. **Migrar Stage 1+2+3+4 + discuss** para usar gateway (5 edits, mesmo padrão).
+3. **Atualizar `plan-cost.server.ts`** com pricing dos 3 modelos novos.
+4. **Atualizar `scripts/r2.2-smoke2.ts`** para usar gateway.
+5. **Correr Smoke #2 sobre Sofia** end-to-end (Stage 1→4).
+6. **Escrever Secções 4 + 5 finais** em `.lovable/r2.2-smoke-report.md` (substituindo o stub):
+   - Secção 4: prescription_parameters JSON real (Sofia)
+   - Secção 5: violation counts iniciais + pós-retry, tabela do dia gerado, custo total da run em $
+7. **STOP GATE 2** — mostro report completo, esperas aprovação.
+8. (Após aprovação, cleanup round separado:) remover `callAnthropicWithSchema`, secret `ANTHROPIC_API_KEY`, dependências mortas. Backlog P3.
 
-### Nota 3 — Persona do Smoke #2
+## Guardrails
 
-Sofia é boa escolha por ser caso default limpo. Mas considera trocar para uma persona ligeiramente mais interessante: alguém que dispare **pelo menos uma** especificidade no `prescription_parameters` — por exemplo, `older_adults` para validar que o derive seleciona o row correto de `flexibility_static_stretch_hold`, ou intent vigorous para validar que pega o row de `cardio_intensity_pct_hrr_vigorous`.
+- **Caching de prompts**: system prompts (FITT-VP block, voice rules) estão constantes dentro de uma run de plan → gateway aproveita cache automaticamente, baixa custo input tokens.
+- **Reasoning effort**: Stage 3 com `reasoning: { effort: "medium" }`. Stage 2 sem reasoning explícito (mini não precisa). Subir para "high" só se Smoke #2 mostrar validator violations recorrentes.
+- **Generation_log**: cada chamada continua a escrever uma row com `model_used` real (`openai/gpt-5` etc.), `cost_usd` correcto, `zod_passed`, `retry_count`. Telemetria intacta.
+- **Fallback**: se gateway devolver 402 (créditos esgotados) ou 429 (rate limit), surface explícito ao trainer ("Sem créditos AI — adiciona em Settings → Workspace → Usage"). Não silenciar.
+- **A/B opcional**: se quiseres comparar gateway vs Anthropic no Sofia, adiciono uma flag `USE_LOVABLE_GATEWAY=false` e corro ambos. Por defeito: ON.
 
-Sofia default vai mostrar moderate cardio + general flexibility — nada errado, mas não exercita o branching do derive.
+## Custo do round
+- Smoke #2 end-to-end: **~$0.10–0.15** em créditos Lovable.
+- Sem custos Anthropic adicionais.
 
-Sugestão: **Inês Bento** ou **Manuel Cardoso** se algum tiver perfil older adult; ou Pedro Vieira se quisermos testar o vigorous branch. Decisão tua.
+## Critério de sucesso (Stop Gate 2)
+- Sofia: tier=`advanced`, clearance=`false`, prescription_parameters com 7 citations (matches Smoke #1).
+- Stage 3 gera 4 dias respeitando ranges FITT-VP (ou triggera retry e passa).
+- Validator violations iniciais ≤ 3, pós-retry = 0.
+- Custo total da run ≤ $0.20.
+- Generation_log tem 4–5 rows (uma por stage + eventual retry).
 
-Se não quiseres complicar, Sofia está bem — a Secção 4 vai mostrar o JSON e basta para validar shape. As outras combinações testam-se em smoke runs futuros.
-
-### Aprovação
-
-Avança com Fase A → B → STOP GATE 1.
-
-Não passes para Fase C sem eu aprovar o report. Stop gate é stop gate.
-
-&nbsp;
-
-R2.2 — Close-out com Guardrails
-
-Sequência ajustada conforme guardrails. Dois stop gates explícitos. Nada de backfill ou R2.3 sem aprovação.
-
-## Fase A — Wire-up dual (algoritmo only)
-
-**Ficheiro tocado:** `src/server/programming/programming-tier.server.ts`
-
-- Importar `runPreparticipationAlgorithm` e `classifyCvdRiskFactors` de `src/server/screening/preparticipation.server.ts`.
-- Manter `hasMedicalClearanceFlag(assessment)` calculado em paralelo (`oldFlag`).
-- `newResult = runPreparticipationAlgorithm({ assessment, signs, desired_intensity })` passa a ser source-of-truth para `clearance_required` no tier classifier.
-- Expor ambos (`oldFlag`, `newResult`) no return interno do helper para o smoke harness conseguir ler o diff por persona.
-- Tier classifier consome `newResult.clearance_required` + `newResult.cvd_risk_factor_count` + BP gate (180/110 independente).
-- **Não** mexer ainda em Stage 2 / Stage 3 / derive.server.ts wire-up.
-
-## Fase B — Smoke offline #1 (algoritmo only, 10 personas)
-
-**Script:** `scripts/r2.2-smoke.ts` (one-off, lê 10 demo assessments do DB via service role, corre o tier classifier, escreve markdown).
-
-**Output:** `.lovable/r2.2-smoke-report.md` com:
-
-1. **Tier transitions table** — `name | tier_old | tier_new | clearance_old | clearance_new | reason`
-2. **Clearance deltas** — quem mudou + `clearance_reason` em PT humano
-3. **BP cardiac rehab gate** — quem dispara ≥180/110
-
-**False-positive watchlist explicitamente verificada no report:**
-
-- Sofia (jovem ativa) → `clearance=false` esperado
-- Pedro Vieira (atleta vigoroso saudável) → `clearance=false` esperado
-- Qualquer gestante → não deve flagear via Ch.2 (pregnancy é R3 overlay)
-- Qualquer jovem saudável com `clearance=true` → bug, parar e investigar antes do report sair
-
-## STOP GATE 1
-
-Mostrar o report. Esperar aprovação. **Sem aprovação: não avança para Fase C.**
-
-## Fase C — Wire-up Stage 2 + Stage 3 + validator
-
-Só após aprovação do smoke #1.
-
-- **Stage 2** (`src/server/pipeline/stage2-*.server.ts`): chamar `deriveFittVpFromDb()` e gravar `prescription_parameters` na linha do plano (coluna já existente ou via `generation_meta` — confirmar no wire-up).
-- **Stage 3** system prompt: bloco "FITT-VP non-negotiable constraints" injectado a partir de `prescription_parameters`, com instrução clara de não violar ranges/floors.
-- **Post-Stage-3 validator**: chamar `validateDayAgainstFittVp()` sobre cada day output; se violations → retry once com violations no prompt; se persistir → log em `generation_log` com `validator_violations[]` e deixar passar (não bloquear plano).
-
-## Fase D — Smoke #2 (end-to-end, 1 persona)
-
-- Persona escolhida: **Sofia** (default case mais limpo, sem clearance, sem flags BP).
-- Correr pipeline completo (Stage 1 → 4) com AI real, custo esperado $0.10–0.30.
-- Anexar ao mesmo `.lovable/r2.2-smoke-report.md`:
-  - **Secção 4** — `prescription_parameters` JSON completo da Sofia
-  - **Secção 5** — validator hits no Stage 3 output + retry outcome
-
-## STOP GATE 2
-
-Mostrar report completo (5 secções). Esperar aprovação antes de:
-
-- Backfill `cvd_risk_factors` em assessments existentes
-- Avançar para R2.3
-
----
-
-## Detalhes técnicos
-
-- `oldFlag` paralelo é puramente observacional — não influencia plano gerado, só alimenta a coluna `clearance_old` no smoke report.
-- Smoke #1 não consome AI: lê assessments, corre puro TS, escreve markdown. Custo zero.
-- Citations em `prescription_parameters.citations[]` já no formato `{source: 'acsm_12e', ref: '§X.Y'}` (estrutura discriminator pronta para Bompa/NSCA aditivos).
-- BP gate 180/110 é independente do algoritmo Ch.2 — disparar mesmo em personas que de outro modo não exigiriam clearance.
-- `generation_log` recebe entry por cada Stage 3 retry com `validator_violations[]` para auditoria.
-- Após Fase C aprovada, `hasMedicalClearanceFlag` é removido em commit separado (cleanup), não nesta fase.
+Se algum critério falha → não avanço para R2.3, debug primeiro.
