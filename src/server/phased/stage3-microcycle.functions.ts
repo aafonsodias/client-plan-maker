@@ -286,6 +286,7 @@ async function runDay(
   guidelines: TierGuidelines | null,
   priorSummary: any = null,
   priorExercisePool: string[] = [],
+  hardBan: string[] = [],
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -341,6 +342,10 @@ If a movement is genuinely "supported" or rehab-style, prefer reducing load and 
     ? `\n\nEXERCISE ROTATION (block N>1) — SAID variation rule:\nThe prior block already exhausted these exercises: ${priorExercisePool.slice(0, 40).join(", ")}.\nAt least 60% of the accessories you pick for THIS day must NOT be in that list (substitute with same movement pattern + same intent — e.g. replace 'leg press' with 'hack squat' or 'belt squat'). The 1–2 main lifts may repeat if they are the driver of progression. Isolators MUST rotate. Variation is what creates new adaptation; clones stall.`
     : "";
 
+  const hardBanBlock = hardBan.length > 0
+    ? `\n\nRETRY — STRICT BAN LIST:\nThe previous attempt repeated too many accessories. DO NOT use any of these accessories (any close variant): ${hardBan.slice(0, 14).join(", ")}.\nReplace each with the closest substitute that trains the same primary muscle / pattern (e.g. swap incline DB press → low-incline machine press; swap leg press → belt squat or hack squat). Main lift may stay.`
+    : "";
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -355,7 +360,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}${hardBanBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
