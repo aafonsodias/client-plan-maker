@@ -150,6 +150,7 @@
       "step_open_client": "Abra a página do cliente para ver a avaliação, foto e histórico.",
       "step_plan": "Abra o último plano. O selo âmbar mostra que evoluiu do bloco anterior.",
       "step_volume": "Volume por músculo (MEV/MAV/MRV). O marcador ↘ mostra onde a IA reduziu o tecto com base no bloco anterior.",
+      "step_capacity": "Síndrome de adaptação: Δ% de carga e e1RM por padrão face ao bloco anterior. Aqui vê se o estímulo está mesmo a produzir capacidade.",
       "step_year": "Vista anual: adesão, RPE e a coluna Adaptação a resumir cada bloco.",
       "step_lab": "Demo Lab (apenas fundador): corra novas simulações sem afetar a sua quota.",
       "skip": "Saltar",

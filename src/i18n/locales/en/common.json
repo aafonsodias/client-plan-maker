@@ -153,6 +153,7 @@
       "step_open_client": "Open the client page to see the assessment, photo and history.",
       "step_plan": "Open the latest plan. The amber chip shows it evolved from the previous block.",
       "step_volume": "Volume targets per muscle (MEV/MAV/MRV). The ↘ marker shows where the AI lowered the ceiling based on the previous block.",
+      "step_capacity": "Adaptation syndrome: load Δ% and e1RM per pattern vs the prior block. This is where you see the stimulus actually producing capacity.",
       "step_year": "Year view: adherence, RPE and the Adaptation column summarising every block.",
       "step_lab": "Demo Lab (founder only): run new simulations without affecting your quota.",
       "skip": "Skip",
