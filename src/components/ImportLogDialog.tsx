@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ClipboardPaste, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,6 +32,7 @@ export function ImportLogDialog({
   plan: PlanData;
   onSaved?: () => void | Promise<void>;
 }) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [weekNum, setWeekNum] = useState<number>(plan.weeks[0]?.week_number ?? 1);
   const [dayLabel, setDayLabel] = useState<string>(plan.weeks[0]?.days?.[0]?.day_label ?? "");
@@ -88,13 +90,13 @@ export function ImportLogDialog({
           entries,
         },
       });
-      toast.success("Registo importado");
+      toast.success(t("import_log.ok_imported"));
       setOpen(false);
       setRows({});
       setNotes("");
       await onSaved?.();
     } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível importar");
+      toast.error(e?.message ?? t("import_log.err_failed"));
     } finally {
       setSaving(false);
     }
@@ -103,17 +105,17 @@ export function ImportLogDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8" title="Importar valores escritos na folha de registo">
-          <ClipboardPaste className="mr-1.5 h-3.5 w-3.5" /> Importar registo
+        <Button size="sm" variant="outline" className="h-8" title={t("import_log.trigger_title")}>
+          <ClipboardPaste className="mr-1.5 h-3.5 w-3.5" /> {t("import_log.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Importar valores da folha de registo</DialogTitle>
+          <DialogTitle>{t("import_log.title")}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <label className="text-xs">
-            <span className="mb-1 block text-muted-foreground">Semana</span>
+            <span className="mb-1 block text-muted-foreground">{t("import_log.week")}</span>
             <select
               value={weekNum}
               onChange={(e) => {
@@ -126,13 +128,13 @@ export function ImportLogDialog({
             >
               {plan.weeks.map((w) => (
                 <option key={w.week_number} value={w.week_number}>
-                  Semana {w.week_number}
+                  {t("import_log.week_label", { n: w.week_number })}
                 </option>
               ))}
             </select>
           </label>
           <label className="text-xs">
-            <span className="mb-1 block text-muted-foreground">Sessão</span>
+            <span className="mb-1 block text-muted-foreground">{t("import_log.session")}</span>
             <select
               value={dayLabel}
               onChange={(e) => setDayLabel(e.target.value)}
@@ -146,7 +148,7 @@ export function ImportLogDialog({
             </select>
           </label>
           <label className="text-xs">
-            <span className="mb-1 block text-muted-foreground">Data</span>
+            <span className="mb-1 block text-muted-foreground">{t("import_log.date")}</span>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
         </div>
@@ -155,11 +157,11 @@ export function ImportLogDialog({
           <table className="w-full text-xs">
             <thead className="bg-muted/30 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-2 py-1.5 text-left">Exercício</th>
-                <th className="px-2 py-1.5 text-left">Prescrito</th>
-                <th className="px-2 py-1.5 text-left">Reps reais</th>
-                <th className="px-2 py-1.5 text-left">Carga</th>
-                <th className="px-2 py-1.5 text-left">Notas</th>
+                <th className="px-2 py-1.5 text-left">{t("import_log.th_exercise")}</th>
+                <th className="px-2 py-1.5 text-left">{t("import_log.th_prescribed")}</th>
+                <th className="px-2 py-1.5 text-left">{t("import_log.th_actual_reps")}</th>
+                <th className="px-2 py-1.5 text-left">{t("import_log.th_load")}</th>
+                <th className="px-2 py-1.5 text-left">{t("import_log.th_notes")}</th>
               </tr>
             </thead>
             <tbody>
@@ -176,7 +178,7 @@ export function ImportLogDialog({
                         className="h-7 text-xs"
                         value={cur.reps}
                         onChange={(e) => setEx(ex.name, { reps: e.target.value })}
-                        placeholder="ex. 8,8,7"
+                        placeholder={t("import_log.ph_reps")}
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -184,7 +186,7 @@ export function ImportLogDialog({
                         className="h-7 text-xs"
                         value={cur.weight}
                         onChange={(e) => setEx(ex.name, { weight: e.target.value })}
-                        placeholder="ex. 40kg"
+                        placeholder={t("import_log.ph_load")}
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -201,7 +203,7 @@ export function ImportLogDialog({
               {(day?.exercises ?? []).length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground">
-                    Sem exercícios prescritos para esta sessão.
+                    {t("import_log.no_exercises")}
                   </td>
                 </tr>
               )}
@@ -210,20 +212,20 @@ export function ImportLogDialog({
         </div>
 
         <label className="block text-xs">
-          <span className="mb-1 block text-muted-foreground">Notas da sessão</span>
+          <span className="mb-1 block text-muted-foreground">{t("import_log.session_notes")}</span>
           <AutoTextarea
             minRows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Sentiu fadiga, técnica, tempo total…"
+            placeholder={t("import_log.ph_session_notes")}
           />
         </label>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>{t("import_log.cancel")}</Button>
           <Button onClick={submit} disabled={saving || !day}>
             {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
-            Guardar registo
+            {t("import_log.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
