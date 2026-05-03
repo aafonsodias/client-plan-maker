@@ -21,6 +21,7 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansIndexRouteImport } from './routes/plans.index'
+import { Route as SchedulePacksRouteImport } from './routes/schedule.packs'
 import { Route as PlansNewRouteImport } from './routes/plans.new'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
@@ -94,6 +95,11 @@ const PlansIndexRoute = PlansIndexRouteImport.update({
   path: '/plans/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SchedulePacksRoute = SchedulePacksRouteImport.update({
+  id: '/packs',
+  path: '/packs',
+  getParentRoute: () => ScheduleRoute,
+} as any)
 const PlansNewRoute = PlansNewRouteImport.update({
   id: '/plans/new',
   path: '/plans/new',
@@ -164,7 +170,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
-  '/schedule': typeof ScheduleRoute
+  '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/schedule/packs': typeof SchedulePacksRoute
   '/plans/': typeof PlansIndexRoute
   '/clients/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
@@ -190,7 +197,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
-  '/schedule': typeof ScheduleRoute
+  '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/schedule/packs': typeof SchedulePacksRoute
   '/plans': typeof PlansIndexRoute
   '/clients/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
@@ -217,7 +225,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
-  '/schedule': typeof ScheduleRoute
+  '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/schedule/packs': typeof SchedulePacksRoute
   '/plans/': typeof PlansIndexRoute
   '/clients_/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/schedule/packs'
     | '/plans/'
     | '/clients/$clientId/year'
     | '/plans/$planId/blueprint'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/schedule/packs'
     | '/plans'
     | '/clients/$clientId/year'
     | '/plans/$planId/blueprint'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/schedule/packs'
     | '/plans/'
     | '/clients_/$clientId/year'
     | '/plans/$planId/blueprint'
@@ -324,7 +336,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ManualRoute: typeof ManualRoute
   PrivacyRoute: typeof PrivacyRoute
-  ScheduleRoute: typeof ScheduleRoute
+  ScheduleRoute: typeof ScheduleRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
@@ -423,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/schedule/packs': {
+      id: '/schedule/packs'
+      path: '/packs'
+      fullPath: '/schedule/packs'
+      preLoaderRoute: typeof SchedulePacksRouteImport
+      parentRoute: typeof ScheduleRoute
+    }
     '/plans/new': {
       id: '/plans/new'
       path: '/plans/new'
@@ -510,6 +529,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ScheduleRouteChildren {
+  SchedulePacksRoute: typeof SchedulePacksRoute
+}
+
+const ScheduleRouteChildren: ScheduleRouteChildren = {
+  SchedulePacksRoute: SchedulePacksRoute,
+}
+
+const ScheduleRouteWithChildren = ScheduleRoute._addFileChildren(
+  ScheduleRouteChildren,
+)
+
 interface ClientsClientIdRouteChildren {
   ClientsClientIdYearRoute: typeof ClientsClientIdYearRoute
 }
@@ -550,7 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ManualRoute: ManualRoute,
   PrivacyRoute: PrivacyRoute,
-  ScheduleRoute: ScheduleRoute,
+  ScheduleRoute: ScheduleRouteWithChildren,
   SettingsRoute: SettingsRoute,
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
