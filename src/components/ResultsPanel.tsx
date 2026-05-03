@@ -314,7 +314,11 @@ export function ResultsPanel({
                   const avg = rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null;
                   const tn = rpeTone(avg);
                   return (
-                    <tr key={s.id} className="bg-card/60">
+                    <tr
+                      key={s.id}
+                      onClick={() => setOpenSession(s)}
+                      className="cursor-pointer bg-card/60 transition hover:bg-card"
+                    >
                       <td className="rounded-l-md px-2 py-1.5">{s.session_date}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">W{s.week_number}</td>
                       <td className="px-2 py-1.5">{s.day_label}</td>
@@ -339,6 +343,79 @@ export function ResultsPanel({
           </table>
         </div>
       </SectionCard>
+
+      <Sheet open={!!openSession} onOpenChange={(v) => !v && setOpenSession(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+          {openSession && (
+            <>
+              <SheetHeader>
+                <SheetTitle>
+                  {openSession.day_label}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    · W{openSession.week_number} · {openSession.session_date}
+                  </span>
+                </SheetTitle>
+                <SheetDescription>
+                  Registado por {openSession.logged_by} · {(openSession.entries ?? []).length} exercícios
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-4 space-y-3">
+                {(openSession.entries ?? []).map((e: any, i: number) => {
+                  const rpe = parseRpe(e?.actual?.rpe);
+                  const tn = rpeTone(rpe);
+                  return (
+                    <div key={i} className="rounded-lg border border-border bg-card/50 p-3 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold">{e?.exercise_name ?? e?.name ?? `Exercício ${i + 1}`}</p>
+                        {rpe != null && (
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tn.pill}`}>
+                            RPE {formatRpe(rpe)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 grid grid-cols-2 gap-1 text-muted-foreground">
+                        {e?.prescribed && (
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest">Prescrito</span>
+                            <p className="text-foreground">
+                              {e.prescribed.sets ?? "—"} × {e.prescribed.reps ?? "—"}
+                              {e.prescribed.load ? ` @ ${e.prescribed.load}` : ""}
+                            </p>
+                          </div>
+                        )}
+                        {e?.actual && (
+                          <div>
+                            <span className="text-[10px] uppercase tracking-widest">Realizado</span>
+                            <p className="text-foreground">
+                              {e.actual.sets ?? "—"} × {e.actual.reps ?? "—"}
+                              {e.actual.load ? ` @ ${e.actual.load}` : ""}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {e?.notes && <p className="mt-1 italic text-muted-foreground">{e.notes}</p>}
+                    </div>
+                  );
+                })}
+                {openSession.session_notes && (
+                  <div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Notas da sessão</p>
+                    <p className="mt-1 whitespace-pre-wrap">{openSession.session_notes}</p>
+                  </div>
+                )}
+                {openSession.client_feedback?.text && (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                    <p className="text-[10px] uppercase tracking-widest text-amber-400">
+                      Feedback do cliente {openSession.client_feedback.kind ? `· ${openSession.client_feedback.kind}` : ""}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap">{openSession.client_feedback.text}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Feedback feed */}
       {(feedback.length > 0 || sessions.some((s) => s.client_feedback?.text)) && (
