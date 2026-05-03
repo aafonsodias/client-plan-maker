@@ -66,7 +66,7 @@ export default function YearView({ clientId }: Props) {
   }));
 
   return (
-    <div className="space-y-6">
+    <div data-tour="year-view" className="space-y-6">
       <header className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card p-4">
         <div>
           <h2 className="text-lg font-bold text-foreground">Vista anual</h2>

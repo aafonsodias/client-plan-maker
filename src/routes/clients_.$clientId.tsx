@@ -1327,7 +1327,7 @@ function ClientDetail() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="w-full max-w-full space-y-6 overflow-x-hidden">
+    <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
         <div className="flex flex-wrap items-center gap-4 min-w-0">
           {user?.id && (

@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { DemoRunsProvider } from "@/contexts/DemoRunsContext";
 import { DemoRunsIndicator } from "@/components/DemoRunsIndicator";
+import { TourProvider } from "@/contexts/TourContext";
 import i18n, { applyPersistedLocale } from "@/i18n";
 
 import appCss from "../styles.css?url";
@@ -118,9 +119,11 @@ function RootComponent() {
       <AuthProvider>
         <CurrencyProvider>
           <DemoRunsProvider>
-            <Outlet />
-            <DemoRunsIndicator />
-            <Toaster />
+            <TourProvider>
+              <Outlet />
+              <DemoRunsIndicator />
+              <Toaster />
+            </TourProvider>
           </DemoRunsProvider>
         </CurrencyProvider>
       </AuthProvider>

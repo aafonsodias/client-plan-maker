@@ -35,7 +35,7 @@ export function VolumeSection({ plan, adaptation }: Props) {
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elegant)]">
+    <section data-tour="volume-section" className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elegant)]">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-2">
           <Activity className="mt-0.5 h-4 w-4 text-accent" />

@@ -293,7 +293,7 @@ function PlanEditor() {
               <span className="truncate">{client.full_name} →</span>
             </Link>
           )}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div data-tour="plan-header" className="mt-1 flex flex-wrap items-center gap-2">
             <Input
               className="h-9 max-w-md border-0 bg-transparent px-0 !text-xl font-bold tracking-tight focus-visible:ring-0"
               value={plan.title}
@@ -305,6 +305,7 @@ function PlanEditor() {
               const fb = ((plan as any).generation_meta?.block_feedback ?? null) as BlockSummary | null;
               const chip = (
                 <span
+                  data-tour="plan-block-chip"
                   title={fb ? undefined : ((plan as any).block_transition_summary ?? undefined)}
                   className="inline-flex cursor-help items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
                 >

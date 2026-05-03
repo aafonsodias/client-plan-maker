@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Beaker, Zap, Activity, Loader2, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { advanceSimulation } from "@/server/demo-sessions.functions";
@@ -17,6 +18,7 @@ import { useDemoRuns, DEMO_RUN_STAGES } from "@/contexts/DemoRunsContext";
  */
 export function DemoLabPanel() {
   const { user } = useAuth();
+  const { t } = useTranslation("common");
   const { runs, startRun, cancelRun } = useDemoRuns();
   const tickFn = useServerFn(advanceSimulation);
   const [busy, setBusy] = useState<"tick" | null>(null);
@@ -52,8 +54,8 @@ export function DemoLabPanel() {
     setBusy("tick");
     try {
       const res: any = await tickFn();
-      if (res?.ticked > 0) toast.success(`${res.ticked} sessões adicionadas.`);
-      else toast.info(res?.message ?? "Nada para avançar.");
+      if (res?.ticked > 0) toast.success(t("demo.lab_advanced_toast", { count: res.ticked }));
+      else toast.info(res?.message ?? t("demo.lab_nothing_toast"));
     } catch (e: any) {
       toast.error(e?.message ?? "Erro inesperado.");
     } finally {
@@ -89,20 +91,20 @@ export function DemoLabPanel() {
   const isRunning = !!trackedRun && trackedRun.status !== "done" && trackedRun.status !== "failed" && !trackedRun.cancelled;
 
   return (
-    <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10 p-4">
+    <div data-tour="demo-lab" className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10 p-4">
       <div className="mb-3 flex items-center gap-2">
         <Beaker className="h-4 w-4 text-amber-500" />
-        <p className="text-xs uppercase tracking-widest text-amber-500/90">Demo Lab · Founder only</p>
+        <p className="text-xs uppercase tracking-widest text-amber-500/90">{t("demo.lab_eyebrow")}</p>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-            Duração (= semanas de logbook)
+            {t("demo.lab_duration_label")}
           </span>
-          <SegBtn value={4} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>4 sem</SegBtn>
-          <SegBtn value={6} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>6 sem</SegBtn>
-          <SegBtn value={8} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>8 sem</SegBtn>
+          <SegBtn value={4} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>{t("demo.lab_weeks", { count: 4 })}</SegBtn>
+          <SegBtn value={6} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>{t("demo.lab_weeks", { count: 6 })}</SegBtn>
+          <SegBtn value={8} current={durationWeeks} onClick={(v) => setDurationWeeks(v as 4 | 6 | 8)}>{t("demo.lab_weeks", { count: 8 })}</SegBtn>
         </div>
       </div>
 
@@ -115,11 +117,11 @@ export function DemoLabPanel() {
           className="border-amber-500/40"
         >
           {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-          Instant: cliente + plano + logbook
+          {t("demo.lab_instant")}
         </Button>
         {isRunning && (
           <Button size="sm" variant="ghost" onClick={() => void cancelInstant()} className="text-amber-400 hover:text-amber-300">
-            <Square className="mr-2 h-4 w-4" /> Parar
+            <Square className="mr-2 h-4 w-4" /> {t("demo.lab_stop")}
           </Button>
         )}
         <Button
@@ -130,7 +132,7 @@ export function DemoLabPanel() {
           className="border-amber-500/40"
         >
           {busy === "tick" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
-          Avançar simulação (+1 sessão / cliente demo)
+          {t("demo.lab_advance")}
         </Button>
       </div>
       {trackedRun ? (
@@ -167,13 +169,12 @@ export function DemoLabPanel() {
             })}
           </ol>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Podes navegar para outras páginas — vais ver o progresso no canto inferior direito e receber um aviso quando terminar.
+            {t("demo.lab_navigate_hint")}
           </p>
         </div>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Cria um cliente fictício realista, gera o plano completo (brief → blueprint → microciclo → progressões)
-        e enche o logbook até ao fim da duração escolhida. Não conta para a tua quota.
+        {t("demo.lab_footer")}
       </p>
     </div>
   );
