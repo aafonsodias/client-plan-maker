@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -46,6 +47,11 @@ const TemplatesRoute = TemplatesRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/privacy': typeof PrivacyRoute
+  '/schedule': typeof ScheduleRoute
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/manual'
     | '/privacy'
+    | '/schedule'
     | '/settings'
     | '/templates'
     | '/terms'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/manual'
     | '/privacy'
+    | '/schedule'
     | '/settings'
     | '/templates'
     | '/terms'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/manual'
     | '/privacy'
+    | '/schedule'
     | '/settings'
     | '/templates'
     | '/terms'
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ManualRoute: typeof ManualRoute
   PrivacyRoute: typeof PrivacyRoute
+  ScheduleRoute: typeof ScheduleRoute
   SettingsRoute: typeof SettingsRoute
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -530,6 +550,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ManualRoute: ManualRoute,
   PrivacyRoute: PrivacyRoute,
+  ScheduleRoute: ScheduleRoute,
   SettingsRoute: SettingsRoute,
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
