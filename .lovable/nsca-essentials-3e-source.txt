@@ -1,0 +1,45 @@
+NSCA Essentials of Personal Training, 3rd Edition — Source & Access Policy
+==========================================================================
+
+Source: NSCA's Essentials of Personal Training, 3rd Edition (2022)
+Editors: Brad J. Schoenfeld, Ronald L. Snarr
+Publisher: Human Kinetics (for the National Strength and Conditioning Association)
+ISBN: 978-1-4925-9521-2
+
+PDF location (NOT in repo):
+  /mnt/documents/nsca-essentials-3e.pdf  (agent-accessible only; outside repo; never bundled)
+
+Status: PARKED. Not ingested in Round 1 (ACSM-only).
+Slot decision pending:
+  - Hypothesis A (preferred): Round 3.5 — ingest after special-population overlays
+    (Round 3) so NSCA exercise selection / cuing / technique substitutions plug
+    on top of overlays already in place.
+  - Hypothesis B (alternative): Round 2.7 — ingest before overlays so each overlay
+    can cite specific NSCA exercise substitutions instead of bare parameters.
+    More valuable per overlay, larger Round 3.
+  Decision deferred until Round 3 planning.
+
+Role in the knowledge stack:
+  - ACSM 12e   = WHAT to prescribe (FITT-VP, contraindications, populations — clinical).
+  - Bompa 6e   = HOW to plan over time (periodization, biomotor abilities).
+  - NSCA 3e    = HOW to teach, select, progress, modify (applied programming, cuing,
+                 technique, populations from a practical lens).
+
+IP rule (mirrors ACSM 12e and Bompa 6e policy):
+  - NEVER render verbatim prose to end users (trainer or client UIs, PDFs, exports).
+  - ALLOWED when ingestion happens: paraphrased rules, exercise selection heuristics,
+    technique cues, population modifications as derived structures, citation strings
+    of the form "NSCA Essentials 3e §X.Y" or "NSCA Essentials 3e Tbl X.Y".
+  - Storage when ingested: paraphrased chapter notes go to a server-only table
+    (RLS deny-all, service-role only). Only derived facts (exercise recommendations,
+    cue libraries, progression rules, population modifications) become trainer-readable.
+
+Cross-source schema (Model B — approved):
+  When ingestion happens, NSCA shares the same source-agnostic tables as Bompa and
+  ACSM where the domains overlap:
+    - periodization_phases / _sequences / _microcycle_patterns
+    - exercise_recommendations
+    - population_overlays
+  Each row carries a `source` discriminator ('acsm_12e' | 'bompa_6e' | 'nsca_3e') and
+  a `citation` string. This surfaces cross-source agreement (strong signal) and
+  disagreement (resolve manually) across the three references.

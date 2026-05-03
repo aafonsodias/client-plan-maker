@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 26 (3 Mai 2026)
+Atualizado: Round 27 (3 Mai 2026)
 
 ## Concluído (linha do tempo condensada)
 
@@ -39,6 +39,7 @@ Atualizado: Round 26 (3 Mai 2026)
 | 39 | P1 | i18n | billing.tsx + plans.$planId headers/toasts (FAQ, tiers, top-up, footer) | R22 |
 | 32 | P1 | i18n | Sweep clients_.$clientId profundo (StageCards, Synthesis, AssessmentSection, Snapshot) | R25 |
 | 33 | P2 | UX | Smoke test checklist PT/EN versionado em .lovable/smoke-test.md | R26 |
+| 51 | P0 | Conhecimento | ACSM 12e ingestion + gap report (8 ch · 22 sec · 59 rec · 79 contra · 167 norm · 37 pop) → `.lovable/acsm-12e-gap-report.md` | R27 |
 
 ## Em aberto
 
@@ -47,6 +48,19 @@ Atualizado: Round 26 (3 Mai 2026)
 | 42 | P2 | Schedule | Recurring booking rules ("toda 3ª/5ª 7h por 10 semanas") | futuro |
 | 43 | P2 | Schedule | Sync Google/Apple Calendar (one-way export ICS para começar) | futuro |
 | 44 | P2 | Schedule | Cobrança/faturação ligada a packs (Stripe link por pack) | futuro |
+
+### Roadmap conhecimento (ACSM + Bompa + NSCA)
+
+| # | P | Round | Item | Status |
+|---|---|---|---|---|
+| 45 | P0 | R2 | FITT-VP backbone + citations: `workout_plans.prescription_parameters` estruturado, teste submax VO₂ (Rockport / 1.5-mi / Ebbeling), checklist dos 9 sinais/sintomas cardinais no intake. Auto-adopt dos 17 thresholds da gap report §E (todos mais conservadores — zero decisões bloqueantes). | next |
+| 46 | P1 | R2.5 | Bompa & Buzzichelli 6e ingestion — camada de periodização sobre o FITT-VP. **Modelo B aprovado**: tabelas source-agnostic `periodization_phases` / `_sequences` / `_microcycle_patterns` com `source` + `citation`. | planned |
+| 47 | P1 | R3 | Special-population overlays — ~18 populações que caem silenciosamente (gap report §D): pediátrico, gravidez, idosos/frailty, LBP, HTA, T1D, T2D, dislipidemia, obesidade, MASLD, asma, DPOC, AVC, Parkinson, MS, depressão, sobreviventes de cancro, osteoporose. Inclui novos do 12e (POTS, ME/CFS, SCAD, transgénero). | planned |
+| 48 | P2 | R3.5 vs R2.7 | NSCA Essentials 3e ingestion — camada de exercise selection / cuing / técnica / programming aplicado. **Pergunta em aberto**: Hipótese A = Round 3.5 (após overlays, plug substituições por cima); Hipótese B = Round 2.7 (antes dos overlays, para overlays poderem citar exercícios específicos). Preferência A. Decidir quando lá chegarmos. | parked |
+| 49 | P2 | R4 | Behaviour-change scaffolding — ACSM Cap. 12 (transtheoretical, motivational interviewing hooks, goal-setting templates). | parked |
+| 50 | P2 | Future | McGill — Ultimate Back Fitness and Performance (2014). Overlay LBP especializado; depende de a infraestrutura de overlays do Round 3 já existir. | parked |
+
+**Cross-source policy** — Bompa 6e + NSCA 3e + ACSM 12e partilham overlap genuíno (variáveis de treino, populações, assessment). Modelo B (tabelas source-agnostic com `source` discriminator) estende-se às três fontes — superficializa concordância (sinal forte) vs discordância (resolver manualmente). Fontes parqueadas: `.lovable/acsm-12e-source.txt`, `.lovable/bompa-buzzichelli-6e-source.txt`, `.lovable/nsca-essentials-3e-source.txt`.
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
