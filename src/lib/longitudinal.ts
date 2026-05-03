@@ -164,9 +164,9 @@ export async function buildYearSummary(clientId: string): Promise<YearSummary> {
     const blockSessions = sessions.filter((s) => s.plan_id === plan.id);
     // Build a "PlanLike" from the shape so we can reuse computeWeeklyVolume per week
     const planLike: PlanLike = {
-      weeks: Array.from(shape.entries()).map(([wn, info]) => ({
+      weeks: Array.from(shape.entries()).map(([wn, info]: [number, { plannedDays: number; weekDayContent: DayContent[] }]) => ({
         week_number: wn,
-        days: info.weekDayContent.map((c) => ({ exercises: c.exercises ?? [] })),
+        days: info.weekDayContent.map((c: DayContent) => ({ exercises: (c.exercises ?? []) as any })),
       })),
     };
     const volByWeek = computeWeeklyVolume(planLike);
