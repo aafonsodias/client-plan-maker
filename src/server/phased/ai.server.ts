@@ -117,7 +117,7 @@ export async function callAnthropicWithSchema<T>(opts: {
         },
         body: JSON.stringify({
           model,
-          max_tokens: opts.maxTokens ?? 1500,
+          max_completion_tokens: opts.maxTokens ?? 1500,
           messages: [
             { role: "system", content: opts.system },
             { role: "user", content: userContent },
