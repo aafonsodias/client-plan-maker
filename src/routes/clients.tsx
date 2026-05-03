@@ -167,7 +167,7 @@ function Clients() {
             variant="outline"
             onClick={() => void createDemo()}
             disabled={creatingDemo}
-            title="Cria um cliente fictício com avaliação completa para testar o fluxo de planeamento"
+            title={t("clients.create_demo_title")}
           >
             {creatingDemo ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -186,11 +186,9 @@ function Clients() {
             {!createdClient ? (
               <>
                 <DialogHeader>
-                  <DialogTitle>Convidar cliente</DialogTitle>
+                  <DialogTitle>{t("clients.invite_dialog_title")}</DialogTitle>
                 </DialogHeader>
-                <p className="text-sm text-muted-foreground">
-                  Não preciso de nada agora. Geras o link, envias ao cliente, e ele preenche tudo (nome, contactos, objetivos, lesões…) pelo telemóvel. Tu só revês no fim.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("clients.invite_intro")}</p>
                 <div className="space-y-3">
                   {!showOptionalName ? (
                     <button
@@ -198,15 +196,15 @@ function Clients() {
                       onClick={() => setShowOptionalName(true)}
                       className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                     >
-                      Já sabes o nome dele? (opcional)
+                      {t("clients.know_name")}
                     </button>
                   ) : (
-                    <Field label="Nome (opcional — só para te ajudar a identificar antes de ele submeter)" value={optionalName} onChange={setOptionalName} />
+                    <Field label={t("clients.optional_name_label")} value={optionalName} onChange={setOptionalName} />
                   )}
                   <DialogFooter>
                     <Button type="button" onClick={() => void createInvite()} disabled={creating}>
                       {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Gerar link de convite
+                      {t("clients.generate_invite")}
                     </Button>
                   </DialogFooter>
                 </div>
@@ -214,11 +212,9 @@ function Clients() {
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle>Envia este link ao cliente</DialogTitle>
+                  <DialogTitle>{t("clients.send_link_title")}</DialogTitle>
                 </DialogHeader>
-                <p className="text-sm text-muted-foreground">
-                  No telemóvel o cliente preenche nome, contactos e a avaliação. Quando ele submeter, aparece aqui na lista para tu revisares.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("clients.send_link_intro")}</p>
                 <IntakeLinkPanel
                   clientId={createdClient.id}
                   clientFirstName={(createdClient.full_name || "").split(" ")[0] || "olá"}
@@ -233,9 +229,9 @@ function Clients() {
                 />
                 <DialogFooter className="mt-2">
                   <Button variant="outline" asChild>
-                    <Link to="/clients/$clientId" params={{ clientId: createdClient.id }}>Abrir cliente</Link>
+                    <Link to="/clients/$clientId" params={{ clientId: createdClient.id }}>{t("clients.open_client")}</Link>
                   </Button>
-                  <Button onClick={closeAndReset}>Concluído</Button>
+                  <Button onClick={closeAndReset}>{t("clients.done")}</Button>
                 </DialogFooter>
               </>
             )}
