@@ -674,15 +674,12 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
           if (collisions / accs.length >= 0.5) stale.push(r.day_number as number);
         }
         const targets = stale.slice(0, 3);
-        const reinforcedPool = [
-          ...priorPool,
-          ...banned.map((n) => `__BAN:${n}`), // bias signal in prompt
-        ];
         for (const idx of targets) {
           const r = await runDay(
             supabase, userId, data.planId, idx,
             briefP.data, bpP.data, guidelines, priorBlockSummary,
-            reinforcedPool,
+            priorPool,
+            banned,
           );
           if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
         }
