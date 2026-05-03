@@ -919,15 +919,16 @@ function buildSlides(
       subtitle: t("intro"),
       body: <p className="text-xs uppercase tracking-widest text-muted-foreground/70">↵ {t("welcome_start")}</p>,
     },
-    // 1a. Path selector — coached vs self
+    // 1a. Coaching mode — presencial / online / híbrido
     {
-      title: t("path_title"),
-      subtitle: t("path_subtitle"),
+      title: t("mode_title"),
+      subtitle: t("mode_subtitle"),
       body: (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           {([
-            { id: "coached", label: t("path_coached"), desc: t("path_coached_desc") },
-            { id: "self", label: t("path_self"), desc: t("path_self_desc") },
+            { id: "in_person", label: t("mode_in_person"), desc: t("mode_in_person_desc") },
+            { id: "online", label: t("mode_online"), desc: t("mode_online_desc") },
+            { id: "hybrid", label: t("mode_hybrid"), desc: t("mode_hybrid_desc") },
           ] as const).map((opt) => {
             const on = form.intake_path === opt.id;
             return (
