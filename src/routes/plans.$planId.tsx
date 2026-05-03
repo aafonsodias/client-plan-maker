@@ -374,14 +374,60 @@ function PlanEditor() {
                 </Popover>
               );
             })()}
-            {(plan as any).generation_meta?.suggest_main_lift_swap && (
-              <span
-                title="Bloco ≥4 — pediu-se à IA para refrescar o main lift de pelo menos um padrão (anti-stale)."
-                className="inline-flex cursor-help items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-emerald-200"
-              >
-                Main lift refrescado
-              </span>
-            )}
+            {(plan as any).generation_meta?.suggest_main_lift_swap && (() => {
+              const audit = (plan as any).generation_meta?.main_lift_audit;
+              const honored = !!audit?.honored;
+              const swapped: string[] = audit?.swappedNames ?? [];
+              const prior: string[] = audit?.priorMain ?? [];
+              const tone = honored
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                : "border-muted bg-muted/20 text-muted-foreground";
+              const label = honored
+                ? `Main lift refrescado${audit?.swappedCount ? ` · ${audit.swappedCount}` : ""}`
+                : "Main lift mantido";
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${tone}`}
+                    >
+                      {label}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
+                    <p className="font-semibold">
+                      {honored ? "Main lift refrescado" : "Main lift mantido"}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {honored
+                        ? "Pelo menos um padrão tem main lift novo vs o bloco anterior — variação anti-stale aplicada."
+                        : "A IA recebeu o pedido de variar o main lift mas manteve os mesmos. Sem ação automática — pode ajustar manualmente se quiser variar."}
+                    </p>
+                    {swapped.length > 0 && (
+                      <div>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Novos main lifts</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {swapped.slice(0, 6).map((n) => (
+                            <li key={n} className="truncate text-foreground/80">{n}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {prior.length > 0 && (
+                      <div>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Bloco anterior</p>
+                        <ul className="mt-1 space-y-0.5">
+                          {prior.slice(0, 6).map((n) => (
+                            <li key={n} className="truncate text-foreground/60">{n}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              );
+            })()}
             {(() => {
               const s = planStatusInfo(plan, tCommon as any);
               if (s.key === "draft") return null;
