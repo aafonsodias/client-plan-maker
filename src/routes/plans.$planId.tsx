@@ -45,6 +45,7 @@ import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
 import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
+import { fetchPlanLineageIds } from "@/lib/plan-lineage";
 import { isPlanFullyLogged, summaryLooksLeaked } from "@/lib/plan-status";
 import { SaveAsTemplateDialog } from "@/components/SaveAsTemplateDialog";
 // Trainer-side ops use the browser supabase client directly (RLS-protected).
@@ -177,10 +178,11 @@ function PlanEditor() {
         setLogoUrl(signed?.signedUrl ?? null);
       }
       try {
+        const lineageIds = await fetchPlanLineageIds(planId);
         const { data: list } = await supabase
           .from("workout_sessions")
           .select("*")
-          .eq("plan_id", planId)
+          .in("plan_id", lineageIds)
           .order("session_date", { ascending: false });
         setSessions((list as unknown as SessionRow[]) ?? []);
       } catch { /* ignore */ }
@@ -189,10 +191,11 @@ function PlanEditor() {
 
   const reloadSessions = async () => {
     try {
+      const lineageIds = await fetchPlanLineageIds(planId);
       const { data: list } = await supabase
         .from("workout_sessions")
         .select("*")
-        .eq("plan_id", planId)
+        .in("plan_id", lineageIds)
         .order("session_date", { ascending: false });
       setSessions((list as unknown as SessionRow[]) ?? []);
     } catch { /* ignore */ }
