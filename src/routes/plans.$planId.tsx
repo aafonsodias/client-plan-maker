@@ -40,6 +40,8 @@ import { VolumeSection } from "@/components/volume/VolumeSection";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
 import { summarizeAdaptation } from "@/lib/block-adaptation";
+import { computeCapacityGain } from "@/lib/capacity-gain";
+import { CapacityGainCard } from "@/components/CapacityGainCard";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
@@ -75,7 +77,7 @@ function PlanRoute() {
 
 type Mode = "view" | "edit" | "log" | "results" | "progress";
 type SessionRow = {
-  id: string; week_number: number; day_label: string; session_date: string;
+  id: string; plan_id?: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
   status?: "done" | "partial" | "missed" | null;
 };
@@ -690,7 +692,10 @@ function PlanEditor() {
       </div>
 
       {mode === "view" ? (
-        <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+        <>
+          <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+        </>
       ) : mode === "edit" ? (
         <>
           {isPhasedComplete && (
@@ -707,7 +712,10 @@ function PlanEditor() {
           </div>
         </>
       ) : mode === "results" ? (
-        <ResultsPanel plan={data} sessions={sessions as any} />
+        <>
+          <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          <ResultsPanel plan={data} sessions={sessions as any} />
+        </>
       ) : mode === "progress" ? (
         <ExerciseTrendChart
           sessions={sessions as any}
@@ -1444,5 +1452,37 @@ function RegenerateWithFeedbackDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * CapacityGainBlock — renders the "what got better" headline card when this
+ * plan is Block N>1 and we have any prior-block sessions in the lineage.
+ * Splits the lineage `sessions` array by plan_id (current vs prior) and
+ * delegates to <CapacityGainCard />.
+ */
+function CapacityGainBlock({
+  plan, sessions, planId,
+}: { plan: any; sessions: SessionRow[]; planId: string }) {
+  const block = (plan as any)?.block_number ?? 1;
+  if (!plan || block <= 1) return null;
+  const priorPlanId = (plan as any)?.prior_plan_id ?? null;
+  if (!priorPlanId) return null;
+  const current = sessions.filter((s) => (s as any).plan_id === planId);
+  const prior = sessions.filter((s) => (s as any).plan_id === priorPlanId);
+  if (current.length === 0 && prior.length === 0) return null;
+  const summary = computeCapacityGain(prior as any, current as any);
+  // Pull the cached block_feedback for adesão / RPE drift.
+  const fb = ((plan as any)?.generation_meta?.block_feedback ?? null) as BlockSummary | null;
+  return (
+    <div className="mb-4">
+      <CapacityGainCard
+        summary={summary}
+        blockNumber={block}
+        adherencePct={fb?.adherencePct ?? null}
+        rpeDrift={null}
+        transitionNote={(plan as any)?.block_transition_summary ?? null}
+      />
+    </div>
   );
 }

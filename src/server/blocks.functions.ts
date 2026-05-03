@@ -132,8 +132,11 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .eq("id", ran.planId);
 
     // Seed 2 weeks of sessions so Resultados has data immediately.
+    // Apply a gentle inter-block load curve (+4% per block, capped at 1.4×)
+    // so the "Top 5 lifts" chart shows real progression across blocks.
+    const loadMultiplier = Math.min(1.4, 1 + 0.04 * (nextBlock - 1));
     try {
-      await seedDemoSessions({ data: { planId: ran.planId, weeksToSeed: 2 } });
+      await seedDemoSessions({ data: { planId: ran.planId, weeksToSeed: 2, loadMultiplier } });
     } catch (e) {
       console.error("[archivePlanAndStartNextBlock] seed sessions failed", e);
     }

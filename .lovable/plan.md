@@ -1,46 +1,100 @@
-## Round 5C — Tour reliability + background-runner hardening + PT sweep continued
+# Round 6 — Plano de Bloco que evolui de verdade + Resultados redesenhados
 
-Three follow-ups to the work just shipped, ordered by user impact.
+## Diagnóstico do PDF que enviaste (Carolina · Bloco 13)
 
-### 1. Tour reliability (the most likely thing to break first)
+Ao ler o export, três sintomas saltam:
 
-The tour was wired up but not exercised — it relies on `data-tour` anchors existing on every step's route, and on Joyride finding them after a route change. Risks to fix:
+1. **Os blocos não variam.** Toda a sessão chama-se `Day 1 – Week 1` / `Day 2 · Week 1`, RPE oscila ~5.0–5.7 ao longo de **2 anos** e o "Top 5 exercícios" é praticamente o mesmo. O motor SAID exige rotação de acessórios a cada mesociclo — não está a acontecer.
+2. **Capacidade não é mostrada.** O cartão "Adaptação" só fala em ajuste de volume por músculo. Não há indicador visível de **ganho de capacidade** (carga estimada, e1RM, kg/rep médio) bloco a bloco — que é exatamente o que o trainer/cliente quer ver.
+3. **A página do plano está densa mas baça.** KPIs em cima, depois 3 charts genéricos, depois tabela longa. Sem hierarquia narrativa, sem "uau", sem reação aos dados (insights, badges de PR, comparação com bloco anterior).
 
-- Add a small wait/retry: when the controlled `stepIndex` changes, verify the target exists in DOM after navigation; if not within ~1.5s, advance to the next step instead of letting Joyride sit on a missing target.
-- Year view target — file is `src/components/YearView.tsx` mounted at `/clients/$clientId/year`; verify the route loader doesn't gate-render the `data-tour` element behind a loader. If it does, anchor moved one level up.
-- Plan route step: when the demo client has no plan yet (rare but possible if seed failed mid-flight) the tour navigates to `/clients/$clientId` instead — already handled, but the next step's `data-tour="plan-block-chip"` won't exist there. Detect this and skip the plan-related steps.
-- "Take tour" button: currently disabled implicitly via `!demoClient`. Add an explicit toast if user clicks it before seed finishes.
+Tudo o resto na conversa anterior (tour, i18n PT-PT, runners de fundo) ficou bom — mantemos.
 
-### 2. Background-runner hardening (Direction C from earlier)
+---
 
-`DemoRunsContext` already persists run ids to localStorage and resumes polling on mount, but a few rough edges remain:
+## O que esta ronda entrega
 
-- After hard refresh, the resumed run's `stage` says "client" until the first poll lands. Seed `stage` from the persisted snapshot so the indicator doesn't regress visually.
-- Cap concurrency: if 3+ runs are in-flight, batch poll them in a single server function call (add `getDemoRunsBatch` server fn) instead of N parallel `pollFn` calls — small win, but matters once a founder kicks off several.
-- The "remove on completion after 4s" timer races with the popover. Hold completed runs in the indicator for the popover's lifetime when it's open.
-- Surface a real "Stop" outcome — today the toast says "a pedir para parar" but the run never visibly transitions; consume the `cancelled` flag to flip the indicator chip to red immediately.
+### 1. Variação real entre blocos (motor)
 
-### 3. PT-PT sweep, round 2
+**Problema raiz**: `runDemoPlay` passa `priorPlanId` mas só envia o resumo de adesão/RPE para os prompts; nunca envia **a lista de exercícios usados no bloco anterior**, nem regra de rotação. O `seedDemoSessions` usa o mesmo array `exercises` do plano, então blocos seguidos parecem clones.
 
-Last round only swept demo + landing-adjacent strings. Highest-traffic remaining surfaces with mixed tu/você or hardcoded PT-BR-ish forms:
+**Correção**:
+- Em `src/server/demo-play.functions.ts`, quando `priorPlanId` existe, ler `workout_plan_days` do bloco anterior e extrair `prior_exercise_pool` (lista única de `exercise_name` + padrão). Stash em `generation_meta.prior_exercise_pool`.
+- Em `src/server/phased/stage3-microcycle.functions.ts` (e Stage 2 quando relevante), injetar bloco hard-rule no prompt:
+  > **EXERCISE ROTATION (block N>1)**: at least **60%** of accessories must differ from the prior block's pool: `[lista]`. Compounds principais podem repetir se forem o driver da progressão; acessórios e isoladores **devem rodar** (substituições no mesmo padrão e mesma intenção).
+- Adicionar uma validação leve pós-geração: se `<40%` de acessórios variarem, pedir 1 retry com a lista a evitar.
+- Bónus: em `seedDemoSessions`, aplicar uma curva de carga **monotonicamente crescente entre blocos** (`loadMultiplier` = `1 + 0.04 * (block_number-1)`, capada em 1.4). Assim a "Top 5 lifts" mostra realmente progressão de carga ao longo dos anos.
 
-- `src/i18n/locales/pt/plan.json` — flag and rewrite any "tu/teu/contigo" forms to formal.
-- `src/i18n/locales/pt/assessment.json`, `pt/intake.json`, `pt/manual.json` — same sweep.
-- Component-level hardcoded PT in `BlockTransitionDialog.tsx`, `BlockAdaptationCard.tsx`, `ResultsPanel.tsx` (mentioned a "Demo Lab" string), `clients_.$clientId.tsx` (free-text headers like "A carregar histórico…").
-- Add an EN-only smoke pass: switch language to EN and visually confirm no PT leaks on the dashboard, clients list, plan page, year view.
+### 2. SAID / Adaptação visível na página do plano
 
-### Out of scope this round
+Novo componente **`<CapacityGainCard />`** logo abaixo do header do plano (substitui o popover-only do chip "Bloco N · evoluiu de N-1"):
 
-- Real (non-demo) `workout_sessions` feeding `block-feedback` (Direction B) — bigger piece, separate.
-- Custom tour tooltips matching the brand (amber underglow). Keep stock styling for now.
+- **Carga média estimada vs bloco anterior** (Δ% por padrão: agachamento, hinge, push, pull). Usa entries do bloco anterior + entries do atual (ou prescrição se ainda sem logs).
+- **e1RM rolling** dos top 3 levantamentos, com sparkline e seta verde/âmbar/vermelha.
+- **Adesão & RPE drift** (já existe, condensado).
+- **Veredito por músculo** (já existe — colado, não duplicado).
+- Tom: emerald quando há ganho ≥3%, âmbar entre 0–3%, vermelho se regressão.
 
-### Files (expected)
+Adiciona helper `src/lib/capacity-gain.ts` que dado `priorSessions` + `currentSessions` devolve `{ pattern, deltaLoadPct, e1rmDelta, verdict }`.
 
-- `src/contexts/TourContext.tsx` (retry/skip logic)
-- `src/components/DemoClientBanner.tsx` (toast on early tour click)
-- `src/contexts/DemoRunsContext.tsx` (batch polling, cancel UX, hold-on-popover)
-- `src/server/demo-oneshot.functions.ts` (new `getDemoRunsBatch`)
-- `src/i18n/locales/pt/{plan,assessment,intake,manual}.json` (voice sweep)
-- `src/components/{BlockTransitionDialog,BlockAdaptationCard,ResultsPanel}.tsx` + `src/routes/clients_.$clientId.tsx` (move literals through `t()`)
+### 3. Página do plano redesenhada (`/plans/$planId` → modo `view` e `results`)
 
-Approve to implement.
+Princípio: **uma narrativa em 3 dobras**, cada uma com um "porquê" óbvio.
+
+**Dobra 1 — "O que ganhámos"** (substitui a faixa atual de 4 KPIs frios):
+- `<CapacityGainCard />` em destaque (gradiente subtil amber→emerald).
+- KPIs reduzidos a 3 chips inline: Sessões · Adesão · RPE médio. Tonelagem desce para a Dobra 2.
+
+**Dobra 2 — "Como treinámos"** (densifica os charts):
+- RPE trend e Top-lifts lado a lado (já existe), mas com **anotações automáticas**: "PR carga · Leg press · 19/03" como ponto destacado, badges de deload nas weeks correctas.
+- Volume semanal vira **stack bar realizado vs prescrito** (já temos prescrição em `progression_plan` / blueprint). Linha de MEV/MAV sobre as barras.
+
+**Dobra 3 — "O que aconteceu"** (logbook + feedback fundidos):
+- Tabela atual mantém-se, mas com **agrupamento por semana colapsável**, badges de PR, e uma coluna nova "Sinal" que resume `[STRESS]`/`[COMPLAINT]`/`[QUESTION]` como ícone ao lado do RPE.
+- Painel "Feedback do cliente" deixa de ser tabela seca — passa a um **timeline** vertical com cores por tipo (vermelho complaint, âmbar stress, azul question) e link directo para a sessão correspondente.
+
+Tudo continua a respeitar `status-tone.ts` e `BrandMark`.
+
+### 4. Princípio aplicado ao resto da app (próximas rondas, em backlog)
+
+Não tocamos agora, mas crio entradas no backlog:
+- **YearView**: cada bloco vira um card com micro-CapacityGain em vez de chip âmbar genérico.
+- **VolumeSection**: realizado vs prescrito também aqui (hoje só prescrito).
+- **Dashboard / lista de clientes**: mostrar ganho médio de capacidade do último bloco como sinal de "este cliente está a evoluir".
+
+### 5. Backlog vivo de prioridades
+
+Crio `.lovable/backlog.md` (markdown simples, já uso `.lovable/plan.md`) com tabela:
+
+| # | Prioridade | Área | Item | Estado |
+|---|---|---|---|---|
+| 1 | P0 | Motor | Rotação de exercícios por bloco | esta ronda |
+| 2 | P0 | Plan page | CapacityGainCard | esta ronda |
+| 3 | P0 | Plan page | Logbook timeline + agrupamento | esta ronda |
+| 4 | P1 | YearView | Cards de bloco com ganho | próxima |
+| 5 | P1 | Volume | Realizado vs prescrito em todo o lado | próxima |
+| 6 | P1 | Dashboard | Sinal de evolução por cliente | próxima |
+| 7 | P2 | Demo seed | Curva de carga inter-blocos | esta ronda (bónus) |
+| 8 | P2 | i18n | Sweep EN final + smoke test | próxima |
+
+Vou actualizar este ficheiro a cada ronda — fica como o "cérebro" da app, sempre legível para nós dois.
+
+### 6. Tua prompt — versão melhorada para reusar
+
+Sugestão de molde curto que podes copiar/colar nas próximas mensagens:
+
+> "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features que não estão no backlog. Atualiza `.lovable/backlog.md` no fim."
+
+E para a tua mensagem anterior, a parte "ajuda-me a fazer esta prompt" virou esta plan — proponho que a meta-prompt seja "diagnostica primeiro com base em artefactos reais (PDF, screenshot, replay), depois propõe a ronda".
+
+---
+
+## Ficheiros tocados (estimativa)
+
+**Criar**: `src/components/CapacityGainCard.tsx`, `src/lib/capacity-gain.ts`, `.lovable/backlog.md`.
+
+**Editar**: `src/server/demo-play.functions.ts`, `src/server/phased/stage3-microcycle.functions.ts`, `src/server/phased/stage2-blueprint.functions.ts`, `src/server/demo-sessions.functions.ts`, `src/server/blocks.functions.ts` (passar pool ao runDemoPlay), `src/components/ResultsPanel.tsx` (3 dobras + timeline), `src/routes/plans.$planId.tsx` (encaixar CapacityGainCard).
+
+Sem migrações de DB — `generation_meta` já é jsonb livre.
+
+**Aprovas para executar?**
