@@ -66,7 +66,7 @@ type FormState = {
   experience_level: string;
   training_days_per_week: string;
   session_duration_minutes: string;
-  training_location: string;
+  training_location: string[];
   available_equipment: string[];
   injuries: string;
   medical_conditions: string;
@@ -99,7 +99,7 @@ const EMPTY: FormState = {
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
-  training_location: "", available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
+  training_location: [], available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
   sleep_quality: 7, stress_level: 5,
   ext_hours_seated: "", ext_daily_steps: "", ext_job_type: "", energy_levels: "", recovery_capacity: "",
   ext_meals_per_day: "", ext_water_l_per_day: "", ext_processed_food: 2, ext_alcohol_units_week: "", nutrition_habits: "",
@@ -128,7 +128,9 @@ function fromAssessment(a: any | null): FormState {
     experience_level: a.experience_level ?? "",
     training_days_per_week: a.training_days_per_week?.toString() ?? "",
     session_duration_minutes: a.session_duration_minutes?.toString() ?? "",
-    training_location: a.training_location ?? "",
+    training_location: Array.isArray(a.training_location)
+      ? a.training_location
+      : (typeof a.training_location === "string" && a.training_location.length > 0 ? [a.training_location] : []),
     available_equipment: a.available_equipment ?? [],
     injuries: a.injuries ?? "",
     medical_conditions: a.medical_conditions ?? "",
@@ -163,7 +165,7 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       experience_level: f.experience_level || null,
       training_days_per_week: f.training_days_per_week ? Number(f.training_days_per_week) : null,
       session_duration_minutes: f.session_duration_minutes ? Number(f.session_duration_minutes) : null,
-      training_location: f.training_location || null,
+      training_location: f.training_location.length > 0 ? f.training_location : null,
       available_equipment: f.available_equipment,
       injuries: f.injuries || null,
       medical_conditions: f.medical_conditions || null,
