@@ -309,6 +309,7 @@ RULES:
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
 Call record_day exactly once.${tierBlock}${rpeFloorBlock}`;
+  // (volumeBlock appended below — keep template literal above stable)
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
