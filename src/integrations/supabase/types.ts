@@ -713,6 +713,7 @@ export type Database = {
           contact_phone: string | null
           created_at: string
           demo_seeded_at: string | null
+          demo_year_offset: number
           full_name: string | null
           id: string
           logo_url: string | null
@@ -732,6 +733,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           demo_seeded_at?: string | null
+          demo_year_offset?: number
           full_name?: string | null
           id?: string
           logo_url?: string | null
@@ -751,6 +753,7 @@ export type Database = {
           contact_phone?: string | null
           created_at?: string
           demo_seeded_at?: string | null
+          demo_year_offset?: number
           full_name?: string | null
           id?: string
           logo_url?: string | null

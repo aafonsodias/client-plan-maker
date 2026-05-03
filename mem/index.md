@@ -21,3 +21,4 @@ Concierge AI = founder-only chat dock (src/components/ConciergeDock.tsx + src/se
 
 Demo content = clients.is_demo + workout_plans.is_demo. Quota trigger bump_plan_quota_on_complete skips is_demo plans. Auto-seeded once per trainer via ensureDemoClient (gated by profiles.demo_seeded_at). Demo Lab Instant: logbook always = duration (fill-to-end).
 In-app AI = <AskForgeDock /> (replaces GuideDock). Tabs: Navegar (askConcierge) + Perguntar à IA (askForge — model picker + credit cost). Available to every signed-in trainer.
+Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Bloco 13 é gerado pela IA real; Blocos 1–12 são clones SQL com mutações leves + logbook back-dated. Botão "Rodar +1 ano" empurra session_date +365d (cap em today). Ver mem/features/demo-year.md.

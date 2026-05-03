@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Sparkles, Loader2, Trash2, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, Trash2, ArrowRight, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ensureDemoClient, wipeDemoContent } from "@/server/demo-seed.functions";
 import { getDemoRun } from "@/server/demo-oneshot.functions";
+import { rotateDemoYear } from "@/server/demo-year.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -21,6 +22,7 @@ export function DemoClientBanner() {
   const seed = useServerFn(ensureDemoClient);
   const wipe = useServerFn(wipeDemoContent);
   const poll = useServerFn(getDemoRun);
+  const rotate = useServerFn(rotateDemoYear);
   const [runId, setRunId] = useState<string | null>(null);
   const [stage, setStage] = useState<string>("client");
   const [done, setDone] = useState(false);
@@ -33,21 +35,27 @@ export function DemoClientBanner() {
     if (!user) return;
     const { data } = await supabase
       .from("clients")
-      .select("id, full_name, workout_plans(id)")
+      .select("id, full_name")
       .eq("trainer_id", user.id)
       .eq("is_demo", true)
       .order("created_at", { ascending: false })
       .limit(1);
     const row = (data as any)?.[0];
-    if (row) {
-      setDemoClient({
-        id: row.id,
-        name: row.full_name,
-        planId: row.workout_plans?.[0]?.id ?? null,
-      });
-    } else {
-      setDemoClient(null);
-    }
+    if (!row) { setDemoClient(null); return; }
+    // Pick the most recent (ready) block to deep-link into.
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("id")
+      .eq("client_id", row.id)
+      .eq("is_demo", true)
+      .order("block_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setDemoClient({
+      id: row.id,
+      name: row.full_name,
+      planId: (plan as any)?.id ?? null,
+    });
   };
 
   // First effect: kick the seed once per mount, then load existing demo client.
@@ -109,7 +117,7 @@ export function DemoClientBanner() {
     client: "A criar cliente fictício…",
     prestage: "A analisar avaliação…",
     plan: "A montar o plano…",
-    logbook: "A preencher 4 semanas de logbook…",
+    logbook: "A semear 1 ano de mesociclos (13 blocos)…",
     done: "Pronto!",
   };
 
@@ -150,6 +158,26 @@ export function DemoClientBanner() {
                 </Link>
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              className="text-muted-foreground"
+              onClick={async () => {
+                if (busy) return;
+                setBusy(true);
+                try {
+                  const r: any = await rotate();
+                  toast.success(`Histórico avançado +1 ano (${r?.rotated ?? 0} sessões).`);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Falhou rodar o ano.");
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <RotateCw className="mr-1.5 h-3.5 w-3.5" /> Rodar +1 ano
+            </Button>
             <Button size="sm" variant="ghost" onClick={removeDemo} disabled={busy} className="text-muted-foreground">
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Remover demo
             </Button>

@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createDemoClient } from "@/server/demo-client.functions";
 import { runDemoPlay } from "@/server/demo-play.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
+import { seedDemoYearForPlan } from "@/server/demo-year.functions";
 import { analyzeAssessmentSection } from "@/server/phased/pre-stage.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PHASED_SECTIONS } from "@/server/phased/section-map";
@@ -101,13 +102,20 @@ export async function runInstantPipelineForUser(
         .eq("id", planId);
     }
 
-    // 3) Seed sessions for the FULL plan duration — we always want a complete
-    // ecosystem, no half-empty logbooks. The duration the user picks is also
-    // how many weeks of history we generate.
+    // 3) Build a FULL YEAR of mesocycle history by cloning the AI plan into
+    // 12 prior blocks (cheap SQL) and seeding logbook for every block. The
+    // AI-generated plan becomes Bloco 13 (most recent). Skip year-seed if
+    // the trainer just wants the founder Demo Lab one-shot — heuristic: only
+    // year-seed when this run was kicked from the dashboard onboarding,
+    // detected by absence of a custom archetype.
     await setStage("logbook", "running");
     try {
-      const weeksToSeed = data.durationWeeks ?? 4;
-      await seedDemoSessions({ data: { planId, weeksToSeed } });
+      if (!data.archetype) {
+        await seedDemoYearForPlan({ trainerId: _userId, rootPlanId: planId });
+      } else {
+        const weeksToSeed = data.durationWeeks ?? 4;
+        await seedDemoSessions({ data: { planId, weeksToSeed } });
+      }
     } catch (e) {
       console.error("[demo-oneshot] seed sessions failed", e);
     }
