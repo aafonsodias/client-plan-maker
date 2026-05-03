@@ -56,6 +56,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     { key: "step_banner", target: "[data-tour='demo-banner']", i18nKey: "demo.tour.step_banner", placement: "bottom" },
     { key: "step_open_client", route: (c) => `/clients/${c.clientId}`, target: "[data-tour='client-overview']", i18nKey: "demo.tour.step_open_client", placement: "bottom" },
     { key: "step_plan", route: (c) => `/plans/${c.planId}`, target: "[data-tour='plan-header']", i18nKey: "demo.tour.step_plan", placement: "bottom" },
+    { key: "step_capacity", route: (c) => `/plans/${c.planId}`, target: "[data-tour='capacity-gain']", i18nKey: "demo.tour.step_capacity", placement: "bottom" },
     { key: "step_volume", route: (c) => `/plans/${c.planId}`, target: "[data-tour='volume-section']", i18nKey: "demo.tour.step_volume", placement: "top" },
     { key: "step_year", route: (c) => `/clients/${c.clientId}/year`, target: "[data-tour='year-view']", i18nKey: "demo.tour.step_year", placement: "top" },
     { key: "step_lab", route: () => `/clients`, target: "[data-tour='demo-lab']", i18nKey: "demo.tour.step_lab", placement: "top" },

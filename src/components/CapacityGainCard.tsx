@@ -25,7 +25,7 @@ export function CapacityGainCard({
   const showRows = rows.filter((r) => r.deltaPct != null).slice(0, 5);
 
   return (
-    <section className={`relative overflow-hidden rounded-2xl border border-border ${tone.bg} p-4 md:p-5`}>
+    <section data-tour="capacity-gain" className={`relative overflow-hidden rounded-2xl border border-border ${tone.bg} p-4 md:p-5`}>
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
