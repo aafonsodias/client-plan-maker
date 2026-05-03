@@ -433,25 +433,25 @@ function BillingPage() {
             size="sm"
             onClick={handleRefresh}
             disabled={busy !== null}
-            title="Sincroniza o estado da tua subscrição com o Stripe"
+            title={t("billing.verify_subscription_title")}
           >
             {busy === "refresh" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Verificar subscrição
+            {t("billing.verify_subscription")}
           </Button>
           {checkout === "cancelled" && (
             <p className="text-xs text-muted-foreground">
-              Checkout cancelado — sem cobrança.
+              {t("billing.checkout_cancelled")}
             </p>
           )}
           {topup === "cancelled" && (
             <p className="text-xs text-muted-foreground">
-              Pack cancelado — sem cobrança.
+              {t("billing.topup_cancelled")}
             </p>
           )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Pagamentos seguros via Stripe. Cancela a qualquer momento no portal.
+          {t("billing.footer_secure")}
         </p>
       </div>
     </AppShell>
