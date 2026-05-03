@@ -133,9 +133,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         styles={{
           tooltip: { backgroundColor: "hsl(220 13% 12%)", color: "hsl(0 0% 95%)", borderRadius: 12 },
           tooltipContent: { color: "hsl(0 0% 95%)" },
-          buttonNext: { backgroundColor: "hsl(38 92% 50%)", color: "#000" },
-          buttonBack: { color: "hsl(38 92% 60%)" },
-          buttonSkip: { color: "hsl(0 0% 70%)" },
           overlay: { backgroundColor: "rgba(0,0,0,0.55)" },
         }}
       />
