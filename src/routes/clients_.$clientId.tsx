@@ -2599,27 +2599,28 @@ function AssessmentSynthesisDashboard({
   const analysedCount = Object.values(sectionAnalyses).filter(Boolean).length;
   if (analysedCount < Math.ceil(totalSections * 0.5)) return null;
 
-  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const { t } = useTranslation("assessment");
+  const riskLabel = riskCategory === "high" ? t("detail.risk.high") : riskCategory === "moderate" ? t("detail.risk.moderate") : t("detail.risk.low");
   const riskCaption = riskCategory === "high"
-    ? "Aprovação médica recomendada"
+    ? t("detail.risk.caption_high")
     : riskCategory === "moderate"
-    ? "Avaliar antes de cargas elevadas"
-    : "Sem necessidade de clearance";
+    ? t("detail.risk.caption_moderate")
+    : t("detail.risk.caption_low");
   const riskTone: "destructive" | "warning" | "success" =
     riskCategory === "high" ? "destructive" : riskCategory === "moderate" ? "warning" : "success";
 
-  const recovery = deriveRecoveryProfile(assessment);
+  const recovery = deriveRecoveryProfile(assessment, t);
 
   const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
   const bodyCompValue = `${bf} · WHR ${whr}`;
   const whrNum = whr === "—" ? null : Number(whr);
   const bodyCompCaption = whrNum == null
-    ? "Adicionar medidas para interpretação"
+    ? t("detail.body_comp.no_data")
     : whrNum >= 0.95
-    ? "Risco cardiometabólico elevado"
+    ? t("detail.body_comp.high_risk")
     : whrNum >= 0.85
-    ? "Risco moderado · monitorizar"
-    : "Padrão saudável";
+    ? t("detail.body_comp.moderate_risk")
+    : t("detail.body_comp.healthy");
 
   const flags = collectRedFlags(assessment, sectionAnalyses);
   const accMap = new Map<string, RedFlagAccommodation>();
@@ -2637,24 +2638,24 @@ function AssessmentSynthesisDashboard({
   return (
     <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Síntese da avaliação</p>
-        <span className="text-[10px] text-muted-foreground">{analysedCount}/{totalSections} secções analisadas</span>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("detail.synthesis.title")}</p>
+        <span className="text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Risco ACSM"
+          label={t("detail.synthesis.stat_risk")}
           value={riskLabel}
           caption={riskCaption}
           tone={riskTone}
         />
         <StatCard
-          label="Perfil de recuperação"
+          label={t("detail.synthesis.stat_recovery")}
           value={recovery?.label ?? "—"}
-          caption={recovery?.caption ?? "Sem dados de sono/stress"}
+          caption={recovery?.caption ?? t("detail.recovery.no_data")}
         />
         <StatCard
-          label="Composição corporal"
+          label={t("detail.synthesis.stat_body_comp")}
           value={bodyCompValue}
           caption={bodyCompCaption}
         />
@@ -2667,7 +2668,7 @@ function AssessmentSynthesisDashboard({
           <div className="mb-2 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              Sinais de alerta · {flags.length}
+              {t("detail.synthesis.alerts", { n: flags.length })}
             </p>
           </div>
           <ul className="space-y-1.5">
