@@ -660,6 +660,24 @@ function Pills({ options, value, onChange }: { options: { id: string; label: str
   );
 }
 
+function PillsMulti({ options, value, onChange }: { options: { id: string; label: string }[]; value: string[]; onChange: (v: string[]) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const on = value.includes(o.id);
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(on ? value.filter((x) => x !== o.id) : [...value, o.id])}
+            className={`rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+          >{o.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
 function SliderField({ label, value, min, max, onChange, legend }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; legend: string }) {
   return (
     <div className="space-y-2">
