@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   MUSCLE_GROUP_LABELS_PT,
@@ -19,25 +20,32 @@ const STATUS_TONE: Record<VolumeStatus, Tone> = {
   danger: "danger",
 };
 
-const STATUS_LABEL: Record<VolumeStatus, string> = {
-  under: "Abaixo do MEV",
-  optimal: "Sweet spot",
-  over: "Acima do MAV",
-  danger: "Acima do MRV",
+const STATUS_KEY: Record<VolumeStatus, string> = {
+  under: "volume.table.status_under",
+  optimal: "volume.table.status_optimal",
+  over: "volume.table.status_over",
+  danger: "volume.table.status_danger",
 };
 
-function messageFor(status: VolumeStatus, sets: number, lm: ReturnType<typeof landmarkOf>): string {
+function messageFor(
+  status: VolumeStatus,
+  sets: number,
+  lm: ReturnType<typeof landmarkOf>,
+  t: (k: string, opts?: any) => string,
+): string {
   switch (status) {
     case "under": {
       const gap = Math.max(1, lm.mev - Math.floor(sets));
-      return `Faltam ~${gap} série${gap === 1 ? "" : "s"} (alvo ${lm.mev}).`;
+      return gap === 1
+        ? t("volume.table.msg_under_one", { mev: lm.mev })
+        : t("volume.table.msg_under_other", { count: gap, mev: lm.mev });
     }
     case "optimal":
-      return `Dentro do alvo (${lm.mev}–${lm.mav}).`;
+      return t("volume.table.msg_optimal", { mev: lm.mev, mav: lm.mav });
     case "over":
-      return `+${Math.ceil(sets - lm.mav)} acima do alvo. Vigia recuperação.`;
+      return t("volume.table.msg_over", { count: Math.ceil(sets - lm.mav) });
     case "danger":
-      return `Excede MRV (${lm.mrv}). Corta ~${Math.ceil(sets - lm.mav)}.`;
+      return t("volume.table.msg_danger", { mrv: lm.mrv, count: Math.ceil(sets - lm.mav) });
   }
 }
 
@@ -52,6 +60,7 @@ type Props = {
 };
 
 export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
+  const { t } = useTranslation("common");
   const adaptByMuscle = new Map<MuscleGroup, AdaptationRow>();
   for (const a of adaptation ?? []) adaptByMuscle.set(a.muscle, a);
   const rows = MUSCLE_GROUP_ORDER.map((m) => {
@@ -83,21 +92,21 @@ export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
               {MUSCLE_GROUP_LABELS_PT[m]}
             </span>
             <span className="tabular-nums text-sm text-muted-foreground">
-              {sets % 1 === 0 ? sets : sets.toFixed(1)} séries
+              {sets % 1 === 0 ? sets : sets.toFixed(1)} {t("volume.table.sets")}
             </span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneChip(STATUS_TONE[status])}`}>
-              {STATUS_LABEL[status]}
+              {t(STATUS_KEY[status])}
             </span>
             <span className="text-[11px] text-muted-foreground">
               MEV {lm.mev} · MAV {lm.mav} · MRV {lm.mrv}
             </span>
           </div>
-          <p className="mt-1.5 text-xs text-muted-foreground">{messageFor(status, sets, lm)}</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{messageFor(status, sets, lm, t)}</p>
           {adaptByMuscle.get(m) && adaptByMuscle.get(m)!.verdict !== "on_target" && (
             <p className="mt-1 text-[11px] text-amber-300">
-              ↘ ajustado · bloco anterior {VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict]}
+              {t("volume.table.adjusted_chip", { verdict: VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict] })}
             </p>
           )}
         </div>
@@ -107,11 +116,11 @@ export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
       <table className="w-full text-left text-sm">
         <thead className="bg-secondary/40 text-[11px] uppercase tracking-widest text-muted-foreground">
           <tr>
-            <th className="px-3 py-2 font-medium">Grupo</th>
-            <th className="px-3 py-2 font-medium">Prescrito</th>
-            {actual && <th className="px-3 py-2 font-medium">Realizado</th>}
-            <th className="px-3 py-2 font-medium">Estado</th>
-            <th className="hidden px-3 py-2 font-medium md:table-cell">Sugestão</th>
+            <th className="px-3 py-2 font-medium">{t("volume.table.muscle")}</th>
+            <th className="px-3 py-2 font-medium">{t("volume.table.prescribed")}</th>
+            {actual && <th className="px-3 py-2 font-medium">{t("volume.table.actual")}</th>}
+            <th className="px-3 py-2 font-medium">{t("volume.table.status")}</th>
+            <th className="hidden px-3 py-2 font-medium md:table-cell">{t("volume.table.suggestion")}</th>
           </tr>
         </thead>
         <tbody>
@@ -127,8 +136,11 @@ export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
                         <span className="cursor-help text-[10px] font-semibold text-amber-300">↘</span>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs text-xs">
-                        Ajustado pelo bloco anterior · {VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict]}.
-                        Tecto {adaptByMuscle.get(m)!.baseline.ceilingSets} → {adaptByMuscle.get(m)!.adapted.ceilingSets}.
+                        {t("volume.table.adjusted_tooltip", {
+                          verdict: VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict],
+                          from: adaptByMuscle.get(m)!.baseline.ceilingSets,
+                          to: adaptByMuscle.get(m)!.adapted.ceilingSets,
+                        })}
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -155,7 +167,7 @@ export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className={`inline-flex cursor-help rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneChip(STATUS_TONE[status])}`}>
-                      {STATUS_LABEL[status]}
+                      {t(STATUS_KEY[status])}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
@@ -164,7 +176,7 @@ export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
                 </Tooltip>
               </td>
               <td className="hidden px-3 py-2.5 text-xs text-muted-foreground md:table-cell">
-                {messageFor(status, sets, lm)}
+                {messageFor(status, sets, lm, t)}
               </td>
             </tr>
           ))}
