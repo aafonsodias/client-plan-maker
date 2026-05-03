@@ -1,22 +1,33 @@
 import type { z } from "zod";
-import { computeCallCostUsd, type AnthropicModelId } from "../plan-cost.server";
+import { computeCallCostUsd, type AiModelId } from "../plan-cost.server";
 
-// Resolve a model id from an env var with a safe default.
-export function resolveModel(envVar: string, fallback: AnthropicModelId): AnthropicModelId {
+// Map any legacy Anthropic fallback id → equivalent Lovable Gateway model.
+// Keeps existing stage files compiling without per-file edits while we
+// migrate to model-routing.server.ts.
+const LEGACY_TO_GATEWAY: Record<string, string> = {
+  "claude-haiku-4-5-20251001": "google/gemini-3-flash-preview",
+  "claude-sonnet-4-5-20250929": "openai/gpt-5",
+};
+
+function normalizeModel(id: string): string {
+  return LEGACY_TO_GATEWAY[id] ?? id;
+}
+
+/**
+ * Resolve a model id from an env var with a safe default. Both env values
+ * and fallbacks are normalized: legacy Anthropic ids are mapped to their
+ * Lovable Gateway equivalents so stage files don't need to change.
+ */
+export function resolveModel(envVar: string, fallback: string): string {
   const v = process.env[envVar];
-  if (!v) return fallback;
-  // Only allow the two models we price.
-  if (v === "claude-haiku-4-5-20251001" || v === "claude-sonnet-4-5-20250929") {
-    return v as AnthropicModelId;
-  }
-  return fallback;
+  return normalizeModel(v && v.trim().length > 0 ? v.trim() : fallback);
 }
 
 export type AiCallResult<T> = {
   ok: true;
   data: T;
   raw: unknown;
-  model: AnthropicModelId;
+  model: AiModelId;
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
@@ -28,7 +39,7 @@ export type AiCallFailure = {
   ok: false;
   error: string;
   zodError?: string;
-  model: AnthropicModelId;
+  model: AiModelId;
   inputTokens: number;
   outputTokens: number;
   costUsd: number;
@@ -36,13 +47,19 @@ export type AiCallFailure = {
   retryCount: number;
 };
 
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
 /**
- * Call Anthropic with a tool-call schema and validate the result with Zod.
- * Retries ONCE on Zod failure, feeding the validation error back to the model.
- * Pure function — no DB writes; the caller is responsible for persisting telemetry.
+ * Call the Lovable AI Gateway with a tool-call schema and validate the
+ * result with Zod. Retries ONCE on Zod failure, feeding the validation
+ * error back to the model. Pure function — caller persists telemetry.
+ *
+ * Name kept as `callAnthropicWithSchema` for back-compat with existing
+ * stage files. Under the hood now talks to Lovable Gateway (OpenAI-
+ * compatible Chat Completions API).
  */
 export async function callAnthropicWithSchema<T>(opts: {
-  model: AnthropicModelId;
+  model: string;
   system: string;
   userMessage: string;
   toolName: string;
@@ -51,12 +68,15 @@ export async function callAnthropicWithSchema<T>(opts: {
   schema: z.ZodType<T>;
   maxTokens?: number;
 }): Promise<AiCallResult<T> | AiCallFailure> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.LOVABLE_API_KEY;
+  const model = normalizeModel(opts.model);
+
   if (!apiKey) {
     return {
       ok: false,
-      error: "ANTHROPIC_API_KEY is not configured.",
-      model: opts.model,
+      error:
+        "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+      model,
       inputTokens: 0,
       outputTokens: 0,
       costUsd: 0,
@@ -66,9 +86,12 @@ export async function callAnthropicWithSchema<T>(opts: {
   }
 
   const tool = {
-    name: opts.toolName,
-    description: opts.toolDescription,
-    input_schema: opts.toolJsonSchema,
+    type: "function" as const,
+    function: {
+      name: opts.toolName,
+      description: opts.toolDescription,
+      parameters: opts.toolJsonSchema,
+    },
   };
 
   let totalInputTokens = 0;
@@ -86,20 +109,24 @@ export async function callAnthropicWithSchema<T>(opts: {
     const t0 = Date.now();
     let resp: Response;
     try {
-      resp = await fetch("https://api.anthropic.com/v1/messages", {
+      resp = await fetch(GATEWAY_URL, {
         method: "POST",
         headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: opts.model,
+          model,
           max_tokens: opts.maxTokens ?? 1500,
-          system: opts.system,
+          messages: [
+            { role: "system", content: opts.system },
+            { role: "user", content: userContent },
+          ],
           tools: [tool],
-          tool_choice: { type: "tool", name: opts.toolName },
-          messages: [{ role: "user", content: userContent }],
+          tool_choice: {
+            type: "function",
+            function: { name: opts.toolName },
+          },
         }),
       });
     } catch (e) {
@@ -107,11 +134,11 @@ export async function callAnthropicWithSchema<T>(opts: {
       totalDurationMs += dur;
       return {
         ok: false,
-        error: `Network error calling Anthropic: ${e instanceof Error ? e.message : String(e)}`,
-        model: opts.model,
+        error: `Network error calling Lovable AI Gateway: ${e instanceof Error ? e.message : String(e)}`,
+        model,
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
-        costUsd: computeCallCostUsd(opts.model, {
+        costUsd: computeCallCostUsd(model, {
           input_tokens: totalInputTokens,
           output_tokens: totalOutputTokens,
         }),
@@ -124,13 +151,21 @@ export async function callAnthropicWithSchema<T>(opts: {
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
+      let friendly = `Lovable AI ${resp.status}: ${body.slice(0, 400)}`;
+      if (resp.status === 402) {
+        friendly =
+          "Sem créditos AI. Adiciona em Settings → Workspace → Usage e tenta de novo.";
+      } else if (resp.status === 429) {
+        friendly =
+          "Demasiados pedidos AI por minuto. Aguarda alguns segundos e tenta de novo.";
+      }
       return {
         ok: false,
-        error: `Anthropic ${resp.status}: ${body.slice(0, 500)}`,
-        model: opts.model,
+        error: friendly,
+        model,
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
-        costUsd: computeCallCostUsd(opts.model, {
+        costUsd: computeCallCostUsd(model, {
           input_tokens: totalInputTokens,
           output_tokens: totalOutputTokens,
         }),
@@ -140,26 +175,41 @@ export async function callAnthropicWithSchema<T>(opts: {
     }
 
     const json: any = await resp.json();
-    totalInputTokens += Number(json?.usage?.input_tokens ?? 0);
-    totalOutputTokens += Number(json?.usage?.output_tokens ?? 0);
-    const toolUse = (json?.content ?? []).find((b: any) => b?.type === "tool_use" && b?.name === opts.toolName);
-    lastRaw = toolUse?.input ?? null;
+    totalInputTokens += Number(json?.usage?.prompt_tokens ?? json?.usage?.input_tokens ?? 0);
+    totalOutputTokens += Number(json?.usage?.completion_tokens ?? json?.usage?.output_tokens ?? 0);
 
-    if (!toolUse) {
+    const choice = json?.choices?.[0];
+    const toolCalls = choice?.message?.tool_calls ?? [];
+    const match = toolCalls.find(
+      (tc: any) => tc?.type === "function" && tc?.function?.name === opts.toolName,
+    );
+    let parsedInput: unknown = null;
+    if (match) {
+      const argsRaw = match?.function?.arguments;
+      try {
+        parsedInput = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+      } catch (e) {
+        lastZodError = `tool_call arguments not valid JSON: ${e instanceof Error ? e.message : String(e)}`;
+        continue;
+      }
+    }
+    lastRaw = parsedInput;
+
+    if (!match || parsedInput == null) {
       lastZodError = "Model did not call the required tool.";
       continue;
     }
 
-    const parsed = opts.schema.safeParse(toolUse.input);
+    const parsed = opts.schema.safeParse(parsedInput);
     if (parsed.success) {
       return {
         ok: true,
         data: parsed.data,
         raw: lastRaw,
-        model: opts.model,
+        model,
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
-        costUsd: computeCallCostUsd(opts.model, {
+        costUsd: computeCallCostUsd(model, {
           input_tokens: totalInputTokens,
           output_tokens: totalOutputTokens,
         }),
@@ -177,10 +227,10 @@ export async function callAnthropicWithSchema<T>(opts: {
     ok: false,
     error: "Schema validation failed after retry.",
     zodError: lastZodError,
-    model: opts.model,
+    model,
     inputTokens: totalInputTokens,
     outputTokens: totalOutputTokens,
-    costUsd: computeCallCostUsd(opts.model, {
+    costUsd: computeCallCostUsd(model, {
       input_tokens: totalInputTokens,
       output_tokens: totalOutputTokens,
     }),
