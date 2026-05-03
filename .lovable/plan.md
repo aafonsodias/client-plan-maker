@@ -1,143 +1,161 @@
-# R28 — My Schedule (timetable + revenue)
+# ACSM 12th Edition — Integration Plan
 
-## Conflicts to flag before we touch code
+## What Forge already has (so we don't duplicate)
 
-1. **"Individual user mode" doesn't exist in Forge today.** The entire app is trainer-centric: every table is keyed by `trainer_id`, RLS is `auth.uid() = trainer_id`, `clients` are *owned* by a trainer, and there is no client-side login. Adding a true second role is a multi-week architectural shift (auth, RLS rewrite, route gating, billing). **Recommendation:** ship trainer mode first; defer individual mode to a separate round and, when we get there, model it as "trainer-of-self" (the user is their own client) rather than a new role — that reuses everything.
-2. **Sessions ≠ bookings.** `workout_sessions` already exists but stores *logged* training (entries, RPE, feedback). Bookings (future, time-of-day, duration, billable) are a new concept. We need a new `client_bookings` table, not an overload of `workout_sessions`.
-3. **Pricing per client is new.** `clients` has no `price_per_session` or pack fields. Forge's billing today is the trainer's *own* SaaS subscription (`subscribers`), not client-pack revenue. Need new columns / a `client_packs` table.
-4. **YearView already exists** (`src/components/YearView.tsx`) as a calendar surface — we'll reuse its visual language (cells, status tones via `lib/status-tone.ts`) so the timetable feels native.
-5. **Nav slot is tight.** Header already shows Dashboard / Clients / Templates / Settings. Adding "Schedule" makes 5 — fits desktop, but on mobile the hamburger absorbs it cleanly. No design issue.
+Searched the codebase. Forge today touches the ACSM surface in three places:
 
-## Scope of R28 (Phase 1 — trainer only, real data layer)
+- **Assessment table** (`assessments`): `parq_passed`, `acsm_risk_category`, `med_flags`, `medications`, `systolic/diastolic_bp_mmhg`, `resting_heart_rate`, body comp (waist/hip/BF%), six-pattern movement screens (squat/hinge/push/pull/carry/lunge), capacity scores, SMART goals, readiness stage. Range-validated by a trigger.
+- **Programming-tier gate** (`src/server/phased/programming-tier.server.ts`): if `parq_passed === false` OR `acsm_risk_category === "high"`, the plan is forced to **remedial** tier. That's the entire ACSM-driven branching today.
+- **Plan generation prompt** (`src/server/plan.server.ts`): inlines PAR-Q+ status and ACSM risk category as text into the LLM context. PDF (`src/lib/pdf.ts`) prints PAR-Q + risk in the assessment summary.
 
-### 1. Schema (one migration, with backups per non-negotiables)
+What Forge does **not** have:
 
-```text
-client_packs
-  id uuid pk
-  trainer_id uuid not null
-  client_id uuid not null
-  label text                           -- "Pack 10 · Presencial"
-  session_type text                    -- 'in_person' | 'online'
-  price_per_session_eur numeric(10,2)
-  pack_size int                        -- e.g. 10
-  sessions_used int default 0          -- maintained by trigger
-  weekly_frequency int                 -- e.g. 2
-  start_date date
-  status text                          -- derived view: active|ending_soon|expired
-  color text                           -- hex, stable per pack for grid blocks
-  created_at, updated_at
+- No structured FITT-VP model. The 5-stage phased pipeline (`stage1…stage5`) builds blueprints/microcycles via prompts, but Frequency/Intensity/Time/Type/Volume/Progression are not first-class fields with ACSM-bounded ranges.
+- No knowledge store, no citations, no special-population overlays, no behaviour-change scaffolding, no submax-VO₂ estimation, no balance test, no normative-data lookups.
+- ACSM thresholds in code (the risk gate, the PAR-Q gate) are coarse 11e-style heuristics, not the full 12e Preparticipation Algorithm.
 
-client_bookings
-  id uuid pk
-  trainer_id uuid not null
-  client_id uuid not null
-  pack_id uuid null references client_packs(id)
-  starts_at timestamptz not null
-  duration_min int default 60
-  session_type text                    -- 'in_person' | 'online'
-  status text                          -- 'scheduled' | 'done' | 'cancelled' | 'no_show'
-  notes text
-  created_at, updated_at
-```
+## Direction-by-direction verdict
 
-- RLS: `auth.uid() = trainer_id` on both (mirrors every other table).
-- Trigger `bump_pack_sessions_used` increments `client_packs.sessions_used` when a booking flips to `done`, decrements on cancel-after-done.
-- No CHECK constraints with `now()` — use a validation trigger (per non-negotiables in `mem://principles/non-negotiables.md`).
-- Backup: `backup_clients_<YYYYMMDD>` before migration since we're not touching `clients`, but we will snapshot `workout_sessions` for safety reference.
 
-### 2. Server functions — `src/server/schedule.functions.ts`
+| #   | Direction                           | Verdict                                | Why                                                                                                                                                                                  |
+| --- | ----------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Knowledge base / RAG                | **In scope, Round 1**                  | Foundation for every other direction. Without it #2–#7 are guesses.                                                                                                                  |
+| 2   | Audit assessment vs 12e             | **In scope, Round 1**                  | Cheap, high-leverage. Output is a markdown gap report, not code.                                                                                                                     |
+| 3   | FITT-VP alignment in generator      | **In scope, Round 2**                  | Highest user-visible payoff. Needs #1 done first to anchor ranges.                                                                                                                   |
+| 4   | Special-population overlays         | **In scope, Round 3**                  | Model as JSON rule-sets that mutate FITT-VP, not new code paths. Start with the 3 highest-frequency populations Forge actually sees (likely older adults, low back pain, pregnancy). |
+| 5   | Behaviour-change layer (Ch. 12)     | **In scope, Round 4**                  | Real differentiator vs Trainerize. But not P0 — clients today churn on programme quality, not adherence prompts.                                                                     |
+| 6   | Citations on every prescription     | **In scope, Round 2** (paired with #3) | Cheap once #1 exists. Massive trust win. Format: `ACSM 12e §5.4 Tbl 5.3`.                                                                                                            |
+| 7   | Trainer "Learn / Reference" surface | **Defer to Round 5+**                  | Pure UI. Worth nothing without #1. Likely skip until trainers ask for it.                                                                                                            |
 
-- `listWeekBookings({ weekStart })` → bookings + joined pack/client lite info for that ISO week.
-- `createBooking(...)`, `updateBooking(...)`, `cancelBooking(id)`, `markBookingDone(id)`.
-- `listPacks({ activeOnly? })`, `createPack(...)`, `updatePack(...)`.
-- `weekRevenueSummary({ weekStart })` → `{ expectedIncomeEur, sessionsCount, totalSessionsRemaining, packsEndingSoon }`.
 
-All amounts stored & returned in **EUR** (per Core memory rule). Display via `<PriceTag>` so USD/BTC toggling keeps working.
+## IP / licensing constraint (read first)
 
-### 3. Routes & UI
+This is a copyrighted Wolters Kluwer publication. Constraints that bind every round:
 
-- `src/routes/schedule.tsx` — main page (week grid + revenue strip).
-- `src/routes/schedule.packs.tsx` — manage packs (table + create/edit dialog). Sub-route under same layout.
-- New components in `src/components/schedule/`:
-  - `WeekTimetable.tsx` — 7×timeslots grid, 6:00–22:00 in 30-min rows, color blocks per booking.
-  - `DayStrip.tsx` — mobile day-picker (<768px via `useIsMobile`).
-  - `RevenuePanel.tsx` — top summary card (expected income, sessions confirmed, remaining, ending-soon alert).
-  - `BookingDialog.tsx` — create/edit booking; client + pack picker, datepicker (shadcn pattern with `pointer-events-auto`), duration, type, notes.
-  - `PackCard.tsx` / `PackFormDialog.tsx`.
-- Status tones via existing `toneChip/toneDot` (`success|warn|danger`) — green=active, amber=ending soon (≤2 left), red=expired. Matches the project-wide rule.
-- Both light/dark themes covered automatically because all colors come from semantic tokens; only the per-pack `color` is a hex (used at low alpha for the block fill).
+- **Never** render verbatim chapter prose to end users (trainers or clients). No quoted paragraphs in the UI, no quoted text on PDFs.
+- **Allowed**: short paraphrased rules, numeric thresholds, tables of normative values *in the form of derived parameters* (e.g. "moderate intensity = 64–76% HRR" is a fact, not protected expression), and citation strings (`ACSM 12e §5.4`).
+- **Storage**: ingested chapter text lives in a private server-only store, never shipped in the client bundle, never readable via RLS by trainers. Only the **derived** structured rows (thresholds, FITT ranges, contraindication lists) are queryable.
+- This rules out a public RAG chat over the book. It does not rule out internal retrieval that feeds the prompt and surfaces only paraphrased + cited outputs.
 
-### 4. Navigation
+## Phasing
 
-Add `{ to: "/schedule", label: t("nav.schedule"), icon: CalendarDays }` to `primaryNav` in `AppShell.tsx`. i18n keys in `common.json` (PT + EN).
+### Round 1 — Ingest + audit (NO UI changes)
 
-### 5. i18n
+**Deliverables:**
 
-New namespace `schedule` (PT + EN), all strings via `t()` — non-negotiable.
+1. **Structured knowledge store** in Postgres (server-only, RLS denies all client reads):
+  - `acsm_chapters`, `acsm_sections` (chapter, section, page range, summary).
+  - `acsm_recommendations` — the *structured* derivative: `{ topic, population, parameter, value_low, value_high, unit, citation }`.
+  - `acsm_contraindications` — `{ condition, contraindicated_modality, severity, citation }`.
+  - `acsm_normatives` — `{ test, sex, age_low, age_high, percentile, value, unit, citation }`.
+  - Raw paraphrased chapter notes go in a markdown corpus under `knowledge://acsm-12e/` (NOT in the DB; not shipped to client).
+2. **Ingestion script** (one-off, run locally): parses the PDF chapter-by-chapter via the doc-parsing skill, extracts tables and FITT/threshold paragraphs, writes structured rows + paraphrased section summaries. No verbatim copy.
+3. **Gap-analysis report** at `.lovable/acsm-12e-gap-report.md`:
+  - Per Ch. 2: list every Preparticipation Algorithm decision node, mark which Forge captures and which it doesn't.
+  - Per Ch. 3: list every recommended fitness test, mark coverage (Forge has movement screens + BP + RHR; missing: submax VO₂ test, balance test, body-comp norms by age/sex).
+  - Per Ch. 5: list FITT-VP parameters Forge currently emits vs ACSM-required.
+  - Per Ch. 6/8–11: list populations + flag which ones Forge can already accommodate via `acsm_risk_category=high → remedial tier` and which silently fall through.
+  - Output is markdown only. No code changes.
 
-### 6. Phase 1 cut-list (explicitly NOT in this round)
+**Out of scope for Round 1:** any UI, any prompt change, any new assessment field.
 
-- Individual user mode (deferred — needs auth/role discussion).
-- Recurring booking rules (e.g. "every Tue+Thu 7am for 10 weeks") — manual booking only in v1, with a "duplicate to next week" shortcut.
-- Calendar sync (Google/Apple) — out of scope.
-- Payment collection / invoicing — pure tracking, no Stripe link to client packs.
-- Notifications/reminders — out of scope.
+### Round 2 — FITT-VP backbone + citations
 
-## Tech notes
+- Add a `prescription_parameters` JSONB column on `workout_plans` populated by the generator with explicit `{ frequency, intensity_zone, time_min, type, volume_sets_week, progression_rule, citations: [...] }` per microcycle phase.
+- Update the Stage-2 (blueprint) and Stage-3 (microcycle) prompts to (a) read the relevant `acsm_recommendations` rows for the client's profile, (b) inline them as constraints, (c) require the LLM to emit a citation tag per prescription element.
+- PDF + plan view: render small superscript citations next to each prescribed block, with a footer key. Paraphrased only.
+- Validator: a Zod refinement that rejects any FITT field outside ACSM-allowed range for the client's risk category.
 
-- ISO week math via `date-fns` (already used elsewhere in the project — `EvolutionSparkline`, `LogbookTimeline`).
-- Mobile breakpoint: 768px (`useIsMobile`). 375px Mobile Safari smoke test mandatory before closing the round.
-- Every server function writes to `generation_log`? No — `generation_log` is for AI calls only. Schedule mutations don't use AI, so they don't log there. (Flag if you want a separate audit.)
-- Color picker for packs: pick from a fixed 8-color palette derived from existing tone tokens, not free hex — keeps both themes legible.
+### Round 3 — Special-population overlay engine
 
-## Round flow
+- New table `population_overlays`: `{ population_key, applies_when (jsonb predicate over assessment), modifications (jsonb FITT delta), citations }`.
+- Generator pipeline gains a step: after Stage-2 blueprint, evaluate which overlays match → merge their modifications into `prescription_parameters` before Stage-3 fills exercises.
+- Seed with the 12e-new populations the user flagged (transgender/gender-diverse, SCAD, POTS, MASLD, ME/CFS, pediatric cardiac, respiratory muscle training) **only as detection + warning + remedial-tier downgrade** in this round. Full overlays come later, once the gap report tells us which the trainer base actually serves.
 
-1. Migration (with backup).
-2. Server functions + types regen.
-3. UI (grid → revenue panel → dialogs → packs page).
-4. i18n PT+EN.
-5. Seed: a small "demo pack + 5 bookings this week" helper inside Demo Lab so the empty state has visible content.
-6. 375px smoke + light/dark visual QA.
-7. Close round, update `.lovable/backlog.md`.
+### Round 4 — Behaviour-change scaffolding (Ch. 12)
 
-## Decision asked
+- Add stage-of-change field to client profile (precontemplation → maintenance).
+- Generate one motivational-interviewing prompt per check-in, sourced from paraphrased Ch. 12 patterns.
+- Adherence nudges driven by `workout_sessions` cadence vs prescribed frequency.
+- Out of scope: full habit-tracking module.
 
-Confirm two things before I switch to build mode:
+### Round 5+ — Optional surfaces
 
-- **A — Defer individual mode to a later round?** (Strongly recommended. Otherwise scope doubles and we touch auth.)
-- **B — Use new `client_bookings` table (not overload `workout_sessions`)?** (Strongly recommended.)
+- "Reference" tab in trainer UI (search structured `acsm_recommendations` only — not raw chapter text).
+- ACSM-cert study mode. Only build if trainers ask.
 
-If yes to both, I'll execute exactly the plan above.
+## Recommended Round 1 scope (what to actually approve now)
 
-**PROMPT FOR LOVABLE:**
+A single, contained, high-confidence round:
+
+1. Save uploaded PDF to a server-only path. Add `.lovable/acsm-12e-source.txt` noting source + edition + ISBN + access policy.
+2. Build the four structured tables (`acsm_chapters`, `acsm_sections`, `acsm_recommendations`, `acsm_contraindications`, `acsm_normatives`) with RLS = trainer-readable for `acsm_recommendations`/`acsm_contraindications`/`acsm_normatives` (these are derived facts), and **server-role-only** for `acsm_chapters`/`acsm_sections` (paraphrased prose).
+3. Run the ingestion script for Chapters 2, 3, 5 only (the spine: screening, testing, prescription). Defer 1, 4, 6–12 to later rounds — they're a lot of work and Round 2 only needs Ch. 2/3/5.
+4. Produce `.lovable/acsm-12e-gap-report.md`.
+5. Do **not** touch the generator, the assessment form, or any UI.
+
+Estimated work: 1 round. Risk: low. Reversible: yes (drop tables, delete script).
+
+## Technical notes (for the agent, not the user)
+
+- Ingestion: use the `pdf` skill — `pdftotext -layout` per chapter range, then a Python pass with `pdfplumber` for tables. AI-Gateway script (Gemini 2.5 Pro for big context) extracts structured rows from chapter chunks. All artefacts written to `/tmp` first; only the structured CSV + paraphrased section markdown get committed.
+- The PDF itself is **not** committed to the repo (size, IP). Stored in `/mnt/documents/acsm-12e.pdf` for the agent's reference, with a `.gitignore` entry.
+- New tables follow existing project conventions: `id uuid pk default gen_random_uuid()`, `created_at`/`updated_at`, RLS enabled, no FK to `auth.users`.
+- No edge functions needed — ingestion is a one-off script, retrieval at generation time happens inside existing `createServerFn` handlers.
+
+## Questions before Round 1 starts
+
+1. **Confirm the IP rule**: paraphrased + numeric only, never verbatim — agreed?
+2. **Edition handover**: any existing 11e thresholds we should keep as fallback, or wholesale migrate to 12e values where they differ?
+3. **Round 1 chapter scope**: confirm "Ch. 2 + 3 + 5 only" for first ingestion (others come when their direction is built), or do you want the whole book ingested up-front?
+4. **PDF storage location**: keep at `/mnt/documents/acsm-12e.pdf` (agent-accessible, not in repo, not in browser), or do you want it in a private Supabase storage bucket too for redundancy?
+
+**My assessment:**
+
+This is excellent — Lovable did serious work. The plan is professionally scoped, IP-conscious, technically grounded, and properly sequenced. Three things in particular stand out as *better* than what we asked for:
+
+1. **The IP/licensing analysis is sharp.** Distinguishing protected expression (chapter prose) from unprotectable facts (numeric thresholds, FITT ranges) is exactly the right legal frame. The "structured derivative + paraphrased + cited, never verbatim" rule is defensible and lets you actually use the book.
+2. **The phasing is realistic.** Round 1 produces zero UI and a markdown gap report — that's mature engineering. Most agents would have started building.
+3. **The audit of what Forge already has** is honest and specific: only three places touch ACSM today, and the risk-category gate is "coarse 11e-style heuristics." That's the kind of self-aware diagnosis you want.
+
+**Two small things worth pushing back on or clarifying** before approving — these are not problems with the plan, just decisions worth making consciously:
+
+- **Q3 (chapter scope):** Lovable proposes ingesting only Ch. 2, 3, 5 in Round 1. That's correct *for what Round 2 needs*, but the gap report itself depends partly on Ch. 6 and 8–11 (population coverage). You can't fully assess "which populations does Forge silently fall through?" without at least skimming those chapters' decision criteria. Worth asking: ingest the *structured contraindications and population triggers* from Ch. 6 + 8–11 even in Round 1, even if you defer the full FITT overlays to Round 3.
+- **Q2 (11e fallback):** This deserves an explicit answer from you. My recommendation: **wholesale migrate to 12e where they differ**. Keeping dual thresholds creates silent ambiguity in the generator. If a 12e value is more conservative, use it; if it's less conservative, the gap report should flag it for your review before you adopt it.
+- **Q4 (PDF storage):** Their proposal (`/mnt/documents/`, gitignored, not in Supabase) is correct. No reason to also stage it in a Supabase bucket — that just creates a second copy to manage and a second IP exposure surface. Agree with their default.
+
+**On Q1 (the IP rule):** agree without modification.
+
+So — **the plan does not need replacement. It needs four answers from you, then approval.** Here is a short reply you can paste:
 
 ---
 
-Confirmed on both decisions:
+**REPLY TO LOVABLE:**
 
-**A — Yes, defer individual user mode.** Ship trainer mode first. When we revisit individual mode, model it as "trainer-of-self" so we reuse the existing schema, RLS, and UI rather than introducing a second role. Please add this to `.lovable/backlog.md` as a future round so we don't lose it.
+---
 
-**B — Yes, new** `client_bookings` **table.** Do not overload `workout_sessions`. Bookings and logged training are different concepts and should stay separate.
+Plan approved. The phasing, the IP analysis, and the round-by-round scope are all correct. Answers to your four questions:
 
-Proceed with R28 Phase 1 exactly as you scoped it:
+**Q1 — IP rule.** Agreed. Paraphrased + numeric + structured derivatives only, never verbatim, ever. Raw chapter prose lives server-only, never reaches the client bundle, never reaches RLS-readable tables. Citations as `ACSM 12e §X.Y` strings are fine.
 
-- Migration with backups (per non-negotiables), validation triggers instead of CHECK with `now()`
-- `client_packs` and `client_bookings` tables with RLS on `trainer_id`
-- `bump_pack_sessions_used` trigger on booking status transitions
-- Server functions in `src/server/schedule.functions.ts` — all amounts in EUR, displayed via `<PriceTag>`
-- Routes: `src/routes/schedule.tsx` and `src/routes/schedule.packs.tsx`
-- Components in `src/components/schedule/`: `WeekTimetable`, `DayStrip`, `RevenuePanel`, `BookingDialog`, `PackCard`, `PackFormDialog`
-- Reuse `YearView` visual language and `lib/status-tone.ts` for green/amber/red status
-- 8-color fixed palette for packs (derived from tone tokens, legible in both themes) — no free hex
-- Add `{ to: "/schedule", label: t("nav.schedule"), icon: CalendarDays }` to `primaryNav` in `AppShell.tsx`
-- New `schedule` i18n namespace, PT + EN, every string via `t()`
-- Demo Lab seed: one demo pack + 5 bookings in the current week so the empty state has content
+**Q2 — 11e fallback.** Wholesale migrate to 12e values where they differ. Do not maintain dual thresholds — that creates silent ambiguity in the generator. The Round 1 gap report should explicitly call out every place a 12e threshold differs from what Forge currently uses, so I can review the deltas before Round 2 adopts them. If any 12e change is *less* conservative than the existing 11e value, flag it for explicit approval rather than auto-adopting.
 
-Out of scope for this round (confirmed): individual mode, recurring booking rules, Google/Apple calendar sync, payments/invoicing, notifications.
+**Q3 — Chapter scope for Round 1.** Adjust slightly: ingest **Ch. 2, 3, 5 fully** (the spine, as you proposed), **plus a lighter pass on Ch. 6 and 8–11** to extract only:
 
-One small addition: please include a **"duplicate to next week"** shortcut on each booking block as you mentioned — that's a high-value shortcut for the trainer's real workflow (most clients train on the same days every week) and removes the friction of manual rebooking until recurring rules ship later.
+- Population trigger criteria (what assessment values flag a population)
+- Contraindication lists per population
+- A one-line paraphrased summary per population
 
-Round flow as you proposed: migration → server functions + types → UI (grid → revenue panel → dialogs → packs page) → i18n → demo seed → 375px Mobile Safari smoke + light/dark QA → close round → update backlog.
+This is needed because the gap report has to answer "which populations does Forge silently fall through?" — and that question can't be answered from Ch. 2/3/5 alone. Full FITT overlays for those populations stay deferred to Round 3 as planned. Ch. 1, 4, 7, 12 can wait entirely until their dedicated round.
 
-Go ahead and switch to build mode.
+**Q4 — PDF storage.** Keep at `/mnt/documents/acsm-12e.pdf`, gitignored, agent-accessible only. No Supabase bucket — second copy, second IP surface, no benefit.
+
+Proceed with Round 1 as scoped, with the Q3 adjustment. Deliverables expected:
+
+1. Five structured tables with RLS as you specified.
+2. Ingestion script (one-off, local-run, not committed beyond the script itself).
+3. `.lovable/acsm-12e-gap-report.md` covering Ch. 2, 3, 5 fully + population triggers/contraindications from Ch. 6, 8–11.
+4. `.lovable/acsm-12e-source.txt` with edition/ISBN/access policy.
+5. `.gitignore` entry for the PDF.
+
+No UI, no prompt changes, no generator changes in Round 1. When the gap report is ready, surface it and we'll decide Round 2 priorities from there.
