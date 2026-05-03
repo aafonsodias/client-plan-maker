@@ -113,8 +113,8 @@ function Dashboard() {
       if (c.intake_status === "submitted") {
         items.push({
           kind: "submitted", key: `sub-${c.id}`,
-          title: `${c.full_name} submeteu a avaliação`,
-          sub: "Pronto para revisão",
+          title: t("dashboard.sub_submitted", { name: c.full_name }),
+          sub: t("dashboard.sub_ready_for_review"),
           clientId: c.id, urgent: true,
         });
       }
@@ -122,10 +122,11 @@ function Dashboard() {
       const d = daysUntilBirthday(c.date_of_birth);
       if (d !== null && d <= 14) {
         const age = turningAge(c.date_of_birth);
+        const bdayKey = d === 0 ? "dashboard.sub_birthday_today" : d === 1 ? "dashboard.sub_birthday_tomorrow" : "dashboard.sub_birthday_in";
         items.push({
           kind: "birthday", key: `bd-${c.id}`,
-          title: `${c.full_name} faz ${age ?? ""} anos ${d === 0 ? "hoje" : d === 1 ? "amanhã" : `em ${d} dias`}`,
-          sub: "Lembra-te de mandar uma mensagem",
+          title: t(bdayKey, { name: c.full_name, age: age ?? "", n: d }),
+          sub: t("dashboard.sub_birthday_hint"),
           clientId: c.id,
         });
       }
@@ -135,8 +136,8 @@ function Dashboard() {
         if (ageDays >= 7) {
           items.push({
             kind: "stale", key: `stale-${c.id}`,
-            title: `${c.full_name} ainda não preencheu`,
-            sub: `Link enviado há ${ageDays} dias — talvez relembrar?`,
+            title: t("dashboard.sub_stale", { name: c.full_name }),
+            sub: t("dashboard.sub_stale_hint", { n: ageDays }),
             clientId: c.id,
           });
         }
@@ -144,7 +145,7 @@ function Dashboard() {
     }
     // submitted first, then birthdays, then stale
     return items.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent)).slice(0, 6);
-  }, [clientRows]);
+  }, [clientRows, t]);
 
   // Quick action: copy intake link of the most recent client without submission
   const quickIntakeClient = useMemo(() => {
@@ -154,7 +155,7 @@ function Dashboard() {
     if (!quickIntakeClient?.intake_token) return;
     const url = `${window.location.origin}/intake/${quickIntakeClient.intake_token}`;
     await navigator.clipboard.writeText(url);
-    toast.success(`Link de ${quickIntakeClient.full_name.split(" ")[0]} copiado`);
+    toast.success(t("dashboard.intake_link_copied", { name: quickIntakeClient.full_name.split(" ")[0] }));
   };
 
   const isEmpty = clients === 0;
@@ -184,21 +185,21 @@ function Dashboard() {
       {/* Quick actions strip — visible once there's at least one client */}
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild size="sm"><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-1.5 h-4 w-4" /> Novo cliente</Link></Button>
+          <Button asChild size="sm"><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-1.5 h-4 w-4" /> {t("dashboard.new_client_short")}</Link></Button>
           {quickIntakeClient && (
             <Button size="sm" variant="outline" onClick={copyQuickIntake}>
-              <Copy className="mr-1.5 h-4 w-4" /> Copiar link de avaliação · {quickIntakeClient.full_name.split(" ")[0]}
+              <Copy className="mr-1.5 h-4 w-4" /> {t("dashboard.copy_intake", { name: quickIntakeClient.full_name.split(" ")[0] })}
             </Button>
           )}
-          <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> Ver planos</Link></Button>
-          <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> Manual</Link></Button>
+          <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> {t("dashboard.view_plans")}</Link></Button>
+          <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> {t("dashboard.manual")}</Link></Button>
         </div>
       )}
 
       {/* Attention panel — surfaces submitted intakes, birthdays, stale invites */}
       {attention.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-bold">Atenção</h2>
+          <h2 className="mb-3 text-lg font-bold">{t("dashboard.attention")}</h2>
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {attention.map((it) => {
               const Icon = it.kind === "submitted" ? Inbox : it.kind === "birthday" ? Cake : Clock;
@@ -214,7 +215,7 @@ function Dashboard() {
                     <p className="truncate text-sm font-medium">{it.title}</p>
                     {it.sub && <p className="truncate text-xs text-muted-foreground">{it.sub}</p>}
                   </div>
-                  {it.urgent && <span className="shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">Rever</span>}
+                  {it.urgent && <span className="shrink-0 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">{t("dashboard.review")}</span>}
                 </Link>
               );
             })}
@@ -224,9 +225,9 @@ function Dashboard() {
 
       {noPlansYet && attention.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="font-medium">Próximo passo: enviar a avaliação</p>
-          <p className="mt-1 text-sm text-muted-foreground">Abre um cliente e copia o link de intake — ele preenche em 5 minutos.</p>
-          <Button asChild className="mt-4" variant="outline"><Link to="/clients" search={{ filter: "all" }}>Ver clientes</Link></Button>
+          <p className="font-medium">{t("dashboard.next_step_title")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.next_step_hint")}</p>
+          <Button asChild className="mt-4" variant="outline"><Link to="/clients" search={{ filter: "all" }}>{t("dashboard.view_clients")}</Link></Button>
         </div>
       )}
 
@@ -313,22 +314,20 @@ function Dashboard() {
                     <button
                       onClick={(e) => { e.stopPropagation(); }}
                       className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
-                      aria-label="Delete plan"
+                      aria-label={t("dashboard.delete_plan_aria")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete "{p.title}"?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This permanently removes the plan and all logged sessions. This cannot be undone.
-                      </AlertDialogDescription>
+                      <AlertDialogTitle>{t("dashboard.delete_plan_title", { title: p.title })}</AlertDialogTitle>
+                      <AlertDialogDescription>{t("dashboard.delete_plan_desc")}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
                       <AlertDialogAction onClick={() => void removePlan(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Delete
+                        {t("dashboard.delete")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
