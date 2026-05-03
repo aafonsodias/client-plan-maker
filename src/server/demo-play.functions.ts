@@ -98,12 +98,32 @@ export const runDemoPlay = createServerFn({ method: "POST" })
         .select("status, entries")
         .eq("plan_id", data.priorPlanId);
       const summary = summarizePriorBlock(priorSessions ?? []);
+      // Pull the prior block's exercise pool so Stage 2/3 prompts can
+      // enforce rotation. Compounds may repeat (driver of progression);
+      // accessories must rotate ≥60% per SAID.
+      const { data: priorDays } = await supabaseAdmin
+        .from("workout_plan_days")
+        .select("content")
+        .eq("plan_id", data.priorPlanId);
+      const pool = new Set<string>();
+      for (const d of priorDays ?? []) {
+        const exs = (d as any)?.content?.exercises ?? [];
+        for (const ex of exs) {
+          const name = String(ex?.name ?? ex?.exercise_name ?? "").trim();
+          if (name) pool.add(name);
+        }
+      }
+      const priorExercisePool = [...pool];
       const { data: existingMeta } = await supabaseAdmin
         .from("workout_plans")
         .select("generation_meta")
         .eq("id", planId)
         .maybeSingle();
-      const merged = { ...((existingMeta as any)?.generation_meta ?? {}), block_feedback: summary };
+      const merged = {
+        ...((existingMeta as any)?.generation_meta ?? {}),
+        block_feedback: summary,
+        prior_exercise_pool: priorExercisePool,
+      };
       await supabaseAdmin
         .from("workout_plans")
         .update({ generation_meta: merged })
