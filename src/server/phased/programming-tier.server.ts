@@ -110,6 +110,7 @@ export function classifyTier(brief: Brief, assessment: Record<string, any>): Tie
     movementFailures >= 2 ||
     recoveryCompromised ||
     prepart.cvd_risk_factors.count >= 2 ||
+    prepart.known_disease ||
     (age > 50 && redFlagCount >= 1) ||
     brief.training_age_band === "beginner"
   ) {
