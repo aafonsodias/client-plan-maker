@@ -741,11 +741,7 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
 
       <header className="border-b border-border/60 bg-card/40">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
-          {ctx.trainer?.logo_url ? (
-            <img src={ctx.trainer.logo_url} alt="" className="h-9 w-9 rounded-md object-cover" />
-          ) : (
-            <BrandMark size="sm" />
-          )}
+          <TrainerLogo url={ctx.trainer?.logo_url} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{trainerName}</p>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
