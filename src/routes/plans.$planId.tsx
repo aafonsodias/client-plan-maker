@@ -557,7 +557,7 @@ function PlanEditor() {
             fullyLogged={isPlanFullyLogged(plan, sessions.length)}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
           />
-        (() => {
+        {(() => {
           const fullyLogged = isPlanFullyLogged(plan, sessions.length);
           const wrapClass = fullyLogged
             ? "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs"
@@ -616,7 +616,8 @@ function PlanEditor() {
           />
         </div>
           );
-        })()
+        })()}
+        </>
       )}
 
       {/* AI Validation Report — always visible to the trainer */}
