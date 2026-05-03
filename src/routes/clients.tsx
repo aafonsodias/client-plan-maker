@@ -157,7 +157,7 @@ function Clients() {
   return (
     <div className="space-y-8">
       <Suspense fallback={null}>
-        <DemoLabPanel />
+        {showLab && <DemoLabPanel />}
       </Suspense>
       <div className="flex items-center justify-between">
         <div>
@@ -165,20 +165,22 @@ function Clients() {
           <h1 className="mt-1 text-4xl font-light tracking-tight">{t("clients.title")}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void createDemo()}
-            disabled={creatingDemo}
-            title={t("clients.create_demo_title")}
-          >
-            {creatingDemo ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
-          </Button>
+          {showLab && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void createDemo()}
+              disabled={creatingDemo}
+              title={t("clients.create_demo_title")}
+            >
+              {creatingDemo ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
+            </Button>
+          )}
           <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeAndReset())}>
             <DialogTrigger asChild>
               <Button>
