@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy } from "lucide-react";
+import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { DashboardHint } from "@/components/DashboardHint";
 import { DemoClientBanner } from "@/components/DemoClientBanner";
@@ -87,6 +88,9 @@ function Dashboard() {
     }
     toast.success("Plan deleted");
   };
+
+  const recentPlanIds = useMemo(() => recent.map((p) => p.id), [recent]);
+  const evolutionByPlan = usePlanBlockEvolution(recentPlanIds);
 
   const phases = useClientPhases(useMemo(() => clientIds, [clientIds]));
   const counts = useMemo(() => {
@@ -283,16 +287,19 @@ function Dashboard() {
                     <p className="truncate font-semibold">{p.title}</p>
                     <p className="truncate text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
                   </div>
-                  {(() => {
-                    const s = planStatusInfo(p as any, t as any);
-                    return (
-                      <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
-                      >
-                        {s.label}
-                      </span>
-                    );
-                  })()}
+                  <div className="flex shrink-0 items-center gap-2">
+                    <EvolutionChip evo={evolutionByPlan[p.id]} />
+                    {(() => {
+                      const s = planStatusInfo(p as any, t as any);
+                      return (
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
+                        >
+                          {s.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </Link>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
