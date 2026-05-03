@@ -107,7 +107,7 @@ export const updateBooking = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, any> = {};
     if (data.startsAt !== undefined) patch.starts_at = data.startsAt;
     if (data.durationMin !== undefined) patch.duration_min = data.durationMin;
     if (data.sessionType !== undefined) patch.session_type = data.sessionType;
@@ -208,7 +208,7 @@ export const upsertPack = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const payload: Record<string, unknown> = {
+    const payload: Record<string, any> = {
       trainer_id: userId,
       client_id: data.clientId,
       label: data.label,
