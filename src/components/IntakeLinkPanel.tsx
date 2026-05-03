@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,15 +15,18 @@ type IntakeFields = {
   intake_submitted_at: string | null;
 };
 
-function timeAgo(iso: string | null): string {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "agora mesmo";
-  if (m < 60) return `há ${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `há ${h}h`;
-  return `há ${Math.floor(h / 24)}d`;
+function useTimeAgo() {
+  const { t } = useTranslation("common");
+  return (iso: string | null): string => {
+    if (!iso) return "";
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return t("intake.now");
+    if (m < 60) return t("intake.min_ago", { n: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t("intake.h_ago", { n: h });
+    return t("intake.d_ago", { n: Math.floor(h / 24) });
+  };
 }
 
 export function IntakeLinkPanel({
@@ -38,6 +42,8 @@ export function IntakeLinkPanel({
   intake: IntakeFields;
   onChange: (fields: Partial<IntakeFields>) => void;
 }) {
+  const { t, i18n } = useTranslation("common");
+  const timeAgo = useTimeAgo();
   const generate = useServerFn(generateIntakeToken);
   const review = useServerFn(markIntakeReviewed);
   const [busy, setBusy] = useState(false);
@@ -77,9 +83,9 @@ export function IntakeLinkPanel({
       } as Partial<IntakeFields>;
       setOverride(patch);
       onChange(patch);
-      toast.success("Link de intake pronto");
+      toast.success(t("intake.ok_link_ready"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível gerar o link.");
+      toast.error(e?.message ?? t("intake.err_generate"));
     } finally { setBusy(false); }
   };
 
@@ -87,18 +93,14 @@ export function IntakeLinkPanel({
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success("Link copiado");
+    toast.success(t("intake.ok_copied"));
   };
 
-  const waMsg = encodeURIComponent(
-    `Olá ${clientFirstName}, preencha este pequeno questionário antes da nossa primeira sessão: ${url}`
-  );
+  const waMsg = encodeURIComponent(t("intake.wa_msg", { name: clientFirstName, url }));
   const waPhone = (clientPhone ?? "").replace(/[^\d]/g, "");
   const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
-  const mailSubj = encodeURIComponent("Questionário inicial para a nossa primeira sessão");
-  const mailBody = encodeURIComponent(
-    `Olá ${clientFirstName}, preencha este pequeno questionário antes da nossa primeira sessão: ${url}`
-  );
+  const mailSubj = encodeURIComponent(t("intake.mail_subject"));
+  const mailBody = encodeURIComponent(t("intake.wa_msg", { name: clientFirstName, url }));
 
   const doReview = async () => {
     setBusy(true);
@@ -106,9 +108,9 @@ export function IntakeLinkPanel({
       await review({ data: { clientId } });
       setOverride((o) => ({ ...(o ?? {}), intake_status: "reviewed" }));
       onChange({ intake_status: "reviewed" });
-      toast.success("Intake marcado como revisto");
+      toast.success(t("intake.marked_reviewed_ok"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível atualizar.");
+      toast.error(e?.message ?? t("intake.err_update"));
     } finally { setBusy(false); }
   };
 
@@ -118,16 +120,16 @@ export function IntakeLinkPanel({
       <div className="rounded-xl border border-accent/40 bg-accent/10 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-accent">O cliente submeteu o intake — reveja e complete as secções presenciais.</p>
-            <p className="mt-1 text-xs text-muted-foreground">Submetido {timeAgo(view.intake_submitted_at)}.</p>
+            <p className="text-sm font-semibold text-accent">{t("intake.submitted_title")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("intake.submitted_when", { when: timeAgo(view.intake_submitted_at) })}</p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => {
               const el = document.getElementById("sec-smart");
               el?.scrollIntoView({ behavior: "smooth" });
-            }}>Rever submissão</Button>
+            }}>{t("intake.review_btn")}</Button>
             <Button size="sm" onClick={doReview} disabled={busy}>
-              <Check className="mr-1.5 h-3.5 w-3.5" /> Marcar como revisto
+              <Check className="mr-1.5 h-3.5 w-3.5" /> {t("intake.mark_reviewed")}
             </Button>
           </div>
         </div>
@@ -139,12 +141,12 @@ export function IntakeLinkPanel({
   if (!view.intake_token || view.intake_status === "not_sent") {
     return (
       <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Link de intake do cliente</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("intake.panel_title")}</p>
         <Button size="sm" variant="secondary" className="mt-3 w-full whitespace-normal text-left sm:w-auto" onClick={doGenerate} disabled={busy}>
-          Gerar link de intake
+          {t("intake.generate")}
         </Button>
         <p className="mt-2 text-xs text-muted-foreground">
-          Envie um link ao cliente para preencher as secções de auto-relato a partir do telemóvel.
+          {t("intake.panel_help")}
         </p>
       </div>
     );
@@ -152,14 +154,14 @@ export function IntakeLinkPanel({
 
   /* State 2 — link generated, not yet submitted (sent / opened) */
   const dotColor = view.intake_status === "opened" ? "bg-accent" : "bg-muted-foreground/50";
-  const statusText = view.intake_status === "opened" ? "Aberto — ainda não submetido" : "Ainda não aberto";
+  const statusText = view.intake_status === "opened" ? t("intake.status_opened") : t("intake.status_pending");
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 max-w-full overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Link de intake do cliente</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("intake.panel_title")}</p>
         <button onClick={doGenerate} disabled={busy} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-          <RefreshCw className="h-3 w-3" /> Gerar novo link
+          <RefreshCw className="h-3 w-3" /> {t("intake.regenerate")}
         </button>
       </div>
       <div className="mt-3 flex items-center gap-2 overflow-hidden rounded-md border border-border bg-background/60 px-2 py-1.5">
@@ -174,26 +176,26 @@ export function IntakeLinkPanel({
         />
         <Button size="sm" variant="outline" onClick={copy} className="shrink-0">
           {copied ? (
-            <><Check className="mr-1.5 h-3.5 w-3.5" /> Copiado!</>
+            <><Check className="mr-1.5 h-3.5 w-3.5" /> {t("intake.copied")}</>
           ) : (
-            <><Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar</>
+            <><Copy className="mr-1.5 h-3.5 w-3.5" /> {t("intake.copy")}</>
           )}
         </Button>
         <Button size="sm" variant="outline" asChild className="shrink-0">
           <a href={url} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Abrir
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> {t("intake.open")}
           </a>
         </Button>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" asChild>
           <a href={waUrl} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> {waPhone ? "Enviar por WhatsApp" : "Enviar por WhatsApp"}
+            <MessageCircle className="mr-1.5 h-3.5 w-3.5" /> {t("intake.send_whatsapp")}
           </a>
         </Button>
         <Button size="sm" variant="outline" asChild>
           <a href={`mailto:?subject=${mailSubj}&body=${mailBody}`}>
-            <Mail className="mr-1.5 h-3.5 w-3.5" /> Enviar por email
+            <Mail className="mr-1.5 h-3.5 w-3.5" /> {t("intake.send_email")}
           </a>
         </Button>
       </div>
@@ -204,9 +206,9 @@ export function IntakeLinkPanel({
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="ml-auto text-muted-foreground/70">Expira {timeAgo(view.intake_token_expires_at)}</span>
+                <span className="ml-auto text-muted-foreground/70">{t("intake.expires", { when: timeAgo(view.intake_token_expires_at) })}</span>
               </TooltipTrigger>
-              <TooltipContent>Link válido até {new Date(view.intake_token_expires_at).toLocaleDateString("pt-PT")}</TooltipContent>
+              <TooltipContent>{t("intake.valid_until", { date: new Date(view.intake_token_expires_at).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US") })}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
