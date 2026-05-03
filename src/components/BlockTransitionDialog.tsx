@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { AutoTextarea } from "@/components/AutoTextarea";
+import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
+import type { BlockSummary } from "@/lib/block-feedback";
 import {
   archivePlanAndStartManualNextBlock,
   computeTransitionSummary,
@@ -41,6 +43,7 @@ export function BlockTransitionDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState("");
+  const [blockFeedback, setBlockFeedback] = useState<BlockSummary | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [submitting, setSubmitting] = useState<"manual" | "ai" | null>(null);
   const navigate = useNavigate();
@@ -55,6 +58,7 @@ export function BlockTransitionDialog({
     computeFn({ data: { priorPlanId } })
       .then((r: any) => {
         if (r?.ok && r?.summary && !summary) setSummary(r.summary);
+        if (r?.ok && r?.blockFeedback) setBlockFeedback(r.blockFeedback as BlockSummary);
       })
       .catch(() => {})
       .finally(() => setLoadingSuggestion(false));
@@ -104,6 +108,9 @@ export function BlockTransitionDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {blockFeedback && (
+            <BlockAdaptationCard feedback={blockFeedback} variant="full" />
+          )}
           <div>
             <Label htmlFor="transition-summary" className="text-xs uppercase tracking-wider text-muted-foreground">
               Nota de transição
