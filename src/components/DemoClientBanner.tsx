@@ -35,21 +35,27 @@ export function DemoClientBanner() {
     if (!user) return;
     const { data } = await supabase
       .from("clients")
-      .select("id, full_name, workout_plans(id)")
+      .select("id, full_name")
       .eq("trainer_id", user.id)
       .eq("is_demo", true)
       .order("created_at", { ascending: false })
       .limit(1);
     const row = (data as any)?.[0];
-    if (row) {
-      setDemoClient({
-        id: row.id,
-        name: row.full_name,
-        planId: row.workout_plans?.[0]?.id ?? null,
-      });
-    } else {
-      setDemoClient(null);
-    }
+    if (!row) { setDemoClient(null); return; }
+    // Pick the most recent (ready) block to deep-link into.
+    const { data: plan } = await supabase
+      .from("workout_plans")
+      .select("id")
+      .eq("client_id", row.id)
+      .eq("is_demo", true)
+      .order("block_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setDemoClient({
+      id: row.id,
+      name: row.full_name,
+      planId: (plan as any)?.id ?? null,
+    });
   };
 
   // First effect: kick the seed once per mount, then load existing demo client.
