@@ -1936,9 +1936,9 @@ function ClientDetail() {
                   to="/clients/$clientId/year"
                   params={{ clientId }}
                   className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-amber-300 hover:bg-amber-500/20"
-                  title="Ver evolução longitudinal de todos os blocos"
+                  title={t("detail.year_view_title")}
                 >
-                  Vista anual
+                  {t("detail.year_view_label")}
                 </Link>
                 <Link
                   to="/plans/$planId"
