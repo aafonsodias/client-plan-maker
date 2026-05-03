@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { EQUIPMENT_CATALOG, CATEGORY_LABEL_PT, CATEGORY_LABEL_EN, type EquipmentCategory, searchEquipment } from "@/lib/equipment-catalog";
 
 function TrainerLogo({ url }: { url?: string | null }) {
   const [failed, setFailed] = useState(false);
@@ -498,30 +499,10 @@ function IntakePage() {
               />
             </Field>
             <Field label={t("sections.training_equipment")}>
-              <div className="flex flex-wrap gap-2">
-                {EQUIPMENT_IDS.map((eid) => {
-                  // Persist the EN canonical label for backend compatibility.
-                  const enLabels: Record<string, string> = {
-                    barbell: "Barbell", dumbbells: "Dumbbells", kettlebells: "Kettlebells",
-                    cable_machine: "Cable machine", bench: "Bench", pull_up_bar: "Pull-up bar",
-                    bands: "Bands", bodyweight: "Bodyweight only",
-                  };
-                  const persisted = enLabels[eid];
-                  const label = t(`equipment.${eid}`);
-                  const on = form.available_equipment.includes(persisted);
-                  return (
-                    <button
-                      key={eid}
-                      type="button"
-                      onClick={() => setForm({
-                        ...form,
-                        available_equipment: on ? form.available_equipment.filter((x) => x !== persisted) : [...form.available_equipment, persisted],
-                      })}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
-                    >{label}</button>
-                  );
-                })}
-              </div>
+              <EquipmentPicker
+                value={form.available_equipment}
+                onChange={(v) => setForm({ ...form, available_equipment: v })}
+              />
             </Field>
             <Field label={t("sections.training_injuries")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.injuries} onChange={(e) => setForm({ ...form, injuries: e.target.value })} />
