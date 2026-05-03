@@ -2709,6 +2709,7 @@ function AssessmentSection({
   defaultCollapsed?: boolean;
   summaryLine?: string;
 }) {
+  const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
   const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
@@ -2785,12 +2786,12 @@ function AssessmentSection({
         >
           <div className="flex items-center gap-2">
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-bold">Avaliação</span>
+            <span className="text-sm font-bold">{t("detail.section.title")}</span>
             {summaryLine && (
               <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
             )}
           </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">expandir</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.section.expand_short")}</span>
         </button>
       </section>
     );
