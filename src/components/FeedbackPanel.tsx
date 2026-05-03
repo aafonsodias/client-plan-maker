@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, MessageSquare, AlertCircle, HelpCircle, ThumbsUp, Bug, Wrench, CheckCircle2, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -37,23 +38,22 @@ const CATEGORY_TONE: Record<Row["category"], string> = {
   ux: "text-violet-500",
 };
 
-const CATEGORY_LABEL: Record<Row["category"], string> = {
-  pain: "Dor",
-  complaint: "Queixa",
-  question: "Pergunta",
-  praise: "Elogio",
-  app_bug: "Bug",
-  ux: "UX",
-};
-
-const AUTHOR_LABEL: Record<Row["author"], string> = {
-  client: "Cliente",
-  trainer: "Treinador",
-  bot: "Bot",
-  system: "Sistema",
-};
-
 export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?: string | null }) {
+  const { t } = useTranslation("common");
+  const CATEGORY_LABEL: Record<Row["category"], string> = {
+    pain: t("feedback.cat_pain"),
+    complaint: t("feedback.cat_complaint"),
+    question: t("feedback.cat_question"),
+    praise: t("feedback.cat_praise"),
+    app_bug: t("feedback.cat_app_bug"),
+    ux: t("feedback.cat_ux"),
+  };
+  const AUTHOR_LABEL: Record<Row["author"], string> = {
+    client: t("feedback.author_client"),
+    trainer: t("feedback.author_trainer"),
+    bot: t("feedback.author_bot"),
+    system: t("feedback.author_system"),
+  };
   const list = useServerFn(listClientFeedback);
   const add = useServerFn(addClientFeedback);
   const setStatus = useServerFn(setFeedbackStatus);
@@ -86,10 +86,10 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
     setSubmitting(false);
     if (res?.ok) {
       setDraft("");
-      toast.success("Feedback registado");
+      toast.success(t("feedback.ok_logged"));
       reload();
     } else {
-      toast.error(res?.error || "Falha ao registar feedback");
+      toast.error(res?.error || t("feedback.err_failed"));
     }
   }
 
@@ -101,8 +101,8 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
   return (
     <div className="space-y-4 rounded-2xl border border-border bg-card/60 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Feedback do cliente</h3>
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{rows.length} entradas</span>
+        <h3 className="text-sm font-semibold text-foreground">{t("feedback.title")}</h3>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("feedback.count_entries", { count: rows.length })}</span>
       </div>
 
       <div className="rounded-xl border border-dashed border-border/70 p-3">
@@ -112,26 +112,26 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
             onChange={(e) => setAuthor(e.target.value as Row["author"])}
             className="rounded-md border border-border bg-background px-2 py-1"
           >
-            <option value="trainer">Como treinador</option>
-            <option value="client">Como cliente</option>
+            <option value="trainer">{t("feedback.as_trainer")}</option>
+            <option value="client">{t("feedback.as_client")}</option>
           </select>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as Row["category"])}
             className="rounded-md border border-border bg-background px-2 py-1"
           >
-            <option value="complaint">Queixa</option>
-            <option value="pain">Dor</option>
-            <option value="question">Pergunta</option>
-            <option value="praise">Elogio</option>
-            <option value="app_bug">Bug da app</option>
-            <option value="ux">UX</option>
+            <option value="complaint">{t("feedback.cat_complaint")}</option>
+            <option value="pain">{t("feedback.cat_pain")}</option>
+            <option value="question">{t("feedback.cat_question")}</option>
+            <option value="praise">{t("feedback.cat_praise")}</option>
+            <option value="app_bug">{t("feedback.cat_app_bug")}</option>
+            <option value="ux">{t("feedback.cat_ux")}</option>
           </select>
         </div>
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Ex: O agachamento dói no joelho direito a meio do segundo set."
+          placeholder={t("feedback.placeholder")}
           className="w-full rounded-md border border-border bg-background p-2 text-xs"
           rows={2}
         />
@@ -143,17 +143,17 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageSquare className="h-3 w-3" />}
-            Registar
+            {t("feedback.submit")}
           </button>
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3 w-3 animate-spin" /> A carregar…
+          <Loader2 className="h-3 w-3 animate-spin" /> {t("feedback.loading")}
         </div>
       ) : rows.length === 0 ? (
-        <p className="text-xs italic text-muted-foreground">Sem feedback registado para este cliente.</p>
+        <p className="text-xs italic text-muted-foreground">{t("feedback.empty")}</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((r) => {
@@ -181,14 +181,14 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
                         onClick={() => ack(r.id, "acknowledged")}
                         className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-secondary"
                       >
-                        <Eye className="h-3 w-3" /> Visto
+                        <Eye className="h-3 w-3" /> {t("feedback.ack_seen")}
                       </button>
                     )}
                     <button
                       onClick={() => ack(r.id, "resolved")}
                       className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[10px] hover:bg-secondary"
                     >
-                      <CheckCircle2 className="h-3 w-3" /> Resolvido
+                      <CheckCircle2 className="h-3 w-3" /> {t("feedback.ack_resolved")}
                     </button>
                   </div>
                 )}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -26,6 +27,7 @@ function platesPerSide(targetTotal: number, barWeight: number, available: number
 }
 
 export function OneRepMaxCalculator() {
+  const { t } = useTranslation("common");
   const [unit, setUnit] = useState<"kg" | "lb">("kg");
   const [weight, setWeight] = useState(80);
   const [reps, setReps] = useState(5);
@@ -51,7 +53,7 @@ export function OneRepMaxCalculator() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">Pesa-papéis</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">{t("calculator.title")}</h3>
         <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
           {(["kg", "lb"] as const).map((u) => (
             <button
@@ -71,7 +73,7 @@ export function OneRepMaxCalculator() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Carga ({unit})</Label>
+          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("calculator.load", { unit })}</Label>
           <Input
             type="number"
             inputMode="decimal"
@@ -83,7 +85,7 @@ export function OneRepMaxCalculator() {
           />
         </div>
         <div>
-          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Repetições</Label>
+          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("calculator.reps")}</Label>
           <Input
             type="number"
             inputMode="numeric"
@@ -97,7 +99,7 @@ export function OneRepMaxCalculator() {
       </div>
 
       <div className="rounded-lg border border-amber-500/30 bg-gradient-to-b from-amber-500/10 to-transparent p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">1RM estimado</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">{t("calculator.estimated_1rm")}</p>
         <p className="mt-1 font-mono text-3xl font-light text-foreground">
           {avg.toFixed(1)} <span className="text-base text-muted-foreground">{unit}</span>
         </p>
@@ -110,12 +112,12 @@ export function OneRepMaxCalculator() {
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">% do 1RM</Label>
+          <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{t("calculator.pct_of_1rm")}</Label>
           <span className="font-mono text-xs text-foreground">{pct}%</span>
         </div>
         <Slider value={[pct]} min={30} max={100} step={5} onValueChange={(v) => setPct(v[0]!)} />
         <div className="mt-3 flex items-baseline justify-between">
-          <span className="text-xs text-muted-foreground">Carga alvo</span>
+          <span className="text-xs text-muted-foreground">{t("calculator.target_load")}</span>
           <span className="font-mono text-xl text-foreground">
             {roundToPlate(target, unit).toFixed(unit === "kg" ? 1 : 0)} {unit}
           </span>
@@ -154,17 +156,18 @@ function PlateRack({
   achievable: number;
   bar: number;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div className="rounded-lg border border-border bg-card/40 p-3">
       <div className="mb-2 flex items-baseline justify-between text-[11px]">
-        <span className="uppercase tracking-wider text-muted-foreground">Anilhas por lado</span>
+        <span className="uppercase tracking-wider text-muted-foreground">{t("calculator.plates_per_side")}</span>
         <span className="font-mono text-foreground">
-          barra {bar} + {achievable - bar} = {achievable} {unit}
+          {t("calculator.bar_summary", { bar, plates: achievable - bar, total: achievable, unit })}
         </span>
       </div>
       <div className="flex items-center justify-center gap-1 overflow-x-auto py-2">
         {plates.length === 0 ? (
-          <span className="text-xs text-muted-foreground">Só a barra.</span>
+          <span className="text-xs text-muted-foreground">{t("calculator.bar_only")}</span>
         ) : (
           plates.map((p, i) => (
             <div

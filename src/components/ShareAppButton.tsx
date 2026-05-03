@@ -1,6 +1,7 @@
 import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 /**
  * Lets the trainer hand the app to someone in seconds. Uses the native
@@ -8,12 +9,13 @@ import { toast } from "sonner";
  * landing URL on desktop.
  */
 export function ShareAppButton() {
+  const { t } = useTranslation("common");
   const onShare = async () => {
     const url =
       typeof window !== "undefined" ? `${window.location.origin}/` : "https://forge.lovable.app/";
     const shareData = {
-      title: "Forge — Workout plans for personal trainers",
-      text: "Estou a usar isto para escrever planos de treino. Experimenta com 1 cliente — grátis.",
+      title: t("share_app.share_title"),
+      text: t("share_app.share_text"),
       url,
     };
     try {
@@ -27,9 +29,9 @@ export function ShareAppButton() {
     }
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Link copiado.");
+      toast.success(t("share_app.copied"));
     } catch {
-      toast.error("Não consegui partilhar.");
+      toast.error(t("share_app.failed"));
     }
   };
 
@@ -39,11 +41,11 @@ export function ShareAppButton() {
       size="sm"
       variant="ghost"
       onClick={onShare}
-      title="Partilhar a app"
+      title={t("share_app.title")}
       className="h-8"
     >
       <Share2 className="h-4 w-4" />
-      <span className="ml-1.5 hidden lg:inline">Partilhar</span>
+      <span className="ml-1.5 hidden lg:inline">{t("share_app.label")}</span>
     </Button>
   );
 }
