@@ -89,7 +89,7 @@ function BillingPage() {
       ],
     },
     {
-      id: "studio", name: "Studio", tagline: t("billing.tier_studio_tagline"),
+      id: "studio", name: "Oficina", tagline: t("billing.tier_studio_tagline"),
       monthly: 119, yearly: 1190,
       features: [
         t("billing.feat_studio_clients"),
