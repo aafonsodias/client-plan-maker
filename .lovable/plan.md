@@ -1,45 +1,68 @@
-## Round 13 — i18n sweep das adições recentes (Rounds 8–12)
+## Round 15 — i18n EN sweep: YearView + ExerciseTrendChart
 
-### Objetivo
-Garantir que tudo o que foi construído nas últimas rondas (NextBlockCard, popovers Rotação/Main lift, WeeklyVolumeBars) tem cobertura EN. As superfícies mais antigas (BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip) ficam para Round 14.
+Closes backlog #26. Both surfaces still have hardcoded PT strings (chart titles, axis names, legends, table headers, empty states, "PR Bloco N", tonelagem labels, etc.). Sweep them through `useTranslation`.
 
-### Mudanças
+### Locale keys to add (`src/i18n/locales/{pt,en}/common.json`)
 
-**1. `src/i18n/locales/pt/common.json` + `src/i18n/locales/en/common.json`**
+- `year.title`, `year.subtitle` (uses `{{blocks}}`, `{{weeks}}`, `{{sessions}}`)
+- `year.overall_adherence`
+- `year.loading`, `year.empty`
+- `year.blocks.heading`, `year.blocks.subtitle`
+- `year.blocks.no_data`, `year.blocks.initial_block`, `year.blocks.delta_capacity` (`{{pct}}`)
+- `year.blocks.adherence_short`, `year.blocks.rpe_short`, `year.blocks.sessions_short`
+- `year.adherence.title`, `year.adherence.subtitle`, `year.adherence.bar`, `year.adherence.line_rpe`
+- `year.tonnage.title`, `year.tonnage.subtitle`, `year.tonnage.bar`
+- `year.strength.title`, `year.strength.subtitle`, `year.strength.empty`
+- `year.map.title`, `year.map.subtitle`, plus column keys: `block`, `weeks`, `sessions`, `adherence`, `avg_rpe`, `tonnage`, `adaptation`
+- `trend.empty_html` (with `<bold>` placeholder for the import button name) + `trend.import_button`
+- `trend.delta_one`, `trend.delta_other` (`{{delta}}`, `{{count}}`), `trend.weeks_one`, `trend.weeks_other`
+- `trend.pr_block` (`{{n}}`)
+- `trend.legend.kg`, `trend.legend.rpe`
+- `trend.week_short` (for `S{week}`; EN `W{{week}}`)
 
-Adicionar dois namespaces no fim:
+### Component edits
 
-- `blocks.next.*` — copy do NextBlockCard (deload/normal/push titles+subs, adesão, avg_rpe, block, start_next)
-- `blocks.rotation.*` — chip "Rotação N%", popover (título, after_retry, no_retry, days_regenerated, pool_label)
-- `blocks.main_lift.*` — chip refrescado/mantido + popover (refreshed_desc, kept_desc, new_label, prior_label)
-- `volume.weekly_bars_label`, `volume.prescribed`, `volume.actual`
+- **`src/components/YearView.tsx`**:
+  - `useTranslation('common')`.
+  - Replace every hardcoded string above. Header subtitle uses interpolation; `BlocksStrip` chip uses `t('year.blocks.delta_capacity', { pct })` with sign prefix preserved.
+  - Stat cards (`Adesão global`, `Adesão`, `RPE`, `Sess.`) localized.
+  - Table headers + `kg` suffix kept (kg is universal).
+- **`src/components/ExerciseTrendChart.tsx`**:
+  - `useTranslation('common')`.
+  - Empty state via `<Trans i18nKey="trend.empty_html" components={{ bold: <b className="text-foreground" /> }} />`.
+  - Subtitle uses `t('trend.delta_one'|'trend.delta_other', { count, delta })` and `t('trend.weeks_*', { count })`.
+  - PR badge: `t('trend.pr_block', { n: blockNumber })`.
+  - X axis tickFormatter uses `t('trend.week_short', { week: v })`.
+  - Legend names via `name={t('trend.legend.kg')}` / `t('trend.legend.rpe')`.
 
-**2. `src/components/NextBlockCard.tsx`**
-- `useTranslation("common")` → todas as strings via `t("blocks.next.*")`.
-- COPY map continua, mas valores passam a ser chaves i18n resolvidas no render.
-- "Iniciar Bloco N+1" → `t("blocks.next.start_next", { n: blockNumber + 1 })`.
+## Round 16 — Hardcoded-PT audit on shipped surfaces
 
-**3. `src/components/volume/WeeklyVolumeBars.tsx`**
-- Label "Prescrito vs realizado · séries" → `t("volume.weekly_bars_label")`.
-- `<Bar dataKey="prescrito" name={t("volume.prescribed")} />` + idem `actual`. Recharts mostra `name` no Tooltip.
-- Manter chaves internas dos dados em PT (não importam — só `name` aparece).
+Quick smoke pass to catch any remaining literal Portuguese in core routes after Rounds 13–15. Read-only scan first (`rg "[À-ÿ]" src/routes src/components | rg -v 'i18n|locales|\\.json'`), then localize the leftovers found in:
 
-**4. `src/routes/plans.$planId.tsx`** — popovers Rotação + Main lift
-- Trocar strings hardcoded para `t("blocks.rotation.*")` e `t("blocks.main_lift.*")`.
-- Manter a lógica de `summarizeRotation` + `main_lift_audit` intacta.
+- `src/routes/plans.$planId.tsx` (any non-i18n labels still in PT)
+- `src/components/NextBlockCard.tsx` edge strings
+- `src/components/CapacityGainCard.tsx` tooltip copy
+- `src/components/volume/VolumeSection.tsx` headers if missed
 
-**5. `.lovable/backlog.md`**
-- Marcar Round 13 (#23 parcial) como ✅; criar #25 para superfícies legadas (BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip) na Round 14.
+Cap at ~6 leftover strings; if more surface, log as backlog #27 instead of expanding the round.
 
-### Fora de scope (intencional)
-- BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip — superfícies estáveis em PT, mexer agora arrisca regressões silenciosas. Vão para Round 14 com QA dedicado.
-- CapacityGainCard — já tem alguma estrutura i18n, validar separadamente na Round 14.
-- Landing page mockups — copy de marketing, decisão à parte.
+## Deploy
 
-### Riscos & mitigação
-- **Recharts Tooltip name**: testado noutros componentes do projeto (chart.tsx). Funciona.
-- **Plurais "Iniciar Bloco N"**: numérico simples, sem regras de plural — interpolation é suficiente.
-- **i18n race**: as keys estão presentes em PT+EN antes dos componentes referenciarem (mesmo commit).
+After Rounds 15–16 land, publish the frontend so the EN audience gets the sweep live. Mention to the user that backend (edge fns/migrations) auto-deploys but the frontend update needs the Publish dialog click.
 
-### Princípio
-útil ✅ (componentes novos = primeira impressão para utilizador EN) · funcional ✅ · bonito ✅ (sem visual diff) · divertido ⚠️ (higiene)
+## Backlog updates (`.lovable/backlog.md`)
+
+- Mark #26 ✅ Round 15.
+- Add #27 (P2, i18n) only if Round 16 audit overflows.
+- Bump "Atualizado" header to Round 16.
+
+### Files touched
+
+- `src/i18n/locales/pt/common.json`
+- `src/i18n/locales/en/common.json`
+- `src/components/YearView.tsx`
+- `src/components/ExerciseTrendChart.tsx`
+- (Round 16) any leftover route/component files surfaced by the rg pass
+- `.lovable/backlog.md`
+
+Avanço?
