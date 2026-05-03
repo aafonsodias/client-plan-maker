@@ -500,6 +500,7 @@ export const generateDay = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     await markPending(supabase, userId, data.planId, data.dayIndex);
     const r = await runDay(
       supabase,
@@ -562,7 +563,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             briefP.data,
             bpP.data,
             guidelines,
-            (loaded.plan.generation_meta as any)?.block_feedback ?? null,
+            priorBlockSummary,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
