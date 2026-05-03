@@ -112,14 +112,8 @@ export function ExerciseTrendChart({
           ? t("trend.delta", {
               count: c.points.length,
               delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}`,
-              defaultValue_one: t("trend.delta_one", { count: c.points.length, delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}` }),
-              defaultValue_other: t("trend.delta_other", { count: c.points.length, delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}` }),
             })
-          : t("trend.weeks", {
-              count: c.points.length,
-              defaultValue_one: t("trend.weeks_one", { count: c.points.length }),
-              defaultValue_other: t("trend.weeks_other", { count: c.points.length }),
-            });
+          : t("trend.weeks", { count: c.points.length });
         return (
           <div key={c.name} className="rounded-xl border border-border bg-card p-3">
             <div className="mb-2 flex items-start justify-between gap-2">
