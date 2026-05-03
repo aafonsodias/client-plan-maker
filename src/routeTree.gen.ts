@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -35,6 +36,11 @@ import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId
 import { Route as ClientsClientIdYearRouteImport } from './routes/clients_.$clientId.year'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
+  '/welcome': typeof WelcomeRoute
   '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/templates'
     | '/terms'
+    | '/welcome'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/templates'
     | '/terms'
+    | '/welcome'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/templates'
     | '/terms'
+    | '/welcome'
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
+  WelcomeRoute: typeof WelcomeRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
@@ -351,6 +364,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -585,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
+  WelcomeRoute: WelcomeRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
