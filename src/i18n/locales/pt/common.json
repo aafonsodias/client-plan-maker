@@ -20,7 +20,8 @@
     "branding": "Marca",
     "manual": "Manual",
     "billing": "Faturação",
-    "landing": "Página inicial"
+    "landing": "Página inicial",
+    "schedule": "Agenda"
   },
   "auth": {
     "tab_signin": "Entrar",
