@@ -1110,10 +1110,6 @@ function TierBadgesSection() {
               <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
               {t(`landing.tier_badges.items.${tier.key}.name`)}
             </div>
-            <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-              <Shield className="h-3.5 w-3.5" />
-              {t("landing.tier_badges.title")}
-            </div>
             <p className="text-sm font-light text-muted-foreground">
               {t(`landing.tier_badges.items.${tier.key}.desc`)}
             </p>
