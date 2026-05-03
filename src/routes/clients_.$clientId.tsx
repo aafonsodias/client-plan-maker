@@ -362,8 +362,9 @@ type SaveStatus = "idle" | "saving" | "saved" | "offline";
 
 function ClientDetail() {
   const { clientId } = Route.useParams();
-  const { t } = useTranslation("assessment");
+  const { t, i18n } = useTranslation("assessment");
   const { t: tCommon } = useTranslation("common");
+  const dateLocale = i18n.language === "pt" ? "pt-PT" : "en-US";
   const { user } = useAuth();
   const navigate = useNavigate();
   const generateFn = useServerFn(generatePlanDraft);
@@ -1409,7 +1410,7 @@ function ClientDetail() {
           className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground transition hover:text-foreground"
         >
           Última avaliação ·{" "}
-          {new Date(lastSavedAt).toLocaleDateString("pt-PT", {
+          {new Date(lastSavedAt).toLocaleDateString(dateLocale, {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -1492,7 +1493,7 @@ function ClientDetail() {
           defaultCollapsed={!!readyPlanForAssessment}
           summaryLine={
             (assessment as any)?.performed_on
-              ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
+              ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
               : `${totalSections} secções · ${pct}%`
           }
           headerProgress={
