@@ -510,7 +510,7 @@ export const generateDay = createServerFn({ method: "POST" })
       briefP.data,
       bpP.data,
       guidelines,
-      (loaded.plan.generation_meta as any)?.block_feedback ?? null,
+      priorBlockSummary,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
