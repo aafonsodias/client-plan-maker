@@ -317,6 +317,25 @@ export async function generatePlanPdf(
       arc.weeks.push({ week_number: w.week_number, day: d });
     }
   }
+  // Normalize labels so every page reads "Day N · <Focus>" uniformly.
+  // Fix common AI artefacts where focus comes back as "Week 1" (junk) and
+  // day_label is missing or already includes "— Week X".
+  const isWeekJunk = (s: string) => /^\s*(week|semana)\s*\d+\s*$/i.test(s.trim());
+  const stripWeekSuffix = (s: string) =>
+    s.replace(/\s*[—–-]\s*(week|semana)\s*\d+\s*$/i, "").trim();
+  archetypes.forEach((arc, i) => {
+    let label = stripWeekSuffix(arc.label || "");
+    if (!label || /^session$/i.test(label)) label = `Day ${i + 1}`;
+    // If label doesn't start with Day/Dia, prefix it with the day index.
+    if (!/^(day|dia)\s*\d+/i.test(label)) label = `Day ${i + 1} — ${label}`;
+    arc.label = label;
+    if (isWeekJunk(arc.focus)) {
+      // Try to infer focus from the day's exercises movement pattern; fallback
+      // to a generic "Full body" so the cabeçalho nunca mostra "Week X".
+      const firstNames = (arc.base.exercises ?? []).slice(0, 3).map((e) => e.name).join(", ");
+      arc.focus = firstNames || "Sessão de treino";
+    }
+  });
   const totalWeeks = plan.weeks?.length ?? 0;
   const numWeeks = Math.min(totalWeeks, 4); // we render at most W1..W4 columns
 
