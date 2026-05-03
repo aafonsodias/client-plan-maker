@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createDemoClient } from "@/server/demo-client.functions";
 import { runDemoPlay } from "@/server/demo-play.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
-import { seedDemoYearForPlan } from "@/server/demo-year.functions";
+import { seedDemoYearForPlan } from "@/server/demo-year.server";
 import { analyzeAssessmentSection } from "@/server/phased/pre-stage.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PHASED_SECTIONS } from "@/server/phased/section-map";
