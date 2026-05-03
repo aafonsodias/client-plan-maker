@@ -30,8 +30,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/clients")({
-  validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { filter?: string; lab?: string } => ({
     filter: typeof s.filter === "string" ? s.filter : undefined,
+    lab: s.lab === "1" ? "1" : undefined,
   }),
   component: () => (
     <AppShell back={{ to: "/dashboard" }}>
@@ -47,6 +48,8 @@ function Clients() {
   const { t } = useTranslation("common");
   const search = Route.useSearch();
   const filter = search.filter ?? "all";
+  const isFounder = (user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com";
+  const showLab = isFounder && search.lab === "1";
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [optionalName, setOptionalName] = useState("");
