@@ -1454,3 +1454,35 @@ function RegenerateWithFeedbackDialog({
     </Dialog>
   );
 }
+
+/**
+ * CapacityGainBlock — renders the "what got better" headline card when this
+ * plan is Block N>1 and we have any prior-block sessions in the lineage.
+ * Splits the lineage `sessions` array by plan_id (current vs prior) and
+ * delegates to <CapacityGainCard />.
+ */
+function CapacityGainBlock({
+  plan, sessions, planId,
+}: { plan: any; sessions: SessionRow[]; planId: string }) {
+  const block = (plan as any)?.block_number ?? 1;
+  if (!plan || block <= 1) return null;
+  const priorPlanId = (plan as any)?.prior_plan_id ?? null;
+  if (!priorPlanId) return null;
+  const current = sessions.filter((s) => (s as any).plan_id === planId);
+  const prior = sessions.filter((s) => (s as any).plan_id === priorPlanId);
+  if (current.length === 0 && prior.length === 0) return null;
+  const summary = computeCapacityGain(prior as any, current as any);
+  // Pull the cached block_feedback for adesão / RPE drift.
+  const fb = ((plan as any)?.generation_meta?.block_feedback ?? null) as BlockSummary | null;
+  return (
+    <div className="mb-4">
+      <CapacityGainCard
+        summary={summary}
+        blockNumber={block}
+        adherencePct={fb?.adherencePct ?? null}
+        rpeDrift={null}
+        transitionNote={(plan as any)?.block_transition_summary ?? null}
+      />
+    </div>
+  );
+}
