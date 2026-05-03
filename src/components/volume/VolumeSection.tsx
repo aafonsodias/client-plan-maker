@@ -3,6 +3,7 @@ import { Activity, Info } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { computeWeeklyVolume, type PlanLike } from "@/lib/volume-compute";
+import { computeWeeklyActualVolume } from "@/lib/volume-actual";
 import { MuscleVolumeRadar } from "./MuscleVolumeRadar";
 import { VolumeStatusTable } from "./VolumeStatusTable";
 import type { AdaptationRow } from "@/lib/block-adaptation";
@@ -10,6 +11,7 @@ import type { AdaptationRow } from "@/lib/block-adaptation";
 type Props = {
   plan: PlanLike;
   adaptation?: AdaptationRow[];
+  sessions?: Array<{ week_number: number; status?: string | null; entries?: any[] | null }>;
 };
 
 /**
@@ -17,8 +19,12 @@ type Props = {
  * Counts sets per muscle group across each week and compares to MEV/MAV/MRV.
  * Pure read-only diagnosis. We never auto-edit the plan.
  */
-export function VolumeSection({ plan, adaptation }: Props) {
+export function VolumeSection({ plan, adaptation, sessions }: Props) {
   const byWeek = useMemo(() => computeWeeklyVolume(plan), [plan]);
+  const byWeekActual = useMemo(
+    () => (sessions && sessions.length > 0 ? computeWeeklyActualVolume(plan, sessions) : null),
+    [plan, sessions],
+  );
   const weeks = useMemo(
     () => Array.from(byWeek.keys()).sort((a, b) => a - b),
     [byWeek]
@@ -29,6 +35,7 @@ export function VolumeSection({ plan, adaptation }: Props) {
   );
   const currentWeek = activeWeek ?? weeks[0] ?? null;
   const currentVolume = currentWeek != null ? byWeek.get(currentWeek) : null;
+  const currentActual = currentWeek != null && byWeekActual ? byWeekActual.get(currentWeek) ?? null : null;
 
   if (!currentVolume || weeks.length === 0) {
     return null;
@@ -105,7 +112,7 @@ export function VolumeSection({ plan, adaptation }: Props) {
           </div>
         </div>
         <div className="min-w-0">
-          <VolumeStatusTable volume={currentVolume} adaptation={adaptation} />
+          <VolumeStatusTable volume={currentVolume} actual={currentActual} adaptation={adaptation} />
         </div>
       </div>
     </section>

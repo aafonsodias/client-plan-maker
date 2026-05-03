@@ -47,18 +47,28 @@ function landmarkOf(m: MuscleGroup) {
 
 type Props = {
   volume: VolumeByMuscle;
+  actual?: VolumeByMuscle | null;
   adaptation?: AdaptationRow[];
 };
 
-export function VolumeStatusTable({ volume, adaptation }: Props) {
+export function VolumeStatusTable({ volume, actual, adaptation }: Props) {
   const adaptByMuscle = new Map<MuscleGroup, AdaptationRow>();
   for (const a of adaptation ?? []) adaptByMuscle.set(a.muscle, a);
   const rows = MUSCLE_GROUP_ORDER.map((m) => {
     const lm = landmarkOf(m);
     const sets = roundSets(volume[m]);
+    const done = actual ? roundSets(actual[m]) : null;
+    const ratio = done != null && sets > 0 ? done / sets : null;
     const status = statusFor(sets, lm);
-    return { m, lm, sets, status, adapt: adaptByMuscle.get(m) };
+    return { m, lm, sets, done, ratio, status, adapt: adaptByMuscle.get(m) };
   });
+
+  function ratioTone(r: number | null): Tone {
+    if (r == null) return "neutral";
+    if (r >= 0.8) return "success";
+    if (r >= 0.5) return "warn";
+    return "danger";
+  }
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -98,13 +108,14 @@ export function VolumeStatusTable({ volume, adaptation }: Props) {
         <thead className="bg-secondary/40 text-[11px] uppercase tracking-widest text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Grupo</th>
-            <th className="px-3 py-2 font-medium">Séries</th>
+            <th className="px-3 py-2 font-medium">Prescrito</th>
+            {actual && <th className="px-3 py-2 font-medium">Realizado</th>}
             <th className="px-3 py-2 font-medium">Estado</th>
             <th className="hidden px-3 py-2 font-medium md:table-cell">Sugestão</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ m, lm, sets, status }) => (
+          {rows.map(({ m, lm, sets, done, ratio, status }) => (
             <tr key={m} className="border-t border-border/60">
               <td className="px-3 py-2.5 font-medium">
                 <span className="inline-flex items-center gap-2">
@@ -126,6 +137,20 @@ export function VolumeStatusTable({ volume, adaptation }: Props) {
               <td className="px-3 py-2.5 tabular-nums">
                 {sets % 1 === 0 ? sets : sets.toFixed(1)}
               </td>
+              {actual && (
+                <td className="px-3 py-2.5 tabular-nums">
+                  <span className="inline-flex items-center gap-2">
+                    <span className={`tabular-nums ${ratio == null ? "text-muted-foreground" : ""}`}>
+                      {done == null ? "—" : done % 1 === 0 ? done : done.toFixed(1)}
+                    </span>
+                    {ratio != null && (
+                      <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${toneChip(ratioTone(ratio))}`}>
+                        {Math.round(ratio * 100)}%
+                      </span>
+                    )}
+                  </span>
+                </td>
+              )}
               <td className="px-3 py-2.5">
                 <Tooltip>
                   <TooltipTrigger asChild>

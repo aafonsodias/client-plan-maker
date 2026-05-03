@@ -19,6 +19,10 @@ import {
   type YearSummary,
 } from "@/lib/longitudinal";
 import { verdictMixSummary } from "@/lib/block-adaptation";
+import { computeCapacityGain } from "@/lib/capacity-gain";
+import { Link } from "@tanstack/react-router";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { toneChip, type Tone } from "@/lib/status-tone";
 
 type Props = { clientId: string };
 
@@ -78,6 +82,8 @@ export default function YearView({ clientId }: Props) {
           <Stat label="Adesão global" value={`${summary.overallAdherencePct}%`} />
         </div>
       </header>
+
+      <BlocksStrip summary={summary} />
 
       <Card title="Adesão semanal" subtitle="% das sessões planeadas que foram registadas, semana a semana">
         <div className="h-64">
@@ -216,5 +222,70 @@ function Card({ title, subtitle, children, right }: { title: string; subtitle?: 
       </header>
       {children}
     </section>
+  );
+}
+
+function BlocksStrip({ summary }: { summary: YearSummary }) {
+  const blocks = summary.blockBoundaries;
+  if (blocks.length === 0) return null;
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <header className="mb-3">
+        <h3 className="text-sm font-bold text-foreground">Blocos</h3>
+        <p className="text-[11px] text-muted-foreground">
+          Cada bloco com a sua evolução de capacidade vs anterior. Clica para abrir.
+        </p>
+      </header>
+      <div className="flex snap-x gap-3 overflow-x-auto pb-1">
+        {blocks.map((b, i) => {
+          const prior = i > 0 ? blocks[i - 1] : null;
+          const cur = summary.sessionsByPlan[b.planId] ?? [];
+          const pri = prior ? summary.sessionsByPlan[prior.planId] ?? [] : [];
+          const gain = computeCapacityGain(pri as any, cur as any);
+          const wks = summary.weeks.filter((w) => w.blockNumber === b.blockNumber);
+          const sess = wks.reduce((a, w) => a + w.sessionsLogged, 0);
+          const planned = wks.reduce((a, w) => a + w.sessionsPlanned, 0);
+          const adh = planned > 0 ? Math.round((sess / planned) * 100) : 0;
+          const rpes = wks.map((w) => w.avgRpe).filter((x): x is number => x != null);
+          const avgRpe = rpes.length ? Number((rpes.reduce((a, b) => a + b, 0) / rpes.length).toFixed(1)) : null;
+          const v = gain.overall.verdict;
+          const tone: Tone = v === "gain" ? "success" : v === "regression" ? "danger" : v === "flat" ? "warn" : "neutral";
+          const Icon = v === "gain" ? TrendingUp : v === "regression" ? TrendingDown : Minus;
+          return (
+            <Link
+              key={b.planId}
+              to="/plans/$planId"
+              params={{ planId: b.planId }}
+              className="group min-w-[200px] snap-start rounded-xl border border-border bg-background/40 p-3 transition hover:border-accent/60"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-accent">{b.title}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">w{b.startWeek}–w{b.endWeek}</span>
+              </div>
+              <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${toneChip(tone)}`}>
+                <Icon className="h-3 w-3" />
+                {gain.overall.deltaPct == null
+                  ? (prior ? "sem dados" : "bloco inicial")
+                  : `${gain.overall.deltaPct > 0 ? "+" : ""}${gain.overall.deltaPct}% capacidade`}
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
+                <MiniStat label="Adesão" value={`${adh}%`} />
+                <MiniStat label="RPE" value={avgRpe == null ? "—" : String(avgRpe)} />
+                <MiniStat label="Sess." value={`${sess}`} />
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded border border-border/60 bg-card px-1.5 py-1 text-center">
+      <div className="text-[8px] uppercase tracking-widest">{label}</div>
+      <div className="text-xs font-semibold text-foreground tabular-nums">{value}</div>
+    </div>
   );
 }

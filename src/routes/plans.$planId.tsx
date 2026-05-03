@@ -42,6 +42,7 @@ import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
 import { summarizeAdaptation } from "@/lib/block-adaptation";
 import { computeCapacityGain } from "@/lib/capacity-gain";
 import { CapacityGainCard } from "@/components/CapacityGainCard";
+import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
@@ -695,6 +696,9 @@ function PlanEditor() {
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+          {sessions.filter((s) => (s as any).plan_id === planId).length > 0 && (
+            <LogbookTimeline sessions={sessions.filter((s) => (s as any).plan_id === planId) as any} />
+          )}
         </>
       ) : mode === "edit" ? (
         <>
@@ -702,6 +706,7 @@ function PlanEditor() {
             <VolumeSection
               plan={data}
               adaptation={summarizeAdaptation(((plan as any).generation_meta?.block_feedback ?? null) as BlockSummary | null)}
+              sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
             />
           )}
           <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
@@ -715,6 +720,7 @@ function PlanEditor() {
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           <ResultsPanel plan={data} sessions={sessions as any} />
+          <LogbookTimeline sessions={sessions.filter((s) => (s as any).plan_id === planId) as any} />
         </>
       ) : mode === "progress" ? (
         <ExerciseTrendChart
