@@ -14,6 +14,197 @@ export type Database = {
   }
   public: {
     Tables: {
+      acsm_chapters: {
+        Row: {
+          chapter_number: number
+          created_at: string
+          id: string
+          page_end: number | null
+          page_start: number | null
+          paraphrased_summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chapter_number: number
+          created_at?: string
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          paraphrased_summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          paraphrased_summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      acsm_contraindications: {
+        Row: {
+          citation: string
+          condition: string
+          created_at: string
+          id: string
+          modality: string
+          notes: string | null
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          citation: string
+          condition: string
+          created_at?: string
+          id?: string
+          modality: string
+          notes?: string | null
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          citation?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          modality?: string
+          notes?: string | null
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      acsm_normatives: {
+        Row: {
+          age_high: number | null
+          age_low: number | null
+          citation: string
+          created_at: string
+          id: string
+          percentile: number | null
+          sex: string | null
+          test: string
+          unit: string | null
+          value: number
+        }
+        Insert: {
+          age_high?: number | null
+          age_low?: number | null
+          citation: string
+          created_at?: string
+          id?: string
+          percentile?: number | null
+          sex?: string | null
+          test: string
+          unit?: string | null
+          value: number
+        }
+        Update: {
+          age_high?: number | null
+          age_low?: number | null
+          citation?: string
+          created_at?: string
+          id?: string
+          percentile?: number | null
+          sex?: string | null
+          test?: string
+          unit?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      acsm_recommendations: {
+        Row: {
+          citation: string
+          created_at: string
+          id: string
+          notes: string | null
+          parameter: string
+          population: string
+          topic: string
+          unit: string | null
+          updated_at: string
+          value_high: number | null
+          value_low: number | null
+        }
+        Insert: {
+          citation: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parameter: string
+          population?: string
+          topic: string
+          unit?: string | null
+          updated_at?: string
+          value_high?: number | null
+          value_low?: number | null
+        }
+        Update: {
+          citation?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          parameter?: string
+          population?: string
+          topic?: string
+          unit?: string | null
+          updated_at?: string
+          value_high?: number | null
+          value_low?: number | null
+        }
+        Relationships: []
+      }
+      acsm_sections: {
+        Row: {
+          chapter_id: string
+          created_at: string
+          id: string
+          page_end: number | null
+          page_start: number | null
+          paraphrased_notes: string | null
+          section_code: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chapter_id: string
+          created_at?: string
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          paraphrased_notes?: string | null
+          section_code: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chapter_id?: string
+          created_at?: string
+          id?: string
+          page_end?: number | null
+          page_start?: number | null
+          paraphrased_notes?: string | null
+          section_code?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acsm_sections_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "acsm_chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessments: {
         Row: {
           acsm_risk_category: string | null
