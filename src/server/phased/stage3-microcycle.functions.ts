@@ -17,6 +17,11 @@ import {
   type RpeFloors,
 } from "./programming-tier.server";
 import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
+import {
+  validateDayAgainstFittVp,
+  type PrescriptionParameters,
+  type FittVpViolation,
+} from "@/server/fitt-vp/derive.server";
 
 /**
  * Lowercase / strip variant suffix to compare exercise names across blocks.
@@ -245,6 +250,7 @@ type LoadedPlan = {
   generation_meta?: any;
   assessment_id?: string | null;
   client_id?: string | null;
+  prescription_parameters?: any;
 };
 
 async function loadPlan(supabase: any, planId: string, userId: string): Promise<
@@ -252,7 +258,7 @@ async function loadPlan(supabase: any, planId: string, userId: string): Promise<
 > {
   const { data: plan } = await supabase
     .from("workout_plans")
-    .select("trainer_id, brief, blueprint, generation_meta, assessment_id, client_id")
+    .select("trainer_id, brief, blueprint, generation_meta, assessment_id, client_id, prescription_parameters")
     .eq("id", planId)
     .maybeSingle();
   if (!plan || (plan as any).trainer_id !== userId) {
