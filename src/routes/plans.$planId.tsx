@@ -40,6 +40,8 @@ import { VolumeSection } from "@/components/volume/VolumeSection";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
 import { summarizeAdaptation } from "@/lib/block-adaptation";
+import { computeCapacityGain } from "@/lib/capacity-gain";
+import { CapacityGainCard } from "@/components/CapacityGainCard";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
@@ -75,7 +77,7 @@ function PlanRoute() {
 
 type Mode = "view" | "edit" | "log" | "results" | "progress";
 type SessionRow = {
-  id: string; week_number: number; day_label: string; session_date: string;
+  id: string; plan_id?: string; week_number: number; day_label: string; session_date: string;
   logged_by: string; entries: any[]; session_notes: string | null;
   status?: "done" | "partial" | "missed" | null;
 };
