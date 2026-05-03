@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -44,6 +45,7 @@ export function ExerciseTrendChart({
   sessions: SessionRow[];
   blockNumber: number;
 }) {
+  const { t } = useTranslation("common");
   const grouped = useMemo(() => {
     // exerciseName -> Map<week, accumulator>
     const out = new Map<string, Map<number, { wSum: number; wN: number; rSum: number; rN: number; repSum: number; repN: number }>>();
@@ -96,8 +98,7 @@ export function ExerciseTrendChart({
   if (cards.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-        Sem registos suficientes ainda. Use o botão <b className="text-foreground">"Importar registo"</b> no
-        topo para trazer os valores escritos na folha de registo A4.
+        <Trans i18nKey="trend.empty_html" ns="common" components={{ bold: <b className="text-foreground" /> }} />
       </div>
     );
   }
@@ -108,8 +109,11 @@ export function ExerciseTrendChart({
         const lastPoint = c.points[c.points.length - 1];
         const isPr = lastPoint?.weight != null && c.pr != null && lastPoint.weight === c.pr && c.points.length > 1;
         const subtitle = c.deltaKg != null && c.deltaKg !== 0
-          ? `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg} kg em ${c.points.length} semana${c.points.length > 1 ? "s" : ""}`
-          : `${c.points.length} semana${c.points.length > 1 ? "s" : ""} registadas`;
+          ? t("trend.delta", {
+              count: c.points.length,
+              delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}`,
+            })
+          : t("trend.weeks", { count: c.points.length });
         return (
           <div key={c.name} className="rounded-xl border border-border bg-card p-3">
             <div className="mb-2 flex items-start justify-between gap-2">
@@ -122,7 +126,7 @@ export function ExerciseTrendChart({
               </div>
               {isPr && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-300">
-                  <Trophy className="h-3 w-3" /> PR Bloco {blockNumber}
+                  <Trophy className="h-3 w-3" /> {t("trend.pr_block", { n: blockNumber })}
                 </span>
               )}
             </div>
@@ -133,7 +137,7 @@ export function ExerciseTrendChart({
                   <XAxis
                     dataKey="week"
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                    tickFormatter={(v) => `S${v}`}
+                    tickFormatter={(v) => t("trend.week_short", { week: v })}
                   />
                   <YAxis
                     yAxisId="left"
@@ -160,7 +164,7 @@ export function ExerciseTrendChart({
                     yAxisId="left"
                     type="monotone"
                     dataKey="weight"
-                    name="kg"
+                    name={t("trend.legend.kg")}
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ r: 3 }}
@@ -170,7 +174,7 @@ export function ExerciseTrendChart({
                     yAxisId="right"
                     type="monotone"
                     dataKey="rpe"
-                    name="RPE"
+                    name={t("trend.legend.rpe")}
                     stroke="hsl(var(--accent-foreground))"
                     strokeOpacity={0.6}
                     strokeWidth={1.5}

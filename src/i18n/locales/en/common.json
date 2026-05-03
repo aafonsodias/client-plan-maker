@@ -221,6 +221,14 @@
     "weekly_bars_label": "Prescribed vs actual · sets",
     "prescribed": "Prescribed",
     "actual": "Actual",
+    "section_title": "Prescribed volume vs landmarks",
+    "section_subtitle": "Check before approving — sets per muscle group against MEV/MAV/MRV (Israetel/Helms). Does not include what the client actually performed.",
+    "info_aria": "About MEV/MAV/MRV",
+    "info_title": "How to read",
+    "info_mev": "minimum to stimulate growth.",
+    "info_mav": "target (sweet spot).",
+    "info_mrv": "maximum recoverable; above this is overreaching.",
+    "info_footnote": "Each set counts 1× for the primary muscle and 0.5× for each secondary. Reference values for intermediate lifters — adjust with judgement.",
     "table": {
       "muscle": "Muscle",
       "prescribed": "Prescribed",
@@ -262,5 +270,59 @@
     "shift_normal": "Normal curve · ceiling {{ceiling}}",
     "shift_change": "Ceiling {{base}} {{arrow}} {{newCeil}}",
     "shift_start_note": ", start {{start}}"
+  },
+  "year": {
+    "title": "Yearly view",
+    "subtitle": "{{blocks}} blocks · {{weeks}} weeks · {{sessions}} logged sessions",
+    "overall_adherence": "Overall adherence",
+    "loading": "Loading history…",
+    "empty": "No longitudinal data yet. Create blocks and log sessions to see yearly evolution.",
+    "blocks": {
+      "heading": "Blocks",
+      "subtitle": "Each block with its capacity evolution vs the previous one. Click to open.",
+      "no_data": "no data",
+      "initial_block": "initial block",
+      "delta_capacity": "{{pct}}% capacity",
+      "adherence_short": "Adherence",
+      "rpe_short": "RPE",
+      "sessions_short": "Sess."
+    },
+    "adherence": {
+      "title": "Weekly adherence",
+      "subtitle": "% of planned sessions that were logged, week by week",
+      "bar": "Adherence (%)",
+      "line_rpe": "Avg RPE"
+    },
+    "tonnage": {
+      "title": "Weekly tonnage",
+      "subtitle": "Total volume lifted per week — proxy for accumulated load",
+      "bar": "Tonnage (kg)"
+    },
+    "strength": {
+      "title": "Strength curve",
+      "subtitle": "Heaviest weight logged per week for a specific exercise",
+      "empty": "No records for this exercise."
+    },
+    "map": {
+      "title": "Block map",
+      "subtitle": "Per-block summary for quick inspection",
+      "block": "Block",
+      "weeks": "Weeks",
+      "sessions": "Sessions",
+      "adherence": "Adherence",
+      "avg_rpe": "Avg RPE",
+      "tonnage": "Tonnage",
+      "adaptation": "Adaptation"
+    }
+  },
+  "trend": {
+    "empty_html": "Not enough records yet. Use the <bold>\"Import log\"</bold> button up top to bring in values written on the A4 log sheet.",
+    "delta_one": "{{delta}} kg over {{count}} week",
+    "delta_other": "{{delta}} kg over {{count}} weeks",
+    "weeks_one": "{{count}} week logged",
+    "weeks_other": "{{count}} weeks logged",
+    "pr_block": "PR Block {{n}}",
+    "legend": { "kg": "kg", "rpe": "RPE" },
+    "week_short": "W{{week}}"
   }
 }

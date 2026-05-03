@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -27,6 +28,7 @@ import { toneChip, type Tone } from "@/lib/status-tone";
 type Props = { clientId: string };
 
 export default function YearView({ clientId }: Props) {
+  const { t } = useTranslation("common");
   const [summary, setSummary] = useState<YearSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exercise, setExercise] = useState<string | null>(null);
@@ -50,11 +52,11 @@ export default function YearView({ clientId }: Props) {
     [summary, exercise],
   );
 
-  if (loading) return <p className="text-sm text-muted-foreground">A carregar histórico…</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("year.loading")}</p>;
   if (!summary || summary.weeks.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-        Sem dados longitudinais ainda. Cria blocos e regista sessões para ver a evolução anual.
+        {t("year.empty")}
       </div>
     );
   }
@@ -73,19 +75,19 @@ export default function YearView({ clientId }: Props) {
     <div data-tour="year-view" className="space-y-6">
       <header className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card p-4">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Vista anual</h2>
+          <h2 className="text-lg font-bold text-foreground">{t("year.title")}</h2>
           <p className="text-xs text-muted-foreground">
-            {summary.totalBlocks} blocos · {summary.totalWeeks} semanas · {summary.totalSessions} sessões registadas
+            {t("year.subtitle", { blocks: summary.totalBlocks, weeks: summary.totalWeeks, sessions: summary.totalSessions })}
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <Stat label="Adesão global" value={`${summary.overallAdherencePct}%`} />
+          <Stat label={t("year.overall_adherence")} value={`${summary.overallAdherencePct}%`} />
         </div>
       </header>
 
       <BlocksStrip summary={summary} />
 
-      <Card title="Adesão semanal" subtitle="% das sessões planeadas que foram registadas, semana a semana">
+      <Card title={t("year.adherence.title")} subtitle={t("year.adherence.subtitle")}>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 12, bottom: 4, left: 4 }}>
@@ -105,14 +107,14 @@ export default function YearView({ clientId }: Props) {
                   fillOpacity={0.25}
                 />
               ))}
-              <Bar yAxisId="left" dataKey="adherence" name="Adesão (%)" fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="rpe" name="RPE médio" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
+              <Bar yAxisId="left" dataKey="adherence" name={t("year.adherence.bar")} fill="hsl(var(--primary))" radius={[2, 2, 0, 0]} />
+              <Line yAxisId="right" type="monotone" dataKey="rpe" name={t("year.adherence.line_rpe")} stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </Card>
 
-      <Card title="Tonelagem semanal" subtitle="Volume total levantado por semana — proxy da carga acumulada">
+      <Card title={t("year.tonnage.title")} subtitle={t("year.tonnage.subtitle")}>
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 12, bottom: 4, left: 4 }}>
@@ -120,15 +122,15 @@ export default function YearView({ clientId }: Props) {
               <XAxis dataKey="week" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
               <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
               <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", fontSize: 11 }} />
-              <Bar dataKey="tonnage" name="Tonelagem (kg)" fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="tonnage" name={t("year.tonnage.bar")} fill="hsl(var(--accent))" radius={[2, 2, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </Card>
 
       <Card
-        title="Curva de força"
-        subtitle="Maior carga registada por semana para um exercício específico"
+        title={t("year.strength.title")}
+        subtitle={t("year.strength.subtitle")}
         right={
           <select
             value={exercise ?? ""}
@@ -142,7 +144,7 @@ export default function YearView({ clientId }: Props) {
         }
       >
         {strengthSeries.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Sem registos para este exercício.</p>
+          <p className="text-xs text-muted-foreground">{t("year.strength.empty")}</p>
         ) : (
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -158,18 +160,18 @@ export default function YearView({ clientId }: Props) {
         )}
       </Card>
 
-      <Card title="Mapa de blocos" subtitle="Resumo por bloco para inspecção rápida">
+      <Card title={t("year.map.title")} subtitle={t("year.map.subtitle")}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-[10px] uppercase tracking-widest text-muted-foreground">
-                <th className="py-2 text-left font-semibold">Bloco</th>
-                <th className="py-2 text-left font-semibold">Semanas</th>
-                <th className="py-2 text-right font-semibold">Sessões</th>
-                <th className="py-2 text-right font-semibold">Adesão</th>
-                <th className="py-2 text-right font-semibold">RPE médio</th>
-                <th className="py-2 text-right font-semibold">Tonelagem</th>
-                <th className="py-2 text-left font-semibold">Adaptação</th>
+                <th className="py-2 text-left font-semibold">{t("year.map.block")}</th>
+                <th className="py-2 text-left font-semibold">{t("year.map.weeks")}</th>
+                <th className="py-2 text-right font-semibold">{t("year.map.sessions")}</th>
+                <th className="py-2 text-right font-semibold">{t("year.map.adherence")}</th>
+                <th className="py-2 text-right font-semibold">{t("year.map.avg_rpe")}</th>
+                <th className="py-2 text-right font-semibold">{t("year.map.tonnage")}</th>
+                <th className="py-2 text-left font-semibold">{t("year.map.adaptation")}</th>
               </tr>
             </thead>
             <tbody>
@@ -226,15 +228,14 @@ function Card({ title, subtitle, children, right }: { title: string; subtitle?: 
 }
 
 function BlocksStrip({ summary }: { summary: YearSummary }) {
+  const { t } = useTranslation("common");
   const blocks = summary.blockBoundaries;
   if (blocks.length === 0) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <header className="mb-3">
-        <h3 className="text-sm font-bold text-foreground">Blocos</h3>
-        <p className="text-[11px] text-muted-foreground">
-          Cada bloco com a sua evolução de capacidade vs anterior. Clica para abrir.
-        </p>
+        <h3 className="text-sm font-bold text-foreground">{t("year.blocks.heading")}</h3>
+        <p className="text-[11px] text-muted-foreground">{t("year.blocks.subtitle")}</p>
       </header>
       <div className="flex snap-x gap-3 overflow-x-auto pb-1">
         {blocks.map((b, i) => {
@@ -265,13 +266,13 @@ function BlocksStrip({ summary }: { summary: YearSummary }) {
               <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${toneChip(tone)}`}>
                 <Icon className="h-3 w-3" />
                 {gain.overall.deltaPct == null
-                  ? (prior ? "sem dados" : "bloco inicial")
-                  : `${gain.overall.deltaPct > 0 ? "+" : ""}${gain.overall.deltaPct}% capacidade`}
+                  ? (prior ? t("year.blocks.no_data") : t("year.blocks.initial_block"))
+                  : t("year.blocks.delta_capacity", { pct: `${gain.overall.deltaPct > 0 ? "+" : ""}${gain.overall.deltaPct}` })}
               </div>
               <div className="mt-2 grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
-                <MiniStat label="Adesão" value={`${adh}%`} />
-                <MiniStat label="RPE" value={avgRpe == null ? "—" : String(avgRpe)} />
-                <MiniStat label="Sess." value={`${sess}`} />
+                <MiniStat label={t("year.blocks.adherence_short")} value={`${adh}%`} />
+                <MiniStat label={t("year.blocks.rpe_short")} value={avgRpe == null ? "—" : String(avgRpe)} />
+                <MiniStat label={t("year.blocks.sessions_short")} value={`${sess}`} />
               </div>
             </Link>
           );
