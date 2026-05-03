@@ -233,6 +233,22 @@ export function AskForgeDock({ enabled }: { enabled: boolean }) {
                 className="h-8 flex-1 rounded-md bg-secondary px-2 text-xs outline-none focus:ring-1 focus:ring-ring"
                 disabled={busy}
               />
+              {speechSupported && (
+                <button
+                  type="button"
+                  onClick={toggleMic}
+                  className={cn(
+                    "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs transition",
+                    listening
+                      ? "border-red-500/60 bg-red-500/10 text-red-500"
+                      : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                  aria-label={listening ? "Parar ditado" : "Ditar"}
+                  title={listening ? "Parar ditado" : "Ditar (PT)"}
+                >
+                  {listening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                </button>
+              )}
               <Button type="button" size="sm" onClick={() => void send()} disabled={busy || !input.trim()} className="h-8 px-2">
                 <Send className="h-3.5 w-3.5" />
               </Button>
