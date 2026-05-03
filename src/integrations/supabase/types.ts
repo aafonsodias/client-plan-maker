@@ -119,6 +119,39 @@ export type Database = {
         }
         Relationships: []
       }
+      acsm_populations: {
+        Row: {
+          citation: string | null
+          created_at: string
+          id: string
+          one_line_summary: string | null
+          population: string
+          source_chapter: number | null
+          trigger_criteria: string | null
+          updated_at: string
+        }
+        Insert: {
+          citation?: string | null
+          created_at?: string
+          id?: string
+          one_line_summary?: string | null
+          population: string
+          source_chapter?: number | null
+          trigger_criteria?: string | null
+          updated_at?: string
+        }
+        Update: {
+          citation?: string | null
+          created_at?: string
+          id?: string
+          one_line_summary?: string | null
+          population?: string
+          source_chapter?: number | null
+          trigger_criteria?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       acsm_recommendations: {
         Row: {
           citation: string
