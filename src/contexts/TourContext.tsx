@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import Joyride, { CallBackProps, STATUS, EVENTS, ACTIONS, Step } from "react-joyride";
+import { Joyride, STATUS, EVENTS, ACTIONS } from "react-joyride";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -19,7 +19,7 @@ type TourStepDef = {
   /** CSS selector or fallback to body. */
   target: string;
   i18nKey: string; // demo.tour.<key>
-  placement?: Step["placement"];
+  placement?: "top" | "bottom" | "left" | "right" | "center" | "auto";
 };
 
 const TOUR_SEEN_KEY = "forge.demoTour.seen";
@@ -57,7 +57,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     { key: "step_lab", route: () => `/clients`, target: "[data-tour='demo-lab']", i18nKey: "demo.tour.step_lab", placement: "top" },
   ], []);
 
-  const steps: Step[] = useMemo(() => stepDefs.map((s) => ({
+  const steps = useMemo(() => stepDefs.map((s) => ({
     target: s.target,
     content: t(s.i18nKey),
     disableBeacon: true,
@@ -93,7 +93,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     setStepIndex(0);
   }, []);
 
-  const handleCallback = useCallback((data: CallBackProps) => {
+  const handleCallback = useCallback((data: any) => {
     const { status, type, action, index } = data;
     if (status === STATUS.FINISHED || status === STATUS.SKIPPED || action === ACTIONS.CLOSE) {
       stop();
