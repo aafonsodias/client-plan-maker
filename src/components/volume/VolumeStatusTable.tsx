@@ -57,7 +57,33 @@ export function VolumeStatusTable({ volume }: Props) {
 
   return (
     <TooltipProvider delayDuration={150}>
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
+    <>
+    {/* Mobile: stacked cards. Tables get unreadable below 380px. */}
+    <div className="space-y-2 md:hidden">
+      {rows.map(({ m, lm, sets, status }) => (
+        <div key={m} className="rounded-xl border border-border bg-card p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-2 font-medium">
+              <span className={`h-2 w-2 rounded-full ${toneDot(STATUS_TONE[status])}`} />
+              {MUSCLE_GROUP_LABELS_PT[m]}
+            </span>
+            <span className="tabular-nums text-sm text-muted-foreground">
+              {sets % 1 === 0 ? sets : sets.toFixed(1)} séries
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${toneChip(STATUS_TONE[status])}`}>
+              {STATUS_LABEL[status]}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              MEV {lm.mev} · MAV {lm.mav} · MRV {lm.mrv}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">{messageFor(status, sets, lm)}</p>
+        </div>
+      ))}
+    </div>
+    <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
       <table className="w-full text-left text-sm">
         <thead className="bg-secondary/40 text-[11px] uppercase tracking-widest text-muted-foreground">
           <tr>
@@ -99,6 +125,7 @@ export function VolumeStatusTable({ volume }: Props) {
         </tbody>
       </table>
     </div>
+    </>
     </TooltipProvider>
   );
 }
