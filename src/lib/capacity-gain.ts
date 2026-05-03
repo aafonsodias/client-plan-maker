@@ -68,10 +68,11 @@ function sets(entry: any): number {
   return m ? Number(m[0]) : 0;
 }
 /** Epley e1RM = load × (1 + reps/30). Conservative + readable. */
-function e1rm(load: number, r: number): number | null {
+export function epley(load: number, r: number): number | null {
   if (!load || !r) return null;
   return load * (1 + r / 30);
 }
+const e1rm = epley;
 
 function verdictFor(deltaPct: number | null): CapacityRow["verdict"] {
   if (deltaPct == null) return "unknown";
