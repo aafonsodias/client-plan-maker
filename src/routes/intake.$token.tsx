@@ -486,7 +486,7 @@ function IntakePage() {
               />
             </Field>
             <Field label={t("sections.training_location")}>
-              <Pills
+              <PillsMulti
                 options={[
                   { id: "Home", label: t("location.home") },
                   { id: "Gym", label: t("location.gym") },
@@ -991,7 +991,7 @@ function buildSlides(
     {
       title: t("sections.training_location"),
       body: (
-        <Pills
+        <PillsMulti
           options={[
             { id: "Home", label: t("location.home") },
             { id: "Gym", label: t("location.gym") },
@@ -1002,7 +1002,7 @@ function buildSlides(
           onChange={(v) => set("training_location", v)}
         />
       ),
-      isValid: () => !!form.training_location,
+      isValid: () => form.training_location.length > 0,
     },
     // 8. Equipment
     {
@@ -1189,7 +1189,7 @@ function buildSlides(
           <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
           <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
           <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
-          <ReviewRow label={t("sections.training_location")} value={form.training_location} />
+          <ReviewRow label={t("sections.training_location")} value={form.training_location.join(", ")} />
           <ReviewRow label={t("sections.training_equipment")} value={form.available_equipment.join(", ")} />
         </div>
       ),
