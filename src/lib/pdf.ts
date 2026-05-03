@@ -174,15 +174,19 @@ type Theme = {
 
 const LIGHT_THEME: Theme = {
   mode: "light",
-  bg: [252, 251, 248],         // warm cream, not stark white
-  bgSubtle: [246, 244, 238],
-  ink: [16, 18, 22],
+  // FORGE PDF spec §12: bg #FAF8F4, text #1A1A1A, accent #D4A574 ochre.
+  // We deliberately keep accent = FORGE amber (#E8A547) instead of ochre
+  // because amber is the brand token used everywhere else (BrandMark, chips,
+  // toneChip warn). Diverging only in PDFs would break visual continuity.
+  bg: [250, 248, 244],         // #FAF8F4 — spec
+  bgSubtle: [244, 241, 234],
+  ink: [26, 26, 26],           // #1A1A1A — spec
   inkMuted: [120, 118, 112],
-  inkGhost: [232, 229, 222],   // very soft for huge numbers
+  inkGhost: [232, 229, 222],
   rule: [220, 216, 208],
-  accent: [232, 165, 71], // FORGE amber
-  bannerBg: [246, 244, 238],
-  bannerInk: [16, 18, 22],
+  accent: [232, 165, 71],      // FORGE amber (brand) — see note above
+  bannerBg: [244, 241, 234],
+  bannerInk: [26, 26, 26],
 };
 
 const DARK_THEME: Theme = {
