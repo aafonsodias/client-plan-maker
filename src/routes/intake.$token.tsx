@@ -1345,3 +1345,49 @@ async function resizeToJpegDataUrl(file: File, maxSide: number, quality: number)
     URL.revokeObjectURL(url);
   }
 }
+
+/* ─────────────── Tiny IndexedDB key/value (for crash-resistant photo stash) ─────────────── */
+
+const IDB_NAME = "forge-intake";
+const IDB_STORE = "kv";
+function idbOpen(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function idbSet(key: string, value: string): Promise<void> {
+  try {
+    const db = await idbOpen();
+    await new Promise<void>((res, rej) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(value, key);
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error);
+    });
+  } catch {}
+}
+async function idbGet(key: string): Promise<string | null> {
+  try {
+    const db = await idbOpen();
+    return await new Promise<string | null>((res) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const r = tx.objectStore(IDB_STORE).get(key);
+      r.onsuccess = () => res((r.result as string) ?? null);
+      r.onerror = () => res(null);
+    });
+  } catch { return null; }
+}
+async function idbDel(key: string): Promise<void> {
+  try {
+    const db = await idbOpen();
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).delete(key);
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {}
+}
