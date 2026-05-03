@@ -47,8 +47,8 @@ type FormState = {
   client_email: string;
   client_phone: string;
   client_dob: string;
-  // Path: who is filling this in
-  intake_path: "" | "coached" | "self";
+  // Coaching mode: how the client will train with this PT
+  intake_path: "" | "in_person" | "online" | "hybrid";
   // Scheduling (PT-guided path)
   sched_days: string[];
   sched_window: string;
