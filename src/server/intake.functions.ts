@@ -271,7 +271,10 @@ export const saveIntake = createServerFn({ method: "POST" })
       if (!schema) continue; // shouldn't happen — whitelist & schemas align.
       const parsed = schema.safeParse(raw);
       if (!parsed.success) {
-        throw new Error(`Invalid value for "${k}".`);
+        console.error("[saveIntake] zod issues", k, JSON.stringify(parsed.error.issues));
+        const first = parsed.error.issues[0];
+        const path = first?.path?.length ? first.path.join(".") : k;
+        throw new Error(`Invalid value for "${path}": ${first?.message ?? "unknown"}`);
       }
       cleaned[k] = parsed.data;
     }
