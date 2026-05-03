@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { summarizePriorBlock } from "@/lib/block-feedback";
 
 /**
  * archivePlanAndStartManualNextBlock — caminho 100% manual.
@@ -139,6 +140,7 @@ export const computeTransitionSummary = createServerFn({ method: "POST" })
       adherencePct,
       rpeDrift,
       sessionsLogged: totalLogged,
+      blockFeedback: summarizePriorBlock((sessions ?? []) as any),
     };
   });
 
