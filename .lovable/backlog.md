@@ -59,6 +59,7 @@ Atualizado: Round 27 (3 Mai 2026)
 | 48 | P2 | R3.5 vs R2.7 | NSCA Essentials 3e ingestion — camada de exercise selection / cuing / técnica / programming aplicado. **Pergunta em aberto**: Hipótese A = Round 3.5 (após overlays, plug substituições por cima); Hipótese B = Round 2.7 (antes dos overlays, para overlays poderem citar exercícios específicos). Preferência A. Decidir quando lá chegarmos. | parked |
 | 49 | P2 | R4 | Behaviour-change scaffolding — ACSM Cap. 12 (transtheoretical, motivational interviewing hooks, goal-setting templates). | parked |
 | 50 | P2 | Future | McGill — Ultimate Back Fitness and Performance (2014). Overlay LBP especializado; depende de a infraestrutura de overlays do Round 3 já existir. | parked |
+| 51 | P3 | Future | Linter housekeeping — mover extension(s) fora do schema `public` (Supabase linter `Extension in Public`). Pré-existente, não bloqueia features. | parked |
 
 **Cross-source policy** — Bompa 6e + NSCA 3e + ACSM 12e partilham overlap genuíno (variáveis de treino, populações, assessment). Modelo B (tabelas source-agnostic com `source` discriminator) estende-se às três fontes — superficializa concordância (sinal forte) vs discordância (resolver manualmente). Fontes parqueadas: `.lovable/acsm-12e-source.txt`, `.lovable/bompa-buzzichelli-6e-source.txt`, `.lovable/nsca-essentials-3e-source.txt`.
 
