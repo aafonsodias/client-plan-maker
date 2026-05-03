@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Activity, TrendingUp, MessageCircle, Dumbbell } from "lucide-react";
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { rpeTone, parseRpe, formatRpe } from "@/lib/rpe-tone";
 import type { PlanData } from "@/lib/pdf";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 type SessionRow = {
   id: string;
@@ -42,6 +43,7 @@ export function ResultsPanel({
   sessions: SessionRow[];
   feedback?: FeedbackRow[];
 }) {
+  const [openSession, setOpenSession] = useState<SessionRow | null>(null);
   // ── KPIs ──────────────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
     const sessionCount = sessions.length;
