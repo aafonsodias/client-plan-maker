@@ -661,6 +661,7 @@ export const generateDay = createServerFn({ method: "POST" })
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
+    const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
     await markPending(supabase, userId, data.planId, data.dayIndex);
     const r = await runDay(
       supabase,
@@ -674,6 +675,7 @@ export const generateDay = createServerFn({ method: "POST" })
       priorPool,
       [],
       swapMainLift,
+      pp,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -707,6 +709,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
+    const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -733,6 +736,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             priorPool,
             [],
             swapMainLift,
+            pp,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
