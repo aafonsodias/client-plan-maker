@@ -67,7 +67,7 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     }
 
     const weeks = (plan as any).duration_weeks ?? 4;
-    const model = resolveModel("FORGE_MODEL_STAGE_4", "claude-haiku-4-5-20251001");
+    const model = resolveModel("FORGE_MODEL_STAGE_4", "openai/gpt-5-mini");
     const progModel = (plan as any).blueprint?.progression_model_proposal?.model ?? "linear";
     // Tier-derived RPE ceiling — falls back to 8 if not present on the blueprint.
     const tierRaw = String(
