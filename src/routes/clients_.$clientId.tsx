@@ -1470,7 +1470,7 @@ function ClientDetail() {
         );
       })()}
 
-      <div className="grid gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
+      <div className="grid items-start gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>

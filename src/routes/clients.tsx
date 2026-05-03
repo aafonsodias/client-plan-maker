@@ -30,8 +30,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/clients")({
-  validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
+  validateSearch: (s: Record<string, unknown>): { filter?: string; lab?: string } => ({
     filter: typeof s.filter === "string" ? s.filter : undefined,
+    lab: s.lab === "1" ? "1" : undefined,
   }),
   component: () => (
     <AppShell back={{ to: "/dashboard" }}>
@@ -47,6 +48,8 @@ function Clients() {
   const { t } = useTranslation("common");
   const search = Route.useSearch();
   const filter = search.filter ?? "all";
+  const isFounder = (user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com";
+  const showLab = isFounder && search.lab === "1";
   const [list, setList] = useState<Client[]>([]);
   const [open, setOpen] = useState(false);
   const [optionalName, setOptionalName] = useState("");
@@ -154,7 +157,7 @@ function Clients() {
   return (
     <div className="space-y-8">
       <Suspense fallback={null}>
-        <DemoLabPanel />
+        {showLab && <DemoLabPanel />}
       </Suspense>
       <div className="flex items-center justify-between">
         <div>
@@ -162,20 +165,22 @@ function Clients() {
           <h1 className="mt-1 text-4xl font-light tracking-tight">{t("clients.title")}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void createDemo()}
-            disabled={creatingDemo}
-            title={t("clients.create_demo_title")}
-          >
-            {creatingDemo ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
-          </Button>
+          {showLab && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void createDemo()}
+              disabled={creatingDemo}
+              title={t("clients.create_demo_title")}
+            >
+              {creatingDemo ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              {t("clients.add_demo_client", { defaultValue: "+ Cliente demo" })}
+            </Button>
+          )}
           <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : closeAndReset())}>
             <DialogTrigger asChild>
               <Button>

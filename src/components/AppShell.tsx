@@ -147,7 +147,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-[3px] text-[9px] font-semibold uppercase tracking-widest leading-none text-amber-600 dark:text-amber-400"
               >
                 <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
-                <span className="hidden sm:inline leading-none">Founder</span>
+                <span className="hidden xl:inline leading-none">Founder</span>
               </span>
             )}
           </Link>
@@ -177,14 +177,15 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Desktop nav (≥ md) */}
-          <nav className="hidden min-w-0 items-center gap-1 md:flex">
+          {/* Desktop nav (≥ lg) — tighter breakpoint so labels never truncate */}
+          <nav className="hidden min-w-0 items-center gap-1 lg:flex">
             {primaryNav.map((n) => {
               const active = isActive(n.to);
               return (
                 <Link
                   key={n.to}
                   to={n.to}
+                  title={n.label}
                   className={cn(
                     "flex min-w-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
                     active
@@ -193,15 +194,15 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   )}
                 >
                   <n.icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{n.label}</span>
+                  <span className="hidden truncate xl:inline">{n.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Desktop right side (≥ md) */}
-          <div className="hidden items-center gap-1 md:flex">
-            <ShareAppButton />
+          {/* Desktop right side (≥ lg) */}
+          <div className="hidden items-center gap-1 lg:flex">
+            <div className="hidden xl:inline-flex"><ShareAppButton /></div>
             {secondaryNav.map((n) => (
               <Button
                 key={n.to}
@@ -212,8 +213,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 className="min-w-0"
               >
                 <Link to={n.to}>
-                  <n.icon className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="hidden truncate lg:inline">{n.label}</span>
+                  <n.icon className="h-4 w-4 shrink-0 xl:mr-2" />
+                  <span className="hidden truncate xl:inline">{n.label}</span>
                 </Link>
               </Button>
             ))}
@@ -238,15 +239,15 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenu>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="min-w-0">
-              <LogOut className="mr-2 h-4 w-4 shrink-0" />
-              <span className="hidden truncate lg:inline">{t("actions.sign_out")}</span>
+              <LogOut className="h-4 w-4 shrink-0 xl:mr-2" />
+              <span className="hidden truncate xl:inline">{t("actions.sign_out")}</span>
             </Button>
           </div>
 
-          {/* Mobile hamburger (< md) */}
+          {/* Mobile hamburger (< lg) */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu">
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>

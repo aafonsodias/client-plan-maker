@@ -164,7 +164,7 @@ function Dashboard() {
   return (
     <div className="space-y-10">
       <OnboardingChecklist />
-      <DemoClientBanner />
+      {((user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com") && <DemoClientBanner />}
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
