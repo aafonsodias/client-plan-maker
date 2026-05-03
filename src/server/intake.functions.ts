@@ -172,19 +172,32 @@ const longText = z.string().trim().max(4000);
 const intRange = (min: number, max: number) =>
   z.number().int().min(min).max(max);
 const stringArray = z.array(z.string().trim().max(120)).max(50);
+// Permissive 2-level schema. Top-level keys are free-form (whitelist enforced
+// implicitly by what the client sends), values can be primitives, flat arrays
+// of primitives, or shallow objects whose values are primitives. This covers
+// every shape the intake form actually emits (parq, skipped, photos,
+// ai_goal_interpretation, ext_*, sched_days, etc.) without the fragile nested
+// record-of-record refinement that was rejecting valid payloads.
+const extPrimitive = z.union([z.string().max(4000), z.number(), z.boolean(), z.null()]);
 const extendedSchema = z
   .record(
-    z.string().max(60),
+    z.string().max(80),
     z.union([
-      z.string().max(2000),
-      z.number(),
-      z.boolean(),
-      z.null(),
-      z.array(z.union([z.string().max(500), z.number(), z.boolean()])).max(50),
-      z.record(z.string().max(60), z.union([z.string().max(2000), z.number(), z.boolean(), z.null()])),
+      extPrimitive,
+      z.array(z.union([z.string().max(2000), z.number(), z.boolean()])).max(100),
+      // Shallow object — values can themselves be primitives or short arrays.
+      z
+        .record(
+          z.string().max(80),
+          z.union([
+            extPrimitive,
+            z.array(z.union([z.string().max(2000), z.number(), z.boolean()])).max(100),
+          ]),
+        )
+        .refine((o) => Object.keys(o).length <= 60, "nested object too large"),
     ]),
   )
-  .refine((o) => Object.keys(o).length <= 80, "extended too large");
+  .refine((o) => Object.keys(o).length <= 100, "extended too large");
 
 const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   smart_specific: longText,
