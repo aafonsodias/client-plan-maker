@@ -16,6 +16,7 @@ import {
   isCarryLike,
   type RpeFloors,
 } from "./programming-tier.server";
+import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
 
 /**
  * Cap preparation duration at 15 minutes total (warmup + activation +
