@@ -39,7 +39,7 @@ const CATEGORY_TONE: Record<Row["category"], string> = {
 };
 
 export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?: string | null }) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const CATEGORY_LABEL: Record<Row["category"], string> = {
     pain: t("feedback.cat_pain"),
     complaint: t("feedback.cat_complaint"),
@@ -169,7 +169,7 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
                   <Icon className={`h-3.5 w-3.5 ${CATEGORY_TONE[r.category]}`} />
                   <span className="font-medium text-foreground">{CATEGORY_LABEL[r.category]}</span>
                   <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {AUTHOR_LABEL[r.author]} · {new Date(r.created_at).toLocaleDateString("pt-PT")}
+                    {AUTHOR_LABEL[r.author]} · {new Date(r.created_at).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US")}
                   </span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{r.status}</span>
                 </div>

@@ -514,5 +514,19 @@
     "not_assessed": "Not assessed yet",
     "capacity_label": "Capacity (optional)",
     "tooltip_aria": "Technical detail"
+  },
+  "logbook": {
+    "empty": "No sessions logged yet. Mark a day as \"Done\" to start the story.",
+    "title": "Logbook timeline",
+    "sessions_count": "· {{n}} sessions logged",
+    "week": "Week {{n}}",
+    "done_of": "{{done}}/{{total}} done",
+    "pr_short": "PR",
+    "pr_count": "PR · {{n}}",
+    "no_detail": "No detailed log.",
+    "exercise_fallback": "Exercise",
+    "pr_toast": "PR — {{names}}",
+    "pr_toast_more": "PR — {{names}} +{{rest}}",
+    "pr_desc": "New e1RM record in this plan."
   }
 }

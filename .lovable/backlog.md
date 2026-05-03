@@ -1,50 +1,50 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 19 (3 Mai 2026)
+Atualizado: Round 20 (3 Mai 2026)
 
-| # | P | Área | Item | Estado |
+## Concluído (linha do tempo condensada)
+
+| # | P | Área | Item | Round |
 |---|---|---|---|---|
-| 1 | P0 | Motor | Rotação de exercícios entre blocos (prior_exercise_pool no Stage 3 prompt) | ✅ Round 6 |
-| 2 | P0 | Motor | Bump load multiplier inter-blocos no archivePlanAndStartNextBlock | ✅ Round 6 |
-| 3 | P0 | Plan page | CapacityGainCard (capacidade vs bloco anterior) no view + results | ✅ Round 6 |
-| 4 | P0 | Lib | computeCapacityGain (Δ% por padrão + e1RM Epley) | ✅ Round 6 |
-| 5 | P1 | Plan page | Logbook timeline (semana colapsável + PR badges via e1RM) | ✅ Round 7 |
-| 6 | P1 | Volume | Realizado vs prescrito em VolumeSection (coluna + chip tonal) | ✅ Round 7 |
-| 7 | P1 | YearView | Strip de Blocos no topo com micro-CapacityGain por bloco | ✅ Round 7 |
-| 8 | P1 | Lib | computeWeeklyActualVolume (lê sessões + cruza com plano) | ✅ Round 7 |
-| 9 | P0 | Dashboard | Coluna "evolução último bloco" na lista de clientes | 🔜 Round 8 |
-| 10 | P0 | Motor | Pós-validação: se <40% accessory rotation, retry 1× com lista a evitar | 🔜 Round 8 |
-| 11 | P2 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 8 |
-| 12 | P2 | Demo | Tour aproveita CapacityGainCard como ponto âncora extra | 🔜 Round 8 |
-| 13 | P1 | Logbook | Confetti suave (1×/sessão) ao logar set que bate e1RM | 🔜 Round 8 |
-| 14 | P1 | Plan page | Secção "Próximo bloco" sugerida (deload/progressão) com CTA arquivar+gerar | 🔜 Round 8 |
-| 15 | P2 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 9 |
-| 9 | P0 | Dashboard | Chip Δ% evolução por plano em "Recent plans" (usePlanBlockEvolution) | ✅ Round 8 |
-| 10 | P0 | Motor | Pós-validação rotação: retry 1× se <40% + rotation_audit em generation_meta | ✅ Round 8 |
-| 12 | P2 | Demo | Passo "step_capacity" no tour ancorado em CapacityGainCard | ✅ Round 8 |
-| 13 | P1 | Logbook | Confetti + toast 1×/sessão ao detectar PR e1RM | ✅ Round 8 |
-| 14 | P1 | Plan page | NextBlockCard (deload/normal/push por adesão+RPE) com CTA Iniciar Bloco N+1 | ✅ Round 9 |
-| 17 | P2 | Motor | Chip "Rotação N%" no header do plano (rotation_audit.finalPct) | ✅ Round 9 |
-| 11 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 9 |
-| 15 | P1 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 9 |
-| 16 | P1 | Dashboard | Sparkline e1RM (EvolutionSparkline) ao lado do chip Δ% em Recent plans | ✅ Round 10 |
-| 18 | P2 | Plan page | Popover do chip Rotação com firstPct→finalPct, dias regenerados e pool top 6 | ✅ Round 10 |
-| 19 | P1 | Motor | Bloco ≥4 marca suggest_main_lift_swap; Stage 3 prompt + chip "Main lift refrescado" | ✅ Round 10 |
-| 20 | P1 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 11 |
-| 21 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 11 |
-| 22 | P0 | Plan page | Auditoria real do main-lift swap (prior_main_lifts → main_lift_audit; chip honesto) | ✅ Round 11 |
-| 23 | P1 | i18n | Sweep EN nos novos componentes (NextBlockCard, WeeklyVolumeBars, popovers Rotação/Main lift) | ✅ Round 13 |
-| 24 | P1 | Volume | Stack-bar semanal prescrito vs realizado (WeeklyVolumeBars, ~160px) | ✅ Round 12 |
-| 25 | P1 | i18n | Sweep EN — CapacityGainCard, BlockAdaptationCard, VolumeStatusTable | ✅ Round 14 |
-| 26 | P2 | i18n | Sweep EN — YearView (Adesão semanal, Tonelagem, Mapa de blocos), ExerciseTrendChart | 🔜 Round 15 |
-| 26 | P2 | i18n | Sweep EN — YearView + ExerciseTrendChart | ✅ Round 15 |
-| 27 | P2 | i18n | Sweep EN — VolumeSection header + tooltip MEV/MAV/MRV | ✅ Round 16 |
-| 28 | P0 | Segurança | REVOKE EXECUTE em SECURITY DEFINER backend-only + drop tabelas backup sem RLS | ✅ Round 17 |
-| 29 | P1 | i18n | Dialogs: AddExerciseDialog, PaywallDialog, ShareAppButton, OneRepMaxCalculator, FeedbackPanel | ✅ Round 18 |
-| 30 | P1 | i18n | Painéis cliente: ImportLogDialog, IntakeLinkPanel, PlanAssessmentSheet, MovementPatternCard | ✅ Round 19 |
+| 1 | P0 | Motor | Rotação de exercícios entre blocos (prior_exercise_pool no Stage 3 prompt) | R6 |
+| 2 | P0 | Motor | Bump load multiplier inter-blocos no archivePlanAndStartNextBlock | R6 |
+| 3 | P0 | Plan page | CapacityGainCard (capacidade vs bloco anterior) no view + results | R6 |
+| 4 | P0 | Lib | computeCapacityGain (Δ% por padrão + e1RM Epley) | R6 |
+| 5 | P1 | Plan page | Logbook timeline (semana colapsável + PR badges via e1RM) | R7 |
+| 6 | P1 | Volume | Realizado vs prescrito em VolumeSection (coluna + chip tonal) | R7 |
+| 7 | P1 | YearView | Strip de Blocos no topo com micro-CapacityGain por bloco | R7 |
+| 8 | P1 | Lib | computeWeeklyActualVolume (lê sessões + cruza com plano) | R7 |
+| 9 | P0 | Dashboard | Chip Δ% evolução por plano em "Recent plans" (usePlanBlockEvolution) | R8 |
+| 10 | P0 | Motor | Pós-validação rotação: retry 1× se <40% + rotation_audit em generation_meta | R8 |
+| 12 | P2 | Demo | Passo "step_capacity" no tour ancorado em CapacityGainCard | R8 |
+| 13 | P1 | Logbook | Confetti + toast 1×/sessão ao detectar PR e1RM | R8 |
+| 14 | P1 | Plan page | NextBlockCard (deload/normal/push por adesão+RPE) com CTA Iniciar Bloco N+1 | R9 |
+| 16 | P1 | Dashboard | Sparkline e1RM (EvolutionSparkline) ao lado do chip Δ% em Recent plans | R10 |
+| 17 | P2 | Motor | Chip "Rotação N%" no header do plano (rotation_audit.finalPct) | R9 |
+| 18 | P2 | Plan page | Popover do chip Rotação com firstPct→finalPct, dias regenerados e pool top 6 | R10 |
+| 19 | P1 | Motor | Bloco ≥4 marca suggest_main_lift_swap; Stage 3 prompt + chip "Main lift refrescado" | R10 |
+| 22 | P0 | Plan page | Auditoria real do main-lift swap (prior_main_lifts → main_lift_audit; chip honesto) | R11 |
+| 24 | P1 | Volume | Stack-bar semanal prescrito vs realizado (WeeklyVolumeBars, ~160px) | R12 |
+| 23 | P1 | i18n | Sweep EN — NextBlockCard, WeeklyVolumeBars, popovers Rotação/Main lift | R13 |
+| 25 | P1 | i18n | Sweep EN — CapacityGainCard, BlockAdaptationCard, VolumeStatusTable | R14 |
+| 26 | P2 | i18n | Sweep EN — YearView + ExerciseTrendChart | R15 |
+| 27 | P2 | i18n | Sweep EN — VolumeSection header + tooltip MEV/MAV/MRV | R16 |
+| 28 | P0 | Segurança | REVOKE EXECUTE em SECURITY DEFINER backend-only + drop tabelas backup sem RLS | R17 |
+| 29 | P1 | i18n | Dialogs: AddExerciseDialog, PaywallDialog, ShareAppButton, OneRepMaxCalculator, FeedbackPanel | R18 |
+| 30 | P1 | i18n | Painéis cliente: ImportLogDialog, IntakeLinkPanel, PlanAssessmentSheet, MovementPatternCard | R19 |
+| 31 | P1 | i18n | LogbookTimeline + datas com locale dinâmico (clients route, FeedbackPanel) | R20 |
+
+## Em aberto
+
+| # | P | Área | Item | Notas |
+|---|---|---|---|---|
+| 32 | P1 | i18n | Sweep restante em src/routes (clients_.$clientId, plans, dashboard) — strings PT residuais | grep ainda detecta ~300+ literals |
+| 33 | P2 | UX | Smoke test manual de cada rota em PT e EN antes de publicar | checklist em PR |
+| 34 | P2 | Motor | Cap mismatch: rever subscribers.subscription_tier vs profiles.plan_quota_limit (auto-sync via webhook Stripe) | manter 1 cliente = 1 plano |
+| 35 | P2 | Plan page | Export PDF do bloco com chip de evolução vs bloco anterior | extensão do PDF actual |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
 
-## Meta-prompt sugerido para ti
+## Meta-prompt sugerido
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."

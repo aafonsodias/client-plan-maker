@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Sparkles, Check, MinusCircle, XCircle, NotebookPen } from "lucide-react";
 import { toneChip, toneDot, type Tone } from "@/lib/status-tone";
 import { epley } from "@/lib/capacity-gain";
@@ -71,6 +72,7 @@ function avgSessionRpe(s: Session): number | null {
 }
 
 export function LogbookTimeline({ sessions }: Props) {
+  const { t, i18n } = useTranslation("common");
   // PRs: best e1RM per exercise across the whole plan; mark the session that hit it.
   const prSessionByExercise = useMemo(() => {
     const best = new Map<string, { e1rm: number; sessionId: string }>();
@@ -103,9 +105,11 @@ export function LogbookTimeline({ sessions }: Props) {
         setBurst((n) => n + 1);
         fired = true;
       }
-      toast.success(`PR — ${names.slice(0, 2).join(", ")}${names.length > 2 ? ` +${names.length - 2}` : ""}`, {
-        description: "Novo recorde de e1RM neste plano.",
-      });
+      const head = names.slice(0, 2).join(", ");
+      const msg = names.length > 2
+        ? t("logbook.pr_toast_more", { names: head, rest: names.length - 2 })
+        : t("logbook.pr_toast", { names: head });
+      toast.success(msg, { description: t("logbook.pr_desc") });
     }
   }, [prSessionByExercise]);
 
@@ -127,7 +131,7 @@ export function LogbookTimeline({ sessions }: Props) {
   if (sessions.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-        Sem sessões registadas ainda. Marca "Feita" num dia para começar a história.
+        {t("logbook.empty")}
       </div>
     );
   }
@@ -137,9 +141,9 @@ export function LogbookTimeline({ sessions }: Props) {
       {burst > 0 && <Confetti key={burst} />}
       <header className="flex items-center gap-2">
         <NotebookPen className="h-4 w-4 text-accent" />
-        <h2 className="text-base font-bold tracking-tight">Cronologia do logbook</h2>
+        <h2 className="text-base font-bold tracking-tight">{t("logbook.title")}</h2>
         <span className="text-[11px] text-muted-foreground">
-          · {sessions.length} sessões registadas
+          {t("logbook.sessions_count", { n: sessions.length })}
         </span>
       </header>
       <div className="space-y-2">
@@ -155,9 +159,9 @@ export function LogbookTimeline({ sessions }: Props) {
             <details key={wk} open={wk === weeks[weeks.length - 1].wk} className="group rounded-xl border border-border bg-card">
               <summary className="flex cursor-pointer list-none items-center gap-3 p-3 text-sm">
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-0 -rotate-90" />
-                <span className="font-semibold">Semana {wk}</span>
+                <span className="font-semibold">{t("logbook.week", { n: wk })}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  {done}/{list.length} feitas
+                  {t("logbook.done_of", { done, total: list.length })}
                 </span>
                 <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${toneChip(adhTone)}`}>
                   {adherence}%
@@ -167,13 +171,13 @@ export function LogbookTimeline({ sessions }: Props) {
                 )}
                 {hasPR && (
                   <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-                    <Sparkles className="h-3 w-3" /> PR
+                    <Sparkles className="h-3 w-3" /> {t("logbook.pr_short")}
                   </span>
                 )}
               </summary>
               <div className="border-t border-border/50 p-2">
                 {list.map((s) => (
-                  <SessionRow key={s.id} session={s} prs={prSessionByExercise.get(s.id) ?? []} />
+                  <SessionRow key={s.id} session={s} prs={prSessionByExercise.get(s.id) ?? []} t={t} lang={i18n.language} />
                 ))}
               </div>
             </details>
@@ -184,7 +188,7 @@ export function LogbookTimeline({ sessions }: Props) {
   );
 }
 
-function SessionRow({ session, prs }: { session: Session; prs: string[] }) {
+function SessionRow({ session, prs, t, lang }: { session: Session; prs: string[]; t: (k: string, o?: any) => string; lang: string }) {
   const [open, setOpen] = useState(false);
   const status = (session.status ?? "done") as keyof typeof STATUS_TONE;
   const tone = STATUS_TONE[status] ?? "neutral";
@@ -204,11 +208,11 @@ function SessionRow({ session, prs }: { session: Session; prs: string[] }) {
           <div className="flex items-center gap-2">
             <span className="font-medium truncate">{session.day_label}</span>
             <span className="text-[11px] text-muted-foreground">
-              {new Date(session.session_date).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
+              {new Date(session.session_date).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-US", { day: "2-digit", month: "short" })}
             </span>
             {prs.length > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
-                <Sparkles className="h-3 w-3" /> PR · {prs.length}
+                <Sparkles className="h-3 w-3" /> {t("logbook.pr_count", { n: prs.length })}
               </span>
             )}
           </div>
@@ -224,7 +228,7 @@ function SessionRow({ session, prs }: { session: Session; prs: string[] }) {
       {open && (
         <div className="mt-2 space-y-1 rounded-md border border-border/60 bg-background/40 p-2 text-xs">
           {(session.entries ?? []).length === 0 ? (
-            <p className="text-muted-foreground">Sem registo detalhado.</p>
+            <p className="text-muted-foreground">{t("logbook.no_detail")}</p>
           ) : (
             (session.entries ?? []).map((e: any, i: number) => {
               const isPR = prs.includes(String(e?.exercise_name ?? e?.name ?? "").trim());
@@ -232,7 +236,7 @@ function SessionRow({ session, prs }: { session: Session; prs: string[] }) {
               return (
                 <div key={i} className="flex items-start justify-between gap-2 border-b border-border/40 py-1 last:border-0">
                   <div className="min-w-0">
-                    <span className="font-medium">{e?.exercise_name ?? e?.name ?? "Exercício"}</span>
+                    <span className="font-medium">{e?.exercise_name ?? e?.name ?? t("logbook.exercise_fallback")}</span>
                     {isPR && (
                       <Sparkles className="ml-1 inline h-3 w-3 text-amber-300" />
                     )}
