@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
+import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { DashboardHint } from "@/components/DashboardHint";
 import { DemoClientBanner } from "@/components/DemoClientBanner";
@@ -289,6 +290,12 @@ function Dashboard() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <EvolutionChip evo={evolutionByPlan[p.id]} />
+                    {evolutionByPlan[p.id]?.series?.length ? (
+                      <EvolutionSparkline
+                        values={evolutionByPlan[p.id].series}
+                        verdict={evolutionByPlan[p.id].verdict}
+                      />
+                    ) : null}
                     {(() => {
                       const s = planStatusInfo(p as any, t as any);
                       return (
