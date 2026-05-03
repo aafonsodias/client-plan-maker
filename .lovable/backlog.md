@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 10 (3 Mai 2026)
+Atualizado: Round 16 (3 Mai 2026)
 
 | # | P | Área | Item | Estado |
 |---|---|---|---|---|
@@ -37,6 +37,8 @@ Atualizado: Round 10 (3 Mai 2026)
 | 24 | P1 | Volume | Stack-bar semanal prescrito vs realizado (WeeklyVolumeBars, ~160px) | ✅ Round 12 |
 | 25 | P1 | i18n | Sweep EN — CapacityGainCard, BlockAdaptationCard, VolumeStatusTable | ✅ Round 14 |
 | 26 | P2 | i18n | Sweep EN — YearView (Adesão semanal, Tonelagem, Mapa de blocos), ExerciseTrendChart | 🔜 Round 15 |
+| 26 | P2 | i18n | Sweep EN — YearView + ExerciseTrendChart | ✅ Round 15 |
+| 27 | P2 | i18n | Sweep EN — VolumeSection header + tooltip MEV/MAV/MRV | ✅ Round 16 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
