@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Beaker, Loader2, Square, Check, X } from "lucide-react";
 import { useDemoRuns, DEMO_RUN_STAGES } from "@/contexts/DemoRunsContext";
 import {
@@ -13,8 +14,16 @@ import { Button } from "@/components/ui/button";
  * follows the user across navigations. Click to expand per-run progress.
  */
 export function DemoRunsIndicator() {
-  const { runs, cancelRun } = useDemoRuns();
+  const { runs, cancelRun, holdRuns } = useDemoRuns();
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation("common");
+
+  // Hold completed runs visible while the popover is open so they don't
+  // pop out from under the user's cursor mid-read.
+  const setOpenAndHold = (next: boolean) => {
+    holdRuns(next);
+    setOpen(next);
+  };
 
   if (runs.length === 0) return null;
 
@@ -26,7 +35,7 @@ export function DemoRunsIndicator() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpenAndHold}>
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -45,7 +54,7 @@ export function DemoRunsIndicator() {
             ) : (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             )}
-            <span className="font-medium">Demo Lab</span>
+            <span className="font-medium">{t("demo.jobs.title")}</span>
             <span className="text-muted-foreground/90">·</span>
             <span>{stageLabel}</span>
             {runs.length > 1 ? (
@@ -57,7 +66,7 @@ export function DemoRunsIndicator() {
         </PopoverTrigger>
         <PopoverContent align="end" side="top" className="w-80 p-3">
           <p className="mb-2 text-[11px] uppercase tracking-widest text-amber-500/90">
-            <Beaker className="mr-1 inline h-3 w-3" /> Simulações em curso
+            <Beaker className="mr-1 inline h-3 w-3" /> {t("demo.jobs.title")}
           </p>
           <div className="space-y-3">
             {runs.map((r) => {
