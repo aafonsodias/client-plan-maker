@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSignedPhotoUrl } from "./intake-photos.server";
 
 /**
  * Public-token photo upload for the intake flow.
@@ -76,4 +77,39 @@ export const uploadIntakePhoto = createServerFn({ method: "POST" })
     }
 
     return { ok: true, path };
+  });
+
+/* ─────────────── Public: signed URLs for already-uploaded photos ─────────────── */
+
+const urlSchema = z.object({
+  token: z.string().uuid(),
+  slot: z.enum(SLOTS),
+});
+
+export const getIntakePhotoUrls = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string }) => z.object({ token: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, intake_token_expires_at")
+      .eq("intake_token", data.token)
+      .maybeSingle();
+    if (!client) return {} as Record<string, string>;
+    const expired = !client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date();
+    if (expired) return {} as Record<string, string>;
+    const { data: a } = await supabaseAdmin
+      .from("assessments")
+      .select("extended")
+      .eq("client_id", client.id)
+      .maybeSingle();
+    const photos = ((a?.extended as any)?.photos ?? {}) as Record<string, string>;
+    const out: Record<string, string> = {};
+    for (const slot of SLOTS) {
+      const path = photos[slot];
+      if (typeof path === "string" && path.length > 0) {
+        const url = await getSignedPhotoUrl(path, 600);
+        if (url) out[slot] = url;
+      }
+    }
+    return out;
   });
