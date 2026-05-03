@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ export function AddExerciseDialog({
   existingNames: string[];
   onAdded: () => void;
 }) {
+  const { t } = useTranslation("common");
   const addFn = useServerFn(addExerciseAcrossWeeks);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,7 +64,7 @@ export function AddExerciseDialog({
 
   async function submit() {
     if (!name.trim()) {
-      toast.error("Indica o nome do exercício.");
+      toast.error(t("add_exercise.err_no_name"));
       return;
     }
     setBusy(true);
@@ -84,10 +86,10 @@ export function AddExerciseDialog({
     });
     setBusy(false);
     if (!res.ok) {
-      toast.error(res.error || "Falhou a adicionar o exercício.");
+      toast.error(res.error || t("add_exercise.err_failed"));
       return;
     }
-    toast.success(`Adicionado a ${res.touched} semana${res.touched === 1 ? "" : "s"}.`);
+    toast.success(t("add_exercise.ok_added", { count: res.touched }));
     reset();
     setOpen(false);
     onAdded();
@@ -106,63 +108,63 @@ export function AddExerciseDialog({
           type="button"
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border/60 bg-transparent px-3 py-1.5 text-[11px] font-medium text-muted-foreground transition hover:border-accent/60 hover:bg-accent/5 hover:text-foreground"
         >
-          <Plus className="h-3 w-3" /> Adicionar exercício
+          <Plus className="h-3 w-3" /> {t("add_exercise.trigger")}
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Novo exercício · {dayLabel}</DialogTitle>
+          <DialogTitle>{t("add_exercise.title", { day: dayLabel })}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <div>
             <Label htmlFor="ex-name" className="text-xs">
-              Nome
+              {t("add_exercise.name")}
             </Label>
             <Input
               id="ex-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex. Face pull"
+              placeholder={t("add_exercise.name_placeholder")}
               autoFocus
             />
           </div>
           <div className="grid grid-cols-4 gap-2">
             <div>
               <Label htmlFor="ex-sets" className="text-xs">
-                Séries
+                {t("add_exercise.sets")}
               </Label>
               <Input id="ex-sets" value={sets} onChange={(e) => setSets(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="ex-reps" className="text-xs">
-                Reps
+                {t("add_exercise.reps")}
               </Label>
               <Input id="ex-reps" value={reps} onChange={(e) => setReps(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="ex-rpe" className="text-xs">
-                RPE
+                {t("add_exercise.rpe")}
               </Label>
               <Input id="ex-rpe" value={rpe} onChange={(e) => setRpe(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="ex-rest" className="text-xs">
-                Descanso
+                {t("add_exercise.rest")}
               </Label>
               <Input id="ex-rest" value={rest} onChange={(e) => setRest(e.target.value)} />
             </div>
           </div>
           <div>
-            <Label className="text-xs">Inserir</Label>
+            <Label className="text-xs">{t("add_exercise.insert")}</Label>
             <Select value={insertAfter} onValueChange={setInsertAfter}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="end">No fim do dia</SelectItem>
+                <SelectItem value="end">{t("add_exercise.insert_end")}</SelectItem>
                 {existingNames.map((n, i) => (
                   <SelectItem key={`${n}-${i}`} value={String(i)}>
-                    Depois de: {n}
+                    {t("add_exercise.insert_after", { name: n })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -170,19 +172,16 @@ export function AddExerciseDialog({
           </div>
           <div>
             <Label htmlFor="ex-notes" className="text-xs">
-              Notas (opcional)
+              {t("add_exercise.notes_optional")}
             </Label>
             <Input
               id="ex-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="ex. controlar fase excêntrica"
+              placeholder={t("add_exercise.notes_placeholder")}
             />
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            O exercício é inserido com os mesmos valores em todas as semanas. Podes ajustar
-            por semana clicando em cada célula.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{t("add_exercise.footnote")}</p>
         </div>
         <DialogFooter>
           <button
@@ -190,7 +189,7 @@ export function AddExerciseDialog({
             onClick={() => setOpen(false)}
             className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
-            Cancelar
+            {t("add_exercise.cancel")}
           </button>
           <button
             type="button"
@@ -199,7 +198,7 @@ export function AddExerciseDialog({
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-            Adicionar
+            {t("add_exercise.submit")}
           </button>
         </DialogFooter>
       </DialogContent>
