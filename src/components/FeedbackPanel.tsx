@@ -39,7 +39,7 @@ const CATEGORY_TONE: Record<Row["category"], string> = {
 };
 
 export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?: string | null }) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const CATEGORY_LABEL: Record<Row["category"], string> = {
     pain: t("feedback.cat_pain"),
     complaint: t("feedback.cat_complaint"),
