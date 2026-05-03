@@ -131,14 +131,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           skip: t("demo.tour.skip"),
         }}
         styles={{
-          options: {
-            primaryColor: "hsl(38 92% 50%)",
-            backgroundColor: "hsl(220 13% 12%)",
-            textColor: "hsl(0 0% 95%)",
-            arrowColor: "hsl(220 13% 12%)",
-            overlayColor: "rgba(0,0,0,0.55)",
-            zIndex: 10000,
-          },
+          tooltip: { backgroundColor: "hsl(220 13% 12%)", color: "hsl(0 0% 95%)", borderRadius: 12 },
+          tooltipContent: { color: "hsl(0 0% 95%)" },
+          buttonNext: { backgroundColor: "hsl(38 92% 50%)", color: "#000" },
+          buttonBack: { color: "hsl(38 92% 60%)" },
+          buttonSkip: { color: "hsl(0 0% 70%)" },
+          overlay: { backgroundColor: "rgba(0,0,0,0.55)" },
+          spotlight: { borderRadius: 12 },
         }}
       />
     </TourCtx.Provider>
