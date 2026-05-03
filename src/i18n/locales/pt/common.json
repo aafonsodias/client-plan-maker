@@ -259,5 +259,59 @@
     "shift_normal": "Curva normal · tecto {{ceiling}}",
     "shift_change": "Tecto {{base}} {{arrow}} {{newCeil}}",
     "shift_start_note": ", arranque {{start}}"
+  },
+  "year": {
+    "title": "Vista anual",
+    "subtitle": "{{blocks}} blocos · {{weeks}} semanas · {{sessions}} sessões registadas",
+    "overall_adherence": "Adesão global",
+    "loading": "A carregar histórico…",
+    "empty": "Sem dados longitudinais ainda. Cria blocos e regista sessões para ver a evolução anual.",
+    "blocks": {
+      "heading": "Blocos",
+      "subtitle": "Cada bloco com a sua evolução de capacidade vs anterior. Clica para abrir.",
+      "no_data": "sem dados",
+      "initial_block": "bloco inicial",
+      "delta_capacity": "{{pct}}% capacidade",
+      "adherence_short": "Adesão",
+      "rpe_short": "RPE",
+      "sessions_short": "Sess."
+    },
+    "adherence": {
+      "title": "Adesão semanal",
+      "subtitle": "% das sessões planeadas que foram registadas, semana a semana",
+      "bar": "Adesão (%)",
+      "line_rpe": "RPE médio"
+    },
+    "tonnage": {
+      "title": "Tonelagem semanal",
+      "subtitle": "Volume total levantado por semana — proxy da carga acumulada",
+      "bar": "Tonelagem (kg)"
+    },
+    "strength": {
+      "title": "Curva de força",
+      "subtitle": "Maior carga registada por semana para um exercício específico",
+      "empty": "Sem registos para este exercício."
+    },
+    "map": {
+      "title": "Mapa de blocos",
+      "subtitle": "Resumo por bloco para inspecção rápida",
+      "block": "Bloco",
+      "weeks": "Semanas",
+      "sessions": "Sessões",
+      "adherence": "Adesão",
+      "avg_rpe": "RPE médio",
+      "tonnage": "Tonelagem",
+      "adaptation": "Adaptação"
+    }
+  },
+  "trend": {
+    "empty_html": "Sem registos suficientes ainda. Use o botão <bold>\"Importar registo\"</bold> no topo para trazer os valores escritos na folha de registo A4.",
+    "delta_one": "{{delta}} kg em {{count}} semana",
+    "delta_other": "{{delta}} kg em {{count}} semanas",
+    "weeks_one": "{{count}} semana registada",
+    "weeks_other": "{{count}} semanas registadas",
+    "pr_block": "PR Bloco {{n}}",
+    "legend": { "kg": "kg", "rpe": "RPE" },
+    "week_short": "S{{week}}"
   }
 }
