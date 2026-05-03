@@ -549,6 +549,14 @@ function PlanEditor() {
           em planos de demonstração (mantém a IA como atalho honesto). */}
       {plan?.generation_status === "complete"
         && plan?.status !== "archived" && (
+        <>
+          <NextBlockCard
+            planId={planId}
+            blockNumber={(plan as any).block_number ?? 1}
+            sessions={sessions as any}
+            fullyLogged={isPlanFullyLogged(plan, sessions.length)}
+            allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
+          />
         (() => {
           const fullyLogged = isPlanFullyLogged(plan, sessions.length);
           const wrapClass = fullyLogged
