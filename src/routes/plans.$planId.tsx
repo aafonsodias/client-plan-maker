@@ -44,6 +44,7 @@ import { computeCapacityGain } from "@/lib/capacity-gain";
 import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import { NextBlockCard } from "@/components/NextBlockCard";
+import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
@@ -334,21 +335,43 @@ function PlanEditor() {
               );
             })()}
             {(() => {
-              const audit = (plan as any).generation_meta?.rotation_audit;
-              if (!audit || typeof audit.finalPct !== "number") return null;
-              const pct = Math.round(audit.finalPct);
-              const tone = pct >= 60
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                : pct >= 40
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
-                : "border-red-500/40 bg-red-500/10 text-red-200";
+              const view = summarizeRotation((plan as any).generation_meta?.rotation_audit);
+              if (!view) return null;
+              const pool = ((plan as any).generation_meta?.prior_exercise_pool ?? []) as string[];
               return (
-                <span
-                  title={`Acessórios rodados vs bloco anterior · ${pct}%${audit.retried ? " (após retry)" : ""}`}
-                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${tone}`}
-                >
-                  Rotação {pct}%
-                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${view.toneClass}`}
+                    >
+                      Rotação {Math.round(view.finalPct ?? 0)}%
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
+                    <p className="font-semibold">Rotação de acessórios vs bloco anterior</p>
+                    <p className="text-muted-foreground">
+                      {view.retried
+                        ? `Tentativa inicial ${Math.round(view.firstPct ?? 0)}% → ${Math.round(view.finalPct ?? 0)}% após retry.`
+                        : `${Math.round(view.finalPct ?? 0)}% dos acessórios mudaram entre blocos.`}
+                      {view.daysRegenerated.length > 0 && (
+                        <> Dias regenerados: {view.daysRegenerated.join(", ")}.</>
+                      )}
+                    </p>
+                    {pool.length > 0 && (
+                      <div>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+                          Pool do bloco anterior (top 6)
+                        </p>
+                        <ul className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                          {pool.slice(0, 6).map((n) => (
+                            <li key={n} className="truncate text-foreground/80">{n}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
               );
             })()}
             {(() => {
