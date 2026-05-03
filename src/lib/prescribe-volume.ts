@@ -24,6 +24,7 @@ import {
   type VolumeLandmark,
 } from "./volume-landmarks";
 import type { BlockSummary, MuscleVerdict } from "./block-feedback";
+import { shiftForVerdict } from "./block-adaptation";
 
 export type PrescriptionRow = {
   muscle: MuscleGroup;
@@ -55,23 +56,12 @@ function targetForWeek(
     return { target: t, min: Math.max(0, t - 1), max: t + 1 };
   }
   // 0 → start, 1 → ceiling, with MAV at the inflection (~2/3 by default).
-  // Verdict from prior block shifts both endpoints and inflection so
-  // sub-recovered muscles re-enter at MEV with shorter accumulation, and
-  // under-loaded muscles start above MEV and reach MRV faster.
+  // Verdict shifts come from block-adaptation (single source of truth, so
+  // the UI shows exactly what the prescription used).
   const accumWeeks = Math.max(1, totalWeeks - 1); // last week is deload
   const phase = (week - 1) / accumWeeks; // 0..1 across the accumulation
-  let startLandmark = lm.mev;
-  let ceilingLandmark = lm.mrv;
-  let inflection = 0.66;
-  if (verdict === "under_recovered") {
-    startLandmark = lm.mev;
-    ceilingLandmark = lm.mav; // never push past MAV in a recovery block
-    inflection = 0.85; // most of the block sits between MEV and MAV
-  } else if (verdict === "under_loaded") {
-    startLandmark = Math.min(lm.mav, lm.mev + 2);
-    ceilingLandmark = lm.mrv;
-    inflection = 0.5; // hit MAV by mid-block, then push to MRV
-  }
+  const { startSets: startLandmark, ceilingSets: ceilingLandmark, inflection } =
+    shiftForVerdict(lm, verdict);
   let target: number;
   if (phase <= inflection) {
     target = lerp(startLandmark, lm.mav, phase / inflection);
