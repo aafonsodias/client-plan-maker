@@ -1451,18 +1451,18 @@ function ClientDetail() {
           <div className="flex flex-wrap items-center gap-2 self-start">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
-              title="Categoria de risco ACSM (Pré-participação)"
+              title={t("detail.acsm_chip_title")}
             >
-              <span className="text-[9px] uppercase tracking-widest opacity-70">ACSM</span>
+              <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.acsm_label")}</span>
               {riskLabel}
               {parqYes && <span className="opacity-70">· PAR-Q+</span>}
             </span>
             {haveSignals && (
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums ${readyTone}`}
-                title={`Sono ${sleep || "—"}/10 · Stress ${stress || "—"}/10 · Soreness ${sore || "—"}/10`}
+                title={t("detail.recovery_chip_tooltip", { sleep: sleep || "—", stress: stress || "—", sore: sore || "—" })}
               >
-                <span className="text-[9px] uppercase tracking-widest opacity-70">Recuperação</span>
+                <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.recovery_label")}</span>
                 {readiness}/100
               </span>
             )}
@@ -1936,9 +1936,9 @@ function ClientDetail() {
                   to="/clients/$clientId/year"
                   params={{ clientId }}
                   className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-amber-300 hover:bg-amber-500/20"
-                  title="Ver evolução longitudinal de todos os blocos"
+                  title={t("detail.year_view_title")}
                 >
-                  Vista anual
+                  {t("detail.year_view_label")}
                 </Link>
                 <Link
                   to="/plans/$planId"
@@ -2282,10 +2282,10 @@ function ClientDetail() {
                           busy={stageBusy === "blueprint"}
                           approveLabel={
                             blueprintApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasBlueprintDraft
-                              ? "Ver draft →"
-                              : "Gerar Blueprint →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_blueprint")
                           }
                           onApprove={() =>
                             blueprintApproved || hasBlueprintDraft
@@ -2295,8 +2295,8 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasBlueprintDraft && !blueprintApproved
-                              ? "Tens um rascunho por aprovar — abre para continuar onde deixaste."
-                              : "Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever."}
+                              ? t("detail.stage.blueprint_draft_hint")
+                              : t("detail.stage.blueprint_help")}
                           </p>
                         </StageCard>
                         <StageCard
@@ -2312,10 +2312,10 @@ function ClientDetail() {
                           busy={stageBusy === "microcycle"}
                           approveLabel={
                             microcycleApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasMicrocycleDraft
-                              ? "Ver draft →"
-                              : "Gerar Microcycle →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_microcycle")
                           }
                           onApprove={
                             blueprintApproved
@@ -2328,10 +2328,10 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasMicrocycleDraft && !microcycleApproved
-                              ? "Tens dias gerados por aprovar — abre para continuar."
+                              ? t("detail.stage.microcycle_draft_hint")
                               : blueprintApproved
-                              ? "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar."
-                              : "Aprova o Blueprint primeiro."}
+                              ? t("detail.stage.microcycle_help")
+                              : t("detail.stage.microcycle_blocked")}
                           </p>
                         </StageCard>
                         <StageCard
@@ -2347,10 +2347,10 @@ function ClientDetail() {
                           busy={stageBusy === "progressions"}
                           approveLabel={
                             progressionsApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasProgressionsDraft
-                              ? "Ver draft →"
-                              : "Gerar Progressions →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_progressions")
                           }
                           onApprove={
                             microcycleApproved
@@ -2363,10 +2363,10 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasProgressionsDraft && !progressionsApproved
-                              ? "Tens deltas propostos por aprovar — abre para rever."
+                              ? t("detail.stage.progressions_draft_hint")
                               : microcycleApproved
-                              ? "Deltas de progressão para as semanas 2+. Clica para gerar."
-                              : "Aprova o Microcycle primeiro."}
+                              ? t("detail.stage.progressions_help")
+                              : t("detail.stage.progressions_blocked")}
                           </p>
                         </StageCard>
                       </>
@@ -2394,7 +2394,7 @@ function ClientDetail() {
                   if (r?.ok && r?.planId) {
                     void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
                   } else {
-                    toast.error(r?.error ?? "Falhou ao criar plano.");
+                    toast.error(r?.error ?? t("detail.plans.manual_failed"));
                   }
                 } finally { setCreatingPlan(null); }
               }}
@@ -2402,24 +2402,24 @@ function ClientDetail() {
               {creatingPlan === "manual"
                 ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 : <Plus className="mr-1.5 h-3.5 w-3.5" />}
-              Novo plano (manual)
+              {t("detail.plans.new_manual")}
             </Button>
             <Button
               size="sm"
               disabled={creatingPlan !== null || !evolvableSourcePlan}
               title={!evolvableSourcePlan
-                ? "Marca um plano como terminado para evoluir."
-                : "Gerar próximo bloco a partir do último concluído."}
+                ? t("detail.plans.evolve_disabled")
+                : t("detail.plans.evolve_help")}
               onClick={async () => {
                 if (!evolvableSourcePlan) return;
                 setCreatingPlan("evolve");
                 try {
                   const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
                   if (r?.ok && r?.planId) {
-                    toast.success("Próximo bloco criado.");
+                    toast.success(t("detail.plans.evolve_success"));
                     void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
                   } else {
-                    toast.error(r?.error ?? "Falhou a evoluir o plano.");
+                    toast.error(r?.error ?? t("detail.plans.evolve_failed"));
                   }
                 } finally { setCreatingPlan(null); }
               }}
@@ -2519,7 +2519,7 @@ type CollapseCtx = {
 };
 const SectionCollapseContext = createContext<CollapseCtx | null>(null);
 
-function deriveRecoveryProfile(a: any): { label: string; caption: string } | null {
+function deriveRecoveryProfile(a: any, t: (k: string, opts?: any) => string): { label: string; caption: string } | null {
   const sleep = a?.sleep_quality ? Number(a.sleep_quality) : null;
   const stress = a?.stress_level ? Number(a.stress_level) : null;
   const cap = (a?.recovery_capacity ?? "").toString().toLowerCase();
@@ -2532,10 +2532,10 @@ function deriveRecoveryProfile(a: any): { label: string; caption: string } | nul
   else if (cap.includes("low") || cap.includes("baixa")) { score += 3; n++; }
   else if (cap) { score += 5; n++; }
   const avg = n ? score / n : 0;
-  const label = avg >= 7 ? "Alta" : avg >= 5 ? "Moderada" : "Baixa";
+  const label = avg >= 7 ? t("detail.recovery.high") : avg >= 5 ? t("detail.recovery.moderate") : t("detail.recovery.low");
   const parts: string[] = [];
-  if (sleep != null) parts.push(`sono ${sleep}/10`);
-  if (stress != null) parts.push(`stress ${stress}/10`);
+  if (sleep != null) parts.push(t("detail.recovery.sleep_part", { n: sleep }));
+  if (stress != null) parts.push(t("detail.recovery.stress_part", { n: stress }));
   return { label, caption: parts.join(" · ") || "—" };
 }
 
@@ -2599,27 +2599,28 @@ function AssessmentSynthesisDashboard({
   const analysedCount = Object.values(sectionAnalyses).filter(Boolean).length;
   if (analysedCount < Math.ceil(totalSections * 0.5)) return null;
 
-  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const { t } = useTranslation("assessment");
+  const riskLabel = riskCategory === "high" ? t("detail.risk.high") : riskCategory === "moderate" ? t("detail.risk.moderate") : t("detail.risk.low");
   const riskCaption = riskCategory === "high"
-    ? "Aprovação médica recomendada"
+    ? t("detail.risk.caption_high")
     : riskCategory === "moderate"
-    ? "Avaliar antes de cargas elevadas"
-    : "Sem necessidade de clearance";
+    ? t("detail.risk.caption_moderate")
+    : t("detail.risk.caption_low");
   const riskTone: "destructive" | "warning" | "success" =
     riskCategory === "high" ? "destructive" : riskCategory === "moderate" ? "warning" : "success";
 
-  const recovery = deriveRecoveryProfile(assessment);
+  const recovery = deriveRecoveryProfile(assessment, t);
 
   const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
   const bodyCompValue = `${bf} · WHR ${whr}`;
   const whrNum = whr === "—" ? null : Number(whr);
   const bodyCompCaption = whrNum == null
-    ? "Adicionar medidas para interpretação"
+    ? t("detail.body_comp.no_data")
     : whrNum >= 0.95
-    ? "Risco cardiometabólico elevado"
+    ? t("detail.body_comp.high_risk")
     : whrNum >= 0.85
-    ? "Risco moderado · monitorizar"
-    : "Padrão saudável";
+    ? t("detail.body_comp.moderate_risk")
+    : t("detail.body_comp.healthy");
 
   const flags = collectRedFlags(assessment, sectionAnalyses);
   const accMap = new Map<string, RedFlagAccommodation>();
@@ -2637,24 +2638,24 @@ function AssessmentSynthesisDashboard({
   return (
     <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Síntese da avaliação</p>
-        <span className="text-[10px] text-muted-foreground">{analysedCount}/{totalSections} secções analisadas</span>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("detail.synthesis.title")}</p>
+        <span className="text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          label="Risco ACSM"
+          label={t("detail.synthesis.stat_risk")}
           value={riskLabel}
           caption={riskCaption}
           tone={riskTone}
         />
         <StatCard
-          label="Perfil de recuperação"
+          label={t("detail.synthesis.stat_recovery")}
           value={recovery?.label ?? "—"}
-          caption={recovery?.caption ?? "Sem dados de sono/stress"}
+          caption={recovery?.caption ?? t("detail.recovery.no_data")}
         />
         <StatCard
-          label="Composição corporal"
+          label={t("detail.synthesis.stat_body_comp")}
           value={bodyCompValue}
           caption={bodyCompCaption}
         />
@@ -2667,7 +2668,7 @@ function AssessmentSynthesisDashboard({
           <div className="mb-2 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              Sinais de alerta · {flags.length}
+              {t("detail.synthesis.alerts", { n: flags.length })}
             </p>
           </div>
           <ul className="space-y-1.5">
@@ -2708,6 +2709,7 @@ function AssessmentSection({
   defaultCollapsed?: boolean;
   summaryLine?: string;
 }) {
+  const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
   const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
@@ -2784,12 +2786,12 @@ function AssessmentSection({
         >
           <div className="flex items-center gap-2">
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-bold">Avaliação</span>
+            <span className="text-sm font-bold">{t("detail.section.title")}</span>
             {summaryLine && (
               <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
             )}
           </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">expandir</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.section.expand_short")}</span>
         </button>
       </section>
     );
@@ -2804,7 +2806,7 @@ function AssessmentSection({
           onClick={() => setCollapsed(true)}
           className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronDown className="h-3 w-3" /> Recolher avaliação
+          <ChevronDown className="h-3 w-3" /> {t("detail.section.collapse")}
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
@@ -2812,10 +2814,10 @@ function AssessmentSection({
           type="button"
           onClick={() => setFocused((f) => !f)}
           className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest transition ${focused ? "border-accent/60 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-          title={focused ? "Mostrar todas as secções" : "Focar uma secção de cada vez"}
+          title={focused ? t("detail.section.focus_tip_show_all") : t("detail.section.focus_tip_focus")}
         >
           {focused ? <List className="h-3 w-3" /> : <Focus className="h-3 w-3" />}
-          {focused ? "Ver tudo" : "Modo focado"}
+          {focused ? t("detail.section.view_all") : t("detail.section.focus_mode")}
         </button>
         {!focused && (
           <>
@@ -2824,20 +2826,20 @@ function AssessmentSection({
           onClick={() => ctx.setAll(true)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsUpDown className="h-3 w-3" /> Expandir tudo
+          <ChevronsUpDown className="h-3 w-3" /> {t("detail.section.expand_all")}
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
           className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
         >
-          <ChevronsDownUp className="h-3 w-3" /> Colapsar tudo
+          <ChevronsDownUp className="h-3 w-3" /> {t("detail.section.collapse_all")}
         </button>
           </>
         )}
       </div>
       {focused && (
-        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label="Secções da avaliação">
+        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label={t("detail.section.tabs_aria")}>
           {SECTIONS.map((s, i) => {
             const isActive = s.id === activeId;
             return (
@@ -2862,7 +2864,7 @@ function AssessmentSection({
             <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
               {sectionChildren.get(activeId) ?? (
                 <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
-                  Secção indisponível.
+                  {t("detail.section.unavailable")}
                 </div>
               )}
             </div>
@@ -2873,7 +2875,7 @@ function AssessmentSection({
                 onClick={goPrev}
                 disabled={activeIdx === 0}
               >
-                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> Anterior
+                <ArrowLeft className="mr-1 h-3.5 w-3.5" /> {t("detail.section.prev")}
               </Button>
               <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                 {activeIdx + 1} / {sectionIds.length}
@@ -2884,7 +2886,7 @@ function AssessmentSection({
                 onClick={goNext}
                 disabled={activeIdx === sectionIds.length - 1}
               >
-                Próxima <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                {t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
             {extras.length > 0 && <div className="space-y-3">{extras}</div>}
@@ -3030,11 +3032,12 @@ function SectionBlock({
 }
 
 function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; analysis: SectionAnalysis | null }) {
+  const { t } = useTranslation("assessment");
   if (analysing) {
     return (
       <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>A analisar esta secção…</span>
+        <span>{t("detail.analysing_section")}</span>
       </div>
     );
   }
@@ -3404,37 +3407,38 @@ function ClientSnapshotCard({
   whr: string;
   lastSavedAt: number | null;
 }) {
-  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const { t, i18n } = useTranslation("assessment");
+  const riskLabel = riskCategory === "high" ? t("detail.risk.high") : riskCategory === "moderate" ? t("detail.risk.moderate") : t("detail.risk.low");
   const riskTone =
     riskCategory === "high" ? "text-destructive"
     : riskCategory === "moderate" ? "text-amber-500"
     : "text-accent";
-  const recovery = deriveRecoveryProfile(assessment);
+  const recovery = deriveRecoveryProfile(assessment, t);
   const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
   const flags = collectRedFlags(assessment, sectionAnalyses).slice(0, 3);
   const dateLabel = lastSavedAt
-    ? new Date(lastSavedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    ? new Date(lastSavedAt).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US", { day: "2-digit", month: "short", year: "numeric" })
     : "—";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Snapshot do cliente
+          {t("detail.snapshot.title")}
         </p>
-        <p className="text-[10px] text-muted-foreground">Última avaliação · {dateLabel}</p>
+        <p className="text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Risco ACSM</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
           <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Recuperação</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.recovery")}</p>
           <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Composição</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.composition")}</p>
           <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
         </div>
       </div>

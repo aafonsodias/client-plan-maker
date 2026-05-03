@@ -1,49 +1,37 @@
-## Objetivo
-Fechar os 3 itens P1/P2 que ainda restam no backlog (R22, R23, R24) numa única sessão.
+## Estado
 
-## R22 — Sweep i18n final em src/routes (#32)
+Restam 2 itens no backlog:
+- **#32** — i18n sweep profundo em `src/routes/clients_.$clientId.tsx` (~30 literals PT em sub-secções de assessment)
+- **#33** — Smoke test manual PT/EN antes de publicar
 
-Alvo: ~250 literals PT detectados via `rg` em rotas grandes.
+Proposta: 2 rondas curtas (R25 fecha #32, R26 entrega #33 como checklist). Depois disso o backlog fica vazio até nova direção tua.
 
-Ficheiros:
-- `src/routes/clients_.$clientId.tsx` (~1.5k linhas) — secções de avaliação, intake, fotos, notas, blocos.
-- `src/routes/plans.$planId.tsx` + sub-rotas (`brief`, `blueprint`, `microcycle`, `progressions`, `sessions`) — toasts, headers, empty states.
-- `src/routes/billing.tsx` — labels de plano e faturação.
-- `src/routes/templates.tsx`, `plans.index.tsx`, `plans.new.tsx` — toasts/empty states residuais.
+## R25 — Fechar #32 (i18n clients_.$clientId)
 
-Ações:
-1. Varrer cada ficheiro com `rg "[À-úçãõ]"` para listar literais PT.
-2. Adicionar chaves novas em `src/i18n/locales/pt/common.json` e `en/common.json` sob namespaces existentes (`clients.*`, `plan.*`, `billing.*`).
-3. Substituir literais por `t("...")`. Datas → `toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US", ...)` (padrão já em uso em FeedbackPanel/LogbookTimeline).
+**Alvo:** literais PT remanescentes em painéis de assessment profundos do detalhe do cliente.
 
-## R23 — Sync subscription_tier ↔ plan_quota_limit (#34)
+**Passos:**
+1. `rg` no ficheiro para mapear strings PT cruas (ex.: "Avaliação", "Mobilidade", "Postura", labels de scores 1–5, headers de cartões, toasts).
+2. Adicionar namespace `client_detail.assessment.*` a `pt/common.json` e `en/common.json` (agrupado por sub-secção: movement_screen, vitals, history, notes).
+3. Substituir literais por `t()` mantendo interpolações (`{{name}}`, `{{n}}`).
+4. Datas inline → `toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US")`.
+5. Smoke visual em `/clients/$id` em PT e EN (QA viewport).
 
-Problema: webhook Stripe escreve `subscribers.subscription_tier` mas `profiles.plan_quota_limit` pode ficar dessincronizado, quebrando o gate de quotas em `quota.server.ts`.
+**Saída:** ~30 chaves novas, 1 ficheiro de rota tocado, 2 locales.
 
-Ações:
-1. Migration: criar função `sync_plan_quota_from_tier(uid uuid)` que mapeia tier → cap (Starter 8 / Pro 30 / Studio 80) e faz `UPDATE profiles SET plan_quota_limit = ... WHERE id = uid`.
-2. Trigger `AFTER INSERT OR UPDATE OF subscription_tier ON public.subscribers` que chama a função para o `user_id` da row.
-3. Backfill: `UPDATE profiles p SET plan_quota_limit = ...` cruzando com `subscribers` actuais.
-4. Manter regra "1 cliente = 1 plano": cap de planos == cap de clientes (já no Core).
+## R26 — Fechar #33 (smoke test checklist)
 
-## R24 — Export PDF do bloco com evolução (#35)
+Como não há UI nova a construir, entrega um checklist versionado em `.lovable/smoke-test.md` com:
+- Lista de rotas críticas (`/`, `/dashboard`, `/clients`, `/clients/$id`, `/plans/$id`, `/billing`, `/templates`, `/auth`, intake público).
+- Por rota: itens a verificar em PT e EN (headers, dialogs principais, toasts, datas, chips de estado).
+- Coluna "PT ok / EN ok / notas" para preencher manualmente.
 
-Estender `src/lib/pdf.ts` (gerador actual) para blocos N≥2.
+Atualiza `.lovable/backlog.md` movendo #32 e #33 para concluído. Backlog fica vazio (secção "Em aberto" some) — próxima ronda exige nova direção tua.
 
-Ações:
-1. Em `src/lib/pdf.ts`, adicionar secção "Evolução vs Bloco N-1" no topo do PDF quando `plan.block_number > 1`:
-   - Chip Δ% load + e1RM (reaproveitar `computeCapacityGain` de `src/lib/capacity-gain.ts`).
-   - Linha de transição (`block_transition_summary`).
-2. Reutilizar a estrutura visual do `CapacityGainCard` (mas em layout PDF: tabela simples por padrão de movimento).
-3. Botão "Export PDF" em `plans.$planId.tsx` já existe — apenas garantir que passa `priorPlan` quando aplicável (ler via `prior_plan_id`).
-4. QA: gerar PDF para um plano demo bloco 2, converter páginas para imagem e inspecionar (sem texto cortado, sem caixas pretas).
+## Sem publicar
 
-## Fora de âmbito
-- R33 (smoke test manual PT/EN) — fica para o utilizador antes de publicar.
-- Não publicar — utilizador pediu explicitamente "publicar só quando eu disser".
+Nenhuma das rondas publica. Continua a regra "publicar só quando eu disser".
 
-## Entregáveis
-- ~10–15 ficheiros editados (rotas + locales).
-- 1 migration SQL (trigger + backfill).
-- 1 PDF de exemplo gerado em `/mnt/documents/` para QA visual.
-- `.lovable/backlog.md` atualizado: itens 32, 34, 35 movidos para "Concluído"; ficar só #33 (smoke test) em aberto.
+## Confirmação
+
+Avanço com R25 + R26 nesta ordem?

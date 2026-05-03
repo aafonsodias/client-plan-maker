@@ -433,5 +433,89 @@
     "smart_measurable": "Mensurável",
     "smart_deadline": "Prazo",
     "confidential": "Confidencial — uso do treinador e cliente"
+  },
+  "detail": {
+    "acsm_chip_title": "Categoria de risco ACSM (Pré-participação)",
+    "acsm_label": "ACSM",
+    "recovery_label": "Recuperação",
+    "recovery_chip_tooltip": "Sono {{sleep}}/10 · Stress {{stress}}/10 · Soreness {{sore}}/10",
+    "year_view_title": "Ver evolução longitudinal de todos os blocos",
+    "year_view_label": "Vista anual",
+    "stage": {
+      "open": "Abrir",
+      "view_draft": "Ver draft →",
+      "generate_blueprint": "Gerar Blueprint →",
+      "generate_microcycle": "Gerar Microcycle →",
+      "generate_progressions": "Gerar Progressions →",
+      "blueprint_draft_hint": "Tens um rascunho por aprovar — abre para continuar onde deixaste.",
+      "blueprint_help": "Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.",
+      "microcycle_draft_hint": "Tens dias gerados por aprovar — abre para continuar.",
+      "microcycle_help": "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar.",
+      "microcycle_blocked": "Aprova o Blueprint primeiro.",
+      "progressions_draft_hint": "Tens deltas propostos por aprovar — abre para rever.",
+      "progressions_help": "Deltas de progressão para as semanas 2+. Clica para gerar.",
+      "progressions_blocked": "Aprova o Microcycle primeiro."
+    },
+    "plans": {
+      "new_manual": "Novo plano (manual)",
+      "manual_failed": "Falhou ao criar plano.",
+      "evolve_disabled": "Marca um plano como terminado para evoluir.",
+      "evolve_help": "Gerar próximo bloco a partir do último concluído.",
+      "evolve_success": "Próximo bloco criado.",
+      "evolve_failed": "Falhou a evoluir o plano."
+    },
+    "risk": {
+      "high": "Alto",
+      "moderate": "Moderado",
+      "low": "Baixo",
+      "caption_high": "Aprovação médica recomendada",
+      "caption_moderate": "Avaliar antes de cargas elevadas",
+      "caption_low": "Sem necessidade de clearance"
+    },
+    "recovery": {
+      "high": "Alta",
+      "moderate": "Moderada",
+      "low": "Baixa",
+      "sleep_part": "sono {{n}}/10",
+      "stress_part": "stress {{n}}/10",
+      "no_data": "Sem dados de sono/stress"
+    },
+    "body_comp": {
+      "no_data": "Adicionar medidas para interpretação",
+      "high_risk": "Risco cardiometabólico elevado",
+      "moderate_risk": "Risco moderado · monitorizar",
+      "healthy": "Padrão saudável"
+    },
+    "synthesis": {
+      "title": "Síntese da avaliação",
+      "analysed": "{{n}}/{{total}} secções analisadas",
+      "stat_risk": "Risco ACSM",
+      "stat_recovery": "Perfil de recuperação",
+      "stat_body_comp": "Composição corporal",
+      "alerts": "Sinais de alerta · {{n}}"
+    },
+    "snapshot": {
+      "title": "Snapshot do cliente",
+      "last": "Última avaliação · {{when}}",
+      "risk_acsm": "Risco ACSM",
+      "recovery": "Recuperação",
+      "composition": "Composição"
+    },
+    "section": {
+      "title": "Avaliação",
+      "expand_short": "expandir",
+      "collapse": "Recolher avaliação",
+      "view_all": "Ver tudo",
+      "focus_mode": "Modo focado",
+      "focus_tip_show_all": "Mostrar todas as secções",
+      "focus_tip_focus": "Focar uma secção de cada vez",
+      "expand_all": "Expandir tudo",
+      "collapse_all": "Colapsar tudo",
+      "tabs_aria": "Secções da avaliação",
+      "prev": "Anterior",
+      "next": "Próxima",
+      "unavailable": "Secção indisponível."
+    },
+    "analysing_section": "A analisar esta secção…"
   }
 }

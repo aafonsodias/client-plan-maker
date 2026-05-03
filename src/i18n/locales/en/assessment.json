@@ -373,5 +373,89 @@
     "smart_measurable": "Measurable",
     "smart_deadline": "Deadline",
     "confidential": "Confidential — for trainer & client use only"
+  },
+  "detail": {
+    "acsm_chip_title": "ACSM risk category (Pre-participation)",
+    "acsm_label": "ACSM",
+    "recovery_label": "Recovery",
+    "recovery_chip_tooltip": "Sleep {{sleep}}/10 · Stress {{stress}}/10 · Soreness {{sore}}/10",
+    "year_view_title": "View longitudinal evolution across all blocks",
+    "year_view_label": "Year view",
+    "stage": {
+      "open": "Open",
+      "view_draft": "View draft →",
+      "generate_blueprint": "Generate Blueprint →",
+      "generate_microcycle": "Generate Microcycle →",
+      "generate_progressions": "Generate Progressions →",
+      "blueprint_draft_hint": "You have an unapproved draft — open it to pick up where you left off.",
+      "blueprint_help": "Mesocycle skeleton: session archetypes, week × day map, progression model. Click to generate and review.",
+      "microcycle_draft_hint": "You have generated days waiting for approval — open to continue.",
+      "microcycle_help": "Detailed week 1 — exercises, sets, reps, RPE per day. Click to generate.",
+      "microcycle_blocked": "Approve the Blueprint first.",
+      "progressions_draft_hint": "You have proposed deltas waiting for approval — open to review.",
+      "progressions_help": "Progression deltas for weeks 2+. Click to generate.",
+      "progressions_blocked": "Approve the Microcycle first."
+    },
+    "plans": {
+      "new_manual": "New plan (manual)",
+      "manual_failed": "Failed to create plan.",
+      "evolve_disabled": "Mark a plan as finished to evolve it.",
+      "evolve_help": "Generate next block from the last finished one.",
+      "evolve_success": "Next block created.",
+      "evolve_failed": "Failed to evolve the plan."
+    },
+    "risk": {
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low",
+      "caption_high": "Medical approval recommended",
+      "caption_moderate": "Assess before high loads",
+      "caption_low": "No clearance needed"
+    },
+    "recovery": {
+      "high": "High",
+      "moderate": "Moderate",
+      "low": "Low",
+      "sleep_part": "sleep {{n}}/10",
+      "stress_part": "stress {{n}}/10",
+      "no_data": "No sleep/stress data"
+    },
+    "body_comp": {
+      "no_data": "Add measurements for interpretation",
+      "high_risk": "Elevated cardiometabolic risk",
+      "moderate_risk": "Moderate risk · monitor",
+      "healthy": "Healthy pattern"
+    },
+    "synthesis": {
+      "title": "Assessment synthesis",
+      "analysed": "{{n}}/{{total}} sections analysed",
+      "stat_risk": "ACSM risk",
+      "stat_recovery": "Recovery profile",
+      "stat_body_comp": "Body composition",
+      "alerts": "Warning signs · {{n}}"
+    },
+    "snapshot": {
+      "title": "Client snapshot",
+      "last": "Last assessment · {{when}}",
+      "risk_acsm": "ACSM risk",
+      "recovery": "Recovery",
+      "composition": "Composition"
+    },
+    "section": {
+      "title": "Assessment",
+      "expand_short": "expand",
+      "collapse": "Collapse assessment",
+      "view_all": "Show all",
+      "focus_mode": "Focus mode",
+      "focus_tip_show_all": "Show all sections",
+      "focus_tip_focus": "Focus one section at a time",
+      "expand_all": "Expand all",
+      "collapse_all": "Collapse all",
+      "tabs_aria": "Assessment sections",
+      "prev": "Previous",
+      "next": "Next",
+      "unavailable": "Section unavailable."
+    },
+    "analysing_section": "Analysing this section…"
   }
 }
