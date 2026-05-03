@@ -1,134 +1,275 @@
-# Part 2 — Adaptive intake + metabolism/steps + AI SMART helper
+# Próxima ronda — Forge ready-to-use (P0 → P1 → P2)
 
-Two waves. Wave A finishes the Part 2 we agreed on last round. Wave B picks up the new feedback. Both sweat the "técnica > força bruta" rule: cheapest model that does the job, real value per question, no fluff.
-
----
-
-## Wave A — Adaptive intake (the original Part 2)
-
-### A1. Remove "Who is this for?" slide
-
-Already inferred from context (intake link → `coached`, `/welcome` solo route → `self`). The slide is redundant. Default `intake_path = "coached"` when the form is loaded via `/intake/$token`, skip rendering it. Keep the field in the schema (already supported) so nothing breaks.
-
-### A2. Add missing slides (real coaching info — currently dropped)
-
-New slides between current "Experience" and "Location":
-
-1. **Anthropometry** — height (cm), current weight (kg), optional waist (cm). Persists to `assessments.height_cm`, `weight_kg`, `extended.waist_cm`. Skippable.
-2. **Training history** — years training (pill: <1, 1–3, 3–5, 5–10, 10+), longest consistent streak (months), prior injuries narrative (already partly there, promote it).
-3. **Real availability** — instead of just "days/week + duration", a 7-day pill grid (Seg–Dom multi-select) + typical window (manhã/almoço/tarde/noite). This survives the "I can do 4 days but only Tue/Thu/Sat/Sun" reality. Stored on `extended.weekday_availability[]` + `extended.window`.
-4. **Modality preference** — pill multi: força, hipertrofia, condicionamento, mobilidade, desporto-específico, perder gordura, ganhar massa. Currently inferred from goal — making it explicit takes 4 seconds and unblocks better Stage 2 archetypes.
-5. **Secondary goal** (optional) — same SMART micro-pattern as primary, but skippable. Persists to `extended.secondary_goal_*`.
-
-All slides use the existing `Skip` mechanism, all copy through `intake.json` PT/EN.
-
-### A3. Photo upload polish (carryover)
-
-Already wired to IndexedDB + retry — verify hydration on coach side `clients_.$clientId.tsx`. Add a 2x2 thumbnail row reading from `assessments.extended.photos` with signed URLs (server fn `getClientPhotoUrls`). Lightbox on click. No editing UI yet.
+**Objetivo:** app utilizável "out of the box" → cliente vê portal próprio → custos travados.
 
 ---
 
-## Wave B — New feedback
+## Onda P0 — Limpeza + correções críticas (~1h)
 
-### B1. AI-suggested SMART (cheapest model, accept/edit)
+### 1. Top bar responsive proper
 
-User writes the goal in slide 2 (`smart_specific`). Slide 3 currently asks them to also write metric + deadline manually — most clients freeze here.
+`src/components/AppShell.tsx`**:**
 
-**Flow:**
-- After slide 2, call new server fn `suggestSmartMetric` with `{ goal, profile_hint }` → returns `{ measurable: string, deadline_iso: string, rationale: string }`.
-- Model: `google/gemini-3-flash-preview` (cheapest, ~$0.0001/call). Hard cap 200 output tokens. JSON tool-call.
-- Prefill slide 3 with the suggestion + a small "✨ proposto pelo Forge — edita se quiser" chip. User just taps Next.
-- Cache result in `extended.ai_smart_suggestion` so re-renders don't re-call.
-- Skip-safe: if AI fails, fallback to the current empty inputs.
+- Breakpoint nav desktop: `md` (768) → `lg` (1024). Abaixo: hamburger
+- Entre `lg`–`xl`: só ícones com `title` tooltip
+- Founder badge: só ícone Sparkles abaixo de `xl`
+- ShareAppButton: hidden `<lg`
 
-Cost ceiling: ~1 call per intake. Negligible.
+### 2. StageCard colapsa fisicamente
 
-### B2. Metabolism + activity panel in assessment
+`src/components/StageCard.tsx`**:**
 
-New compact card on the existing slide that already asks `ext_hours_seated` / `ext_daily_steps` / `ext_job_type`. Promote it into a proper "Atividade & metabolismo" slide with:
+- Trocar classe `hidden` por `{!collapsed && children}` (não basta esconder visualmente — não renderizar)
+- Auditar todos os usos para garantir consistência
 
-- **BMR** auto-computed (Mifflin-St Jeor, needs sex + age + height + weight — sex pill added here, age from `client_dob` if present).
-- **Activity factor** picked via pill: sedentário 1.2 / leve 1.375 / moderado 1.55 / ativo 1.725 / muito ativo 1.9.
-- **TDEE** = BMR × factor, shown live as the user picks.
-- **Treino estimado** = sessions/week × duration × MET (rough lookup by experience level), shown as kcal/week.
-- Persisted to `extended.metabolism = { bmr, activity_factor, tdee, training_kcal_week, sex }`.
-- Pure client-side math, no AI call. ~50 LOC of `src/lib/metabolism.ts` + tiny component.
+### 3. Foto rosto intake → perfil cliente
 
-This is data that **directly improves** Stage 2/3 prompts (we can pass `tdee` so volume prescription respects energy availability).
+`src/server/intake.functions.ts` **(submitIntake):**
 
-### B3. Daily-step logging (lightweight, no device sync)
+```ts
+if (extended.photos?.face && !clients.photo_url) {
+  clients.photo_url = extended.photos.face;
+  clients.photo_verified = true; // ✓ amber badge no avatar
+}
 
-**Scope honesty:** no Apple Health / Google Fit integration this round (huge surface, OAuth, native bridges). Manual logging only — but make it 5-second fast.
+```
 
-- New table `daily_activity_log (client_id, date, steps int, notes text)` with RLS scoped to trainer + client (via intake token in client-side log routes).
-- Tiny widget in `/log/$token` and on coach client page: "Quantos passos hoje?" + history sparkline (last 14 days).
-- Compute kcal from steps cheaply: `steps × weight_kg × 0.0005` (standard ACSM walking estimate).
-- Show on client overview alongside compliance: "Passos médios 7d: 8.2k · ~310 kcal/dia".
-- No notifications, no goals enforcement — just visibility. The user explicitly said "no devices, just track manually for now."
+- Cliente pode auto-upload depois (perde `photo_verified`)
+- Migration adicionar coluna `clients.photo_verified boolean default false`
 
-Defer to next round (P1 not P0 here): integration with Apple Health / step counters.
+### 4. Demo escondido para users normais
 
-### B4. "Where will you train?" → multi-select
+- `src/routes/clients.tsx`: gate DemoLabPanel + botão "Cliente demo" atrás de `isFounder && search.lab === '1'`
+- `src/routes/dashboard.tsx`: idem DemoClientBanner
+- **Migration cleanup:** `DELETE FROM clients WHERE is_demo=true AND trainer_id=<founder_uid>` (com confirmação log)
+- Demo só acessível via `/clients?lab=1` para founder
 
-Trivial change. Pills component already supports `value: string[]`. Convert `training_location` from string → string[] in form state, persist as comma-joined to keep the column shape (or migrate the column to text[] — preferred, cleaner). I'll do the proper migration.
+### 5. Intake "Who is this for?" → coaching mode
 
-### B5. Expanded equipment catalog (3–5× more)
+`src/routes/intake.$token.tsx` **(slide 2):**
 
-Current list has 8 items. New catalog grouped by category, each with i18n key + emoji-free label. ~35 items across:
+Trocar pergunta atual por:
 
-- **Barras & discos** — barbell, EZ bar, trap bar, plates standard, plates olympic
-- **Halteres & kettlebells** — dumbbells fixed, dumbbells adjustable, kettlebells single, kettlebells set
-- **Máquinas** — cable machine, smith machine, leg press, lat pulldown, hack squat, leg curl/ext, chest press
-- **Bancos & racks** — flat bench, adjustable bench, squat rack, power rack, dip station
-- **Corpo & suspensão** — pull-up bar, dip bar, parallettes, gymnastic rings, TRX
-- **Cardio** — treadmill, stationary bike, rower, assault bike, jump rope, stair climber
-- **Mobilidade & acessórios** — resistance bands, mini-bands, foam roller, lacrosse ball, sliders, ab wheel, medicine ball, slam ball, sandbag, plyo box
-- **Espaço** — outdoor track, hill, pool
+```
+"Como vais treinar comigo?"
+- Presencial
+- Online (longa distância)
+- Híbrido
 
-Stored as IDs in `available_equipment text[]`. Group headers in UI. Search/filter input on top because 35 pills need it. Catalog lives in `src/lib/equipment-catalog.ts` (already exists — extend it).
+```
+
+Grava em `extended.coaching_mode`. Stage 3 microcycle usa para decidir nível de detalhe das cues (presencial = breve, online = detalhado).
+
+### 6. Tela final intake — nome + animação
+
+`src/routes/intake.$token.tsx` **(final screen):**
+
+```tsx
+const firstName = formState.client_full_name?.split(' ')[0];
+"Obrigado{firstName ? `, ${firstName}` : ''}!
+O teu treinador vai rever isto antes da primeira sessão."
+
+```
+
+- Animação CSS-only: anel amber pulse 1× + check com spring (0.5s, sem Lottie)
+
+### 7. Auth no fim do intake (opcional)
+
+`src/routes/intake.$token.tsx` **(novo slide pós-thanks):**
+
+Card opcional:
+
+```
+"Cria a tua conta para acompanhar o plano"
+- Email pré-preenchido (read-only)
+- Senha OU "Sign in with Google"
+- Botão "Criar conta" → auth.signUp + clients.user_id = uid + profiles.account_type = 'coached_client' → redirect /me
+- Botão "Skip" → magic link enviado, pode registar depois
+
+```
+
+Skip é safe — não bloqueia entrega ao PT.
+
+### 8. Adicionar cliente manual
+
+`src/routes/clients.tsx` **(dialog "novo cliente"):**
+
+Tabs ou dropdown:
+
+- "Convidar via link" (atual)
+- "Adicionar manual" (novo): nome + email opcional → cria com `intake_status='manual'` → abre `/clients/$id` para PT preencher à mão
 
 ---
 
-## Technical summary
+## Onda P1 — Portal cliente + intake rico (~1.5h)
 
-**New / modified files:**
-- `src/routes/intake.$token.tsx` — slide additions, multi-select location, prefill SMART
-- `src/lib/metabolism.ts` (new) — Mifflin + TDEE
-- `src/components/intake/MetabolismPanel.tsx` (new)
-- `src/lib/equipment-catalog.ts` — expand to ~35 items, group metadata
-- `src/server/intake-ai.functions.ts` — add `suggestSmartMetric`
-- `src/server/daily-activity.functions.ts` (new) — log + read 14-day window
-- `src/routes/log.$token.tsx` — steps widget
-- `src/routes/clients_.$clientId.tsx` — photos thumb row + steps mini-chart
-- i18n: `intake.json`, `common.json`, `assessment.json` PT+EN
+### 9. Rota `/me` — cliente vê plano (read-only)
 
-**Migrations:**
-1. `assessments`: add `extended` schema usage docs (no DDL — already JSONB).
-2. `clients.training_location` → `text[]` (with safe backfill: `string_to_array(training_location, ',')`).
-3. New table `daily_activity_log` with RLS (trainer can read all of own clients; intake-token read+insert via server fn using service role).
+**Auto-redirect:** se `profiles.account_type='coached_client'` e `clients.user_id=auth.uid()`, `/dashboard` → `/me`.
 
-**Cost discipline:**
-- 1 cheap AI call per intake (SMART suggest, ~$0.0001).
-- 0 AI calls for metabolism/steps (pure math).
-- All text fits the existing slide animation cost.
+`src/routes/me.tsx` **(novo):**
 
-**Ordering of work:**
-1. Migration (location → text[], new daily_activity_log).
-2. Metabolism panel + equipment expansion + multi-location (no AI, fast wins).
-3. Slide additions (anthropometry, history, real availability, modality, secondary).
-4. AI SMART helper.
-5. Steps widget (client log + coach view).
-6. Photo thumbs on coach page.
+Voz "tu", read-only, secções:
 
-After this round the assessment carries everything Stage 2 actually needs to prescribe honestly: real availability, real equipment, energy budget, history depth. No food tracking yet (correctly out of scope).
+1. **Próxima sessão** — data + foco + botão "Ver sessão"
+2. **Plano atual** — semana X de Y, blocos visuais (cor por fase), RPE alvo
+3. **Evolução** — sparkline e1RM dos lifts principais; tabela sessões logadas
+4. **Pagamentos** — tabela `client_payments` (a criar): data | pack | EUR | status
+5. **Feedback** — botão "Pedir ajuste" → modal → `client_messages` table → notifica PT
+
+### 10. Red-team portal — proteções
+
+**RLS strict:**
+
+```sql
+-- coached_client só vê o seu próprio
+CREATE POLICY clients_self ON clients FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY plans_own ON workout_plans FOR SELECT USING (
+  client_id IN (SELECT id FROM clients WHERE user_id = auth.uid())
+);
+-- idem sessions, payments, client_messages
+
+```
+
+**Bloqueios:**
+
+- Coached_client não pode: editar plano, ver IA logs, ver `trainer_id`, ver custos, ver outros clientes
+- `client_messages`: unidirecional (cliente → PT only)
+- Foto self-uploaded: perde `photo_verified` badge
+
+### 11. Intake — ergonomia + secções
+
+**Lesões:** chips frequentes (`Joelho`, `Lombar`, `Ombro`, `Punho`, `Tornozelo`, `Quadril`) + campo livre.
+
+**Equipamento:** remover separadores; single list; categoria por **cor** + legenda lateral colapsável (poupa altura).
+
+**Fotos:**
+
+- Secção "Perfil" (rosto) — separada de "Postura/Evolução" (corpo 4 ângulos)
+
+**Novas secções:**
+
+- Histórico exames recentes (BP, colesterol, etc — opcional)
+- Contacto emergência (nome + tel)
+- Fuso horário (online clients)
+- Preferência comunicação: WhatsApp / Email / In-app
+
+**Animação final:** CSS @keyframes (check spring, anel pulse). Sem Lottie.
+
+### 12. Smart measurable + deadline com IA
+
+**Slide novo (antes de "thanks"):**
+
+```
+"Como vais medir progresso? Até quando?"
+
+Chips: 1RM | Reps | Aparência | Força relativa | Custom
++ Botão "💡 Sugerir com IA" → google/gemini-flash (~$0.0001/call)
+  Input: goal + training_age + sport + coaching_mode
+  Output: "Recomendação: XXX até DD/MM"
+  Cliente aceita ou edita
+Grava em extended.goal_measurable + extended.goal_deadline
+
+```
 
 ---
 
-## What I'm explicitly **not** doing this round
+## Onda P2 — Custos + merge + housekeeping (~1h)
 
-- Apple Health / Google Fit / wearables — separate beast, P2.
-- Food tracking — confirmed parked.
-- Solo `/me` dashboard buildout — already deferred; `/welcome` lands solo users in the standard dashboard for now.
-- Posture analysis from photos — kept honest as "visual progress only."
+### 13. Merge `/schedule` ↔ `/clients`
 
-Approve and I'll execute in the order above, smoking each migration with a backup first per the non-negotiables.
+`src/routes/clients.tsx`**:**
+
+Lista densa default:
+
+- Linha: avatar | nome | nº planos | última sessão | próxima sessão | fase | ações
+- Sort: nome / última / próxima / plano ativo
+- Filtros: all / onboarding / active / idle / ready
+
+Botão "📅 Agenda" → `?view=calendar` (sub-vista, mesma rota, grid semana)
+
+Eliminar rota `/schedule` isolada (redirect para `/clients?view=calendar`).
+
+### 14. Drop-off radar → "Reengajamento"
+
+- Renomear "Drop-off radar" → "Reengajamento" (PT)
+- Adicionar `<InfoHint/>`: *"Detecta clientes >7 dias sem sessão. Sugere mensagem para reengajar."*
+
+### 15. Cost guardrails (CRÍTICO)
+
+**Hard cap mensal:**
+
+```ts
+// profiles.monthly_ai_cents_cap
+// default: 500 (€5) free | 2000 (€20) paid
+
+// Helper antes de cada call AI:
+async function assertWithinBudget(userId, modelCost) {
+  const spent = await getMonthSpend(userId);
+  const cap = await getCap(userId);
+  if (spent + modelCost > cap) {
+    return { error: 'budget_exceeded', toast: 'Limite mensal atingido' };
+  }
+}
+
+```
+
+**Routing barato por defeito:**
+
+- Stage 1 (brief): Google Gemini Flash
+- Stage 2 (blueprint): Haiku ou Gemini Flash
+- Stage 3 (microcycle): GPT-5 / Sonnet **só em dias críticos**; resto determinístico (RPE floor + fórmula volume + templates)
+- Stage 4 (finalize): SQL puro, zero IA
+
+**Demo:** clones SQL pré-cooked, zero IA. Manter como está.
+
+**Telemetria founder:**
+
+- `/founder/costs` — spend agregado/mês, breakdown user, sparkline trend
+
+### 16. Renomear "Estúdio de treino" → **"Bancada"**
+
+(Alinha com `WorkbenchMockup`, vibe craftwork PT)
+
+### 17. Botão duplicado new client
+
+Após P0 #4 + #8 — fica um único dropdown CTA: "+ Convidar via link / Adicionar manual".
+
+### 18. Filtros + arquivar + bulk actions
+
+`/clients` **e** `/templates`**:**
+
+Header: sort por nome / criado / última atividade
+
+Multi-select (checkbox row):
+
+- Arquivar
+- Exportar CSV
+- Apagar (só archived, com `AlertDialog` confirm — segurança contra apagar ativos)
+
+Toggle "Mostrar arquivados?" → revela coluna escondida by default.
+
+---
+
+## Ordem de execução
+
+
+| Onda | Items | Tempo | Entrega                            |
+| ---- | ----- | ----- | ---------------------------------- |
+| P0   | 1–8   | ~1h   | App utilizável, sem ar de obra     |
+| P1   | 9–12  | ~1.5h | Portal cliente + intake polido     |
+| P2   | 13–18 | ~1h   | Custos safe + merge + housekeeping |
+
+
+---
+
+## Respostas às perguntas (decididas)
+
+1. **Nome:** "Bancada" (alinha com WorkbenchMockup já existente)
+2. **Demo cleanup:** **Sim**, apagar clientes demo dos founders + esconder UI para non-founders
+3. **/me pagamentos:** **Sim** — cliente vê valores quando já pago + status do pendente (transparência > opacidade)
+4. **Auth no intake:** **Opcional** (skip envia magic link). Não bloqueia entrega.
+
+---
+
+**GO.**
