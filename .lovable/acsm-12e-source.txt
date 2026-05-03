@@ -1,0 +1,26 @@
+ACSM 12th Edition — Source & Access Policy
+==========================================
+
+Source: ACSM's Guidelines for Exercise Testing and Prescription, 12th Edition (2025)
+Editors: Cemal Ozemek, Amanda Bonikowske, Jeffrey Christle, Paul Gallo
+Publisher: Wolters Kluwer (Lippincott Williams & Wilkins)
+ISBN: 978-1-9752-1920-8
+Pages: 1,153 / 12 chapters + appendices
+
+PDF location (NOT in repo):
+  /mnt/documents/acsm-12e.pdf  (agent-accessible only; outside repo; never bundled)
+
+IP rule (binds every round):
+  - NEVER render verbatim chapter prose to end users (trainer or client UIs, PDFs, exports).
+  - ALLOWED: paraphrased rules, numeric thresholds, FITT ranges, normative tables as
+    derived parameters, citation strings of the form "ACSM 12e §X.Y" or "ACSM 12e Tbl X.Y".
+  - Storage: paraphrased prose lives only in `acsm_chapters` / `acsm_sections` (RLS deny-all,
+    service-role only). Derived facts in `acsm_recommendations` / `acsm_contraindications` /
+    `acsm_normatives` are trainer-readable.
+  - No public RAG chat over the book. Internal retrieval feeds prompts; outputs are
+    paraphrased + cited.
+
+Edition handover (per Round-1 brief):
+  - Wholesale migrate to 12e values where they differ from current code (which is 11e-leaning).
+  - Where 12e is LESS conservative than the existing threshold, flag in the gap report and
+    require explicit approval before adopting.
