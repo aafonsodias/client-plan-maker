@@ -428,7 +428,7 @@ Brief context:
 
 Generate ONLY this single day's session.`;
 
-  const model = resolveModel("FORGE_MODEL_STAGE_3", "claude-sonnet-4-5-20250929");
+  const model = resolveModel("FORGE_MODEL_STAGE_3", "openai/gpt-5");
   const result = await callAnthropicWithSchema({
     model,
     system,
