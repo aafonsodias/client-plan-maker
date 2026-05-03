@@ -511,5 +511,19 @@
     "not_assessed": "Ainda não avaliado",
     "capacity_label": "Capacidade (opcional)",
     "tooltip_aria": "Detalhe técnico"
+  },
+  "logbook": {
+    "empty": "Sem sessões registadas ainda. Marca \"Feita\" num dia para começar a história.",
+    "title": "Cronologia do logbook",
+    "sessions_count": "· {{n}} sessões registadas",
+    "week": "Semana {{n}}",
+    "done_of": "{{done}}/{{total}} feitas",
+    "pr_short": "PR",
+    "pr_count": "PR · {{n}}",
+    "no_detail": "Sem registo detalhado.",
+    "exercise_fallback": "Exercício",
+    "pr_toast": "PR — {{names}}",
+    "pr_toast_more": "PR — {{names}} +{{rest}}",
+    "pr_desc": "Novo recorde de e1RM neste plano."
   }
 }
