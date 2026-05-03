@@ -135,7 +135,7 @@ const DISEASE_PATTERNS: Array<[RegExp, string]> = [
   [/\b(valvular|estenose a[óo]rtica|insufici[eê]ncia mitral)\b/i, "valvular_disease"],
   [/\b(arritmia|atrial fib|fibrila[cç][ãa]o auricular|AFib)\b/i, "arrhythmia"],
   [/\bpacemaker|cardiov[ée]rsor|ICD\b/i, "implanted_device"],
-  [/\b(diabetes|DM ?[12]|T1D|T2D)\b/i, "diabetes"],
+  [/\b(diabetes|DM ?[12]|DM\s+tipo\s+[12]|diabetes\s+mellitus|T1D|T2D)\b/i, "diabetes"],
   [/\b(insufici[eê]ncia renal|chronic kidney disease|CKD|di[áa]lise|dialysis)\b/i, "renal_disease"],
   [/\b(DPOC|COPD|asma severa)\b/i, "pulmonary_disease"],
   [/\b(AVC|stroke|TIA)\b/i, "cerebrovascular"],
