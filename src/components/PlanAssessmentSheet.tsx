@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
@@ -16,6 +17,7 @@ type Props = {
  * trainers click "Open full assessment" to edit.
  */
 export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Props) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [a, setA] = useState<any>(null);
@@ -46,14 +48,14 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={triggerVariant} size="sm" className="h-8" title="Ver avaliação do cliente">
-          <ClipboardList className="mr-1.5 h-3.5 w-3.5" /> Avaliação
+        <Button variant={triggerVariant} size="sm" className="h-8" title={t("assessment_sheet.trigger_title")}>
+          <ClipboardList className="mr-1.5 h-3.5 w-3.5" /> {t("assessment_sheet.trigger")}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
-            Avaliação
+            {t("assessment_sheet.title")}
             {archetype && (
               <span className="rounded-full bg-accent/10 border border-accent/30 text-accent px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest">
                 {archetype}
@@ -64,25 +66,25 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
-            <Loader2 className="h-4 w-4 animate-spin" /> A carregar…
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("assessment_sheet.loading")}
           </div>
         ) : !a ? (
-          <p className="text-sm text-muted-foreground py-6">Sem avaliação registada.</p>
+          <p className="text-sm text-muted-foreground py-6">{t("assessment_sheet.none")}</p>
         ) : (
           <div className="space-y-4 py-4 text-sm">
-            <Row label="Realizada" value={a.performed_on ?? "—"} />
-            <Row label="Objetivo" value={a.primary_goal ?? "—"} />
-            <Row label="Experiência" value={a.experience_level ?? "—"} />
-            <Row label="Frequência" value={a.training_days_per_week ? `${a.training_days_per_week}×/sem` : "—"} />
-            <Row label="Duração da sessão" value={a.session_duration_minutes ? `${a.session_duration_minutes} min` : "—"} />
-            <Row label="Risco ACSM" value={a.acsm_risk_category ?? "—"} tone={a.acsm_risk_category === "high" ? "warn" : "neutral"} />
-            <Row label="PAR-Q+" value={a.parq_passed === false ? "Falhou (≥1 sim)" : a.parq_passed === true ? "Passou" : "—"} tone={a.parq_passed === false ? "warn" : "neutral"} />
+            <Row label={t("assessment_sheet.performed_on")} value={a.performed_on ?? "—"} />
+            <Row label={t("assessment_sheet.primary_goal")} value={a.primary_goal ?? "—"} />
+            <Row label={t("assessment_sheet.experience")} value={a.experience_level ?? "—"} />
+            <Row label={t("assessment_sheet.frequency")} value={a.training_days_per_week ? t("assessment_sheet.freq_value", { n: a.training_days_per_week }) : "—"} />
+            <Row label={t("assessment_sheet.duration")} value={a.session_duration_minutes ? t("assessment_sheet.duration_value", { n: a.session_duration_minutes }) : "—"} />
+            <Row label={t("assessment_sheet.acsm")} value={a.acsm_risk_category ?? "—"} tone={a.acsm_risk_category === "high" ? "warn" : "neutral"} />
+            <Row label={t("assessment_sheet.parq")} value={a.parq_passed === false ? t("assessment_sheet.parq_failed") : a.parq_passed === true ? t("assessment_sheet.parq_passed") : "—"} tone={a.parq_passed === false ? "warn" : "neutral"} />
             {(a.systolic_bp_mmhg || a.diastolic_bp_mmhg) && (
-              <Row label="TA" value={`${a.systolic_bp_mmhg ?? "?"}/${a.diastolic_bp_mmhg ?? "?"} mmHg`} />
+              <Row label={t("assessment_sheet.bp")} value={`${a.systolic_bp_mmhg ?? "?"}/${a.diastolic_bp_mmhg ?? "?"} mmHg`} />
             )}
 
             {equipment.length > 0 && (
-              <Block label="Equipamento">
+              <Block label={t("assessment_sheet.equipment")}>
                 <div className="flex flex-wrap gap-1.5">
                   {equipment.map((e) => (
                     <span key={e} className="rounded-full bg-secondary text-secondary-foreground px-2 py-0.5 text-[11px]">{e}</span>
@@ -92,7 +94,7 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
             )}
 
             {medFlags.length > 0 && (
-              <Block label="Sinalizações médicas">
+              <Block label={t("assessment_sheet.med_flags")}>
                 <div className="flex flex-wrap gap-1.5">
                   {medFlags.map((f) => (
                     <span key={f} className="rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 px-2 py-0.5 text-[11px] font-mono">{f}</span>
@@ -102,7 +104,7 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
             )}
 
             {expectedFlags.length > 0 && (
-              <Block label="Red flags da persona (demo)">
+              <Block label={t("assessment_sheet.expected_red_flags")}>
                 <div className="flex flex-wrap gap-1.5">
                   {expectedFlags.map((f) => (
                     <span key={f} className="rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 px-2 py-0.5 text-[11px] font-mono">{f}</span>
@@ -111,15 +113,15 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
               </Block>
             )}
 
-            {a.injuries && <Block label="Lesões"><p className="whitespace-pre-wrap text-foreground/90">{a.injuries}</p></Block>}
-            {a.medical_conditions && <Block label="Condições"><p className="whitespace-pre-wrap text-foreground/90">{a.medical_conditions}</p></Block>}
-            {a.medications && <Block label="Medicação"><p className="whitespace-pre-wrap text-foreground/90">{a.medications}</p></Block>}
+            {a.injuries && <Block label={t("assessment_sheet.injuries")}><p className="whitespace-pre-wrap text-foreground/90">{a.injuries}</p></Block>}
+            {a.medical_conditions && <Block label={t("assessment_sheet.conditions")}><p className="whitespace-pre-wrap text-foreground/90">{a.medical_conditions}</p></Block>}
+            {a.medications && <Block label={t("assessment_sheet.medications")}><p className="whitespace-pre-wrap text-foreground/90">{a.medications}</p></Block>}
 
             {(a.smart_specific || a.smart_measurable || a.smart_deadline) && (
-              <Block label="Objetivo SMART">
+              <Block label={t("assessment_sheet.smart_goal")}>
                 {a.smart_specific && <p className="text-foreground/90">{a.smart_specific}</p>}
-                {a.smart_measurable && <p className="text-muted-foreground text-xs mt-1">Métrica: {a.smart_measurable}</p>}
-                {a.smart_deadline && <p className="text-muted-foreground text-xs mt-1">Prazo: {a.smart_deadline}</p>}
+                {a.smart_measurable && <p className="text-muted-foreground text-xs mt-1">{t("assessment_sheet.metric")}: {a.smart_measurable}</p>}
+                {a.smart_deadline && <p className="text-muted-foreground text-xs mt-1">{t("assessment_sheet.deadline")}: {a.smart_deadline}</p>}
               </Block>
             )}
 
@@ -127,14 +129,14 @@ export function PlanAssessmentSheet({ clientId, triggerVariant = "outline" }: Pr
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex gap-2 text-xs">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-amber-700 dark:text-amber-300">
-                  Verifique se o plano respeita as restrições antes de partilhar.
+                  {t("assessment_sheet.warning")}
                 </p>
               </div>
             )}
 
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to="/clients/$clientId" params={{ clientId }}>
-                <ExternalLink className="mr-2 h-3.5 w-3.5" /> Abrir avaliação completa
+                <ExternalLink className="mr-2 h-3.5 w-3.5" /> {t("assessment_sheet.open_full")}
               </Link>
             </Button>
           </div>
