@@ -18,6 +18,7 @@ import {
   exercisesInSummary,
   type YearSummary,
 } from "@/lib/longitudinal";
+import { verdictMixSummary } from "@/lib/block-adaptation";
 
 type Props = { clientId: string };
 
@@ -162,6 +163,7 @@ export default function YearView({ clientId }: Props) {
                 <th className="py-2 text-right font-semibold">Adesão</th>
                 <th className="py-2 text-right font-semibold">RPE médio</th>
                 <th className="py-2 text-right font-semibold">Tonelagem</th>
+                <th className="py-2 text-left font-semibold">Adaptação</th>
               </tr>
             </thead>
             <tbody>
@@ -181,6 +183,7 @@ export default function YearView({ clientId }: Props) {
                     <td className="py-2 text-right tabular-nums">{adh}%</td>
                     <td className="py-2 text-right tabular-nums">{avgRpe ?? "—"}</td>
                     <td className="py-2 text-right tabular-nums">{tonnage.toLocaleString()} kg</td>
+                    <td className="py-2 text-muted-foreground">{verdictMixSummary((b as any).blockFeedback)}</td>
                   </tr>
                 );
               })}

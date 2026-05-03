@@ -5,9 +5,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { computeWeeklyVolume, type PlanLike } from "@/lib/volume-compute";
 import { MuscleVolumeRadar } from "./MuscleVolumeRadar";
 import { VolumeStatusTable } from "./VolumeStatusTable";
+import type { AdaptationRow } from "@/lib/block-adaptation";
 
 type Props = {
   plan: PlanLike;
+  adaptation?: AdaptationRow[];
 };
 
 /**
@@ -15,7 +17,7 @@ type Props = {
  * Counts sets per muscle group across each week and compares to MEV/MAV/MRV.
  * Pure read-only diagnosis. We never auto-edit the plan.
  */
-export function VolumeSection({ plan }: Props) {
+export function VolumeSection({ plan, adaptation }: Props) {
   const byWeek = useMemo(() => computeWeeklyVolume(plan), [plan]);
   const weeks = useMemo(
     () => Array.from(byWeek.keys()).sort((a, b) => a - b),
@@ -103,7 +105,7 @@ export function VolumeSection({ plan }: Props) {
           </div>
         </div>
         <div className="min-w-0">
-          <VolumeStatusTable volume={currentVolume} />
+          <VolumeStatusTable volume={currentVolume} adaptation={adaptation} />
         </div>
       </div>
     </section>

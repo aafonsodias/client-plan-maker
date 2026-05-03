@@ -9,6 +9,8 @@ import {
 } from "@/lib/volume-landmarks";
 import { roundSets, type VolumeByMuscle } from "@/lib/volume-compute";
 import { toneChip, toneDot, type Tone } from "@/lib/status-tone";
+import type { AdaptationRow } from "@/lib/block-adaptation";
+import { VERDICT_LABEL_PT } from "@/lib/block-adaptation";
 
 const STATUS_TONE: Record<VolumeStatus, Tone> = {
   under: "neutral",
@@ -45,14 +47,17 @@ function landmarkOf(m: MuscleGroup) {
 
 type Props = {
   volume: VolumeByMuscle;
+  adaptation?: AdaptationRow[];
 };
 
-export function VolumeStatusTable({ volume }: Props) {
+export function VolumeStatusTable({ volume, adaptation }: Props) {
+  const adaptByMuscle = new Map<MuscleGroup, AdaptationRow>();
+  for (const a of adaptation ?? []) adaptByMuscle.set(a.muscle, a);
   const rows = MUSCLE_GROUP_ORDER.map((m) => {
     const lm = landmarkOf(m);
     const sets = roundSets(volume[m]);
     const status = statusFor(sets, lm);
-    return { m, lm, sets, status };
+    return { m, lm, sets, status, adapt: adaptByMuscle.get(m) };
   });
 
   return (
@@ -80,6 +85,11 @@ export function VolumeStatusTable({ volume }: Props) {
             </span>
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">{messageFor(status, sets, lm)}</p>
+          {adaptByMuscle.get(m) && adaptByMuscle.get(m)!.verdict !== "on_target" && (
+            <p className="mt-1 text-[11px] text-amber-300">
+              ↘ ajustado · bloco anterior {VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict]}
+            </p>
+          )}
         </div>
       ))}
     </div>
@@ -100,6 +110,17 @@ export function VolumeStatusTable({ volume }: Props) {
                 <span className="inline-flex items-center gap-2">
                   <span className={`h-2 w-2 rounded-full ${toneDot(STATUS_TONE[status])}`} />
                   {MUSCLE_GROUP_LABELS_PT[m]}
+                  {adaptByMuscle.get(m) && adaptByMuscle.get(m)!.verdict !== "on_target" && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-help text-[10px] font-semibold text-amber-300">↘</span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-xs">
+                        Ajustado pelo bloco anterior · {VERDICT_LABEL_PT[adaptByMuscle.get(m)!.verdict]}.
+                        Tecto {adaptByMuscle.get(m)!.baseline.ceilingSets} → {adaptByMuscle.get(m)!.adapted.ceilingSets}.
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </span>
               </td>
               <td className="px-3 py-2.5 tabular-nums">
