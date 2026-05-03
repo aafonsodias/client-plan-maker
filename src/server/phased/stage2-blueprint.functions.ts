@@ -17,6 +17,11 @@ import {
   tierPromptBlock,
   validateBlueprintShape,
 } from "./programming-tier.server";
+import {
+  runPreparticipationAlgorithm,
+  type DesiredIntensity,
+} from "@/server/screening/preparticipation.server";
+import { deriveFittVpFromDb } from "@/server/fitt-vp/derive.server";
 
 const BLUEPRINT_TOOL_SCHEMA = {
   type: "object",
@@ -211,6 +216,49 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
       return { ok: false as const, error: result.error, zodError: (result as any).zodError };
     }
 
+    // ---- Derive FITT-VP prescription_parameters (R2.2 Phase C.1) ---------
+    // Pure DB-backed derivation — no AI. Persist to the dedicated column so
+    // Stage 3 can inject it as a non-negotiable constraint block.
+    const desiredIntensity: DesiredIntensity = ((): DesiredIntensity => {
+      const a = String((brief as any)?.intensity_appetite ?? "").toLowerCase();
+      if (a === "agressivo" || a === "aggressive") return "vigorous";
+      if (a === "conservador" || a === "conservative") return "light";
+      return "moderate";
+    })();
+    const prepart = runPreparticipationAlgorithm({
+      assessment: assessment ?? {},
+      desired_intensity: desiredIntensity,
+    });
+    const ageForPop =
+      (assessment?.extended as any)?.age ?? (assessment as any)?.age ?? null;
+    const population: "general" | "older_adults" =
+      typeof ageForPop === "number" && ageForPop >= 65 ? "older_adults" : "general";
+    let prescriptionParameters: any = null;
+    try {
+      prescriptionParameters = await deriveFittVpFromDb(
+        supabase,
+        brief,
+        tier,
+        prepart,
+        population,
+      );
+    } catch (e) {
+      // Non-fatal — log and continue. Stage 3 will fall back to its existing prompt.
+      await logGeneration(supabase, {
+        trainer_id: userId,
+        plan_id: data.planId,
+        stage: "stage2:fittvp_derive",
+        model_used: "deterministic",
+        input_tokens: 0,
+        output_tokens: 0,
+        cost_usd: 0,
+        zod_passed: false,
+        retry_count: 0,
+        duration_ms: 0,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
     const newState = GenerationStateSchema.parse({
       stage: "blueprint",
       approved_stages: ["brief"],
@@ -228,7 +276,17 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
           tier_auto: autoTier,
           tier_override: overrideTier ?? null,
           tier_guidelines: guidelines,
+          prepart_summary: {
+            clearance_required: prepart.clearance_required,
+            clearance_reason: prepart.clearance_reason,
+            cardiac_rehab_bp_exclusion: prepart.cardiac_rehab_bp_exclusion,
+            cvd_risk_count: prepart.cvd_risk_factors.count,
+            desired_intensity: prepart.desired_intensity,
+          },
         } as any,
+        ...(prescriptionParameters
+          ? { prescription_parameters: prescriptionParameters as any }
+          : {}),
         ...clearDownstream("blueprint"),
       })
       .eq("id", data.planId);
