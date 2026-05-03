@@ -1,123 +1,108 @@
-## **PLAN** — só uma revisão final, não código.
+# **PLAN** — só revisão final, sem código.
 
 ---
 
-Migration revista está aprovada. As 3 notas resolvidas exatamente como queria. Duas micro-observações antes de aplicares — nenhuma bloqueia.
+Sequência aprovada. Plano respeita os guardrails sem desvios. Três notas finas antes de avançares:
 
-### Obs 1 — Nomes das chaves dos signs/symptoms
+### Nota 1 — Custo esperado do Smoke #2
 
-No trigger usaste estes nomes:
+Disseste `$0.10–0.30` para uma persona end-to-end. Confirma que isso inclui retry caso o validator dispare. Se o validator falhar e disparar 1× retry, o custo dobra parcialmente (Stage 3 corre 2x). Se for o caso, ajusta a estimativa para `$0.20–0.50` worst case e aprova mesmo assim — vale a pena. Só quero o número honesto.
 
-```
-chest_discomfort, unreasonable_dyspnea, dizziness_syncope,
-orthopnea_pnd, ankle_edema, palpitations_tachycardia,
-intermittent_claudication, known_heart_murmur, unusual_fatigue
+### Nota 2 — Persistência do `prescription_parameters`
 
-```
+Disseste "coluna já existente ou via `generation_meta` — confirmar no wire-up". A coluna `workout_plans.prescription_parameters jsonb NOT NULL DEFAULT '{}'::jsonb` foi criada em R2.1 (Migration A). É lá que vai. Não é via `generation_meta`. Confirma que apontas para a coluna direta — senão temos dois sítios para o mesmo dado.
 
-Mas no comment da coluna `signs_symptoms` original (Migration A) tinhas:
+`generation_meta.fitt_vp_audit` é um sítio diferente: lá vão os resultados do **validator** (violations, retry counts, audit trail). São dois sítios distintos:
 
-```
-chest_pain, dyspnea, syncope, orthopnea, ankle_edema, palpitations,
-claudication, murmur, unusual_fatigue
+- `prescription_parameters` → o block FITT-VP gerado pelo derive (input para Stage 3)
+- `generation_meta.fitt_vp_audit` → o resultado da validação post-Stage-3
 
-```
+Se já tinhas isto claro, ignora. Mas vi a frase "ou via generation_meta" e quero confirmar antes de cementares.
 
-São listas diferentes. Os nomes do trigger são **mais clinicamente precisos** (ACSM 12e Box 2.1: "unreasonable dyspnea", "dizziness or syncope", "orthopnea or PND", "palpitations or tachycardia") — preferi-os.
+### Nota 3 — Persona do Smoke #2
 
-**Atualiza o COMMENT da coluna** `signs_symptoms` **para espelhar as chaves canónicas do trigger.** Senão fica drift entre comment (documentação) e trigger (enforcement). Mesma lista nos dois sítios.
+Sofia é boa escolha por ser caso default limpo. Mas considera trocar para uma persona ligeiramente mais interessante: alguém que dispare **pelo menos uma** especificidade no `prescription_parameters` — por exemplo, `older_adults` para validar que o derive seleciona o row correto de `flexibility_static_stretch_hold`, ou intent vigorous para validar que pega o row de `cardio_intensity_pct_hrr_vigorous`.
 
-### Obs 2 — Backfill no fim de R2.2 deve ser idempotente
+Sofia default vai mostrar moderate cardio + general flexibility — nada errado, mas não exercita o branching do derive.
 
-Quando correres o backfill de `cvd_risk_factors`:
+Sugestão: **Inês Bento** ou **Manuel Cardoso** se algum tiver perfil older adult; ou Pedro Vieira se quisermos testar o vigorous branch. Decisão tua.
 
-- Script tem de ser **idempotente** (correr 2x seguidas dá o mesmo resultado, não duplica nada)
-- Filtrar **só** assessments com `cvd_risk_factors = '{}'::jsonb` (não tocar nas que já foram classificadas pelo algorithm em writes pós-R2.2)
-- Reportar contagem: `total_assessments`, `already_classified`, `newly_classified`, `errors_per_reason` no smoke report
-- Wrap em transaction com savepoints por assessment — se uma falhar (e.g. dados inconsistentes), continua nas outras e reporta no fim
-
-Não é trabalho extra agora — só queria isto explicito antes de chegares lá.
+Se não quiseres complicar, Sofia está bem — a Secção 4 vai mostrar o JSON e basta para validar shape. As outras combinações testam-se em smoke runs futuros.
 
 ### Aprovação
 
-**Aplica Migration A revista** com a correção do COMMENT (Obs 1). Obs 2 fica registada para R2.2.
+Avança com Fase A → B → STOP GATE 1.
 
-Depois disso:
+Não passes para Fase C sem eu aprovar o report. Stop gate é stop gate.
 
-1. Mostra-me o seed dos 17 thresholds (parameter keys em snake_case descritivo) **antes** de aplicar.
-2. R2.2 algorithm + smoke report. **Stop gate até eu aprovar o smoke**.
-3. R2.2 backfill idempotente conforme Obs 2.
-4. R2.3 só depois.
+&nbsp;
 
-Avança.  
-Migration A — Revisões às 3 notas
+R2.2 — Close-out com Guardrails
 
-### Nota 1 — `cvd_risk_factors` populating strategy (resposta, sem mudar migration)
+Sequência ajustada conforme guardrails. Dois stop gates explícitos. Nada de backfill ou R2.3 sem aprovação.
 
-**Plano confirmado:** populated **on-write apenas** via `runPreparticipationAlgorithm()` em R2.2. Sem trigger derivado em SQL — manter a lógica de classificação ACSM Ch.2 em TypeScript (testável, citável, debugável) e não em PL/pgSQL.
+## Fase A — Wire-up dual (algoritmo only)
 
-- Assessments existentes ficam com `cvd_risk_factors = '{}'` (default) até serem re-saved.
-- **Backfill no fim de R2.2**, depois do algoritmo passar smoke test nos perfis demo. Backfill = um one-shot script que itera assessments com `cvd_risk_factors = '{}'` e corre o classifier server-side. Reportado no smoke report.
-- Coluna fica NOT NULL com default `{}` — semanticamente "ainda não classificado" = objeto vazio. UI lê `Object.keys(cvd_risk_factors).length === 0` para mostrar estado "pending classification".
+**Ficheiro tocado:** `src/server/programming/programming-tier.server.ts`
 
-**Migration não muda por causa desta nota.**
+- Importar `runPreparticipationAlgorithm` e `classifyCvdRiskFactors` de `src/server/screening/preparticipation.server.ts`.
+- Manter `hasMedicalClearanceFlag(assessment)` calculado em paralelo (`oldFlag`).
+- `newResult = runPreparticipationAlgorithm({ assessment, signs, desired_intensity })` passa a ser source-of-truth para `clearance_required` no tier classifier.
+- Expor ambos (`oldFlag`, `newResult`) no return interno do helper para o smoke harness conseguir ler o diff por persona.
+- Tier classifier consome `newResult.clearance_required` + `newResult.cvd_risk_factor_count` + BP gate (180/110 independente).
+- **Não** mexer ainda em Stage 2 / Stage 3 / derive.server.ts wire-up.
 
-### Nota 2 — Validation trigger reforçado (mudança na migration)
+## Fase B — Smoke offline #1 (algoritmo only, 10 personas)
 
-Adicionar checks leves a `validate_assessment_screening_ranges()`:
+**Script:** `scripts/r2.2-smoke.ts` (one-off, lê 10 demo assessments do DB via service role, corre o tier classifier, escreve markdown).
 
-```sql
--- signs_symptoms: se presente e não-vazio, tem de ser objeto;
--- chaves cardinais conhecidas, se presentes, têm de ser boolean.
-IF NEW.signs_symptoms IS NOT NULL AND NEW.signs_symptoms <> '{}'::jsonb THEN
-  IF jsonb_typeof(NEW.signs_symptoms) <> 'object' THEN
-    RAISE EXCEPTION 'signs_symptoms must be a JSON object';
-  END IF;
-  FOR _key IN SELECT unnest(ARRAY[
-    'chest_discomfort','unreasonable_dyspnea','dizziness_syncope',
-    'orthopnea_pnd','ankle_edema','palpitations_tachycardia',
-    'intermittent_claudication','known_heart_murmur','unusual_fatigue'
-  ]) LOOP
-    IF NEW.signs_symptoms ? _key
-       AND jsonb_typeof(NEW.signs_symptoms->_key) <> 'boolean' THEN
-      RAISE EXCEPTION 'signs_symptoms.% must be boolean', _key;
-    END IF;
-  END LOOP;
-END IF;
+**Output:** `.lovable/r2.2-smoke-report.md` com:
 
--- submax_test.protocol: se presente, restrito ao enum.
-IF NEW.submax_test IS NOT NULL
-   AND NEW.submax_test ? 'protocol'
-   AND NEW.submax_test->>'protocol' NOT IN ('rockport','one_and_half_mile') THEN
-  RAISE EXCEPTION 'submax_test.protocol must be rockport or one_and_half_mile';
-END IF;
-```
+1. **Tier transitions table** — `name | tier_old | tier_new | clearance_old | clearance_new | reason`
+2. **Clearance deltas** — quem mudou + `clearance_reason` em PT humano
+3. **BP cardiac rehab gate** — quem dispara ≥180/110
 
-Declaração `_key text` no bloco `DECLARE`. Trigger continua curto, sem loop sobre o objecto inteiro — só sobre as 9 chaves canónicas.
+**False-positive watchlist explicitamente verificada no report:**
 
-### Nota 3 — `prescription_parameters` empty state (resposta, sem mudar migration)
+- Sofia (jovem ativa) → `clearance=false` esperado
+- Pedro Vieira (atleta vigoroso saudável) → `clearance=false` esperado
+- Qualquer gestante → não deve flagear via Ch.2 (pregnancy é R3 overlay)
+- Qualquer jovem saudável com `clearance=true` → bug, parar e investigar antes do report sair
 
-**Plano confirmado:**
+## STOP GATE 1
 
-- `derive.server.ts` em R2.2 corre **on-demand** dentro do pipeline phased (entre Stage 2 e Stage 3) — nunca em backfill. Planos pre-R2 ficam com `prescription_parameters = '{}'` para sempre.
-- UI: chip "FITT-VP · ACSM 12e" **escondido** quando `Object.keys(prescription_parameters).length === 0`. Sem fallback "vazio/disabled" — só aparece em planos gerados pós-R2.
-- Documentado em comment SQL na coluna (já lá está, vou acrescentar a nota sobre empty-state).
+Mostrar o report. Esperar aprovação. **Sem aprovação: não avança para Fase C.**
 
-**Migration não muda por causa desta nota** (apenas comment refinado).
+## Fase C — Wire-up Stage 2 + Stage 3 + validator
 
-### Diff final (vs. proposta original)
+Só após aprovação do smoke #1.
 
-1. `validate_assessment_screening_ranges()` ganha o bloco signs_symptoms + protocol enum acima.
-2. Comment em `workout_plans.prescription_parameters` ganha a frase: `Empty object {} indicates pre-R2 plan; UI hides FITT-VP chip in that case.`
+- **Stage 2** (`src/server/pipeline/stage2-*.server.ts`): chamar `deriveFittVpFromDb()` e gravar `prescription_parameters` na linha do plano (coluna já existente ou via `generation_meta` — confirmar no wire-up).
+- **Stage 3** system prompt: bloco "FITT-VP non-negotiable constraints" injectado a partir de `prescription_parameters`, com instrução clara de não violar ranges/floors.
+- **Post-Stage-3 validator**: chamar `validateDayAgainstFittVp()` sobre cada day output; se violations → retry once com violations no prompt; se persistir → log em `generation_log` com `validator_violations[]` e deixar passar (não bloquear plano).
 
-Tudo o resto (colunas, tabela `acsm_thresholds`, RLS, `protect_assessment_intake_columns` extension) fica idêntico ao aprovado.
+## Fase D — Smoke #2 (end-to-end, 1 persona)
 
-### Sequência pós-aprovação
+- Persona escolhida: **Sofia** (default case mais limpo, sem clearance, sem flags BP).
+- Correr pipeline completo (Stage 1 → 4) com AI real, custo esperado $0.10–0.30.
+- Anexar ao mesmo `.lovable/r2.2-smoke-report.md`:
+  - **Secção 4** — `prescription_parameters` JSON completo da Sofia
+  - **Secção 5** — validator hits no Stage 3 output + retry outcome
 
-1. Aplicar Migration A revista (esta).
-2. **Mostrar seed dos 17 thresholds** (INSERT separado) para review antes de aplicar — keys em snake_case descritivo (ex: `resistance_intensity_pct_1rm_novice`, `cardio_vigorous_hrr_pct_lower`). Confirma keys → aplico seed.
-3. R2.2 algorithm + classifier + smoke report nos perfis demo. **Stop gate até smoke aprovado.**
-4. R2.2 backfill `cvd_risk_factors` (one-shot script, reportado).
-5. R2.3+ só depois.
+## STOP GATE 2
 
-Ok para aplicar Migration A revista?
+Mostrar report completo (5 secções). Esperar aprovação antes de:
+
+- Backfill `cvd_risk_factors` em assessments existentes
+- Avançar para R2.3
+
+---
+
+## Detalhes técnicos
+
+- `oldFlag` paralelo é puramente observacional — não influencia plano gerado, só alimenta a coluna `clearance_old` no smoke report.
+- Smoke #1 não consome AI: lê assessments, corre puro TS, escreve markdown. Custo zero.
+- Citations em `prescription_parameters.citations[]` já no formato `{source: 'acsm_12e', ref: '§X.Y'}` (estrutura discriminator pronta para Bompa/NSCA aditivos).
+- BP gate 180/110 é independente do algoritmo Ch.2 — disparar mesmo em personas que de outro modo não exigiriam clearance.
+- `generation_log` recebe entry por cada Stage 3 retry com `validator_violations[]` para auditoria.
+- Após Fase C aprovada, `hasMedicalClearanceFlag` é removido em commit separado (cleanup), não nesta fase.
