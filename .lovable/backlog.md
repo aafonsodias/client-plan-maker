@@ -42,7 +42,11 @@ Atualizado: Round 26 (3 Mai 2026)
 
 ## Em aberto
 
-_Vazio_ — backlog fechado. Próximas rondas dependem de nova direção do utilizador.
+| 40 | P0 | Schedule | My Schedule v1: timetable semanal + revenue panel + packs (R28) | R28 ✅ |
+| 41 | P2 | Schedule | Modo "individual" como trainer-of-self (auth/role discussion + intake mínimo) | futuro |
+| 42 | P2 | Schedule | Recurring booking rules ("toda 3ª/5ª 7h por 10 semanas") | futuro |
+| 43 | P2 | Schedule | Sync Google/Apple Calendar (one-way export ICS para começar) | futuro |
+| 44 | P2 | Schedule | Cobrança/faturação ligada a packs (Stripe link por pack) | futuro |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
