@@ -1,68 +1,59 @@
-## Round 15 — i18n EN sweep: YearView + ExerciseTrendChart
+## Estado: o que ainda está pendente
 
-Closes backlog #26. Both surfaces still have hardcoded PT strings (chart titles, axis names, legends, table headers, empty states, "PR Bloco N", tonelagem labels, etc.). Sweep them through `useTranslation`.
+Auditoria rápida revelou três frentes ativas:
 
-### Locale keys to add (`src/i18n/locales/{pt,en}/common.json`)
+1. **i18n** — ~417 strings PT hardcoded ainda em `src/components` e `src/routes`. Rounds 13-16 cobriram surfaces de plano/blocos/volume/ano. Faltam: dialogs de edição (AddExerciseDialog, ImportLogDialog), painéis de cliente (IntakeLinkPanel, PlanAssessmentSheet), Paywall, FeedbackPanel, OneRepMaxCalculator, MovementPatternCard, ShareAppButton, MesocycleTableView, SessionDayView, etc. Rotas inteiras (clients, settings, billing) ainda por sweep.
+2. **Backend (DB linter)** — 11 issues:
+   - 4 funções `SECURITY DEFINER` executáveis por `anon` (alto risco)
+   - 4 funções `SECURITY DEFINER` executáveis por `authenticated` sem necessidade
+   - 1 extensão instalada em `public`
+   - 2 tabelas com RLS ligado mas sem policies
+3. **Backlog** — desorganizado (linhas duplicadas para #9, #11, #15, #26 com estados inconsistentes). Difícil ler.
 
-- `year.title`, `year.subtitle` (uses `{{blocks}}`, `{{weeks}}`, `{{sessions}}`)
-- `year.overall_adherence`
-- `year.loading`, `year.empty`
-- `year.blocks.heading`, `year.blocks.subtitle`
-- `year.blocks.no_data`, `year.blocks.initial_block`, `year.blocks.delta_capacity` (`{{pct}}`)
-- `year.blocks.adherence_short`, `year.blocks.rpe_short`, `year.blocks.sessions_short`
-- `year.adherence.title`, `year.adherence.subtitle`, `year.adherence.bar`, `year.adherence.line_rpe`
-- `year.tonnage.title`, `year.tonnage.subtitle`, `year.tonnage.bar`
-- `year.strength.title`, `year.strength.subtitle`, `year.strength.empty`
-- `year.map.title`, `year.map.subtitle`, plus column keys: `block`, `weeks`, `sessions`, `adherence`, `avg_rpe`, `tonnage`, `adaptation`
-- `trend.empty_html` (with `<bold>` placeholder for the import button name) + `trend.import_button`
-- `trend.delta_one`, `trend.delta_other` (`{{delta}}`, `{{count}}`), `trend.weeks_one`, `trend.weeks_other`
-- `trend.pr_block` (`{{n}}`)
-- `trend.legend.kg`, `trend.legend.rpe`
-- `trend.week_short` (for `S{week}`; EN `W{{week}}`)
+Fazer tudo num único turno arrisca regressões silenciosas (425 strings + 11 mudanças DB = muito raio de explosão para um round). Proposta segmentada e priorizada por risco real.
 
-### Component edits
+## Round 17 — DB hardening (P0, segurança)
 
-- **`src/components/YearView.tsx`**:
-  - `useTranslation('common')`.
-  - Replace every hardcoded string above. Header subtitle uses interpolation; `BlocksStrip` chip uses `t('year.blocks.delta_capacity', { pct })` with sign prefix preserved.
-  - Stat cards (`Adesão global`, `Adesão`, `RPE`, `Sess.`) localized.
-  - Table headers + `kg` suffix kept (kg is universal).
-- **`src/components/ExerciseTrendChart.tsx`**:
-  - `useTranslation('common')`.
-  - Empty state via `<Trans i18nKey="trend.empty_html" components={{ bold: <b className="text-foreground" /> }} />`.
-  - Subtitle uses `t('trend.delta_one'|'trend.delta_other', { count, delta })` and `t('trend.weeks_*', { count })`.
-  - PR badge: `t('trend.pr_block', { n: blockNumber })`.
-  - X axis tickFormatter uses `t('trend.week_short', { week: v })`.
-  - Legend names via `name={t('trend.legend.kg')}` / `t('trend.legend.rpe')`.
+1. **Identificar** as 4 funções com EXECUTE para `anon` e as 2 tabelas RLS-sem-policy via `read_query` (`pg_proc` + `pg_policies`).
+2. **Migration** que para cada função:
+   - `REVOKE EXECUTE ... FROM anon, public` se realmente não é endpoint público.
+   - Mantém `GRANT EXECUTE ... TO authenticated` apenas se for chamada via PostgREST/RPC do frontend autenticado; caso contrário também revoga.
+3. **Tabelas RLS-sem-policy**: ou criar policy mínima (`USING (false)` se interno), ou desativar RLS se a tabela é só backend.
+4. **Extensão em public**: mover para schema `extensions` se for trivial (geralmente `pg_trgm`/`unaccent`); se houver dependências, registar como aceite e atualizar `@security-memory`.
+5. Re-correr `supabase--linter` para confirmar 0 WARN restantes ou justificar os que ficam no `@security-memory`.
 
-## Round 16 — Hardcoded-PT audit on shipped surfaces
+## Round 18 — i18n sweep dos diálogos de edição (P1)
 
-Quick smoke pass to catch any remaining literal Portuguese in core routes after Rounds 13–15. Read-only scan first (`rg "[À-ÿ]" src/routes src/components | rg -v 'i18n|locales|\\.json'`), then localize the leftovers found in:
+Cobre os componentes mais visíveis a um trainer EN durante uso real:
 
-- `src/routes/plans.$planId.tsx` (any non-i18n labels still in PT)
-- `src/components/NextBlockCard.tsx` edge strings
-- `src/components/CapacityGainCard.tsx` tooltip copy
-- `src/components/volume/VolumeSection.tsx` headers if missed
+- `AddExerciseDialog`, `ImportLogDialog`, `FeedbackPanel`, `OneRepMaxCalculator`, `PaywallDialog` (features list + botões), `ShareAppButton` (texto de partilha).
 
-Cap at ~6 leftover strings; if more surface, log as backlog #27 instead of expanding the round.
+Todos com keys novas em `dialogs.*`, `paywall.*`, `share.*`, `calculator.*`, `feedback.*`. Toasts de erro/sucesso passam por `t()`.
 
-## Deploy
+## Round 19 — i18n sweep dos painéis de cliente + format helpers (P1)
 
-After Rounds 15–16 land, publish the frontend so the EN audience gets the sweep live. Mention to the user that backend (edge fns/migrations) auto-deploys but the frontend update needs the Publish dialog click.
+- `IntakeLinkPanel` (incluindo `ago(min)` → helper i18n com `Intl.RelativeTimeFormat`), templates de SMS/email passam por `t()` com interpolação `{{name}}`.
+- `PlanAssessmentSheet` — labels da avaliação (Experiência, Frequência, Lesões, Condições, Métrica…).
+- `MovementPatternCard`, `MesocycleTableView`, `SessionDayView` (Preparação, etc.).
+- Locale do `toLocaleDateString` passa a usar `i18n.language` em vez de `"pt-PT"` fixo.
 
-## Backlog updates (`.lovable/backlog.md`)
+## Round 20 — Backlog cleanup + smoke + publish (P2)
 
-- Mark #26 ✅ Round 15.
-- Add #27 (P2, i18n) only if Round 16 audit overflows.
-- Bump "Atualizado" header to Round 16.
+1. Reescrever `.lovable/backlog.md`: deduplicar linhas, agrupar por estado, manter só uma linha por #ID com o último round, adicionar #28-#30 para os rounds acima.
+2. Smoke test: trocar `lng` para `en` no init, varrer `/`, `/clients`, `/clients/$id`, `/plans/$id`, `/settings`, `/billing`. Reportar qualquer string PT residual como #31 follow-up (não fazer agora).
+3. Restaurar `lng: "en"` ou deixar como aplicar-pelo-cliente. Publish.
 
-### Files touched
+## Restrição honesta
 
-- `src/i18n/locales/pt/common.json`
-- `src/i18n/locales/en/common.json`
-- `src/components/YearView.tsx`
-- `src/components/ExerciseTrendChart.tsx`
-- (Round 16) any leftover route/component files surfaced by the rg pass
-- `.lovable/backlog.md`
+Não dá para esmagar 417 strings num round sem regressões. Esta sequência fecha a parte crítica (segurança DB + dialogs + painéis de cliente — talvez 70-80% das strings em surfaces realmente usadas) em 4 rounds discretos e auditáveis.
 
-Avanço?
+## Ficheiros prováveis
+
+- Migrations SQL novas (Round 17)
+- `src/i18n/locales/{pt,en}/common.json` (Rounds 18-19)
+- ~10 componentes em `src/components/*` (Rounds 18-19)
+- `src/i18n/index.ts` se precisar helper `formatRelative`
+- `.lovable/backlog.md` (Round 20)
+- `@security-memory` se algum lint for justificadamente ignorado
+
+Avanço com Round 17 (DB hardening)? Confirma e arranco.
