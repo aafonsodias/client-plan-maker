@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   LineChart,
   Line,
@@ -44,6 +45,7 @@ export function ExerciseTrendChart({
   sessions: SessionRow[];
   blockNumber: number;
 }) {
+  const { t } = useTranslation("common");
   const grouped = useMemo(() => {
     // exerciseName -> Map<week, accumulator>
     const out = new Map<string, Map<number, { wSum: number; wN: number; rSum: number; rN: number; repSum: number; repN: number }>>();
@@ -96,8 +98,7 @@ export function ExerciseTrendChart({
   if (cards.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center text-sm text-muted-foreground">
-        Sem registos suficientes ainda. Use o botão <b className="text-foreground">"Importar registo"</b> no
-        topo para trazer os valores escritos na folha de registo A4.
+        <Trans i18nKey="trend.empty_html" ns="common" components={{ bold: <b className="text-foreground" /> }} />
       </div>
     );
   }
@@ -108,8 +109,17 @@ export function ExerciseTrendChart({
         const lastPoint = c.points[c.points.length - 1];
         const isPr = lastPoint?.weight != null && c.pr != null && lastPoint.weight === c.pr && c.points.length > 1;
         const subtitle = c.deltaKg != null && c.deltaKg !== 0
-          ? `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg} kg em ${c.points.length} semana${c.points.length > 1 ? "s" : ""}`
-          : `${c.points.length} semana${c.points.length > 1 ? "s" : ""} registadas`;
+          ? t("trend.delta", {
+              count: c.points.length,
+              delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}`,
+              defaultValue_one: t("trend.delta_one", { count: c.points.length, delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}` }),
+              defaultValue_other: t("trend.delta_other", { count: c.points.length, delta: `${c.deltaKg > 0 ? "+" : ""}${c.deltaKg}` }),
+            })
+          : t("trend.weeks", {
+              count: c.points.length,
+              defaultValue_one: t("trend.weeks_one", { count: c.points.length }),
+              defaultValue_other: t("trend.weeks_other", { count: c.points.length }),
+            });
         return (
           <div key={c.name} className="rounded-xl border border-border bg-card p-3">
             <div className="mb-2 flex items-start justify-between gap-2">
