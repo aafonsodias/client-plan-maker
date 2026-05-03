@@ -640,7 +640,71 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
-    return { ok: true as const, generated: okCount, errors: errCount };
+
+    // ---- Post-validation: rotation audit (block N>1 only) -----------------
+    let rotationAudit: any = null;
+    if (priorPool.length > 0) {
+      const { data: rows } = await supabase
+        .from("workout_plan_days")
+        .select("day_number, content")
+        .eq("plan_id", data.planId)
+        .eq("week_number", 1);
+      const days = ((rows ?? []) as any[]).map((r) => r.content ?? {});
+      const first = computeAccessoryRotationPct(days, priorPool);
+      rotationAudit = { firstPct: first.pct, accessoryCount: first.accessoryCount, retried: false, finalPct: first.pct };
+
+      // If <40% of accessories rotated, retry the most-stale days once with a
+      // hard "do not use" list. Cap to 3 worst days to keep cost bounded.
+      if (first.pct < 40 && first.accessoryCount > 0) {
+        const banned = first.topPriorAccessories;
+        // Identify days where ≥50% of accessories collide with prior pool.
+        const stale: number[] = [];
+        for (const r of (rows ?? []) as any[]) {
+          const ex = Array.isArray(r.content?.exercises) ? r.content.exercises : [];
+          if (ex.length <= 1) continue;
+          const accs = ex.slice(1);
+          const collisions = accs.filter((e: any) =>
+            new Set(banned.map(normalizeExerciseName)).has(normalizeExerciseName(e?.name)),
+          ).length;
+          if (collisions / accs.length >= 0.5) stale.push(r.day_number as number);
+        }
+        const targets = stale.slice(0, 3);
+        const reinforcedPool = [
+          ...priorPool,
+          ...banned.map((n) => `__BAN:${n}`), // bias signal in prompt
+        ];
+        for (const idx of targets) {
+          const r = await runDay(
+            supabase, userId, data.planId, idx,
+            briefP.data, bpP.data, guidelines, priorBlockSummary,
+            reinforcedPool,
+          );
+          if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
+        }
+        const { data: rows2 } = await supabase
+          .from("workout_plan_days")
+          .select("content")
+          .eq("plan_id", data.planId)
+          .eq("week_number", 1);
+        const finalDays = ((rows2 ?? []) as any[]).map((r) => r.content ?? {});
+        const second = computeAccessoryRotationPct(finalDays, priorPool);
+        rotationAudit.retried = true;
+        rotationAudit.finalPct = second.pct;
+        rotationAudit.daysRegenerated = targets;
+      }
+
+      // Stamp into generation_meta for transparency.
+      const { data: cur } = await supabase
+        .from("workout_plans")
+        .select("generation_meta")
+        .eq("id", data.planId)
+        .maybeSingle();
+      const meta = ((cur as any)?.generation_meta ?? {}) as Record<string, any>;
+      meta.rotation_audit = rotationAudit;
+      await supabase.from("workout_plans").update({ generation_meta: meta }).eq("id", data.planId);
+    }
+
+    return { ok: true as const, generated: okCount, errors: errCount, rotationAudit };
   });
 
 export const approveMicrocycle = createServerFn({ method: "POST" })
