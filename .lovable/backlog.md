@@ -32,7 +32,9 @@ Atualizado: Round 10 (3 Mai 2026)
 | 19 | P1 | Motor | Bloco ≥4 marca suggest_main_lift_swap; Stage 3 prompt + chip "Main lift refrescado" | ✅ Round 10 |
 | 20 | P1 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 11 |
 | 21 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 11 |
-| 22 | P2 | Plan page | Pós-validação adicional: detectar se main lift mudou de facto e ajustar chip | 🔜 Round 11 |
+| 22 | P0 | Plan page | Auditoria real do main-lift swap (prior_main_lifts → main_lift_audit; chip honesto) | ✅ Round 11 |
+| 23 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 12 |
+| 24 | P2 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 12 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
