@@ -740,6 +740,12 @@ function ViewMode({
   sessions: SessionRow[];
   reload: () => Promise<void>;
 }) {
+  return null as any;
+}
+
+// shadow rebind below
+function _CapacityGainBlockTypeAnchor() {}
+
   const [layout, setLayout] = useState<"cards" | "table">(() => {
     if (typeof window === "undefined") return "table";
     const saved = window.localStorage.getItem("planLayout");
