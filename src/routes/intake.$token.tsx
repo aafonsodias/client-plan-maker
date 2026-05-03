@@ -659,6 +659,64 @@ function PillsMulti({ options, value, onChange }: { options: { id: string; label
   );
 }
 
+function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { i18n, t } = useTranslation("intake");
+  const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
+  const [q, setQ] = useState("");
+  const filtered = q.trim() ? searchEquipment(q) : EQUIPMENT_CATALOG;
+  const grouped = useMemo(() => {
+    const by: Record<EquipmentCategory, typeof EQUIPMENT_CATALOG> = {
+      free_weights: [], machines: [], racks_benches: [], bodyweight_accessory: [],
+      conditioning: [], mobility: [], misc: [],
+    } as any;
+    for (const it of filtered) by[it.category].push(it);
+    return by;
+  }, [filtered]);
+  const labelFor = (cat: EquipmentCategory) =>
+    locale === "en" ? CATEGORY_LABEL_EN[cat] : CATEGORY_LABEL_PT[cat];
+  const toggle = (canonical: string) => {
+    onChange(value.includes(canonical)
+      ? value.filter((x) => x !== canonical)
+      : [...value, canonical]);
+  };
+  return (
+    <div className="space-y-3">
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={t("equipment_search", { defaultValue: "Procurar equipamento…" })}
+        className="h-9"
+      />
+      <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+        {(Object.keys(grouped) as EquipmentCategory[]).map((cat) => {
+          const items = grouped[cat];
+          if (items.length === 0) return null;
+          return (
+            <div key={cat}>
+              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">{labelFor(cat)}</p>
+              <div className="flex flex-wrap gap-2">
+                {items.map((it) => {
+                  const on = value.includes(it.en);
+                  const label = locale === "en" ? it.en : it.pt;
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => toggle(it.en)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    >{label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 function SliderField({ label, value, min, max, onChange, legend }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; legend: string }) {
   return (
     <div className="space-y-2">
