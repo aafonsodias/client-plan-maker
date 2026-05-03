@@ -20,6 +20,9 @@ export type DemoRunStatus = "running" | "done" | "failed";
 export type ActiveDemoRun = {
   runId: string;
   durationWeeks: number;
+  /** UI label/kind for the indicator. Defaults to demo_lab. */
+  kind?: "demo_lab" | "demo_seed";
+  title?: string;
   startedAt: number;
   stage: DemoRunStage | string;
   status: DemoRunStatus | string;
@@ -31,6 +34,7 @@ export type ActiveDemoRun = {
 type Ctx = {
   runs: ActiveDemoRun[];
   startRun: (opts: { durationWeeks: number }) => Promise<string | null>;
+  registerRun: (run: { runId: string; kind: "demo_lab" | "demo_seed"; title?: string; durationWeeks?: number }) => void;
   cancelRun: (runId: string) => Promise<void>;
   getRun: (runId: string) => ActiveDemoRun | undefined;
 };
@@ -38,6 +42,7 @@ type Ctx = {
 const DemoRunsCtx = createContext<Ctx>({
   runs: [],
   startRun: async () => null,
+  registerRun: () => {},
   cancelRun: async () => {},
   getRun: () => undefined,
 });
@@ -182,6 +187,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
         const run: ActiveDemoRun = {
           runId: res.runId,
           durationWeeks,
+          kind: "demo_lab",
           startedAt: Date.now(),
           stage: "client",
           status: "running",
@@ -200,6 +206,27 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
     [startFn],
   );
 
+  const registerRun = useCallback<Ctx["registerRun"]>(({ runId, kind, title, durationWeeks }) => {
+    setRuns((prev) => {
+      if (prev.some((r) => r.runId === runId)) return prev;
+      return [
+        ...prev,
+        {
+          runId,
+          kind,
+          title,
+          durationWeeks: durationWeeks ?? 0,
+          startedAt: Date.now(),
+          stage: "client",
+          status: "running",
+          planId: null,
+          cancelled: false,
+          error: null,
+        },
+      ];
+    });
+  }, []);
+
   const cancelRun = useCallback<Ctx["cancelRun"]>(
     async (runId) => {
       try {
@@ -215,7 +242,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
   const getRun = useCallback((runId: string) => runs.find((r) => r.runId === runId), [runs]);
 
   return (
-    <DemoRunsCtx.Provider value={{ runs, startRun, cancelRun, getRun }}>
+    <DemoRunsCtx.Provider value={{ runs, startRun, registerRun, cancelRun, getRun }}>
       {children}
     </DemoRunsCtx.Provider>
   );
