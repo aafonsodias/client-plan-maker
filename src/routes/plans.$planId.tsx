@@ -261,9 +261,37 @@ function PlanEditor() {
         }
       } catch { /* ignore */ }
     }
+    // Block evolution: if this is Block N>1 and we have a prior plan in the lineage,
+    // compute capacity-gain and pass it to the PDF so the cover shows progress vs
+    // the previous block (parity with the on-screen <CapacityGainCard />).
+    const blockN = (plan as any)?.block_number ?? 1;
+    const priorPlanId = (plan as any)?.prior_plan_id ?? null;
+    let blockEvolution: any[] | null = null;
+    if (blockN > 1 && priorPlanId) {
+      const current = sessions.filter((s) => (s as any).plan_id === planId);
+      const prior = sessions.filter((s) => (s as any).plan_id === priorPlanId);
+      if (current.length > 0 || prior.length > 0) {
+        const summary = computeCapacityGain(prior as any, current as any);
+        blockEvolution = (summary.rows ?? []).map((r) => ({
+          label: r.patternLabel,
+          priorAvgLoadKg: r.priorAvgLoadKg,
+          currentAvgLoadKg: r.currentAvgLoadKg,
+          deltaPct: r.deltaPct,
+          verdict: r.verdict,
+        }));
+      }
+    }
     const { generatePlanPdf } = await import("@/lib/pdf");
     await generatePlanPdf(
-      { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
+      {
+        title: plan.title,
+        summary: plan.summary,
+        client_name: client.full_name,
+        duration_weeks: plan.duration_weeks,
+        block_number: blockN,
+        block_transition_summary: (plan as any)?.block_transition_summary ?? null,
+        block_evolution: blockEvolution,
+      },
       data,
       {
         business_name: profile?.business_name,
