@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Sparkles, Check, MinusCircle, XCircle, NotebookPen } from "lucide-react";
 import { toneChip, toneDot, type Tone } from "@/lib/status-tone";
 import { epley } from "@/lib/capacity-gain";
+import { Confetti } from "@/components/log/Confetti";
+import { toast } from "sonner";
 
 /**
  * LogbookTimeline — agrupa as sessões registadas por semana e narra a
@@ -89,6 +91,24 @@ export function LogbookTimeline({ sessions }: Props) {
     return sessionToPRs;
   }, [sessions]);
 
+  // Surface PRs with a one-shot confetti + toast per session id (per mount).
+  const seenRef = useRef<Set<string>>(new Set());
+  const [burst, setBurst] = useState(0);
+  useEffect(() => {
+    let fired = false;
+    for (const [sessionId, names] of prSessionByExercise.entries()) {
+      if (seenRef.current.has(sessionId)) continue;
+      seenRef.current.add(sessionId);
+      if (!fired) {
+        setBurst((n) => n + 1);
+        fired = true;
+      }
+      toast.success(`PR — ${names.slice(0, 2).join(", ")}${names.length > 2 ? ` +${names.length - 2}` : ""}`, {
+        description: "Novo recorde de e1RM neste plano.",
+      });
+    }
+  }, [prSessionByExercise]);
+
   const weeks = useMemo(() => {
     const map = new Map<number, Session[]>();
     for (const s of sessions) {
@@ -114,6 +134,7 @@ export function LogbookTimeline({ sessions }: Props) {
 
   return (
     <section className="space-y-3">
+      {burst > 0 && <Confetti key={burst} />}
       <header className="flex items-center gap-2">
         <NotebookPen className="h-4 w-4 text-accent" />
         <h2 className="text-base font-bold tracking-tight">Cronologia do logbook</h2>
