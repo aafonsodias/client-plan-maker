@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
+import { ClientDocuments } from "@/components/ClientDocuments";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
