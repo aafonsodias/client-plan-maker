@@ -1,275 +1,114 @@
-# Próxima ronda — Forge ready-to-use (P0 → P1 → P2)
+## Round goal
 
-**Objetivo:** app utilizável "out of the box" → cliente vê portal próprio → custos travados.
-
----
-
-## Onda P0 — Limpeza + correções críticas (~1h)
-
-### 1. Top bar responsive proper
-
-`src/components/AppShell.tsx`**:**
-
-- Breakpoint nav desktop: `md` (768) → `lg` (1024). Abaixo: hamburger
-- Entre `lg`–`xl`: só ícones com `title` tooltip
-- Founder badge: só ícone Sparkles abaixo de `xl`
-- ShareAppButton: hidden `<lg`
-
-### 2. StageCard colapsa fisicamente
-
-`src/components/StageCard.tsx`**:**
-
-- Trocar classe `hidden` por `{!collapsed && children}` (não basta esconder visualmente — não renderizar)
-- Auditar todos os usos para garantir consistência
-
-### 3. Foto rosto intake → perfil cliente
-
-`src/server/intake.functions.ts` **(submitIntake):**
-
-```ts
-if (extended.photos?.face && !clients.photo_url) {
-  clients.photo_url = extended.photos.face;
-  clients.photo_verified = true; // ✓ amber badge no avatar
-}
-
-```
-
-- Cliente pode auto-upload depois (perde `photo_verified`)
-- Migration adicionar coluna `clients.photo_verified boolean default false`
-
-### 4. Demo escondido para users normais
-
-- `src/routes/clients.tsx`: gate DemoLabPanel + botão "Cliente demo" atrás de `isFounder && search.lab === '1'`
-- `src/routes/dashboard.tsx`: idem DemoClientBanner
-- **Migration cleanup:** `DELETE FROM clients WHERE is_demo=true AND trainer_id=<founder_uid>` (com confirmação log)
-- Demo só acessível via `/clients?lab=1` para founder
-
-### 5. Intake "Who is this for?" → coaching mode
-
-`src/routes/intake.$token.tsx` **(slide 2):**
-
-Trocar pergunta atual por:
-
-```
-"Como vais treinar comigo?"
-- Presencial
-- Online (longa distância)
-- Híbrido
-
-```
-
-Grava em `extended.coaching_mode`. Stage 3 microcycle usa para decidir nível de detalhe das cues (presencial = breve, online = detalhado).
-
-### 6. Tela final intake — nome + animação
-
-`src/routes/intake.$token.tsx` **(final screen):**
-
-```tsx
-const firstName = formState.client_full_name?.split(' ')[0];
-"Obrigado{firstName ? `, ${firstName}` : ''}!
-O teu treinador vai rever isto antes da primeira sessão."
-
-```
-
-- Animação CSS-only: anel amber pulse 1× + check com spring (0.5s, sem Lottie)
-
-### 7. Auth no fim do intake (opcional)
-
-`src/routes/intake.$token.tsx` **(novo slide pós-thanks):**
-
-Card opcional:
-
-```
-"Cria a tua conta para acompanhar o plano"
-- Email pré-preenchido (read-only)
-- Senha OU "Sign in with Google"
-- Botão "Criar conta" → auth.signUp + clients.user_id = uid + profiles.account_type = 'coached_client' → redirect /me
-- Botão "Skip" → magic link enviado, pode registar depois
-
-```
-
-Skip é safe — não bloqueia entrega ao PT.
-
-### 8. Adicionar cliente manual
-
-`src/routes/clients.tsx` **(dialog "novo cliente"):**
-
-Tabs ou dropdown:
-
-- "Convidar via link" (atual)
-- "Adicionar manual" (novo): nome + email opcional → cria com `intake_status='manual'` → abre `/clients/$id` para PT preencher à mão
+Tighten the trainer surface (dashboard ↔ clients) and fix everything you flagged in the intake. No new "extensions" — finish what's already there cleanly.
 
 ---
 
-## Onda P1 — Portal cliente + intake rico (~1.5h)
+## 1. Dashboard + Roster: stop being two pages
 
-### 9. Rota `/me` — cliente vê plano (read-only)
+Today: `/dashboard` and `/clients` show overlapping data and three buttons all do the same thing.
 
-**Auto-redirect:** se `profiles.account_type='coached_client'` e `clients.user_id=auth.uid()`, `/dashboard` → `/me`.
+Changes:
+- **Inline the roster on `/dashboard`** below the Attention panel: avatar + name + phase pill + ArrowRight, exactly like `/clients` shows now. Filter chips (All / Active / Ready / Idle / Onboarding) live above it.
+- **Remove "Clients" stat card** (the count is already implicit in the list + filter chips).
+- **Keep `/clients` as a deep-link target** for the same component (so existing links don't break) but the dashboard becomes the canonical entry. Remove the giant "Clients 0" / "Plans created 0" stat block.
+- **One single primary action** in the header: `+ Cliente` opens a small menu with **two** options:
+  1. **Convidar por link** (golden path — current invite dialog)
+  2. **Adicionar manualmente** (opens a small form: nome + email + telefone, creates the client row directly with `intake_status = 'manual'`, then routes to `/clients/$id` so the trainer can fill the assessment themselves)
+- Drop the secondary "Convidar cliente" button and the "+ Cliente demo" button from the body of `/clients` (the demo button stays gated behind `?lab=1` for the founder).
 
-`src/routes/me.tsx` **(novo):**
+## 2. Coaching mode: drop "Híbrido", rename, rewrite the copy
 
-Voz "tu", read-only, secções:
+Two real archetypes, like you said:
+- **`self_log`** — "Vou treinar sozinho com o teu plano" (client trains alone, logs sessions in their portal — like an individual user)
+- **`coached`** — "Vamos treinar juntos" (PT-led, client gets the dashboard to follow progress, doesn't need to log)
 
-1. **Próxima sessão** — data + foco + botão "Ver sessão"
-2. **Plano atual** — semana X de Y, blocos visuais (cor por fase), RPE alvo
-3. **Evolução** — sparkline e1RM dos lifts principais; tabela sessões logadas
-4. **Pagamentos** — tabela `client_payments` (a criar): data | pack | EUR | status
-5. **Feedback** — botão "Pedir ajuste" → modal → `client_messages` table → notifica PT
+Replace `mode_in_person` / `online` / `hybrid` triplet with these two, drop the literal i18n keys leaking through, and keep `intake_path` column accepting `'self_log' | 'coached'` (migration to relax the existing CHECK if any).
 
-### 10. Red-team portal — proteções
+## 3. SMART goal: AI suggestion + sensible defaults
 
-**RLS strict:**
+Slide currently asks two raw text inputs ("Como vais medir o sucesso?" / "Até quando?").
 
-```sql
--- coached_client só vê o seu próprio
-CREATE POLICY clients_self ON clients FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY plans_own ON workout_plans FOR SELECT USING (
-  client_id IN (SELECT id FROM clients WHERE user_id = auth.uid())
-);
--- idem sessions, payments, client_messages
+New behavior on that slide:
+- After "What do you want to achieve?" answer, call `interpretGoal` (already exists, uses Flash — cheapest tier) and propose:
+  - 3 measurable suggestions as clickable chips (e.g. "Agachar 1.5× peso corporal", "Correr 10k em 60min", "Perder 5kg")
+  - 3 deadline chips (8 / 12 / 16 weeks, derived from `timeline_weeks` returned by AI)
+- Pre-select the highest-confidence suggestion + the AI-suggested deadline. User taps to accept or types over.
+- Free-text fallback stays (small "escrever outro" link).
 
-```
+Statistics-driven preselection elsewhere too: experience = "Iniciante", days/week = 3, session = 60 min, location = "Ginásio" — all editable, just defaulted.
 
-**Bloqueios:**
+## 4. Equipment slide: kill the inner scrollbar
 
-- Coached_client não pode: editar plano, ver IA logs, ver `trainer_id`, ver custos, ver outros clientes
-- `client_messages`: unidirecional (cliente → PT only)
-- Foto self-uploaded: perde `photo_verified` badge
+Current: vertical scroll inside the slide because every category has a heading row.
 
-### 11. Intake — ergonomia + secções
+New layout:
+- One flat wrap of pills, **colour-coded by category** (use the existing status-tone palette: free-weights = amber, machines = blue, bodyweight = emerald, conditioning = neutral, mobility = muted, racks = primary).
+- A small legend row at the top (5–6 dots + label).
+- Search bar stays at top, filters the same flat list.
+- Removes the `max-h-[50vh] overflow-y-auto` wrapper.
 
-**Lesões:** chips frequentes (`Joelho`, `Lombar`, `Ombro`, `Punho`, `Tornozelo`, `Quadril`) + campo livre.
+## 5. Profile photo: own slide + immediate avatar feedback
 
-**Equipamento:** remover separadores; single list; categoria por **cor** + legenda lateral colapsável (poupa altura).
+- Move the **face** photo out of the 4-slot reference grid into its **own slide** placed right after Identity, titled "Foto de perfil". Reference photos slide keeps front / side / back only.
+- As soon as the face photo uploads, render a small avatar in the slideshow header (next to the FORGE logo) so the client immediately feels "I'm in".
+- Mirror to `clients.photo_url` on upload (already wired) — verify the signed URL refresh works.
+- Future "certified badge" overlay is noted in the backlog but **not** built this round (needs a real verification flow, not a fake badge).
 
-**Fotos:**
+## 6. Thanks screen: fix i18n + signup flow
 
-- Secção "Perfil" (rosto) — separada de "Postura/Evolução" (corpo 4 ângulos)
+Issues:
+- Literal `thanks_title_anon` rendered → means the EN bundle is missing the key. Add `thanks_title_named` / `thanks_title_anon` / `thanks_desc_v2` / `thanks_create_account_*` to **`src/i18n/locales/en/intake.json`** too.
+- Rewrite PT copy:
+  - Title: "Pronto, {nome}." (or "Pronto." if anon)
+  - Subtitle: "{trainer} vai rever a tua avaliação antes da primeira sessão."
+- Account creation block: present **email/password as primary** + "ou continua com Google" as secondary link (you said Google is one option, not the only one).
+- After Google round-trip we already auto-link via `linkClientAccount`. Add a guard: if the current authenticated user **is the trainer themselves** (their own intake link), skip the linking, show a friendly "Estás autenticado como treinador. Abre este link em modo anónimo ou noutro browser para testar como cliente." message — that fixes the "carreguei e voltei ao começo" loop you hit.
 
-**Novas secções:**
+## 7. Keyboard: Enter advances on desktop
 
-- Histórico exames recentes (BP, colesterol, etc — opcional)
-- Contacto emergência (nome + tel)
-- Fuso horário (online clients)
-- Preferência comunicação: WhatsApp / Email / In-app
+Already implemented in `SlideshowIntake` via `onKey` handler **but** it's blocked when focus is in `<Input>` because Enter inside a form input bubbles weirdly. Verify: keep the global handler, also let inputs forward Enter (preventDefault + call `next()`). Textareas remain Shift+Enter for newline, plain Enter advances only when the field is not multi-line.
 
-**Animação final:** CSS @keyframes (check spring, anel pulse). Sem Lottie.
+## 8. Publish vs preview — quick clarification (no code)
 
-### 12. Smart measurable + deadline com IA
+To answer your question directly: yes, you need to **Publish** once for the app to be reachable by a real client on their phone. After that, you can keep iterating here in Lovable preview without breaking the published version — the preview URL (`id-preview--…lovable.app`) and the published URL are independent. Each new publish snapshots whatever the preview is at that moment. So the workflow is:
 
-**Slide novo (antes de "thanks"):**
+1. Publish now → share `https://<your-project>.lovable.app/intake/<token>` with a real client (or yourself on a 2nd email).
+2. Keep working here. Re-publish whenever you want the public version to catch up.
 
-```
-"Como vais medir progresso? Até quando?"
+I'll surface a "Publish" reminder in the dashboard hint after this round.
 
-Chips: 1RM | Reps | Aparência | Força relativa | Custom
-+ Botão "💡 Sugerir com IA" → google/gemini-flash (~$0.0001/call)
-  Input: goal + training_age + sport + coaching_mode
-  Output: "Recomendação: XXX até DD/MM"
-  Cliente aceita ou edita
-Grava em extended.goal_measurable + extended.goal_deadline
+## 9. Backlog (NOT this round, written down so we don't lose them)
 
-```
-
----
-
-## Onda P2 — Custos + merge + housekeeping (~1h)
-
-### 13. Merge `/schedule` ↔ `/clients`
-
-`src/routes/clients.tsx`**:**
-
-Lista densa default:
-
-- Linha: avatar | nome | nº planos | última sessão | próxima sessão | fase | ações
-- Sort: nome / última / próxima / plano ativo
-- Filtros: all / onboarding / active / idle / ready
-
-Botão "📅 Agenda" → `?view=calendar` (sub-vista, mesma rota, grid semana)
-
-Eliminar rota `/schedule` isolada (redirect para `/clients?view=calendar`).
-
-### 14. Drop-off radar → "Reengajamento"
-
-- Renomear "Drop-off radar" → "Reengajamento" (PT)
-- Adicionar `<InfoHint/>`: *"Detecta clientes >7 dias sem sessão. Sugere mensagem para reengajar."*
-
-### 15. Cost guardrails (CRÍTICO)
-
-**Hard cap mensal:**
-
-```ts
-// profiles.monthly_ai_cents_cap
-// default: 500 (€5) free | 2000 (€20) paid
-
-// Helper antes de cada call AI:
-async function assertWithinBudget(userId, modelCost) {
-  const spent = await getMonthSpend(userId);
-  const cap = await getCap(userId);
-  if (spent + modelCost > cap) {
-    return { error: 'budget_exceeded', toast: 'Limite mensal atingido' };
-  }
-}
-
-```
-
-**Routing barato por defeito:**
-
-- Stage 1 (brief): Google Gemini Flash
-- Stage 2 (blueprint): Haiku ou Gemini Flash
-- Stage 3 (microcycle): GPT-5 / Sonnet **só em dias críticos**; resto determinístico (RPE floor + fórmula volume + templates)
-- Stage 4 (finalize): SQL puro, zero IA
-
-**Demo:** clones SQL pré-cooked, zero IA. Manter como está.
-
-**Telemetria founder:**
-
-- `/founder/costs` — spend agregado/mês, breakdown user, sparkline trend
-
-### 16. Renomear "Estúdio de treino" → **"Bancada"**
-
-(Alinha com `WorkbenchMockup`, vibe craftwork PT)
-
-### 17. Botão duplicado new client
-
-Após P0 #4 + #8 — fica um único dropdown CTA: "+ Convidar via link / Adicionar manual".
-
-### 18. Filtros + arquivar + bulk actions
-
-`/clients` **e** `/templates`**:**
-
-Header: sort por nome / criado / última atividade
-
-Multi-select (checkbox row):
-
-- Arquivar
-- Exportar CSV
-- Apagar (só archived, com `AlertDialog` confirm — segurança contra apagar ativos)
-
-Toggle "Mostrar arquivados?" → revela coluna escondida by default.
+- Step counting / activity tracker integration (Apple Health / Google Fit) and the rich activity philosophy you wrote — this is its own feature, not a 1-line field.
+- "Certified" badge on profile photo (needs ID verification flow).
+- Client portal mensagens / training log / progress charts (`/me` is read-only stub today).
+- Longer assessment surface — once #1–#7 are clean, we'll do a dedicated "deep assessment" pass mapping every field from the FORGE coach-side assessment into the slideshow.
 
 ---
 
-## Ordem de execução
+## Technical plan
 
+**Migrations**
+- `clients.intake_path` CHECK constraint → allow `'self_log' | 'coached'` (drop old constraint, add new). Existing rows stay untouched.
+- No other DB changes this round.
 
-| Onda | Items | Tempo | Entrega                            |
-| ---- | ----- | ----- | ---------------------------------- |
-| P0   | 1–8   | ~1h   | App utilizável, sem ar de obra     |
-| P1   | 9–12  | ~1.5h | Portal cliente + intake polido     |
-| P2   | 13–18 | ~1h   | Custos safe + merge + housekeeping |
+**Files to edit**
+- `src/routes/dashboard.tsx` — inline roster, remove Clients stat, add `+ Cliente` dropdown.
+- `src/routes/clients.tsx` — keep route, render same component as dashboard's roster section, remove duplicate "Convidar" button, add manual-create form behind the same `+ Cliente` menu.
+- `src/components/AddClientMenu.tsx` (new) — the dropdown with "Convidar por link" / "Adicionar manualmente".
+- `src/server/intake.functions.ts` — add `createManualClient({ fullName, email, phone })` server fn.
+- `src/routes/intake.$token.tsx`:
+  - Replace mode slide options (`self_log` / `coached`).
+  - Split face photo into its own slide, add header avatar.
+  - SMART goal slide: call `interpretGoal`, render chip suggestions.
+  - Equipment slide: flat colour-coded grid, drop `overflow-y-auto`.
+  - ThankYou: rewrite copy, add trainer-self guard, swap Google/email priority.
+  - Enter-to-advance from inputs.
+- `src/i18n/locales/{pt,en}/intake.json` — add missing keys, rewrite mode + thanks copy.
+- `src/lib/equipment-catalog.ts` — verify `category` field per item (used for colour mapping).
+- `.lovable/backlog.md` — append the deferred items.
 
+**Out of scope** (explicitly): step tracker, certified badge, deep assessment expansion, client portal write surfaces, plan-production work (next round).
 
----
-
-## Respostas às perguntas (decididas)
-
-1. **Nome:** "Bancada" (alinha com WorkbenchMockup já existente)
-2. **Demo cleanup:** **Sim**, apagar clientes demo dos founders + esconder UI para non-founders
-3. **/me pagamentos:** **Sim** — cliente vê valores quando já pago + status do pendente (transparência > opacidade)
-4. **Auth no intake:** **Opcional** (skip envia magic link). Não bloqueia entrega.
-
----
-
-**GO.**
+Approve and I'll ship it in one focused pass.
