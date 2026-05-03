@@ -77,6 +77,20 @@ export type PdfMeta = {
   summary?: string | null;
   client_name: string;
   duration_weeks?: number | null;
+  block_number?: number | null;
+  block_transition_summary?: string | null;
+  /**
+   * Optional capacity-gain rows summarising progress vs. the prior block.
+   * Pass `computeCapacityGain(prior, current).rows` (filtered to rows with a
+   * meaningful deltaPct). When omitted or empty, the section is skipped.
+   */
+  block_evolution?: Array<{
+    label: string;
+    priorAvgLoadKg: number | null;
+    currentAvgLoadKg: number | null;
+    deltaPct: number | null;
+    verdict: "gain" | "flat" | "regression" | "unknown";
+  }> | null;
 };
 
 // ---------- Asset + luminance helpers ----------
