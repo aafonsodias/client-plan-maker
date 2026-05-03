@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Joyride, STATUS, EVENTS, ACTIONS } from "react-joyride";
+import { Joyride } from "react-joyride";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -117,12 +117,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         steps={steps}
         stepIndex={stepIndex}
         continuous
-        showSkipButton
-        showProgress
         scrollToFirstStep
-        spotlightClicks={false}
-        disableScrolling={false}
-        callback={handleCallback}
+        onEvent={handleCallback}
+        options={{ showProgress: true, primaryColor: "hsl(38 92% 50%)", overlayColor: "rgba(0,0,0,0.55)", zIndex: 10000 }}
         locale={{
           back: t("demo.tour.back"),
           close: t("demo.tour.skip"),
