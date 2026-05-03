@@ -100,6 +100,13 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
     z.object({
       planId: z.string().uuid(),
       weeksToSeed: z.number().int().min(1).max(8).optional().default(2),
+      // How many weeks BEFORE today should the LAST session of this plan
+      // sit on. 0 = last day of plan = today. Used by demo-year to lay out
+      // 13 blocks chronologically into the past.
+      endsWeeksAgo: z.number().int().min(0).max(520).optional().default(0),
+      // Multiplier applied to fabricated loads, so older blocks look lighter
+      // and recent blocks look heavier without re-running the AI.
+      loadMultiplier: z.number().min(0.4).max(2).optional().default(1),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -136,9 +143,13 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
       .eq("plan_id", data.planId);
     const seen = new Set((existing ?? []).map((r: any) => `${r.week_number}::${r.day_label}`));
 
-    // Anchor: walk back from today so the most recent week is "this week".
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (maxWeek * 7));
+    // Anchor: end of the plan = (today - endsWeeksAgo*7).
+    // startDate = end - (maxWeek-1) days*7 - extra padding so the FIRST day
+    // of week 1 lands maxWeek weeks before the end.
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() - data.endsWeeksAgo * 7);
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - maxWeek * 7);
 
     const rows: any[] = [];
     for (const d of days as any[]) {
@@ -147,7 +158,14 @@ export const seedDemoSessions = createServerFn({ method: "POST" })
       const exercises: ExerciseLike[] = Array.isArray(d.content?.exercises) ? d.content.exercises : [];
       if (exercises.length === 0) continue;
       const isDeload = totalWeeks >= 3 && d.week_number === totalWeeks;
-      const entries = exercises.map((ex) => fabricateEntry(ex, d.week_number, profile, isDeload));
+      const baseEntries = exercises.map((ex) => fabricateEntry(ex, d.week_number, profile, isDeload));
+      // Apply per-block load multiplier so older blocks look lighter.
+      const entries = data.loadMultiplier === 1 ? baseEntries : baseEntries.map((e) => {
+        const m = e.actual?.weight?.match?.(/^([\d.]+)\s*kg$/i);
+        if (!m) return e;
+        const scaled = (Number(m[1]) * data.loadMultiplier).toFixed(1);
+        return { ...e, actual: { ...e.actual, weight: `${scaled} kg` } };
+      });
       // Date = startDate + (week-1)*7 + (day_number-1) days.
       const sessionDate = new Date(startDate);
       sessionDate.setDate(sessionDate.getDate() + (d.week_number - 1) * 7 + (d.day_number - 1));
