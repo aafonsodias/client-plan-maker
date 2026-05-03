@@ -1348,6 +1348,9 @@ function ClientDetail() {
             <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
           </div>
         </div>
+        <div className="mt-4">
+          <ClientDocuments clientId={client.id} />
+        </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AssessmentDatePicker
             value={assessment.performed_on || ""}
