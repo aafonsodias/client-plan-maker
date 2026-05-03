@@ -692,7 +692,10 @@ function PlanEditor() {
       </div>
 
       {mode === "view" ? (
-        <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+        <>
+          <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+        </>
       ) : mode === "edit" ? (
         <>
           {isPhasedComplete && (
@@ -709,7 +712,10 @@ function PlanEditor() {
           </div>
         </>
       ) : mode === "results" ? (
-        <ResultsPanel plan={data} sessions={sessions as any} />
+        <>
+          <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          <ResultsPanel plan={data} sessions={sessions as any} />
+        </>
       ) : mode === "progress" ? (
         <ExerciseTrendChart
           sessions={sessions as any}
