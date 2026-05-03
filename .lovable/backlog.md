@@ -34,15 +34,16 @@ Atualizado: Round 21 (3 Mai 2026)
 | 30 | P1 | i18n | Painéis cliente: ImportLogDialog, IntakeLinkPanel, PlanAssessmentSheet, MovementPatternCard | R19 |
 | 31 | P1 | i18n | LogbookTimeline + datas com locale dinâmico (clients route, FeedbackPanel) | R20 |
 | 36 | P1 | i18n | Sweep dashboard + clients (atenção/aniversários, plans-status-bar, EvolutionChip, dialogs convite) | R21 |
+| 37 | P1 | Motor | Trigger sync subscription_tier → profiles.plan_quota_limit (Starter 8 / Pro 30 / Studio 80) + backfill | R23 |
+| 38 | P2 | Plan page | Export PDF do bloco com secção "Block N · Evolution vs Block N-1" (computeCapacityGain + transition note) | R24 |
+| 39 | P1 | i18n | billing.tsx + plans.$planId headers/toasts (FAQ, tiers, top-up, footer) | R22 |
 
 ## Em aberto
 
 | # | P | Área | Item | Notas |
 |---|---|---|---|---|
-| 32 | P1 | i18n | Sweep restante em src/routes (clients_.$clientId 1.5k linhas, plans.$planId, billing) | grep ainda detecta ~250 literals |
+| 32 | P1 | i18n | Sweep restante em src/routes (clients_.$clientId 1.5k linhas — assessment subsections) | ~30 literals em painéis profundos |
 | 33 | P2 | UX | Smoke test manual de cada rota em PT e EN antes de publicar | checklist em PR |
-| 34 | P2 | Motor | Cap mismatch: rever subscribers.subscription_tier vs profiles.plan_quota_limit (auto-sync via webhook Stripe) | manter 1 cliente = 1 plano |
-| 35 | P2 | Plan page | Export PDF do bloco com chip de evolução vs bloco anterior | extensão do PDF actual |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
