@@ -84,8 +84,15 @@ export function computeCapacityGain(
   prior: Array<{ entries?: any[] }> = [],
   current: Array<{ entries?: any[] }> = [],
 ): CapacitySummary {
-  const buckets = new Map<CapacityRow["pattern"], { prior: number[]; current: number[] }>();
-  const liftLoads = new Map<string, { prior: number[]; current: number[]; priorRepsAtBest: Map<number, number>; currentRepsAtBest: Map<number, number> }>();
+  type Bucket = { prior: number[]; current: number[] };
+  type Lift = {
+    prior: number[];
+    current: number[];
+    priorRepsAtBest: Map<number, number>;
+    currentRepsAtBest: Map<number, number>;
+  };
+  const buckets = new Map<CapacityRow["pattern"], Bucket>();
+  const liftLoads = new Map<string, Lift>();
 
   function ingest(rows: typeof prior, side: "prior" | "current") {
     for (const s of rows) {
@@ -95,11 +102,11 @@ export function computeCapacityGain(
         const name = String(e?.exercise_name ?? e?.name ?? "").trim();
         if (!name) continue;
         const p = classifyPattern(name);
-        const b = buckets.get(p) ?? { prior: [], current: [] };
+        const b: Bucket = buckets.get(p) ?? { prior: [], current: [] };
         b[side].push(load);
         buckets.set(p, b);
 
-        const lift = liftLoads.get(name) ?? {
+        const lift: Lift = liftLoads.get(name) ?? {
           prior: [], current: [],
           priorRepsAtBest: new Map(), currentRepsAtBest: new Map(),
         };
