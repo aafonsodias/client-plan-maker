@@ -118,7 +118,7 @@
     "soon": "Em breve"
   },
   "demo": {
-    "ready_title": "Cliente demo pronto: {{name}}",
+    "ready_title_prefix": "Cliente demo pronto:",
     "ready_desc": "Explore a app com dados reais e remova quando quiser.",
     "preparing_title": "A preparar a sua conta demo",
     "preparing_desc": "A trabalhar… (não conta para a sua quota)",

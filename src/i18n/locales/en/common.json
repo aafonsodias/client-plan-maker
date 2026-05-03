@@ -121,7 +121,7 @@
     "soon": "Soon"
   },
   "demo": {
-    "ready_title": "Demo client ready: {{name}}",
+    "ready_title_prefix": "Demo client ready:",
     "ready_desc": "Explore the app with real data and remove it whenever you like.",
     "preparing_title": "Preparing your demo account",
     "preparing_desc": "Working… (does not count toward your quota)",
