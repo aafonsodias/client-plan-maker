@@ -72,7 +72,9 @@ export type YearSummary = {
   overallAdherencePct: number;
   weeks: YearWeekPoint[];
   /** Block boundaries for chart annotation. */
-  blockBoundaries: Array<{ blockNumber: number; startWeek: number; endWeek: number; title: string; blockFeedback?: any }>;
+  blockBoundaries: Array<{ planId: string; blockNumber: number; startWeek: number; endWeek: number; title: string; blockFeedback?: any }>;
+  /** Raw sessions grouped by plan (for per-block analytics). */
+  sessionsByPlan: Record<string, SessionRow[]>;
 };
 
 function emptyVolume(): Record<MuscleGroup, number> {
@@ -157,12 +159,14 @@ export async function buildYearSummary(clientId: string): Promise<YearSummary> {
   const weeks: YearWeekPoint[] = [];
   const blockBoundaries: YearSummary["blockBoundaries"] = [];
   let globalWeek = 0;
+  const sessionsByPlan: Record<string, SessionRow[]> = {};
 
   for (const plan of plans) {
     const shape = shapeByPlan.get(plan.id) ?? new Map();
     const dur = plan.duration_weeks ?? 4;
     const startWeek = globalWeek + 1;
     const blockSessions = sessions.filter((s) => s.plan_id === plan.id);
+    sessionsByPlan[plan.id] = blockSessions;
     // Build a "PlanLike" from the shape so we can reuse computeWeeklyVolume per week
     const planLike: PlanLike = {
       weeks: Array.from(shape.entries()).map(([wn, info]: [number, { plannedDays: number; weekDayContent: DayContent[] }]) => ({
@@ -208,6 +212,7 @@ export async function buildYearSummary(clientId: string): Promise<YearSummary> {
       });
     }
     blockBoundaries.push({
+      planId: plan.id,
       blockNumber: plan.block_number,
       startWeek,
       endWeek: globalWeek,
@@ -230,6 +235,7 @@ export async function buildYearSummary(clientId: string): Promise<YearSummary> {
     overallAdherencePct,
     weeks,
     blockBoundaries,
+    sessionsByPlan,
   };
 }
 
