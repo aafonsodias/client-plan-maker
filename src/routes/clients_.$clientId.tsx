@@ -2394,7 +2394,7 @@ function ClientDetail() {
                   if (r?.ok && r?.planId) {
                     void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
                   } else {
-                    toast.error(r?.error ?? "Falhou ao criar plano.");
+                    toast.error(r?.error ?? t("detail.plans.manual_failed"));
                   }
                 } finally { setCreatingPlan(null); }
               }}
@@ -2402,24 +2402,24 @@ function ClientDetail() {
               {creatingPlan === "manual"
                 ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 : <Plus className="mr-1.5 h-3.5 w-3.5" />}
-              Novo plano (manual)
+              {t("detail.plans.new_manual")}
             </Button>
             <Button
               size="sm"
               disabled={creatingPlan !== null || !evolvableSourcePlan}
               title={!evolvableSourcePlan
-                ? "Marca um plano como terminado para evoluir."
-                : "Gerar próximo bloco a partir do último concluído."}
+                ? t("detail.plans.evolve_disabled")
+                : t("detail.plans.evolve_help")}
               onClick={async () => {
                 if (!evolvableSourcePlan) return;
                 setCreatingPlan("evolve");
                 try {
                   const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
                   if (r?.ok && r?.planId) {
-                    toast.success("Próximo bloco criado.");
+                    toast.success(t("detail.plans.evolve_success"));
                     void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
                   } else {
-                    toast.error(r?.error ?? "Falhou a evoluir o plano.");
+                    toast.error(r?.error ?? t("detail.plans.evolve_failed"));
                   }
                 } finally { setCreatingPlan(null); }
               }}
