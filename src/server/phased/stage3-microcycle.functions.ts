@@ -714,6 +714,35 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
         .maybeSingle();
       const meta = ((cur as any)?.generation_meta ?? {}) as Record<string, any>;
       meta.rotation_audit = rotationAudit;
+
+      // Main-lift swap audit: compare current main lifts vs prior_main_lifts.
+      // Honest reporting — only claim "swapped" if the model actually changed
+      // at least one main-lift name (normalised) vs the prior block.
+      const priorMain = ((meta as any)?.prior_main_lifts ?? []) as string[];
+      if (swapMainLift && priorMain.length > 0) {
+        const { data: rowsAll } = await supabase
+          .from("workout_plan_days")
+          .select("content")
+          .eq("plan_id", data.planId)
+          .eq("week_number", 1);
+        const currentMain: string[] = [];
+        for (const r of (rowsAll ?? []) as any[]) {
+          const ex = Array.isArray(r?.content?.exercises) ? r.content.exercises : [];
+          const name = String(ex[0]?.name ?? "").trim();
+          if (name) currentMain.push(name);
+        }
+        const priorSet = new Set(priorMain.map(normalizeExerciseName));
+        const swapped = currentMain.filter((n) => !priorSet.has(normalizeExerciseName(n)));
+        meta.main_lift_audit = {
+          requested: true,
+          priorMain,
+          currentMain,
+          swappedCount: swapped.length,
+          swappedNames: swapped,
+          honored: swapped.length > 0,
+        };
+      }
+
       await supabase.from("workout_plans").update({ generation_meta: meta }).eq("id", data.planId);
     }
 
