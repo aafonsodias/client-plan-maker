@@ -52,7 +52,7 @@ export const ensureDemoClient = createServerFn({ method: "POST" }).
 
     // Lazy import keeps the heavy pipeline out of any cold path that just
     // needed to check the seeded flag.
-    const { runInstantPipelineForUser } = await import("./demo-oneshot.functions");
+    const { runInstantPipelineForUser } = await import("./demo-oneshot.server");
     void runInstantPipelineForUser(userId, runId, { durationWeeks: 4 }).catch((e: unknown) => {
       console.error("[demo-seed] pipeline error", e);
     });
