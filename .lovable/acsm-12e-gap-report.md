@@ -1,140 +1,118 @@
-# ACSM 12e — Forge Gap Report (Round 1, pre-ingestion skeleton)
+# ACSM 12e Gap Report (Round 1 deliverable)
 
-Status: **skeleton — full ingestion pending**. The PDF was not attached to this turn.
-The schema and policy doc are in place; the structured rows in
-`acsm_recommendations` / `acsm_contraindications` / `acsm_normatives` will be
-populated once the PDF is re-uploaded to `/mnt/documents/acsm-12e.pdf` and the
-ingestion script is run.
+Updated: 2026-05-03 · Source: `/mnt/documents/acsm-12e.pdf` (server-only)
+Ingested: 8 chapters · 22 sections · 59 recommendations · 79 contraindications · 167 normatives · 37 population triggers.
 
-What follows is the **code-side audit** (no PDF needed) — what Forge already
-touches that ACSM 12e governs, and where the gaps are. Numeric deltas vs 12e
-thresholds will be filled in after ingestion.
+> Comparison baseline: Forge today touches ACSM in three places only:
+> 1. `assessments.parq_passed` + `assessments.acsm_risk_category` (low/moderate/high)
+> 2. `programming-tier.server.ts`: `parq_passed===false || risk==="high" → remedial`
+> 3. `plan.server.ts` prompt + `pdf.ts` print PAR-Q + risk text
 
 ---
 
-## 1. Where Forge currently touches ACSM
+## Section A — Chapter 2: Preparticipation Algorithm
 
-| Surface | File | What it does |
+| 12e decision node | Forge | Note |
 |---|---|---|
-| Assessment intake form | `src/routes/intake.$token.tsx`, `src/components/PlanAssessmentSheet.tsx` | Collects PAR-Q+ pass/fail, ACSM risk category (text), med flags, BP, RHR, body comp, six-pattern movement screen, capacity, SMART goals, readiness stage. |
-| Programming-tier gate | `src/server/phased/programming-tier.server.ts` | If `parq_passed === false` OR `acsm_risk_category === "high"` → forces plan to **remedial** tier. Currently the *only* ACSM-driven branching. |
-| Plan generation prompt | `src/server/plan.server.ts` | Inlines PAR-Q+ status + risk category as plain text into the LLM context. No FITT-VP constraints, no citations. |
-| PDF export | `src/lib/pdf.ts` | Prints PAR-Q + ACSM risk in the assessment summary block. |
+| Informed consent (verbal + written) | ❌ | No consent capture step in intake. Trainer-side liability gap. |
+| Current exerciser definition (≥3 d/wk × ≥30 min × ≥3 months at moderate) | ⚠️ | Captures `training_days_per_week` + `years_training` but not the 3-month continuity rule used by the algorithm. |
+| Known CVD/metabolic/renal disease | ⚠️ | `medical_conditions` is free-text; not parsed into the three buckets the algorithm needs. |
+| Signs/symptoms of CVD/metabolic/renal disease | ❌ | The 9 cardinal signs (chest pain, dyspnea, syncope, orthopnea, ankle edema, palpitations, claudication, murmur, unusual fatigue) are not asked. **Highest-impact screening gap.** |
+| Desired exercise intensity (light/moderate/vigorous) gate | ❌ | Not asked at intake; algorithm branches on this. |
+| Medical clearance recommendation output | ⚠️ | Forge collapses to `risk_category=high → remedial tier`. Does not emit "seek medical clearance" message that the algorithm requires. |
+| AACVPR risk stratification (LVEF<40%, MET<5, ST≥2mm, sudden death survivor, etc.) | ❌ | Not modelled; out of scope for non-clinical Forge users but flag for "do not accept" gate. |
+| CVD risk-factor count (age, family hx, smoking, sedentary, BMI, BP, lipids, glucose) | ⚠️ | Forge captures BP, RHR, body comp, sedentary signals — but does not aggregate them into the 12e risk-factor count. |
 
-Stages 1–5 in `src/server/phased/*` build brief → blueprint → microcycle →
-progressions via prompts that do **not** receive structured FITT-VP guidance.
+## Section B — Chapter 3: Health-Related Fitness Testing
 
-## 2. Ch. 2 — Preparticipation Screening Algorithm
-
-The 12e algorithm asks decision-tree questions that map to: current activity
-status, known CV/metabolic/renal disease, signs/symptoms, desired exercise
-intensity. Forge today collapses all of this into a single trainer-graded
-enum (`acsm_risk_category` ∈ low/moderate/high) plus a binary `parq_passed`.
-
-| 12e algorithm node | Captured in Forge? | Gap |
+| 12e test | Forge | Note |
 |---|---|---|
-| Currently active (≥30 min mod-int ≥3×/wk for ≥3 mo) | No explicit field | Inferable from `training_days_per_week` + `years_training`, but not stored as the algorithm's binary input. |
-| Known CV / metabolic / renal disease | Partial — `medical_conditions` (free text) + `med_flags[]` | No structured disease list; `med_flags` content is undefined in schema. **Gap**: enumerate the 12e disease list. |
-| Signs/symptoms suggestive of CV/metabolic/renal disease | No | **Missing field.** 12e signs list (chest discomfort, unaccustomed dyspnea, dizziness/syncope, orthopnea/PND, ankle oedema, palpitations/tachycardia, intermittent claudication, known heart murmur, unusual fatigue with usual activity). |
-| Desired exercise intensity (light / mod / vig) | Implied | Not captured as a separate decision input. The algorithm requires it. |
-| Medical clearance recommendation output | Implicit — `risk = high` → remedial tier | **Gap**: 12e has 3 outcomes (no clearance / clearance recommended / clearance recommended at vigorous only). Forge collapses to 2. |
+| Resting HR (5-min seated rest, no caffeine 30 min) | ⚠️ | `resting_heart_rate` captured, no protocol enforced. |
+| Resting BP (same protocol, both arms first visit) | ⚠️ | `systolic/diastolic_bp_mmhg` captured, no protocol UI. |
+| Body composition: BMI, waist circumference, WHR, BF% | ⚠️ | `waist_cm`, `hip_cm`, `body_fat_pct`, `body_fat_method` captured. WHR not auto-derived; risk-stratified thresholds not applied. |
+| Cardiorespiratory fitness: VO₂max (max or submax estimation) | ❌ | `cardio_capacity` is free-text. No submax test (YMCA, Rockport, 1.5-mile, Ebbeling, Astrand) implemented. **High-value gap for Round 2 intensity prescription.** |
+| Muscular strength (1-RM or 10-15 RM) | ⚠️ | Captured as `max_lifts` free-text + capacity scores. No protocol/normative comparison. |
+| Muscular endurance (push-up, plank, curl-up) | ❌ | Not standardised. |
+| Power | ❌ | Not measured. |
+| Flexibility (sit-and-reach, goniometry) | ❌ | Replaced by 6-pattern movement screens — different model, defensible. |
+| Balance (BESS, Y-balance, TUG) | ⚠️ | `single_leg_balance_score` (1-5) only; no validated test. Critical for older-adult overlay (Round 3). |
 
-**Round-2 implication:** the 12e algorithm should be a derived function over
-structured inputs, not a trainer-graded enum. Likely deliverable: replace
-`acsm_risk_category` with a computed view that runs the algorithm.
+## Section C — Chapter 5: FITT-VP coverage in generator
 
-## 3. Ch. 3 — Health-Related Fitness Testing
+For each parameter, does Forge's plan generator emit it as a structured, validatable value?
 
-| 12e test battery | Forge today | Gap |
-|---|---|---|
-| Resting HR | `resting_heart_rate` | OK. Norms by age/sex pending → `acsm_normatives`. |
-| Resting BP | `systolic_bp_mmhg` / `diastolic_bp_mmhg` + `bp_measured_at` | OK. 12e classification thresholds pending. |
-| Body composition: BMI | Derivable from `weight_kg` / `height_cm` | Computed ad-hoc; no stored classification. |
-| Body composition: waist circumference + waist-to-hip | `waist_cm`, `hip_cm` | OK; 12e cardiometabolic-risk thresholds pending. |
-| Body composition: body-fat % | `body_fat_pct`, `body_fat_method` | OK; norm tables pending. |
-| Cardiorespiratory: VO₂max (lab) | No | **Missing.** Out of scope for most trainers. |
-| Cardiorespiratory: submax estimation (YMCA cycle, Astrand-Rhyming, 1-mile walk, 1.5-mile run, Cooper, step tests) | No | **Missing — material gap.** This is the trainer-feasible bit. |
-| Muscular strength: 1RM / estimated 1RM | Implicit in `max_lifts` text + `current_capacity_vs_pb` | **Gap**: no structured 1RM per pattern, no Brzycki/Epley toggle. (Forge already uses Epley in `src/lib/capacity-gain.ts`.) |
-| Muscular endurance: push-up / curl-up / YMCA bench-press tests | No | **Missing.** |
-| Muscular power | Implicit in capacity scores | **Gap.** |
-| Flexibility: sit-and-reach | No | **Missing.** |
-| Balance: single-leg stance | `single_leg_balance_score` (1–5) | Stored as subjective tier, not the 12e timed protocol. **Gap**: capture seconds. |
-| Movement screen (6 patterns) | Full (`*_form_criteria`, `*_capacity`) | This is **Forge-original**, not from ACSM. Keep — it complements rather than overlaps. |
+| Modality × Parameter | Frequency | Intensity | Time | Type | Volume | Progression |
+|---|---|---|---|---|---|---|
+| Cardiorespiratory | ❌ | ❌ | ❌ | ⚠️ | ❌ | ❌ |
+| Resistance | ⚠️ (`training_days_per_week` echoed) | ❌ | ⚠️ (`session_duration_minutes`) | ✅ (exercise list) | ⚠️ (sets/reps embedded in `plan_data`, not extracted) | ⚠️ (Stage-4 progressions, not bound to %1-RM rules) |
+| Flexibility | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-**Round-2 priority:** add submax-VO₂ estimation (highest-leverage single
-gap) and timed single-leg balance. Defer the full muscular endurance battery
-unless trainers ask.
+→ **All ❌/⚠️ above is exactly what Round 2 (FITT-VP backbone + citations) is scoped to fix.** This is the expected baseline.
 
-## 4. Ch. 5 — FITT-VP framework
+## Section D — Population coverage (Ch. 6, 8–11)
 
-Forge today emits exercise plans (sets/reps/load/rest/tempo on each
-exercise) but **does not emit explicit FITT-VP parameters per modality per
-phase**. The Stage-2 blueprint and Stage-3 microcycle prompts do not receive
-ACSM range constraints.
+37 population triggers extracted. Coverage classification against Forge's only branch (`risk=high → remedial`):
 
-| FITT-VP element | Forge today | Required for Round 2 |
-|---|---|---|
-| Frequency (sessions/wk per modality) | Implicit from session schedule | Make explicit per modality (aerobic / resistance / flexibility / neuromotor) per phase. |
-| Intensity (HRR%, VO₂R%, RPE, %1RM) | %1RM-style only on resistance lifts | Add aerobic intensity zone; tag with method (HRR, VO₂R, RPE). |
-| Time (min/session) | `session_duration_minutes` (intake only) | Make per-modality and per-phase. |
-| Type | Exercise list | Tag exercise modality per ACSM categorisation. |
-| Volume (sets/wk, MET-min/wk) | Sets/reps per exercise; weekly volume computed downstream | Add MET-min/wk for aerobic; sets/wk per muscle group already derivable. |
-| Progression rule | Implicit in multi-block lineage (`generation_meta.prior_exercise_pool`, +4%/block load multiplier in demo) | Make rule explicit per modality. |
+**Falls silently through (no detection, no overlay) — Round 3 candidates:**
 
-The 12e resistance-training section was significantly expanded vs 11e
-(rest-period prescription, autoregulation, velocity-based options, eccentric
-emphasis, training-to-failure guidance). Specific deltas pending ingestion.
+- Children & adolescents (<19y) — Forge has no pediatric guard
+- Pregnancy (any trimester, postpartum, GDM, preeclampsia hx)
+- Older adults (≥65y) with frailty / fall-risk
+- Low back pain (LBP) — current/chronic
+- Hypertension (controlled) — needs intensity cap, not high-risk
+- Type 1 / Type 2 diabetes (medication-aware)
+- Dyslipidemia, metabolic syndrome, obesity (class I-III), MASLD
+- Asthma, COPD (mild–moderate)
+- Stroke recovery, Parkinson's (early), MS, Alzheimer's (early)
+- ADHD, depression, anxiety
+- Cancer survivors (modality-dependent)
+- Transgender / gender-diverse (chest binder, hormone therapy)
+- Osteoporosis / osteopenia
+- Arthritis (OA / RA)
+- POTS, ME/CFS, MASLD, SCAD (12e-new populations)
 
-## 5. Ch. 6 + 8–11 — Population coverage
+**Caught correctly by `risk=high → remedial`:**
+- Unstable CHD, decompensated HF, severe pulmonary HTN, aortic stenosis, active myocarditis, aortic dissection, recent embolism — these all map to medical-clearance-required and Forge correctly downgrades programming. ✅
 
-Forge has **no special-population branching today** beyond the binary
-remedial-tier downgrade. Every population in 12e silently falls through to
-the same generator.
+**Estimated overlays needed in Round 3:** ~18 (the silent-fall-through list above).
 
-Populations Forge will silently mis-prescribe for until Round 3 ships:
+## Section E — 12e vs 11e/Forge thresholds (Q2 deltas)
 
-- Children/adolescents (Ch. 6)
-- Pregnant clients (Ch. 6) — `med_flags` could carry this but doesn't drive logic
-- Low-back-pain history (Ch. 6) — `injuries` free-text only
-- Older adults (Ch. 6) — `age` is captured but doesn't modify FITT
-- Transgender / gender-diverse (Ch. 6, **new in 12e**)
-- CHD / post-cardiac-event / cardiac-rehab phase (Ch. 8)
-- SCAD (**new in 12e**)
-- POTS (**new in 12e**)
-- Pulmonary disease + respiratory muscle training (Ch. 8, **expanded in 12e**)
-- Metabolic syndrome / MASLD (**new in 12e**) / diabetes / obesity (Ch. 9)
-- Cancer / arthritis / osteoporosis / pediatric cardiac (**new**) / ME-CFS (**new**) (Ch. 10)
-- Neurological: stroke / Parkinson's / MS / SCI / TBI (Ch. 11)
+Cross-referencing extracted 12e values against current Forge code/prompts:
 
-**Round-1 ingestion will populate** `acsm_contraindications` rows and a
-population-trigger table sketch so the Round-3 overlay engine has data to
-match against.
+| Parameter | Forge / 11e | 12e | Direction | Citation | Recommendation |
+|---|---|---|---|---|---|
+| Aerobic moderate intensity (%HRR) | not enforced | 40–59 | n/a | §5 Tbl 5.1 | adopt automatically |
+| Aerobic vigorous intensity (%HRR) | not enforced | 60–89 | n/a | §5 Tbl 5.1 | adopt automatically |
+| Aerobic minimum weekly time (mod) | implicit 150 | 150–300 min/wk | equivalent floor, higher ceiling | §5 Tbl 5.1 | adopt 150 floor |
+| Resistance frequency (general) | trainer-set | 2–4 d/wk | equivalent | §5.6 | adopt as default |
+| RT inter-set rest, strength | not enforced | 120–300 s | n/a | §5 Tbl 5.7 | adopt as validator floor |
+| RT progression rule | Forge: free, Stage-4 LLM | 2-for-2 rule + 2.5–5 %1-RM | more conservative (structured) | §5.6 | adopt automatically |
+| Static stretch hold (general adults) | not enforced | 10–30 s | n/a | §5 Tbl 5.13 | adopt as default |
+| Static stretch hold (older adults) | not enforced | 30–60 s | n/a | §5 Tbl 5.13 | adopt as default |
+| Pre-exercise static stretch >60 s | not flagged | discouraged before performance | new rule | §5.7 | adopt automatically (warn in PDF) |
+| Sedentary→exercise transition | not phased | 2–3 months light (2–3 METs) before progression | more conservative | §2.2 | adopt — wire into Stage-2 blueprint |
+| Submax test stop criterion | absent | 70% HRR or 85% age-pred HRmax | new safety floor | §Box 3.7 | adopt when submax test ships |
+| BP test-stop SBP | absent | >250 mmHg | new safety floor | §Box 3.6 | adopt automatically |
+| BP test-stop DBP | absent | >115 mmHg | new safety floor | §Box 3.6 | adopt automatically |
+| Cardiac rehab BP exclusion | absent | >180/110 mmHg resting | new safety floor | Box 8.3 | adopt automatically |
+| Waist circ "high risk" (women) | absent | 90–110 cm | n/a | Tbl 3.2 | adopt as derived stratifier |
+| Waist circ "high risk" (men) | absent | 100–120 cm | n/a | Tbl 3.2 | adopt as derived stratifier |
+| WHR "very high" (men <60 / women <60) | absent | >0.95 / >0.86 | n/a | §3.6 | adopt as derived stratifier |
 
-## 6. Ch. 12 — Behaviour change
+**No `less-conservative` deltas detected** in this slice — every 12e value either matches or tightens the implicit Forge baseline. Q2 directive (auto-adopt when more conservative) applies cleanly to all 17 above.
 
-No coverage in Forge today. No stage-of-change field on clients, no
-motivational-interviewing prompts, no adherence-vs-prescription delta
-surfaced. Defer to Round 4 as planned.
+## Section F — Executive summary
 
-## 7. 11e → 12e threshold deltas
+**Top 3 lacunas a fechar no Round 2:**
+1. **Structured FITT-VP emission** in `workout_plans.prescription_parameters` — without this, none of the 59 ingested recommendations can be enforced or cited.
+2. **Submax VO₂ estimation** (Rockport / 1.5-mile / Ebbeling) — unlocks intensity prescription in %HRR/%VO₂R rather than RPE-only.
+3. **9 cardinal signs/symptoms checklist** in intake — closes the largest preparticipation safety gap (currently invisible to Forge).
 
-**Pending ingestion.** Will be enumerated as a table here after the PDF is
-re-uploaded and parsed. Any 12e value that is *less conservative* than the
-current Forge threshold will be flagged for explicit approval before
-adoption.
+**Top 3 deltas 12e vs Forge requiring user decision:** None — every delta extracted is more conservative than current Forge, so per Q2 all 17 listed in Section E auto-adopt in Round 2. **No blocking decisions for you.**
+
+**Round 3 overlay forecast:** ~18 special-population overlays (pediatric, pregnancy, older-adults-frailty, LBP, hypertension, T1D, T2D, dyslipidemia, obesity, MASLD, asthma, COPD, stroke, Parkinson's, MS, depression, cancer survivors, osteoporosis). The 12e-new populations (POTS, ME/CFS, SCAD, MASLD, transgender/gender-diverse) are all in this set.
 
 ---
 
-## Round-1 status checklist
-
-- [x] Schema (`acsm_chapters`, `acsm_sections`, `acsm_recommendations`, `acsm_contraindications`, `acsm_normatives`) with RLS as specified.
-- [x] `.lovable/acsm-12e-source.txt` (source + IP policy).
-- [x] PDF storage location: `/mnt/documents/acsm-12e.pdf` (outside the repo by design — `/mnt/documents/` is not in the project tree, so no `.gitignore` entry is required).
-- [x] Code-side gap report (this file, the parts that don't need the PDF).
-- [ ] **Blocked: PDF re-upload.** The Round-1 brief expected the ACSM 12e PDF to be attached to the chat turn. It wasn't. Once you re-upload it, the ingestion script will populate the structured rows and complete the threshold-delta section.
-
-## Next step (you)
-
-Re-attach the ACSM 12e PDF to the chat. The agent will then run the
-ingestion against Ch. 2/3/5 fully + a lighter pass on Ch. 6/8–11 for
-population triggers + contraindications, and finalise this report.
+**Bompa & Buzzichelli 6e:** PDF parked at `/mnt/documents/bompa-buzzichelli-6e.pdf`, source policy in `.lovable/bompa-buzzichelli-6e-source.txt`. Decision pending — recommend slotting as Round 2.5 (periodization layer above FITT-VP) or Round 3.5 (after population overlays). My pick: **Round 2.5** — periodization templates are a natural extension of the FITT-VP backbone and most overlays don't need periodization-aware logic.

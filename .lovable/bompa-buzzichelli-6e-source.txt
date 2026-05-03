@@ -1,0 +1,25 @@
+Bompa & Buzzichelli — Periodization, 6th Edition — Source & Access Policy
+=========================================================================
+
+Source: Periodization: Theory and Methodology of Training, 6th Edition (2019)
+Authors: Tudor O. Bompa, Carlo Buzzichelli
+Publisher: Human Kinetics
+ISBN: 978-1-4925-4480-7
+Pages: ~394
+
+PDF location (NOT in repo):
+  /mnt/documents/bompa-buzzichelli-6e.pdf  (agent-accessible only; outside repo; never bundled)
+
+Status: PARKED. Not ingested in Round 1 (ACSM-only).
+Decision pending: integration round/order to be decided after the ACSM 12e gap
+report is reviewed (candidate for Round 2 layered on FITT-VP, or Round 3 as a
+periodization overlay above the population overlays).
+
+IP rule (mirrors ACSM 12e policy):
+  - NEVER render verbatim prose to end users (trainer or client UIs, PDFs, exports).
+  - ALLOWED when ingestion happens: paraphrased rules, numeric loading parameters,
+    periodization templates as derived structures, citation strings of the form
+    "Bompa & Buzzichelli 6e §X.Y" or "Bompa & Buzzichelli 6e Tbl X.Y".
+  - Storage when ingested: paraphrased chapter notes go to a server-only table
+    (RLS deny-all). Only derived facts (loading %1RM, set/rep schemes, mesocycle
+    templates) become trainer-readable.
