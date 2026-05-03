@@ -308,8 +308,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}`;
-  // (volumeBlock appended below — keep template literal above stable)
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
