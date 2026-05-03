@@ -1930,13 +1930,23 @@ function ClientDetail() {
               <span className="text-muted-foreground">
                 Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
               </span>
-              <Link
-                to="/plans/$planId"
-                params={{ planId: readyPlanForAssessment.id }}
-                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20"
-              >
-                Plano pronto · ver
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/clients/$clientId/year"
+                  params={{ clientId }}
+                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-amber-300 hover:bg-amber-500/20"
+                  title="Ver evolução longitudinal de todos os blocos"
+                >
+                  Vista anual
+                </Link>
+                <Link
+                  to="/plans/$planId"
+                  params={{ planId: readyPlanForAssessment.id }}
+                  className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/20"
+                >
+                  Plano pronto · ver
+                </Link>
+              </div>
             </div>
           ) : (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">

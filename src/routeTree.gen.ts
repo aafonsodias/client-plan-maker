@@ -30,6 +30,7 @@ import { Route as PlansPlanIdProgressionsRouteImport } from './routes/plans.$pla
 import { Route as PlansPlanIdMicrocycleRouteImport } from './routes/plans.$planId.microcycle'
 import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.brief'
 import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId.blueprint'
+import { Route as ClientsClientIdYearRouteImport } from './routes/clients_.$clientId.year'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
 const TermsRoute = TermsRouteImport.update({
@@ -137,6 +138,11 @@ const PlansPlanIdBlueprintRoute = PlansPlanIdBlueprintRouteImport.update({
   path: '/blueprint',
   getParentRoute: () => PlansPlanIdRoute,
 } as any)
+const ClientsClientIdYearRoute = ClientsClientIdYearRouteImport.update({
+  id: '/year',
+  path: '/year',
+  getParentRoute: () => ClientsClientIdRoute,
+} as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -155,12 +161,13 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
-  '/clients/$clientId': typeof ClientsClientIdRoute
+  '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/clients/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
@@ -179,12 +186,13 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
-  '/clients/$clientId': typeof ClientsClientIdRoute
+  '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans': typeof PlansIndexRoute
+  '/clients/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
@@ -204,12 +212,13 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
-  '/clients_/$clientId': typeof ClientsClientIdRoute
+  '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/': typeof PlansIndexRoute
+  '/clients_/$clientId/year': typeof ClientsClientIdYearRoute
   '/plans/$planId/blueprint': typeof PlansPlanIdBlueprintRoute
   '/plans/$planId/brief': typeof PlansPlanIdBriefRoute
   '/plans/$planId/microcycle': typeof PlansPlanIdMicrocycleRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/'
+    | '/clients/$clientId/year'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/microcycle'
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans'
+    | '/clients/$clientId/year'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/microcycle'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/'
+    | '/clients_/$clientId/year'
     | '/plans/$planId/blueprint'
     | '/plans/$planId/brief'
     | '/plans/$planId/microcycle'
@@ -303,7 +315,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
-  ClientsClientIdRoute: typeof ClientsClientIdRoute
+  ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
   PlansPlanIdRoute: typeof PlansPlanIdRouteWithChildren
@@ -461,6 +473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlansPlanIdBlueprintRouteImport
       parentRoute: typeof PlansPlanIdRoute
     }
+    '/clients_/$clientId/year': {
+      id: '/clients_/$clientId/year'
+      path: '/year'
+      fullPath: '/clients/$clientId/year'
+      preLoaderRoute: typeof ClientsClientIdYearRouteImport
+      parentRoute: typeof ClientsClientIdRoute
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -470,6 +489,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ClientsClientIdRouteChildren {
+  ClientsClientIdYearRoute: typeof ClientsClientIdYearRoute
+}
+
+const ClientsClientIdRouteChildren: ClientsClientIdRouteChildren = {
+  ClientsClientIdYearRoute: ClientsClientIdYearRoute,
+}
+
+const ClientsClientIdRouteWithChildren = ClientsClientIdRoute._addFileChildren(
+  ClientsClientIdRouteChildren,
+)
 
 interface PlansPlanIdRouteChildren {
   PlansPlanIdBlueprintRoute: typeof PlansPlanIdBlueprintRoute
@@ -502,7 +533,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
-  ClientsClientIdRoute: ClientsClientIdRoute,
+  ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
   PlansPlanIdRoute: PlansPlanIdRouteWithChildren,
