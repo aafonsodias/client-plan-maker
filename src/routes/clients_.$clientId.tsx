@@ -1451,18 +1451,18 @@ function ClientDetail() {
           <div className="flex flex-wrap items-center gap-2 self-start">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
-              title="Categoria de risco ACSM (Pré-participação)"
+              title={t("detail.acsm_chip_title")}
             >
-              <span className="text-[9px] uppercase tracking-widest opacity-70">ACSM</span>
+              <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.acsm_label")}</span>
               {riskLabel}
               {parqYes && <span className="opacity-70">· PAR-Q+</span>}
             </span>
             {haveSignals && (
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums ${readyTone}`}
-                title={`Sono ${sleep || "—"}/10 · Stress ${stress || "—"}/10 · Soreness ${sore || "—"}/10`}
+                title={t("detail.recovery_chip_tooltip", { sleep: sleep || "—", stress: stress || "—", sore: sore || "—" })}
               >
-                <span className="text-[9px] uppercase tracking-widest opacity-70">Recuperação</span>
+                <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.recovery_label")}</span>
                 {readiness}/100
               </span>
             )}
