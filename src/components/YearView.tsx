@@ -19,6 +19,10 @@ import {
   type YearSummary,
 } from "@/lib/longitudinal";
 import { verdictMixSummary } from "@/lib/block-adaptation";
+import { computeCapacityGain } from "@/lib/capacity-gain";
+import { Link } from "@tanstack/react-router";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { toneChip, type Tone } from "@/lib/status-tone";
 
 type Props = { clientId: string };
 
@@ -78,6 +82,8 @@ export default function YearView({ clientId }: Props) {
           <Stat label="Adesão global" value={`${summary.overallAdherencePct}%`} />
         </div>
       </header>
+
+      <BlocksStrip summary={summary} />
 
       <Card title="Adesão semanal" subtitle="% das sessões planeadas que foram registadas, semana a semana">
         <div className="h-64">
