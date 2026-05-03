@@ -374,6 +374,14 @@ function PlanEditor() {
                 </Popover>
               );
             })()}
+            {(plan as any).generation_meta?.suggest_main_lift_swap && (
+              <span
+                title="Bloco ≥4 — pediu-se à IA para refrescar o main lift de pelo menos um padrão (anti-stale)."
+                className="inline-flex cursor-help items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-emerald-200"
+              >
+                Main lift refrescado
+              </span>
+            )}
             {(() => {
               const s = planStatusInfo(plan, tCommon as any);
               if (s.key === "draft") return null;
