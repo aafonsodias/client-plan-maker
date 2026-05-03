@@ -1,152 +1,50 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Beaker, Zap, Activity, Loader2, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { startDemoClientFull, getDemoRun, cancelDemoRun } from "@/server/demo-oneshot.functions";
 import { advanceSimulation } from "@/server/demo-sessions.functions";
 import { useAuth } from "@/hooks/use-auth";
-
-type GateState = "idle" | "running" | "done" | "failed";
-const GATE_LABELS = [
-  { key: "client", label: "Cliente + avaliação" },
-  { key: "prestage", label: "Análise por secção (pré-stage)" },
-  { key: "plan", label: "Plano (brief → progressões)" },
-  { key: "logbook", label: "Logbook" },
-  { key: "done", label: "Pronto" },
-] as const;
-
-const STAGE_ORDER = GATE_LABELS.map((g) => g.key) as readonly string[];
+import { useDemoRuns, DEMO_RUN_STAGES } from "@/contexts/DemoRunsContext";
 
 /**
  * Founder-only Demo Lab: creates a fully realistic demo client (client +
- * assessment + plan + logbook) with one click. Real per-stage progress now
- * comes from polling the `demo_runs` row that the server writes between
- * stages — the previous fake setInterval animation lied when stages took
- * unequal time. The cancel button writes `cancelled = true`; the runner
- * checks between stages and exits early.
+ * assessment + plan + logbook) with one click. Generations now run via the
+ * global DemoRunsProvider so the trainer can navigate the app while the
+ * pipeline is running and gets a toast (with "Abrir plano" action) when it
+ * finishes. The inline gate list mirrors the same context state so this
+ * panel stays informative when the user is on /dashboard.
  */
 export function DemoLabPanel() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const startFn = useServerFn(startDemoClientFull);
-  const pollFn = useServerFn(getDemoRun);
-  const cancelFn = useServerFn(cancelDemoRun);
+  const { runs, startRun, cancelRun } = useDemoRuns();
   const tickFn = useServerFn(advanceSimulation);
-  const [busy, setBusy] = useState<"instant" | "tick" | null>(null);
-  const [gates, setGates] = useState<Record<string, GateState>>({});
+  const [busy, setBusy] = useState<"tick" | null>(null);
   const [durationWeeks, setDurationWeeks] = useState<4 | 6 | 8>(4);
-  const runIdRef = useRef<string | null>(null);
-  const pollTimerRef = useRef<number | null>(null);
 
   if (!user || user.email !== "aafonsodias@gmail.com") return null;
 
-  const resetGates = () => {
-    setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "idle"])));
-  };
-
-  const applyStage = (stage: string, status: "running" | "done" | "failed") => {
-    setGates((prev) => {
-      const next = { ...prev };
-      const idx = STAGE_ORDER.indexOf(stage);
-      if (idx === -1) return prev;
-      // Mark all earlier stages as done.
-      for (let i = 0; i < idx; i++) next[STAGE_ORDER[i]] = "done";
-      next[stage] = status;
-      // Reset later stages to idle.
-      for (let i = idx + 1; i < STAGE_ORDER.length; i++) {
-        if (next[STAGE_ORDER[i]] !== "done") next[STAGE_ORDER[i]] = "idle";
-      }
-      return next;
-    });
-  };
-
-  const stopPolling = () => {
-    if (pollTimerRef.current) window.clearInterval(pollTimerRef.current);
-    pollTimerRef.current = null;
-  };
-
-  const startPolling = (onComplete: (row: any) => void) => {
-    stopPolling();
-    pollTimerRef.current = window.setInterval(async () => {
-      const id = runIdRef.current;
-      if (!id) return;
-      try {
-        const row: any = await pollFn({ data: { runId: id } });
-        if (!row) return;
-        applyStage(row.stage, row.status);
-        const finished =
-          (row.stage === "done" && row.status === "done") ||
-          row.status === "failed" ||
-          row.cancelled;
-        if (finished) {
-          stopPolling();
-          onComplete(row);
-        }
-      } catch {
-        /* swallow — best-effort */
-      }
-    }, 1500);
-  };
-
-  useEffect(() => () => stopPolling(), []);
+  // Track the last run started from this panel so the inline gate list
+  // shows the matching progress. If the run is gone (cleaned up after
+  // completion), fall back to the most recent active run if any.
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const trackedRun =
+    (lastRunId ? runs.find((r) => r.runId === lastRunId) : null) ??
+    runs.find((r) => r.status !== "done" && r.status !== "failed" && !r.cancelled) ??
+    null;
+  const stageIdx = trackedRun
+    ? DEMO_RUN_STAGES.findIndex((s) => s.key === trackedRun.stage)
+    : -1;
 
   const runInstant = async () => {
-    if (busy) return;
-    setBusy("instant");
-    resetGates();
-    applyStage("client", "running");
-    try {
-      // Fire-and-poll: the server returns runId in <1s and runs the rest in
-      // background. We follow progress via getDemoRun and only navigate when
-      // the run reaches stage="done". This avoids the upstream timeout that
-      // crashed the long-running response.
-      // Logbook always equals duration — we want the full ecosystem populated
-      // so we can mine the data for fusion / insights.
-      const res: any = await startFn({ data: { durationWeeks } });
-      if (!res?.ok || !res?.runId) {
-        applyStage("client", "failed");
-        toast.error(res?.error ?? "Falhou a iniciar a simulação.");
-        setBusy(null);
-        return;
-      }
-      runIdRef.current = res.runId;
-      startPolling((row) => {
-        setBusy(null);
-        if (row.cancelled) {
-          toast.info("Simulação cancelada.");
-          return;
-        }
-        if (row.status === "failed") {
-          toast.error(`Falhou em ${row.stage ?? "?"}: ${row.error ?? "erro desconhecido"}`);
-          return;
-        }
-        setGates(Object.fromEntries(GATE_LABELS.map((g) => [g.key, "done"])));
-        toast.success(`Cliente demo + plano (${durationWeeks} sem) prontos.`);
-        if (row.plan_id) {
-          void navigate({ to: "/plans/$planId", params: { planId: row.plan_id } });
-        }
-      });
-    } catch (e: any) {
-      stopPolling();
-      setBusy(null);
-      toast.error(e?.message ?? "Erro inesperado.");
-    }
+    if (trackedRun && trackedRun.status !== "done" && trackedRun.status !== "failed") return;
+    const id = await startRun({ durationWeeks });
+    if (id) setLastRunId(id);
   };
 
   const cancelInstant = async () => {
-    const id = runIdRef.current;
-    if (!id) {
-      toast.info("Cancelamento pedido (sem runId — a chamada vai concluir).");
-      return;
-    }
-    try {
-      await cancelFn({ data: { runId: id } });
-      toast.info("A pedir para parar… (stage atual termina antes de sair).");
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha a cancelar.");
-    }
+    if (!trackedRun) return;
+    await cancelRun(trackedRun.runId);
   };
 
   const runTick = async () => {
@@ -188,6 +86,8 @@ export function DemoLabPanel() {
     </button>
   );
 
+  const isRunning = !!trackedRun && trackedRun.status !== "done" && trackedRun.status !== "failed" && !trackedRun.cancelled;
+
   return (
     <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-amber-500/10 p-4">
       <div className="mb-3 flex items-center gap-2">
@@ -211,13 +111,13 @@ export function DemoLabPanel() {
           size="sm"
           variant="outline"
           onClick={() => void runInstant()}
-          disabled={busy !== null}
+          disabled={isRunning}
           className="border-amber-500/40"
         >
-          {busy === "instant" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+          {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
           Instant: cliente + plano + logbook
         </Button>
-        {busy === "instant" && (
+        {isRunning && (
           <Button size="sm" variant="ghost" onClick={() => void cancelInstant()} className="text-amber-400 hover:text-amber-300">
             <Square className="mr-2 h-4 w-4" /> Parar
           </Button>
@@ -226,28 +126,36 @@ export function DemoLabPanel() {
           size="sm"
           variant="outline"
           onClick={() => void runTick()}
-          disabled={busy !== null}
+          disabled={busy !== null || isRunning}
           className="border-amber-500/40"
         >
           {busy === "tick" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
           Avançar simulação (+1 sessão / cliente demo)
         </Button>
       </div>
-      {(busy === "instant" || Object.values(gates).some((v) => v === "failed")) ? (
+      {trackedRun ? (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-background/40 p-3">
           <ol className="space-y-1.5 text-[11px]">
-            {GATE_LABELS.map((g) => {
-              const s = gates[g.key] ?? "idle";
-              const Icon =
-                s === "done" ? Check
-                : s === "failed" ? X
-                : s === "running" ? Loader2
-                : null;
+            {DEMO_RUN_STAGES.map((g, i) => {
+              const s =
+                trackedRun.status === "failed" && i === stageIdx
+                  ? "failed"
+                  : i < stageIdx
+                  ? "done"
+                  : i === stageIdx
+                  ? trackedRun.status === "done"
+                    ? "done"
+                    : "running"
+                  : "idle";
+              const Icon = s === "done" ? Check : s === "failed" ? X : s === "running" ? Loader2 : null;
               const tone =
-                s === "done" ? "text-emerald-400"
-                : s === "failed" ? "text-red-400"
-                : s === "running" ? "text-amber-300"
-                : "text-muted-foreground/60";
+                s === "done"
+                  ? "text-emerald-400"
+                  : s === "failed"
+                  ? "text-red-400"
+                  : s === "running"
+                  ? "text-amber-300"
+                  : "text-muted-foreground/60";
               return (
                 <li key={g.key} className={`flex items-center gap-2 ${tone}`}>
                   <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current/40">
@@ -258,6 +166,9 @@ export function DemoLabPanel() {
               );
             })}
           </ol>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Podes navegar para outras páginas — vais ver o progresso no canto inferior direito e receber um aviso quando terminar.
+          </p>
         </div>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">

@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runDemoPlay } from "@/server/demo-play.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
+import { summarizePriorBlock, verdictLabelPt } from "@/lib/block-feedback";
+import { MUSCLE_GROUP_LABELS_PT } from "@/lib/volume-landmarks";
 
 /**
  * archivePlanAndStartNextBlock — closes the current plan as "archived" and
@@ -40,9 +42,10 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .eq("plan_id", data.priorPlanId)
       .order("week_number", { ascending: true });
 
-    const totalLogged = sessions?.length ?? 0;
-    const completed = (sessions ?? []).filter((s: any) => s.status === "done").length;
-    const adherencePct = totalLogged > 0 ? Math.round((completed / totalLogged) * 100) : 0;
+    const summaryStruct = summarizePriorBlock((sessions ?? []) as any[]);
+    const totalLogged = summaryStruct.totalSessions;
+    const completed = summaryStruct.completedSessions;
+    const adherencePct = summaryStruct.adherencePct;
 
     // Best-effort RPE drift: average RPE in the first vs last logged week.
     const rpePerWeek = new Map<number, number[]>();
@@ -64,12 +67,20 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
     const rpeDrift =
       firstRpe !== null && lastRpe !== null ? Number((lastRpe - firstRpe).toFixed(2)) : null;
 
+    const offTarget = summaryStruct.perMuscle.filter((p) => p.verdict !== "on_target");
+    const offTargetLine = offTarget.length
+      ? `Adaptação: ${offTarget
+          .map((p) => `${MUSCLE_GROUP_LABELS_PT[p.muscle]} (${verdictLabelPt(p.verdict)})`)
+          .join(", ")}.`
+      : "Todos os grupos musculares no alvo.";
+
     const summary = [
       `Bloco ${(prior as any).block_number ?? 1} concluído.`,
       `Adesão: ${adherencePct}% (${completed}/${totalLogged} sessões).`,
       rpeDrift !== null
         ? `RPE médio variou ${rpeDrift > 0 ? "+" : ""}${rpeDrift} entre semana ${weeks[0]} e ${weeks[weeks.length - 1]}.`
         : "RPE sem dados suficientes.",
+      offTargetLine,
       adherencePct >= 80 && (rpeDrift ?? 0) < 1
         ? "Próximo bloco: progride carga 5–7%, mantém volume."
         : adherencePct < 60
@@ -94,10 +105,12 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
 
     const nextBlock = ((prior as any).block_number ?? 1) + 1;
 
-    // Run the phased pipeline against the existing client. runDemoPlay reuses
-    // any in-progress plan, so we DO NOT pre-insert a placeholder (that would
-    // be picked up and then dropped, breaking the navigation target).
-    const ran: any = await runDemoPlay({ data: { clientId: (prior as any).client_id } });
+    // Run the phased pipeline against the existing client. Pass priorPlanId
+    // so runDemoPlay stamps the per-muscle verdict map onto generation_meta;
+    // Stage 2/3 prompts read it to adapt the volume prescription.
+    const ran: any = await runDemoPlay({
+      data: { clientId: (prior as any).client_id, priorPlanId: data.priorPlanId },
+    });
     if (!ran?.ok || !ran?.planId) {
       return {
         ok: false as const,

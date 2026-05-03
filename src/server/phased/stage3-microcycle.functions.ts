@@ -242,7 +242,8 @@ async function runDay(
   dayIndex: number,
   brief: any,
   blueprint: any,
-  guidelines: TierGuidelines | null
+  guidelines: TierGuidelines | null,
+  priorSummary: any = null,
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -264,11 +265,11 @@ async function runDay(
     4,
     Number(blueprint?.mesocycle_length_weeks) || Number(brief?.mesocycle_length_weeks) || 4,
   );
-  const week1 = prescribeWeek(1, totalWeeks);
+  const week1 = prescribeWeek(1, totalWeeks, { priorSummary });
   const week1TargetsLine = week1.rows
     .map((r) => `${r.muscle}=${r.target}(${r.min}..${r.max})`)
     .join(" ");
-  const volumeBlock = `\n\nWEEKLY VOLUME PRESCRIPTION (full mesocycle, hard constraint):\n${prescriptionPromptBlock(totalWeeks)}\n\nTHIS DAY contributes to WEEK 1 totals: ${week1TargetsLine}.\nPick exercises whose primary/secondary muscles move the day toward those weekly targets without overshooting on any single muscle.`;
+  const volumeBlock = `\n\nWEEKLY VOLUME PRESCRIPTION (full mesocycle, hard constraint):\n${prescriptionPromptBlock(totalWeeks, { priorSummary })}\n\nTHIS DAY contributes to WEEK 1 totals: ${week1TargetsLine}.\nPick exercises whose primary/secondary muscles move the day toward those weekly targets without overshooting on any single muscle.`;
 
   const tierBlock = guidelines
     ? `
@@ -499,6 +500,7 @@ export const generateDay = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     await markPending(supabase, userId, data.planId, data.dayIndex);
     const r = await runDay(
       supabase,
@@ -508,6 +510,7 @@ export const generateDay = createServerFn({ method: "POST" })
       briefP.data,
       bpP.data,
       guidelines,
+      priorBlockSummary,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -538,6 +541,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -560,6 +564,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             briefP.data,
             bpP.data,
             guidelines,
+            priorBlockSummary,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);

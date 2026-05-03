@@ -126,6 +126,7 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       | "conservative"
       | "advanced"
       | undefined;
+    const priorBlockSummary = (planMeta as any)?.generation_meta?.block_feedback ?? null;
     const autoTier = classifyTier(brief, assessment ?? {});
     const tier = overrideTier ?? autoTier;
     const guidelines = tierGuidelines(
@@ -134,7 +135,7 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       brief.primary_goal,
     );
     const tierBlock = tierPromptBlock(guidelines);
-    const volumeBlock = prescriptionPromptBlock(weeks);
+    const volumeBlock = prescriptionPromptBlock(weeks, { priorSummary: priorBlockSummary });
 
     const baseSystem = `You are a senior strength coach designing a MESOCYCLE BLUEPRINT.
 
