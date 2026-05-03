@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS demo_year_offset integer NOT NULL DEFAULT 0;
