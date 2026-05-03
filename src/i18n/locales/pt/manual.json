@@ -24,7 +24,7 @@
         },
         {
           "h": "Envie o intake",
-          "p": "No cartão do cliente, copie o link de intake e envia. O cliente preenche pelo telemóvel; tu recebes tudo estruturado."
+          "p": "No cartão do cliente, copie o link de intake e envie. O cliente preenche pelo telemóvel; tu recebe tudo estruturado."
         }
       ]
     },
@@ -37,7 +37,7 @@
           "p": "Objetivos, histórico, equipamento, lesões, PAR-Q+. O cliente faz isto sozinho — leva 4–7 minutos."
         },
         {
-          "h": "Brief (tu)",
+          "h": "Brief (você)",
           "p": "Em /plans/{id}/brief revês o que a IA extraiu: objetivo primário, ênfase, faixa de treino, sinais de alerta. Ajustas qualquer coisa."
         },
         {

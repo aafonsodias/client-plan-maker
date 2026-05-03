@@ -126,7 +126,7 @@
         },
         "brief": {
           "label": "Brief",
-          "desc": "A IA resume a avaliação num brief defensável que tu aprovas."
+          "desc": "A IA resume a avaliação num brief defensável que você aprova."
         },
         "blueprint": {
           "label": "Blueprint",
@@ -145,7 +145,7 @@
     "logbook_preview": {
       "eyebrow": "Depois do PDF",
       "title": "Cada série registada vira combustível para a próxima semana.",
-      "subtitle": "O PDF é o ponto de partida. Cada registo — manual hoje, por voz e sensores amanhã — alimenta a próxima geração. Tudo opcional, tudo via toggle: dás o que tens, recebes o que dá para fazer.",
+      "subtitle": "O PDF é o ponto de partida. Cada registo — manual hoje, por voz e sensores amanhã — alimenta a próxima geração. Tudo opcional, tudo via toggle: dás o que tens, recebe o que dá para fazer.",
       "log_caption": "Pré-visualização — regista uma sessão em segundos.",
       "trend_caption": "Linhas de tendência e dicas da IA vêm a seguir — os seus registos já alimentam o motor.",
       "history_caption": "Histórico semana a semana — vê a carga a subir sem abrir o ginásio.",
