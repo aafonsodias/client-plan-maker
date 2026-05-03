@@ -1007,22 +1007,10 @@ function buildSlides(
     {
       title: t("sections.training_equipment"),
       body: (
-        <div className="flex flex-wrap gap-2">
-          {equipmentIds.map((eid) => {
-            const persisted = enLabels[eid];
-            const on = form.available_equipment.includes(persisted);
-            return (
-              <button
-                key={eid}
-                type="button"
-                onClick={() => set("available_equipment", on
-                  ? form.available_equipment.filter((x) => x !== persisted)
-                  : [...form.available_equipment, persisted])}
-                className={`rounded-full border px-3 py-2 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-              >{t(`equipment.${eid}`)}</button>
-            );
-          })}
-        </div>
+        <EquipmentPicker
+          value={form.available_equipment}
+          onChange={(v) => set("available_equipment", v)}
+        />
       ),
     },
     // 9. Injuries (optional)
