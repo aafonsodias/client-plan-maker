@@ -87,7 +87,7 @@ function Dashboard() {
         [k]: Math.max(0, (c as any)[k] - 1),
       }));
     }
-    toast.success("Plan deleted");
+    toast.success(t("dashboard.plan_deleted"));
   };
 
   const recentPlanIds = useMemo(() => recent.map((p) => p.id), [recent]);
