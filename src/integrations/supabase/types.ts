@@ -253,6 +253,56 @@ export type Database = {
           },
         ]
       }
+      client_bookings: {
+        Row: {
+          client_id: string
+          created_at: string
+          duration_min: number
+          id: string
+          notes: string | null
+          pack_id: string | null
+          session_type: string
+          starts_at: string
+          status: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          duration_min?: number
+          id?: string
+          notes?: string | null
+          pack_id?: string | null
+          session_type?: string
+          starts_at: string
+          status?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          duration_min?: number
+          id?: string
+          notes?: string | null
+          pack_id?: string | null
+          session_type?: string
+          starts_at?: string
+          status?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_bookings_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "client_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_measurement_prefs: {
         Row: {
           client_id: string
@@ -313,6 +363,57 @@ export type Database = {
           notes?: string | null
           trainer_id?: string
           values?: Json
+        }
+        Relationships: []
+      }
+      client_packs: {
+        Row: {
+          archived: boolean
+          client_id: string
+          color: string
+          created_at: string
+          id: string
+          label: string
+          pack_size: number
+          price_per_session_eur: number
+          session_type: string
+          sessions_used: number
+          start_date: string
+          trainer_id: string
+          updated_at: string
+          weekly_frequency: number
+        }
+        Insert: {
+          archived?: boolean
+          client_id: string
+          color?: string
+          created_at?: string
+          id?: string
+          label?: string
+          pack_size?: number
+          price_per_session_eur?: number
+          session_type?: string
+          sessions_used?: number
+          start_date?: string
+          trainer_id: string
+          updated_at?: string
+          weekly_frequency?: number
+        }
+        Update: {
+          archived?: boolean
+          client_id?: string
+          color?: string
+          created_at?: string
+          id?: string
+          label?: string
+          pack_size?: number
+          price_per_session_eur?: number
+          session_type?: string
+          sessions_used?: number
+          start_date?: string
+          trainer_id?: string
+          updated_at?: string
+          weekly_frequency?: number
         }
         Relationships: []
       }
