@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, BookOpen, Bookmark } from "lucide-react";
+import { Home, Users, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, BookOpen, Bookmark, CalendarRange } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
@@ -98,6 +98,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   const primaryNav = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: Home },
     { to: "/clients", label: t("nav.clients"), icon: Users },
+    { to: "/schedule", label: t("nav.schedule"), icon: CalendarRange },
     { to: "/templates", label: "Templates", icon: Bookmark },
     { to: "/settings", label: t("nav.branding"), icon: Settings },
   ] as const;
