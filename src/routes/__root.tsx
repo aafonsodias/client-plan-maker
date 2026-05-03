@@ -5,6 +5,8 @@ import { I18nextProvider } from "react-i18next";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { DemoRunsProvider } from "@/contexts/DemoRunsContext";
+import { DemoRunsIndicator } from "@/components/DemoRunsIndicator";
 import i18n, { applyPersistedLocale } from "@/i18n";
 
 import appCss from "../styles.css?url";
@@ -115,8 +117,11 @@ function RootComponent() {
     <I18nextProvider i18n={i18n}>
       <AuthProvider>
         <CurrencyProvider>
-          <Outlet />
-          <Toaster />
+          <DemoRunsProvider>
+            <Outlet />
+            <DemoRunsIndicator />
+            <Toaster />
+          </DemoRunsProvider>
         </CurrencyProvider>
       </AuthProvider>
     </I18nextProvider>
