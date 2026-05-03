@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Activity, Info } from "lucide-react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ type Props = {
  * Pure read-only diagnosis. We never auto-edit the plan.
  */
 export function VolumeSection({ plan, adaptation, sessions }: Props) {
+  const { t } = useTranslation("common");
   const byWeek = useMemo(() => computeWeeklyVolume(plan), [plan]);
   const byWeekActual = useMemo(
     () => (sessions && sessions.length > 0 ? computeWeeklyActualVolume(plan, sessions) : null),
@@ -48,10 +50,8 @@ export function VolumeSection({ plan, adaptation, sessions }: Props) {
         <div className="flex items-start gap-2">
           <Activity className="mt-0.5 h-4 w-4 text-accent" />
           <div>
-            <h2 className="text-base font-bold tracking-tight">Volume prescrito vs landmarks</h2>
-            <p className="text-[11px] text-muted-foreground">
-              Verifica antes de aprovar — séries por grupo muscular face a MEV/MAV/MRV (Israetel/Helms). Não inclui o que o cliente realizou.
-            </p>
+            <h2 className="text-base font-bold tracking-tight">{t("volume.section_title")}</h2>
+            <p className="text-[11px] text-muted-foreground">{t("volume.section_subtitle")}</p>
           </div>
           <TooltipProvider delayDuration={150}>
             <Tooltip>
@@ -59,17 +59,17 @@ export function VolumeSection({ plan, adaptation, sessions }: Props) {
                 <button
                   type="button"
                   className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                  aria-label="Sobre MEV/MAV/MRV"
+                  aria-label={t("volume.info_aria")}
                 >
                   <Info className="h-3.5 w-3.5" />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
-                <p className="mb-2 font-semibold">Como ler</p>
-                <p className="mb-1"><span className="font-medium">MEV</span> — mínimo para estimular crescimento.</p>
-                <p className="mb-1"><span className="font-medium">MAV</span> — alvo (sweet spot).</p>
-                <p className="mb-2"><span className="font-medium">MRV</span> — máximo recuperável; acima é overreaching.</p>
-                <p className="text-muted-foreground">Cada série conta 1× para o músculo primário e 0.5× para cada secundário. Valores referência para praticantes intermédios — ajusta com critério.</p>
+                <p className="mb-2 font-semibold">{t("volume.info_title")}</p>
+                <p className="mb-1"><span className="font-medium">MEV</span> — {t("volume.info_mev")}</p>
+                <p className="mb-1"><span className="font-medium">MAV</span> — {t("volume.info_mav")}</p>
+                <p className="mb-2"><span className="font-medium">MRV</span> — {t("volume.info_mrv")}</p>
+                <p className="text-muted-foreground">{t("volume.info_footnote")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
