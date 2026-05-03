@@ -14,6 +14,19 @@ import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
+function TrainerLogo({ url }: { url?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!url || failed) return <BrandMark size="sm" />;
+  return (
+    <img
+      src={url}
+      alt=""
+      className="h-9 w-9 rounded-md object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
   validateSearch: (s: Record<string, unknown>): { legacy?: "1" } => ({
@@ -741,11 +754,7 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
 
       <header className="border-b border-border/60 bg-card/40">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-4">
-          {ctx.trainer?.logo_url ? (
-            <img src={ctx.trainer.logo_url} alt="" className="h-9 w-9 rounded-md object-cover" />
-          ) : (
-            <BrandMark size="sm" />
-          )}
+          <TrainerLogo url={ctx.trainer?.logo_url} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{trainerName}</p>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">

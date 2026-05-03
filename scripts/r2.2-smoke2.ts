@@ -103,13 +103,13 @@ const DAY_TOOL_SCHEMA = {
     day_label: { type: "string" },
     focus: { type: "string" },
     rationale: { type: "string" },
-    warmup: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
-    activation: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
-    dynamic_stretches: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
-    cooldown: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
-    finisher: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
+    warmup: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
+    activation: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
+    dynamic_stretches: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
+    cooldown: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
+    finisher: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
     finisher_enabled: { type: "boolean" },
-    cardio: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"} } } },
+    cardio: { type: "array", items: { type: "object", additionalProperties: false, required: ["name","duration","cue","notes"], properties: { name: {type:"string"}, duration: {type:"string"}, cue: {type:"string"}, notes: {type:"string"} } } },
     exercises: {
       type: "array", minItems: 1,
       items: {
@@ -149,7 +149,8 @@ async function callGateway(system: string, userMessage: string) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_completion_tokens: 4000,
+      max_completion_tokens: 16000,
+      reasoning_effort: "low",
       messages: [
         { role: "system", content: system },
         { role: "user", content: userMessage },
