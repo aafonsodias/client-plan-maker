@@ -1,106 +1,134 @@
+# Part 2 — Adaptive intake + metabolism/steps + AI SMART helper
 
-## What I read in your PDF
-
-Sim, percebi tudo. Vi os 19 ecrãs, parou na Page 18 (fotos de referência) — bateu no erro `invalid values for "extended"` quando tentaste submeter o todo, e as fotos não auto-guardaram (só guardam quando carregas em "Tirar foto" → upload, sem retry/persistência se a página crashar antes). Vi também que o intake atual assume sempre "tens coach" — não há a bifurcação que descreves.
-
-## Diagnóstico dos 3 bugs
-
-**1. `invalid values for "extended"` no submit final**
-A causa é o schema do servidor em `src/server/intake.functions.ts` (`extendedSchema`): só aceita `string|number|boolean|null|array|record-flat`. Mas o cliente envia coisas que não cabem:
-- `extended.parq` = `{q1: true|false|null, ...}` — é um record com `null`, e o schema record só permite `string|number|boolean|null` como valor (ok), MAS o teu objeto `parq` chega via `f.parq` antes de `q1..q7` serem todos respondidos → vem `null`, ok. O problema real é `extended.skipped` = `Record<string, boolean>` que passa, mas `ai_goal_interpretation` (escrito por `interpretGoal`) é um objeto aninhado de 2 níveis → falha o refine.
-- `extended.sched_days` = `string[]` ok, mas `extended.parq` é record de booleans → ok individualmente. O culpado mais provável é a combinação `parq + skipped + ai_goal_interpretation` (este último não vem do cliente, vem fundido server-side, e quando o cliente envia `extended` no submit, o merge replica e revalida tudo — não é o caso porque a validação só corre em `cleaned.extended` (input), não em `mergedExtended`).
-- O culpado real (confirmei no código): `extended.skipped` chega como `Record<string, boolean>` ✓, `extended.parq` `Record<string, boolean|null>` ✓ — mas o `extendedSchema` tem `.refine(o => Object.keys(o).length <= 80)` e mais importante, o `record(value)` aceita `null` mas o **inner record** dentro de extended (`record<string, string|number|boolean|null>`) **não aceita null como valor** quando dentro de outro record nested via `parq`. O `parq` está OK, o que **falha** é provavelmente o campo de topo `ai_goal_interpretation` que tem `{ human_label, confidence, ..., source_text, at }` — Zod não distingue mas o tamanho/tipo OK. Vou instrumentar no fix para apanhar exatamente qual key falha (logar `parsed.error.issues[0].path` antes de devolver mensagem genérica).
-
-**2. Fotos não auto-guardam**
-`PhotoSlot` faz upload imediato quando carregas no botão (isso funciona), mas:
-- Se o utilizador tirar foto e a página crashar **durante** o upload, perde tudo (não há retry).
-- Não há feedback de "esta foto já foi guardada antes" quando volta à página (lê de `assessments.extended.photos[slot]` mas nunca puxa signed URL para preview).
-- Não há autosave de drafts antes do upload (não consegues, é binário).
-
-**3. Pós-registo → dashboard adaptado**
-Hoje toda a gente cai em `/dashboard` (PT). Não há conceito de `account_type` (`coach` | `solo` | `coached_client`).
+Two waves. Wave A finishes the Part 2 we agreed on last round. Wave B picks up the new feedback. Both sweat the "técnica > força bruta" rule: cheapest model that does the job, real value per question, no fluff.
 
 ---
 
-## O que vou construir
+## Wave A — Adaptive intake (the original Part 2)
 
-### A. Audience routing (fundação para tudo o resto)
+### A1. Remove "Who is this for?" slide
 
-**DB migration:**
-- `profiles.account_type` = enum `'coach' | 'solo' | 'coached_client'` (default `'coach'` para retrocompatibilidade).
-- `profiles.onboarding_completed` já existe — passa a guardar `account_type` na primeira sessão.
-- Trigger `handle_new_user` mantém-se mas `account_type` arranca `NULL` para forçar a escolha.
+Already inferred from context (intake link → `coached`, `/welcome` solo route → `self`). The slide is redundant. Default `intake_path = "coached"` when the form is loaded via `/intake/$token`, skip rendering it. Keep the field in the schema (already supported) so nothing breaks.
 
-**Pós-signup welcome (`/welcome`):**
-Nova rota que aparece se `profiles.account_type IS NULL`. 3 cards grandes:
-1. **"Sou treinador / coach"** → `/dashboard` (atual)
-2. **"Treino sozinho/a"** → `/me` (novo dashboard solo)
-3. **"Tenho coach e quero acompanhar o meu plano"** → `/me` mas em modo "linked" (vê plano que o coach criou; pode pedir link ao coach via código de convite — fora deste PR)
+### A2. Add missing slides (real coaching info — currently dropped)
 
-`AppShell` redireciona para `/welcome` se `account_type` é null e a rota não é `/welcome`/`/auth`.
+New slides between current "Experience" and "Location":
 
-**Solo dashboard (`/me`) — V1 mínimo viável:**
-- Cabeçalho com nome, próximo treino.
-- Botão grande "Gerar plano com IA" que reusa o pipeline atual mas com `client = self` (auto-cria cliente espelho do solo user — usar `clients.is_self = true`).
-- Lista os planos do próprio.
-- Reusa `PlanHeader`, `MicrocycleView`, `Logbook` — não duplicamos.
+1. **Anthropometry** — height (cm), current weight (kg), optional waist (cm). Persists to `assessments.height_cm`, `weight_kg`, `extended.waist_cm`. Skippable.
+2. **Training history** — years training (pill: <1, 1–3, 3–5, 5–10, 10+), longest consistent streak (months), prior injuries narrative (already partly there, promote it).
+3. **Real availability** — instead of just "days/week + duration", a 7-day pill grid (Seg–Dom multi-select) + typical window (manhã/almoço/tarde/noite). This survives the "I can do 4 days but only Tue/Thu/Sat/Sun" reality. Stored on `extended.weekday_availability[]` + `extended.window`.
+4. **Modality preference** — pill multi: força, hipertrofia, condicionamento, mobilidade, desporto-específico, perder gordura, ganhar massa. Currently inferred from goal — making it explicit takes 4 seconds and unblocks better Stage 2 archetypes.
+5. **Secondary goal** (optional) — same SMART micro-pattern as primary, but skippable. Persists to `extended.secondary_goal_*`.
 
-**Intake adaptativo:**
-A pergunta "Who is this for?" (Page 2 do PDF) deixa de ser uma pergunta de slide e passa a vir **pré-determinada pelo contexto**:
-- Se entrou via link do coach → `intake_path = "coached"` (sem perguntar).
-- Se chegou via signup solo → `intake_path = "self"` (sem perguntar).
-- Em vez disso, o slide 2 pergunta algo útil: **frequência de check-ins desejada** (semanal/quinzenal/mensal) ou salta direto para o goal.
+All slides use the existing `Skip` mechanism, all copy through `intake.json` PT/EN.
 
-### B. Fix do `invalid values for "extended"`
+### A3. Photo upload polish (carryover)
 
-`src/server/intake.functions.ts`:
-1. Substituir o `extendedSchema` rígido por um schema **2-níveis** explícito:
-   - top-level keys whitelisted (`smart_extra`, `ext_*`, `parq`, `intake_path`, `sched_days`, `sched_window`, `lifestyle_gate`, `ai_goal_confirmed`, `ai_goal_interpretation`, `skipped`, `photos`).
-   - cada uma com o seu sub-schema correto (`parq` = `record<enumKeys, boolean.nullable()>`, `skipped` = `record<string, boolean>`, `ai_goal_interpretation` = `object passthrough`, `photos` = `record<string, string>`).
-2. No catch que devolve `Invalid value for "X"`, **logar `error.issues`** para debug (`console.error("[saveIntake] zod issues", parsed.error.issues)`) — assim a próxima vez que falhar sabemos a path exata.
-3. `cleaned.extended` antes do merge tem de manter o objeto vazio em vez de `null` para não destruir provenance.
-
-### C. Auto-save de fotos robusto
-
-`PhotoSlot`:
-1. **Hidrata estado inicial** do `ctx.assessment.extended.photos[slot]` — se já existe, marca `done=true` e mostra preview via signed URL (novo server fn `getIntakePhotoUrl({token, slot})` que devolve URL assinada de 5min).
-2. **Auto-retry** com backoff (3 tentativas) em falha de rede.
-3. **Persistência local antes do upload**: guardar `dataUrl` em IndexedDB (não localStorage — limite 5MB) com chave `forge_intake_photo_${token}_${slot}`. No mount, se há foto pendente em IDB e não há foto remota, re-tenta upload.
-4. Botão "Tirar foto" passa a aceitar drag-drop também (desktop).
-
-### D. Mais dados no assessment (cobre o que ficou de fora)
-
-O PDF mostra que param-se nos slides 17/18. Slides que faltam ou estão fracos:
-- **Antropometria básica**: altura, peso, % gordura estimada (opcional). Slide entre o "Who are you" e "Goal".
-- **Histórico de treino**: melhor agachamento/supino/peso morto/dominadas conhecidos (opcional, só intermédio+).
-- **Disponibilidade real**: dias da semana específicos (não só "X dias") — feed para o microcycle scheduler.
-- **Preferências de modalidade**: cardio sim/não, mobilidade sim/não, qual exercício odeias.
-- **Objetivo secundário**: para casos como o teu ("ripped + vo2max") — explicitamente um campo "primary_goal" + "secondary_goal".
-
-Tudo guardado em `extended.*` com keys bem definidas, integrado no Stage 1 (Brief) prompt.
+Already wired to IndexedDB + retry — verify hydration on coach side `clients_.$clientId.tsx`. Add a 2x2 thumbnail row reading from `assessments.extended.photos` with signed URLs (server fn `getClientPhotoUrls`). Lightbox on click. No editing UI yet.
 
 ---
 
-## Como testar registo (resposta direta)
+## Wave B — New feedback
 
-Sim — **email novo**. Algumas opções:
-1. **Gmail aliases**: `aafonsodias+test1@gmail.com`, `+test2`, etc. — entregam-te à mesma caixa.
-2. **mailinator.com**: `qualquercoisa@mailinator.com` → consultas em mailinator.com sem registar.
-3. Vou também adicionar um botão dev-only **"Reset minha conta"** em `/settings` (só visível para `aafonsodias@gmail.com`) que apaga clientes/planos/profile e permite re-onboarding sem criar nova conta.
+### B1. AI-suggested SMART (cheapest model, accept/edit)
+
+User writes the goal in slide 2 (`smart_specific`). Slide 3 currently asks them to also write metric + deadline manually — most clients freeze here.
+
+**Flow:**
+- After slide 2, call new server fn `suggestSmartMetric` with `{ goal, profile_hint }` → returns `{ measurable: string, deadline_iso: string, rationale: string }`.
+- Model: `google/gemini-3-flash-preview` (cheapest, ~$0.0001/call). Hard cap 200 output tokens. JSON tool-call.
+- Prefill slide 3 with the suggestion + a small "✨ proposto pelo Forge — edita se quiser" chip. User just taps Next.
+- Cache result in `extended.ai_smart_suggestion` so re-renders don't re-call.
+- Skip-safe: if AI fails, fallback to the current empty inputs.
+
+Cost ceiling: ~1 call per intake. Negligible.
+
+### B2. Metabolism + activity panel in assessment
+
+New compact card on the existing slide that already asks `ext_hours_seated` / `ext_daily_steps` / `ext_job_type`. Promote it into a proper "Atividade & metabolismo" slide with:
+
+- **BMR** auto-computed (Mifflin-St Jeor, needs sex + age + height + weight — sex pill added here, age from `client_dob` if present).
+- **Activity factor** picked via pill: sedentário 1.2 / leve 1.375 / moderado 1.55 / ativo 1.725 / muito ativo 1.9.
+- **TDEE** = BMR × factor, shown live as the user picks.
+- **Treino estimado** = sessions/week × duration × MET (rough lookup by experience level), shown as kcal/week.
+- Persisted to `extended.metabolism = { bmr, activity_factor, tdee, training_kcal_week, sex }`.
+- Pure client-side math, no AI call. ~50 LOC of `src/lib/metabolism.ts` + tiny component.
+
+This is data that **directly improves** Stage 2/3 prompts (we can pass `tdee` so volume prescription respects energy availability).
+
+### B3. Daily-step logging (lightweight, no device sync)
+
+**Scope honesty:** no Apple Health / Google Fit integration this round (huge surface, OAuth, native bridges). Manual logging only — but make it 5-second fast.
+
+- New table `daily_activity_log (client_id, date, steps int, notes text)` with RLS scoped to trainer + client (via intake token in client-side log routes).
+- Tiny widget in `/log/$token` and on coach client page: "Quantos passos hoje?" + history sparkline (last 14 days).
+- Compute kcal from steps cheaply: `steps × weight_kg × 0.0005` (standard ACSM walking estimate).
+- Show on client overview alongside compliance: "Passos médios 7d: 8.2k · ~310 kcal/dia".
+- No notifications, no goals enforcement — just visibility. The user explicitly said "no devices, just track manually for now."
+
+Defer to next round (P1 not P0 here): integration with Apple Health / step counters.
+
+### B4. "Where will you train?" → multi-select
+
+Trivial change. Pills component already supports `value: string[]`. Convert `training_location` from string → string[] in form state, persist as comma-joined to keep the column shape (or migrate the column to text[] — preferred, cleaner). I'll do the proper migration.
+
+### B5. Expanded equipment catalog (3–5× more)
+
+Current list has 8 items. New catalog grouped by category, each with i18n key + emoji-free label. ~35 items across:
+
+- **Barras & discos** — barbell, EZ bar, trap bar, plates standard, plates olympic
+- **Halteres & kettlebells** — dumbbells fixed, dumbbells adjustable, kettlebells single, kettlebells set
+- **Máquinas** — cable machine, smith machine, leg press, lat pulldown, hack squat, leg curl/ext, chest press
+- **Bancos & racks** — flat bench, adjustable bench, squat rack, power rack, dip station
+- **Corpo & suspensão** — pull-up bar, dip bar, parallettes, gymnastic rings, TRX
+- **Cardio** — treadmill, stationary bike, rower, assault bike, jump rope, stair climber
+- **Mobilidade & acessórios** — resistance bands, mini-bands, foam roller, lacrosse ball, sliders, ab wheel, medicine ball, slam ball, sandbag, plyo box
+- **Espaço** — outdoor track, hill, pool
+
+Stored as IDs in `available_equipment text[]`. Group headers in UI. Search/filter input on top because 35 pills need it. Catalog lives in `src/lib/equipment-catalog.ts` (already exists — extend it).
 
 ---
 
-## Plano de execução (ordem)
+## Technical summary
 
-1. **Migration**: `profiles.account_type`, `clients.is_self`, índice. (≤2min)
-2. **Fix extended schema** + logging detalhado. (15min)
-3. **Auto-save de fotos** (IDB + retry + hidratação). (30min)
-4. **`/welcome` route + AppShell redirect**. (20min)
-5. **`/me` solo dashboard V1** (lista de planos próprios + botão gerar). (40min)
-6. **Intake adaptativo**: remover slide "Who is this for?", inferir `intake_path`, adicionar slides em falta (antropometria, disponibilidade, secondary goal). (45min)
-7. **Dev reset button** em settings. (10min)
-8. Smoke test: criar `aafonsodias+coach@`, `+solo@`, `+client@`, verificar cada caminho até gerar plano.
+**New / modified files:**
+- `src/routes/intake.$token.tsx` — slide additions, multi-select location, prefill SMART
+- `src/lib/metabolism.ts` (new) — Mifflin + TDEE
+- `src/components/intake/MetabolismPanel.tsx` (new)
+- `src/lib/equipment-catalog.ts` — expand to ~35 items, group metadata
+- `src/server/intake-ai.functions.ts` — add `suggestSmartMetric`
+- `src/server/daily-activity.functions.ts` (new) — log + read 14-day window
+- `src/routes/log.$token.tsx` — steps widget
+- `src/routes/clients_.$clientId.tsx` — photos thumb row + steps mini-chart
+- i18n: `intake.json`, `common.json`, `assessment.json` PT+EN
 
-Total estimado: ~3h. Faço tudo numa volta, sem te chatear, e reporto no fim com screenshots dos 3 caminhos a funcionar.
+**Migrations:**
+1. `assessments`: add `extended` schema usage docs (no DDL — already JSONB).
+2. `clients.training_location` → `text[]` (with safe backfill: `string_to_array(training_location, ',')`).
+3. New table `daily_activity_log` with RLS (trainer can read all of own clients; intake-token read+insert via server fn using service role).
 
-**Confirmas?** Se sim, arranco já. Se quiseres tirar/adiar alguma parte (ex: adiar o `/me` solo para outro PR e focar só nos bugs + welcome), diz qual.
+**Cost discipline:**
+- 1 cheap AI call per intake (SMART suggest, ~$0.0001).
+- 0 AI calls for metabolism/steps (pure math).
+- All text fits the existing slide animation cost.
+
+**Ordering of work:**
+1. Migration (location → text[], new daily_activity_log).
+2. Metabolism panel + equipment expansion + multi-location (no AI, fast wins).
+3. Slide additions (anthropometry, history, real availability, modality, secondary).
+4. AI SMART helper.
+5. Steps widget (client log + coach view).
+6. Photo thumbs on coach page.
+
+After this round the assessment carries everything Stage 2 actually needs to prescribe honestly: real availability, real equipment, energy budget, history depth. No food tracking yet (correctly out of scope).
+
+---
+
+## What I'm explicitly **not** doing this round
+
+- Apple Health / Google Fit / wearables — separate beast, P2.
+- Food tracking — confirmed parked.
+- Solo `/me` dashboard buildout — already deferred; `/welcome` lands solo users in the standard dashboard for now.
+- Posture analysis from photos — kept honest as "visual progress only."
+
+Approve and I'll execute in the order above, smoking each migration with a backup first per the non-negotiables.
