@@ -92,45 +92,21 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    // Create the Block N+1 row up front so the phased pipeline can attach to it.
     const nextBlock = ((prior as any).block_number ?? 1) + 1;
-    const { data: nextPlanRow, error: insErr } = await supabaseAdmin
-      .from("workout_plans")
-      .insert({
-        trainer_id: userId,
-        client_id: (prior as any).client_id,
-        assessment_id: (assessment as any)?.id ?? null,
-        title: `Bloco ${nextBlock}`,
-        duration_weeks: (prior as any).duration_weeks ?? 4,
-        status: "draft",
-        generation_status: "pending",
-        block_number: nextBlock,
-        prior_plan_id: data.priorPlanId,
-        block_transition_summary: summary,
-      })
-      .select("id")
-      .single();
-    if (insErr || !nextPlanRow) {
-      return { ok: false as const, error: insErr?.message ?? "Failed to create next block." };
-    }
-    const nextPlanId = (nextPlanRow as any).id as string;
 
-    // Run the phased pipeline against the existing client; runDemoPlay starts
-    // its own draft, so we link the resulting plan back as Block N+1 by
-    // copying the relevant fields and discarding the placeholder we just
-    // created. Simpler than threading planId through every stage.
+    // Run the phased pipeline against the existing client. runDemoPlay reuses
+    // any in-progress plan, so we DO NOT pre-insert a placeholder (that would
+    // be picked up and then dropped, breaking the navigation target).
     const ran: any = await runDemoPlay({ data: { clientId: (prior as any).client_id } });
     if (!ran?.ok || !ran?.planId) {
-      // Fall back: keep the placeholder so the user sees Block 2 in draft state.
       return {
         ok: false as const,
         error: ran?.error ?? "Block 2 generation failed.",
-        planId: nextPlanId,
+        failedStep: ran?.failedStep ?? null,
       };
     }
 
-    // Promote the freshly-generated plan to be Block N+1 and remove the
-    // placeholder we created earlier.
+    // Tag the freshly-generated plan as Block N+1 of the lineage.
     await supabaseAdmin
       .from("workout_plans")
       .update({
@@ -138,11 +114,11 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
         prior_plan_id: data.priorPlanId,
         block_transition_summary: summary,
         title: `Bloco ${nextBlock}`,
+        assessment_id: (assessment as any)?.id ?? null,
       })
       .eq("id", ran.planId);
-    await supabaseAdmin.from("workout_plans").delete().eq("id", nextPlanId);
 
-    // Seed 2 weeks of sessions so the Resultados view has data immediately.
+    // Seed 2 weeks of sessions so Resultados has data immediately.
     try {
       await seedDemoSessions({ data: { planId: ran.planId, weeksToSeed: 2 } });
     } catch (e) {
