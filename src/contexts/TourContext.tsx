@@ -137,7 +137,6 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           buttonBack: { color: "hsl(38 92% 60%)" },
           buttonSkip: { color: "hsl(0 0% 70%)" },
           overlay: { backgroundColor: "rgba(0,0,0,0.55)" },
-          spotlight: { borderRadius: 12 },
         }}
       />
     </TourCtx.Provider>
