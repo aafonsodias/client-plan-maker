@@ -19,6 +19,7 @@ import {
 } from "@/server/phased/stage4-progressions.functions";
 import { bulkFillRemainingWeeks } from "@/server/phased/stage5-bulkfill.functions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { summarizePriorBlock } from "@/lib/block-feedback";
 
 /**
  * runDemoPlay — drives the entire 5-stage phased pipeline server-side for a
@@ -57,7 +58,12 @@ const ALL_STEPS: StepKey[] = [
 export const runDemoPlay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ clientId: z.string().uuid() }).parse(d)
+    z
+      .object({
+        clientId: z.string().uuid(),
+        priorPlanId: z.string().uuid().optional(),
+      })
+      .parse(d)
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -81,6 +87,28 @@ export const runDemoPlay = createServerFn({ method: "POST" })
     }
     const planId = startRes.planId as string;
     completed.push("brief_generate");
+
+    // If this is block N>1, compute the prior block's adherence + RPE
+    // verdict per muscle and stash it on the new plan's generation_meta
+    // so Stage 2 (blueprint) and Stage 3 (microcycle) prompts can adapt
+    // the volume prescription accordingly.
+    if (data.priorPlanId) {
+      const { data: priorSessions } = await supabaseAdmin
+        .from("workout_sessions")
+        .select("status, entries")
+        .eq("plan_id", data.priorPlanId);
+      const summary = summarizePriorBlock(priorSessions ?? []);
+      const { data: existingMeta } = await supabaseAdmin
+        .from("workout_plans")
+        .select("generation_meta")
+        .eq("id", planId)
+        .maybeSingle();
+      const merged = { ...((existingMeta as any)?.generation_meta ?? {}), block_feedback: summary };
+      await supabaseAdmin
+        .from("workout_plans")
+        .update({ generation_meta: merged })
+        .eq("id", planId);
+    }
 
     // Pull stored brief + programming variables to feed approveBrief.
     const { data: planRow } = await supabaseAdmin
