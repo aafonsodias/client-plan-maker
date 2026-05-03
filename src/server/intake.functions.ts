@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getSignedPhotoUrl } from "./intake-photos.server";
 
 const TOKEN_TTL_DAYS = 14;
 
@@ -327,6 +328,21 @@ export const saveIntake = createServerFn({ method: "POST" })
         .from("clients")
         .update({ intake_status: "submitted", intake_submitted_at: new Date().toISOString() })
         .eq("id", client.id);
+
+      // If the intake includes a face photo, mirror it onto clients.photo_url
+      // (signed URL, ~30 days) so the trainer's roster shows the real face
+      // instead of initials right after submission.
+      try {
+        const facePath = (mergedExtended as any)?.photos?.face;
+        if (typeof facePath === "string" && facePath.length > 0) {
+          const signed = await getSignedPhotoUrl(facePath, 60 * 60 * 24 * 30);
+          if (signed) {
+            await supabaseAdmin.from("clients").update({ photo_url: signed }).eq("id", client.id);
+          }
+        }
+      } catch (e) {
+        console.error("[intake] face -> photo_url mirror failed", e);
+      }
     }
 
     // Apply identity patch (name / email / phone / dob) — only fields the
@@ -349,4 +365,42 @@ export const saveIntake = createServerFn({ method: "POST" })
     }
 
     return { ok: true, submitted: data.submit };
+  });
+
+/* ─────────────── Public: link an authenticated user to their client row ─────────────── */
+
+/**
+ * After a client signs up at the end of intake, link the new auth user to the
+ * client row referenced by the intake token. Requires the user to be
+ * authenticated (auth-middleware) AND for the token to still resolve to the
+ * correct trainer's client. One auth user can link to one client (uniqueness
+ * enforced by partial index `clients_user_id_uniq`).
+ */
+export const linkClientAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { token: string }) => z.object({ token: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, user_id, email")
+      .eq("intake_token", data.token)
+      .maybeSingle();
+    if (!client) throw new Error("This link is no longer valid.");
+    if (client.user_id && client.user_id !== userId) {
+      throw new Error("This client is already linked to another account.");
+    }
+    if (!client.user_id) {
+      const { error } = await supabaseAdmin
+        .from("clients")
+        .update({ user_id: userId })
+        .eq("id", client.id);
+      if (error) throw new Error(error.message);
+    }
+    // Also tag profile as a coached client (best-effort).
+    await supabaseAdmin
+      .from("profiles")
+      .update({ account_type: "coached_client" } as any)
+      .eq("user_id", userId);
+    return { ok: true, clientId: client.id };
   });
