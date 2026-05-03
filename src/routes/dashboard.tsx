@@ -5,8 +5,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy } from "lucide-react";
+import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { DashboardHint } from "@/components/DashboardHint";
 import { DemoClientBanner } from "@/components/DemoClientBanner";
@@ -87,6 +88,9 @@ function Dashboard() {
     }
     toast.success("Plan deleted");
   };
+
+  const recentPlanIds = useMemo(() => recent.map((p) => p.id), [recent]);
+  const evolutionByPlan = usePlanBlockEvolution(recentPlanIds);
 
   const phases = useClientPhases(useMemo(() => clientIds, [clientIds]));
   const counts = useMemo(() => {
@@ -283,16 +287,19 @@ function Dashboard() {
                     <p className="truncate font-semibold">{p.title}</p>
                     <p className="truncate text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
                   </div>
-                  {(() => {
-                    const s = planStatusInfo(p as any, t as any);
-                    return (
-                      <span
-                        className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
-                      >
-                        {s.label}
-                      </span>
-                    );
-                  })()}
+                  <div className="flex shrink-0 items-center gap-2">
+                    <EvolutionChip evo={evolutionByPlan[p.id]} />
+                    {(() => {
+                      const s = planStatusInfo(p as any, t as any);
+                      return (
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
+                        >
+                          {s.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </Link>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -372,5 +379,27 @@ function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<
       </div>
       <p className="mt-3 text-4xl font-light tracking-tight">{value}</p>
     </Link>
+  );
+}
+
+function EvolutionChip({ evo }: { evo?: { hasPrior: boolean; deltaPct: number | null; verdict: "gain" | "flat" | "regression" | "unknown" } }) {
+  if (!evo || !evo.hasPrior) return null;
+  const v = evo.verdict;
+  const Icon = v === "gain" ? TrendingUp : v === "regression" ? TrendingDown : Minus;
+  const cls = v === "gain"
+    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+    : v === "regression"
+    ? "bg-red-500/15 text-red-300 border-red-500/30"
+    : v === "flat"
+    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+    : "bg-muted/30 text-muted-foreground border-border";
+  const label = evo.deltaPct == null ? "—" : `${evo.deltaPct > 0 ? "+" : ""}${evo.deltaPct}%`;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tabular-nums ${cls}`}
+      title={`Evolução vs bloco anterior · ${label}`}
+    >
+      <Icon className="h-3 w-3" /> {label}
+    </span>
   );
 }

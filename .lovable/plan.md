@@ -1,53 +1,64 @@
+# Ronda 8 — Dashboard evolution + Motor hardening + Polish
 
-# Round 7 — Logbook como história, volume com realidade, ano com blocos
+Princípio: útil > funcional > bonito > divertido. Cada item passa nos 4.
 
-Foco P1 do backlog (#5, #6, #7, #8). Princípio: útil > funcional > bonito > divertido. Sem features novas — só fechar o que está escrito.
+## P0 — Motor & Dashboard
 
-## 1. Logbook timeline na página do plano (#5)
+### 1. Rotation post-validation retry (`stage3-microcycle.functions.ts`)
+- Após gerar microcycle do bloco N+1, calcular `accessoryRotationPct` vs `prior_exercise_pool`.
+- Se < 40%, fazer **1 retry** com prompt reforçado listando exercícios proibidos (top-12 do bloco anterior) e exigindo substitutos do mesmo padrão.
+- Logar resultado em `generation_meta.rotation_audit { firstPct, finalPct, retried }`.
 
-Novo componente `src/components/plan/LogbookTimeline.tsx`:
-- Recebe `sessions: SessionRow[]` e agrupa por `week_number`.
-- Cada semana é um `<details>` colapsável:
-  - Header: "Semana N · X/Y sessões · adesão Z% · RPE médio R" com chips tonais (`status-tone.ts`).
-  - Sessões em linha: data, dia, status (chip emerald/amber/muted), RPE médio, badge Sparkles "PR" se algum exercício bateu e1RM máximo histórico do cliente.
-  - Click numa sessão → expande `SessionDayView` inline (reaproveitar componente).
-- Detecção de PR: percorre todas as sessões do plano, calcula e1RM por exercício (Epley, já em `capacity-gain.ts` — exporto `epley`), marca a sessão onde cada exercício atingiu o seu máximo.
+### 2. Dashboard "Evolução último bloco" (`src/routes/dashboard.tsx` + lista de clientes)
+- Nova coluna/chip por cliente: lê plano ativo + `prior_plan_id`, corre `computeCapacityGain` head-to-head sobre top-3 padrões (squat/hinge/push).
+- Mostra Δ% mediano com `toneChip` (emerald se > +2%, muted se ±2%, amber se queda) + tooltip com breakdown.
+- Sem dados (bloco 1 ou sem logs) → chip neutro "Bloco 1 — sem comparação".
+- Fetch lazy: hook `useClientsBlockEvolution(clientIds)` em batch, cache via TanStack Query 5min.
 
-Substitui o bloco "Sessões registadas" actual em modo `view`/`results` em `src/routes/plans.$planId.tsx` (procurar `SessionDayView` solto e a lista plana).
+## P1 — Plan page polish
 
-## 2. Volume realizado vs prescrito (#6, #8)
+### 3. Confetti em PR no logbook (`LogbookTimeline.tsx` + `Confetti.tsx`)
+- Quando o utilizador loga um set e o seu e1RM > histórico → `<Confetti/>` 1×/sessão (guardar `prSeen` em `useRef` por sessionId).
+- Toast "PR! Novo recorde em {exercise} ({weight}kg×{reps})" via sonner.
 
-Nova lib `src/lib/volume-actual.ts`:
-- `computeWeeklyActualVolume(sessions, exercises)` → mesma forma que `computeWeeklyVolume` mas conta apenas sets com `actual.sets > 0`.
+### 4. "Próximo bloco" suggestion card (`src/components/NextBlockCard.tsx`)
+- Renderiza no fim de `/plans/$id` quando: plano `completed` OU semana atual = última semana com >70% adesão.
+- Lê `block_feedback` + capacity gain para sugerir: deload (se RPE médio > 8.5), progressão normal, ou volume bump.
+- CTA único: "Arquivar e gerar Bloco N+1" → chama `archivePlanAndStartNextBlock` com sugestão pré-preenchida.
 
-Em `src/components/volume/VolumeSection.tsx`:
-- Aceita prop opcional `sessions?: SessionRow[]`.
-- Se `sessions` presente, `VolumeStatusTable` ganha coluna "Realizado" (sets contados) ao lado de "Prescrito"; barras emerald se ≥80% prescrito, amber 50-79%, red <50%.
-- Adiciona pequeno gráfico stack-bar (recharts) por semana: barra prescrito (muted) + barra realizado (emerald), linha pontilhada MEV/MAV. ~140px alto.
+## P2 — Polish
 
-Em `src/routes/plans.$planId.tsx` passa `sessions` para `VolumeSection` em modos `view`, `log`, `results`.
+### 5. i18n EN sweep
+- `rg "[Áàãâéêíóôõúç]"` em `src/i18n/locales/en/*.json` → traduzir hardcoded PT remanescente.
+- Smoke walk: dashboard → cliente → plano → blueprint → microcycle → progressions → year. Verificar i18n keys faltantes (console: `i18next::translator: missingKey`).
 
-## 3. YearView — blocos como cards com micro-CapacityGain (#7)
+### 6. Tour: âncora `data-tour="capacity-gain"` no `CapacityGainCard`
+- Adicionar passo no `TourContext` entre `plan-block-chip` e `volume-section`.
 
-Em `src/components/YearView.tsx`:
-- Nova secção "Blocos" no topo: lista cards horizontais (1 por bloco) com:
-  - "Bloco N · Mmm-Mmm" 
-  - Δ% capacidade vs bloco anterior (chip tonal grande, reaproveita `computeCapacityGain`)
-  - 3 mini-stats: adesão %, RPE médio, sessões logged
-  - Click → navega para `/plans/{blockPlanId}` em modo results
-- Buscar via `workout_plans` filtrado por `client_id` ordenado por `block_number`, com sessões correspondentes carregadas em batch.
-
-## 4. Backlog refresh
-
-Atualizar `.lovable/backlog.md`: marcar #5-8 como ✅ Round 7. Promover #9 (Dashboard "evolução último bloco") e #10 (pós-validação rotação) para P0/Round 8. Adicionar 2 novos P1 descobertos:
-- "Logbook PR celebration: confetti suave quando se loga um set que bate e1RM (uma vez por sessão)."
-- "Plan page: secção 'Próximo bloco' sugerida (deload/progressão) baseada no transition_summary, com botão direto para arquivar+gerar."
+## Atualização de backlog
+Mover #9, #10, #13, #14 para ✅ Round 8. Promover #11, #12, #15 para P1 da Round 9. Adicionar nova entrada P1: "Realized vs prescribed stack-bar chart (recharts)".
 
 ## Ficheiros
 
-**Criar**: `src/components/plan/LogbookTimeline.tsx`, `src/lib/volume-actual.ts`.
-**Editar**: `src/lib/capacity-gain.ts` (exportar `epley`), `src/components/volume/VolumeSection.tsx`, `src/components/volume/VolumeStatusTable.tsx`, `src/components/YearView.tsx`, `src/routes/plans.$planId.tsx`, `.lovable/backlog.md`.
+**Criar**
+- `src/components/NextBlockCard.tsx`
+- `src/hooks/use-clients-block-evolution.ts`
 
-Tudo PT-PT (você), tonal via `status-tone.ts`. Sem novas dependências.
+**Editar**
+- `src/server/phased/stage3-microcycle.functions.ts` (post-validation retry + rotation_audit meta)
+- `src/routes/dashboard.tsx` (evolução column)
+- `src/routes/clients.tsx` (chip evolução, se lista lá)
+- `src/components/plan/LogbookTimeline.tsx` (PR detection → confetti+toast)
+- `src/routes/plans.$planId.tsx` (montar NextBlockCard)
+- `src/components/CapacityGainCard.tsx` (data-tour anchor)
+- `src/contexts/TourContext.tsx` (passo extra)
+- `src/i18n/locales/en/*.json` (sweep)
+- `.lovable/backlog.md` (refresh)
 
-Aprovas para executar?
+## Notas técnicas
+- `computeCapacityGain` já retorna `medianDeltaPct`; reutilizar sem alterar API.
+- Confetti: já existe `src/components/log/Confetti.tsx` — só wire-up.
+- Retry no Stage 3: cap em 1 tentativa para não duplicar custo. Telemetria via `makeTelemetry`.
+- NextBlockCard usa `toneChip` para coerência com paleta status.
+
+Aprovas?

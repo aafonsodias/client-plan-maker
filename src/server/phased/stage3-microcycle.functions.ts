@@ -19,6 +19,47 @@ import {
 import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
 
 /**
+ * Lowercase / strip variant suffix to compare exercise names across blocks.
+ * "Barbell back squat (close stance)" → "barbell back squat".
+ */
+function normalizeExerciseName(n: string): string {
+  return String(n ?? "")
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Compute % of accessories in this microcycle that are NOT in the prior pool.
+ * The first exercise of each day is treated as the main lift and excluded
+ * (mains are allowed to repeat across blocks for progression).
+ */
+function computeAccessoryRotationPct(
+  days: any[],
+  priorPool: string[],
+): { pct: number; accessoryCount: number; rotated: number; topPriorAccessories: string[] } {
+  if (!Array.isArray(days) || days.length === 0 || priorPool.length === 0) {
+    return { pct: 100, accessoryCount: 0, rotated: 0, topPriorAccessories: [] };
+  }
+  const priorSet = new Set(priorPool.map(normalizeExerciseName).filter(Boolean));
+  let total = 0;
+  let rotated = 0;
+  for (const d of days) {
+    const ex = Array.isArray(d?.exercises) ? d.exercises : [];
+    // accessories = everything except first (main lift)
+    for (let i = 1; i < ex.length; i++) {
+      const name = normalizeExerciseName(ex[i]?.name);
+      if (!name) continue;
+      total++;
+      if (!priorSet.has(name)) rotated++;
+    }
+  }
+  const pct = total > 0 ? Math.round((rotated / total) * 100) : 100;
+  return { pct, accessoryCount: total, rotated, topPriorAccessories: priorPool.slice(0, 12) };
+}
+
+/**
  * Cap preparation duration at 15 minutes total (warmup + activation +
  * dynamic_stretches). The model frequently inflates these to 25–35 minutes,
  * which is unrealistic. We trim from the LARGEST section first while
@@ -245,6 +286,7 @@ async function runDay(
   guidelines: TierGuidelines | null,
   priorSummary: any = null,
   priorExercisePool: string[] = [],
+  hardBan: string[] = [],
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -300,6 +342,10 @@ If a movement is genuinely "supported" or rehab-style, prefer reducing load and 
     ? `\n\nEXERCISE ROTATION (block N>1) — SAID variation rule:\nThe prior block already exhausted these exercises: ${priorExercisePool.slice(0, 40).join(", ")}.\nAt least 60% of the accessories you pick for THIS day must NOT be in that list (substitute with same movement pattern + same intent — e.g. replace 'leg press' with 'hack squat' or 'belt squat'). The 1–2 main lifts may repeat if they are the driver of progression. Isolators MUST rotate. Variation is what creates new adaptation; clones stall.`
     : "";
 
+  const hardBanBlock = hardBan.length > 0
+    ? `\n\nRETRY — STRICT BAN LIST:\nThe previous attempt repeated too many accessories. DO NOT use any of these accessories (any close variant): ${hardBan.slice(0, 14).join(", ")}.\nReplace each with the closest substitute that trains the same primary muscle / pattern (e.g. swap incline DB press → low-incline machine press; swap leg press → belt squat or hack squat). Main lift may stay.`
+    : "";
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -314,7 +360,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}${hardBanBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -599,7 +645,68 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
-    return { ok: true as const, generated: okCount, errors: errCount };
+
+    // ---- Post-validation: rotation audit (block N>1 only) -----------------
+    let rotationAudit: any = null;
+    if (priorPool.length > 0) {
+      const { data: rows } = await supabase
+        .from("workout_plan_days")
+        .select("day_number, content")
+        .eq("plan_id", data.planId)
+        .eq("week_number", 1);
+      const days = ((rows ?? []) as any[]).map((r) => r.content ?? {});
+      const first = computeAccessoryRotationPct(days, priorPool);
+      rotationAudit = { firstPct: first.pct, accessoryCount: first.accessoryCount, retried: false, finalPct: first.pct };
+
+      // If <40% of accessories rotated, retry the most-stale days once with a
+      // hard "do not use" list. Cap to 3 worst days to keep cost bounded.
+      if (first.pct < 40 && first.accessoryCount > 0) {
+        const banned = first.topPriorAccessories;
+        // Identify days where ≥50% of accessories collide with prior pool.
+        const stale: number[] = [];
+        for (const r of (rows ?? []) as any[]) {
+          const ex = Array.isArray(r.content?.exercises) ? r.content.exercises : [];
+          if (ex.length <= 1) continue;
+          const accs = ex.slice(1);
+          const collisions = accs.filter((e: any) =>
+            new Set(banned.map(normalizeExerciseName)).has(normalizeExerciseName(e?.name)),
+          ).length;
+          if (collisions / accs.length >= 0.5) stale.push(r.day_number as number);
+        }
+        const targets = stale.slice(0, 3);
+        for (const idx of targets) {
+          const r = await runDay(
+            supabase, userId, data.planId, idx,
+            briefP.data, bpP.data, guidelines, priorBlockSummary,
+            priorPool,
+            banned,
+          );
+          if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
+        }
+        const { data: rows2 } = await supabase
+          .from("workout_plan_days")
+          .select("content")
+          .eq("plan_id", data.planId)
+          .eq("week_number", 1);
+        const finalDays = ((rows2 ?? []) as any[]).map((r) => r.content ?? {});
+        const second = computeAccessoryRotationPct(finalDays, priorPool);
+        rotationAudit.retried = true;
+        rotationAudit.finalPct = second.pct;
+        rotationAudit.daysRegenerated = targets;
+      }
+
+      // Stamp into generation_meta for transparency.
+      const { data: cur } = await supabase
+        .from("workout_plans")
+        .select("generation_meta")
+        .eq("id", data.planId)
+        .maybeSingle();
+      const meta = ((cur as any)?.generation_meta ?? {}) as Record<string, any>;
+      meta.rotation_audit = rotationAudit;
+      await supabase.from("workout_plans").update({ generation_meta: meta }).eq("id", data.planId);
+    }
+
+    return { ok: true as const, generated: okCount, errors: errCount, rotationAudit };
   });
 
 export const approveMicrocycle = createServerFn({ method: "POST" })
