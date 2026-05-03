@@ -306,7 +306,7 @@ function IntakePage() {
   }
 
   if (submitted) {
-    return <ThankYou ctx={ctx} />;
+    return <ThankYou ctx={ctx} token={token} />;
   }
 
   const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || t("your_trainer");
