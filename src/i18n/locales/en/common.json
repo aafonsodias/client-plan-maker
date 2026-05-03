@@ -87,10 +87,26 @@
     "remind_later": "Remind me later",
     "got_it": "I've got it",
     "steps": {
-      "add_client": { "title": "Add your first client", "desc": "Create a client profile to track everything.", "cta": "Go to Clients" },
-      "run_assessment": { "title": "Run an assessment", "desc": "Complete the ACSM-aligned intake on a client page.", "cta": "Open a client" },
-      "generate_plan": { "title": "Generate a plan", "desc": "Let AI draft a periodized program from the intake.", "cta": "Generate now" },
-      "export_pdf": { "title": "Export a branded PDF", "desc": "Send the polished plan to your client.", "cta": "Open Plans" }
+      "add_client": {
+        "title": "Add your first client",
+        "desc": "Create a client profile to track everything.",
+        "cta": "Go to Clients"
+      },
+      "run_assessment": {
+        "title": "Run an assessment",
+        "desc": "Complete the ACSM-aligned intake on a client page.",
+        "cta": "Open a client"
+      },
+      "generate_plan": {
+        "title": "Generate a plan",
+        "desc": "Let AI draft a periodized program from the intake.",
+        "cta": "Generate now"
+      },
+      "export_pdf": {
+        "title": "Export a branded PDF",
+        "desc": "Send the polished plan to your client.",
+        "cta": "Open Plans"
+      }
     }
   },
   "language": {
@@ -204,6 +220,47 @@
   "volume": {
     "weekly_bars_label": "Prescribed vs actual · sets",
     "prescribed": "Prescribed",
-    "actual": "Actual"
+    "actual": "Actual",
+    "table": {
+      "muscle": "Muscle",
+      "prescribed": "Prescribed",
+      "actual": "Actual",
+      "status": "Status",
+      "suggestion": "Suggestion",
+      "sets": "sets",
+      "status_under": "Below MEV",
+      "status_optimal": "Sweet spot",
+      "status_over": "Above MAV",
+      "status_danger": "Above MRV",
+      "msg_under_one": "~1 set short (target {{mev}}).",
+      "msg_under_other": "~{{count}} sets short (target {{mev}}).",
+      "msg_optimal": "On target ({{mev}}–{{mav}}).",
+      "msg_over": "+{{count}} above target. Watch recovery.",
+      "msg_danger": "Exceeds MRV ({{mrv}}). Cut ~{{count}}.",
+      "adjusted_chip": "↘ adjusted · prior block {{verdict}}",
+      "adjusted_tooltip": "Adjusted by prior block · {{verdict}}. Ceiling {{from}} → {{to}}."
+    }
+  },
+  "capacity": {
+    "eyebrow": "Adaptation syndrome · Block {{cur}} vs {{prev}}",
+    "headline_gain": "Capacity gain confirmed.",
+    "headline_regression": "Capacity regressed — investigate.",
+    "headline_flat": "Capacity stable — vary the stimulus.",
+    "headline_unknown": "Not enough data yet.",
+    "top_lifts": "Top lifts — estimated e1RM",
+    "adherence": "Adherence {{pct}}%",
+    "rpe_drift": "RPE drift {{value}}"
+  },
+  "adaptation": {
+    "compact_all_target": "All on target in the prior block.",
+    "title": "Adaptation · prior block",
+    "adherence": "Adherence {{pct}}%",
+    "col_muscle": "Muscle",
+    "col_verdict": "Verdict",
+    "col_rpe": "Avg RPE",
+    "col_shift": "Shift",
+    "shift_normal": "Normal curve · ceiling {{ceiling}}",
+    "shift_change": "Ceiling {{base}} {{arrow}} {{newCeil}}",
+    "shift_start_note": ", start {{start}}"
   }
 }
