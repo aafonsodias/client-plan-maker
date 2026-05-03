@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown, Minus, Sparkles, Target } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { CapacitySummary, CapacityRow } from "@/lib/capacity-gain";
 
 type Props = {
@@ -20,6 +21,7 @@ type Props = {
 export function CapacityGainCard({
   summary, blockNumber, adherencePct, rpeDrift, transitionNote,
 }: Props) {
+  const { t } = useTranslation("common");
   const { rows, topLifts, overall } = summary;
   const tone = verdictBg(overall.verdict);
   const showRows = rows.filter((r) => r.deltaPct != null).slice(0, 5);
@@ -29,13 +31,13 @@ export function CapacityGainCard({
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Síndrome de adaptação · Bloco {blockNumber} vs {blockNumber - 1}
+            {t("capacity.eyebrow", { cur: blockNumber, prev: blockNumber - 1 })}
           </p>
           <h3 className="mt-0.5 text-base font-semibold tracking-tight">
-            {overall.verdict === "gain" ? "Ganho de capacidade confirmado." :
-             overall.verdict === "regression" ? "Capacidade recuou — investigar." :
-             overall.verdict === "flat" ? "Capacidade estável — variar estímulo." :
-             "Sem dados suficientes ainda."}
+            {overall.verdict === "gain" ? t("capacity.headline_gain") :
+             overall.verdict === "regression" ? t("capacity.headline_regression") :
+             overall.verdict === "flat" ? t("capacity.headline_flat") :
+             t("capacity.headline_unknown")}
           </h3>
         </div>
         <BigDelta value={overall.deltaPct} verdict={overall.verdict} />
@@ -54,7 +56,7 @@ export function CapacityGainCard({
       {topLifts.length > 0 && (
         <div className="mt-4 rounded-xl border border-border/60 bg-card/40 p-3">
           <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            <Sparkles className="h-3 w-3" /> Top exercícios — e1RM estimado
+            <Sparkles className="h-3 w-3" /> {t("capacity.top_lifts")}
           </p>
           <div className="space-y-1.5">
             {topLifts.map((l) => (
@@ -74,12 +76,12 @@ export function CapacityGainCard({
       <footer className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
         {adherencePct != null && (
           <span className="inline-flex items-center gap-1">
-            <Target className="h-3 w-3" /> Adesão {adherencePct}%
+            <Target className="h-3 w-3" /> {t("capacity.adherence", { pct: adherencePct })}
           </span>
         )}
         {rpeDrift != null && (
           <span className="inline-flex items-center gap-1">
-            RPE drift {rpeDrift > 0 ? "+" : ""}{rpeDrift.toFixed(2)}
+            {t("capacity.rpe_drift", { value: `${rpeDrift > 0 ? "+" : ""}${rpeDrift.toFixed(2)}` })}
           </span>
         )}
         {transitionNote && (

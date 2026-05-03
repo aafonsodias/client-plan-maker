@@ -35,7 +35,8 @@ Atualizado: Round 10 (3 Mai 2026)
 | 22 | P0 | Plan page | Auditoria real do main-lift swap (prior_main_lifts → main_lift_audit; chip honesto) | ✅ Round 11 |
 | 23 | P1 | i18n | Sweep EN nos novos componentes (NextBlockCard, WeeklyVolumeBars, popovers Rotação/Main lift) | ✅ Round 13 |
 | 24 | P1 | Volume | Stack-bar semanal prescrito vs realizado (WeeklyVolumeBars, ~160px) | ✅ Round 12 |
-| 25 | P1 | i18n | Sweep EN superfícies legadas (BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip, CapacityGainCard) | 🔜 Round 14 |
+| 25 | P1 | i18n | Sweep EN — CapacityGainCard, BlockAdaptationCard, VolumeStatusTable | ✅ Round 14 |
+| 26 | P2 | i18n | Sweep EN — YearView (Adesão semanal, Tonelagem, Mapa de blocos), ExerciseTrendChart | 🔜 Round 15 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.

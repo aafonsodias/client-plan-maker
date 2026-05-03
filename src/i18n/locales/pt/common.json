@@ -84,10 +84,26 @@
     "remind_later": "Lembrar mais tarde",
     "got_it": "Já percebi",
     "steps": {
-      "add_client": { "title": "Adicione o seu primeiro cliente", "desc": "Crie um perfil de cliente para acompanhar tudo.", "cta": "Ir para Clientes" },
-      "run_assessment": { "title": "Faça uma avaliação", "desc": "Complete a avaliação alinhada com ACSM na página do cliente.", "cta": "Abrir um cliente" },
-      "generate_plan": { "title": "Gere um plano", "desc": "Deixe a IA preparar um programa periodizado a partir da avaliação.", "cta": "Gerar agora" },
-      "export_pdf": { "title": "Exporte um PDF com a sua marca", "desc": "Envie o plano polido ao seu cliente.", "cta": "Abrir Planos" }
+      "add_client": {
+        "title": "Adicione o seu primeiro cliente",
+        "desc": "Crie um perfil de cliente para acompanhar tudo.",
+        "cta": "Ir para Clientes"
+      },
+      "run_assessment": {
+        "title": "Faça uma avaliação",
+        "desc": "Complete a avaliação alinhada com ACSM na página do cliente.",
+        "cta": "Abrir um cliente"
+      },
+      "generate_plan": {
+        "title": "Gere um plano",
+        "desc": "Deixe a IA preparar um programa periodizado a partir da avaliação.",
+        "cta": "Gerar agora"
+      },
+      "export_pdf": {
+        "title": "Exporte um PDF com a sua marca",
+        "desc": "Envie o plano polido ao seu cliente.",
+        "cta": "Abrir Planos"
+      }
     }
   },
   "language": {
@@ -201,6 +217,47 @@
   "volume": {
     "weekly_bars_label": "Prescrito vs realizado · séries",
     "prescribed": "Prescrito",
-    "actual": "Realizado"
+    "actual": "Realizado",
+    "table": {
+      "muscle": "Grupo",
+      "prescribed": "Prescrito",
+      "actual": "Realizado",
+      "status": "Estado",
+      "suggestion": "Sugestão",
+      "sets": "séries",
+      "status_under": "Abaixo do MEV",
+      "status_optimal": "Sweet spot",
+      "status_over": "Acima do MAV",
+      "status_danger": "Acima do MRV",
+      "msg_under_one": "Falta ~1 série (alvo {{mev}}).",
+      "msg_under_other": "Faltam ~{{count}} séries (alvo {{mev}}).",
+      "msg_optimal": "Dentro do alvo ({{mev}}–{{mav}}).",
+      "msg_over": "+{{count}} acima do alvo. Vigia recuperação.",
+      "msg_danger": "Excede MRV ({{mrv}}). Corta ~{{count}}.",
+      "adjusted_chip": "↘ ajustado · bloco anterior {{verdict}}",
+      "adjusted_tooltip": "Ajustado pelo bloco anterior · {{verdict}}. Tecto {{from}} → {{to}}."
+    }
+  },
+  "capacity": {
+    "eyebrow": "Síndrome de adaptação · Bloco {{cur}} vs {{prev}}",
+    "headline_gain": "Ganho de capacidade confirmado.",
+    "headline_regression": "Capacidade recuou — investigar.",
+    "headline_flat": "Capacidade estável — variar estímulo.",
+    "headline_unknown": "Sem dados suficientes ainda.",
+    "top_lifts": "Top exercícios — e1RM estimado",
+    "adherence": "Adesão {{pct}}%",
+    "rpe_drift": "RPE drift {{value}}"
+  },
+  "adaptation": {
+    "compact_all_target": "Tudo no alvo no bloco anterior.",
+    "title": "Adaptação · bloco anterior",
+    "adherence": "Adesão {{pct}}%",
+    "col_muscle": "Músculo",
+    "col_verdict": "Veredito",
+    "col_rpe": "RPE médio",
+    "col_shift": "Ajuste",
+    "shift_normal": "Curva normal · tecto {{ceiling}}",
+    "shift_change": "Tecto {{base}} {{arrow}} {{newCeil}}",
+    "shift_start_note": ", arranque {{start}}"
   }
 }
