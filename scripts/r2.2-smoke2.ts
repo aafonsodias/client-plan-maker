@@ -149,7 +149,8 @@ async function callGateway(system: string, userMessage: string) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_completion_tokens: 4000,
+      max_completion_tokens: 16000,
+      reasoning_effort: "low",
       messages: [
         { role: "system", content: system },
         { role: "user", content: userMessage },
