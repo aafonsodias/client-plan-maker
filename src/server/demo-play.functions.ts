@@ -106,14 +106,19 @@ export const runDemoPlay = createServerFn({ method: "POST" })
         .select("content")
         .eq("plan_id", data.priorPlanId);
       const pool = new Set<string>();
+      const mainLifts = new Set<string>();
       for (const d of priorDays ?? []) {
         const exs = (d as any)?.content?.exercises ?? [];
-        for (const ex of exs) {
+        for (let i = 0; i < exs.length; i++) {
+          const ex = exs[i];
           const name = String(ex?.name ?? ex?.exercise_name ?? "").trim();
-          if (name) pool.add(name);
+          if (!name) continue;
+          pool.add(name);
+          if (i === 0) mainLifts.add(name);
         }
       }
       const priorExercisePool = [...pool];
+      const priorMainLifts = [...mainLifts];
       // Anti-stale: from Block 4 onwards, ask Stage 3 to rotate the main
       // lift of at least one pattern. Read prior plan's block_number to
       // know what number this new block will inherit.
@@ -133,6 +138,7 @@ export const runDemoPlay = createServerFn({ method: "POST" })
         ...((existingMeta as any)?.generation_meta ?? {}),
         block_feedback: summary,
         prior_exercise_pool: priorExercisePool,
+        prior_main_lifts: priorMainLifts,
         suggest_main_lift_swap: suggestMainLiftSwap,
       };
       await supabaseAdmin
