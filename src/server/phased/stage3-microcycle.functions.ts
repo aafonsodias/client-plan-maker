@@ -19,6 +19,47 @@ import {
 import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
 
 /**
+ * Lowercase / strip variant suffix to compare exercise names across blocks.
+ * "Barbell back squat (close stance)" → "barbell back squat".
+ */
+function normalizeExerciseName(n: string): string {
+  return String(n ?? "")
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Compute % of accessories in this microcycle that are NOT in the prior pool.
+ * The first exercise of each day is treated as the main lift and excluded
+ * (mains are allowed to repeat across blocks for progression).
+ */
+function computeAccessoryRotationPct(
+  days: any[],
+  priorPool: string[],
+): { pct: number; accessoryCount: number; rotated: number; topPriorAccessories: string[] } {
+  if (!Array.isArray(days) || days.length === 0 || priorPool.length === 0) {
+    return { pct: 100, accessoryCount: 0, rotated: 0, topPriorAccessories: [] };
+  }
+  const priorSet = new Set(priorPool.map(normalizeExerciseName).filter(Boolean));
+  let total = 0;
+  let rotated = 0;
+  for (const d of days) {
+    const ex = Array.isArray(d?.exercises) ? d.exercises : [];
+    // accessories = everything except first (main lift)
+    for (let i = 1; i < ex.length; i++) {
+      const name = normalizeExerciseName(ex[i]?.name);
+      if (!name) continue;
+      total++;
+      if (!priorSet.has(name)) rotated++;
+    }
+  }
+  const pct = total > 0 ? Math.round((rotated / total) * 100) : 100;
+  return { pct, accessoryCount: total, rotated, topPriorAccessories: priorPool.slice(0, 12) };
+}
+
+/**
  * Cap preparation duration at 15 minutes total (warmup + activation +
  * dynamic_stretches). The model frequently inflates these to 25–35 minutes,
  * which is unrealistic. We trim from the LARGEST section first while
