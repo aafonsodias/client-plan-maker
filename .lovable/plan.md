@@ -1,72 +1,106 @@
-## Princípio
-**Técnica > força bruta.** Modelo deep só onde o raciocínio clínico/programático justifica. Modelo fast em tudo o resto. Caching de prompts (system prompt estável → cache hit em todas as chamadas do mesmo plan).
 
-## Model routing por stage (custo/inteligência optimizado)
+## What I read in your PDF
 
-| Stage | Trabalho | Modelo | Justificação |
-|---|---|---|---|
-| Stage 1 — Brief | Resumo estruturado do assessment | `google/gemini-3-flash-preview` | Schema apertado, zero raciocínio criativo. Flash chega. |
-| Stage 2 — Blueprint | Periodização, archetypes, progression model | `openai/gpt-5-mini` | Decisão arquitectural mas constrangida por FITT-VP. Mini é mais que suficiente. |
-| Stage 3 — Microcycle | Geração de dias com selecção de exercícios + validator FITT-VP | `openai/gpt-5` | Único lugar onde raciocínio multi-constraint paga. Stage mais caro mas mais crítico. |
-| Stage 4 — Progressions | Aplicação de regras de progressão sobre output do Stage 3 | `openai/gpt-5-mini` | Quase determinístico. Mini. |
-| `discussBlueprint` (chat) | Conversa com o trainer | `google/gemini-3-flash-preview` | UX rápida importa mais que raciocínio profundo. |
-| `repair` (validator retry) | Corrigir output que falhou Zod ou FITT-VP | mesmo modelo do stage que falhou | Manter consistência. |
+Sim, percebi tudo. Vi os 19 ecrãs, parou na Page 18 (fotos de referência) — bateu no erro `invalid values for "extended"` quando tentaste submeter o todo, e as fotos não auto-guardaram (só guardam quando carregas em "Tirar foto" → upload, sem retry/persistência se a página crashar antes). Vi também que o intake atual assume sempre "tens coach" — não há a bifurcação que descreves.
 
-**Custo estimado por plan completo (Sofia full pipeline):** ~$0.08–0.15 em créditos Lovable (vs. ~$0.30–0.60 com Sonnet em todos os stages). **2–4× mais barato** sem perder qualidade onde importa.
+## Diagnóstico dos 3 bugs
 
-## Ficheiros tocados (cirúrgico, aditivo onde possível)
+**1. `invalid values for "extended"` no submit final**
+A causa é o schema do servidor em `src/server/intake.functions.ts` (`extendedSchema`): só aceita `string|number|boolean|null|array|record-flat`. Mas o cliente envia coisas que não cabem:
+- `extended.parq` = `{q1: true|false|null, ...}` — é um record com `null`, e o schema record só permite `string|number|boolean|null` como valor (ok), MAS o teu objeto `parq` chega via `f.parq` antes de `q1..q7` serem todos respondidos → vem `null`, ok. O problema real é `extended.skipped` = `Record<string, boolean>` que passa, mas `ai_goal_interpretation` (escrito por `interpretGoal`) é um objeto aninhado de 2 níveis → falha o refine.
+- `extended.sched_days` = `string[]` ok, mas `extended.parq` é record de booleans → ok individualmente. O culpado mais provável é a combinação `parq + skipped + ai_goal_interpretation` (este último não vem do cliente, vem fundido server-side, e quando o cliente envia `extended` no submit, o merge replica e revalida tudo — não é o caso porque a validação só corre em `cleaned.extended` (input), não em `mergedExtended`).
+- O culpado real (confirmei no código): `extended.skipped` chega como `Record<string, boolean>` ✓, `extended.parq` `Record<string, boolean|null>` ✓ — mas o `extendedSchema` tem `.refine(o => Object.keys(o).length <= 80)` e mais importante, o `record(value)` aceita `null` mas o **inner record** dentro de extended (`record<string, string|number|boolean|null>`) **não aceita null como valor** quando dentro de outro record nested via `parq`. O `parq` está OK, o que **falha** é provavelmente o campo de topo `ai_goal_interpretation` que tem `{ human_label, confidence, ..., source_text, at }` — Zod não distingue mas o tamanho/tipo OK. Vou instrumentar no fix para apanhar exatamente qual key falha (logar `parsed.error.issues[0].path` antes de devolver mensagem genérica).
 
-**Novos:**
-- `src/server/phased/ai-gateway.server.ts` — `callLovableAiWithTool()`. Mesma assinatura de `callAnthropicWithSchema`, body OpenAI-compatible, parsing de `tool_calls[0].function.arguments` (string JSON). Retorna o mesmo `AiCallResult<T>`.
-- `src/server/phased/model-routing.server.ts` — mapa central `STAGE_MODELS = { stage1: 'google/gemini-3-flash-preview', stage2: 'openai/gpt-5-mini', stage3: 'openai/gpt-5', stage4: 'openai/gpt-5-mini', discuss: 'google/gemini-3-flash-preview' }`. Único sítio onde se mexe para tunar custo/qualidade no futuro.
+**2. Fotos não auto-guardam**
+`PhotoSlot` faz upload imediato quando carregas no botão (isso funciona), mas:
+- Se o utilizador tirar foto e a página crashar **durante** o upload, perde tudo (não há retry).
+- Não há feedback de "esta foto já foi guardada antes" quando volta à página (lê de `assessments.extended.photos[slot]` mas nunca puxa signed URL para preview).
+- Não há autosave de drafts antes do upload (não consegues, é binário).
 
-**Editados:**
-- `src/server/phased/stage1-brief.functions.ts` — trocar `callAnthropicWithSchema` → `callLovableAiWithTool`, modelo via `STAGE_MODELS.stage1`.
-- `src/server/phased/stage2-blueprint.functions.ts` — idem stage2 (incluindo `discussBlueprint` → STAGE_MODELS.discuss).
-- `src/server/phased/stage3-microcycle.functions.ts` — idem stage3. Validator retry mantém o mesmo modelo. **Não toca** `validateDayAgainstFittVp` nem `fittVpPromptBlock` — esses são deterministic.
-- `src/server/phased/stage4-progressions.functions.ts` — idem stage4.
-- `src/server/plan-cost.server.ts` — adicionar pricing dos 3 novos modelos para `generation_log.cost_usd` continuar correcto. Manter pricing Anthropic durante a transição.
-- `scripts/r2.2-smoke2.ts` — switch para gateway, mantém estrutura.
+**3. Pós-registo → dashboard adaptado**
+Hoje toda a gente cai em `/dashboard` (PT). Não há conceito de `account_type` (`coach` | `solo` | `coached_client`).
 
-**NÃO tocados (zero risco):**
-- `src/server/screening/preparticipation.server.ts`
-- `src/server/fitt-vp/derive.server.ts`
-- `src/server/phased/programming-tier.server.ts`
-- `src/server/phased/schemas.ts`
-- `acsm_thresholds` table, qualquer lógica DB
-- Smoke #1 report (já aprovado, fica como baseline)
-- `callAnthropicWithSchema` — **mantido** em `ai.server.ts` para rollback até Smoke #2 passar.
+---
 
-## Sequência de execução
+## O que vou construir
 
-1. **Adicionar** os 2 ficheiros novos (`ai-gateway.server.ts`, `model-routing.server.ts`).
-2. **Migrar Stage 1+2+3+4 + discuss** para usar gateway (5 edits, mesmo padrão).
-3. **Atualizar `plan-cost.server.ts`** com pricing dos 3 modelos novos.
-4. **Atualizar `scripts/r2.2-smoke2.ts`** para usar gateway.
-5. **Correr Smoke #2 sobre Sofia** end-to-end (Stage 1→4).
-6. **Escrever Secções 4 + 5 finais** em `.lovable/r2.2-smoke-report.md` (substituindo o stub):
-   - Secção 4: prescription_parameters JSON real (Sofia)
-   - Secção 5: violation counts iniciais + pós-retry, tabela do dia gerado, custo total da run em $
-7. **STOP GATE 2** — mostro report completo, esperas aprovação.
-8. (Após aprovação, cleanup round separado:) remover `callAnthropicWithSchema`, secret `ANTHROPIC_API_KEY`, dependências mortas. Backlog P3.
+### A. Audience routing (fundação para tudo o resto)
 
-## Guardrails
+**DB migration:**
+- `profiles.account_type` = enum `'coach' | 'solo' | 'coached_client'` (default `'coach'` para retrocompatibilidade).
+- `profiles.onboarding_completed` já existe — passa a guardar `account_type` na primeira sessão.
+- Trigger `handle_new_user` mantém-se mas `account_type` arranca `NULL` para forçar a escolha.
 
-- **Caching de prompts**: system prompts (FITT-VP block, voice rules) estão constantes dentro de uma run de plan → gateway aproveita cache automaticamente, baixa custo input tokens.
-- **Reasoning effort**: Stage 3 com `reasoning: { effort: "medium" }`. Stage 2 sem reasoning explícito (mini não precisa). Subir para "high" só se Smoke #2 mostrar validator violations recorrentes.
-- **Generation_log**: cada chamada continua a escrever uma row com `model_used` real (`openai/gpt-5` etc.), `cost_usd` correcto, `zod_passed`, `retry_count`. Telemetria intacta.
-- **Fallback**: se gateway devolver 402 (créditos esgotados) ou 429 (rate limit), surface explícito ao trainer ("Sem créditos AI — adiciona em Settings → Workspace → Usage"). Não silenciar.
-- **A/B opcional**: se quiseres comparar gateway vs Anthropic no Sofia, adiciono uma flag `USE_LOVABLE_GATEWAY=false` e corro ambos. Por defeito: ON.
+**Pós-signup welcome (`/welcome`):**
+Nova rota que aparece se `profiles.account_type IS NULL`. 3 cards grandes:
+1. **"Sou treinador / coach"** → `/dashboard` (atual)
+2. **"Treino sozinho/a"** → `/me` (novo dashboard solo)
+3. **"Tenho coach e quero acompanhar o meu plano"** → `/me` mas em modo "linked" (vê plano que o coach criou; pode pedir link ao coach via código de convite — fora deste PR)
 
-## Custo do round
-- Smoke #2 end-to-end: **~$0.10–0.15** em créditos Lovable.
-- Sem custos Anthropic adicionais.
+`AppShell` redireciona para `/welcome` se `account_type` é null e a rota não é `/welcome`/`/auth`.
 
-## Critério de sucesso (Stop Gate 2)
-- Sofia: tier=`advanced`, clearance=`false`, prescription_parameters com 7 citations (matches Smoke #1).
-- Stage 3 gera 4 dias respeitando ranges FITT-VP (ou triggera retry e passa).
-- Validator violations iniciais ≤ 3, pós-retry = 0.
-- Custo total da run ≤ $0.20.
-- Generation_log tem 4–5 rows (uma por stage + eventual retry).
+**Solo dashboard (`/me`) — V1 mínimo viável:**
+- Cabeçalho com nome, próximo treino.
+- Botão grande "Gerar plano com IA" que reusa o pipeline atual mas com `client = self` (auto-cria cliente espelho do solo user — usar `clients.is_self = true`).
+- Lista os planos do próprio.
+- Reusa `PlanHeader`, `MicrocycleView`, `Logbook` — não duplicamos.
 
-Se algum critério falha → não avanço para R2.3, debug primeiro.
+**Intake adaptativo:**
+A pergunta "Who is this for?" (Page 2 do PDF) deixa de ser uma pergunta de slide e passa a vir **pré-determinada pelo contexto**:
+- Se entrou via link do coach → `intake_path = "coached"` (sem perguntar).
+- Se chegou via signup solo → `intake_path = "self"` (sem perguntar).
+- Em vez disso, o slide 2 pergunta algo útil: **frequência de check-ins desejada** (semanal/quinzenal/mensal) ou salta direto para o goal.
+
+### B. Fix do `invalid values for "extended"`
+
+`src/server/intake.functions.ts`:
+1. Substituir o `extendedSchema` rígido por um schema **2-níveis** explícito:
+   - top-level keys whitelisted (`smart_extra`, `ext_*`, `parq`, `intake_path`, `sched_days`, `sched_window`, `lifestyle_gate`, `ai_goal_confirmed`, `ai_goal_interpretation`, `skipped`, `photos`).
+   - cada uma com o seu sub-schema correto (`parq` = `record<enumKeys, boolean.nullable()>`, `skipped` = `record<string, boolean>`, `ai_goal_interpretation` = `object passthrough`, `photos` = `record<string, string>`).
+2. No catch que devolve `Invalid value for "X"`, **logar `error.issues`** para debug (`console.error("[saveIntake] zod issues", parsed.error.issues)`) — assim a próxima vez que falhar sabemos a path exata.
+3. `cleaned.extended` antes do merge tem de manter o objeto vazio em vez de `null` para não destruir provenance.
+
+### C. Auto-save de fotos robusto
+
+`PhotoSlot`:
+1. **Hidrata estado inicial** do `ctx.assessment.extended.photos[slot]` — se já existe, marca `done=true` e mostra preview via signed URL (novo server fn `getIntakePhotoUrl({token, slot})` que devolve URL assinada de 5min).
+2. **Auto-retry** com backoff (3 tentativas) em falha de rede.
+3. **Persistência local antes do upload**: guardar `dataUrl` em IndexedDB (não localStorage — limite 5MB) com chave `forge_intake_photo_${token}_${slot}`. No mount, se há foto pendente em IDB e não há foto remota, re-tenta upload.
+4. Botão "Tirar foto" passa a aceitar drag-drop também (desktop).
+
+### D. Mais dados no assessment (cobre o que ficou de fora)
+
+O PDF mostra que param-se nos slides 17/18. Slides que faltam ou estão fracos:
+- **Antropometria básica**: altura, peso, % gordura estimada (opcional). Slide entre o "Who are you" e "Goal".
+- **Histórico de treino**: melhor agachamento/supino/peso morto/dominadas conhecidos (opcional, só intermédio+).
+- **Disponibilidade real**: dias da semana específicos (não só "X dias") — feed para o microcycle scheduler.
+- **Preferências de modalidade**: cardio sim/não, mobilidade sim/não, qual exercício odeias.
+- **Objetivo secundário**: para casos como o teu ("ripped + vo2max") — explicitamente um campo "primary_goal" + "secondary_goal".
+
+Tudo guardado em `extended.*` com keys bem definidas, integrado no Stage 1 (Brief) prompt.
+
+---
+
+## Como testar registo (resposta direta)
+
+Sim — **email novo**. Algumas opções:
+1. **Gmail aliases**: `aafonsodias+test1@gmail.com`, `+test2`, etc. — entregam-te à mesma caixa.
+2. **mailinator.com**: `qualquercoisa@mailinator.com` → consultas em mailinator.com sem registar.
+3. Vou também adicionar um botão dev-only **"Reset minha conta"** em `/settings` (só visível para `aafonsodias@gmail.com`) que apaga clientes/planos/profile e permite re-onboarding sem criar nova conta.
+
+---
+
+## Plano de execução (ordem)
+
+1. **Migration**: `profiles.account_type`, `clients.is_self`, índice. (≤2min)
+2. **Fix extended schema** + logging detalhado. (15min)
+3. **Auto-save de fotos** (IDB + retry + hidratação). (30min)
+4. **`/welcome` route + AppShell redirect**. (20min)
+5. **`/me` solo dashboard V1** (lista de planos próprios + botão gerar). (40min)
+6. **Intake adaptativo**: remover slide "Who is this for?", inferir `intake_path`, adicionar slides em falta (antropometria, disponibilidade, secondary goal). (45min)
+7. **Dev reset button** em settings. (10min)
+8. Smoke test: criar `aafonsodias+coach@`, `+solo@`, `+client@`, verificar cada caminho até gerar plano.
+
+Total estimado: ~3h. Faço tudo numa volta, sem te chatear, e reporto no fim com screenshots dos 3 caminhos a funcionar.
+
+**Confirmas?** Se sim, arranco já. Se quiseres tirar/adiar alguma parte (ex: adiar o `/me` solo para outro PR e focar só nos bugs + welcome), diz qual.

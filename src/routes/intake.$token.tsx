@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
 import { interpretGoal } from "@/server/intake-ai.functions";
-import { uploadIntakePhoto } from "@/server/intake-photos.functions";
+import { uploadIntakePhoto, getIntakePhotoUrls } from "@/server/intake-photos.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1214,10 +1214,52 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
   tutorial: string;
 }) {
   const upload = useServerFn(uploadIntakePhoto);
+  const fetchUrls = useServerFn(getIntakePhotoUrls);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Hydrate: if a photo for this slot was already uploaded, mark done and
+  // show the signed URL preview so the user knows it's saved.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const urls = await fetchUrls({ data: { token } });
+        if (cancelled) return;
+        const url = (urls as Record<string, string>)[slot];
+        if (url) {
+          setPreview(url);
+          setDone(true);
+        } else {
+          // Pending IDB upload? Try to flush.
+          const pending = await idbGet(`forge_intake_photo_${token}_${slot}`);
+          if (pending && typeof pending === "string") {
+            setPreview(pending);
+            void retryUpload(pending);
+          }
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, slot]);
+
+  const retryUpload = async (dataUrl: string, attempt = 0): Promise<void> => {
+    try {
+      await upload({ data: { token: token!, slot, dataUrl } });
+      await idbDel(`forge_intake_photo_${token}_${slot}`);
+      setDone(true);
+    } catch (e) {
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 800 * Math.pow(2, attempt)));
+        return retryUpload(dataUrl, attempt + 1);
+      }
+      throw e;
+    }
+  };
 
   const onFile = async (file: File) => {
     if (!token) {
@@ -1228,12 +1270,12 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
     try {
       const dataUrl = await resizeToJpegDataUrl(file, 1600, 0.82);
       setPreview(dataUrl);
-      await upload({ data: { token, slot, dataUrl } });
-      setDone(true);
+      // Stash locally BEFORE upload so a crash doesn't lose the capture.
+      await idbSet(`forge_intake_photo_${token}_${slot}`, dataUrl);
+      await retryUpload(dataUrl);
       toast.success(`${label} guardada`);
     } catch (e: any) {
-      toast.error(e?.message ?? "Falhou. Tenta outra foto.");
-      setPreview(null);
+      toast.error(e?.message ?? "Falhou — guardada localmente, tenta enviar de novo.");
     } finally {
       setBusy(false);
     }
@@ -1302,4 +1344,50 @@ async function resizeToJpegDataUrl(file: File, maxSide: number, quality: number)
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/* ─────────────── Tiny IndexedDB key/value (for crash-resistant photo stash) ─────────────── */
+
+const IDB_NAME = "forge-intake";
+const IDB_STORE = "kv";
+function idbOpen(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+}
+async function idbSet(key: string, value: string): Promise<void> {
+  try {
+    const db = await idbOpen();
+    await new Promise<void>((res, rej) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(value, key);
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error);
+    });
+  } catch {}
+}
+async function idbGet(key: string): Promise<string | null> {
+  try {
+    const db = await idbOpen();
+    return await new Promise<string | null>((res) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const r = tx.objectStore(IDB_STORE).get(key);
+      r.onsuccess = () => res((r.result as string) ?? null);
+      r.onerror = () => res(null);
+    });
+  } catch { return null; }
+}
+async function idbDel(key: string): Promise<void> {
+  try {
+    const db = await idbOpen();
+    await new Promise<void>((res) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).delete(key);
+      tx.oncomplete = () => res();
+      tx.onerror = () => res();
+    });
+  } catch {}
 }

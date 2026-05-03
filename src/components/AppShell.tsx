@@ -60,6 +60,24 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
 
+  // Audience routing: if the user hasn't picked an account_type yet, send
+  // them to /welcome (unless they're already there).
+  useEffect(() => {
+    if (!user) return;
+    if (location.pathname === "/welcome") return;
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!(data as any)?.account_type) navigate({ to: "/welcome" });
+    })();
+    return () => { cancelled = true; };
+  }, [user, location.pathname, navigate]);
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;

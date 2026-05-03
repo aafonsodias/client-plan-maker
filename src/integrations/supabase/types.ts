@@ -715,6 +715,7 @@ export type Database = {
           intake_token: string | null
           intake_token_expires_at: string | null
           is_demo: boolean
+          is_self: boolean
           notes: string | null
           phone: string | null
           photo_url: string | null
@@ -737,6 +738,7 @@ export type Database = {
           intake_token?: string | null
           intake_token_expires_at?: string | null
           is_demo?: boolean
+          is_self?: boolean
           notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -759,6 +761,7 @@ export type Database = {
           intake_token?: string | null
           intake_token_expires_at?: string | null
           is_demo?: boolean
+          is_self?: boolean
           notes?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -994,6 +997,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: Database["public"]["Enums"]["account_type"] | null
           business_name: string | null
           contact_email: string | null
           contact_phone: string | null
@@ -1014,6 +1018,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: Database["public"]["Enums"]["account_type"] | null
           business_name?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -1034,6 +1039,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: Database["public"]["Enums"]["account_type"] | null
           business_name?: string | null
           contact_email?: string | null
           contact_phone?: string | null
@@ -1344,6 +1350,7 @@ export type Database = {
       tier_to_plan_quota: { Args: { _tier: string }; Returns: number }
     }
     Enums: {
+      account_type: "coach" | "solo" | "coached_client"
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
       session_status: "done" | "partial" | "missed" | "in_progress"
     }
@@ -1473,6 +1480,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["coach", "solo", "coached_client"],
       intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
       session_status: ["done", "partial", "missed", "in_progress"],
     },
