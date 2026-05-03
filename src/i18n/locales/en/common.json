@@ -109,7 +109,17 @@
     "filter_onboarding": "Onboarding · {{count}}",
     "filter_active": "Active · {{count}}",
     "filter_idle": "Idle · {{count}}",
-    "filter_ready": "Ready for plan · {{count}}"
+    "filter_ready": "Ready for plan · {{count}}",
+    "create_demo_title": "Creates a fictional client with a full assessment to test the planning flow",
+    "invite_dialog_title": "Invite client",
+    "invite_intro": "I don't need anything right now. You generate a link, send it to the client, and they fill everything (name, contacts, goals, injuries…) on their phone. You only review at the end.",
+    "know_name": "Do you already know their name? (optional)",
+    "optional_name_label": "Name (optional — just to help you identify before they submit)",
+    "generate_invite": "Generate invite link",
+    "send_link_title": "Send this link to the client",
+    "send_link_intro": "On their phone the client fills name, contacts and the assessment. When they submit, they show up in this list for you to review.",
+    "open_client": "Open client",
+    "done": "Done"
   },
   "onboarding": {
     "title": "Welcome to Forge",

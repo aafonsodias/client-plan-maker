@@ -106,7 +106,17 @@
     "filter_onboarding": "Onboarding · {{count}}",
     "filter_active": "Ativos · {{count}}",
     "filter_idle": "Inativos · {{count}}",
-    "filter_ready": "Prontos para plano · {{count}}"
+    "filter_ready": "Prontos para plano · {{count}}",
+    "create_demo_title": "Cria um cliente fictício com avaliação completa para testar o fluxo de planeamento",
+    "invite_dialog_title": "Convidar cliente",
+    "invite_intro": "Não preciso de nada agora. Geras o link, envias ao cliente, e ele preenche tudo (nome, contactos, objetivos, lesões…) pelo telemóvel. Tu só revês no fim.",
+    "know_name": "Já sabes o nome dele? (opcional)",
+    "optional_name_label": "Nome (opcional — só para te ajudar a identificar antes de ele submeter)",
+    "generate_invite": "Gerar link de convite",
+    "send_link_title": "Envia este link ao cliente",
+    "send_link_intro": "No telemóvel o cliente preenche nome, contactos e a avaliação. Quando ele submeter, aparece aqui na lista para tu revisares.",
+    "open_client": "Abrir cliente",
+    "done": "Concluído"
   },
   "onboarding": {
     "title": "Bem-vindo à Forge",
