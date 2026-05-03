@@ -120,6 +120,17 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
     }
 
     // Tag the freshly-generated plan as Block N+1 of the lineage.
+    // Bonus: from Block 4 onwards, ask Stage 3 to refresh the main lift of
+    // at least one pattern (anti-stale). We surface a flag in
+    // `generation_meta.suggest_main_lift_swap` so the prompt picks it up
+    // and the UI can show a "Main lift refrescado" chip.
+    const { data: curPlanRow } = await supabaseAdmin
+      .from("workout_plans")
+      .select("generation_meta")
+      .eq("id", ran.planId)
+      .maybeSingle();
+    const curMeta = ((curPlanRow as any)?.generation_meta ?? {}) as Record<string, any>;
+    if (nextBlock >= 4) curMeta.suggest_main_lift_swap = true;
     await supabaseAdmin
       .from("workout_plans")
       .update({
@@ -128,6 +139,7 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
         block_transition_summary: summary,
         title: `Bloco ${nextBlock}`,
         assessment_id: (assessment as any)?.id ?? null,
+        generation_meta: curMeta,
       })
       .eq("id", ran.planId);
 

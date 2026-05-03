@@ -287,6 +287,7 @@ async function runDay(
   priorSummary: any = null,
   priorExercisePool: string[] = [],
   hardBan: string[] = [],
+  swapMainLift: boolean = false,
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -346,6 +347,10 @@ If a movement is genuinely "supported" or rehab-style, prefer reducing load and 
     ? `\n\nRETRY — STRICT BAN LIST:\nThe previous attempt repeated too many accessories. DO NOT use any of these accessories (any close variant): ${hardBan.slice(0, 14).join(", ")}.\nReplace each with the closest substitute that trains the same primary muscle / pattern (e.g. swap incline DB press → low-incline machine press; swap leg press → belt squat or hack squat). Main lift may stay.`
     : "";
 
+  const mainLiftSwapBlock = swapMainLift && priorExercisePool.length > 0
+    ? `\n\nMAIN LIFT REFRESH (block ≥4 — anti-stale):\nWe've kept the same main lifts for several blocks. For at least ONE pattern this microcycle, swap the main lift to a same-pattern variant (e.g. back squat → front squat or safety-bar squat; bench press → low-incline DB press; conventional deadlift → trap-bar; barbell row → chest-supported row). Keep RPE floors and intent unchanged. The remaining main lifts may stay.`
+    : "";
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -360,7 +365,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}${hardBanBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -553,6 +558,7 @@ export const generateDay = createServerFn({ method: "POST" })
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
+    const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
     await markPending(supabase, userId, data.planId, data.dayIndex);
     const r = await runDay(
       supabase,
@@ -564,6 +570,8 @@ export const generateDay = createServerFn({ method: "POST" })
       guidelines,
       priorBlockSummary,
       priorPool,
+      [],
+      swapMainLift,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -596,6 +604,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
+    const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -620,6 +629,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             guidelines,
             priorBlockSummary,
             priorPool,
+            [],
+            swapMainLift,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);

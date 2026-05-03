@@ -114,6 +114,16 @@ export const runDemoPlay = createServerFn({ method: "POST" })
         }
       }
       const priorExercisePool = [...pool];
+      // Anti-stale: from Block 4 onwards, ask Stage 3 to rotate the main
+      // lift of at least one pattern. Read prior plan's block_number to
+      // know what number this new block will inherit.
+      const { data: priorPlanRow } = await supabaseAdmin
+        .from("workout_plans")
+        .select("block_number")
+        .eq("id", data.priorPlanId)
+        .maybeSingle();
+      const upcomingBlock = ((priorPlanRow as any)?.block_number ?? 1) + 1;
+      const suggestMainLiftSwap = upcomingBlock >= 4;
       const { data: existingMeta } = await supabaseAdmin
         .from("workout_plans")
         .select("generation_meta")
@@ -123,6 +133,7 @@ export const runDemoPlay = createServerFn({ method: "POST" })
         ...((existingMeta as any)?.generation_meta ?? {}),
         block_feedback: summary,
         prior_exercise_pool: priorExercisePool,
+        suggest_main_lift_swap: suggestMainLiftSwap,
       };
       await supabaseAdmin
         .from("workout_plans")
