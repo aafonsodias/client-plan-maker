@@ -541,6 +541,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
