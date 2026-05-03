@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, X, Send, Loader2, ArrowRight, Compass, MessageSquare } from "lucide-react";
+import { Sparkles, X, Send, Loader2, ArrowRight, Compass, MessageSquare, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ModelPicker } from "@/components/ai/ModelPicker";
@@ -42,6 +42,39 @@ export function AskForgeDock({ enabled }: { enabled: boolean }) {
   const location = useLocation();
   const navigate = useNavigate();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const speechSupported =
+    typeof window !== "undefined" &&
+    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+  const toggleMic = () => {
+    if (!speechSupported) {
+      toast.error("O teu browser não suporta ditado por voz.");
+      return;
+    }
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SR: any =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const r = new SR();
+    r.lang = "pt-PT";
+    r.interimResults = true;
+    r.continuous = false;
+    r.onresult = (e: any) => {
+      let text = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) text += e.results[i][0].transcript;
+      setInput((prev) => (prev ? prev + " " : "") + text.trim());
+    };
+    r.onend = () => setListening(false);
+    r.onerror = () => setListening(false);
+    recognitionRef.current = r;
+    setListening(true);
+    try { r.start(); } catch { setListening(false); }
+  };
 
   useEffect(() => {
     scrollerRef.current?.scrollTo({ top: scrollerRef.current.scrollHeight, behavior: "smooth" });
