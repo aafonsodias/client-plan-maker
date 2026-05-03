@@ -77,7 +77,7 @@ const personas: Persona[] = [
   {
     name: "Marta (gestante, sem disease)",
     why: "Watchlist — pregnancy NÃO deve flagear via Ch.2 (R3 overlay).",
-    expected: { tier: "conservative", clearance: false, reason: "pregnancy not a Ch.2 trigger" },
+    expected: { tier: "advanced", clearance: false, reason: "pregnancy not a Ch.2 trigger; sem outros flags" },
     brief: baseBrief({ training_age_band: "intermediate" }),
     assessment: baseAssessment({ sex: "female", age: 31, extended: { age: 31, pregnancy: true, height_cm: 165, weight_kg: 68 } }),
   },
@@ -98,14 +98,14 @@ const personas: Persona[] = [
   {
     name: "João (DM2 conhecido, ativo, moderate intent)",
     why: "Known disease + asymptomatic + exercising + moderate → SEM clearance.",
-    expected: { tier: "conservative", clearance: false, reason: "known disease but stable mod" },
+    expected: { tier: "conservative", clearance: false, reason: "known disease → conservative (sem clearance)" },
     brief: baseBrief(),
     assessment: baseAssessment({ sex: "male", age: 45, extended: { age: 45, height_cm: 178, weight_kg: 88 }, medical_conditions: "DM2 controlada", training_days_per_week: 4, years_training: 2 }),
   },
   {
     name: "Rui (DM2, ativo, intent vigorous)",
     why: "Known disease + escalada vigorous → clearance.",
-    expected: { tier: "remedial", clearance: true, reason: "known disease + vigorous escalation" },
+    expected: { tier: "remedial", clearance: true, reason: "known disease + vigorous → clearance → remedial" },
     brief: baseBrief({ intensity_appetite: "agressivo" } as any),
     assessment: baseAssessment({ sex: "male", age: 50, extended: { age: 50, height_cm: 178, weight_kg: 92 }, medical_conditions: "DM tipo 2", training_days_per_week: 4, years_training: 2 }),
   },
