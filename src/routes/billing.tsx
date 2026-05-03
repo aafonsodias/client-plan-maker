@@ -305,39 +305,39 @@ function BillingPage() {
 
         {/* Tier cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          {TIERS.map((t) => {
-            const isCurrent = currentTier === t.id;
-            const price = interval === "year" ? t.yearly : t.monthly;
-            const suffix = interval === "year" ? this_t("billing.per_year") : this_t("billing.per_month");
+          {TIERS.map((tier) => {
+            const isCurrent = currentTier === tier.id;
+            const price = interval === "year" ? tier.yearly : tier.monthly;
+            const suffix = interval === "year" ? t("billing.per_year") : t("billing.per_month");
             const monthlyEquiv =
-              interval === "year" ? Math.round((t.yearly / 12) * 10) / 10 : null;
+              interval === "year" ? Math.round((tier.yearly / 12) * 10) / 10 : null;
             return (
               <div
-                key={t.id}
+                key={tier.id}
                 className={`relative rounded-lg border bg-card p-6 ${
-                  t.highlight ? "border-accent/60 shadow-lg" : "border-border"
+                  tier.highlight ? "border-accent/60 shadow-lg" : "border-border"
                 }`}
               >
-                {t.highlight && (
+                {tier.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-widest text-accent-foreground">
-                    Mais popular
+                    {t("billing.most_popular")}
                   </div>
                 )}
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-accent">
-                  <Sparkles className="h-3.5 w-3.5" /> Forge {t.name}
+                  <Sparkles className="h-3.5 w-3.5" /> Forge {tier.name}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{t.tagline}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{tier.tagline}</p>
                 <div className="mt-4">
                   <span className="text-4xl font-semibold">€{price}</span>
                   <span className="text-sm text-muted-foreground">{suffix}</span>
                   {monthlyEquiv !== null && (
                     <p className="text-xs text-muted-foreground">
-                      ≈ €{monthlyEquiv}/mês
+                      {t("billing.per_month_eq", { price: monthlyEquiv })}
                     </p>
                   )}
                 </div>
                 <ul className="mt-5 space-y-2 text-sm">
-                  {t.features.map((f) => (
+                  {tier.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-foreground">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                       <span>{f}</span>
@@ -355,19 +355,19 @@ function BillingPage() {
                       {busy === "portal" ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
-                      Plano actual — gerir
+                      {t("billing.current_manage")}
                     </Button>
                   ) : (
                     <Button
-                      onClick={() => handleSubscribe(t.id)}
+                      onClick={() => handleSubscribe(tier.id)}
                       disabled={busy !== null}
                       className="w-full"
-                      variant={t.highlight ? "default" : "outline"}
+                      variant={tier.highlight ? "default" : "outline"}
                     >
-                      {busy === `checkout-${t.id}` ? (
+                      {busy === `checkout-${tier.id}` ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
-                      {access?.subscribed ? "Mudar para este plano" : `Subscrever`}
+                      {access?.subscribed ? t("billing.switch_plan") : t("billing.subscribe")}
                     </Button>
                   )}
                 </div>
@@ -381,18 +381,16 @@ function BillingPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-accent">
-                <Zap className="h-3.5 w-3.5" /> Pack Premium
+                <Zap className="h-3.5 w-3.5" /> {t("billing.premium_pack")}
               </div>
-              <h3 className="mt-1 text-lg font-semibold">10 escalações premium — €12</h3>
+              <h3 className="mt-1 text-lg font-semibold">{t("billing.premium_pack_title")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Top-up avulso. Usa quando precisares do nosso modelo mais sofisticado (Claude Sonnet)
-                para casos com red flags ou periodização complexa. Custo cobre o modelo + ~30% de margem.
-                Válido até ao fim do próximo ciclo.
+                {t("billing.premium_pack_desc")}
               </p>
             </div>
             <Button onClick={handleTopup} disabled={busy !== null} variant="outline">
               {busy === "topup" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Comprar pack
+              {t("billing.buy_pack")}
             </Button>
           </div>
         </div>
@@ -400,7 +398,7 @@ function BillingPage() {
         {/* Honest FAQ */}
         <div className="rounded-lg border border-border bg-card/60 p-5">
           <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            <Info className="h-3.5 w-3.5" /> Perguntas honestas
+            <Info className="h-3.5 w-3.5" /> {t("billing.honest_faq")}
           </div>
           <ul className="divide-y divide-border/60">
             {FAQ_ITEMS.map((item, i) => {
