@@ -1,69 +1,43 @@
-# Round 4 — Forward-adapting transitions + background demo generations
+## Round 5A — Close the feedback loop visually
 
-Two parallel workstreams. First addresses the simulation engine (Round 4 proper). Second addresses the UX request: demo runs must continue while the trainer navigates the app and notify them when done.
+The pipeline already stamps `generation_meta.block_feedback` (a `BlockSummary` from `summarizePriorBlock`) onto every Block N+1. Today this data is invisible: the only surface is the free-text `block_transition_summary`. This round exposes the verdicts, adherence, and resulting volume shifts inside the existing UI.
 
----
+### What the user will see
 
-## Part A — Forward-adapting block transitions
+1. **Block report card** inside `BlockTransitionDialog` — shown above the editable summary when computing the suggestion. Lists per-muscle: prior adherence %, mean RPE, verdict chip (sob-recuperação / no alvo / sub-carregado), and the prescribed shift ("MAV teto 14 → 11").
+2. **Adaptation strip on the plan header** for any plan with `prior_plan_id` set. Compact row of muscle chips coloured by verdict, click opens a popover with the same report card (read-only).
+3. **VolumeStatusTable annotations** — when the active plan was downshifted on a muscle, the row gets an amber "↓ ajustado por bloco anterior" badge and the tooltip explains why.
+4. **YearView block boundaries** — the block-map table gains a "Adaptação" column with the verdict mix (e.g. "3 sob-rec · 5 alvo · 2 sub-carga"); chart x-axis ticks at block boundaries get an amber/emerald dot matching the dominant verdict.
 
-Today `archivePlanAndStartNextBlock` (src/server/blocks.functions.ts) re-runs the phased pipeline tagged with `block_number+1` but does not feed the *prior* block's adherence/RPE/volume reality back into the new prescription. The next block reuses default landmarks instead of adapting to what actually happened.
+### Files to create
 
-**Changes**
-- **`src/lib/block-feedback.ts`** (new): pure function `summarizePriorBlock(plan, sessions)` returning per-muscle realised volume, mean RPE, adherence %, and a verdict (`under_recovered` | `on_target` | `under_loaded`) per muscle, using thresholds:
-  - mean RPE ≥ 9 OR adherence < 70% → `under_recovered` → next block starts at `MEV` (not the curve default), shorter accumulation.
-  - mean RPE 7–8.5 AND adherence ≥ 85% → `on_target` → continue MEV→MAV→MRV curve.
-  - mean RPE ≤ 6.5 → `under_loaded` → start at `MEV+2`, push faster toward MRV.
-- **`src/lib/prescribe-volume.ts`**: extend `prescribeMesocycle()` to accept an optional `priorBlockSummary` argument; per muscle it shifts the start landmark and slope based on the verdict.
-- **`src/server/blocks.functions.ts` (`archivePlanAndStartNextBlock`)**: before kicking off the next phased run, fetch prior plan + sessions, call `summarizePriorBlock`, and pass the result through pipeline context so stage 2 + stage 3 prompts receive the adapted landmark table. Persist the verdict map onto `workout_plans.block_transition_summary` so the UI can show *why* the new block looks different.
-- **`src/components/BlockTransitionDialog.tsx`**: add a compact "Adaptado a partir do bloco anterior" section listing per-muscle verdicts with tone chips (success/warn/danger via `src/lib/status-tone.ts`).
+- `src/lib/block-adaptation.ts` — pure helpers:
+  - `computeAdaptationShift(verdict, landmark)` returning `{ startSets, ceilingSets, inflection }` (mirrors logic already in `prescribe-volume.ts` so the UI shows exactly what the prescription used).
+  - `summarizeAdaptation(blockFeedback)` returning per-muscle `{ muscle, verdict, adherencePct, meanRpe, priorMAV, newCeiling, delta }`.
+  - `dominantVerdict(blockFeedback)` for the YearView dot colour.
+- `src/components/BlockAdaptationCard.tsx` — presentational card consuming `summarizeAdaptation` output. Two variants via prop: `compact` (chip strip) and `full` (table with shifts and tooltips). Reuses `toneChip`/`toneDot` from `status-tone.ts`.
 
-No new tables; reuses existing `workout_plans` / `workout_sessions` / `block_transition_summary`.
+### Files to edit
 
----
+- `src/components/BlockTransitionDialog.tsx` — fetch prior plan's feedback (extend `computeTransitionSummary` server fn to also return `blockFeedback`) and render `<BlockAdaptationCard variant="full" />` above the textarea.
+- `src/server/blocks-manual.functions.ts` — `computeTransitionSummary` returns `{ summary, blockFeedback }` (additive; existing callers ignore extra field).
+- `src/routes/plans.$planId.tsx` — when `plan.prior_plan_id` exists, render the existing "Bloco N · evoluiu" chip with a popover trigger that shows `<BlockAdaptationCard variant="full" />` populated from `plan.generation_meta.block_feedback`.
+- `src/components/volume/VolumeStatusTable.tsx` — accept optional `adaptation?: ReturnType<typeof summarizeAdaptation>` prop; when a row's muscle has `verdict === "under_recovered"` or `"under_loaded"`, append the badge + extend the tooltip text. Backward compatible (prop optional).
+- Callers of `VolumeStatusTable` (likely in `plans.$planId.tsx` / blueprint view) — pass the adaptation summary when available.
+- `src/components/YearView.tsx` — extend the block-map table with the "Adaptação" column; add the verdict dot to the block-boundary annotations on the adherence chart.
 
-## Part B — Background demo runner (navigate-while-generating)
+### Technical notes
 
-Today `DemoLabPanel` owns the polling loop. Closing the dashboard kills `setInterval`, the toast never fires, and the user can't tell whether the run is still alive.
+- No DB migration needed — `block_feedback` already lives in `workout_plans.generation_meta`.
+- `computeAdaptationShift` must stay in lockstep with `prescribe-volume.ts`. Extract the shared shift math into `block-adaptation.ts` and have `prescribe-volume.ts` import from it (single source of truth) — silently divergent UI vs prescription would be worse than no UI at all.
+- All copy in PT-PT, matching existing tone ("sob-recuperação", "sub-carregado", "no alvo").
+- No new colours — verdicts map onto the existing `status-tone` palette: `under_recovered → warn`, `on_target → success`, `under_loaded → neutral` (it's not a problem, it's headroom).
+- Compact strip on the plan header is purely additive; if `block_feedback` is missing on a legacy plan, it falls back to the current "evoluiu" chip without the popover.
 
-**Architecture**
-```text
-RootComponent
- └─ DemoRunsProvider          (new context, mounted once, survives navigation)
-      ├─ tracks runId(s) in state + localStorage
-      ├─ polls getDemoRun every 1.5s for each active run
-      ├─ fires sonner toasts on completion / failure
-      └─ exposes { activeRuns, startRun, cancelRun }
- └─ <DemoRunsIndicator/>      (new floating chip, bottom-right, only when runs active)
- └─ <Outlet/>
-```
+### Out of scope (separate rounds)
 
-**Changes**
-- **`src/contexts/DemoRunsContext.tsx`** (new): provider + `useDemoRuns()` hook. Persists `{ runId, durationWeeks, startedAt }[]` to `localStorage` keyed by user id so a hard refresh resumes polling. On `done` → `toast.success` with an *Abrir plano* action that navigates to `/plans/$planId`. On `failed`/`cancelled` → appropriate toast. Cleans up storage entry on terminal state.
-- **`src/components/DemoRunsIndicator.tsx`** (new): small amber pill fixed bottom-right showing current stage label + spinner + count if >1, click opens a popover with per-run progress (reuses the GATE_LABELS list) and a *Parar* button. Hidden when no active runs.
-- **`src/routes/__root.tsx`**: mount `<DemoRunsProvider>` inside `AuthProvider`, render `<DemoRunsIndicator/>` next to `<Toaster/>`.
-- **`src/components/DemoLabPanel.tsx`**: gut the local polling. `runInstant` now calls `useDemoRuns().startRun({ durationWeeks })` and returns immediately. The inline gate list still renders but reads its state from the context (so the dashboard view shows progress when user is there, and the floating indicator shows it everywhere else). Cancel button delegates to `cancelRun(runId)`.
-- **No server changes needed** — `startDemoClientFull` is already fire-and-poll, which is exactly what this needs.
+- Wiring real (non-demo) `workout_sessions` into `block-feedback` (Direction B).
+- Background runner hardening (Direction C).
+- Quota policy for Block N+1 (Direction D).
 
-**Behaviour the user gets**
-- Click *Instant: cliente + plano + logbook* → toast "Simulação iniciada em segundo plano".
-- Navigate to /clients, /plans, /settings — amber pill stays visible bottom-right, updates stage live.
-- When done → success toast with *Abrir plano* button; pill disappears.
-- Hard refresh mid-run → pill comes back, polling resumes from localStorage.
-
----
-
-## Files
-
-**Created**
-- `src/lib/block-feedback.ts`
-- `src/contexts/DemoRunsContext.tsx`
-- `src/components/DemoRunsIndicator.tsx`
-
-**Edited**
-- `src/lib/prescribe-volume.ts`
-- `src/server/blocks.functions.ts`
-- `src/components/BlockTransitionDialog.tsx`
-- `src/components/DemoLabPanel.tsx`
-- `src/routes/__root.tsx`
-
-Approve to implement both parts in one pass?
+Approve to implement.
