@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,78 +53,9 @@ type TierCard = {
   highlight?: boolean;
 };
 
-const TIERS: TierCard[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    tagline: "Para PTs com até 8 clientes activos",
-    monthly: 19,
-    yearly: 190,
-    features: [
-      "Até 8 clientes activos",
-      "8 gerações de plano / mês",
-      "1 escalação premium incluída",
-      "Intake & PDFs com a tua marca",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    tagline: "Para PTs com 10–25 clientes activos",
-    monthly: 45,
-    yearly: 450,
-    highlight: true,
-    features: [
-      "Até 25 clientes activos",
-      "30 gerações de plano / mês",
-      "4 escalações premium incluídas",
-      "Partilha WhatsApp + check-ins",
-      "Digest semanal de Segunda",
-    ],
-  },
-  {
-    id: "studio",
-    name: "Studio",
-    tagline: "Estúdios e equipas (até 5 PTs)",
-    monthly: 119,
-    yearly: 1190,
-    features: [
-      "Até 60 clientes activos no total",
-      "80 gerações de plano / mês",
-      "12 escalações premium incluídas",
-      "5 lugares de PT",
-      "Suporte prioritário",
-    ],
-  },
-];
-
-/** Honest FAQ items shown directly under the tier cards — surfaces the truth
- *  about quotas, retention, and overage so PTs don't feel ambushed. */
-const FAQ_ITEMS: { q: string; a: string }[] = [
-  {
-    q: "O que conta como uma “geração de plano”?",
-    a: "Uma geração = um novo mesociclo de 4 semanas (Brief + Blueprint + Microciclo + Progressões) para um cliente. Editares manualmente, voltar a correr só as progressões, ou re-printar o PDF NÃO conta como nova geração.",
-  },
-  {
-    q: "Como conta um “cliente activo”?",
-    a: "Activo = qualquer cliente com pelo menos uma sessão registada nos últimos 60 dias OU um plano gerado nos últimos 60 dias. Clientes inactivos ficam guardados mas não contam para o limite — quando voltarem a treinar, voltam a contar.",
-  },
-  {
-    q: "E se ultrapassar as gerações no mês?",
-    a: "Avisamos-te ao chegares a 80%. Podes comprar packs avulso (10 gerações por €12) ou esperar pelo dia 1 do próximo ciclo. Nunca cobramos sem confirmação.",
-  },
-  {
-    q: "Porque é que a “escalação premium” custa €1,50?",
-    a: "Escalação premium = corremos o teu plano com o nosso modelo mais sofisticado (Claude Sonnet) para casos com red flags ou periodização complexa. €1,50 cobre o custo do modelo + ~30% de margem para infra e suporte.",
-  },
-  {
-    q: "O que acontece aos dados dos meus clientes?",
-    a: "Guardados na UE com encriptação. Podes exportar tudo em JSON ou apagar qualquer cliente a qualquer momento, em Definições. Se cancelares a subscrição, mantemos os dados 90 dias para te permitir reactivar; depois disso são apagados.",
-  },
-];
-
 function BillingPage() {
   const { checkout, topup } = Route.useSearch();
+  const { t } = useTranslation("common");
   useNavigate();
   const { user } = useAuth();
   const checkoutFn = useServerFn(createCheckout);
@@ -133,6 +65,49 @@ function BillingPage() {
   const [access, setAccess] = useState<Access | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [interval, setInterval] = useState<Interval>("month");
+
+  const TIERS: TierCard[] = useMemo(() => [
+    {
+      id: "starter", name: "Starter", tagline: t("billing.tier_starter_tagline"),
+      monthly: 19, yearly: 190,
+      features: [
+        t("billing.feat_starter_clients"),
+        t("billing.feat_starter_plans"),
+        t("billing.feat_starter_premium"),
+        t("billing.feat_brand"),
+      ],
+    },
+    {
+      id: "pro", name: "Pro", tagline: t("billing.tier_pro_tagline"),
+      monthly: 45, yearly: 450, highlight: true,
+      features: [
+        t("billing.feat_pro_clients"),
+        t("billing.feat_pro_plans"),
+        t("billing.feat_pro_premium"),
+        t("billing.feat_pro_share"),
+        t("billing.feat_pro_digest"),
+      ],
+    },
+    {
+      id: "studio", name: "Studio", tagline: t("billing.tier_studio_tagline"),
+      monthly: 119, yearly: 1190,
+      features: [
+        t("billing.feat_studio_clients"),
+        t("billing.feat_studio_plans"),
+        t("billing.feat_studio_premium"),
+        t("billing.feat_studio_seats"),
+        t("billing.feat_studio_support"),
+      ],
+    },
+  ], [t]);
+
+  const FAQ_ITEMS = useMemo(() => [
+    { q: t("billing.faq_q1"), a: t("billing.faq_a1") },
+    { q: t("billing.faq_q2"), a: t("billing.faq_a2") },
+    { q: t("billing.faq_q3"), a: t("billing.faq_a3") },
+    { q: t("billing.faq_q4"), a: t("billing.faq_a4") },
+    { q: t("billing.faq_q5"), a: t("billing.faq_a5") },
+  ], [t]);
 
   const loadAccess = async (): Promise<Access | null> => {
     if (!user) return null;
@@ -169,15 +144,15 @@ function BillingPage() {
       try {
         if (checkout === "success") {
           await refreshFn();
-          toast.success("Bem-vindo ao Forge!");
+          toast.success(t("billing.welcome_toast"));
         }
         if (topup === "success") {
-          toast.success("Pack premium adicionado.");
+          toast.success(t("billing.topup_added"));
         }
         const a = await loadAccess();
         if (!cancelled) setAccess(a);
       } catch (e: any) {
-        toast.error(e?.message ?? "Falha ao carregar billing");
+        toast.error(e?.message ?? t("billing.load_failed"));
       }
     })();
     return () => {
@@ -192,7 +167,7 @@ function BillingPage() {
       const { url } = await checkoutFn({ data: { tier, interval } });
       if (url) window.location.href = url;
     } catch (e: any) {
-      toast.error(e?.message ?? "Checkout falhou");
+      toast.error(e?.message ?? t("billing.checkout_failed"));
       setBusy(null);
     }
   };
@@ -203,7 +178,7 @@ function BillingPage() {
       const { url } = await portalFn();
       if (url) window.location.href = url;
     } catch (e: any) {
-      toast.error(e?.message ?? "Portal falhou");
+      toast.error(e?.message ?? t("billing.portal_failed"));
       setBusy(null);
     }
   };
@@ -214,7 +189,7 @@ function BillingPage() {
       const { url } = await topupFn();
       if (url) window.location.href = url;
     } catch (e: any) {
-      toast.error(e?.message ?? "Top-up falhou");
+      toast.error(e?.message ?? t("billing.topup_failed"));
       setBusy(null);
     }
   };
@@ -225,30 +200,30 @@ function BillingPage() {
       await refreshFn();
       const a = await loadAccess();
       setAccess(a);
-      toast.success("Subscrição actualizada");
+      toast.success(t("billing.refresh_ok"));
     } catch (e: any) {
-      toast.error(e?.message ?? "Não foi possível verificar a subscrição");
+      toast.error(e?.message ?? t("billing.refresh_failed"));
     } finally {
       setBusy(null);
     }
   };
 
   const currentTier = access?.tier ?? null;
-  const yearlySavings = useMemo(() => "17% off · 2 meses grátis", []);
+  const yearlySavings = t("billing.yearly_savings");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <AppShell back={{ to: "/dashboard", label: "Voltar ao dashboard" }}>
+    <AppShell back={{ to: "/dashboard", label: t("billing.back_to_dashboard") }}>
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <div className="flex items-center gap-3">
             <BrandMark size="sm" />
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Billing</p>
           </div>
-          <h1 className="mt-2 text-2xl font-semibold">A tua subscrição</h1>
+          <h1 className="mt-2 text-2xl font-semibold">{t("billing.title")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Preço por <span className="text-foreground">clientes activos + gerações de plano</span> — um cliente que treina sempre o mesmo mesociclo
-            <span className="italic"> não </span>conta como geração nova. Sem letras pequenas.
+            {t("billing.subtitle_1")}<span className="text-foreground">{t("billing.subtitle_strong")}</span>{t("billing.subtitle_2")}
+            <span className="italic"> {t("billing.subtitle_em")} </span>{t("billing.subtitle_3")}
           </p>
         </div>
 
@@ -256,39 +231,40 @@ function BillingPage() {
         <div className="rounded-lg border border-border bg-card p-5">
           {access === null ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> A carregar…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("billing.loading")}
             </div>
           ) : access.subscribed ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Check className="h-4 w-4 text-emerald-500" />{" "}
                 {currentTier
-                  ? `Forge ${currentTier[0].toUpperCase() + currentTier.slice(1)} — activo`
-                  : "Forge — activo"}
+                  ? t("billing.active_tier", { tier: currentTier[0].toUpperCase() + currentTier.slice(1) })
+                  : t("billing.active_generic")}
               </div>
               {access.currentPeriodEnd && (
                 <p className="text-xs text-muted-foreground">
-                  Renova a {new Date(access.currentPeriodEnd).toLocaleDateString()}
+                  {t("billing.renews_on", { date: new Date(access.currentPeriodEnd).toLocaleDateString() })}
                 </p>
               )}
             </div>
           ) : access.trialActive ? (
             <div className="space-y-2">
               <div className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                Trial — {access.trialDaysLeft} dia{access.trialDaysLeft === 1 ? "" : "s"} restante
-                {access.trialDaysLeft === 1 ? "" : "s"}
+                {t("billing.trial_label")} — {access.trialDaysLeft === 1
+                  ? t("billing.trial_days", { n: 1 })
+                  : t("billing.trial_days_plural", { n: access.trialDaysLeft ?? 0 })}
               </div>
               <p className="text-xs text-muted-foreground">
-                Subscreve para continuar a gerar planos sem interrupções.
+                {t("billing.trial_hint")}
               </p>
             </div>
           ) : (
             <div className="space-y-2">
               <div className="text-sm font-semibold text-destructive">
-                Trial terminada — geração de planos pausada
+                {t("billing.trial_ended_title")}
               </div>
               <p className="text-xs text-muted-foreground">
-                Escolhe um plano abaixo para retomar.
+                {t("billing.trial_ended_hint")}
               </p>
             </div>
           )}
@@ -306,7 +282,7 @@ function BillingPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Mensal
+              {t("billing.monthly")}
             </button>
             <button
               type="button"
@@ -317,7 +293,7 @@ function BillingPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Anual
+              {t("billing.yearly")}
             </button>
           </div>
           {interval === "year" && (
@@ -332,7 +308,7 @@ function BillingPage() {
           {TIERS.map((t) => {
             const isCurrent = currentTier === t.id;
             const price = interval === "year" ? t.yearly : t.monthly;
-            const suffix = interval === "year" ? "/ano" : "/mês";
+            const suffix = interval === "year" ? this_t("billing.per_year") : this_t("billing.per_month");
             const monthlyEquiv =
               interval === "year" ? Math.round((t.yearly / 12) * 10) / 10 : null;
             return (
