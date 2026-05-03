@@ -43,6 +43,7 @@ import { summarizeAdaptation } from "@/lib/block-adaptation";
 import { computeCapacityGain } from "@/lib/capacity-gain";
 import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
+import { NextBlockCard } from "@/components/NextBlockCard";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
