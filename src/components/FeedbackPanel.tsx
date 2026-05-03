@@ -169,7 +169,7 @@ export function FeedbackPanel({ clientId, planId }: { clientId: string; planId?:
                   <Icon className={`h-3.5 w-3.5 ${CATEGORY_TONE[r.category]}`} />
                   <span className="font-medium text-foreground">{CATEGORY_LABEL[r.category]}</span>
                   <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                    {AUTHOR_LABEL[r.author]} · {new Date(r.created_at).toLocaleDateString("pt-PT")}
+                    {AUTHOR_LABEL[r.author]} · {new Date(r.created_at).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US")}
                   </span>
                   <span className="ml-auto text-[10px] text-muted-foreground">{r.status}</span>
                 </div>
