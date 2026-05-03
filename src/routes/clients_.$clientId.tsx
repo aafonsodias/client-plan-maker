@@ -3032,11 +3032,12 @@ function SectionBlock({
 }
 
 function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; analysis: SectionAnalysis | null }) {
+  const { t } = useTranslation("assessment");
   if (analysing) {
     return (
       <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
-        <span>A analisar esta secção…</span>
+        <span>{t("detail.analysing_section")}</span>
       </div>
     );
   }
