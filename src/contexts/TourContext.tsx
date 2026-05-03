@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Joyride } from "react-joyride";
 
@@ -55,34 +55,72 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const stepDefs = useMemo<TourStepDef[]>(() => [
     { key: "step_banner", target: "[data-tour='demo-banner']", i18nKey: "demo.tour.step_banner", placement: "bottom" },
     { key: "step_open_client", route: (c) => `/clients/${c.clientId}`, target: "[data-tour='client-overview']", i18nKey: "demo.tour.step_open_client", placement: "bottom" },
-    { key: "step_plan", route: (c) => c.planId ? `/plans/${c.planId}` : `/clients/${c.clientId}`, target: "[data-tour='plan-block-chip'], [data-tour='plan-header']", i18nKey: "demo.tour.step_plan", placement: "bottom" },
-    { key: "step_volume", route: (c) => c.planId ? `/plans/${c.planId}` : `/clients/${c.clientId}`, target: "[data-tour='volume-section']", i18nKey: "demo.tour.step_volume", placement: "top" },
+    { key: "step_plan", route: (c) => `/plans/${c.planId}`, target: "[data-tour='plan-header']", i18nKey: "demo.tour.step_plan", placement: "bottom" },
+    { key: "step_volume", route: (c) => `/plans/${c.planId}`, target: "[data-tour='volume-section']", i18nKey: "demo.tour.step_volume", placement: "top" },
     { key: "step_year", route: (c) => `/clients/${c.clientId}/year`, target: "[data-tour='year-view']", i18nKey: "demo.tour.step_year", placement: "top" },
     { key: "step_lab", route: () => `/clients`, target: "[data-tour='demo-lab']", i18nKey: "demo.tour.step_lab", placement: "top" },
   ], []);
 
-  const steps = useMemo(() => stepDefs.map((s) => ({
+  // Drop plan-dependent steps when the demo client has no plan yet (mid-seed
+  // or seed-failed). Joyride's controlled stepIndex still indexes into this
+  // filtered list.
+  const activeStepDefs = useMemo(
+    () => stepDefs.filter((s) => (ctx?.planId ? true : s.key !== "step_plan" && s.key !== "step_volume")),
+    [stepDefs, ctx?.planId],
+  );
+
+  const steps = useMemo(() => activeStepDefs.map((s) => ({
     target: s.target,
     content: t(s.i18nKey),
     disableBeacon: true,
     placement: s.placement,
-  })), [stepDefs, t]);
+  })), [activeStepDefs, t]);
+
+  const advanceTimerRef = useRef<number | null>(null);
+  const clearAdvance = () => {
+    if (advanceTimerRef.current) { window.clearTimeout(advanceTimerRef.current); advanceTimerRef.current = null; }
+  };
 
   const ensureRouteForStep = useCallback(async (i: number) => {
     if (!ctx) return;
-    const def = stepDefs[i];
+    const def = activeStepDefs[i];
     if (!def?.route) return;
     const target = def.route(ctx);
     if (!target) return;
     if (location.pathname === target) return;
     await navigate({ to: target as any });
-  }, [ctx, stepDefs, location.pathname, navigate]);
+  }, [ctx, activeStepDefs, location.pathname, navigate]);
 
-  // When stepIndex changes, ensure the right route is loaded.
+  // Wait for the target selector to appear; auto-skip the step if it doesn't
+  // show up within a reasonable window. Prevents Joyride from getting stuck.
+  const waitForTargetThenSkip = useCallback((i: number) => {
+    clearAdvance();
+    const def = activeStepDefs[i];
+    if (!def) return;
+    let waited = 0;
+    const tick = 200;
+    const max = 2000;
+    const id = window.setInterval(() => {
+      waited += tick;
+      const found = typeof document !== "undefined" && !!document.querySelector(def.target);
+      if (found) { window.clearInterval(id); return; }
+      if (waited >= max) {
+        window.clearInterval(id);
+        const next = i + 1;
+        if (next >= activeStepDefs.length) { setRun(false); setStepIndex(0); return; }
+        setStepIndex(next);
+      }
+    }, tick);
+    advanceTimerRef.current = id as unknown as number;
+  }, [activeStepDefs]);
+
+  // When stepIndex changes, ensure the right route is loaded then watch for
+  // the target. If the target never appears, advance.
   useEffect(() => {
     if (!run) return;
-    void ensureRouteForStep(stepIndex);
-  }, [stepIndex, run, ensureRouteForStep]);
+    void ensureRouteForStep(stepIndex).then(() => waitForTargetThenSkip(stepIndex));
+    return () => clearAdvance();
+  }, [stepIndex, run, ensureRouteForStep, waitForTargetThenSkip]);
 
   const start = useCallback((c: NonNullable<DemoCtx>) => {
     setCtx(c);
@@ -105,13 +143,13 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     }
     if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
       const next = index + (action === ACTIONS.PREV ? -1 : 1);
-      if (next < 0 || next >= stepDefs.length) {
+      if (next < 0 || next >= activeStepDefs.length) {
         stop();
         return;
       }
       setStepIndex(next);
     }
-  }, [stepDefs.length, stop]);
+  }, [activeStepDefs.length, stop]);
 
   return (
     <TourCtx.Provider value={{ start, hasSeen }}>
