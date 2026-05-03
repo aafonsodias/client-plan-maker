@@ -358,7 +358,7 @@ export type Database = {
           systolic_bp_mmhg: number | null
           trainer_id: string
           training_days_per_week: number | null
-          training_location: string | null
+          training_location: string[] | null
           updated_at: string
           waist_cm: number | null
           years_training: number | null
@@ -440,7 +440,7 @@ export type Database = {
           systolic_bp_mmhg?: number | null
           trainer_id: string
           training_days_per_week?: number | null
-          training_location?: string | null
+          training_location?: string[] | null
           updated_at?: string
           waist_cm?: number | null
           years_training?: number | null
@@ -522,7 +522,7 @@ export type Database = {
           systolic_bp_mmhg?: number | null
           trainer_id?: string
           training_days_per_week?: number | null
-          training_location?: string | null
+          training_location?: string[] | null
           updated_at?: string
           waist_cm?: number | null
           years_training?: number | null
@@ -770,6 +770,39 @@ export type Database = {
           trainer_summary?: string | null
           updated_at?: string
           weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      daily_activity_log: {
+        Row: {
+          client_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          steps: number
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          steps?: number
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          steps?: number
+          trainer_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
