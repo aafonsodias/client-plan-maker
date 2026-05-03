@@ -37,6 +37,10 @@ import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
 import { MesocycleTableView } from "@/components/MesocycleTableView";
 import { VolumeSection } from "@/components/volume/VolumeSection";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
+import { summarizeAdaptation } from "@/lib/block-adaptation";
+import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
@@ -298,13 +302,30 @@ function PlanEditor() {
             {(() => {
               const block = (plan as any).block_number ?? 1;
               if (block <= 1) return null;
-              return (
+              const fb = ((plan as any).generation_meta?.block_feedback ?? null) as BlockSummary | null;
+              const chip = (
                 <span
-                  title={(plan as any).block_transition_summary ?? undefined}
-                  className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
+                  title={fb ? undefined : ((plan as any).block_transition_summary ?? undefined)}
+                  className="inline-flex cursor-help items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
                 >
                   Bloco {block} · evoluiu de Bloco {block - 1}
                 </span>
+              );
+              if (!fb) return chip;
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="cursor-pointer">{chip}</button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[420px] p-3">
+                    <BlockAdaptationCard feedback={fb} variant="full" />
+                    {(plan as any).block_transition_summary && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {(plan as any).block_transition_summary}
+                      </p>
+                    )}
+                  </PopoverContent>
+                </Popover>
               );
             })()}
             {(() => {
@@ -671,7 +692,12 @@ function PlanEditor() {
         <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
       ) : mode === "edit" ? (
         <>
-          {isPhasedComplete && <VolumeSection plan={data} />}
+          {isPhasedComplete && (
+            <VolumeSection
+              plan={data}
+              adaptation={summarizeAdaptation(((plan as any).generation_meta?.block_feedback ?? null) as BlockSummary | null)}
+            />
+          )}
           <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
           <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
             <Button onClick={exportPdf}>
