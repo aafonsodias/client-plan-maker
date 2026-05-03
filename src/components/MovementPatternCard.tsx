@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   CAPACITY_FIELDS,
@@ -26,6 +27,7 @@ export default function MovementPatternCard({
   onCapacity: (next: Record<string, number | null>) => void;
   onNotAssessed: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("common");
   const criteria = FORM_CRITERIA[pattern];
   const fields = CAPACITY_FIELDS[pattern];
   const score = formScore(formCriteria);
@@ -44,7 +46,7 @@ export default function MovementPatternCard({
           </h4>
           {!disabled && (
             <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
-              Forma: {score}/5
+              {t("movement.form_score", { score })}
             </span>
           )}
         </div>
@@ -54,7 +56,7 @@ export default function MovementPatternCard({
             onCheckedChange={(v) => onNotAssessed(v === true)}
             className="h-3.5 w-3.5"
           />
-          Ainda não avaliado
+          {t("movement.not_assessed")}
         </label>
       </div>
 
@@ -83,7 +85,7 @@ export default function MovementPatternCard({
                       type="button"
                       onClick={(e) => e.preventDefault()}
                       className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
-                      aria-label="Detalhe técnico"
+                      aria-label={t("movement.tooltip_aria")}
                     >
                       <Info className="h-3 w-3" />
                     </button>
@@ -100,7 +102,7 @@ export default function MovementPatternCard({
 
       <div className="mt-3 border-t border-border/50 pt-2.5">
         <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Capacidade (opcional)
+          {t("movement.capacity_label")}
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {fields.map((f) => {

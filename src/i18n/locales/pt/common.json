@@ -319,7 +319,10 @@
     "weeks_one": "{{count}} semana registada",
     "weeks_other": "{{count}} semanas registadas",
     "pr_block": "PR Bloco {{n}}",
-    "legend": { "kg": "kg", "rpe": "RPE" },
+    "legend": {
+      "kg": "kg",
+      "rpe": "RPE"
+    },
     "week_short": "S{{week}}"
   },
   "add_exercise": {
@@ -359,9 +362,22 @@
     "details": "Ver detalhes completos",
     "later": "Agora não",
     "checkout_failed": "Checkout falhou",
-    "starter_features": ["8 clientes activos", "8 planos/mês", "1 escalação premium"],
-    "pro_features": ["25 clientes activos", "30 planos/mês", "4 escalações premium", "Digest semanal"],
-    "studio_features": ["60 clientes activos", "80 planos/mês", "5 lugares de PT"]
+    "starter_features": [
+      "8 clientes activos",
+      "8 planos/mês",
+      "1 escalação premium"
+    ],
+    "pro_features": [
+      "25 clientes activos",
+      "30 planos/mês",
+      "4 escalações premium",
+      "Digest semanal"
+    ],
+    "studio_features": [
+      "60 clientes activos",
+      "80 planos/mês",
+      "5 lugares de PT"
+    ]
   },
   "share_app": {
     "label": "Partilhar",
@@ -428,5 +444,72 @@
     "save": "Guardar registo",
     "ok_imported": "Registo importado",
     "err_failed": "Não foi possível importar"
+  },
+  "intake": {
+    "now": "agora mesmo",
+    "min_ago": "há {{n}}m",
+    "h_ago": "há {{n}}h",
+    "d_ago": "há {{n}}d",
+    "submitted_title": "O cliente submeteu o intake — reveja e complete as secções presenciais.",
+    "submitted_when": "Submetido {{when}}.",
+    "review_btn": "Rever submissão",
+    "mark_reviewed": "Marcar como revisto",
+    "marked_reviewed_ok": "Intake marcado como revisto",
+    "panel_title": "Link de intake do cliente",
+    "generate": "Gerar link de intake",
+    "panel_help": "Envie um link ao cliente para preencher as secções de auto-relato a partir do telemóvel.",
+    "regenerate": "Gerar novo link",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "open": "Abrir",
+    "send_whatsapp": "Enviar por WhatsApp",
+    "send_email": "Enviar por email",
+    "wa_msg": "Olá {{name}}, preencha este pequeno questionário antes da nossa primeira sessão: {{url}}",
+    "mail_subject": "Questionário inicial para a nossa primeira sessão",
+    "ok_link_ready": "Link de intake pronto",
+    "err_generate": "Não foi possível gerar o link.",
+    "err_update": "Não foi possível atualizar.",
+    "ok_copied": "Link copiado",
+    "status_opened": "Aberto — ainda não submetido",
+    "status_pending": "Ainda não aberto",
+    "expires": "Expira {{when}}",
+    "valid_until": "Link válido até {{date}}"
+  },
+  "assessment_sheet": {
+    "trigger": "Avaliação",
+    "trigger_title": "Ver avaliação do cliente",
+    "title": "Avaliação",
+    "loading": "A carregar…",
+    "none": "Sem avaliação registada.",
+    "performed_on": "Realizada",
+    "primary_goal": "Objetivo",
+    "experience": "Experiência",
+    "frequency": "Frequência",
+    "freq_value": "{{n}}×/sem",
+    "duration": "Duração da sessão",
+    "duration_value": "{{n}} min",
+    "acsm": "Risco ACSM",
+    "parq": "PAR-Q+",
+    "parq_failed": "Falhou (≥1 sim)",
+    "parq_passed": "Passou",
+    "bp": "TA",
+    "equipment": "Equipamento",
+    "med_flags": "Sinalizações médicas",
+    "expected_red_flags": "Red flags da persona (demo)",
+    "injuries": "Lesões",
+    "conditions": "Condições",
+    "medications": "Medicação",
+    "smart_goal": "Objetivo SMART",
+    "metric": "Métrica",
+    "deadline": "Prazo",
+    "warning": "Verifique se o plano respeita as restrições antes de partilhar.",
+    "open_full": "Abrir avaliação completa",
+    "dash": "—"
+  },
+  "movement": {
+    "form_score": "Forma: {{score}}/5",
+    "not_assessed": "Ainda não avaliado",
+    "capacity_label": "Capacidade (opcional)",
+    "tooltip_aria": "Detalhe técnico"
   }
 }

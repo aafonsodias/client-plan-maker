@@ -322,7 +322,10 @@
     "weeks_one": "{{count}} week logged",
     "weeks_other": "{{count}} weeks logged",
     "pr_block": "PR Block {{n}}",
-    "legend": { "kg": "kg", "rpe": "RPE" },
+    "legend": {
+      "kg": "kg",
+      "rpe": "RPE"
+    },
     "week_short": "W{{week}}"
   },
   "add_exercise": {
@@ -362,9 +365,22 @@
     "details": "See full details",
     "later": "Not now",
     "checkout_failed": "Checkout failed",
-    "starter_features": ["8 active clients", "8 plans/month", "1 premium escalation"],
-    "pro_features": ["25 active clients", "30 plans/month", "4 premium escalations", "Weekly digest"],
-    "studio_features": ["60 active clients", "80 plans/month", "5 PT seats"]
+    "starter_features": [
+      "8 active clients",
+      "8 plans/month",
+      "1 premium escalation"
+    ],
+    "pro_features": [
+      "25 active clients",
+      "30 plans/month",
+      "4 premium escalations",
+      "Weekly digest"
+    ],
+    "studio_features": [
+      "60 active clients",
+      "80 plans/month",
+      "5 PT seats"
+    ]
   },
   "share_app": {
     "label": "Share",
@@ -431,5 +447,72 @@
     "save": "Save log",
     "ok_imported": "Log imported",
     "err_failed": "Could not import"
+  },
+  "intake": {
+    "now": "just now",
+    "min_ago": "{{n}}m ago",
+    "h_ago": "{{n}}h ago",
+    "d_ago": "{{n}}d ago",
+    "submitted_title": "The client submitted the intake — review and complete the in-person sections.",
+    "submitted_when": "Submitted {{when}}.",
+    "review_btn": "Review submission",
+    "mark_reviewed": "Mark as reviewed",
+    "marked_reviewed_ok": "Intake marked as reviewed",
+    "panel_title": "Client intake link",
+    "generate": "Generate intake link",
+    "panel_help": "Send the client a link to fill the self-reported sections from their phone.",
+    "regenerate": "Generate new link",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "open": "Open",
+    "send_whatsapp": "Send via WhatsApp",
+    "send_email": "Send via email",
+    "wa_msg": "Hi {{name}}, please fill this short questionnaire before our first session: {{url}}",
+    "mail_subject": "Initial questionnaire for our first session",
+    "ok_link_ready": "Intake link ready",
+    "err_generate": "Could not generate the link.",
+    "err_update": "Could not update.",
+    "ok_copied": "Link copied",
+    "status_opened": "Opened — not submitted yet",
+    "status_pending": "Not opened yet",
+    "expires": "Expires {{when}}",
+    "valid_until": "Link valid until {{date}}"
+  },
+  "assessment_sheet": {
+    "trigger": "Assessment",
+    "trigger_title": "View client assessment",
+    "title": "Assessment",
+    "loading": "Loading…",
+    "none": "No assessment recorded.",
+    "performed_on": "Performed",
+    "primary_goal": "Goal",
+    "experience": "Experience",
+    "frequency": "Frequency",
+    "freq_value": "{{n}}×/wk",
+    "duration": "Session duration",
+    "duration_value": "{{n}} min",
+    "acsm": "ACSM risk",
+    "parq": "PAR-Q+",
+    "parq_failed": "Failed (≥1 yes)",
+    "parq_passed": "Passed",
+    "bp": "BP",
+    "equipment": "Equipment",
+    "med_flags": "Medical flags",
+    "expected_red_flags": "Persona red flags (demo)",
+    "injuries": "Injuries",
+    "conditions": "Conditions",
+    "medications": "Medications",
+    "smart_goal": "SMART goal",
+    "metric": "Metric",
+    "deadline": "Deadline",
+    "warning": "Check that the plan respects the restrictions before sharing.",
+    "open_full": "Open full assessment",
+    "dash": "—"
+  },
+  "movement": {
+    "form_score": "Form: {{score}}/5",
+    "not_assessed": "Not assessed yet",
+    "capacity_label": "Capacity (optional)",
+    "tooltip_aria": "Technical detail"
   }
 }
