@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 16 (3 Mai 2026)
+Atualizado: Round 19 (3 Mai 2026)
 
 | # | P | Área | Item | Estado |
 |---|---|---|---|---|
@@ -39,6 +39,9 @@ Atualizado: Round 16 (3 Mai 2026)
 | 26 | P2 | i18n | Sweep EN — YearView (Adesão semanal, Tonelagem, Mapa de blocos), ExerciseTrendChart | 🔜 Round 15 |
 | 26 | P2 | i18n | Sweep EN — YearView + ExerciseTrendChart | ✅ Round 15 |
 | 27 | P2 | i18n | Sweep EN — VolumeSection header + tooltip MEV/MAV/MRV | ✅ Round 16 |
+| 28 | P0 | Segurança | REVOKE EXECUTE em SECURITY DEFINER backend-only + drop tabelas backup sem RLS | ✅ Round 17 |
+| 29 | P1 | i18n | Dialogs: AddExerciseDialog, PaywallDialog, ShareAppButton, OneRepMaxCalculator, FeedbackPanel | ✅ Round 18 |
+| 30 | P1 | i18n | Painéis cliente: ImportLogDialog, IntakeLinkPanel, PlanAssessmentSheet, MovementPatternCard | ✅ Round 19 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
