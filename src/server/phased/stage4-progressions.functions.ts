@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 
 const PROG_TOOL_SCHEMA = {
   type: "object",
