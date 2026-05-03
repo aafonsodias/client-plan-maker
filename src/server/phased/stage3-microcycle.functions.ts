@@ -282,6 +282,42 @@ function archetypeForDay(blueprint: any, dayIndex: number): {
   return arch;
 }
 
+/**
+ * Render the FITT-VP "non-negotiable" constraints block injected into the
+ * Stage 3 system prompt. ACSM 12e thresholds derived in Stage 2 from
+ * acsm_thresholds. Citations are surfaced so the model knows the source.
+ */
+function fittVpPromptBlock(pp: PrescriptionParameters | null): string {
+  if (!pp) return "";
+  const c = pp.cardio;
+  const r = pp.resistance;
+  const f = pp.flexibility;
+  const sf = pp.safety_floors;
+  const cits = (pp.citations ?? [])
+    .map((x) => `${x.source} ${x.ref}`)
+    .join("; ");
+  const crBp =
+    sf.cardiac_rehab_resting_sbp_mmhg && sf.cardiac_rehab_resting_dbp_mmhg
+      ? `\n- Cardiac rehab resting BP exclusion: SBP >= ${sf.cardiac_rehab_resting_sbp_mmhg} OR DBP >= ${sf.cardiac_rehab_resting_dbp_mmhg}`
+      : "";
+  return `
+
+CONSTRAINTS — FITT-VP Non-Negotiable (ACSM 12e):
+- Cardio intensity: ${c.intensity_pct_hrr.low}-${c.intensity_pct_hrr.high}% HRR (${c.intensity_pct_hrr.zone})
+- Cardio weekly time: ${c.weekly_minutes.min}-${c.weekly_minutes.max} min/week
+- Resistance frequency: ${r.frequency_days_per_week.min}-${r.frequency_days_per_week.max} d/wk
+- Resistance inter-set rest (strength, RPE >= 8): ${r.inter_set_rest_seconds_strength.min}-${r.inter_set_rest_seconds_strength.max} sec
+- Static stretch hold: ${f.static_stretch_hold_seconds.min}-${f.static_stretch_hold_seconds.max} sec (pre-exercise max ${f.pre_exercise_static_max_seconds}s)
+
+Safety floors (absolute stop criteria):
+- BP test stop: SBP >= ${sf.bp_test_stop_sbp_mmhg} OR DBP >= ${sf.bp_test_stop_dbp_mmhg}
+- Submax test stop: >= ${sf.submax_stop_pct_hrr}% HRR OR >= ${sf.submax_stop_pct_age_pred_hrmax}% age-pred HRmax${crBp}
+
+Citations: ${cits}
+
+Your generated exercise selections, rest periods, and stretch durations MUST fit within these ranges. Do not negotiate or interpret these as guidelines — they are constraints.`;
+}
+
 async function runDay(
   supabase: any,
   userId: string,
@@ -294,6 +330,7 @@ async function runDay(
   priorExercisePool: string[] = [],
   hardBan: string[] = [],
   swapMainLift: boolean = false,
+  prescriptionParameters: PrescriptionParameters | null = null,
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -357,6 +394,8 @@ If a movement is genuinely "supported" or rehab-style, prefer reducing load and 
     ? `\n\nMAIN LIFT REFRESH (block ≥4 — anti-stale):\nWe've kept the same main lifts for several blocks. For at least ONE pattern this microcycle, swap the main lift to a same-pattern variant (e.g. back squat → front squat or safety-bar squat; bench press → low-incline DB press; conventional deadlift → trap-bar; barbell row → chest-supported row). Keep RPE floors and intent unchanged. The remaining main lifts may stay.`
     : "";
 
+  const fittVpBlock = fittVpPromptBlock(prescriptionParameters);
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -371,7 +410,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -437,7 +476,64 @@ Generate ONLY this single day's session.`;
       output_snapshot: { floorApplied },
     });
   }
-  return { ok: true, day: floored };
+
+  // ---- FITT-VP validator + 1× retry (R2.2 Phase C.3) ---------------------
+  let finalDay = floored;
+  if (prescriptionParameters) {
+    const violationsInitial: FittVpViolation[] = validateDayAgainstFittVp(
+      finalDay,
+      prescriptionParameters,
+    );
+    if (violationsInitial.length > 0) {
+      const violationLines = violationsInitial
+        .map(
+          (v) =>
+            `- ${v.exercise}: ${v.field} = ${v.observed}, threshold ${JSON.stringify(v.threshold)} (${v.citation.source} ${v.citation.ref})`,
+        )
+        .join("\n");
+      const retrySystem = `${system}\n\nPREVIOUS OUTPUT VIOLATED FITT-VP CONSTRAINTS:\n${violationLines}\n\nRegenerate ensuring ALL exercises fit within the FITT-VP ranges above. These are non-negotiable.`;
+      const retry = await callAnthropicWithSchema({
+        model,
+        system: retrySystem,
+        userMessage: user,
+        toolName: "record_day",
+        toolDescription: "Record one training session as a structured day.",
+        toolJsonSchema: DAY_TOOL_SCHEMA,
+        schema: PhasedDaySchema,
+        maxTokens: 4000,
+      });
+      let violationsAfter: FittVpViolation[] = violationsInitial;
+      if (retry.ok) {
+        const retrySanitized = sanitizePrepBlocks(retry.data);
+        const { day: retryFloored } = enforceRpeFloor(retrySanitized, floors);
+        violationsAfter = validateDayAgainstFittVp(retryFloored, prescriptionParameters);
+        // Use retry output if it strictly improves things; else keep original.
+        if (violationsAfter.length < violationsInitial.length) {
+          finalDay = retryFloored;
+        }
+      }
+      await logGeneration(supabase, {
+        trainer_id: userId,
+        plan_id: planId,
+        stage: `stage3:day${dayIndex}:fittvp_validator`,
+        model_used: model,
+        input_tokens: retry.inputTokens,
+        output_tokens: retry.outputTokens,
+        cost_usd: retry.costUsd,
+        zod_passed: retry.ok,
+        retry_count: 1,
+        duration_ms: retry.durationMs,
+        error: retry.ok ? null : (retry as any).error,
+        input_snapshot: { violations_initial: violationsInitial },
+        output_snapshot: {
+          violations_initial_count: violationsInitial.length,
+          violations_after_retry_count: violationsAfter.length,
+          retry_succeeded: violationsAfter.length === 0,
+        },
+      });
+    }
+  }
+  return { ok: true, day: finalDay };
 }
 
 async function upsertDayRow(
