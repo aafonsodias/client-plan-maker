@@ -1,105 +1,105 @@
-# Fix client crash · posture intake · re-show manual hint · bigger logo · cleaner hero
 
-## 1. Fix the crash on "Open client" (CRITICAL)
+## 1. Logbook clicável (drawer da sessão)
 
-The runtime trace shows `Maximum update depth exceeded` triggered from `<AppShell>` while landing on `/clients/$clientId`.
+**Onde**: `src/components/ResultsPanel.tsx` (tabela "Logbook") e `src/routes/plans.$planId.tsx`.
 
-Root cause is in `src/routes/clients_.$clientId.tsx` ~ line 2739:
+- Tornar cada linha do Logbook clicável (não só o ícone).
+- Abrir um `Sheet` lateral com:
+  - cabeçalho: data · `Wn · Day label · focus`
+  - lista de exercícios (prescrição vs actuals: sets×reps×carga, RPE)
+  - bloco "Feedback do cliente" (se existir `client_feedback.text`)
+  - botão "Editar no Workbench" → leva ao dia correspondente
+- Reutilizar `SessionDayView` se ele já renderiza isto; caso contrário, criar um pequeno `LogbookSessionSheet.tsx`.
 
-```ts
-const ctx = useSectionCollapseProvider(...); // returns a fresh object every render
-useEffect(() => {
-  if (focused) ctx.setOpen(activeId, true);  // mutates state
-}, [focused, activeId, ctx]);                // ctx changes every render → infinite loop
+## 2. PDF do plano — uniformizar e limpar
+
+**Onde**: `src/lib/pdf.ts` (`generatePlanPdf`).
+
+Problemas confirmados pelo PDF enviado:
+- Cabeçalhos de sessão inconsistentes ("Day 1 — Upper Push & Pull" vs "Day 2 — Week 1"). Causa: arquetipos usam `day_label` cru, e quando o `day_label` foi gerado como "Day 2" sem focus, mostra "Week 1" no lugar do focus.
+- Página de "Plan at a glance" é redundante quando já existe título de sessão por página.
+- Footers/headers pesados; faltam regras consistentes.
+
+Acções:
+1. **Normalizador de cabeçalho de sessão**: helper `formatSessionHeader(arc)` que devolve sempre `"<Day N> · <Focus>"`, derivando "Day N" da posição na semana (1..N) e nunca usando "Week X" como focus. Aplicar tanto no header de página como na tabela "Plan at a glance".
+2. **Remover** o cabeçalho duplicado "Day 2 — Week 1" no fundo da página (origem da confusão na screenshot do PDF).
+3. **Tipografia**: 1 pt a mais nas linhas da tabela principal, line-height +10%, e separar `sets×reps` da coluna `RPE/tempo` com pipe vertical em vez de espaço.
+4. **Cover**: encolher a banda do cabeçalho para 56pt e baixar o KPI strip para ficar com mais respiro.
+5. **Smoke test**: gerar 1 PDF de regressão com plano demo e abrir como imagem (`pdftoppm`) para QA visual antes de fechar.
+
+## 3. Documentos do cliente + Ask Forge como router de ficheiros
+
+**Bucket novo** (migration): `client-documents` (privado), path `{trainerId}/{clientId}/<uuid>-<filename>`. RLS: trainer só vê os seus.
+
+**UI**: nova aba "Documentos" em `clients_.$clientId.tsx`:
+- lista de ficheiros (nome, tipo, data, download via signed URL)
+- drag-and-drop / botão upload (`uploadClientDocument` server fn)
+- ícone por tipo (PDF, imagem, etc.)
+
+**Ask Forge router** (`src/components/AskForgeDock.tsx` + nova `routeUpload.functions.ts`):
+- Aceitar anexos no painel de chat (já temos contexto de cliente activo).
+- Se for **imagem** → pedir ao Lovable AI Gateway (Gemini 2.5 Flash, vision) para classificar em: `posture_photo` | `medication_label` | `medical_exam` | `other`.
+  - posture_photo → `client-photos` no slot livre (front/side/back/face).
+  - medication_label → OCR do nome + regista em `clients.extended.medications[]`.
+  - medical_exam → `client-documents` com tag "exam".
+- Se for **PDF/doc** → `client-documents` (tag "exam" por defeito; AI sugere tag).
+- Mostrar no chat um card "Arquivado em X" com link e opção "mover para Y".
+
+## 4. Voz no Ask Forge
+
+**Onde**: `src/components/AskForgeDock.tsx`.
+
+- Botão microfone usando `window.SpeechRecognition` / `webkitSpeechRecognition` (graceful fallback se indisponível).
+- Locale = `pt-PT` por defeito (cair no idioma do i18n).
+- Estado visual (a gravar / a transcrever) e tecla espaço para parar.
+- Sem dependências novas; sem servidor.
+
+## 5. Logo + Hero da landing
+
+**Logo**:
+- Substituir `src/assets/forge-logo.png` pela versão do GPT (já copiada para `src/assets/forge-logo-gpt.png`). Se a luminância testar bem, promover para `forge-logo.png` (ficheiro principal, mantendo o nome para o resto da app).
+- `BrandMark`: aumentar `md` (h-14/w-14) e `lg` (h-20/w-20). Reforçar glow âmbar (drop-shadow duplo, raio maior em `lg`).
+
+**Hero** (`src/routes/index.tsx`, secção `Hero`):
+Reorganização para "ease of use, function, beauty":
+- Coluna esquerda passa a ter ordem fixa: BrandMark `lg` + wordmark → eyebrow ("Forge personal training plans, instantly") → H1 (2 linhas máx) → sub (1 linha) → 1 chip social-proof → CTA primário + secundário → micro-copy "Conta grátis · 1 cliente · 1 plano · sem cartão".
+- Remover o segundo BrandMark do hero (está no nav já).
+- Coluna direita: manter `HeroPlanMockup` mas com glow ainda mais subtil para o logo grande respirar.
+- Mobile: BrandMark `md`, H1 a 3.25rem.
+
+## 6. Limpeza de redundâncias detectadas
+
+- Logo aparece no nav e dentro do hero — passa a aparecer só no hero (mais impacto) com nav a usar apenas wordmark + glow.
+- Botão "Ver exemplo de plano PDF" fica como link discreto sob o CTA, em vez de ocupar uma row inteira nos benefits.
+
+---
+
+## Detalhes técnicos
+
+**Migration** (storage):
+```sql
+insert into storage.buckets (id, name, public) values ('client-documents','client-documents', false);
+-- RLS: trainer dono do path (split_part(name,'/',1) = auth.uid()::text)
+create policy "trainers manage own docs" on storage.objects
+  for all using (bucket_id='client-documents' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id='client-documents' and (storage.foldername(name))[1] = auth.uid()::text);
 ```
 
-`useSectionCollapseProvider` rebuilds its return value on every render, so the effect re-fires forever and React eventually bails with the depth error (which the route's error boundary then renders as "Something went wrong").
+**Server functions a criar**:
+- `src/server/client-documents.functions.ts` → `listClientDocuments`, `uploadClientDocument`, `deleteClientDocument`, `getSignedDocUrl`.
+- `src/server/forge-router.functions.ts` → `classifyAndRouteUpload({ clientId, file })` chamando Lovable AI Gateway (`google/gemini-2.5-flash`).
 
-**Fix:**
-- Memoise the provider return: wrap it in `useMemo` so identity is stable when `isOpen / setOpen / setAll / allOpen / allClosed` haven't changed.
-- Drop `ctx` from the effect dependency array; depend only on `focused`, `activeId`, and the stable `setOpen` callback.
-- Also harden the "trainer-edit detection" effect (line 687) to avoid feedback loops by skipping when the computed `next` is structurally equal to current provenance.
+**Ficheiros editados**:
+- `src/lib/pdf.ts`, `src/components/ResultsPanel.tsx` (+ novo `LogbookSessionSheet.tsx`), `src/components/AskForgeDock.tsx`, `src/components/BrandMark.tsx`, `src/routes/index.tsx`, `src/routes/clients_.$clientId.tsx`, `src/assets/forge-logo.png`.
 
-## 2. Re-introduce the dismissable manual / coach-mark
+**Sem alterações**: schema de planos, motor de geração, demo seeding.
 
-The dashboard hero numbered-steps card currently only shows when `isEmpty`. The user wants it permanently togglable.
+---
 
-- Add a `<DashboardHint />` card that always renders the 3-step "como funciona" guide on `/dashboard` and `/clients`, with an `×` button that persists `localStorage["forge.hint.dashboard.dismissed"]="1"`.
-- Add a "Mostrar guia" toggle in the dashboard's quick-actions strip (visible when dismissed) so the user can bring it back.
-- Reuse the same component on the client detail page (collapsed by default, opens on click) explaining "Avaliação → Plano → PDF".
+## QA antes de fechar
 
-## 3. Bigger, cleaner brand mark
-
-The user finds the current logo too small and dislikes the circle plate.
-
-- `<Logo />` (raw mark) stays as the source of truth; remove the rounded-full plate from `<BrandMark />` so it renders as the bare PNG with the amber under-glow only.
-- Bump default sizes: `sm 7→8`, `md 9→11`, `lg 12→14` (Tailwind units). Header in AppShell uses `md`; auth screen uses `lg`.
-- Hero of the landing already uses an inline mark; add a larger mark (`h-12 w-12`) next to the FORGE wordmark in the nav.
-- Keep the favicons we already regenerated.
-
-## 4. Reorganise the landing hero (clarity over density)
-
-Current hero crams: headline + subtitle + sparkles social-proof chip + 2 CTAs + footer note + a heavy two-week-microcycle mockup. It overflows visually.
-
-- Reduce the right-column mockup to a slimmer, single-week table (4 exercises) so it doesn't dominate.
-- Move the "social proof" chip BELOW the CTAs as a single tiny line, not a chip.
-- Tighten vertical rhythm: hero `py-32 → py-20`, h1 `text-7xl → text-6xl` on desktop.
-- Move the "Conta grátis · 1 cliente · 1 plano…" footnote into the secondary CTA's tooltip or a single muted line.
-
-## 5. Posture & visual-harmony intake (3 photos + face profile)
-
-The user wants a standardised photo step in the intake. Honest framing: research on posture-based programming is weak, but standardised photos remain useful for **visual progress tracking, screening obvious asymmetries, and rapport** — we'll position it that way, not as "posture cures injury".
-
-### a) Storage
-- New private bucket `client-photos-intake` (or reuse `client-photos` with a `posture/` subpath: `{trainerId}/{clientId}/{slot}.{ext}`).
-- Slots: `front`, `side`, `back`, `face`. Path: `{trainerId}/{clientId}/posture-{slot}.{ext}`.
-- New columns on `assessments` (jsonb is already used via `extended`):
-  - `extended.photos = { front?: string, side?: string, back?: string, face?: string, captured_at?: string }` (signed-url cache lives in client; storage path is the source of truth).
-- Or better: add a `client_photos` table with `(client_id, slot, path, captured_at)` so we can keep history. Decision: jsonb on `assessments.extended.photos` for v1 (simpler, matches the existing pattern); migrate to a table when we want history.
-
-### b) Intake UI (new slide in `src/routes/intake.$token.tsx`)
-- Slide title: "Fotografias de referência (opcional)".
-- Honest copy: "Não usamos para diagnosticar postura. Servem para acompanhar a tua evolução visualmente e padronizar o registo. Podes saltar."
-- 4 capture cards (Front / Lateral / Back / Rosto), each with:
-  - A diagram silhouette showing the correct pose (light SVG, no real photos).
-  - "Como tirar" mini-tutorial: distância 2m, parede neutra, roupa justa, iluminação natural, telemóvel à altura do peito.
-  - Single tap → camera capture (mobile native `<input capture="environment">`) or file picker on desktop.
-  - Auto-resize client-side to ≤1600px JPEG before upload (avoid huge files).
-  - Show preview + "Tirar outra" button.
-- Skip button (uses existing universal skip) marks `extended.skipped.photos = true`.
-- New i18n keys under `intake.photos.*` (PT + EN).
-
-### c) Coach side (`src/routes/clients_.$clientId.tsx`)
-- New `Photos` section in the assessment view: 4 thumbnails in a row, click to open lightbox, "Substituir" / "Remover" actions.
-- Add a "Tirar fotos" button that re-sends the intake link scoped to just the photos slide (`?step=photos`), so the coach can ask a client mid-flow.
-
-### d) Server
-- Reuse the existing `client-photos` upload pattern (`<ClientAvatarUpload />`); extract a shared `uploadClientImage(slot, file)` helper in `src/lib/client-photos.ts` to centralise compression + signed URL refresh.
-- No new server function needed — direct supabase storage upload from the intake page (RLS already scopes `client-photos` to trainer).
-
-## 6. Memory updates
-- `mem://design/brand-mark` — remove circle plate; logo renders bare with amber under-glow.
-- `mem://features/intake-photos` (new) — slot names, bucket path, framing copy ("not posture diagnosis, visual progress").
-- `mem://index.md` Core: "Posture photos = honest framing (visual progress, not diagnosis). Bucket `client-photos`, paths `{trainerId}/{clientId}/posture-{front|side|back|face}.jpg`."
-
-## Files
-
-**Edit**
-- `src/routes/clients_.$clientId.tsx` — fix infinite-loop effect; add posture section.
-- `src/components/BrandMark.tsx` — drop the circle plate; bigger sizes.
-- `src/routes/index.tsx` — slimmer hero composition.
-- `src/routes/dashboard.tsx` — extract dismissable hint; show toggle.
-- `src/routes/intake.$token.tsx` — new photos slide + i18n hooks.
-- `src/i18n/locales/{pt,en}/intake.json` — `photos.*` keys.
-- `mem/index.md`, `mem/design/brand-mark.md`.
-
-**Create**
-- `src/components/DashboardHint.tsx` — togglable 3-step guide.
-- `src/components/intake/PhotoCaptureCard.tsx` — single-slot camera/upload tile with diagram + tutorial.
-- `src/lib/client-photos.ts` — shared upload + compression helper.
-- `mem/features/intake-photos.md`.
-
-## Out of scope (next iteration)
-- Spider/radar comparison charts between two photo sessions.
-- Cropping / pose-alignment overlay (we just standardise the framing copy for v1).
-- Migrating photo history to a dedicated table.
+1. Gerar PDF do mesmo plano demo e abrir como imagem para confirmar que todos os blocos de sessão dizem `Day N · Focus`, sem "Week X" como focus.
+2. Abrir Logbook → clicar numa linha → ver sessão completa no drawer.
+3. No Ask Forge, fazer upload de uma imagem de exame e confirmar que aparece em "Documentos" do cliente.
+4. Mic no Ask Forge ditando uma frase em PT.
+5. Lighthouse rápido na landing: hero acima da dobra mostra logo grande + H1 sem scroll em 1440×900.
