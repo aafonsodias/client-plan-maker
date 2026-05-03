@@ -68,3 +68,19 @@ Atualizado: Round 27 (3 Mai 2026)
 
 ## Meta-prompt sugerido
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."
+
+## Closed this round
+- Demo data cleanup (DB + UI gating already behind ?lab=1 + isFounder)
+- clients.user_id column + RLS for coached client self-read
+- linkClientAccount server fn + ThankYou panel (Google one-click + email/password)
+- /me read-only client portal (plan + trainer brand)
+- Face photo mirrored to clients.photo_url on submit
+- Tier "Studio" → "Oficina"
+- ThankYou copy fixed ("Powered by Forge" line + thanks_desc_v2)
+
+## Next round (P1)
+- Steps widget on /log/$token + trainer view
+- AI-suggested SMART helper (cheapest model)
+- Metabolism panel (BMR/TDEE pure-math)
+- Manual client creation (name+email, intake_status="manual")
+- Client portal: messages, e1RM trends

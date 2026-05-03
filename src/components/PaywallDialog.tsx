@@ -14,7 +14,7 @@ type Interval = "month" | "year";
 const TIERS: { id: TierId; name: string; monthly: number; yearly: number; highlight?: boolean; featuresKey: string }[] = [
   { id: "starter", name: "Starter", monthly: 19, yearly: 190, featuresKey: "paywall.starter_features" },
   { id: "pro", name: "Pro", monthly: 45, yearly: 450, highlight: true, featuresKey: "paywall.pro_features" },
-  { id: "studio", name: "Studio", monthly: 119, yearly: 1190, featuresKey: "paywall.studio_features" },
+  { id: "studio", name: "Oficina", monthly: 119, yearly: 1190, featuresKey: "paywall.studio_features" },
 ];
 
 export function PaywallDialog({

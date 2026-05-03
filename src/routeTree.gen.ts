@@ -15,6 +15,7 @@ import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MeRouteImport } from './routes/me'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ClientsRouteImport } from './routes/clients'
@@ -64,6 +65,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManualRoute = ManualRouteImport.update({
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
   ManualRoute: typeof ManualRoute
+  MeRoute: typeof MeRoute
   PrivacyRoute: typeof PrivacyRoute
   ScheduleRoute: typeof ScheduleRouteWithChildren
   SettingsRoute: typeof SettingsRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manual': {
@@ -600,6 +620,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,
   ManualRoute: ManualRoute,
+  MeRoute: MeRoute,
   PrivacyRoute: PrivacyRoute,
   ScheduleRoute: ScheduleRouteWithChildren,
   SettingsRoute: SettingsRoute,
