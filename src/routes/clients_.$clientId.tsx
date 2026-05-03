@@ -3405,37 +3405,38 @@ function ClientSnapshotCard({
   whr: string;
   lastSavedAt: number | null;
 }) {
-  const riskLabel = riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+  const { t, i18n } = useTranslation("assessment");
+  const riskLabel = riskCategory === "high" ? t("detail.risk.high") : riskCategory === "moderate" ? t("detail.risk.moderate") : t("detail.risk.low");
   const riskTone =
     riskCategory === "high" ? "text-destructive"
     : riskCategory === "moderate" ? "text-amber-500"
     : "text-accent";
-  const recovery = deriveRecoveryProfile(assessment);
+  const recovery = deriveRecoveryProfile(assessment, t);
   const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
   const flags = collectRedFlags(assessment, sectionAnalyses).slice(0, 3);
   const dateLabel = lastSavedAt
-    ? new Date(lastSavedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })
+    ? new Date(lastSavedAt).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US", { day: "2-digit", month: "short", year: "numeric" })
     : "—";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Snapshot do cliente
+          {t("detail.snapshot.title")}
         </p>
-        <p className="text-[10px] text-muted-foreground">Última avaliação · {dateLabel}</p>
+        <p className="text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Risco ACSM</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
           <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Recuperação</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.recovery")}</p>
           <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Composição</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.composition")}</p>
           <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
         </div>
       </div>
