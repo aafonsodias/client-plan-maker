@@ -1,18 +1,32 @@
 // Cost tracking helpers (server-only).
-// Prices in USD per 1M tokens (Anthropic pricing as of 2025-10).
-// https://www.anthropic.com/pricing
+// Prices in USD per 1M tokens. Values are approximate — used purely for
+// generation_log.cost_usd display. True billing happens at the Lovable AI
+// Gateway (workspace credits).
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
   | "claude-sonnet-4-5-20250929";
 
-const PRICING: Record<AnthropicModelId, { in: number; out: number }> = {
+// Any string is accepted (Lovable Gateway model ids), but we keep a typed
+// alias so callsites that already imported AnthropicModelId keep compiling.
+export type AiModelId = AnthropicModelId | string;
+
+const PRICING: Record<string, { in: number; out: number }> = {
+  // Anthropic (legacy direct calls — kept for back-compat)
   "claude-haiku-4-5-20251001": { in: 1.0, out: 5.0 },
   "claude-sonnet-4-5-20250929": { in: 3.0, out: 15.0 },
+  // Lovable AI Gateway (approximate pricing per Lovable docs)
+  "google/gemini-3-flash-preview": { in: 0.1, out: 0.4 },
+  "google/gemini-2.5-flash": { in: 0.1, out: 0.4 },
+  "google/gemini-2.5-flash-lite": { in: 0.05, out: 0.2 },
+  "google/gemini-2.5-pro": { in: 1.25, out: 10.0 },
+  "openai/gpt-5-nano": { in: 0.05, out: 0.4 },
+  "openai/gpt-5-mini": { in: 0.25, out: 2.0 },
+  "openai/gpt-5": { in: 1.25, out: 10.0 },
 };
 
 export function computeCallCostUsd(
-  model: AnthropicModelId,
+  model: AiModelId,
   usage: { input_tokens?: number; output_tokens?: number } | null | undefined
 ): number {
   if (!usage) return 0;
@@ -24,7 +38,7 @@ export function computeCallCostUsd(
 }
 
 export type CallTelemetry = {
-  model: AnthropicModelId;
+  model: AiModelId;
   pass: "generate" | "critic-1" | "repair" | "critic-2" | "escalate-generate" | "escalate-critic";
   input_tokens: number;
   output_tokens: number;
@@ -35,7 +49,7 @@ export type CallTelemetry = {
 };
 
 export function makeTelemetry(
-  model: AnthropicModelId,
+  model: AiModelId,
   pass: CallTelemetry["pass"],
   usage: { input_tokens?: number; output_tokens?: number } | null | undefined,
   duration_ms: number,

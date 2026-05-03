@@ -31,11 +31,11 @@ import { PhasedDaySchema, type Brief } from "../src/server/phased/schemas";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!;
-const MODEL = "claude-sonnet-4-5-20250929";
+const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY!;
+const MODEL = process.env.FORGE_MODEL_STAGE_3 || "openai/gpt-5";
 
-if (!SUPABASE_URL || !SERVICE_ROLE || !ANTHROPIC_API_KEY) {
-  console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / ANTHROPIC_API_KEY env vars.");
+if (!SUPABASE_URL || !SERVICE_ROLE || !LOVABLE_API_KEY) {
+  console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / LOVABLE_API_KEY env vars.");
   process.exit(1);
 }
 
@@ -130,39 +130,56 @@ const DAY_TOOL_SCHEMA = {
   },
 };
 
-const SONNET_INPUT_PER_MTOK = 3;
-const SONNET_OUTPUT_PER_MTOK = 15;
+// Approximate Lovable Gateway pricing (USD per 1M tokens). Used only for the
+// smoke report — true billing is via workspace credits.
+const PRICING: Record<string, { in: number; out: number }> = {
+  "openai/gpt-5": { in: 1.25, out: 10.0 },
+  "openai/gpt-5-mini": { in: 0.25, out: 2.0 },
+  "google/gemini-3-flash-preview": { in: 0.1, out: 0.4 },
+  "google/gemini-2.5-pro": { in: 1.25, out: 10.0 },
+};
 
-async function callAnthropic(system: string, userMessage: string) {
+async function callGateway(system: string, userMessage: string) {
   const t0 = Date.now();
-  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 4000,
-      system,
-      tools: [{ name: "record_day", description: "Record one training session.", input_schema: DAY_TOOL_SCHEMA }],
-      tool_choice: { type: "tool", name: "record_day" },
-      messages: [{ role: "user", content: userMessage }],
+      max_completion_tokens: 4000,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMessage },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: { name: "record_day", description: "Record one training session.", parameters: DAY_TOOL_SCHEMA },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "record_day" } },
     }),
   });
   const dur = Date.now() - t0;
   if (!resp.ok) {
     const body = await resp.text().catch(() => "");
-    throw new Error(`Anthropic ${resp.status}: ${body.slice(0, 500)}`);
+    throw new Error(`Lovable AI ${resp.status}: ${body.slice(0, 500)}`);
   }
   const json: any = await resp.json();
-  const inTok = Number(json?.usage?.input_tokens ?? 0);
-  const outTok = Number(json?.usage?.output_tokens ?? 0);
-  const cost = (inTok * SONNET_INPUT_PER_MTOK + outTok * SONNET_OUTPUT_PER_MTOK) / 1_000_000;
-  const tool = (json?.content ?? []).find((b: any) => b?.type === "tool_use" && b?.name === "record_day");
-  if (!tool) throw new Error("No tool_use returned");
-  const parsed = PhasedDaySchema.safeParse(tool.input);
+  const inTok = Number(json?.usage?.prompt_tokens ?? json?.usage?.input_tokens ?? 0);
+  const outTok = Number(json?.usage?.completion_tokens ?? json?.usage?.output_tokens ?? 0);
+  const p = PRICING[MODEL] ?? { in: 1.25, out: 10.0 };
+  const cost = (inTok * p.in + outTok * p.out) / 1_000_000;
+  const choice = json?.choices?.[0];
+  const toolCalls = choice?.message?.tool_calls ?? [];
+  const match = toolCalls.find((tc: any) => tc?.type === "function" && tc?.function?.name === "record_day");
+  if (!match) throw new Error("No tool_call returned. Raw: " + JSON.stringify(choice?.message ?? json).slice(0, 400));
+  const argsRaw = match.function.arguments;
+  const argsJson = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+  const parsed = PhasedDaySchema.safeParse(argsJson);
   if (!parsed.success) {
     throw new Error(`Zod fail: ${parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).slice(0, 5).join("; ")}`);
   }
@@ -207,8 +224,8 @@ Brief context:
 
 Generate ONLY this single day's session.`;
 
-  console.log("→ Calling Anthropic (initial)…");
-  const initial = await callAnthropic(system, userMsg);
+  console.log(`→ Calling Lovable Gateway (model=${MODEL}, initial)…`);
+  const initial = await callGateway(system, userMsg);
   let violationsInitial = validateDayAgainstFittVp(initial.day as any, pp);
   console.log(`  initial violations=${violationsInitial.length} cost=$${initial.cost.toFixed(4)}`);
 
@@ -220,8 +237,8 @@ Generate ONLY this single day's session.`;
     retried = true;
     const lines = violationsInitial.map((v) => `- ${v.exercise}: ${v.field}=${v.observed}, threshold ${JSON.stringify(v.threshold)}`).join("\n");
     const retrySys = `${system}\n\nPREVIOUS OUTPUT VIOLATED FITT-VP CONSTRAINTS:\n${lines}\n\nRegenerate ensuring ALL exercises fit the ranges above. Non-negotiable.`;
-    console.log("→ Calling Anthropic (retry)…");
-    const retry = await callAnthropic(retrySys, userMsg);
+    console.log("→ Calling Lovable Gateway (retry)…");
+    const retry = await callGateway(retrySys, userMsg);
     totalCost += retry.cost;
     const retryViolations = validateDayAgainstFittVp(retry.day as any, pp);
     if (retryViolations.length < violationsInitial.length) {

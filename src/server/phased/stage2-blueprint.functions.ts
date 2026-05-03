@@ -165,7 +165,7 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
-    const model = resolveModel("FORGE_MODEL_STAGE_2", "claude-haiku-4-5-20251001");
+    const model = resolveModel("FORGE_MODEL_STAGE_2", "openai/gpt-5-mini");
 
     // Up to 2 attempts: first run, then a stricter retry if the shape fails
     // the tier validator.
@@ -414,10 +414,10 @@ export const discussBlueprint = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief is missing or invalid." };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI key not configured." };
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) return { ok: false as const, error: "Lovable AI not configured." };
 
-    const model = resolveModel("FORGE_MODEL_STAGE_2", "claude-haiku-4-5-20251001");
+    const model = resolveModel("FORGE_MODEL_DISCUSS", "google/gemini-3-flash-preview");
 
     const system = `You are a senior strength coach reviewing a MESOCYCLE BLUEPRINT with a trainer.
 You can either:
@@ -433,10 +433,7 @@ Rules for patches:
 
     const userContent = `BRIEF:\n${JSON.stringify(briefParsed.data, null, 2)}\n\nCURRENT BLUEPRINT:\n${JSON.stringify(data.currentBlueprint, null, 2)}\n\nCONVERSATION:\n${data.messages.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join("\n")}`;
 
-    const tool = {
-      name: "propose_blueprint_patch",
-      description: "Propose a partial blueprint patch the trainer can apply.",
-      input_schema: {
+    const toolSchema = {
         type: "object",
         additionalProperties: false,
         properties: {
@@ -467,25 +464,35 @@ Rules for patches:
             },
           },
         },
-      },
     };
 
     const t0 = Date.now();
     let resp: Response;
     try {
-      resp = await fetch("https://api.anthropic.com/v1/messages", {
+      resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model,
           max_tokens: 1500,
-          system,
-          tools: [tool],
-          messages: [{ role: "user", content: userContent }],
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: userContent },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "propose_blueprint_patch",
+                description: "Propose a partial blueprint patch the trainer can apply.",
+                parameters: toolSchema,
+              },
+            },
+          ],
+          // No tool_choice — let model reply in text OR call the tool.
         }),
       });
     } catch (e) {
@@ -498,23 +505,35 @@ Rules for patches:
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
-      return { ok: false as const, error: `Anthropic ${resp.status}: ${body.slice(0, 300)}` };
+      let friendly = `Lovable AI ${resp.status}: ${body.slice(0, 300)}`;
+      if (resp.status === 402) friendly = "Sem créditos AI. Adiciona em Settings → Workspace → Usage.";
+      else if (resp.status === 429) friendly = "Demasiados pedidos AI. Aguarda alguns segundos.";
+      return { ok: false as const, error: friendly };
     }
     const json: any = await resp.json();
-    const inputTokens = Number(json?.usage?.input_tokens ?? 0);
-    const outputTokens = Number(json?.usage?.output_tokens ?? 0);
+    const inputTokens = Number(json?.usage?.prompt_tokens ?? json?.usage?.input_tokens ?? 0);
+    const outputTokens = Number(json?.usage?.completion_tokens ?? json?.usage?.output_tokens ?? 0);
     const costUsd = computeCallCostUsd(model, {
       input_tokens: inputTokens,
       output_tokens: outputTokens,
     });
 
-    const blocks: any[] = json?.content ?? [];
-    const textBlock = blocks.find((b) => b?.type === "text");
-    const toolBlock = blocks.find((b) => b?.type === "tool_use" && b?.name === "propose_blueprint_patch");
+    const choice = json?.choices?.[0];
+    const replyText: string = (choice?.message?.content as string | undefined) ?? "";
+    const toolCalls: any[] = choice?.message?.tool_calls ?? [];
+    const match = toolCalls.find(
+      (tc) => tc?.type === "function" && tc?.function?.name === "propose_blueprint_patch",
+    );
     let patch: z.infer<typeof PatchProposalSchema> | null = null;
-    if (toolBlock) {
-      const parsed = PatchProposalSchema.safeParse(toolBlock.input);
-      if (parsed.success) patch = parsed.data;
+    if (match) {
+      const argsRaw = match?.function?.arguments;
+      try {
+        const argsJson = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+        const parsed = PatchProposalSchema.safeParse(argsJson);
+        if (parsed.success) patch = parsed.data;
+      } catch {
+        // ignore — keep patch null
+      }
     }
 
     await logGeneration(supabase, {
@@ -528,12 +547,12 @@ Rules for patches:
       zod_passed: true,
       retry_count: 0,
       duration_ms: durationMs,
-      output_snapshot: { reply: textBlock?.text ?? "", patch },
+      output_snapshot: { reply: replyText, patch },
     });
 
     return {
       ok: true as const,
-      reply: (textBlock?.text as string | undefined) ?? "",
+      reply: replyText,
       patch,
       costUsd,
     };
