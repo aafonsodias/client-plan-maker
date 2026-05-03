@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
+import { EQUIPMENT_CATALOG, CATEGORY_LABEL_PT, CATEGORY_LABEL_EN, type EquipmentCategory, searchEquipment } from "@/lib/equipment-catalog";
 
 function TrainerLogo({ url }: { url?: string | null }) {
   const [failed, setFailed] = useState(false);
@@ -66,7 +67,7 @@ type FormState = {
   experience_level: string;
   training_days_per_week: string;
   session_duration_minutes: string;
-  training_location: string;
+  training_location: string[];
   available_equipment: string[];
   injuries: string;
   medical_conditions: string;
@@ -99,7 +100,7 @@ const EMPTY: FormState = {
   smart_specific: "", smart_measurable: "", smart_deadline: "", smart_extra: "",
   readiness_stage: "",
   experience_level: "", training_days_per_week: "", session_duration_minutes: "",
-  training_location: "", available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
+  training_location: [], available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
   sleep_quality: 7, stress_level: 5,
   ext_hours_seated: "", ext_daily_steps: "", ext_job_type: "", energy_levels: "", recovery_capacity: "",
   ext_meals_per_day: "", ext_water_l_per_day: "", ext_processed_food: 2, ext_alcohol_units_week: "", nutrition_habits: "",
@@ -128,7 +129,9 @@ function fromAssessment(a: any | null): FormState {
     experience_level: a.experience_level ?? "",
     training_days_per_week: a.training_days_per_week?.toString() ?? "",
     session_duration_minutes: a.session_duration_minutes?.toString() ?? "",
-    training_location: a.training_location ?? "",
+    training_location: Array.isArray(a.training_location)
+      ? a.training_location
+      : (typeof a.training_location === "string" && a.training_location.length > 0 ? [a.training_location] : []),
     available_equipment: a.available_equipment ?? [],
     injuries: a.injuries ?? "",
     medical_conditions: a.medical_conditions ?? "",
@@ -163,7 +166,7 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       experience_level: f.experience_level || null,
       training_days_per_week: f.training_days_per_week ? Number(f.training_days_per_week) : null,
       session_duration_minutes: f.session_duration_minutes ? Number(f.session_duration_minutes) : null,
-      training_location: f.training_location || null,
+      training_location: f.training_location.length > 0 ? f.training_location : null,
       available_equipment: f.available_equipment,
       injuries: f.injuries || null,
       medical_conditions: f.medical_conditions || null,
@@ -484,7 +487,7 @@ function IntakePage() {
               />
             </Field>
             <Field label={t("sections.training_location")}>
-              <Pills
+              <PillsMulti
                 options={[
                   { id: "Home", label: t("location.home") },
                   { id: "Gym", label: t("location.gym") },
@@ -496,30 +499,10 @@ function IntakePage() {
               />
             </Field>
             <Field label={t("sections.training_equipment")}>
-              <div className="flex flex-wrap gap-2">
-                {EQUIPMENT_IDS.map((eid) => {
-                  // Persist the EN canonical label for backend compatibility.
-                  const enLabels: Record<string, string> = {
-                    barbell: "Barbell", dumbbells: "Dumbbells", kettlebells: "Kettlebells",
-                    cable_machine: "Cable machine", bench: "Bench", pull_up_bar: "Pull-up bar",
-                    bands: "Bands", bodyweight: "Bodyweight only",
-                  };
-                  const persisted = enLabels[eid];
-                  const label = t(`equipment.${eid}`);
-                  const on = form.available_equipment.includes(persisted);
-                  return (
-                    <button
-                      key={eid}
-                      type="button"
-                      onClick={() => setForm({
-                        ...form,
-                        available_equipment: on ? form.available_equipment.filter((x) => x !== persisted) : [...form.available_equipment, persisted],
-                      })}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground"}`}
-                    >{label}</button>
-                  );
-                })}
-              </div>
+              <EquipmentPicker
+                value={form.available_equipment}
+                onChange={(v) => setForm({ ...form, available_equipment: v })}
+              />
             </Field>
             <Field label={t("sections.training_injuries")} optional optionalLabel={t("optional")}>
               <Textarea rows={2} value={form.injuries} onChange={(e) => setForm({ ...form, injuries: e.target.value })} />
@@ -657,6 +640,82 @@ function Pills({ options, value, onChange }: { options: { id: string; label: str
     </div>
   );
 }
+
+function PillsMulti({ options, value, onChange }: { options: { id: string; label: string }[]; value: string[]; onChange: (v: string[]) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const on = value.includes(o.id);
+        return (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => onChange(on ? value.filter((x) => x !== o.id) : [...value, o.id])}
+            className={`rounded-full border px-3 py-1.5 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+          >{o.label}</button>
+        );
+      })}
+    </div>
+  );
+}
+
+function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { i18n, t } = useTranslation("intake");
+  const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
+  const [q, setQ] = useState("");
+  const filtered = q.trim() ? searchEquipment(q) : EQUIPMENT_CATALOG;
+  const grouped = useMemo(() => {
+    const by: Record<EquipmentCategory, typeof EQUIPMENT_CATALOG> = {
+      free_weights: [], machines: [], racks_benches: [], bodyweight_accessory: [],
+      conditioning: [], mobility: [], misc: [],
+    } as any;
+    for (const it of filtered) by[it.category].push(it);
+    return by;
+  }, [filtered]);
+  const labelFor = (cat: EquipmentCategory) =>
+    locale === "en" ? CATEGORY_LABEL_EN[cat] : CATEGORY_LABEL_PT[cat];
+  const toggle = (canonical: string) => {
+    onChange(value.includes(canonical)
+      ? value.filter((x) => x !== canonical)
+      : [...value, canonical]);
+  };
+  return (
+    <div className="space-y-3">
+      <Input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={t("equipment_search", { defaultValue: "Procurar equipamento…" })}
+        className="h-9"
+      />
+      <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+        {(Object.keys(grouped) as EquipmentCategory[]).map((cat) => {
+          const items = grouped[cat];
+          if (items.length === 0) return null;
+          return (
+            <div key={cat}>
+              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">{labelFor(cat)}</p>
+              <div className="flex flex-wrap gap-2">
+                {items.map((it) => {
+                  const on = value.includes(it.en);
+                  const label = locale === "en" ? it.en : it.pt;
+                  return (
+                    <button
+                      key={it.id}
+                      type="button"
+                      onClick={() => toggle(it.en)}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
+                    >{label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function SliderField({ label, value, min, max, onChange, legend }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; legend: string }) {
   return (
@@ -989,7 +1048,7 @@ function buildSlides(
     {
       title: t("sections.training_location"),
       body: (
-        <Pills
+        <PillsMulti
           options={[
             { id: "Home", label: t("location.home") },
             { id: "Gym", label: t("location.gym") },
@@ -1000,28 +1059,16 @@ function buildSlides(
           onChange={(v) => set("training_location", v)}
         />
       ),
-      isValid: () => !!form.training_location,
+      isValid: () => form.training_location.length > 0,
     },
     // 8. Equipment
     {
       title: t("sections.training_equipment"),
       body: (
-        <div className="flex flex-wrap gap-2">
-          {equipmentIds.map((eid) => {
-            const persisted = enLabels[eid];
-            const on = form.available_equipment.includes(persisted);
-            return (
-              <button
-                key={eid}
-                type="button"
-                onClick={() => set("available_equipment", on
-                  ? form.available_equipment.filter((x) => x !== persisted)
-                  : [...form.available_equipment, persisted])}
-                className={`rounded-full border px-3 py-2 text-sm transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-              >{t(`equipment.${eid}`)}</button>
-            );
-          })}
-        </div>
+        <EquipmentPicker
+          value={form.available_equipment}
+          onChange={(v) => set("available_equipment", v)}
+        />
       ),
     },
     // 9. Injuries (optional)
@@ -1187,7 +1234,7 @@ function buildSlides(
           <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
           <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
           <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
-          <ReviewRow label={t("sections.training_location")} value={form.training_location} />
+          <ReviewRow label={t("sections.training_location")} value={form.training_location.join(", ")} />
           <ReviewRow label={t("sections.training_equipment")} value={form.available_equipment.join(", ")} />
         </div>
       ),
