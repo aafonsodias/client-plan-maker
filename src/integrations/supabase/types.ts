@@ -953,6 +953,7 @@ export type Database = {
         }[]
       }
       has_active_access: { Args: { _user_id: string }; Returns: boolean }
+      tier_to_plan_quota: { Args: { _tier: string }; Returns: number }
     }
     Enums: {
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"

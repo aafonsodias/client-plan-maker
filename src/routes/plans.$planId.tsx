@@ -261,9 +261,37 @@ function PlanEditor() {
         }
       } catch { /* ignore */ }
     }
+    // Block evolution: if this is Block N>1 and we have a prior plan in the lineage,
+    // compute capacity-gain and pass it to the PDF so the cover shows progress vs
+    // the previous block (parity with the on-screen <CapacityGainCard />).
+    const blockN = (plan as any)?.block_number ?? 1;
+    const priorPlanId = (plan as any)?.prior_plan_id ?? null;
+    let blockEvolution: any[] | null = null;
+    if (blockN > 1 && priorPlanId) {
+      const current = sessions.filter((s) => (s as any).plan_id === planId);
+      const prior = sessions.filter((s) => (s as any).plan_id === priorPlanId);
+      if (current.length > 0 || prior.length > 0) {
+        const summary = computeCapacityGain(prior as any, current as any);
+        blockEvolution = (summary.rows ?? []).map((r) => ({
+          label: r.patternLabel,
+          priorAvgLoadKg: r.priorAvgLoadKg,
+          currentAvgLoadKg: r.currentAvgLoadKg,
+          deltaPct: r.deltaPct,
+          verdict: r.verdict,
+        }));
+      }
+    }
     const { generatePlanPdf } = await import("@/lib/pdf");
     await generatePlanPdf(
-      { title: plan.title, summary: plan.summary, client_name: client.full_name, duration_weeks: plan.duration_weeks },
+      {
+        title: plan.title,
+        summary: plan.summary,
+        client_name: client.full_name,
+        duration_weeks: plan.duration_weeks,
+        block_number: blockN,
+        block_transition_summary: (plan as any)?.block_transition_summary ?? null,
+        block_evolution: blockEvolution,
+      },
       data,
       {
         business_name: profile?.business_name,
@@ -465,7 +493,7 @@ function PlanEditor() {
             size="sm"
             onClick={exportPdf}
             className="h-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm hover:from-amber-500 hover:to-amber-700 hover:shadow-md transition-all"
-            title="Exporta o plano em PDF — cada página tem o treino e espaço para registo manual no ginásio."
+            title={tCommon("plan.export_pdf_title")}
           >
             <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
           </Button>
@@ -477,7 +505,7 @@ function PlanEditor() {
               variant="outline"
               className="h-8"
               disabled={regenSummaryBusy}
-              title="Re-escrever o resumo a partir do brief (determinístico, sem IA)"
+              title={tCommon("plan.rewrite_summary_title")}
               onClick={async () => {
                 setRegenSummaryBusy(true);
                 try {
@@ -507,7 +535,7 @@ function PlanEditor() {
               variant="outline"
               className="h-8"
               disabled={reanchorBusy}
-              title="Re-aplicar o piso de RPE (tier × apetite) à Semana 1. Útil para planos antigos onde o RPE saiu demasiado baixo."
+              title={tCommon("plan.reanchor_rpe_title")}
               onClick={async () => {
                 setReanchorBusy(true);
                 try {
@@ -520,7 +548,7 @@ function PlanEditor() {
                       // Force fresh load so the table re-reads the bumped RPEs.
                       window.location.reload();
                     } else {
-                      toast.info("Nada a re-ancorar — todos os exercícios já estão acima do piso.");
+                      toast.info(tCommon("plan.reanchor_rpe_noop"));
                     }
                   } else {
                     toast.error(r?.error ?? "Falhou re-ancorar RPE.");
@@ -673,9 +701,9 @@ function PlanEditor() {
               {fullyLogged && <Sparkles className="h-3.5 w-3.5 text-amber-400" />}
               Bloco {(plan as any).block_number ?? 1}
               {fullyLogged
-                ? " concluído na totalidade — todas as sessões registadas."
+                ? tCommon("plan.fully_completed")
                 : (plan as any).completion_state === "finished_logging"
-                ? " · concluído pelo treinador"
+                ? tCommon("plan.completed_by_trainer")
                 : sessions.length > 0
                 ? ` · ${sessions.length} sessão(ões) registada(s)`
                 : " · pronto para fechar"}
@@ -693,10 +721,10 @@ function PlanEditor() {
               onClick={async () => {
                 const r: any = await markFinishedFn({ data: { planId, archive: false } });
                 if (r?.ok) {
-                  toast.success("Plano marcado como concluído.");
+                  toast.success(tCommon("plan.marked_complete"));
                   setPlan({ ...plan, completion_state: "finished_logging" });
                 } else {
-                  toast.error(r?.error ?? "Falhou marcar como concluído.");
+                  toast.error(r?.error ?? tCommon("plan.mark_complete_failed"));
                 }
               }}
             >
@@ -786,7 +814,7 @@ function PlanEditor() {
         <button
           onClick={() => setMode("progress")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "progress" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-          title="Gráfico de progressão por exercício a partir do logbook"
+          title={tCommon("plan.trend_chart_title")}
         >
           <TrendingUp className="h-3.5 w-3.5" /> Progresso
         </button>

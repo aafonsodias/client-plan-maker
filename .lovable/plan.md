@@ -1,59 +1,49 @@
-## Estado: o que ainda está pendente
+## Objetivo
+Fechar os 3 itens P1/P2 que ainda restam no backlog (R22, R23, R24) numa única sessão.
 
-Auditoria rápida revelou três frentes ativas:
+## R22 — Sweep i18n final em src/routes (#32)
 
-1. **i18n** — ~417 strings PT hardcoded ainda em `src/components` e `src/routes`. Rounds 13-16 cobriram surfaces de plano/blocos/volume/ano. Faltam: dialogs de edição (AddExerciseDialog, ImportLogDialog), painéis de cliente (IntakeLinkPanel, PlanAssessmentSheet), Paywall, FeedbackPanel, OneRepMaxCalculator, MovementPatternCard, ShareAppButton, MesocycleTableView, SessionDayView, etc. Rotas inteiras (clients, settings, billing) ainda por sweep.
-2. **Backend (DB linter)** — 11 issues:
-   - 4 funções `SECURITY DEFINER` executáveis por `anon` (alto risco)
-   - 4 funções `SECURITY DEFINER` executáveis por `authenticated` sem necessidade
-   - 1 extensão instalada em `public`
-   - 2 tabelas com RLS ligado mas sem policies
-3. **Backlog** — desorganizado (linhas duplicadas para #9, #11, #15, #26 com estados inconsistentes). Difícil ler.
+Alvo: ~250 literals PT detectados via `rg` em rotas grandes.
 
-Fazer tudo num único turno arrisca regressões silenciosas (425 strings + 11 mudanças DB = muito raio de explosão para um round). Proposta segmentada e priorizada por risco real.
+Ficheiros:
+- `src/routes/clients_.$clientId.tsx` (~1.5k linhas) — secções de avaliação, intake, fotos, notas, blocos.
+- `src/routes/plans.$planId.tsx` + sub-rotas (`brief`, `blueprint`, `microcycle`, `progressions`, `sessions`) — toasts, headers, empty states.
+- `src/routes/billing.tsx` — labels de plano e faturação.
+- `src/routes/templates.tsx`, `plans.index.tsx`, `plans.new.tsx` — toasts/empty states residuais.
 
-## Round 17 — DB hardening (P0, segurança)
+Ações:
+1. Varrer cada ficheiro com `rg "[À-úçãõ]"` para listar literais PT.
+2. Adicionar chaves novas em `src/i18n/locales/pt/common.json` e `en/common.json` sob namespaces existentes (`clients.*`, `plan.*`, `billing.*`).
+3. Substituir literais por `t("...")`. Datas → `toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US", ...)` (padrão já em uso em FeedbackPanel/LogbookTimeline).
 
-1. **Identificar** as 4 funções com EXECUTE para `anon` e as 2 tabelas RLS-sem-policy via `read_query` (`pg_proc` + `pg_policies`).
-2. **Migration** que para cada função:
-   - `REVOKE EXECUTE ... FROM anon, public` se realmente não é endpoint público.
-   - Mantém `GRANT EXECUTE ... TO authenticated` apenas se for chamada via PostgREST/RPC do frontend autenticado; caso contrário também revoga.
-3. **Tabelas RLS-sem-policy**: ou criar policy mínima (`USING (false)` se interno), ou desativar RLS se a tabela é só backend.
-4. **Extensão em public**: mover para schema `extensions` se for trivial (geralmente `pg_trgm`/`unaccent`); se houver dependências, registar como aceite e atualizar `@security-memory`.
-5. Re-correr `supabase--linter` para confirmar 0 WARN restantes ou justificar os que ficam no `@security-memory`.
+## R23 — Sync subscription_tier ↔ plan_quota_limit (#34)
 
-## Round 18 — i18n sweep dos diálogos de edição (P1)
+Problema: webhook Stripe escreve `subscribers.subscription_tier` mas `profiles.plan_quota_limit` pode ficar dessincronizado, quebrando o gate de quotas em `quota.server.ts`.
 
-Cobre os componentes mais visíveis a um trainer EN durante uso real:
+Ações:
+1. Migration: criar função `sync_plan_quota_from_tier(uid uuid)` que mapeia tier → cap (Starter 8 / Pro 30 / Studio 80) e faz `UPDATE profiles SET plan_quota_limit = ... WHERE id = uid`.
+2. Trigger `AFTER INSERT OR UPDATE OF subscription_tier ON public.subscribers` que chama a função para o `user_id` da row.
+3. Backfill: `UPDATE profiles p SET plan_quota_limit = ...` cruzando com `subscribers` actuais.
+4. Manter regra "1 cliente = 1 plano": cap de planos == cap de clientes (já no Core).
 
-- `AddExerciseDialog`, `ImportLogDialog`, `FeedbackPanel`, `OneRepMaxCalculator`, `PaywallDialog` (features list + botões), `ShareAppButton` (texto de partilha).
+## R24 — Export PDF do bloco com evolução (#35)
 
-Todos com keys novas em `dialogs.*`, `paywall.*`, `share.*`, `calculator.*`, `feedback.*`. Toasts de erro/sucesso passam por `t()`.
+Estender `src/lib/pdf.ts` (gerador actual) para blocos N≥2.
 
-## Round 19 — i18n sweep dos painéis de cliente + format helpers (P1)
+Ações:
+1. Em `src/lib/pdf.ts`, adicionar secção "Evolução vs Bloco N-1" no topo do PDF quando `plan.block_number > 1`:
+   - Chip Δ% load + e1RM (reaproveitar `computeCapacityGain` de `src/lib/capacity-gain.ts`).
+   - Linha de transição (`block_transition_summary`).
+2. Reutilizar a estrutura visual do `CapacityGainCard` (mas em layout PDF: tabela simples por padrão de movimento).
+3. Botão "Export PDF" em `plans.$planId.tsx` já existe — apenas garantir que passa `priorPlan` quando aplicável (ler via `prior_plan_id`).
+4. QA: gerar PDF para um plano demo bloco 2, converter páginas para imagem e inspecionar (sem texto cortado, sem caixas pretas).
 
-- `IntakeLinkPanel` (incluindo `ago(min)` → helper i18n com `Intl.RelativeTimeFormat`), templates de SMS/email passam por `t()` com interpolação `{{name}}`.
-- `PlanAssessmentSheet` — labels da avaliação (Experiência, Frequência, Lesões, Condições, Métrica…).
-- `MovementPatternCard`, `MesocycleTableView`, `SessionDayView` (Preparação, etc.).
-- Locale do `toLocaleDateString` passa a usar `i18n.language` em vez de `"pt-PT"` fixo.
+## Fora de âmbito
+- R33 (smoke test manual PT/EN) — fica para o utilizador antes de publicar.
+- Não publicar — utilizador pediu explicitamente "publicar só quando eu disser".
 
-## Round 20 — Backlog cleanup + smoke + publish (P2)
-
-1. Reescrever `.lovable/backlog.md`: deduplicar linhas, agrupar por estado, manter só uma linha por #ID com o último round, adicionar #28-#30 para os rounds acima.
-2. Smoke test: trocar `lng` para `en` no init, varrer `/`, `/clients`, `/clients/$id`, `/plans/$id`, `/settings`, `/billing`. Reportar qualquer string PT residual como #31 follow-up (não fazer agora).
-3. Restaurar `lng: "en"` ou deixar como aplicar-pelo-cliente. Publish.
-
-## Restrição honesta
-
-Não dá para esmagar 417 strings num round sem regressões. Esta sequência fecha a parte crítica (segurança DB + dialogs + painéis de cliente — talvez 70-80% das strings em surfaces realmente usadas) em 4 rounds discretos e auditáveis.
-
-## Ficheiros prováveis
-
-- Migrations SQL novas (Round 17)
-- `src/i18n/locales/{pt,en}/common.json` (Rounds 18-19)
-- ~10 componentes em `src/components/*` (Rounds 18-19)
-- `src/i18n/index.ts` se precisar helper `formatRelative`
-- `.lovable/backlog.md` (Round 20)
-- `@security-memory` se algum lint for justificadamente ignorado
-
-Avanço com Round 17 (DB hardening)? Confirma e arranco.
+## Entregáveis
+- ~10–15 ficheiros editados (rotas + locales).
+- 1 migration SQL (trigger + backfill).
+- 1 PDF de exemplo gerado em `/mnt/documents/` para QA visual.
+- `.lovable/backlog.md` atualizado: itens 32, 34, 35 movidos para "Concluído"; ficar só #33 (smoke test) em aberto.
