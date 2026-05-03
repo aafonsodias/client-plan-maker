@@ -469,6 +469,67 @@ export async function generatePlanPdf(
   }
   y += 38 + 18;
 
+  // ---------- Block evolution (only when block_number > 1) ----------
+  const blockN = meta.block_number ?? 1;
+  const evoRows = (meta.block_evolution ?? []).filter((r) => r.deltaPct != null);
+  if (blockN > 1 && (evoRows.length > 0 || meta.block_transition_summary)) {
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(`BLOCK ${blockN} · EVOLUTION VS BLOCK ${blockN - 1}`, M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+
+    if (meta.block_transition_summary) {
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      const lines = doc.splitTextToSize(meta.block_transition_summary, W - M * 2).slice(0, 3) as string[];
+      doc.text(lines, M, y);
+      y += lines.length * 11 + 6;
+    }
+
+    if (evoRows.length > 0) {
+      // Pattern · prior avg load · current avg load · Δ%
+      const colX = [M, M + 180, M + 320, M + 460];
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.text("PATTERN", colX[0], y);
+      doc.text(`BLOCK ${blockN - 1} AVG`, colX[1], y);
+      doc.text(`BLOCK ${blockN} AVG`, colX[2], y);
+      doc.text("Δ %", colX[3], y);
+      y += 4;
+      setDraw(doc, theme.rule);
+      doc.setLineWidth(0.2);
+      doc.line(M, y, W - M, y);
+      y += 10;
+      const fmtKg = (v: number | null) => (v == null ? "—" : `${v.toFixed(1)} kg`);
+      for (const r of evoRows.slice(0, 6)) {
+        setText(doc, theme.ink);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(fitText(r.label, 170), colX[0], y);
+        doc.setFont("helvetica", "normal");
+        doc.text(fmtKg(r.priorAvgLoadKg), colX[1], y);
+        doc.setFont("helvetica", "bold");
+        doc.text(fmtKg(r.currentAvgLoadKg), colX[2], y);
+        const sign = r.deltaPct! > 0 ? "+" : "";
+        const deltaTxt = `${sign}${r.deltaPct!.toFixed(1)}%`;
+        // Verdict colour (fall back to ink if theme has no accent variants)
+        if (r.verdict === "gain") setText(doc, theme.accent);
+        else if (r.verdict === "regression") setText(doc, theme.inkMuted);
+        else setText(doc, theme.ink);
+        doc.text(deltaTxt, colX[3], y);
+        y += 13;
+      }
+      y += 4;
+    }
+  }
+
   // Plan-at-a-glance: one row per archetype × week
   setText(doc, theme.inkMuted);
   doc.setFont("helvetica", "bold");
