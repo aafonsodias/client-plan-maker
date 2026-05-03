@@ -33,7 +33,8 @@ function WelcomePage() {
         .maybeSingle();
       const t = (prof as any)?.account_type as Choice | null | undefined;
       if (t === "coach") navigate({ to: "/dashboard" });
-      else if (t === "solo" || t === "coached_client") navigate({ to: "/dashboard" }); // /me lands here for now
+      else if (t === "coached_client") navigate({ to: "/me" });
+      else if (t === "solo") navigate({ to: "/dashboard" });
       else setChecking(false);
     })();
   }, [navigate]);
@@ -48,7 +49,7 @@ function WelcomePage() {
         .update({ account_type: kind } as any)
         .eq("user_id", u.user.id);
       if (error) throw error;
-      navigate({ to: "/dashboard" });
+      navigate({ to: kind === "coached_client" ? "/me" : "/dashboard" });
     } catch (e: any) {
       toast.error(e?.message ?? "Tenta outra vez.");
       setBusy(null);
