@@ -14,6 +14,19 @@ import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 
+function TrainerLogo({ url }: { url?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (!url || failed) return <BrandMark size="sm" />;
+  return (
+    <img
+      src={url}
+      alt=""
+      className="h-9 w-9 rounded-md object-cover"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export const Route = createFileRoute("/intake/$token")({
   component: IntakePage,
   validateSearch: (s: Record<string, unknown>): { legacy?: "1" } => ({
