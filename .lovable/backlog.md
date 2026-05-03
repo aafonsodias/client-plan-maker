@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 21 (3 Mai 2026)
+Atualizado: Round 26 (3 Mai 2026)
 
 ## Concluído (linha do tempo condensada)
 
@@ -37,13 +37,12 @@ Atualizado: Round 21 (3 Mai 2026)
 | 37 | P1 | Motor | Trigger sync subscription_tier → profiles.plan_quota_limit (Starter 8 / Pro 30 / Studio 80) + backfill | R23 |
 | 38 | P2 | Plan page | Export PDF do bloco com secção "Block N · Evolution vs Block N-1" (computeCapacityGain + transition note) | R24 |
 | 39 | P1 | i18n | billing.tsx + plans.$planId headers/toasts (FAQ, tiers, top-up, footer) | R22 |
+| 32 | P1 | i18n | Sweep clients_.$clientId profundo (StageCards, Synthesis, AssessmentSection, Snapshot) | R25 |
+| 33 | P2 | UX | Smoke test checklist PT/EN versionado em .lovable/smoke-test.md | R26 |
 
 ## Em aberto
 
-| # | P | Área | Item | Notas |
-|---|---|---|---|---|
-| 32 | P1 | i18n | Sweep restante em src/routes (clients_.$clientId 1.5k linhas — assessment subsections) | ~30 literals em painéis profundos |
-| 33 | P2 | UX | Smoke test manual de cada rota em PT e EN antes de publicar | checklist em PR |
+_Vazio_ — backlog fechado. Próximas rondas dependem de nova direção do utilizador.
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
