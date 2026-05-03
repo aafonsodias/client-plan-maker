@@ -579,13 +579,23 @@ function IntakePage() {
 function ThankYou({ ctx }: { ctx: IntakeContext }) {
   const { t } = useTranslation("intake");
   const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || t("your_trainer");
+  const rawFirst = (ctx.client?.first_name ?? "").trim();
+  // Filter out placeholder names that creep in when the trainer creates the
+  // invite without a name ("Convite", "Convidado", "Guest", "Client").
+  const placeholders = new Set(["convite", "convidado", "guest", "cliente", "client"]);
+  const firstName = placeholders.has(rawFirst.toLowerCase()) ? "" : rawFirst;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="max-w-md text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent">
-          <Check className="h-6 w-6" />
+        <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
+          <span className="absolute inset-0 rounded-full bg-accent/20 animate-ping" />
+          <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent">
+            <Check className="h-7 w-7 animate-in zoom-in-50 spin-in-12 duration-500" />
+          </span>
         </div>
-        <h1 className="mt-5 text-2xl font-light tracking-tight">{t("thanks_title", { name: ctx.client?.first_name ?? "" })}</h1>
+        <h1 className="mt-6 text-2xl font-light tracking-tight">
+          {firstName ? t("thanks_title_named", { name: firstName }) : t("thanks_title_anon")}
+        </h1>
         <p className="mt-3 text-sm text-muted-foreground">{t("thanks_desc", { trainer: trainerName })}</p>
         <PoweredBy />
       </div>
