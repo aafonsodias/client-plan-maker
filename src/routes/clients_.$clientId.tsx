@@ -2282,10 +2282,10 @@ function ClientDetail() {
                           busy={stageBusy === "blueprint"}
                           approveLabel={
                             blueprintApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasBlueprintDraft
-                              ? "Ver draft →"
-                              : "Gerar Blueprint →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_blueprint")
                           }
                           onApprove={() =>
                             blueprintApproved || hasBlueprintDraft
@@ -2295,8 +2295,8 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasBlueprintDraft && !blueprintApproved
-                              ? "Tens um rascunho por aprovar — abre para continuar onde deixaste."
-                              : "Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever."}
+                              ? t("detail.stage.blueprint_draft_hint")
+                              : t("detail.stage.blueprint_help")}
                           </p>
                         </StageCard>
                         <StageCard
@@ -2312,10 +2312,10 @@ function ClientDetail() {
                           busy={stageBusy === "microcycle"}
                           approveLabel={
                             microcycleApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasMicrocycleDraft
-                              ? "Ver draft →"
-                              : "Gerar Microcycle →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_microcycle")
                           }
                           onApprove={
                             blueprintApproved
@@ -2328,10 +2328,10 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasMicrocycleDraft && !microcycleApproved
-                              ? "Tens dias gerados por aprovar — abre para continuar."
+                              ? t("detail.stage.microcycle_draft_hint")
                               : blueprintApproved
-                              ? "Semana 1 detalhada — exercícios, séries, reps, RPE por dia. Clica para gerar."
-                              : "Aprova o Blueprint primeiro."}
+                              ? t("detail.stage.microcycle_help")
+                              : t("detail.stage.microcycle_blocked")}
                           </p>
                         </StageCard>
                         <StageCard
@@ -2347,10 +2347,10 @@ function ClientDetail() {
                           busy={stageBusy === "progressions"}
                           approveLabel={
                             progressionsApproved
-                              ? "Abrir"
+                              ? t("detail.stage.open")
                               : hasProgressionsDraft
-                              ? "Ver draft →"
-                              : "Gerar Progressions →"
+                              ? t("detail.stage.view_draft")
+                              : t("detail.stage.generate_progressions")
                           }
                           onApprove={
                             microcycleApproved
@@ -2363,10 +2363,10 @@ function ClientDetail() {
                         >
                           <p className="text-sm text-muted-foreground">
                             {hasProgressionsDraft && !progressionsApproved
-                              ? "Tens deltas propostos por aprovar — abre para rever."
+                              ? t("detail.stage.progressions_draft_hint")
                               : microcycleApproved
-                              ? "Deltas de progressão para as semanas 2+. Clica para gerar."
-                              : "Aprova o Microcycle primeiro."}
+                              ? t("detail.stage.progressions_help")
+                              : t("detail.stage.progressions_blocked")}
                           </p>
                         </StageCard>
                       </>
