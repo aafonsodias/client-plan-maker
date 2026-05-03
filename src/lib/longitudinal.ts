@@ -30,6 +30,7 @@ export type ClientPlanRow = {
   status: string;
   created_at: string;
   prior_plan_id: string | null;
+  generation_meta?: any;
 };
 
 export type SessionRow = {
@@ -71,7 +72,7 @@ export type YearSummary = {
   overallAdherencePct: number;
   weeks: YearWeekPoint[];
   /** Block boundaries for chart annotation. */
-  blockBoundaries: Array<{ blockNumber: number; startWeek: number; endWeek: number; title: string }>;
+  blockBoundaries: Array<{ blockNumber: number; startWeek: number; endWeek: number; title: string; blockFeedback?: any }>;
 };
 
 function emptyVolume(): Record<MuscleGroup, number> {
@@ -84,7 +85,7 @@ function emptyVolume(): Record<MuscleGroup, number> {
 export async function fetchClientPlans(clientId: string): Promise<ClientPlanRow[]> {
   const { data } = await supabase
     .from("workout_plans")
-    .select("id, block_number, duration_weeks, title, status, created_at, prior_plan_id")
+    .select("id, block_number, duration_weeks, title, status, created_at, prior_plan_id, generation_meta")
     .eq("client_id", clientId)
     .order("block_number", { ascending: true })
     .order("created_at", { ascending: true });
@@ -211,6 +212,7 @@ export async function buildYearSummary(clientId: string): Promise<YearSummary> {
       startWeek,
       endWeek: globalWeek,
       title: plan.title ?? `Bloco ${plan.block_number}`,
+      blockFeedback: (plan as any).generation_meta?.block_feedback ?? null,
     });
   }
 
