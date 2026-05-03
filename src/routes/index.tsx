@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload, X, Minus, Shield } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { WorkbenchMockup } from "@/components/landing/WorkbenchMockup";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
@@ -223,6 +223,9 @@ function Landing() {
         </div>
       </section>
 
+      {/* Anti-ChatGPT — sharp positioning vs the obvious alternative */}
+      <AntiChatGPTSection />
+
       {/* How it works — animated mock */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
@@ -231,6 +234,12 @@ function Landing() {
         </div>
         <HowItWorksAnimation />
       </section>
+
+      {/* Comparison table — FORGE vs Excel vs ChatGPT vs Generic apps */}
+      <ComparisonTableSection />
+
+      {/* Programming tier badges — 3-tier methodology shown on landing */}
+      <TierBadgesSection />
 
       {/* The journey — mirrors the 5 stages of the in-app generator */}
       <section id="journey" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
@@ -241,6 +250,9 @@ function Landing() {
         </div>
         <JourneyStrip />
       </section>
+
+      {/* Mid-page repeat CTA — anchors the offer halfway down the page */}
+      <MidCtaSection primaryCtaTo={primaryCtaTo} />
 
       {/* Credibility — built on the science */}
       <section className="mx-auto max-w-6xl px-6 py-24">
