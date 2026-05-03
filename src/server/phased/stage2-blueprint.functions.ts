@@ -10,6 +10,7 @@ import {
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
+import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 import {
   classifyTier,
   tierGuidelines,
