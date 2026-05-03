@@ -1,6 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Joyride } from "react-joyride";
+
+const STATUS = { SKIPPED: "skipped", FINISHED: "finished" } as const;
+const EVENTS = { STEP_AFTER: "step:after", TARGET_NOT_FOUND: "error:target_not_found", TOUR_END: "tour:end" } as const;
+const ACTIONS = { PREV: "prev", CLOSE: "close" } as const;
 import { useTranslation } from "react-i18next";
 
 /**
