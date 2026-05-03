@@ -170,5 +170,40 @@
       "open": "Open",
       "no_jobs": "Nothing running."
     }
+  },
+  "blocks": {
+    "next": {
+      "deload_title": "Suggestion: deload next block",
+      "deload_sub": "High RPE or low adherence — pull back to MEV, drop RPE by 1 and rebuild.",
+      "normal_title": "Suggestion: normal progression",
+      "normal_sub": "Continue the MEV → MAV curve, rotate accessories, keep the anchors.",
+      "push_title": "Suggestion: step on the gas",
+      "push_sub": "Low RPE + high adherence — push to MAV/MRV and add 1–2 sets per pattern.",
+      "adherence": "Adherence",
+      "avg_rpe": "Avg RPE",
+      "block": "Block",
+      "start_next": "Start Block {{n}}"
+    },
+    "rotation": {
+      "chip": "Rotation {{pct}}%",
+      "popover_title": "Accessory rotation vs prior block",
+      "after_retry": "First attempt {{first}}% → {{final}}% after retry.",
+      "no_retry": "{{final}}% of accessories changed between blocks.",
+      "days_regenerated": "Days regenerated: {{days}}.",
+      "pool_label": "Prior block pool (top 6)"
+    },
+    "main_lift": {
+      "refreshed": "Main lift refreshed",
+      "kept": "Main lift kept",
+      "refreshed_desc": "At least one pattern has a new main lift vs the prior block — anti-stale variation applied.",
+      "kept_desc": "The AI was asked to vary the main lift but kept the same ones. No automatic action — you can adjust manually if you want a swap.",
+      "new_label": "New main lifts",
+      "prior_label": "Prior block"
+    }
+  },
+  "volume": {
+    "weekly_bars_label": "Prescribed vs actual · sets",
+    "prescribed": "Prescribed",
+    "actual": "Actual"
   }
 }

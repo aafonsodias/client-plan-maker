@@ -1,35 +1,45 @@
-## Round 10 — proposta
+## Round 13 — i18n sweep das adições recentes (Rounds 8–12)
 
-Foco: fechar 3 itens do backlog (P1/P2) que tornam a evolução entre blocos visível em mais sítios e que validam a higiene do motor de rotação.
+### Objetivo
+Garantir que tudo o que foi construído nas últimas rondas (NextBlockCard, popovers Rotação/Main lift, WeeklyVolumeBars) tem cobertura EN. As superfícies mais antigas (BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip) ficam para Round 14.
 
-### 1. Sparkline e1RM no Dashboard (P1, item #16)
-- Criar `src/components/EvolutionSparkline.tsx` — SVG puro, ~64×16px, 1 polyline tonal (emerald/amber/red consoante verdict).
-- Estender `usePlanBlockEvolution` para devolver também `topLiftSeries` (até 8 pontos do `currentBest`/sessão para o lift mais frequente).
-- Em `src/routes/dashboard.tsx`, renderizar a sparkline ao lado do `EvolutionChip` em "Recent plans".
+### Mudanças
 
-### 2. Tooltip detalhado no chip "Rotação N%" (P2, item #18)
-- Substituir `title="..."` no chip por `Popover` (já usado no header).
-- Mostrar: `firstPct → finalPct` (se houve retry), `daysRegenerated`, e a lista (até 6) de exercícios do `prior_exercise_pool` que continuam presentes.
-- Helper puro `src/lib/rotation-audit.ts` para formatar o payload — fácil de testar e reusar.
+**1. `src/i18n/locales/pt/common.json` + `src/i18n/locales/en/common.json`**
 
-### 3. Variação opcional do main lift após 3 blocos (P1, item #19)
-- Em `src/server/blocks.functions.ts > archivePlanAndStartNextBlock`: quando `block_number+1 >= 4`, marcar `generation_meta.suggest_main_lift_swap = true` com sugestões por padrão (ex.: back squat → front squat; bench → incline DB).
-- No prompt do Stage 3 (`stage3-microcycle.functions.ts`), ler essa flag e, se presente, instruir a IA a trocar o main lift de pelo menos 1 padrão (sem forçar — autonomia controlada).
-- Surfacing: chip "Main lift refrescado" no header quando a flag dispara e o nome do main lift mudou vs bloco anterior.
+Adicionar dois namespaces no fim:
 
-### 4. Atualizar `.lovable/backlog.md`
-- Marcar #16, #18, #19 como ✅ Round 9.
-  Wait — vai ser Round 10. Marcar como ✅ Round 10.
-- Adicionar para Round 11: stack-bar prescrito vs realizado (#15) e sweep EN final (#11).
+- `blocks.next.*` — copy do NextBlockCard (deload/normal/push titles+subs, adesão, avg_rpe, block, start_next)
+- `blocks.rotation.*` — chip "Rotação N%", popover (título, after_retry, no_retry, days_regenerated, pool_label)
+- `blocks.main_lift.*` — chip refrescado/mantido + popover (refreshed_desc, kept_desc, new_label, prior_label)
+- `volume.weekly_bars_label`, `volume.prescribed`, `volume.actual`
 
-### Critérios de aceitação
-- Dashboard: cada plano com `prior_plan_id` mostra Δ% chip + sparkline numa única linha sem partir o layout em 846px.
-- Plan header: clicar no chip Rotação abre popover legível (≤320px de largura) com lista de colisões.
-- Bloco 4 gerado a partir de demo: `generation_meta.suggest_main_lift_swap === true` e o main lift de pelo menos 1 padrão difere do bloco 3.
-- `tsc --noEmit` continua limpo.
+**2. `src/components/NextBlockCard.tsx`**
+- `useTranslation("common")` → todas as strings via `t("blocks.next.*")`.
+- COPY map continua, mas valores passam a ser chaves i18n resolvidas no render.
+- "Iniciar Bloco N+1" → `t("blocks.next.start_next", { n: blockNumber + 1 })`.
 
-### Ficheiros tocados
-- Novos: `src/components/EvolutionSparkline.tsx`, `src/lib/rotation-audit.ts`.
-- Editados: `src/hooks/use-clients-block-evolution.ts`, `src/routes/dashboard.tsx`, `src/routes/plans.$planId.tsx`, `src/server/blocks.functions.ts`, `src/server/phased/stage3-microcycle.functions.ts`, `.lovable/backlog.md`.
+**3. `src/components/volume/WeeklyVolumeBars.tsx`**
+- Label "Prescrito vs realizado · séries" → `t("volume.weekly_bars_label")`.
+- `<Bar dataKey="prescrito" name={t("volume.prescribed")} />` + idem `actual`. Recharts mostra `name` no Tooltip.
+- Manter chaves internas dos dados em PT (não importam — só `name` aparece).
 
-Aprovas?
+**4. `src/routes/plans.$planId.tsx`** — popovers Rotação + Main lift
+- Trocar strings hardcoded para `t("blocks.rotation.*")` e `t("blocks.main_lift.*")`.
+- Manter a lógica de `summarizeRotation` + `main_lift_audit` intacta.
+
+**5. `.lovable/backlog.md`**
+- Marcar Round 13 (#23 parcial) como ✅; criar #25 para superfícies legadas (BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip) na Round 14.
+
+### Fora de scope (intencional)
+- BlockAdaptationCard, VolumeStatusTable, ExerciseTrendChart, YearView strip — superfícies estáveis em PT, mexer agora arrisca regressões silenciosas. Vão para Round 14 com QA dedicado.
+- CapacityGainCard — já tem alguma estrutura i18n, validar separadamente na Round 14.
+- Landing page mockups — copy de marketing, decisão à parte.
+
+### Riscos & mitigação
+- **Recharts Tooltip name**: testado noutros componentes do projeto (chart.tsx). Funciona.
+- **Plurais "Iniciar Bloco N"**: numérico simples, sem regras de plural — interpolation é suficiente.
+- **i18n race**: as keys estão presentes em PT+EN antes dos componentes referenciarem (mesmo commit).
+
+### Princípio
+útil ✅ (componentes novos = primeira impressão para utilizador EN) · funcional ✅ · bonito ✅ (sem visual diff) · divertido ⚠️ (higiene)

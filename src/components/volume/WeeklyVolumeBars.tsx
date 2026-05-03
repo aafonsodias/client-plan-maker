@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   MUSCLE_GROUP_LABELS_PT,
@@ -19,21 +20,24 @@ type Props = {
 };
 
 export function WeeklyVolumeBars({ prescribed, actual }: Props) {
+  const { t } = useTranslation("common");
+  const prescribedLabel = t("volume.prescribed");
+  const actualLabel = t("volume.actual");
   const data = useMemo(() => {
     return MUSCLE_GROUP_ORDER.map((m: MuscleGroup) => ({
       muscle: MUSCLE_GROUP_LABELS_PT[m],
-      prescrito: Number((prescribed[m] ?? 0).toFixed(1)),
-      realizado: actual ? Number((actual[m] ?? 0).toFixed(1)) : 0,
+      [prescribedLabel]: Number((prescribed[m] ?? 0).toFixed(1)),
+      [actualLabel]: actual ? Number((actual[m] ?? 0).toFixed(1)) : 0,
     }));
-  }, [prescribed, actual]);
+  }, [prescribed, actual, prescribedLabel, actualLabel]);
 
-  const totalActual = data.reduce((a, b) => a + b.realizado, 0);
+  const totalActual = data.reduce((a, b) => a + (b[actualLabel] as number), 0);
   if (!actual || totalActual <= 0) return null;
 
   return (
     <div className="mt-3 rounded-xl border border-border/60 bg-secondary/20 p-2">
       <p className="mb-1 px-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-        Prescrito vs realizado · séries
+        {t("volume.weekly_bars_label")}
       </p>
       <div className="h-[160px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -61,8 +65,8 @@ export function WeeklyVolumeBars({ prescribed, actual }: Props) {
                 fontSize: 11,
               }}
             />
-            <Bar dataKey="prescrito" fill="oklch(0.68 0.16 240)" radius={[3, 3, 0, 0]} maxBarSize={14} />
-            <Bar dataKey="realizado" fill="oklch(0.70 0.13 145)" radius={[3, 3, 0, 0]} maxBarSize={14} />
+            <Bar dataKey={prescribedLabel} fill="oklch(0.68 0.16 240)" radius={[3, 3, 0, 0]} maxBarSize={14} />
+            <Bar dataKey={actualLabel} fill="oklch(0.70 0.13 145)" radius={[3, 3, 0, 0]} maxBarSize={14} />
           </BarChart>
         </ResponsiveContainer>
       </div>
