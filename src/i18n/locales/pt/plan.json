@@ -204,7 +204,19 @@
       "q3_q": "Posso usar a minha própria marca no PDF?",
       "q3_a": "Sim. Carrega o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Forge.",
       "q4_q": "O que acontece aos dados dos meus clientes?",
-      "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
+      "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca.",
+      "q5_q": "Em que ciência se baseia a programação?",
+      "q5_a": "Volume landmarks (MEV/MAV/MRV) seguem a investigação de Mike Israetel e Renaissance Periodization. A prescrição de RPE e seleção de exercícios bebe de Greg Nuckols e Eric Helms (3DMJ). Triagem de risco usa as guidelines da ACSM e o PAR-Q+ validado.",
+      "q6_q": "O que acontece se o meu cliente piorar a meio do bloco?",
+      "q6_a": "Re-aplicas a avaliação, o nível programático ajusta-se (ex: avançado → conservativo) e o próximo bloco regenera com restrições mais apertadas. O bloco anterior fica arquivado para histórico.",
+      "q7_q": "Posso editar o plano gerado antes de exportar?",
+      "q7_a": "Sim — em todos os 5 estágios (Brief, Blueprint, Microciclo, Progressões, Sessões). Cada edição fica registada e o PDF só é gerado depois da tua aprovação final.",
+      "q8_q": "Funciona offline ou no telemóvel do cliente?",
+      "q8_a": "O PDF funciona offline em qualquer dispositivo. O logbook de séries é web (Mobile Safari testado a 375px) e basta o link do plano — sem app para instalar.",
+      "q9_q": "Quantos planos posso gerar no plano grátis?",
+      "q9_a": "1 plano completo por conta. Suficiente para testar o fluxo end-to-end com um cliente real. Os tiers pagos abrem 8 / 30 / 80 planos por mês conforme escala (cap de clientes = cap de planos, sem letras pequenas).",
+      "q10_q": "Como sei que a IA não inventou um exercício perigoso?",
+      "q10_a": "Cada exercício é validado contra a biblioteca FORGE (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração."
     },
     "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
     "closing": {
@@ -261,6 +273,108 @@
       "eyebrow": "LOGBOOK INTELIGENTE",
       "title": "Sessões anotadas. Padrões revelados.",
       "subtitle": "O logbook não é só registo — a IA lê os seus dados e devolve sinais accionáveis."
+    },
+    "anti_chatgpt": {
+      "eyebrow": "FORGE vs ChatGPT",
+      "title": "ChatGPT gera o que você PEDE. FORGE gera o que o cliente PRECISA.",
+      "body": "14 secções de avaliação clínica antes de 1 exercício. Triagem PAR-Q+, classificação de risco ACSM, seleção de exercícios contraindicados, periodização em blocos com volumes MEV/MAV/MRV — tudo automático, tudo justificado.",
+      "sections_label": "Secções avaliadas antes de gerar:",
+      "items": [
+        "PAR-Q+",
+        "História médica",
+        "Antropometria",
+        "Pressão arterial",
+        "Mobilidade articular",
+        "Postura",
+        "Padrões de movimento",
+        "Sinais vitais",
+        "Recuperação",
+        "Histórico de treino",
+        "Hábitos",
+        "Objetivos",
+        "Disponibilidade",
+        "Equipamento"
+      ]
+    },
+    "comparison": {
+      "eyebrow": "Onde o FORGE encaixa",
+      "title": "Como o FORGE se compara ao que já usas.",
+      "headers": [
+        "",
+        "FORGE",
+        "Excel",
+        "ChatGPT",
+        "Apps genéricas"
+      ],
+      "rows": [
+        [
+          "Periodização em blocos com deload",
+          "yes",
+          "manual",
+          "no",
+          "rara"
+        ],
+        [
+          "MEV/MAV/MRV por grupo muscular",
+          "yes",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "Contraindicações automáticas (PAR-Q+/ACSM)",
+          "yes",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "PDF com a tua marca, bilingue",
+          "yes",
+          "manual",
+          "no",
+          "premium"
+        ],
+        [
+          "Voz tu/você consistente, copy revista",
+          "yes",
+          "—",
+          "no",
+          "—"
+        ],
+        [
+          "Tempo até 1º plano",
+          "~90s",
+          "horas",
+          "minutos",
+          "horas"
+        ]
+      ],
+      "footnote": "Não é magia. É lógica condicional sobre ciência publicada — Israetel, Helms, ACSM."
+    },
+    "tier_badges": {
+      "eyebrow": "Cada plano nasce com um nível",
+      "title": "Sistema de 3 níveis de programação.",
+      "subtitle": "O nível é decidido pelo perfil do cliente — não por adivinhação. Define carga máxima, RPE permitido e exercícios disponíveis.",
+      "items": {
+        "remedial": {
+          "name": "Remediação",
+          "desc": "Défices críticos ou autorização médica. Máquinas e bandas, 2×/semana."
+        },
+        "conservative": {
+          "name": "Conservativo",
+          "desc": "2+ sinais de alerta ou iniciante. Progressões seguras, 3-4×/semana."
+        },
+        "advanced": {
+          "name": "Avançado",
+          "desc": "Competência completa. Biblioteca total, 5-6×/semana."
+        }
+      }
+    },
+    "mid_cta": {
+      "title": "Vê com os teus dados.",
+      "subtitle": "Conta grátis · 1 cliente · 1 plano completo · sem cartão.",
+      "button": "Começar agora"
     }
   },
   "briefRail": {

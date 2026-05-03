@@ -204,7 +204,19 @@
       "q3_q": "Can I use my own branding on the PDF?",
       "q3_a": "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Forge's.",
       "q4_q": "What happens to my client data?",
-      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever."
+      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever.",
+      "q5_q": "What science is the programming based on?",
+      "q5_a": "Volume landmarks (MEV/MAV/MRV) follow Mike Israetel & Renaissance Periodization research. RPE prescription and exercise selection draw on Greg Nuckols and Eric Helms (3DMJ). Risk screening uses ACSM guidelines and the validated PAR-Q+.",
+      "q6_q": "What if the client regresses mid-block?",
+      "q6_a": "You re-run the assessment, the programming tier adjusts (e.g. advanced → conservative) and the next block regenerates with tighter constraints. The previous block stays archived for history.",
+      "q7_q": "Can I edit the generated plan before export?",
+      "q7_a": "Yes — at all 5 stages (Brief, Blueprint, Microcycle, Progressions, Sessions). Every edit is logged and the PDF only ships after your final approval.",
+      "q8_q": "Does it work offline or on the client's phone?",
+      "q8_a": "The PDF works offline on any device. The set logbook is web (tested on Mobile Safari at 375px) — just share the plan link, no app to install.",
+      "q9_q": "How many plans can I generate on the free tier?",
+      "q9_a": "1 full plan per account. Enough to test the end-to-end flow with a real client. Paid tiers unlock 8 / 30 / 80 plans per month as you scale (client cap = plan cap, no fine print).",
+      "q10_q": "How do I know the AI didn't invent a dangerous exercise?",
+      "q10_a": "Every exercise is validated against the FORGE library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation."
     },
     "mission": "Forge exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
     "closing": {
@@ -261,6 +273,108 @@
       "eyebrow": "INTELLIGENT LOGBOOK",
       "title": "Sessions logged. Patterns surfaced.",
       "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals."
+    },
+    "anti_chatgpt": {
+      "eyebrow": "FORGE vs ChatGPT",
+      "title": "ChatGPT generates what you ASK. FORGE generates what the client NEEDS.",
+      "body": "14 clinical assessment sections before 1 exercise. PAR-Q+ screening, ACSM risk classification, contraindicated-exercise filtering, block periodization with MEV/MAV/MRV volumes — automatic, justified.",
+      "sections_label": "Assessed before generation:",
+      "items": [
+        "PAR-Q+",
+        "Medical history",
+        "Anthropometry",
+        "Blood pressure",
+        "Joint mobility",
+        "Posture",
+        "Movement patterns",
+        "Vitals",
+        "Recovery",
+        "Training history",
+        "Lifestyle",
+        "Goals",
+        "Availability",
+        "Equipment"
+      ]
+    },
+    "comparison": {
+      "eyebrow": "Where FORGE fits",
+      "title": "How FORGE compares to what you already use.",
+      "headers": [
+        "",
+        "FORGE",
+        "Excel",
+        "ChatGPT",
+        "Generic apps"
+      ],
+      "rows": [
+        [
+          "Block periodization with deload",
+          "yes",
+          "manual",
+          "no",
+          "rare"
+        ],
+        [
+          "MEV/MAV/MRV per muscle group",
+          "yes",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "Auto contraindications (PAR-Q+/ACSM)",
+          "yes",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "Branded bilingual PDF",
+          "yes",
+          "manual",
+          "no",
+          "premium"
+        ],
+        [
+          "Consistent voice, reviewed copy",
+          "yes",
+          "—",
+          "no",
+          "—"
+        ],
+        [
+          "Time to first plan",
+          "~90s",
+          "hours",
+          "minutes",
+          "hours"
+        ]
+      ],
+      "footnote": "It's not magic. It's conditional logic over published science — Israetel, Helms, ACSM."
+    },
+    "tier_badges": {
+      "eyebrow": "Every plan ships with a tier",
+      "title": "3-tier programming system.",
+      "subtitle": "The tier is decided by the client profile — not guesswork. It sets load ceiling, allowed RPE and available exercises.",
+      "items": {
+        "remedial": {
+          "name": "Remedial",
+          "desc": "Critical deficits or medical clearance. Machines and bands, 2×/week."
+        },
+        "conservative": {
+          "name": "Conservative",
+          "desc": "2+ red flags or beginner. Safe progressions, 3-4×/week."
+        },
+        "advanced": {
+          "name": "Advanced",
+          "desc": "Full competency. Full library, 5-6×/week."
+        }
+      }
+    },
+    "mid_cta": {
+      "title": "See it with your own data.",
+      "subtitle": "Free account · 1 client · 1 full plan · no card.",
+      "button": "Start now"
     }
   },
   "briefRail": {

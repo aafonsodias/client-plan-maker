@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload } from "lucide-react";
+import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload, X, Minus, Shield } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { WorkbenchMockup } from "@/components/landing/WorkbenchMockup";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
@@ -223,6 +223,9 @@ function Landing() {
         </div>
       </section>
 
+      {/* Anti-ChatGPT — sharp positioning vs the obvious alternative */}
+      <AntiChatGPTSection />
+
       {/* How it works — animated mock */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
@@ -231,6 +234,12 @@ function Landing() {
         </div>
         <HowItWorksAnimation />
       </section>
+
+      {/* Comparison table — FORGE vs Excel vs ChatGPT vs Generic apps */}
+      <ComparisonTableSection />
+
+      {/* Programming tier badges — 3-tier methodology shown on landing */}
+      <TierBadgesSection />
 
       {/* The journey — mirrors the 5 stages of the in-app generator */}
       <section id="journey" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
@@ -241,6 +250,9 @@ function Landing() {
         </div>
         <JourneyStrip />
       </section>
+
+      {/* Mid-page repeat CTA — anchors the offer halfway down the page */}
+      <MidCtaSection primaryCtaTo={primaryCtaTo} />
 
       {/* Credibility — built on the science */}
       <section className="mx-auto max-w-6xl px-6 py-24">
@@ -458,6 +470,12 @@ function Landing() {
             { q: t("plan:landing.faq.q2_q"), a: t("plan:landing.faq.q2_a") },
             { q: t("plan:landing.faq.q3_q"), a: t("plan:landing.faq.q3_a") },
             { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
+            { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
+            { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
+            { q: t("plan:landing.faq.q7_q"), a: t("plan:landing.faq.q7_a") },
+            { q: t("plan:landing.faq.q8_q"), a: t("plan:landing.faq.q8_a") },
+            { q: t("plan:landing.faq.q9_q"), a: t("plan:landing.faq.q9_a") },
+            { q: t("plan:landing.faq.q10_q"), a: t("plan:landing.faq.q10_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
@@ -935,5 +953,199 @@ function JourneyStrip() {
         })}
       </ol>
     </div>
+  );
+}
+
+// ─── Anti-ChatGPT positioning ──────────────────────────────────────────
+function AntiChatGPTSection() {
+  const { t } = useTranslation("plan");
+  const items = (t("landing.anti_chatgpt.items", { returnObjects: true }) as string[]) ?? [];
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.anti_chatgpt.eyebrow")}
+        </p>
+        <h2 className="mt-2 max-w-3xl text-3xl font-light leading-tight tracking-tight sm:text-4xl">
+          {t("landing.anti_chatgpt.title")}
+        </h2>
+        <p className="mt-4 max-w-2xl text-base font-light text-muted-foreground">
+          {t("landing.anti_chatgpt.body")}
+        </p>
+        <p className="mt-8 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("landing.anti_chatgpt.sections_label")}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {items.map((label) => (
+            <span
+              key={label}
+              className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium text-foreground/85"
+            >
+              <ClipboardCheck className="h-3 w-3 text-accent" />
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Comparison table ──────────────────────────────────────────────────
+function ComparisonTableSection() {
+  const { t } = useTranslation("plan");
+  const headers = (t("landing.comparison.headers", { returnObjects: true }) as string[]) ?? [];
+  const rows = (t("landing.comparison.rows", { returnObjects: true }) as string[][]) ?? [];
+
+  function renderCell(value: string, colIdx: number) {
+    if (colIdx === 0) return <span className="text-foreground/85">{value}</span>;
+    if (value === "yes")
+      return (
+        <span className="inline-flex items-center justify-center text-emerald-400">
+          <Check className="h-4 w-4" aria-label="yes" />
+        </span>
+      );
+    if (value === "no")
+      return (
+        <span className="inline-flex items-center justify-center text-red-400/80">
+          <X className="h-4 w-4" aria-label="no" />
+        </span>
+      );
+    if (value === "—")
+      return (
+        <span className="inline-flex items-center justify-center text-muted-foreground/60">
+          <Minus className="h-4 w-4" aria-label="n/a" />
+        </span>
+      );
+    return <span className="text-xs text-muted-foreground">{value}</span>;
+  }
+
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="mb-8 max-w-2xl">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.comparison.eyebrow")}
+        </p>
+        <h2 className="mt-2 text-4xl font-light tracking-tight">
+          {t("landing.comparison.title")}
+        </h2>
+      </div>
+      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+        <table className="w-full min-w-[640px] text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              {headers.map((h, i) => (
+                <th
+                  key={i}
+                  className={`px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest ${
+                    i === 1 ? "text-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr
+                key={ri}
+                className={`border-b border-border/60 last:border-0 ${
+                  ri % 2 === 1 ? "bg-background/40" : ""
+                }`}
+              >
+                {row.map((cell, ci) => (
+                  <td
+                    key={ci}
+                    className={`px-4 py-3 ${ci === 1 ? "bg-accent/[0.04]" : ""} ${
+                      ci === 0 ? "" : "text-center"
+                    }`}
+                  >
+                    {renderCell(cell, ci)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-4 text-center text-xs italic text-muted-foreground/70">
+        {t("landing.comparison.footnote")}
+      </p>
+    </section>
+  );
+}
+
+// ─── Programming tier badges ───────────────────────────────────────────
+function TierBadgesSection() {
+  const { t } = useTranslation("plan");
+  type TierKey = "remedial" | "conservative" | "advanced";
+  const tiers: Array<{ key: TierKey; chip: string; dot: string }> = [
+    { key: "remedial",     chip: "border-blue-500/40 bg-blue-500/10 text-blue-300",         dot: "bg-blue-400" },
+    { key: "conservative", chip: "border-amber-500/40 bg-amber-500/10 text-amber-300",       dot: "bg-amber-400" },
+    { key: "advanced",     chip: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300", dot: "bg-emerald-400" },
+  ];
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="mb-8 max-w-2xl">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.tier_badges.eyebrow")}
+        </p>
+        <h2 className="mt-2 text-4xl font-light tracking-tight">
+          {t("landing.tier_badges.title")}
+        </h2>
+        <p className="mt-4 text-base font-light text-muted-foreground">
+          {t("landing.tier_badges.subtitle")}
+        </p>
+      </div>
+      <div className="grid gap-6 md:grid-cols-3">
+        {tiers.map((tier) => (
+          <div
+            key={tier.key}
+            className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40"
+          >
+            <div
+              className={`mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${tier.chip}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
+              {t(`landing.tier_badges.items.${tier.key}.name`)}
+            </div>
+            <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+              <Shield className="h-3.5 w-3.5" />
+              {t("landing.tier_badges.title")}
+            </div>
+            <p className="text-sm font-light text-muted-foreground">
+              {t(`landing.tier_badges.items.${tier.key}.desc`)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Mid-page repeat CTA ───────────────────────────────────────────────
+function MidCtaSection({ primaryCtaTo }: { primaryCtaTo: string }) {
+  const { t } = useTranslation("plan");
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-16">
+      <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] px-6 py-8 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
+        <div>
+          <h3 className="text-2xl font-light tracking-tight">
+            {t("landing.mid_cta.title")}
+          </h3>
+          <p className="mt-1 text-sm font-light text-muted-foreground">
+            {t("landing.mid_cta.subtitle")}
+          </p>
+        </div>
+        <div className="mt-5 sm:mt-0">
+          <Button asChild size="lg">
+            <Link to={primaryCtaTo}>
+              {t("landing.mid_cta.button")} <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
