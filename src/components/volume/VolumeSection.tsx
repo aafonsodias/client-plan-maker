@@ -6,6 +6,7 @@ import { computeWeeklyVolume, type PlanLike } from "@/lib/volume-compute";
 import { computeWeeklyActualVolume } from "@/lib/volume-actual";
 import { MuscleVolumeRadar } from "./MuscleVolumeRadar";
 import { VolumeStatusTable } from "./VolumeStatusTable";
+import { WeeklyVolumeBars } from "./WeeklyVolumeBars";
 import type { AdaptationRow } from "@/lib/block-adaptation";
 
 type Props = {
@@ -113,6 +114,7 @@ export function VolumeSection({ plan, adaptation, sessions }: Props) {
         </div>
         <div className="min-w-0">
           <VolumeStatusTable volume={currentVolume} actual={currentActual} adaptation={adaptation} />
+          <WeeklyVolumeBars prescribed={currentVolume} actual={currentActual} />
         </div>
       </div>
     </section>

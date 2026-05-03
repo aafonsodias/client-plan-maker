@@ -33,8 +33,8 @@ Atualizado: Round 10 (3 Mai 2026)
 | 20 | P1 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 11 |
 | 21 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 11 |
 | 22 | P0 | Plan page | Auditoria real do main-lift swap (prior_main_lifts → main_lift_audit; chip honesto) | ✅ Round 11 |
-| 23 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 12 |
-| 24 | P2 | Volume | Stack-bar semanal prescrito vs realizado (recharts ~140px) | 🔜 Round 12 |
+| 23 | P1 | i18n | Sweep EN final + smoke test em todas as rotas | 🔜 Round 13 |
+| 24 | P1 | Volume | Stack-bar semanal prescrito vs realizado (WeeklyVolumeBars, ~160px) | ✅ Round 12 |
 
 ## Princípio
 Útil > funcional > bonito > divertido. Cada ronda corta o que não passa todos os 4.
