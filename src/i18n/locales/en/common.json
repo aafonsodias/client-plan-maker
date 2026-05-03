@@ -23,7 +23,8 @@
     "branding": "Branding",
     "manual": "Manual",
     "billing": "Billing",
-    "landing": "Landing"
+    "landing": "Landing",
+    "schedule": "Schedule"
   },
   "auth": {
     "tab_signin": "Sign in",

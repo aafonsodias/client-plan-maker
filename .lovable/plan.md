@@ -1,85 +1,143 @@
-## Triagem honesta do documento
+# R28 — My Schedule (timetable + revenue)
 
-A maior parte do que recomendam **já existe** no FORGE (TierChip 🟢🟡🔴, fonts Inter/Inter Tight/JetBrains Mono, AI sem keys, i18n total, generation_log, "você" voice, brief/blueprint/microcycle/progressions). Outras propostas **conflituam** com decisões deliberadas e vou rejeitar com motivo. O resto ou são **conteúdo de marketing** (escreves tu, eu não invento copy/stats) ou **post-MVP estratégico** que devia esperar utilizadores reais.
+## Conflicts to flag before we touch code
 
-Codifico tudo em memórias `mem://` para passar a aplicar-se a todas as rondas futuras.
+1. **"Individual user mode" doesn't exist in Forge today.** The entire app is trainer-centric: every table is keyed by `trainer_id`, RLS is `auth.uid() = trainer_id`, `clients` are *owned* by a trainer, and there is no client-side login. Adding a true second role is a multi-week architectural shift (auth, RLS rewrite, route gating, billing). **Recommendation:** ship trainer mode first; defer individual mode to a separate round and, when we get there, model it as "trainer-of-self" (the user is their own client) rather than a new role — that reuses everything.
+2. **Sessions ≠ bookings.** `workout_sessions` already exists but stores *logged* training (entries, RPE, feedback). Bookings (future, time-of-day, duration, billable) are a new concept. We need a new `client_bookings` table, not an overload of `workout_sessions`.
+3. **Pricing per client is new.** `clients` has no `price_per_session` or pack fields. Forge's billing today is the trainer's *own* SaaS subscription (`subscribers`), not client-pack revenue. Need new columns / a `client_packs` table.
+4. **YearView already exists** (`src/components/YearView.tsx`) as a calendar surface — we'll reuse its visual language (cells, status tones via `lib/status-tone.ts`) so the timetable feels native.
+5. **Nav slot is tight.** Header already shows Dashboard / Clients / Templates / Settings. Adding "Schedule" makes 5 — fits desktop, but on mobile the hamburger absorbs it cleanly. No design issue.
+
+## Scope of R28 (Phase 1 — trainer only, real data layer)
+
+### 1. Schema (one migration, with backups per non-negotiables)
+
+```text
+client_packs
+  id uuid pk
+  trainer_id uuid not null
+  client_id uuid not null
+  label text                           -- "Pack 10 · Presencial"
+  session_type text                    -- 'in_person' | 'online'
+  price_per_session_eur numeric(10,2)
+  pack_size int                        -- e.g. 10
+  sessions_used int default 0          -- maintained by trigger
+  weekly_frequency int                 -- e.g. 2
+  start_date date
+  status text                          -- derived view: active|ending_soon|expired
+  color text                           -- hex, stable per pack for grid blocks
+  created_at, updated_at
+
+client_bookings
+  id uuid pk
+  trainer_id uuid not null
+  client_id uuid not null
+  pack_id uuid null references client_packs(id)
+  starts_at timestamptz not null
+  duration_min int default 60
+  session_type text                    -- 'in_person' | 'online'
+  status text                          -- 'scheduled' | 'done' | 'cancelled' | 'no_show'
+  notes text
+  created_at, updated_at
+```
+
+- RLS: `auth.uid() = trainer_id` on both (mirrors every other table).
+- Trigger `bump_pack_sessions_used` increments `client_packs.sessions_used` when a booking flips to `done`, decrements on cancel-after-done.
+- No CHECK constraints with `now()` — use a validation trigger (per non-negotiables in `mem://principles/non-negotiables.md`).
+- Backup: `backup_clients_<YYYYMMDD>` before migration since we're not touching `clients`, but we will snapshot `workout_sessions` for safety reference.
+
+### 2. Server functions — `src/server/schedule.functions.ts`
+
+- `listWeekBookings({ weekStart })` → bookings + joined pack/client lite info for that ISO week.
+- `createBooking(...)`, `updateBooking(...)`, `cancelBooking(id)`, `markBookingDone(id)`.
+- `listPacks({ activeOnly? })`, `createPack(...)`, `updatePack(...)`.
+- `weekRevenueSummary({ weekStart })` → `{ expectedIncomeEur, sessionsCount, totalSessionsRemaining, packsEndingSoon }`.
+
+All amounts stored & returned in **EUR** (per Core memory rule). Display via `<PriceTag>` so USD/BTC toggling keeps working.
+
+### 3. Routes & UI
+
+- `src/routes/schedule.tsx` — main page (week grid + revenue strip).
+- `src/routes/schedule.packs.tsx` — manage packs (table + create/edit dialog). Sub-route under same layout.
+- New components in `src/components/schedule/`:
+  - `WeekTimetable.tsx` — 7×timeslots grid, 6:00–22:00 in 30-min rows, color blocks per booking.
+  - `DayStrip.tsx` — mobile day-picker (<768px via `useIsMobile`).
+  - `RevenuePanel.tsx` — top summary card (expected income, sessions confirmed, remaining, ending-soon alert).
+  - `BookingDialog.tsx` — create/edit booking; client + pack picker, datepicker (shadcn pattern with `pointer-events-auto`), duration, type, notes.
+  - `PackCard.tsx` / `PackFormDialog.tsx`.
+- Status tones via existing `toneChip/toneDot` (`success|warn|danger`) — green=active, amber=ending soon (≤2 left), red=expired. Matches the project-wide rule.
+- Both light/dark themes covered automatically because all colors come from semantic tokens; only the per-pack `color` is a hex (used at low alpha for the block fill).
+
+### 4. Navigation
+
+Add `{ to: "/schedule", label: t("nav.schedule"), icon: CalendarDays }` to `primaryNav` in `AppShell.tsx`. i18n keys in `common.json` (PT + EN).
+
+### 5. i18n
+
+New namespace `schedule` (PT + EN), all strings via `t()` — non-negotiable.
+
+### 6. Phase 1 cut-list (explicitly NOT in this round)
+
+- Individual user mode (deferred — needs auth/role discussion).
+- Recurring booking rules (e.g. "every Tue+Thu 7am for 10 weeks") — manual booking only in v1, with a "duplicate to next week" shortcut.
+- Calendar sync (Google/Apple) — out of scope.
+- Payment collection / invoicing — pure tracking, no Stripe link to client packs.
+- Notifications/reminders — out of scope.
+
+## Tech notes
+
+- ISO week math via `date-fns` (already used elsewhere in the project — `EvolutionSparkline`, `LogbookTimeline`).
+- Mobile breakpoint: 768px (`useIsMobile`). 375px Mobile Safari smoke test mandatory before closing the round.
+- Every server function writes to `generation_log`? No — `generation_log` is for AI calls only. Schedule mutations don't use AI, so they don't log there. (Flag if you want a separate audit.)
+- Color picker for packs: pick from a fixed 8-color palette derived from existing tone tokens, not free hex — keeps both themes legible.
+
+## Round flow
+
+1. Migration (with backup).
+2. Server functions + types regen.
+3. UI (grid → revenue panel → dialogs → packs page).
+4. i18n PT+EN.
+5. Seed: a small "demo pack + 5 bookings this week" helper inside Demo Lab so the empty state has visible content.
+6. 375px smoke + light/dark visual QA.
+7. Close round, update `.lovable/backlog.md`.
+
+## Decision asked
+
+Confirm two things before I switch to build mode:
+
+- **A — Defer individual mode to a later round?** (Strongly recommended. Otherwise scope doubles and we touch auth.)
+- **B — Use new `client_bookings` table (not overload `workout_sessions`)?** (Strongly recommended.)
+
+If yes to both, I'll execute exactly the plan above.
+
+**PROMPT FOR LOVABLE:**
 
 ---
 
-## ✅ Aprovo (R27 — pequenas, seguras)
+Confirmed on both decisions:
 
-**A. Memórias de princípios e copy**
+**A — Yes, defer individual user mode.** Ship trainer mode first. When we revisit individual mode, model it as "trainer-of-self" so we reuse the existing schema, RLS, and UI rather than introducing a second role. Please add this to `.lovable/backlog.md` as a future round so we don't lose it.
 
-- `mem://principles/decision-order` — "looks → function → ease. Ugly-but-fast vs beautiful-but-2-days-more → escolhe beautiful."
-- `mem://principles/non-negotiables` — "1 fase por commit. Bug ≠ design ≠ feature. Backup `backup_<table>_<YYYYMMDD>` antes de SQL prod. Smoke Mobile Safari 375px. Toda copy via i18n."
-- `mem://positioning/sharp` — pitch B2B2C + matriz vs Trainerize/ChatGPT/RP Strength.
-- `mem://design/pdf-spec` — confirmar #FAF8F4/#1A1A1A/#D4A574, Inter/Inter Tight/JetBrains Mono, sem itálico em cues, sem all-caps em nomes de exercícios. **Auditar `src/lib/pdf.ts` contra a spec** e corrigir se divergir (PDFs hoje são gerados em jsPDF; provavelmente já cumprem mas não confirmei cada string).
-- `mem://design/red-flag-tiers` — invertendo a convenção do documento (que está errada): no FORGE 🟢=advanced (verde=ok), 🟡=conservative, 🔴=remedial (vermelho=restrição máxima). Já é assim no `TierChip` (`success` para advanced, `warn` para os outros). Não inverto para amarelo/verde como pede o doc — semântica de cor importa.
+**B — Yes, new** `client_bookings` **table.** Do not overload `workout_sessions`. Bookings and logged training are different concepts and should stay separate.
 
-**B. Landing — adições "zero engenharia"** (1 ronda, R28)
+Proceed with R28 Phase 1 exactly as you scoped it:
 
-- Secção "Anti-ChatGPT" curta: 1 frase + 14 secções de assessment ilustradas com ícones existentes.
-- Tabela comparativa **FORGE vs Excel vs ChatGPT vs Trainerize** (5–6 linhas: periodização, MEV/MAV/MRV, contraindicações, PDF marca, voz tu/você, idioma).
-- CTA repetido no fim de cada secção principal já existente.
-- Expandir FAQ de 4 → 12 (não 15+; >12 fica spam). Citações Israetel/Helms/ACSM nas relevantes, sem inventar quotes.
-- "Como funciona" 3 passos — verifico se já existe (id=`how-it-works` no hero); se sim, polir; se não, adicionar.
-- **Badges metodologia 🟢🟡🔴 na landing** — reutilizar `TierChip` em modo display (sem override) numa linha "Cada plano nasce com um destes níveis".
+- Migration with backups (per non-negotiables), validation triggers instead of CHECK with `now()`
+- `client_packs` and `client_bookings` tables with RLS on `trainer_id`
+- `bump_pack_sessions_used` trigger on booking status transitions
+- Server functions in `src/server/schedule.functions.ts` — all amounts in EUR, displayed via `<PriceTag>`
+- Routes: `src/routes/schedule.tsx` and `src/routes/schedule.packs.tsx`
+- Components in `src/components/schedule/`: `WeekTimetable`, `DayStrip`, `RevenuePanel`, `BookingDialog`, `PackCard`, `PackFormDialog`
+- Reuse `YearView` visual language and `lib/status-tone.ts` for green/amber/red status
+- 8-color fixed palette for packs (derived from tone tokens, legible in both themes) — no free hex
+- Add `{ to: "/schedule", label: t("nav.schedule"), icon: CalendarDays }` to `primaryNav` in `AppShell.tsx`
+- New `schedule` i18n namespace, PT + EN, every string via `t()`
+- Demo Lab seed: one demo pack + 5 bookings in the current week so the empty state has content
 
----
+Out of scope for this round (confirmed): individual mode, recurring booking rules, Google/Apple calendar sync, payments/invoicing, notifications.
 
-## ⚠️ Adapto (não como está escrito)
+One small addition: please include a **"duplicate to next week"** shortcut on each booking block as you mentioned — that's a high-value shortcut for the trainer's real workflow (most clients train on the same days every week) and removes the friction of manual rebooking until recurring rules ship later.
 
-**C. "Como funciona" mental model**  
-Doc propõe `ASSESS → GENERATE → REVIEW → DELIVER`. O FORGE já tem **5 estágios** (Intake → Brief → Blueprint → Microcycle → Progressions), e isto está fixado em memória core e na landing. **Mantenho 5 estágios** — colapsar em 4 partiria a metáfora que estrutura o produto inteiro. No máximo, agrupo visualmente como `AVALIA (Intake) → PROGRAMA (Brief+Blueprint+Microcycle+Progressions) → ENTREGA (PDF)` num resumo de 1 linha acima dos 5 cartões.
+Round flow as you proposed: migration → server functions + types → UI (grid → revenue panel → dialogs → packs page) → i18n → demo seed → 375px Mobile Safari smoke + light/dark QA → close round → update backlog.
 
-**D. Stats de tracção e testemunhos**  
-Não invento números. Se me deres **1 stat real verificável** (ex: "104 sessões logged em beta"), adiciono. Se me deres **1 testemunho real com nome+foto+permissão**, adiciono. Caso contrário, fica de fora — fake social proof é exactamente o que o "honest craft tool" rejeita.
-
-**E. Hero copy nova ("90 segundos")**  
-Não confirmo se geração média é 90s. Se quiseres, instrumento `generation_log` para mostrar **mediana real** num dashboard founder-only, e só depois prometo número na landing.
-
----
-
-## ❌ Rejeito (com motivo)
-
-**F. "Auto-detect language pt-PT/en-GB no signup"**  
-Já fazes isto via i18next browser detector + manual override no AppShell. Pedido = não-feature.
-
-**G. "Primeiro ecrã pós-login: pergunta dark/light"**  
-Atrito desnecessário no onboarding. O sistema respeita `prefers-color-scheme` e há toggle no shell. Adicionar um modal de boas-vindas cortaria conversão sem ganho emocional comprovado.
-
-**H. "Adversarial AI agent que ataca o produto"**  
-Fora de âmbito de uma ronda. Isto é trabalho de QA/segurança contínuo — temos `supabase--linter`, RLS auditado, REVOKEs já feitos (R17). Posso correr o linter+scan agora se quiseres, mas "criar um agente adversarial" não é um item de backlog discreto, é um processo.
-
-**I. "AI-simulated users portal-to-portal"**  
-Já tens DemoOrchestrator + demo_runs reais. Construir um segundo sistema "AI que simula humanos" duplica esforço e contradiz a regra de memória "código deve estar pronto para humanos reais, não fluxos AI". Risk > reward.
-
-**J. "Physical capacity spectrum graph (peer percentile vs população)"**  
-Estrategicamente forte mas **post-MVP** e exige dataset normativo validado (grip dead-hang, VO₂max Rockport). Sem o dataset, é vapourware. Adiciono ao backlog como **#40 (P3, post-launch)**, não implemento agora. (Verifica se não podes criar forma do sistema estudar a aprender com os humanos que o utilizam... e não há estudos corte do acsm e tal, há... )
-
-**K. "Pay-as-you-grow per athlete"**  
-Conflito directo com memória core: tiers Starter/Pro/Studio com cap clientes==cap planos. Mudar pricing model é decisão de negócio, não de ronda. (Mas achas que faz sentido e é win?)
-
-**L. "Video testimonial após habit formation"**  
-Growth tactic, não engenharia. Quando tiveres um beta user disposto, ligamos um Tally/Loom — não preciso construir nada. (Ok, é preciso ter growth tactics)
-
----
-
-## Ordem de execução
-
-
-| Ronda           | Conteúdo                                                                                                                                                                            | Risco                            |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **R27**         | Memórias (`mem://principles/*`, `mem://positioning/*`, `mem://design/pdf-spec`, `mem://design/red-flag-tiers`) + auditar `src/lib/pdf.ts` contra spec PDF (corrigir só se divergir) | Baixo                            |
-| **R28**         | Landing: Anti-ChatGPT, tabela comparativa, FAQ 4→12, CTAs repetidos, "Como funciona" se faltar, badges 🟢🟡🔴 reutilizando TierChip                                                 | Médio (toca a rota mais visível) |
-| **Backlog #40** | Physical capacity spectrum — só quando tivermos dataset normativo                                                                                                                   | Adiar                            |
-
-
-Não publico nada. Cada ronda mantém commit verde antes de abrir a próxima.
-
-## Decisões que preciso de ti
-
-1. Aprovas as **rejeições** F–L? (Se discordas de alguma, identifica qual.) Tudo ok acho eu
-2. Confirmas a **inversão da convenção de cor** (🟢=advanced, 🔴=remedial — oposto do documento)? Sim
-3. Para R28: tens **stat real** ou **testemunho real** para incluir? Senão, secções ficam fora. Podemos criar a estrutura para os receber e eles aparecerem...
-4. Avanço com R27 já? Como achares melhor.
+Go ahead and switch to build mode.
