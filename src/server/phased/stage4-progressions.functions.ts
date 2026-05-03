@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 
 const PROG_TOOL_SCHEMA = {
   type: "object",
@@ -123,7 +124,10 @@ HARD RULES — apply to EVERY exercise:
 6. Keep "rationale" ≤ 10 words.
 7. RPE WAVE COVERAGE: at least 70% of all exercises MUST receive a non-empty intensity_rpe delta in W2 OR W3. Flat RPE across the mesocycle is the #1 failure mode — do NOT repeat it. If a main compound is already at the ceiling in W1, keep RPE flat for W2 and use reps/load deltas instead, but accessory work should still ride the wave.
 
-Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.`;
+Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.
+
+${prescriptionPromptBlock(weeks)}
+The W2/W3/W4 deltas you emit must move weekly volume toward each week's target band. A "+1set" or "-1set" is your primary lever — use it whenever the W1 baseline is below or above the prescribed band for the muscles that exercise trains.`;
 
     const user = `Mesocycle length: ${weeks} weeks.\nWeek 1 exercise list:\n${JSON.stringify(exerciseList, null, 2)}`;
 

@@ -10,6 +10,7 @@ import {
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
+import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 import {
   classifyTier,
   tierGuidelines,
@@ -133,6 +134,7 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       brief.primary_goal,
     );
     const tierBlock = tierPromptBlock(guidelines);
+    const volumeBlock = prescriptionPromptBlock(weeks);
 
     const baseSystem = `You are a senior strength coach designing a MESOCYCLE BLUEPRINT.
 
@@ -149,7 +151,11 @@ RULES:
 
 Call record_blueprint with valid input.
 
-${tierBlock}`;
+${tierBlock}
+
+${volumeBlock}
+
+The week_to_session_map and session_archetypes you propose MUST make it feasible to hit the per-muscle weekly set targets above (a single archetype only trains a subset of muscles, so allocate frequency accordingly).`;
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
