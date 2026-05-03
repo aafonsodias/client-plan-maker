@@ -42,9 +42,9 @@ export const listWeekBookings = createServerFn({ method: "GET" })
     z.object({ weekStart: z.string() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase } = context; const sb = supabase as any;
     const { startIso, endIso } = weekRange(data.weekStart);
-    const { data: rows, error } = await supabase
+    const { data: rows, error } = await sb
       .from("client_bookings")
       .select(
         "id, client_id, pack_id, starts_at, duration_min, session_type, status, notes",
@@ -71,8 +71,8 @@ export const createBooking = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: row, error } = await supabase
+    const { supabase, userId } = context; const sb = supabase as any;
+    const { data: row, error } = await sb
       .from("client_bookings")
       .insert({
         trainer_id: userId,
@@ -106,7 +106,7 @@ export const updateBooking = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context; const sb = supabase as any;
     const patch: Record<string, any> = {};
     if (data.startsAt !== undefined) patch.starts_at = data.startsAt;
     if (data.durationMin !== undefined) patch.duration_min = data.durationMin;
@@ -114,7 +114,7 @@ export const updateBooking = createServerFn({ method: "POST" })
     if (data.status !== undefined) patch.status = data.status;
     if (data.notes !== undefined) patch.notes = data.notes;
     if (data.packId !== undefined) patch.pack_id = data.packId;
-    const { error } = await supabase
+    const { error } = await sb
       .from("client_bookings")
       .update(patch)
       .eq("id", data.id)
@@ -127,8 +127,8 @@ export const deleteBooking = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
+    const { supabase, userId } = context; const sb = supabase as any;
+    const { error } = await sb
       .from("client_bookings")
       .delete()
       .eq("id", data.id)
@@ -141,8 +141,8 @@ export const duplicateBookingNextWeek = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: src, error } = await supabase
+    const { supabase, userId } = context; const sb = supabase as any;
+    const { data: src, error } = await sb
       .from("client_bookings")
       .select("client_id, pack_id, starts_at, duration_min, session_type, notes")
       .eq("id", data.id)
@@ -150,7 +150,7 @@ export const duplicateBookingNextWeek = createServerFn({ method: "POST" })
     if (error || !src) return { ok: false as const, error: error?.message ?? "not found" };
     const next = new Date((src as any).starts_at);
     next.setDate(next.getDate() + 7);
-    const { data: row, error: insErr } = await supabase
+    const { data: row, error: insErr } = await sb
       .from("client_bookings")
       .insert({
         trainer_id: userId,
@@ -176,8 +176,8 @@ export const listPacks = createServerFn({ method: "GET" })
     z.object({ activeOnly: z.boolean().optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    let q = supabase
+    const { supabase } = context; const sb = supabase as any;
+    let q = sb
       .from("client_packs")
       .select(
         "id, client_id, label, session_type, price_per_session_eur, pack_size, sessions_used, weekly_frequency, start_date, color, archived, created_at",
@@ -207,7 +207,7 @@ export const upsertPack = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context; const sb = supabase as any;
     const payload: Record<string, any> = {
       trainer_id: userId,
       client_id: data.clientId,
@@ -220,7 +220,7 @@ export const upsertPack = createServerFn({ method: "POST" })
       color: data.color,
     };
     if (data.id) {
-      const { error } = await supabase
+      const { error } = await sb
         .from("client_packs")
         .update(payload)
         .eq("id", data.id)
@@ -228,7 +228,7 @@ export const upsertPack = createServerFn({ method: "POST" })
       if (error) return { ok: false as const, error: error.message };
       return { ok: true as const, id: data.id };
     }
-    const { data: row, error } = await supabase
+    const { data: row, error } = await sb
       .from("client_packs")
       .insert(payload)
       .select("id")
@@ -243,8 +243,8 @@ export const archivePack = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
+    const { supabase, userId } = context; const sb = supabase as any;
+    const { error } = await sb
       .from("client_packs")
       .update({ archived: data.archived })
       .eq("id", data.id)
@@ -258,7 +258,7 @@ export const archivePack = createServerFn({ method: "POST" })
 export const seedScheduleDemo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase, userId } = context; const sb = supabase as any;
     const { data: clients } = await supabase
       .from("clients")
       .select("id, full_name")
@@ -275,7 +275,7 @@ export const seedScheduleDemo = createServerFn({ method: "POST" })
     const created: string[] = [];
     for (let i = 0; i < clients.length; i++) {
       const c = clients[i] as any;
-      const { data: pack } = await supabase
+      const { data: pack } = await sb
         .from("client_packs")
         .insert({
           trainer_id: userId,
@@ -297,7 +297,7 @@ export const seedScheduleDemo = createServerFn({ method: "POST" })
         const t = new Date(monday);
         t.setDate(monday.getDate() + dow);
         t.setHours(hour, 0, 0, 0);
-        const { data: b } = await supabase
+        const { data: b } = await sb
           .from("client_bookings")
           .insert({
             trainer_id: userId,
