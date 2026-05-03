@@ -207,7 +207,7 @@ const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   experience_level: shortText,
   training_days_per_week: intRange(0, 14),
   session_duration_minutes: intRange(5, 240),
-  training_location: shortText,
+  training_location: z.array(z.string().trim().max(60)).max(8),
   available_equipment: stringArray,
   injuries: longText,
   medical_conditions: longText,
