@@ -726,7 +726,7 @@ export const createDemoClient = createServerFn({ method: "POST" })
       training_days_per_week: persona.training_days_per_week,
       session_duration_minutes: persona.session_duration_minutes,
       available_equipment: persona.available_equipment,
-      training_location: persona.training_location,
+      training_location: [persona.training_location],
       // Health
       injuries: persona.injuries,
       medical_conditions: persona.medical_conditions,
