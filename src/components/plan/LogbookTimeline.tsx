@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Sparkles, Check, MinusCircle, XCircle, NotebookPen } from "lucide-react";
 import { toneChip, toneDot, type Tone } from "@/lib/status-tone";
 import { epley } from "@/lib/capacity-gain";
