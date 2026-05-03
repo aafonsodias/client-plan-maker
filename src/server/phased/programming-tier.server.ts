@@ -5,6 +5,13 @@
 // only reference fields that actually exist in the schema (or in `extended`).
 
 import type { Brief } from "./schemas";
+import {
+  runPreparticipationAlgorithm,
+  classifyCvdRiskFactors,
+  cardiacRehabBpExclusion,
+  type PreparticipationResult,
+  type DesiredIntensity,
+} from "../screening/preparticipation.server";
 
 export type Tier = "remedial" | "conservative" | "advanced";
 
@@ -57,7 +64,13 @@ function isRecoveryCompromised(
   return false;
 }
 
-function hasMedicalClearanceFlag(assessment: Record<string, any>): boolean {
+/**
+ * Legacy clearance heuristic — kept exported during R2.2 smoke window so the
+ * smoke harness can compute `oldFlag` in parallel with the new ACSM 12e Ch.2
+ * algorithm and surface a per-persona diff. Removed in a follow-up commit
+ * after Smoke #1 is approved.
+ */
+export function hasMedicalClearanceFlag(assessment: Record<string, any>): boolean {
   if (assessment?.parq_passed === false) return true;
   const sys = assessment?.systolic_bp_mmhg;
   const dia = assessment?.diastolic_bp_mmhg;
@@ -67,10 +80,22 @@ function hasMedicalClearanceFlag(assessment: Record<string, any>): boolean {
   return false;
 }
 
+/** Map brief.intensity_appetite → DesiredIntensity for ACSM Ch.2 algorithm. */
+function desiredIntensityFromBrief(brief: Brief): DesiredIntensity {
+  const a = String((brief as any)?.intensity_appetite ?? "").toLowerCase();
+  if (a === "agressivo" || a === "aggressive") return "vigorous";
+  if (a === "conservador" || a === "conservative") return "light";
+  return "moderate";
+}
+
 /** Classify the programming tier for a brief + assessment pair. */
 export function classifyTier(brief: Brief, assessment: Record<string, any>): Tier {
+  const prepart = runPreparticipationAlgorithm({
+    assessment,
+    desired_intensity: desiredIntensityFromBrief(brief),
+  });
   const movementFailures = countMovementScreenFailures(assessment);
-  if (movementFailures >= 5 || hasMedicalClearanceFlag(assessment)) {
+  if (movementFailures >= 5 || prepart.clearance_required) {
     return "remedial";
   }
 
@@ -84,6 +109,8 @@ export function classifyTier(brief: Brief, assessment: Record<string, any>): Tie
     redFlagCount >= 2 ||
     movementFailures >= 2 ||
     recoveryCompromised ||
+    prepart.cvd_risk_factors.count >= 2 ||
+    prepart.known_disease ||
     (age > 50 && redFlagCount >= 1) ||
     brief.training_age_band === "beginner"
   ) {
@@ -91,6 +118,36 @@ export function classifyTier(brief: Brief, assessment: Record<string, any>): Tie
   }
   return "advanced";
 }
+
+/**
+ * Dual-mode classifier used by the R2.2 smoke harness. Returns the final
+ * tier (driven by the new ACSM 12e algorithm) plus the legacy `oldFlag` and
+ * the full preparticipation result so the smoke report can produce a clean
+ * old-vs-new diff per persona.
+ */
+export interface DualTierResult {
+  tier: Tier;
+  oldFlag: boolean;
+  prepart: PreparticipationResult;
+  movement_failures: number;
+}
+
+export function classifyTierWithDual(
+  brief: Brief,
+  assessment: Record<string, any>,
+): DualTierResult {
+  const oldFlag = hasMedicalClearanceFlag(assessment);
+  const prepart = runPreparticipationAlgorithm({
+    assessment,
+    desired_intensity: desiredIntensityFromBrief(brief),
+  });
+  const movement_failures = countMovementScreenFailures(assessment);
+  const tier = classifyTier(brief, assessment);
+  return { tier, oldFlag, prepart, movement_failures };
+}
+
+// Re-export ACSM helpers for callers/smoke harness convenience.
+export { classifyCvdRiskFactors, cardiacRehabBpExclusion };
 
 const REMEDIAL_FORBIDDEN = [
   "back squat", "front squat", "overhead squat",
