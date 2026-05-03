@@ -579,17 +579,80 @@ function IntakePage() {
   );
 }
 
-function ThankYou({ ctx }: { ctx: IntakeContext }) {
+function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
   const { t } = useTranslation("intake");
   const trainerName = ctx.trainer?.business_name || ctx.trainer?.full_name || t("your_trainer");
   const rawFirst = (ctx.client?.first_name ?? "").trim();
-  // Filter out placeholder names that creep in when the trainer creates the
-  // invite without a name ("Convite", "Convidado", "Guest", "Client").
   const placeholders = new Set(["convite", "convidado", "guest", "cliente", "client"]);
   const firstName = placeholders.has(rawFirst.toLowerCase()) ? "" : rawFirst;
+  const link = useServerFn(linkClientAccount);
+
+  const [mode, setMode] = useState<"intro" | "email">("intro");
+  const [email, setEmail] = useState(ctx.client?.email ?? "");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // If the user is already authenticated (e.g. came back after Google), link
+  // automatically and confirm.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled || !data.user) return;
+      try {
+        await link({ data: { token } });
+        if (!cancelled) setDone(true);
+      } catch {
+        // silent — user can retry from the panel.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [link, token]);
+
+  const google = async () => {
+    setBusy(true);
+    try {
+      const res: any = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/intake/${token}`,
+      });
+      if (res?.error) throw res.error;
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível iniciar com Google");
+      setBusy(false);
+    }
+  };
+
+  const emailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/intake/${token}`,
+          data: { full_name: ctx.client?.full_name ?? firstName ?? null },
+        },
+      });
+      if (error) throw error;
+      // If session is returned (auto-confirm on), link immediately.
+      if (data.session) {
+        await link({ data: { token } });
+        setDone(true);
+      } else {
+        toast.success(t("thanks_check_email", { defaultValue: "Confirma o teu email para terminar." }));
+      }
+    } catch (err: any) {
+      toast.error(err?.message ?? "Não foi possível criar a conta");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="max-w-md text-center">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
+      <div className="w-full max-w-md text-center">
         <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
           <span className="absolute inset-0 rounded-full bg-accent/20 animate-ping" />
           <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-accent/15 text-accent">
@@ -599,7 +662,52 @@ function ThankYou({ ctx }: { ctx: IntakeContext }) {
         <h1 className="mt-6 text-2xl font-light tracking-tight">
           {firstName ? t("thanks_title_named", { name: firstName }) : t("thanks_title_anon")}
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">{t("thanks_desc", { trainer: trainerName })}</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {t("thanks_desc_v2", { trainer: trainerName, defaultValue: `${trainerName} vai rever as tuas respostas antes da nossa primeira sessão.` })}
+        </p>
+
+        {done ? (
+          <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
+            <p className="text-sm font-medium">{t("thanks_account_ready", { defaultValue: "Conta criada." })}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("thanks_account_ready_desc", { defaultValue: "Daqui a pouco vais conseguir ver o teu plano, mensagens e progresso." })}
+            </p>
+          </div>
+        ) : (
+          <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
+            <p className="text-sm font-medium">{t("thanks_create_account_title", { defaultValue: "Cria a tua conta" })}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("thanks_create_account_desc", { defaultValue: "Para acompanhares o teu plano, registar treinos e falar com o treinador." })}
+            </p>
+
+            <div className="mt-4 space-y-2">
+              <Button type="button" onClick={google} disabled={busy} className="w-full">
+                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {t("thanks_continue_google", { defaultValue: "Continuar com Google" })}
+              </Button>
+
+              {mode === "intro" ? (
+                <button
+                  type="button"
+                  onClick={() => setMode("email")}
+                  className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  {t("thanks_use_email", { defaultValue: "Usar email e palavra-passe" })}
+                </button>
+              ) : (
+                <form onSubmit={emailSignup} className="space-y-2 pt-2">
+                  <Input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input type="password" placeholder="palavra-passe" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Button type="submit" variant="outline" disabled={busy} className="w-full">
+                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {t("thanks_create_account_btn", { defaultValue: "Criar conta" })}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
         <PoweredBy />
       </div>
     </div>
