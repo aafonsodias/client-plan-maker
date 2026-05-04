@@ -96,13 +96,16 @@
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "plan_deleted": "Plano eliminado",
-    "evo_title": "Evolução vs bloco anterior · {{label}}"
-    ,"how_it_works": {
+    "evo_title": "Evolução vs bloco anterior · {{label}}",
+    "how_it_works": {
       "open": "Como funciona",
       "title": "3 passos para o primeiro plano",
-      "s1_b": "Adicione um cliente", "s1_s": "Só nome e email.",
-      "s2_b": "Envie o link de avaliação", "s2_s": "Ele preenche no telemóvel.",
-      "s3_b": "Gere o plano", "s3_s": "Reveja, ajuste, exporte em PDF.",
+      "s1_b": "Adicione um cliente",
+      "s1_s": "Só nome e email.",
+      "s2_b": "Envie o link de avaliação",
+      "s2_s": "Ele preenche no telemóvel.",
+      "s3_b": "Gere o plano",
+      "s3_s": "Reveja, ajuste, exporte em PDF.",
       "full_manual": "Manual completo"
     }
   },
@@ -154,7 +157,17 @@
     "send_link_title": "Envia este link ao cliente",
     "send_link_intro": "No telemóvel o cliente preenche nome, contactos e a avaliação. Quando ele submeter, aparece aqui na lista para tu revisares.",
     "open_client": "Abrir cliente",
-    "done": "Concluído"
+    "done": "Concluído",
+    "card": {
+      "block_n": "Bloco {{n}}",
+      "week_n": "Sem. {{n}}",
+      "block_ended": "Bloco terminado · próximo nasce no próximo log",
+      "idle_days": "Sem treino há {{n}} dias",
+      "plan_ready": "Plano pronto · aguarda 1.º log",
+      "last_log": "Último log {{when}}",
+      "ready_to_build": "Avaliação pronta · monte o plano",
+      "intake_pending": "Avaliação por completar"
+    }
   },
   "onboarding": {
     "title": "Bem-vindo ao Protocol",
