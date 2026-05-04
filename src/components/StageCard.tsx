@@ -70,9 +70,7 @@ export default function StageCard({
           ) : (
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
           )}
-          {isBrief
-            ? `Stage ${stageNumber} — ${title} approved`
-            : `${title.toLowerCase()} · approved`}
+          {`Stage ${stageNumber} — ${title} approved`}
         </span>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </button>
