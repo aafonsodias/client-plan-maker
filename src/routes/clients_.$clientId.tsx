@@ -2252,7 +2252,7 @@ function ClientDetail() {
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
           {phasedEnabled && inlineBrief && (
-            <div className="space-y-3">
+            <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
                 stageNumber={1}
