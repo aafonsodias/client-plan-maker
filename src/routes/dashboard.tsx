@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Plus, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy,
-  TrendingUp, TrendingDown, Minus, ArrowRight, Loader2,
+  Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
+  TrendingUp, TrendingDown, Minus, Loader2,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
@@ -17,8 +17,8 @@ import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { AtlasGenie } from "@/components/AtlasGenie";
 import { useClientPhases } from "@/hooks/use-client-phases";
-import { ClientPhasePill } from "@/components/ClientPhasePill";
-import { ClientAvatar } from "@/components/ClientAvatar";
+import { ClientPlayerCard } from "@/components/ClientPlayerCard";
+import type { CardPlan, CardLog } from "@/lib/client-card-data";
 import { PhaseKind } from "@/lib/client-phase";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,10 +27,6 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -65,6 +61,8 @@ function Dashboard() {
   const [clientRows, setClientRows] = useState<ClientRow[]>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
   const [statusCounts, setStatusCounts] = useState<{ draft: number; ready: number; finalized: number }>({ draft: 0, ready: 0, finalized: 0 });
+  const [planByClient, setPlanByClient] = useState<Record<string, CardPlan | null>>({});
+  const [logsByClient, setLogsByClient] = useState<Record<string, CardLog[]>>({});
 
   // Invite dialog state
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -105,6 +103,42 @@ function Dashboard() {
       else counts.draft++;
     }
     setStatusCounts(counts);
+
+    // Per-client latest plan + recent logs (for the player card).
+    const ids = rows.map((c) => c.id);
+    if (ids.length > 0) {
+      const [{ data: plans }, { data: sessions }] = await Promise.all([
+        supabase
+          .from("workout_plans")
+          .select("id, client_id, title, status, duration_weeks, block_number, block_transition_summary, generation_status, created_at, updated_at")
+          .in("client_id", ids)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("workout_sessions")
+          .select("plan_id, session_date, week_number")
+          .order("session_date", { ascending: false }),
+      ]);
+      const planMap: Record<string, CardPlan | null> = {};
+      const planClient: Record<string, string> = {};
+      for (const p of (plans ?? []) as any[]) {
+        if (planMap[p.client_id] === undefined) {
+          planMap[p.client_id] = p as CardPlan;
+          planClient[p.id] = p.client_id;
+        }
+      }
+      const logMap: Record<string, CardLog[]> = {};
+      for (const s of (sessions ?? []) as any[]) {
+        const cid = planClient[s.plan_id];
+        if (!cid) continue;
+        if (!logMap[cid]) logMap[cid] = [];
+        if (logMap[cid].length < 10) logMap[cid].push({ session_date: s.session_date, week_number: s.week_number });
+      }
+      setPlanByClient(planMap);
+      setLogsByClient(logMap);
+    } else {
+      setPlanByClient({});
+      setLogsByClient({});
+    }
   };
 
   useEffect(() => {
@@ -429,52 +463,14 @@ function Dashboard() {
 
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
               {filteredClients.map((c) => (
-                <div key={c.id} className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50">
-                  <Link
-                    to="/clients/$clientId"
-                    params={{ clientId: c.id }}
-                    className="flex flex-1 items-center gap-3 px-4 py-4 sm:justify-between sm:px-5"
-                  >
-                    <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-sm font-semibold sm:truncate sm:text-base">{c.full_name}</p>
-                      <p className="truncate text-xs text-muted-foreground sm:text-sm">{c.email ?? t("clients.no_email")}</p>
-                      {phases[c.id] && (
-                        <span className="mt-1 inline-flex sm:hidden">
-                          <ClientPhasePill phase={phases[c.id]} />
-                        </span>
-                      )}
-                    </div>
-                    {phases[c.id] && (
-                      <span className="hidden shrink-0 sm:inline-flex">
-                        <ClientPhasePill phase={phases[c.id]} />
-                      </span>
-                    )}
-                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:inline-block" />
-                  </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button
-                        className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
-                        aria-label={t("clients.delete_aria")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t("clients.delete_title", { name: c.full_name })}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("clients.delete_desc")}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t("clients.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => void removeClient(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          {t("clients.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <ClientPlayerCard
+                  key={c.id}
+                  client={c}
+                  phase={phases[c.id]}
+                  plan={planByClient[c.id] ?? null}
+                  logs={logsByClient[c.id] ?? []}
+                  onDelete={() => void removeClient(c.id)}
+                />
               ))}
             </div>
           </>

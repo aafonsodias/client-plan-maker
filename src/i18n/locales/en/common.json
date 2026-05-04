@@ -96,13 +96,16 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "plan_deleted": "Plan deleted",
-    "evo_title": "Evolution vs prior block · {{label}}"
-    ,"how_it_works": {
+    "evo_title": "Evolution vs prior block · {{label}}",
+    "how_it_works": {
       "open": "How it works",
       "title": "3 steps to your first plan",
-      "s1_b": "Add a client", "s1_s": "Just name and email.",
-      "s2_b": "Send the assessment link", "s2_s": "They fill it on their phone.",
-      "s3_b": "Generate the plan", "s3_s": "Review, adjust, export PDF.",
+      "s1_b": "Add a client",
+      "s1_s": "Just name and email.",
+      "s2_b": "Send the assessment link",
+      "s2_s": "They fill it on their phone.",
+      "s3_b": "Generate the plan",
+      "s3_s": "Review, adjust, export PDF.",
       "full_manual": "Open the manual"
     }
   },
@@ -154,7 +157,17 @@
     "send_link_title": "Send this link to the client",
     "send_link_intro": "On their phone the client fills name, contacts and the assessment. When they submit, they show up in this list for you to review.",
     "open_client": "Open client",
-    "done": "Done"
+    "done": "Done",
+    "card": {
+      "block_n": "Block {{n}}",
+      "week_n": "Wk {{n}}",
+      "block_ended": "Block ended · next is born on the next log",
+      "idle_days": "No log for {{n}} days",
+      "plan_ready": "Plan ready · awaiting 1st log",
+      "last_log": "Last log {{when}}",
+      "ready_to_build": "Assessment ready · build the plan",
+      "intake_pending": "Assessment incomplete"
+    }
   },
   "onboarding": {
     "title": "Welcome to Protocol",
