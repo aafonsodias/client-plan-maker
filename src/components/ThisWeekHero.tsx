@@ -29,6 +29,7 @@ export function ThisWeekHero({
   defaultWeek,
   zeroState,
   primaryAction,
+  bare = false,
 }: {
   plan: {
     id: string;
@@ -41,11 +42,24 @@ export function ThisWeekHero({
   zeroState: boolean;
   /** The ONE next thing the trainer should do for this client. */
   primaryAction: HeroPrimaryAction;
+  /** When true, omit the outer card chrome (used when embedded in the Protocolo card). */
+  bare?: boolean;
 }) {
   const [selectedWeek, setSelectedWeek] = useState(defaultWeek);
   const [downloading, setDownloading] = useState(false);
 
   if (zeroState || !plan) {
+    if (bare) {
+      return (
+        <div className="pt-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">Próximo passo</p>
+          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
+            Cada cliente tem uma única ação prioritária. Quando este passo estiver feito, aparece o seguinte aqui.
+          </p>
+          <div className="mt-2"><PrimaryCta action={primaryAction} /></div>
+        </div>
+      );
+    }
     return (
       <section
         aria-label="Próximo passo"
@@ -90,17 +104,20 @@ export function ThisWeekHero({
     }
   };
 
+  const Wrapper: any = bare ? "div" : "section";
+  const wrapperCls = bare
+    ? "relative pt-2"
+    : "relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.08] via-card to-card p-5 shadow-[0_8px_32px_-12px_rgba(245,158,11,0.22)]";
   return (
-    <section
-      aria-label="Esta semana"
-      className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.08] via-card to-card p-5 shadow-[0_8px_32px_-12px_rgba(245,158,11,0.22)]"
-    >
+    <Wrapper aria-label={bare ? undefined : "Esta semana"} className={wrapperCls}>
       <div className="relative">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
-              Protocolo · esta semana
-            </p>
+            {!bare && (
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
+                Protocolo · esta semana
+              </p>
+            )}
             <h2 className="mt-1 text-base font-semibold text-foreground">
               <Link
                 to="/plans/$planId"
@@ -141,7 +158,7 @@ export function ThisWeekHero({
           </div>
         )}
       </div>
-    </section>
+    </Wrapper>
   );
 }
 
