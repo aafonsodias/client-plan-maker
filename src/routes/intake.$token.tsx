@@ -783,6 +783,69 @@ function PillsMulti({ options, value, onChange }: { options: { id: string; label
   );
 }
 
+/**
+ * SMART chip palettes — clickable suggestions that fill the measurable /
+ * deadline inputs. Colour-coded by category so the client sees the spread
+ * (body comp · performance · clinical · lifestyle). Chips are suggestions,
+ * never validations — the input remains free-text.
+ */
+type SmartCat = "body" | "perf" | "clin" | "life";
+const SMART_CAT_TONE: Record<SmartCat, string> = {
+  body: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20",
+  perf: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20",
+  clin: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20",
+  life: "border-muted-foreground/30 bg-muted/40 text-muted-foreground hover:text-foreground",
+};
+const SMART_CAT_DOT: Record<SmartCat, string> = {
+  body: "bg-emerald-500",
+  perf: "bg-sky-500",
+  clin: "bg-amber-500",
+  life: "bg-muted-foreground/60",
+};
+
+function SmartChips({
+  legend,
+  options,
+  onPick,
+}: {
+  legend: { body: string; perf: string; clin: string; life: string };
+  options: Array<{ cat: SmartCat; label: string; value: string }>;
+  onPick: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {options.map((o, i) => (
+          <button
+            key={`${o.cat}-${i}`}
+            type="button"
+            onClick={() => onPick(o.value)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${SMART_CAT_TONE[o.cat]}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+        {(["body", "perf", "clin", "life"] as SmartCat[]).map((c) => (
+          <span key={c} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${SMART_CAT_DOT[c]}`} />
+            {legend[c]}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Format a Date as YYYY-MM-DD in the user's local timezone. */
+function isoDateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const { i18n, t } = useTranslation("intake");
   const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
