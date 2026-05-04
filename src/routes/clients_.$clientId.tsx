@@ -2863,43 +2863,16 @@ function ClientDetail() {
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
       {/* "Around the workout" nutrition cue moved to the plan page (view mode) — it belongs next to the workout, not in the client overview. */}
 
-      {plans.length > 0 && (
+      {plans.length > 1 && (
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            {plans.length === 1 ? "Gerar próximo bloco" : "Histórico de planos"}
+            Histórico de planos
           </h2>
-          <div className="flex items-center gap-2">
-            {/* "New plan (manual)" removed (R57) — one protocol per client.
-                To change direction, adjust the current protocol or evolve into the next block. */}
-            <Button
-              size="sm"
-              disabled={creatingPlan !== null || !evolvableSourcePlan}
-              title={!evolvableSourcePlan
-                ? t("detail.plans.evolve_disabled")
-                : "Arquiva o plano atual e usa-o como base para gerar o próximo bloco com IA."}
-              onClick={async () => {
-                if (!evolvableSourcePlan) return;
-                setCreatingPlan("evolve");
-                try {
-                  const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
-                  if (r?.ok && r?.planId) {
-                    toast.success(t("detail.plans.evolve_success"));
-                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                  } else {
-                    toast.error(r?.error ?? t("detail.plans.evolve_failed"));
-                  }
-                } finally { setCreatingPlan(null); }
-              }}
-            >
-              {creatingPlan === "evolve"
-                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
-              Gerar próximo bloco (IA)
-            </Button>
-          </div>
+          {/* "Gerar próximo bloco (IA)" button removed (R58) — the next block
+              should be born from necessity when the client logs the last
+              session of the current mesocycle, not from a manual button here. */}
         </div>
-        {plans.length > 1 && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => {
               const stage = (p.generation_state as any)?.stage as string | undefined;
@@ -3029,7 +3002,6 @@ function ClientDetail() {
               );
             })}
         </div>
-        )}
       </section>
       )}
 
