@@ -16,8 +16,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Search, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Search, Trash2, Code2 } from "lucide-react";
 import type { Blueprint } from "@/server/phased/schemas";
+import { archetypeLabel } from "@/lib/archetype-labels";
+import { useTranslation } from "react-i18next";
 
 type Archetype = Blueprint["session_archetypes"][number];
 
@@ -28,7 +30,10 @@ export function BlueprintArchetypesList({
   archetypes: Archetype[];
   onChange: (next: Archetype[]) => void;
 }) {
+  const { i18n } = useTranslation();
+  const locale: "pt" | "en" = i18n.language?.startsWith("pt") ? "pt" : "en";
   const [query, setQuery] = useState("");
+  const [showIds, setShowIds] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -80,6 +85,16 @@ export function BlueprintArchetypesList({
           placeholder="Procurar por id ou foco…"
           className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs outline-none focus:border-accent"
         />
+        <button
+          type="button"
+          onClick={() => setShowIds((s) => !s)}
+          title={showIds ? "Esconder ids" : "Mostrar ids"}
+          className={`absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-[10px] uppercase tracking-widest transition ${
+            showIds ? "text-amber-400" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Code2 className="h-3.5 w-3.5" />
+        </button>
       </div>
       {dragDisabled && (
         <p className="text-[11px] text-muted-foreground">
@@ -98,6 +113,8 @@ export function BlueprintArchetypesList({
                   key={a.id}
                   archetype={a}
                   dragDisabled={dragDisabled}
+                  locale={locale}
+                  showId={showIds}
                   onIdChange={(v) => updateAt(i, { id: v })}
                   onFocusChange={(v) => updateAt(i, { focus: v })}
                   onRemove={() => removeAt(i)}
@@ -121,12 +138,16 @@ export function BlueprintArchetypesList({
 function SortableRow({
   archetype,
   dragDisabled,
+  locale,
+  showId,
   onIdChange,
   onFocusChange,
   onRemove,
 }: {
   archetype: Archetype;
   dragDisabled: boolean;
+  locale: "pt" | "en";
+  showId: boolean;
   onIdChange: (v: string) => void;
   onFocusChange: (v: string) => void;
   onRemove: () => void;
@@ -142,6 +163,10 @@ function SortableRow({
     opacity: isDragging ? 0.6 : 1,
   };
 
+  const friendly = archetypeLabel(archetype.id, locale);
+  // Show the friendly label as the placeholder so the trainer reads
+  // "Inferior · Quadríceps" instead of an empty box, but keeps the
+  // freedom to type their own focus on top.
   return (
     <div
       ref={setNodeRef}
@@ -158,14 +183,19 @@ function SortableRow({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <input
-        value={archetype.id}
-        onChange={(e) => onIdChange(e.target.value)}
-        className="w-32 rounded border border-border bg-background px-2 py-1 font-mono text-xs"
-      />
+      {showId && (
+        <input
+          value={archetype.id}
+          onChange={(e) => onIdChange(e.target.value)}
+          className="w-32 rounded border border-border/60 bg-background/60 px-2 py-1 font-mono text-[11px] text-muted-foreground"
+          aria-label="Identificador interno (engine)"
+          title="Identificador interno usado pelo motor"
+        />
+      )}
       <input
         value={archetype.focus}
         onChange={(e) => onFocusChange(e.target.value)}
+        placeholder={friendly}
         className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
       />
       <button

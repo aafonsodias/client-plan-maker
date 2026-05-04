@@ -426,7 +426,7 @@
   "actions": {
     "regenerate": "Regenerar",
     "approve_brief": "Aprovar brief",
-    "approve_blueprint": "Aprovar → Dia 1",
+    "approve_blueprint": "Aprovar Plano-mestre →",
     "approve_microcycle": "Aprovar microciclo",
     "approve_microcycle_disabled": "Completa os dias para aprovar",
     "approve_microcycle_busy": "A aprovar…",
@@ -444,7 +444,14 @@
     "ready_to_approve": "Tudo pronto — podes aprovar",
     "stage_hint": "Microciclo = a sua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes.",
     "days_approved": "dias aprovados",
-    "to_review": "a rever"
+    "to_review": "a rever",
+    "day_label": "Dia {{n}}",
+    "review_short": "rever",
+    "approve_day": "Aprovar Dia {{n}}",
+    "day_approved": "Dia {{n}} aprovado",
+    "regenerate_short": "regenerar",
+    "resume_hint": "Retomar · {{done}}/{{total}} dias prontos",
+    "retry_remaining": "Continuar dias em falta"
   },
   "stage": {
     "label": {

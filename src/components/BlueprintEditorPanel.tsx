@@ -312,10 +312,17 @@ export function BlueprintEditorPanel({
         />
       </section>
 
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Week × Day matrix
-        </h2>
+      <section className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] to-card p-5 shadow-[inset_0_0_24px_rgba(245,158,11,0.05)]">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-300/90">
+            {locale === "pt" ? "Matriz Semana × Dia" : "Week × Day matrix"}
+          </h2>
+          <span className="text-[11px] text-muted-foreground">
+            {locale === "pt"
+              ? "Distribui os arquétipos pelos dias da semana."
+              : "Distribute archetypes across the days of the week."}
+          </span>
+        </div>
         <WeekMatrixGrid
           key={blueprint.session_archetypes.map((a) => a.id).join("|")}
           blueprint={blueprint}

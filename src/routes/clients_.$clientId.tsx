@@ -3250,10 +3250,13 @@ function AssessmentSection({
 
   if (collapsed) {
     const isComplete = (completionPct ?? 0) >= 80;
+    // Stage 1 sits in the same approved/draft visual language as Stages 2-5:
+    // emerald when complete (matches PipelineStrip + approved StageCard),
+    // neutral card when partial. Drops the legacy amber-only treatment.
     const stripClass = isComplete
-      ? "rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-500/5 p-3 hover:from-amber-500/15"
+      ? "rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.05] p-3 transition hover:bg-emerald-500/[0.08]"
       : "rounded-2xl border border-border bg-card p-3";
-    const labelClass = isComplete ? "text-amber-400" : "";
+    const labelClass = isComplete ? "text-emerald-300" : "";
     return (
       <section className={stripClass}>
         <div className="flex w-full items-center justify-between gap-3">
@@ -3264,7 +3267,7 @@ function AssessmentSection({
             aria-expanded={false}
           >
             {isComplete ? (
-              <Check className="h-4 w-4 text-amber-400" />
+              <Check className="h-4 w-4 text-emerald-400" />
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
@@ -3282,7 +3285,7 @@ function AssessmentSection({
             <button
               type="button"
               onClick={onShowSynthesis}
-              className="rounded-md border border-amber-500/30 px-2 py-1 text-[10px] font-medium uppercase tracking-widest text-amber-400 hover:bg-amber-500/10"
+              className="rounded-md border border-emerald-500/30 px-2 py-1 text-[10px] font-medium uppercase tracking-widest text-emerald-300 hover:bg-emerald-500/10"
             >
               Ver síntese
             </button>
