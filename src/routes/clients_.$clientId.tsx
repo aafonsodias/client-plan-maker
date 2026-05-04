@@ -2409,9 +2409,9 @@ function ClientDetail() {
                       if (stageBusy) return;
                       setStageBusy(stage);
                       const labels: Record<string, string> = {
-                        blueprint: "A gerar Blueprint…",
-                        microcycle: "A gerar Microcycle (Semana 1)…",
-                        progressions: "A gerar Progressions…",
+                        blueprint: "A gerar plano-mestre…",
+                        microcycle: "A gerar semana-tipo (Semana 1)…",
+                        progressions: "A gerar progressões (Semanas 2–4)…",
                       };
                       const tId = toast.loading(labels[stage]);
                       try {
