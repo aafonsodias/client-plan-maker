@@ -2465,7 +2465,7 @@ function ClientDetail() {
                       <>
                         <StageCard
                           stageNumber={3}
-                          title="Plano-mestre"
+                          title={t("plan:stage.label.3", "Plano-mestre")}
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
                           progressLabel={
@@ -2521,7 +2521,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={4}
-                          title="Semana-tipo"
+                          title={t("plan:stage.label.4", "Semana-tipo")}
                           status={
                             microcycleApproved
                               ? "approved"
@@ -2591,7 +2591,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={5}
-                          title="Progressão 12 sem."
+                          title={t("plan:stage.label.5", "Progressão 12 sem.")}
                           status={
                             progressionsApproved
                               ? "approved"
