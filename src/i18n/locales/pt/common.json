@@ -94,6 +94,14 @@
     "delete": "Eliminar",
     "plan_deleted": "Plano eliminado",
     "evo_title": "Evolução vs bloco anterior · {{label}}"
+    ,"how_it_works": {
+      "open": "Como funciona",
+      "title": "3 passos para o primeiro plano",
+      "s1_b": "Adicione um cliente", "s1_s": "Só nome e email.",
+      "s2_b": "Envie o link de avaliação", "s2_s": "Ele preenche no telemóvel.",
+      "s3_b": "Gere o plano", "s3_s": "Reveja, ajuste, exporte em PDF.",
+      "full_manual": "Manual completo"
+    }
   },
   "clients": {
     "eyebrow": "Lista",
