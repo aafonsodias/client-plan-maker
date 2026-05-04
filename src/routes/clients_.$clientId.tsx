@@ -2277,8 +2277,8 @@ function ClientDetail() {
             <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
-                stageNumber={1}
-                title="Brief"
+                stageNumber={2}
+                title="Briefing"
                 tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
@@ -2458,8 +2458,8 @@ function ClientDetail() {
                     return (
                       <>
                         <StageCard
-                          stageNumber={2}
-                          title="Blueprint"
+                          stageNumber={3}
+                          title="Plano-mestre"
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
                           progressLabel={
@@ -2514,8 +2514,8 @@ function ClientDetail() {
                           }
                         />
                         <StageCard
-                          stageNumber={3}
-                          title="Microcycle"
+                          stageNumber={4}
+                          title="Semana-tipo"
                           status={
                             microcycleApproved
                               ? "approved"
@@ -2584,8 +2584,8 @@ function ClientDetail() {
                           }
                         />
                         <StageCard
-                          stageNumber={4}
-                          title="Progressions"
+                          stageNumber={5}
+                          title="Progressão 12 sem."
                           status={
                             progressionsApproved
                               ? "approved"
