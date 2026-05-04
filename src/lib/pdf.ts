@@ -239,6 +239,8 @@ export async function generatePlanPdf(
   planArg: PlanData,
   branding: PdfBranding,
 ) {
+  // local mutable alias so we can substitute a filtered (single-week) view below
+  let plan: PlanData = planArg;
   // Landscape A4 — 842 × 595 pt. Wider canvas means the dense exercise
   // table no longer clips and we can fit one whole session per page.
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
