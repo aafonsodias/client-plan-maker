@@ -18,6 +18,7 @@ export default function StageCard({
   expandedBody,
   hideHeaderApprove = false,
   progressLabel,
+  tone = "stage",
 }: {
   stageNumber: number;
   title: string;
@@ -37,6 +38,10 @@ export default function StageCard({
   hideHeaderApprove?: boolean;
   /** When set with busy=true, shows an inline progress strip instead of the white spinner box. */
   progressLabel?: string;
+  /** Visual identity of the approved-collapsed strip. "brief" stays amber (the
+   *  source of truth that AI stages descend from); "stage" goes emerald to
+   *  signal "AI-generated, human-approved" — matches the post-assessment chip. */
+  tone?: "brief" | "stage";
 }) {
   const [openInternal, setOpenInternal] = useState(!defaultCollapsed && status !== "approved");
   const open = expanded ?? openInternal;
@@ -48,15 +53,26 @@ export default function StageCard({
 
   // Approved & collapsed: thin strip
   if (status === "approved" && !open) {
+    const isBrief = tone === "brief";
+    const stripClass = isBrief
+      ? "border-accent/40 bg-accent/5 hover:bg-accent/10"
+      : "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10";
+    const labelClass = isBrief ? "" : "text-emerald-500";
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 text-left text-sm transition hover:bg-accent/10"
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition ${stripClass}`}
       >
-        <span className="flex items-center gap-2 font-semibold">
-          <Check className="h-4 w-4 text-accent" />
-          Stage {stageNumber} — {title} approved
+        <span className={`flex items-center gap-2 font-semibold ${labelClass}`}>
+          {isBrief ? (
+            <Check className="h-4 w-4 text-accent" />
+          ) : (
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          )}
+          {isBrief
+            ? `Stage ${stageNumber} — ${title} approved`
+            : `${title.toLowerCase()} · approved`}
         </span>
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </button>
