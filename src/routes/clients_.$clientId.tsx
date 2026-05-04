@@ -680,7 +680,7 @@ function ClientDetail() {
 
       const { data: p } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number")
+        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, assessment_completion_pct")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
@@ -1270,7 +1270,7 @@ function ClientDetail() {
   const refreshPlans = async () => {
     const { data: p } = await supabase
       .from("workout_plans")
-      .select("id, title, status, updated_at, brief, generation_state, generation_status")
+      .select("id, title, status, updated_at, brief, generation_state, generation_status, assessment_completion_pct")
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false });
     setPlans(p ?? []);
@@ -2278,7 +2278,7 @@ function ClientDetail() {
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
                 stageNumber={2}
-                title="Briefing"
+                title={t("plan:stage.label.2", "Briefing")}
                 tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
@@ -2296,6 +2296,12 @@ function ClientDetail() {
                               brief: inlineBrief.brief,
                               programmingVariables: inlineBrief.programmingVariables,
                               redFlagAccommodations: inlineBrief.accommodations,
+                              assessmentCompletionPct:
+                                briefCoverage && briefCoverage.total > 0
+                                  ? Math.round(
+                                      (briefCoverage.done / briefCoverage.total) * 100,
+                                    )
+                                  : undefined,
                             },
                           });
                           if (!res.ok) {
@@ -2459,7 +2465,7 @@ function ClientDetail() {
                       <>
                         <StageCard
                           stageNumber={3}
-                          title="Plano-mestre"
+                          title={t("plan:stage.label.3", "Plano-mestre")}
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
                           progressLabel={
@@ -2515,7 +2521,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={4}
-                          title="Semana-tipo"
+                          title={t("plan:stage.label.4", "Semana-tipo")}
                           status={
                             microcycleApproved
                               ? "approved"
@@ -2585,7 +2591,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={5}
-                          title="Progressão 12 sem."
+                          title={t("plan:stage.label.5", "Progressão 12 sem.")}
                           status={
                             progressionsApproved
                               ? "approved"
@@ -2697,7 +2703,12 @@ function ClientDetail() {
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <div className="text-left">
                       <p className="font-semibold">{p.title}</p>
-                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}
+                        {typeof (p as any).assessment_completion_pct === "number" && (
+                          <span className="ml-1.5 opacity-80">· dados {(p as any).assessment_completion_pct}%</span>
+                        )}
+                      </p>
                     </div>
                   </div>
                   {(() => {

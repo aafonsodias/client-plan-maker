@@ -7,8 +7,9 @@ import {
   approveMicrocycle,
   generateMicrocycleDays,
 } from "@/server/phased/stage3-microcycle.functions";
+import { approveDay as approveDayFn, unlockDay as unlockDayFn } from "@/server/phased/microcycle-edit.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, ArrowLeft, CheckCircle2, Lock, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Lock, RefreshCw, AlertTriangle, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { DayCardEditable } from "@/components/DayCardEditable";
@@ -23,6 +24,7 @@ type DayRow = {
   rationale: string;
   content: any;
   updated_at?: string;
+  approved_at?: string | null;
 };
 
 /**
@@ -44,6 +46,8 @@ export function MicrocyclePanel({
   const generateDayFn = useServerFn(generateDay);
   const generateAllDaysFn = useServerFn(generateMicrocycleDays);
   const approveFn = useServerFn(approveMicrocycle);
+  const approveDaySrv = useServerFn(approveDayFn);
+  const unlockDaySrv = useServerFn(unlockDayFn);
 
   const [planTitle, setPlanTitle] = useState("");
   const [planStatus, setPlanStatus] = useState<string | null>(null);
@@ -77,7 +81,7 @@ export function MicrocyclePanel({
   async function loadDays() {
     const { data } = await supabase
       .from("workout_plan_days")
-      .select("id, day_number, status, day_label, focus, rationale, content, updated_at")
+      .select("id, day_number, status, day_label, focus, rationale, content, updated_at, approved_at")
       .eq("plan_id", planId)
       .eq("week_number", 1)
       .order("day_number", { ascending: true });
@@ -153,6 +157,18 @@ export function MicrocyclePanel({
 
   async function regenDay(dayIndex: number) {
     if (regenSet.has(dayIndex)) return;
+    const row = days.find((d) => d.day_number === dayIndex);
+    if (row?.approved_at) {
+      const ok = window.confirm(
+        `Day ${dayIndex} is approved. Unlock and regenerate? Your edits will be replaced.`,
+      );
+      if (!ok) return;
+      const ur = await unlockDaySrv({ data: { planId, dayNumber: dayIndex } });
+      if (!ur.ok) {
+        toast.error(ur.error || "Unlock failed");
+        return;
+      }
+    }
     setRegenSet((s) => { const n = new Set(s); n.add(dayIndex); return n; });
     try {
       const res = await generateDayFn({ data: { planId, dayIndex } });
@@ -163,6 +179,16 @@ export function MicrocyclePanel({
       setRegenSet((s) => { const n = new Set(s); n.delete(dayIndex); return n; });
       await loadDays();
     }
+  }
+
+  async function approveDayLocal(dayIndex: number) {
+    const r = await approveDaySrv({ data: { planId, dayNumber: dayIndex } });
+    if (!r.ok) {
+      toast.error(r.error || `Approve day ${dayIndex} failed`);
+      return;
+    }
+    toast.success(`Day ${dayIndex} approved`, { duration: 1200 });
+    await loadDays();
   }
 
   async function approve() {
@@ -192,6 +218,12 @@ export function MicrocyclePanel({
   };
   const doneCount = dayList.filter((i) => dayState(i) === "done").length;
   const errorCount = dayList.filter((i) => dayState(i) === "error").length;
+  const approvedDayCount = dayList.filter((i) => {
+    const r = days.find((d) => d.day_number === i);
+    return !!r?.approved_at;
+  }).length;
+  const allDaysApproved =
+    sessionsPerWeek > 0 && approvedDayCount === sessionsPerWeek;
   const haveAllRows =
     sessionsPerWeek > 0 &&
     days.filter((d) => d.day_number <= sessionsPerWeek).length >= sessionsPerWeek;
@@ -204,11 +236,14 @@ export function MicrocyclePanel({
   const autoApprovedRef = useRef(false);
   useEffect(() => {
     if (autoApprovedRef.current) return;
-    if (!allDone || isFinalized || busy) return;
+    // Honest gate: only auto-advance when the trainer has approved every
+    // single day (not merely "AI finished writing them"). Prevents the
+    // silent jump to Stage 5 that loses unreviewed edits.
+    if (!allDaysApproved || isFinalized || busy) return;
     autoApprovedRef.current = true;
     void approve();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allDone, isFinalized, busy]);
+  }, [allDaysApproved, isFinalized, busy]);
 
   // Honest ETA based on observed completion times. Falls back to 18s/day.
   useEffect(() => {
@@ -251,7 +286,15 @@ export function MicrocyclePanel({
           <div className="min-w-0">
             {planTitle && <h2 className="truncate text-base font-semibold text-foreground">{planTitle}</h2>}
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              <span>Stage 4 — Semana-tipo · {doneCount}/{sessionsPerWeek} dias prontos</span>
+              <span>
+                Stage 4 — {t("stage.label.4", "Semana-tipo")} · {approvedDayCount}/{sessionsPerWeek}{" "}
+                {t("microcycle.days_approved", "dias aprovados")}
+                {doneCount > approvedDayCount && (
+                  <span className="ml-1 opacity-70">
+                    ({doneCount - approvedDayCount} {t("microcycle.to_review", "a rever")})
+                  </span>
+                )}
+              </span>
               <InfoHint tone="neutral" side="bottom" label="O que é um microciclo?">
                 {t("microcycle.stage_hint")}
               </InfoHint>
@@ -328,11 +371,16 @@ export function MicrocyclePanel({
             const row = days.find((d) => d.day_number === idx);
             const focus = row?.focus ?? "";
             const isActive = idx === activeDay;
+            const isApproved = !!row?.approved_at;
             const tone =
-              st === "done"
+              st === "done" && isApproved
                 ? isActive
                   ? "border-amber-500 bg-amber-500/15 text-amber-400 shadow-[0_0_18px_-8px_rgba(245,158,11,0.6)]"
                   : "border-amber-500/40 bg-amber-500/5 text-amber-400/90 hover:bg-amber-500/10"
+                : st === "done"
+                ? isActive
+                  ? "border-amber-500/60 bg-amber-500/5 text-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted/40"
                 : st === "generating"
                 ? "border-amber-500/30 bg-amber-500/5 text-amber-300/80 animate-pulse"
                 : st === "error"
@@ -347,7 +395,8 @@ export function MicrocyclePanel({
               >
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
                   <span>Day {idx}</span>
-                  {st === "done" && <CheckCircle2 className="h-3 w-3" />}
+                  {st === "done" && isApproved && <CheckCircle2 className="h-3 w-3" />}
+                  {st === "done" && !isApproved && <span className="text-[9px] font-medium opacity-60">review</span>}
                   {st === "generating" && <Loader2 className="h-3 w-3 animate-spin" />}
                   {st === "error" && <AlertTriangle className="h-3 w-3" />}
                 </div>
@@ -360,14 +409,37 @@ export function MicrocyclePanel({
 
       {/* Active day detail */}
       {activeRow && activeRow.status === "done" && (
-        <DayCardEditable
-          key={`day${activeDay}-${activeRow.updated_at ?? activeRow.status}`}
-          dayIndex={activeDay}
-          day={activeRow}
-          planId={planId}
-          onRegen={() => regenDay(activeDay)}
-          isGate={false}
-        />
+        <div className="space-y-3">
+          <DayCardEditable
+            key={`day${activeDay}-${activeRow.updated_at ?? activeRow.status}`}
+            dayIndex={activeDay}
+            day={activeRow}
+            planId={planId}
+            onRegen={() => regenDay(activeDay)}
+            isGate={false}
+          />
+          {!isFinalized && (
+            <div className="flex items-center justify-end gap-2">
+              {activeRow.approved_at ? (
+                <button
+                  type="button"
+                  onClick={() => regenDay(activeDay)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20"
+                >
+                  <Unlock className="h-3 w-3" /> Unlock & regenerate
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => approveDayLocal(activeDay)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_14px_-6px_rgba(245,158,11,0.7)] hover:opacity-95"
+                >
+                  <CheckCircle2 className="h-3 w-3" /> Approve day {activeDay}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
       {activeRow && activeRow.status === "error" && (
         <div className="flex items-center justify-between rounded-2xl border border-red-500/40 bg-red-500/5 p-5">

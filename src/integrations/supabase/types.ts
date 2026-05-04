@@ -1141,6 +1141,7 @@ export type Database = {
       }
       workout_plan_days: {
         Row: {
+          approved_at: string | null
           content: Json
           created_at: string
           day_label: string | null
@@ -1156,6 +1157,7 @@ export type Database = {
           week_number: number
         }
         Insert: {
+          approved_at?: string | null
           content?: Json
           created_at?: string
           day_label?: string | null
@@ -1171,6 +1173,7 @@ export type Database = {
           week_number: number
         }
         Update: {
+          approved_at?: string | null
           content?: Json
           created_at?: string
           day_label?: string | null
@@ -1197,6 +1200,7 @@ export type Database = {
       }
       workout_plans: {
         Row: {
+          assessment_completion_pct: number | null
           assessment_id: string | null
           block_number: number
           block_transition_summary: string | null
@@ -1227,6 +1231,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assessment_completion_pct?: number | null
           assessment_id?: string | null
           block_number?: number
           block_transition_summary?: string | null
@@ -1257,6 +1262,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assessment_completion_pct?: number | null
           assessment_id?: string | null
           block_number?: number
           block_transition_summary?: string | null

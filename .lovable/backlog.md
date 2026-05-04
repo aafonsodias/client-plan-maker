@@ -145,3 +145,15 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1: per-exercise inline AI comments on edit
 - P1: searchable warmup catalog
 - P2: Stage 4 Progressions fully inlined too (the Open button on approved still navigateToStage — convert to inline expansion like microcycle)
+
+## Closed Round 36
+- P0: Per-day approval lock — `workout_plan_days.approved_at` column, `approveDay`/`unlockDay` server fns, MicrocyclePanel surfaces an amber "Approve day N" CTA per active day; once approved, regenerate goes through an explicit Unlock confirm. Auto-collapse Stage 3 now waits for ALL days to be approved (not just AI-done), removing the silent jump that lost edits.
+- P0: Day tabs distinguish "AI done · awaiting review" (neutral, "review" tag) from "approved" (golden ✓). Header reads `N/M dias aprovados (X a rever)`.
+- P1: Assessment richness travels with plan — `workout_plans.assessment_completion_pct` column populated by `approveBrief({ assessmentCompletionPct })`. Surfaced as `· dados 86%` on plans-list rows. PDF richness footer parked for next round (needs pdf.ts cover-section refactor).
+- P1: Stage labels via i18n — `plan:stage.label.{1..5}` keys (PT + EN) replace hardcoded titles in clients route + MicrocyclePanel header. EN no longer leaks "Plano-mestre".
+
+## Round 36 deferred (next)
+- P0: Stage 5 (Progressions) inlined — needs new ProgressionsPanel component (no existing UI to extract; the route has always been a redirect shell). Out of this round to keep risk low.
+- P1: WeekMatrix desktop view (D from R35 plan)
+- P1: VerifiedBadge (F from R35 plan)
+- P1: PDF richness footer (uses `assessment_completion_pct` already persisted)
