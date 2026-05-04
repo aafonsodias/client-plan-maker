@@ -2810,6 +2810,9 @@ function ClientDetail() {
         );
       })()}
 
+      {/* Compact nutrition windows cue — pre/peri/post-workout suggestions. */}
+      {plans.length > 0 && <NextMealCue />}
+
       {plans.length > 0 && (
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
