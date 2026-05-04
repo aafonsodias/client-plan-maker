@@ -118,6 +118,58 @@ export const deleteExerciseAcrossWeeks = createServerFn({ method: "POST" })
   });
 
 /**
+ * Mark a single day as approved by the trainer. Locks the row from
+ * accidental regeneration overwrites (UI must offer an explicit "Unlock day"
+ * confirm before regenerating).
+ */
+export const approveDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        dayNumber: z.number().int().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("workout_plan_days")
+      .update({ approved_at: new Date().toISOString() } as any)
+      .eq("plan_id", data.planId)
+      .eq("day_number", data.dayNumber)
+      .eq("trainer_id", userId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
+/**
+ * Clear the approved_at lock on a day so it can be regenerated.
+ */
+export const unlockDay = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        planId: z.string().uuid(),
+        dayNumber: z.number().int().min(1),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("workout_plan_days")
+      .update({ approved_at: null } as any)
+      .eq("plan_id", data.planId)
+      .eq("day_number", data.dayNumber)
+      .eq("trainer_id", userId);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
+/**
  * Insert a single exercise into workout_plan_days.content.exercises across
  * ALL weeks of a plan, matched by `day_label`. Deterministic — same object
  * inserted at the same position on every week. The trainer can then tune
