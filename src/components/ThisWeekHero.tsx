@@ -123,7 +123,8 @@ function PrimaryCta({ action, large = false }: { action: HeroPrimaryAction; larg
   if (action.href) {
     return (
       <Button asChild className={sizeCls} disabled={action.busy}>
-        <Link to={action.href}>{inner}</Link>
+        {/* href is an internal path; cast to satisfy typed router */}
+        <Link to={action.href as any}>{inner}</Link>
       </Button>
     );
   }
