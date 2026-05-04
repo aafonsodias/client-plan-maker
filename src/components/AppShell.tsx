@@ -154,7 +154,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             )}
           </Link>
 
-          {/* Mobile-only locale chip — visible at-a-glance, taps the same items as desktop globe */}
+          {/* Mobile-only quick controls — locale chip + theme toggle, always reachable without opening the hamburger */}
+          <div className="ml-auto flex items-center gap-1 lg:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -178,6 +179,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          <span className="lg:hidden"><ThemeToggle /></span>
+          </div>
 
           {/* Desktop nav (≥ lg) — tighter breakpoint so labels never truncate */}
           <nav className="hidden min-w-0 items-center gap-1 lg:flex">
