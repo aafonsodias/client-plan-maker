@@ -1,28 +1,41 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { OnboardingChecklist } from "@/components/OnboardingChecklist";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Plus, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy,
+  TrendingUp, TrendingDown, Minus, ArrowRight, Loader2,
+} from "lucide-react";
+import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
 import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { DashboardHint } from "@/components/DashboardHint";
-import { DemoClientBanner } from "@/components/DemoClientBanner";
 import { useClientPhases } from "@/hooks/use-client-phases";
-import { useMemo } from "react";
+import { ClientPhasePill } from "@/components/ClientPhasePill";
+import { ClientAvatar } from "@/components/ClientAvatar";
+import { PhaseKind } from "@/lib/client-phase";
+import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { useServerFn } from "@tanstack/react-start";
+import { createInviteClient } from "@/server/intake.functions";
 import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/dashboard")({
+  validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
+    filter: typeof s.filter === "string" ? s.filter : undefined,
+  }),
   component: () => (
     <AppShell>
       <Dashboard />
@@ -30,86 +43,122 @@ export const Route = createFileRoute("/dashboard")({
   ),
 });
 
+type ClientRow = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  date_of_birth: string | null;
+  photo_url: string | null;
+  intake_status: string;
+  intake_token: string | null;
+  intake_submitted_at: string | null;
+  created_at: string;
+};
+
 function Dashboard() {
   const { user } = useAuth();
   const { t } = useTranslation("common");
-  const [clients, setClients] = useState<number>(0);
-  const [plans, setPlans] = useState<number>(0);
-  const [clientIds, setClientIds] = useState<string[]>([]);
-  const [clientRows, setClientRows] = useState<Array<{ id: string; full_name: string; date_of_birth: string | null; intake_status: string; intake_token: string | null; intake_submitted_at: string | null; created_at: string }>>([]);
+  const search = Route.useSearch();
+  const filter = search.filter ?? "all";
+  const navigate = useNavigate();
+
+  const [clientRows, setClientRows] = useState<ClientRow[]>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
   const [statusCounts, setStatusCounts] = useState<{ draft: number; ready: number; finalized: number }>({ draft: 0, ready: 0, finalized: 0 });
 
+  // Invite dialog state
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [optionalName, setOptionalName] = useState("");
+  const [showOptionalName, setShowOptionalName] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createdClient, setCreatedClient] = useState<{
+    id: string; full_name: string; phone: string | null;
+    intake_token: string; intake_token_expires_at: string; intake_status: any;
+  } | null>(null);
+  const createInviteFn = useServerFn(createInviteClient);
+
+  const load = async () => {
+    const [{ data: cRows }, { data: r }, { data: allPlans }] = await Promise.all([
+      supabase
+        .from("clients")
+        .select("id, full_name, email, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("workout_plans")
+        .select("id, title, status, updated_at, generation_state, generation_status, client:clients(full_name)")
+        .order("updated_at", { ascending: false })
+        .limit(5),
+      supabase.from("workout_plans").select("status, generation_state, generation_status"),
+    ]);
+    const rows = (cRows as any[]) ?? [];
+    setClientRows(rows);
+    setRecent((r as any) ?? []);
+    const counts = { draft: 0, ready: 0, finalized: 0 };
+    for (const pl of (allPlans ?? []) as any[]) {
+      const k = planStatusInfo(pl).key;
+      if (k === "finalized") counts.finalized++;
+      else if (k === "ready") counts.ready++;
+      else counts.draft++;
+    }
+    setStatusCounts(counts);
+  };
+
   useEffect(() => {
     if (!user) return;
-    void (async () => {
-      const [{ data: cRows }, { count: p }, { data: r }, { data: allPlans }] = await Promise.all([
-        supabase.from("clients").select("id, full_name, date_of_birth, intake_status, intake_token, intake_submitted_at, created_at"),
-        supabase.from("workout_plans").select("id", { count: "exact", head: true }),
-        supabase
-          .from("workout_plans")
-          .select("id, title, status, updated_at, generation_state, generation_status, client:clients(full_name)")
-          .order("updated_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("workout_plans")
-          .select("status, generation_state, generation_status"),
-      ]);
-      const rows = (cRows as any[]) ?? [];
-      setClientRows(rows);
-      const ids = rows.map((c: any) => c.id);
-      setClientIds(ids);
-      setClients(ids.length);
-      setPlans(p ?? 0);
-      setRecent((r as any) ?? []);
-      const counts = { draft: 0, ready: 0, finalized: 0 };
-      for (const pl of (allPlans ?? []) as any[]) {
-        const k = planStatusInfo(pl).key;
-        if (k === "finalized") counts.finalized++;
-        else if (k === "ready") counts.ready++;
-        else counts.draft++;
-      }
-      setStatusCounts(counts);
-    })();
+    void load();
   }, [user]);
+
+  const clientIds = useMemo(() => clientRows.map((c) => c.id), [clientRows]);
+  const phases = useClientPhases(clientIds);
+
+  const counts = useMemo(() => {
+    const c = { all: clientRows.length, active: 0, idle: 0, ready: 0, onboarding: 0 };
+    clientRows.forEach((cl) => {
+      const k = phases[cl.id]?.kind;
+      if (k === "active") c.active++;
+      else if (k === "idle") c.idle++;
+      else if (k === "ready") c.ready++;
+      else if (k === "onboarding" || k === "assessment") c.onboarding++;
+    });
+    return c;
+  }, [clientRows, phases]);
+
+  const matchesFilter = (kind?: PhaseKind): boolean => {
+    if (filter === "all" || !kind) return filter === "all";
+    if (filter === "active") return kind === "active";
+    if (filter === "idle") return kind === "idle";
+    if (filter === "ready") return kind === "ready";
+    if (filter === "onboarding") return kind === "onboarding" || kind === "assessment";
+    return true;
+  };
+
+  const filteredClients = clientRows.filter((c) => filter === "all" || matchesFilter(phases[c.id]?.kind));
 
   const removePlan = async (id: string) => {
     const { error } = await supabase.from("workout_plans").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    // Find the deleted plan so we can also update the status bar optimistically.
     const removed = recent.find((p) => p.id === id);
     setRecent((r) => r.filter((p) => p.id !== id));
-    setPlans((n) => Math.max(0, n - 1));
     if (removed) {
       const k = planStatusInfo(removed as any).key;
-      setStatusCounts((c) => ({
-        ...c,
-        [k]: Math.max(0, (c as any)[k] - 1),
-      }));
+      setStatusCounts((c) => ({ ...c, [k]: Math.max(0, (c as any)[k] - 1) }));
     }
     toast.success(t("dashboard.plan_deleted"));
+  };
+
+  const removeClient = async (id: string) => {
+    const { error } = await supabase.from("clients").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setClientRows((l) => l.filter((c) => c.id !== id));
+    toast.success(t("clients.removed_toast"));
   };
 
   const recentPlanIds = useMemo(() => recent.map((p) => p.id), [recent]);
   const evolutionByPlan = usePlanBlockEvolution(recentPlanIds);
 
-  const phases = useClientPhases(useMemo(() => clientIds, [clientIds]));
-  const counts = useMemo(() => {
-    const c = { active: 0, idle: 0, ready: 0, onboarding: 0 };
-    Object.values(phases).forEach((p) => {
-      if (p.kind === "active") c.active++;
-      else if (p.kind === "idle") c.idle++;
-      else if (p.kind === "ready") c.ready++;
-      else if (p.kind === "onboarding" || p.kind === "assessment") c.onboarding++;
-    });
-    return c;
-  }, [phases]);
-
-  // Build the "Attention" feed — actionable items ordered by urgency.
   const attention = useMemo(() => {
-    const items: Array<{ kind: string; key: string; title: string; href?: string; clientId?: string; sub?: string; urgent?: boolean }> = [];
+    const items: Array<{ kind: string; key: string; title: string; clientId?: string; sub?: string; urgent?: boolean }> = [];
     for (const c of clientRows) {
-      // Submitted, not yet reviewed
       if (c.intake_status === "submitted") {
         items.push({
           kind: "submitted", key: `sub-${c.id}`,
@@ -118,7 +167,6 @@ function Dashboard() {
           clientId: c.id, urgent: true,
         });
       }
-      // Birthday in next 14 days
       const d = daysUntilBirthday(c.date_of_birth);
       if (d !== null && d <= 14) {
         const age = turningAge(c.date_of_birth);
@@ -130,7 +178,6 @@ function Dashboard() {
           clientId: c.id,
         });
       }
-      // Sent >7d ago, never opened/submitted
       if (c.intake_status === "sent" && c.intake_token) {
         const ageDays = Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000);
         if (ageDays >= 7) {
@@ -143,11 +190,9 @@ function Dashboard() {
         }
       }
     }
-    // submitted first, then birthdays, then stale
     return items.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent)).slice(0, 6);
   }, [clientRows, t]);
 
-  // Quick action: copy intake link of the most recent client without submission
   const quickIntakeClient = useMemo(() => {
     return clientRows.find((c) => c.intake_token && c.intake_status !== "submitted" && c.intake_status !== "reviewed");
   }, [clientRows]);
@@ -158,31 +203,116 @@ function Dashboard() {
     toast.success(t("dashboard.intake_link_copied", { name: quickIntakeClient.full_name.split(" ")[0] }));
   };
 
-  const isEmpty = clients === 0;
-  const noPlansYet = clients > 0 && plans === 0;
+  const isEmpty = clientRows.length === 0;
+
+  const createInvite = async () => {
+    if (!user || creating) return;
+    setCreating(true);
+    try {
+      const row: any = await createInviteFn({ data: { fullName: optionalName.trim() || null } });
+      if (!row?.id) throw new Error("Resposta inválida");
+      toast.success(t("clients.invite_ready_toast", { defaultValue: "Convite pronto. Envia o link." }));
+      void markOnboardingStep(user.id, "add_client");
+      setCreatedClient({
+        id: row.id, full_name: row.full_name, phone: row.phone ?? null,
+        intake_token: row.intake_token,
+        intake_token_expires_at: row.intake_token_expires_at,
+        intake_status: row.intake_status,
+      });
+      void load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível criar o convite.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const closeAndReset = () => {
+    setInviteOpen(false);
+    setTimeout(() => {
+      setOptionalName("");
+      setShowOptionalName(false);
+      setCreatedClient(null);
+    }, 200);
+  };
 
   return (
     <div className="space-y-10">
       <OnboardingChecklist />
-      {((user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com") && <DemoClientBanner />}
+
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
           <h1 className="mt-1 text-4xl font-light tracking-tight">{t("dashboard.title")}</h1>
         </div>
-        <Button asChild>
-          <Link to="/clients" search={{ filter: "all" }}>
-            <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
-          </Link>
-        </Button>
+        <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-lg">
+            {!createdClient ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{t("clients.invite_dialog_title")}</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">{t("clients.invite_intro")}</p>
+                <div className="space-y-3">
+                  {!showOptionalName ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowOptionalName(true)}
+                      className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                    >
+                      {t("clients.know_name")}
+                    </button>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Label>{t("clients.optional_name_label")}</Label>
+                      <Input value={optionalName} onChange={(e) => setOptionalName(e.target.value)} />
+                    </div>
+                  )}
+                  <DialogFooter>
+                    <Button type="button" onClick={() => void createInvite()} disabled={creating}>
+                      {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {t("clients.generate_invite")}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{t("clients.send_link_title")}</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">{t("clients.send_link_intro")}</p>
+                <IntakeLinkPanel
+                  clientId={createdClient.id}
+                  clientFirstName={(createdClient.full_name || "").split(" ")[0] || "olá"}
+                  clientPhone={createdClient.phone}
+                  intake={{
+                    intake_token: createdClient.intake_token,
+                    intake_token_expires_at: createdClient.intake_token_expires_at,
+                    intake_status: createdClient.intake_status,
+                    intake_submitted_at: null,
+                  }}
+                  onChange={() => {}}
+                />
+                <DialogFooter className="mt-2">
+                  <Button variant="outline" asChild>
+                    <Link to="/clients/$clientId" params={{ clientId: createdClient.id }}>{t("clients.open_client")}</Link>
+                  </Button>
+                  <Button onClick={closeAndReset}>{t("clients.done")}</Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Empty state — onboarding hero */}
-      {/* Always-available, dismissable how-it-works guide (replaces the old
-          empty-state-only hero — no redundancy). */}
       <DashboardHint />
 
-      {/* Quick actions strip — visible once there's at least one client */}
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
           {quickIntakeClient && (
@@ -195,7 +325,6 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Attention panel — surfaces submitted intakes, birthdays, stale invites */}
       {attention.length > 0 && (
         <section>
           <h2 className="mb-3 text-lg font-bold">{t("dashboard.attention")}</h2>
@@ -222,44 +351,93 @@ function Dashboard() {
         </section>
       )}
 
-      {noPlansYet && attention.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="font-medium">{t("dashboard.next_step_title")}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.next_step_hint")}</p>
-          <Button asChild className="mt-4" variant="outline"><Link to="/clients" search={{ filter: "all" }}>{t("dashboard.view_clients")}</Link></Button>
-        </div>
-      )}
+      <DropoffAlerts />
 
-      {clients > 0 && (
-        <div className="flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
-          {[
-            { id: "active", label: t("dashboard.seg_active", { count: counts.active }) },
-            { id: "ready", label: t("dashboard.seg_ready", { count: counts.ready }) },
-            { id: "idle", label: t("dashboard.seg_idle", { count: counts.idle }) },
-            { id: "onboarding", label: t("dashboard.seg_onboarding", { count: counts.onboarding }) },
-          ].map((seg) => (
-            <Link
-              key={seg.id}
-              to="/clients"
-              search={{ filter: seg.id }}
-              className="rounded-full bg-secondary px-3 py-1 text-muted-foreground transition hover:text-foreground"
-            >
-              {seg.label}
-            </Link>
-          ))}
+      {/* Clients section — single source of truth */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold">{t("dashboard.clients_heading", { defaultValue: "Clientes" })}</h2>
         </div>
-      )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard icon={Users} label={t("dashboard.stat_clients")} value={clients} to="/clients" />
-        <StatCard icon={FileText} label={t("dashboard.stat_plans")} value={plans} to="/plans" />
-      </div>
+        {isEmpty ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+            <p className="font-medium">{t("dashboard.empty_clients_title", { defaultValue: "Adiciona o teu primeiro cliente" })}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.empty_clients_hint", { defaultValue: "Envia o link de avaliação. Eles preenchem no telemóvel." })}</p>
+            <Button className="mt-4" onClick={() => setInviteOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
+              {[
+                { id: "all", label: t("clients.filter_all", { count: counts.all }) },
+                { id: "onboarding", label: t("clients.filter_onboarding", { count: counts.onboarding }) },
+                { id: "active", label: t("clients.filter_active", { count: counts.active }) },
+                { id: "idle", label: t("clients.filter_idle", { count: counts.idle }) },
+                { id: "ready", label: t("clients.filter_ready", { count: counts.ready }) },
+              ].map((f) => (
+                <Link
+                  key={f.id}
+                  to="/dashboard"
+                  search={{ filter: f.id }}
+                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                >
+                  {f.label}
+                </Link>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+              {filteredClients.map((c) => (
+                <div key={c.id} className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50">
+                  <Link
+                    to="/clients/$clientId"
+                    params={{ clientId: c.id }}
+                    className="flex flex-1 items-center justify-between px-5 py-4"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{c.full_name}</p>
+                        <p className="truncate text-sm text-muted-foreground">{c.email ?? t("clients.no_email")}</p>
+                      </div>
+                      {phases[c.id] && <ClientPhasePill phase={phases[c.id]} />}
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+                        aria-label={t("clients.delete_aria")}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("clients.delete_title", { name: c.full_name })}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("clients.delete_desc")}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("clients.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => void removeClient(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          {t("clients.delete")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
 
       {(statusCounts.draft + statusCounts.ready + statusCounts.finalized) > 0 && (
         <PlansStatusBar counts={statusCounts} />
       )}
-
-      <DropoffAlerts />
 
       <section>
         <h2 className="mb-4 text-lg font-bold">{t("dashboard.recent_plans")}</h2>
@@ -268,15 +446,6 @@ function Dashboard() {
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent" />
             <p className="font-medium">{t("dashboard.no_plans")}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.no_plans_hint")}</p>
-            {isEmpty ? (
-              <Button asChild className="mt-4">
-                <Link to="/clients" search={{ filter: "all" }}>{t("dashboard.add_a_client")}</Link>
-              </Button>
-            ) : (
-              <Button asChild className="mt-4" variant="outline">
-                <Link to="/clients" search={{ filter: "all" }}>{t("dashboard.view_clients")}</Link>
-              </Button>
-            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -305,9 +474,7 @@ function Dashboard() {
                     {(() => {
                       const s = planStatusInfo(p as any, t as any);
                       return (
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
-                        >
+                        <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
                           {s.label}
                         </span>
                       );
@@ -375,22 +542,6 @@ function PlansStatusBar({ counts }: { counts: { draft: number; ready: number; fi
         ))}
       </div>
     </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, to }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; to: "/clients" | "/plans" }) {
-  return (
-    <Link
-      to={to}
-      search={to === "/clients" ? { filter: "all" } : undefined as any}
-      className="group block rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:bg-card/80"
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-muted-foreground transition group-hover:text-accent" />
-      </div>
-      <p className="mt-3 text-4xl font-light tracking-tight">{value}</p>
-    </Link>
   );
 }
 
