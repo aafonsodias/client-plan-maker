@@ -475,19 +475,27 @@ export async function generatePlanPdf(
     y += sumLines.length * 11 + 10;
   }
 
-  // KPI strip
-  const totalSessions = (plan.weeks ?? []).reduce((acc, w) => acc + (w.days?.length ?? 0), 0);
-  const totalExercises = (plan.weeks ?? []).reduce(
+  // KPI strip — honest in weekly mode (this week only)
+  const sessionsThisRender = (plan.weeks ?? []).reduce((acc, w) => acc + (w.days?.length ?? 0), 0);
+  const exercisesThisRender = (plan.weeks ?? []).reduce(
     (a, w) => a + (w.days ?? []).reduce((b, d) => b + (d.exercises?.length ?? 0), 0), 0,
   );
-  const sessionsPerWeek = plan.weeks?.length ? Math.round(totalSessions / plan.weeks.length) : 0;
-  const kpis: [string, string][] = [
-    ["DURATION", meta.duration_weeks ? `${meta.duration_weeks} wk` : `${plan.weeks?.length ?? 0} wk`],
-    ["SESSIONS / WK", String(sessionsPerWeek)],
-    ["TOTAL SESSIONS", String(totalSessions)],
-    ["EXERCISES", String(totalExercises)],
-    ["ARCHETYPES", String(archetypes.length)],
-  ];
+  const totalMesoWeeks = meta.duration_weeks ?? totalWeeksInPlan ?? plan.weeks?.length ?? 0;
+  const kpis: [string, string][] = selectedWeekN
+    ? [
+        ["BLOCK", `${meta.block_number ?? 1}`],
+        ["WEEK", `${selectedWeekN} / ${totalMesoWeeks || "?"}`],
+        ["SESSIONS", String(sessionsThisRender)],
+        ["EXERCISES", String(exercisesThisRender)],
+        ["ARCHETYPES", String(archetypes.length)],
+      ]
+    : [
+        ["DURATION", `${totalMesoWeeks || plan.weeks?.length || 0} wk`],
+        ["SESSIONS / WK", plan.weeks?.length ? String(Math.round(sessionsThisRender / plan.weeks.length)) : "0"],
+        ["TOTAL SESSIONS", String(sessionsThisRender)],
+        ["EXERCISES", String(exercisesThisRender)],
+        ["ARCHETYPES", String(archetypes.length)],
+      ];
   const kpiW = (W - M * 2 - 8 * (kpis.length - 1)) / kpis.length;
   for (let i = 0; i < kpis.length; i++) {
     const x = M + i * (kpiW + 8);
