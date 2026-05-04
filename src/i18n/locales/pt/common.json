@@ -106,6 +106,19 @@
       "full_manual": "Manual completo"
     }
   },
+  "missions": {
+    "title": "Missões de avaliação",
+    "subtitle": "Complete estas missões para destrancar a geração do plano.",
+    "parq": "PARQ — segurança cardiovascular",
+    "rockport": "Teste Rockport (VO₂)",
+    "blood_pressure": "Tensão arterial",
+    "photos": "Fotos de postura",
+    "gym_class": "Aula de avaliação no ginásio",
+    "custom": "Missão personalizada",
+    "mark_done": "Marcar feito",
+    "completion": "Avaliação {{n}}% completa",
+    "locked_hint": "A geração do plano destranca aos 100%."
+  },
   "clients": {
     "eyebrow": "Lista",
     "title": "Clientes",
