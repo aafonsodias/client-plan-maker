@@ -61,7 +61,7 @@ Training assessment:
 - Experience: ${a.experience_level ?? "—"}
 - Days/week: ${a.training_days_per_week ?? "—"}
 - Session length: ${a.session_duration_minutes ?? "—"} min
-- Location: ${a.training_location ?? "—"}
+- Location: ${Array.isArray((a as any).training_location) ? (a as any).training_location.join(", ") : (a.training_location ?? "—")}
 - Equipment: ${(a.available_equipment ?? []).join(", ") || "—"}
 - Injuries: ${a.injuries ?? "—"}
 - Medical conditions: ${a.medical_conditions ?? "—"}

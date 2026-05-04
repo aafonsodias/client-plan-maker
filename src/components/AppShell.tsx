@@ -132,7 +132,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+      <header data-app-shell className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link
             to="/"

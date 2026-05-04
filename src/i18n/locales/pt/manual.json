@@ -1,6 +1,6 @@
 {
   "title": "Manual",
-  "subtitle": "Tudo o que precisas de saber para tirares o máximo da Forge — passo a passo.",
+  "subtitle": "Tudo o que precisas de saber para tirares o máximo da Protocol — passo a passo.",
   "back_to_app": "Voltar à app",
   "open": "Abrir manual",
   "tab_aria": "Secção do manual",
@@ -122,7 +122,7 @@
       "steps": [
         {
           "h": "Plano gratuito",
-          "p": "1 plano de treino finalizado. Suficiente para validares se a Forge serve para o seu fluxo."
+          "p": "1 plano de treino finalizado. Suficiente para validares se a Protocol serve para o seu fluxo."
         },
         {
           "h": "Trial",
@@ -134,7 +134,7 @@
         },
         {
           "h": "Founder",
-          "p": "Acesso permanente para o fundador da Forge — sem trial, sem limite, sem banners de upgrade."
+          "p": "Acesso permanente para o fundador da Protocol — sem trial, sem limite, sem banners de upgrade."
         }
       ]
     }
@@ -150,7 +150,7 @@
     "items": [
       {
         "q": "Tenho mesmo de pagar para usar?",
-        "a": "Não para experimentar. O plano gratuito permite-lhe criar 1 plano completo do zero, suficiente para perceber se a Forge encaixa no seu fluxo. Só pagas quando decides escalar para mais clientes."
+        "a": "Não para experimentar. O plano gratuito permite-lhe criar 1 plano completo do zero, suficiente para perceber se a Protocol encaixa no seu fluxo. Só pagas quando decides escalar para mais clientes."
       },
       {
         "q": "Os meus clientes precisam de criar conta?",
@@ -182,7 +182,7 @@
       },
       {
         "q": "Suporta vários blocos de mesociclo?",
-        "a": "Sim. Quando aprovas o último ciclo, podes começar o Bloco 2 — a Forge arquiva o anterior, mantém o histórico e usa-o como contexto para a nova geração."
+        "a": "Sim. Quando aprovas o último ciclo, podes começar o Bloco 2 — a Protocol arquiva o anterior, mantém o histórico e usa-o como contexto para a nova geração."
       },
       {
         "q": "Funciona em mobile?",
@@ -192,7 +192,7 @@
   },
   "contact": {
     "title": "Falar comigo",
-    "subtitle": "A Forge está em construção activa. Bug, sugestão, ou só dizer olá — leio tudo.",
+    "subtitle": "A Protocol está em construção activa. Bug, sugestão, ou só dizer olá — leio tudo.",
     "email_label": "Email directo",
     "email_value": "aafonsodias@gmail.com",
     "email_hint": "Resposta normalmente em 24h (PT/EN).",

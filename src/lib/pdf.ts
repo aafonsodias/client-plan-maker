@@ -184,8 +184,8 @@ type Theme = {
 
 const LIGHT_THEME: Theme = {
   mode: "light",
-  // FORGE PDF spec §12: bg #FAF8F4, text #1A1A1A, accent #D4A574 ochre.
-  // We deliberately keep accent = FORGE amber (#E8A547) instead of ochre
+  // PROTOCOL PDF spec §12: bg #FAF8F4, text #1A1A1A, accent #D4A574 ochre.
+  // We deliberately keep accent = Protocol amber (#E8A547) instead of ochre
   // because amber is the brand token used everywhere else (BrandMark, chips,
   // toneChip warn). Diverging only in PDFs would break visual continuity.
   bg: [250, 248, 244],         // #FAF8F4 — spec
@@ -194,7 +194,7 @@ const LIGHT_THEME: Theme = {
   inkMuted: [120, 118, 112],
   inkGhost: [232, 229, 222],
   rule: [220, 216, 208],
-  accent: [232, 165, 71],      // FORGE amber (brand) — see note above
+  accent: [232, 165, 71],      // Protocol amber (brand) — see note above
   bannerBg: [244, 241, 234],
   bannerInk: [26, 26, 26],
 };
@@ -263,7 +263,7 @@ export async function generatePlanPdf(
     else theme = LIGHT_THEME;
   }
 
-  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
+  const brand = (branding.business_name || branding.full_name || "PROTOCOL").toUpperCase();
 
   // ---------- Weekly mode setup ----------
   // If meta.week_number is provided, filter plan.weeks down to just that week
@@ -832,26 +832,29 @@ export async function generatePlanPdf(
       // We replace the per-week delta columns with 4 handwriting slots S1..S4
       // so the trainer reads and writes on the SAME row. Week-over-week
       // progressions are still visible in-app (Mesociclo view).
+      // Re-balanced for honest hand-writing space (R47):
+      // SETS/REPS/REST/RPE/TEMPO get just enough to render values without
+      // truncation; the four S1..S4 handwriting slots widen to ~72pt each
+      // (~2.5cm) so the trainer has room to write `80×6 @8`. Cue absorbs
+      // remaining slack and wraps to up to 2 lines instead of ellipsis.
       const colNumW = 20;
-      const colExW = 220;     // wider — single-session-per-page leaves room
-      const colCueW = 130;
+      const colExW = 180;
       const statCols = ["SETS", "REPS", "REST", "RPE", "TEMPO"];
-      const statColW = 36;
+      const statColWs: number[] = [26, 38, 34, 28, 38]; // per-column widths
+      const statTotal = statColWs.reduce((a, b) => a + b, 0);
       const slotsCount = 4;
-      const slotColW = 64; // each S1..S4 slot
-
-      const required =
-        colNumW + colExW + colCueW + statCols.length * statColW + slotsCount * slotColW;
-      const slack = (W - M * 2) - required;
-      const cueW = Math.max(90, colCueW + slack);
+      const slotColW = 72; // ~2.5cm — enough for `80×6 @8`
+      const fixed = colNumW + colExW + statTotal + slotsCount * slotColW;
+      const cueW = Math.max(100, (W - M * 2) - fixed);
 
       const xNum = M;
       const xEx = xNum + colNumW;
       const xCue = xEx + colExW;
       const xStat0 = xCue + cueW;
-      const xSlot0 = xStat0 + statCols.length * statColW;
+      const xSlot0 = xStat0 + statTotal;
+      const statX = (i: number) => xStat0 + statColWs.slice(0, i).reduce((a, b) => a + b, 0);
 
-      // Header
+      // Header — 2 lines so the S1 slot label can read "S1 / peso × reps @RPE"
       setText(doc, theme.inkMuted);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(6.5);
@@ -859,23 +862,18 @@ export async function generatePlanPdf(
       doc.text("EXERCISE", xEx, y);
       doc.text("CUE", xCue, y);
       for (let s = 0; s < statCols.length; s++) {
-        doc.text(statCols[s], xStat0 + s * statColW + statColW / 2, y, { align: "center" });
+        doc.text(statCols[s], statX(s) + statColWs[s] / 2, y, { align: "center" });
       }
       for (let sI = 0; sI < slotsCount; sI++) {
-        doc.text(
-          `S${sI + 1}  peso × reps @RPE`,
-          xSlot0 + sI * slotColW + 4,
-          y,
-        );
+        const sx = xSlot0 + sI * slotColW + 4;
+        doc.text(`S${sI + 1}`, sx, y);
+        doc.text("peso × reps @RPE", sx, y + 8);
       }
-      y += 4;
+      y += 14;
       setDraw(doc, theme.rule);
       doc.setLineWidth(0.4);
       doc.line(M, y, W - M, y);
       y += 10;
-
-      // Row geometry
-      const rowH = 18;
 
       // Track superset groups for bracket post-pass
       type Bracket = { id: string; topY: number; botY: number };
@@ -884,6 +882,22 @@ export async function generatePlanPdf(
 
       for (let i = 0; i < baseEx.length; i++) {
         const ex = baseEx[i];
+
+        // Pre-compute wrap so rowH is dynamic — avoids ellipsis on long cues
+        // and 3-word exercise names. Cue is allowed up to 2 lines; name up to 2.
+        let cueText = (ex.cue ?? "").trim();
+        if (!cueText && ex.technique_cues) cueText = ex.technique_cues.trim();
+        if (!cueText && ex.notes) cueText = ex.notes.trim();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        const cueLines = cueText
+          ? (doc.splitTextToSize(cueText, cueW - 6) as string[]).slice(0, 2)
+          : [];
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        const nameLines = (doc.splitTextToSize(ex.name, colExW - 4) as string[]).slice(0, 2);
+        const rowH = Math.max(18, nameLines.length * 11 + 6, cueLines.length * 11 + 6);
+
         ensureSpace(rowH + 2, pageHeader);
         const rowTop = y;
 
@@ -899,24 +913,22 @@ export async function generatePlanPdf(
         doc.setFontSize(8.5);
         doc.text(String(i + 1).padStart(2, "0"), xNum + 4, rowTop + 12);
 
-        // Name — wrap to 2 lines instead of ellipsis when long
+        // Name — already wrapped above
         setText(doc, theme.ink);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
-        const nameLines = (doc.splitTextToSize(ex.name, colExW - 4) as string[]).slice(0, 2);
         for (let nli = 0; nli < nameLines.length; nli++) {
-          doc.text(nameLines[nli], xEx, rowTop + 12 + nli * 10);
+          doc.text(nameLines[nli], xEx, rowTop + 12 + nli * 11);
         }
 
-        // Cue (single line)
-        let cueText = (ex.cue ?? "").trim();
-        if (!cueText && ex.technique_cues) cueText = ex.technique_cues.trim();
-        if (!cueText && ex.notes) cueText = ex.notes.trim();
-        if (cueText) {
+        // Cue — wrap up to 2 lines, NEVER truncate with ellipsis
+        if (cueLines.length > 0) {
           setText(doc, theme.inkMuted);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(8.5);
-          doc.text(fitText(cueText, cueW - 6), xCue, rowTop + 12);
+          for (let cli = 0; cli < cueLines.length; cli++) {
+            doc.text(cueLines[cli], xCue, rowTop + 12 + cli * 11);
+          }
         }
 
         // Stats
@@ -931,11 +943,17 @@ export async function generatePlanPdf(
         ];
         for (let s = 0; s < stats.length; s++) {
           const [val, hot] = stats[s];
-          const cx = xStat0 + s * statColW + statColW / 2;
+          const cx = statX(s) + statColWs[s] / 2;
           setText(doc, hot ? theme.accent : theme.ink);
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(9.5);
-          doc.text(fitText(val, statColW - 6), cx, rowTop + 12, { align: "center" });
+          // Use raw value (no fitText/ellipsis). If still too wide, shrink font.
+          let fz = 9.5;
+          doc.setFontSize(fz);
+          while (doc.getTextWidth(val) > statColWs[s] - 4 && fz > 7) {
+            fz -= 0.5;
+            doc.setFontSize(fz);
+          }
+          doc.text(val, cx, rowTop + 12, { align: "center" });
         }
 
         // Handwriting slots S1..S4 — empty lines for the trainer to fill in the gym.
@@ -1187,7 +1205,11 @@ export function renderAssessmentPdf({ assessment, client, t }: RenderAssessmentA
       [tr("pdf.experience", "Experience"), safe(assessment?.experience_level)],
       [tr("pdf.training_days", "Days/week"), safe(assessment?.training_days_per_week)],
       [tr("pdf.session_duration", "Session (min)"), safe(assessment?.session_duration_minutes)],
-      [tr("pdf.location", "Location"), safe(assessment?.training_location)],
+      [tr("pdf.location", "Location"), safe(
+        Array.isArray(assessment?.training_location)
+          ? assessment.training_location.join(", ")
+          : assessment?.training_location,
+      )],
       [tr("pdf.years_training", "Years training"), safe(assessment?.years_training)],
     ],
     3,

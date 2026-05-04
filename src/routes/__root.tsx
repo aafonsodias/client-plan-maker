@@ -38,9 +38,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Forge — Workout plans for personal trainers" },
+      { title: "Protocol — Workout plans for personal trainers" },
       { name: "description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
-      { property: "og:title", content: "Forge — Workout plans for personal trainers" },
+      { property: "og:title", content: "Protocol — Workout plans for personal trainers" },
       { property: "og:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -64,14 +64,14 @@ export const Route = createRootRoute({
       },
       { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
       { name: "referrer", content: "strict-origin-when-cross-origin" },
-      { name: "twitter:title", content: "Forge — Workout plans for personal trainers" },
+      { name: "twitter:title", content: "Protocol — Workout plans for personal trainers" },
       { name: "twitter:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6dfe31f-b880-4ca1-aa7b-c6f200feea05/id-preview-7ce323db--52660b57-3b15-46ae-b3c1-32e2157652c6.lovable.app-1777570010210.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6dfe31f-b880-4ca1-aa7b-c6f200feea05/id-preview-7ce323db--52660b57-3b15-46ae-b3c1-32e2157652c6.lovable.app-1777570010210.png" },
       { name: "theme-color", content: "#0d1117" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Forge" },
+      { name: "apple-mobile-web-app-title", content: "Protocol" },
     ],
     links: [
       {

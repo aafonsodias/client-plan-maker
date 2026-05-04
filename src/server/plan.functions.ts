@@ -245,7 +245,12 @@ const InputSchema = z.object({
     training_days_per_week: z.number().nullable().optional(),
     session_duration_minutes: z.number().nullable().optional(),
     available_equipment: z.array(z.string()).nullable().optional(),
-    training_location: z.string().nullable().optional(),
+    // Accept legacy string OR canonical array; normalise downstream consumers
+    // (PDF, prompt) handle both shapes via Array.isArray checks.
+    training_location: z
+      .union([z.string(), z.array(z.string())])
+      .nullable()
+      .optional(),
     injuries: z.string().nullable().optional(),
     medical_conditions: z.string().nullable().optional(),
     preferences: z.string().nullable().optional(),
@@ -628,7 +633,11 @@ Training assessment:
 - Experience: ${data.assessment.experience_level ?? "—"}
 - Days/week: ${data.assessment.training_days_per_week ?? "—"}
 - Session length: ${data.assessment.session_duration_minutes ?? "—"} min
-- Location: ${data.assessment.training_location ?? "—"}
+- Location: ${
+      Array.isArray(data.assessment.training_location)
+        ? data.assessment.training_location.join(", ")
+        : (data.assessment.training_location ?? "—")
+    }
 - Equipment: ${(data.assessment.available_equipment ?? []).join(", ") || "—"}
 - Injuries: ${data.assessment.injuries ?? "—"}
 - Medical conditions: ${data.assessment.medical_conditions ?? "—"}

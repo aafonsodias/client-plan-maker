@@ -113,7 +113,7 @@
     },
     "logging": {
       "title": "The plan doesn't end at the PDF.",
-      "subtitle": "Log every set, track every session. Forge keeps the history so you and the client see the work pile up."
+      "subtitle": "Log every set, track every session. Protocol keeps the history so you and the client see the work pile up."
     },
     "journey": {
       "eyebrow": "Under continuous build",
@@ -188,23 +188,23 @@
       "pdf_desc": "Add your logo and business name. Send a polished plan instantly."
     },
     "founder": {
-      "title": "Why Forge?",
-      "img_alt": "André, founder of Forge",
+      "title": "Why Protocol?",
+      "img_alt": "André, founder of Protocol",
       "p1": "In fifteen years as a PT I kept seeing the same thing: plans poorly put together because programming with judgement takes too much work.",
-      "p2": "Forge exists to take that excuse off the table. Solid foundations (PAR-Q+, ACSM, Prochaska), you as the human filter, AI only for the repetitive drafting.",
+      "p2": "Protocol exists to take that excuse off the table. Solid foundations (PAR-Q+, ACSM, Prochaska), you as the human filter, AI only for the repetitive drafting.",
       "p3": "The goal isn't to automate coaching. It's to make sure that \"it's too much work\" is no longer an excuse for a bad plan.",
       "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
     },
     "faq": {
       "title": "Questions trainers ask before signing up.",
       "q1_q": "Is the AI plan good enough to send to clients as-is?",
-      "q1_a": "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Forge is faster than starting from a blank page — not a replacement for your judgement.",
+      "q1_a": "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Protocol is faster than starting from a blank page — not a replacement for your judgement.",
       "q2_q": "What if my client has injuries or medical conditions?",
       "q2_a": "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
       "q3_q": "Can I use my own branding on the PDF?",
-      "q3_a": "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Forge's.",
+      "q3_a": "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Protocol's.",
       "q4_q": "What happens to my client data?",
-      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Forge does not share or sell client data — ever.",
+      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Protocol does not share or sell client data — ever.",
       "q5_q": "What science is the programming based on?",
       "q5_a": "Volume landmarks (MEV/MAV/MRV) follow Mike Israetel & Renaissance Periodization research. RPE prescription and exercise selection draw on Greg Nuckols and Eric Helms (3DMJ). Risk screening uses ACSM guidelines and the validated PAR-Q+.",
       "q6_q": "What if the client regresses mid-block?",
@@ -216,16 +216,16 @@
       "q9_q": "How many plans can I generate on the free tier?",
       "q9_a": "1 full plan per account. Enough to test the end-to-end flow with a real client. Paid tiers unlock 8 / 30 / 80 plans per month as you scale (client cap = plan cap, no fine print).",
       "q10_q": "How do I know the AI didn't invent a dangerous exercise?",
-      "q10_a": "Every exercise is validated against the FORGE library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation."
+      "q10_a": "Every exercise is validated against the PROTOCOL library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation."
     },
-    "mission": "Forge exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
+    "mission": "Protocol exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
     "closing": {
       "title": "Your next plan, before your next session.",
       "subtitle": "Free during beta. No card required.",
       "cta_signed_in": "Open dashboard",
       "cta_signed_out": "Create your account"
     },
-    "footer_copy": "© {{year}} Forge",
+    "footer_copy": "© {{year}} Protocol",
     "pricing": {
       "eyebrow": "Pricing",
       "title": "Honest, no surprises.",
@@ -275,8 +275,8 @@
       "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals."
     },
     "anti_chatgpt": {
-      "eyebrow": "FORGE vs ChatGPT",
-      "title": "ChatGPT generates what you ASK. FORGE generates what the client NEEDS.",
+      "eyebrow": "PROTOCOL vs ChatGPT",
+      "title": "ChatGPT generates what you ASK. PROTOCOL generates what the client NEEDS.",
       "body": "14 clinical assessment sections before 1 exercise. PAR-Q+ screening, ACSM risk classification, contraindicated-exercise filtering, block periodization with MEV/MAV/MRV volumes — automatic, justified.",
       "sections_label": "Assessed before generation:",
       "items": [
@@ -297,8 +297,8 @@
       ]
     },
     "comparison": {
-      "eyebrow": "Where FORGE fits",
-      "title": "How FORGE compares to what you already use.",
+      "eyebrow": "Where PROTOCOL fits",
+      "title": "How PROTOCOL compares to what you already use.",
       "headers": [
         "",
         "PROTOCOL",

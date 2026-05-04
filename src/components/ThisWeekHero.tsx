@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Download, FileText, Loader2, ExternalLink, Sparkles, Plus } from "lucide-react";
+import { FileText, Loader2, ExternalLink, Sparkles, Plus } from "lucide-react";
+// Loader2 still used in the zero-state CTAs below.
 import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
+// toast no longer used here — week download moved to the per-plan row.
 import { Button } from "@/components/ui/button";
 import { MacroIndexStrip } from "@/components/MacroIndexStrip";
-import { downloadPlanById } from "@/lib/download-plan";
 import { weekTagFor } from "@/lib/macro-index";
 
 /**
@@ -37,7 +37,6 @@ export function ThisWeekHero({
   zeroState: boolean;
 }) {
   const [selectedWeek, setSelectedWeek] = useState(defaultWeek);
-  const [downloading, setDownloading] = useState(false);
 
   if (zeroState || !plan) {
     return (
@@ -76,45 +75,27 @@ export function ThisWeekHero({
   const blockN = plan.block_number ?? 1;
   const tag = weekTagFor(selectedWeek, totalWeeks);
 
-  async function handleDownload() {
-    if (!plan) return;
-    setDownloading(true);
-    const tId = toast.loading(`A preparar PDF da Semana ${selectedWeek}…`);
-    try {
-      await downloadPlanById(plan.id, selectedWeek);
-      toast.success("PDF descarregado.", { id: tId });
-    } catch (err: any) {
-      toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
-    } finally {
-      setDownloading(false);
-    }
-  }
-
   return (
     <section
       aria-label="Esta semana"
-      className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.06] via-card to-card p-5 shadow-[inset_0_0_36px_rgba(245,158,11,0.06)] sm:p-6"
+      className="relative overflow-hidden rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.06] via-card to-card p-4"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-amber-500/10 blur-3xl"
-      />
       <div className="relative">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
+            <p className="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
               Esta semana
             </p>
-            <h2 className="mt-1 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <FileText className="h-4 w-4 text-muted-foreground" />
+            <h2 className="mt-0.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="truncate">{plan.title}</span>
             </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
               Bloco {blockN} · Semana {selectedWeek} de {totalWeeks} · <span className="uppercase tracking-wider text-foreground/80">{tag}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild size="sm" variant="ghost" className="h-8 gap-1.5">
+            <Button asChild size="sm" variant="ghost" className="h-7 gap-1.5">
               <Link to="/plans/$planId" params={{ planId: plan.id }}>
                 <ExternalLink className="h-3.5 w-3.5" /> Abrir plano
               </Link>
@@ -122,29 +103,12 @@ export function ThisWeekHero({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           <MacroIndexStrip
             totalWeeks={totalWeeks}
             selectedWeek={selectedWeek}
             onSelect={setSelectedWeek}
           />
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
-            Imprima a semana atual e atualize ao fim-de-semana — o app é o registo, o papel é o guia.
-          </p>
-          <button
-            type="button"
-            disabled={downloading}
-            onClick={handleDownload}
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-500/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.18)] transition hover:bg-amber-500/25 disabled:opacity-60"
-          >
-            {downloading
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <Download className="h-3.5 w-3.5" />}
-            Descarregar Semana {selectedWeek}
-          </button>
         </div>
       </div>
     </section>

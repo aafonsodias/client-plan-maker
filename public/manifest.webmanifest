@@ -1,6 +1,6 @@
 {
-  "name": "Forge — Workout plans for personal trainers",
-  "short_name": "Forge",
+  "name": "Protocol — Workout plans for personal trainers",
+  "short_name": "Protocol",
   "description": "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes.",
   "start_url": "/dashboard",
   "scope": "/",

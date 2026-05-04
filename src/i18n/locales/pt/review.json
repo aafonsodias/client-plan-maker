@@ -81,7 +81,7 @@
       },
       "credibility": {
         "title": "Construído sobre a ciência em que já confias.",
-        "subtitle": "A Forge não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeu na sua certificação — para que o resultado seja defensável, não genérico.",
+        "subtitle": "A Protocol não é só IA em cima de uma caixa de chat. A avaliação segue os protocolos que aprendeu na sua certificação — para que o resultado seja defensável, não genérico.",
         "cards": {
           "parq_title": "Triagem PAR-Q+",
           "parq_desc": "Triagem de saúde pré-participação com sinalização de risco cardiovascular, metabólico e renal incluída.",
@@ -93,7 +93,7 @@
       },
       "logging": {
         "title": "O plano não acaba no PDF.",
-        "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que você e o cliente vejam o trabalho a acumular."
+        "subtitle": "Regista cada série, acompanha cada sessão. A Protocol guarda o histórico para que você e o cliente vejam o trabalho a acumular."
       },
       "features": {
         "title": "Feito para treinadores que preferem treinar a copiar e colar folhas de cálculo.",
@@ -105,11 +105,11 @@
         "pdf_desc": "Adicione o seu logótipo e o nome do seu negócio. Envie um plano polido instantaneamente."
       },
       "founder": {
-        "title": "Porquê a Forge?",
-        "img_alt": "André, fundador da Forge",
+        "title": "Porquê a Protocol?",
+        "img_alt": "André, fundador da Protocol",
         "p1": "Em quinze anos como personal trainer, percebi duas coisas: a maioria dos planos de treino profissionais são mal montados e, como a parte administrativa é uma chatice, muitos treinadores acabam por desistir e improvisar.",
         "p2": "Programação estruturada e de qualidade demora normalmente demasiado tempo, e por isso não é feita.",
-        "p3": "A Forge foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o seu próprio treino.",
+        "p3": "A Protocol foi feita para mudar isso. É uma ferramenta que torna fácil gerar um plano que é, de facto, defensável, quer estejas a treinar outros quer a gerir o seu próprio treino.",
         "bullet_logic_title": "Lógica acima da estética.",
         "bullet_logic_body": "Não é teatro administrativo nem PDFs bonitos. É usar frameworks sólidos (PAR-Q+, estratificação de risco ACSM, Prochaska) para construir uma base que faz sentido.",
         "bullet_pro_title": "Profissional ou pessoal.",
@@ -122,22 +122,22 @@
       "faq": {
         "title": "Perguntas que os treinadores fazem antes de se inscrever.",
         "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
-        "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vai ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
+        "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vai ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Protocol é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
         "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
         "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
         "q3_q": "Posso usar a minha própria marca no PDF?",
-        "q3_a": "Sim. Carregue o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Forge.",
+        "q3_a": "Sim. Carregue o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Protocol.",
         "q4_q": "O que acontece aos dados dos meus clientes?",
-        "q4_a": "Guardados no Supabase (região UE). Pode exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca."
+        "q4_a": "Guardados no Supabase (região UE). Pode exportar ou apagar qualquer registo de cliente a qualquer momento. A Protocol não partilha nem vende dados de clientes — nunca."
       },
-      "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
+      "mission": "A Protocol existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
       "closing": {
         "title": "O seu próximo plano, antes da sua próxima sessão.",
         "subtitle": "Grátis durante a fase beta. Sem cartão.",
         "cta_signed_in": "Abrir dashboard",
         "cta_signed_out": "Crie a sua conta"
       },
-      "footer_copy": "© {{year}} Forge"
+      "footer_copy": "© {{year}} Protocol"
     }
   }
 }

@@ -64,7 +64,7 @@
       "q7": "Do you know of any other reason why you should not do physical activity?"
     },
     "rationale": {
-      "cardio": "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Forge can still draft a low-intensity plan, flagged for physician review.",
+      "cardio": "Cardiovascular flag. Medical clearance recommended before moderate-vigorous intensity. Protocol can still draft a low-intensity plan, flagged for physician review.",
       "balance": "Balance flag. Plan will avoid free-weight overhead movements and unsupported standing exercises until cleared by a physician.",
       "msk": "Musculoskeletal flag. Plan will exclude high-impact patterns and aggressive progressive loading. Mobility-first protocol available.",
       "manual": "Manual flag. Note specifics in client medical conditions. PDF export will include a physician-review disclaimer."
@@ -406,7 +406,7 @@
         ],
         "microcycle": [
           "Translating blueprint into week 1…",
-          "Choosing exercises from the FORGE library…",
+          "Choosing exercises from the PROTOCOL library…",
           "Computing RPE and rests…",
           "Reviewing safety and contraindications…"
         ],

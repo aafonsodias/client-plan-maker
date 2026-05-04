@@ -1,123 +1,191 @@
-# Round 46 — Quest path foundation + tri-theme + brand polish
+# Round 47 — Stabilization
 
-Eu sou o Atlas. Esta ronda fecha o cleanup R45 e abre as duas fundações que destrancam tudo o resto: **(1)** o esquema de Missions (caminho mordida-a-mordida até `assessment_completion = 100`), e **(2)** o tri-tema visual alinhado com a tua imagem do logo (Dark · Slate · Cream). Mais a coreografia AtlasGenie e os fixes de cima.
+Sem features novas. Triagem dos P0/P1 que ficaram a sangrar de R45/R46. Lista de QA no fim — só fechamos com tudo verde.
 
-> 1 ronda = 1 conjunto coeso. A coreografia full-pointing (Joyride/Shepherd) e a UI rica de missões ficam parqueadas para R47, conforme combinado.
+## A. PDF — rebrand + layout + print
 
----
+Ficheiro principal: `src/lib/pdf.ts` (jsPDF, landscape A4, render directo). NÃO há template HTML/Puppeteer — é tudo desenho jsPDF. A "página de print preto" não vem de `@media print` partido; vem de **falta de logo do trainer** → `theme = LIGHT_THEME` mas `branding.business_name` cai no fallback `"FORGE"`. Quando o utilizador imprime via browser, o que ele vê é a rota `/plans/$id` com background `--background` escuro, não o PDF — esse é outro bug, ver §A6.
 
-## A. P0 cleanup R45 (5 min)
+1. **Limpar fallback de marca** (`src/lib/pdf.ts:266`):  
+   `branding.business_name || branding.full_name || "FORGE"` → `… || "PROTOCOL"`. Comentários §12 (linhas 187-197) de `FORGE PDF spec` → `PROTOCOL PDF spec`. Token `accent` mantém-se (#E8A547 ambar — brand consistency).
 
-- Apagar `src/assets/forge-logo.png` (smoke confirmou que `Logo.tsx` e `BrandMark.tsx` já apontam para `protocol-mark.png`).
-- `rg -i "forge|askForge"` final — substituir as ocorrências que sobram em código vivo (`STORAGE_KEY = "forge_theme"` em `ThemeToggle.tsx`, `KEY = "forge.ai.model"` em `use-model-preference.ts`, comentários em `styles.css` `/* FORGE design system tokens */` → renomear para Protocol nos comentários, manter as CSS vars `--forge-*` para não partir o PDF).
-- Memory sweep: actualizar `mem://index.md` para Protocol/Atlas e remover linhas que ainda mencionem Forge.
+2. **Tagline `"Quod Tango Muto"`** vem da BD: `profiles.tagline` da row do André. Não é hardcoded em lado nenhum (`rg` confirmou). Acção:  
+   a. Migration que faz `update profiles set tagline = null where tagline = 'Quod Tango Muto'`.  
+   b. Em `src/routes/settings.tsx:127` adicionar placeholder `"Ex.: Evidence-based training"` e helper text "Aparece no header do PDF. Deixa em branco se não quiseres tagline."
 
-## B. Brand mark fixes (clique no P + contraste)
+3. **Logo "AP" no PDF** = `logo_data_url` do trainer (Settings → Logo). Não é o BrandMark da app. Acções:  
+   a. Quando `branding.logo_data_url` é null, em vez de não desenhar logo, desenhar o Protocol mark P (rasterizado) — criar `src/assets/protocol-mark-print.png` (export 256×256 PNG do SVG existente, fundo transparente, P em #1A1A1A). Importar via `?url` e fazer fetch→dataURL no início de `generatePlanPdf`.  
+   b. Quando o trainer TEM logo próprio, mantém o do trainer (princípio: o PDF é dele, não nosso).
 
-Problemas no print do dashboard mobile:
-1. `<BrandMark>` no AppShell **não navega** quando carregado — está dentro de um `<Link to="/">` mas o utilizador disse "carregar no P não leva à landing". Verificar se o problema é o handler ou se `location.pathname` já está em `/dashboard` e o link visualmente não dá feedback. Garantir que o clique sempre vai para `/`.
-2. **Contraste inverso**: a tua imagem mostra a P branca a viver em fundo escuro / a P escura em fundo claro. O `protocol-mark.png` actual é uma única imagem que fica branca no claro (invisível). Fix: usar **duas variantes** — `protocol-mark-dark.png` (P branca, para tema escuro) e `protocol-mark-light.png` (P escura, para tema claro+cream). O `<Logo>` escolhe via `useTheme()`. Alternativamente, gerar um SVG com `currentColor` para ser one-source — vou propor SVG primeiro (1 ficheiro, escala, sem fetch).
-3. Remover do header o sublinhado roxo/branco que aparece no mobile no print (resíduo do hover/focus do Link).
+4. **Cues / reps / rest sem reticências**:  
+   - `src/lib/pdf.ts` tem helper `fitText(s, maxW)` (linha 290) que **trunca com `…`**. É a raiz das reticências.  
+   - Substituir o uso de `fitText` na coluna CUE (linha 919) por `splitTextToSize` com max 2 linhas e `rowH` dinâmico:  
+     ```ts
+     const cueLines = (doc.splitTextToSize(cueText, cueW - 6) as string[]).slice(0, 2);
+     // cada linha 9pt → 10pt line-height
+     ```  
+   - Para colunas STATS (linha 938 — REPS/REST/RPE/TEMPO), `fitText(val, statColW - 6)` trunca `12-15` em `12-1…`. Correcção: alargar `statColW` (ver §A5) e remover `fitText` daí — usar valor cru. Se ainda não couber, reduzir font size para 8 nessa célula.  
+   - **`rowH` deixa de ser fixo (18pt)**: calcular `rowH = max(18, cueLines * 10 + 8, nameLines * 10 + 8)` antes de pintar zebra/linhas S1-S4.
 
-## C. Tri-mode theme: Dark · Slate · Cream
+5. **Larguras das colunas** (linhas 835-852):  
+   - Hoje: `colExW=220 + colCueW=130 + 5 stats × 36 + 4 slots × 64 = 786pt`. Usable = 770pt → `slack ≈ -16` → cue espremida.  
+   - Nova distribuição: `colExW=180`, stats `SETS=24, REPS=42, REST=38, RPE=28, TEMPO=42` (174pt), `colCueW=110` flexível, **slot S1-S4 = 84pt cada** (336pt). Total = 180+110+174+336+20 = 820 → `slack` distribuído ao cue.  
+   - Cabeçalho `S1  peso × reps @RPE` (linha 866) → quebrar em 2 linhas:  
+     ```
+     S1
+     peso × reps @RPE
+     ```  
+     Ajustar `y += 4` para `y += 14` para acomodar header de 2 linhas.
 
-Substituir o toggle binário por **rotativo de 1/3** (120° por clique): Dark → Slate → Cream → Dark.
+6. **Print preview vazia (preto sólido)** — investigação extra antes do fix:  
+   - O utilizador faz `Ctrl+P` em `/plans/$planId` (rota da app), não no PDF descarregado.  
+   - O PDF gerado por jsPDF é descarregado, NÃO renderizado em página. Logo "13 páginas pretas" = browser a tentar imprimir a rota inteira da app com background dark.  
+   - Fix: adicionar em `src/styles.css`:  
+     ```css
+     @media print {
+       html, body { background: white !important; color: black !important; }
+       .no-print, header[data-app-shell], nav, aside { display: none !important; }
+       * { box-shadow: none !important; }
+     }
+     ```  
+   - E adicionar `data-app-shell` ao header do AppShell + classe `no-print` em controlos de UI da rota plan.  
+   - Mensagem clara no topo da rota plan dentro de `@media print`: "Para imprimir o plano, use o botão **Descarregar PDF** — gera o ficheiro pronto a imprimir."
 
-- `ThemeToggle.tsx`: novo `Mode = "dark" | "slate" | "cream"`. Estado guardado em `localStorage` chave `protocol_theme`. Ícone passa a ser um disco dividido em 3 sectores (cream / slate / dark) com seta amber a apontar o sector activo; rotação 120° suave (300ms ease-out). Respeita `prefers-reduced-motion`.
-- `styles.css`: 
-  - `:root` continua dark (default).
-  - `.light` → renomeado conceptualmente para "cream" mas mantemos a classe `.light` para não partir nada; values ajustadas para o cream warm da tua imagem (`#F5F0E6` background, `#1A1814` foreground).
-  - Nova classe `.slate`: fundo `#1F2530` (slate-azulado da imagem do meio), foreground `#E5E7EB`, cards `#2A3140`. Accent amber mantém-se em todos.
-  - `color-scheme` ajustado por modo (`dark` para slate+dark, `light` para cream).
-- Todos os componentes que assumem dark/light hard-coded levam audit rápido (`grep "dark:"` está OK porque slate cai no dark via `color-scheme`).
+## B. Forge cleanup — exaustivo
 
-> Decisão "Decide tu" no terceiro tema: escolhi **Cream warm** (não Slate) como o terceiro distinto, porque Slate fica demasiado próximo do Dark. Final: Dark (oficina) · Slate (intermédio neutro) · Cream (manual de papel). Os 3 painéis da tua imagem inspiram directamente esta escolha.
+Output do `rg -i "forge|quod tango" src/`: ~30 ficheiros. Plano:
 
-## D. Workbench title personalisado
+1. **`src/routes/__root.tsx:41,43,67,74`** — `head()` meta:  
+   `Forge — Workout plans for personal trainers` → `Protocol — Workout plans for personal trainers`. Idem `og:title`, `twitter:title`, `apple-mobile-web-app-title: "Protocol"`.
 
-Mantém "Workbench" mas troca o copy para possessivo + ligeiro hover de vida:
-- PT: `dashboard.title` → `"O teu Workbench"` (foi essa a tua escolha)
-- EN: `"Your Workbench"`
-- Subtítulo eyebrow continua `"BEM-VINDO DE VOLTA"` / `"WELCOME BACK"`.
-- Adicionar micro-animação amber pulse no `<BrandMark>` ao lado do título (1× ao montar, ~600ms).
+2. **`public/manifest.webmanifest`** — `name`, `short_name` → Protocol.
 
-## E. IntakeLinkPanel — fora-do-lugar mobile + nomenclatura
+3. **`src/i18n/locales/{pt,en}/plan.json`** — todas as ocorrências `Forge` / `FORGE` → `Protocol` / `PROTOCOL`. Inclui `landing.comparison.eyebrow`, `landing.why.title`, `mission`, `footer_copy: "© {{year}} Protocol"`, `q10_a` (biblioteca PROTOCOL), etc.
 
-Print mostra "Como funciona" e "Copiar link de avaliação · André" empilhados de forma estranha + ainda diz o nome em vez de "último link gerado".
+4. **`src/i18n/locales/{pt,en}/manual.json`, `assessment.json`, `intake.json`, `pt/review.json`** — mesmo passo.
 
-Em `dashboard.tsx`:
-- Mover o pill `<AtlasGenie trigger="pill" />` para **dentro** do header (canto direito ao lado do "+ Novo cliente"), em vez de uma linha solta `flex justify-end`. Em mobile fica como ícone `?` pequeno; em desktop pill com texto.
-- Refactor da action row (linha 380-390): em vez de `Copiar link de avaliação · André` fixo, mostrar:
-  - Label: "Último link de avaliação gerado" + chip pequeno com nome do cliente por baixo, em duas linhas claras.
-  - PT/EN i18n: `dashboard.last_intake_label` / `dashboard.last_intake_for`.
-- "Copiar link de avaliação" → renomear para **"Copiar link de intake"** com tooltip "Questionário inicial do cliente". (Queres ser percebido — "intake" + tooltip explicativo é o equilíbrio.)
+5. **`src/routes/index.tsx`** — comentários `FORGE vs Excel…`, `<span>FORGE</span>` (linha 770) → `Protocol`. `mailto:hello@forge.app` → `mailto:hello@protocol.app` (se domínio mudar; senão deixar e marcar TODO).
 
-## F. AtlasGenie animação (génio sai do livro)
+6. **`src/i18n/index.ts:19`** — `LOCALE_STORAGE_KEY = "forge.locale"` → `"protocol.locale"`. Adicionar migração:  
+   ```ts
+   const legacy = localStorage.getItem("forge.locale");
+   if (legacy && !localStorage.getItem("protocol.locale")) {
+     localStorage.setItem("protocol.locale", legacy);
+   }
+   ```
 
-Coreografia CSS pura (~600ms total, sem libs):
-- Pulse amber no ícone do livro do trigger (`box-shadow` expand 200ms).
-- Marca P emerge: `translateY(-40px → 0) + scale(0 → 1) + filter: blur(8px → 0)` em 400ms.
-- Halo amber radial fade-out 600ms.
-- Dialog content fade-in 200ms depois.
-- `prefers-reduced-motion: reduce` → fallback fade simples 150ms.
-- Backdrop: `radial-gradient` amber 8% opacity (não takeover total).
+7. **Restantes ficheiros** (`hooks/use-auth.tsx`, `contexts/*.tsx`, `server/*.ts`, `routes/welcome.tsx`, `terms.tsx`, `privacy.tsx`, `intake.$token.tsx`, `clients_.$clientId.tsx`, `lib/currency.ts`, `lib/pdf.ts`, `components/{ThemeToggle,ShareAppButton,DashboardHint,LanguageSwitcher}.tsx`, `server/{demo-seed,plan,billing,feedback,phased/*}`) — pass automatizado:  
+   - **Strings visíveis e copy** → Protocol.  
+   - **Comentários e identifiers internos** (`forgeRouter`, `--forge-amber` CSS var, `forge_theme` legacy) → manter, são internos. Memory já documenta isto.  
+   - Critério: se o utilizador alguma vez vê o texto, muda. Se não, deixa para evitar churn.  
+   - **No fim, correr `rg -i "forge|quod tango" src/ public/` e colar output no chat.** Esperado: só CSS vars `--forge-*` e `forge_theme` legacy migration.
 
-Manter o conteúdo dos 3 passos existente.
+## C. Regenerate with feedback — schema fix
 
-## G. Mission schema (fundação que destranca R47)
+Erro: `path: ["assessment", "training_location"]`, `expected: "string"`, `received: "array"`.
 
-**Lógica seca apenas, sem UI rica.**
+Origem: `src/server/plan.functions.ts:248`  
+```ts
+training_location: z.string().nullable().optional(),
+```
+mas:
+- `src/server/intake.functions.ts:240` guarda como `z.array(z.string()).max(8)`.
+- `src/routes/intake.$token.tsx` usa `string[]` desde sempre.
+- `src/server/demo-client.functions.ts:729` envia `[persona.training_location]`.
 
-Migration nova:
-```sql
-create type mission_kind as enum ('parq','rockport','blood_pressure','gym_class','photos','custom');
-create type mission_status as enum ('pending','in_progress','done','skipped');
+Acção:
 
-create table public.missions (
-  id uuid primary key default gen_random_uuid(),
-  client_id uuid not null references clients(id) on delete cascade,
-  trainer_id uuid not null,
-  kind mission_kind not null,
-  status mission_status not null default 'pending',
-  evidence_required boolean not null default false,
-  evidence_url text,
-  completed_at timestamptz,
-  created_at timestamptz not null default now()
-);
-alter table public.missions enable row level security;
-create policy "trainer manages own missions" on missions
-  for all using (trainer_id = auth.uid()) with check (trainer_id = auth.uid());
+1. `src/server/plan.functions.ts:248` →  
+   ```ts
+   training_location: z.union([z.string(), z.array(z.string())])
+     .nullable().optional()
+     .transform((v) => Array.isArray(v) ? v : (v ? [v] : null)),
+   ```  
+   (aceita ambos; normaliza para array). Idem qualquer outro schema duplicado.
 
-alter table public.clients add column if not exists assessment_completion int not null default 0;
+2. `src/server/plan.functions.ts:631` (`Location: ${data.assessment.training_location ?? "—"}`) → `${Array.isArray(...) ? data.assessment.training_location.join(", ") : data.assessment.training_location ?? "—"}`.
+
+3. `src/lib/pdf.ts:1190` (`safe(assessment?.training_location)`) → `safe(Array.isArray(...) ? ....join(", ") : ...)`.
+
+4. **Front-end error UX**: localizar onde o JSON Zod aparece raw (provavelmente `BlueprintAiChat.tsx` ou `MicrocyclePanel.tsx` em catch). Substituir por toast amigável:  
+   - PT: "O plano não passou na validação. Tenta de novo ou reporta."  
+   - EN: "The plan didn't pass validation. Try again or report."  
+   Logar o erro raw em `console.error` + `generation_log` (que já existe), mas nunca mostrar JSON cru ao trainer.
+
+## D. Workbench title
+
+`src/i18n/locales/{pt,en}/common.json` chave `dashboard.title`:  
+- PT: `"O teu Workbench"` → `"Workbench"`  
+- EN: `"Your Workbench"` → `"Workbench"`
+
+(Header da app já mostra Protocol via BrandMark.)
+
+## E. Página do cliente — desinflamar
+
+1. **Stages 2-4 colapsados** — hoje só mostra Stage 1 expandido.  
+   - Verificar lógica em `clients_.$clientId.tsx` (linhas 2291-2640): há StageCard 1, depois `PipelineStrip` que **colapsa as 4 quando todas aprovadas**. Quando apenas Stage 1 está em curso, Stages 2-4 NÃO renderizam de todo.  
+   - Adicionar render placeholder das Stages 2-4 sempre que existem mas ainda não foram geradas:  
+     ```
+     ◯ Stage 2 — Plano-mestre        (bloqueado: aprova Stage 1 primeiro)
+     ◯ Stage 3 — Semana-tipo         (bloqueado)
+     ◯ Stage 4 — Progressões         (bloqueado)
+     ```  
+   - Usar StageCard com `status: "placeholder"` (já existe esse status — linha 4 do StageCard.tsx).  
+   - Click num stage bloqueado mostra tooltip: "Disponível depois de aprovares a fase anterior."
+
+2. **`ThisWeekHero` (`src/components/ThisWeekHero.tsx`)** — encolher e re-focar:  
+   - Remover `min-h` implícita do `p-5 sm:p-6` para `p-4`. Remover halo blob (linha 99-101).  
+   - Reduzir título de `text-lg` para `text-sm`, "Esta semana" de `text-[10px]` para esconder no mobile.  
+   - **Adicionar info útil**: dia da semana de hoje, próximo treino agendado (lookup em `workout_sessions` por `client_id` e `session_date >= today`), `% sessões concluídas esta semana`.  
+   - Cortar copy linha 135: `"Imprima a semana atual…"` → mover para tooltip do botão Download.
+
+3. **Remover botão duplicado de download**:  
+   - `clients_.$clientId.tsx:2896` (`Descarregar Semana`) ao lado do plano — manter (é o granular por plano).  
+   - `clients_.$clientId.tsx:1485` header `download_pdf` — manter (PDF completo).  
+   - `ThisWeekHero` botão `Descarregar Semana {selectedWeek}` — **remover**, deixar só "Abrir plano".  
+   - Resultado: 2 botões, função distinta.
+
+## F. Out of scope
+
+Logbook UI, Mission UI, AtlasGenie animation, tri-tema polish, pagamentos, anti-cópia, OCR, Whatsapp.
+
+## QA antes de fechar
+
+```text
+[ ] rg -i "forge|quod tango" src/ public/  →  só vars CSS/legacy migration
+[ ] Tab title diz "Protocol" em / e em /dashboard
+[ ] Landing PT+EN sem Forge visível
+[ ] PDF descarrega em <5s, mostra "PROTOCOL" no footer/header
+[ ] PDF sem reticências em CUE/REPS/REST/RPE
+[ ] PDF colunas S1-S4 com ≥84pt (~3cm) cada
+[ ] PDF com Protocol mark quando trainer não tem logo
+[ ] Tagline do André em DB = null  →  PDF header limpo
+[ ] Ctrl+P numa rota da app mostra fundo branco e tinta preta
+[ ] Regenerate with feedback funciona com training_location string OU array
+[ ] Erro de validação = toast amigável, nunca JSON cru
+[ ] Página do cliente: 4 StageCards visíveis (1 expandido + 3 placeholder)
+[ ] Apenas 2 botões de download na página do cliente
+[ ] ThisWeekHero ocupa <1/3 da viewport, mostra dia + próximo treino + %
+[ ] Workbench title = só "Workbench"
 ```
 
-E um helper `src/lib/missions.ts` com:
-- `MISSION_KIND_LABELS` (PT/EN via i18n keys).
-- `computeAssessmentCompletion(client)` — soma ponderada simples (PARQ 30 + medidas 20 + tensão 20 + Rockport 20 + foto 10).
-- Tipo TS `Mission` exportado.
+## Files to touch (resumo)
 
-**Gate no gerador de plano**: em `clients_.$clientId.tsx`, se `assessment_completion < 100`, o botão "Gerar plano" mostra em vez disso o componente novo `<MissionsPanel client={...} />` (apenas render seco — lista das missões pendentes e botão "Marcar feito"). Sem genie animations, sem confetti — isso é R47.
+- `src/lib/pdf.ts` (rebrand fallback, fitText→splitTextToSize, larguras colunas, rowH dinâmico, training_location array)
+- `src/styles.css` (`@media print` + reset)
+- `src/routes/__root.tsx` (head meta)
+- `public/manifest.webmanifest`
+- `src/i18n/locales/**/*.json` (Forge → Protocol)
+- `src/i18n/index.ts` (LOCALE_STORAGE_KEY + migration)
+- `src/i18n/locales/{pt,en}/common.json` (dashboard.title = Workbench)
+- `src/server/plan.functions.ts` (training_location union+transform; Location string render)
+- `src/components/ThisWeekHero.tsx` (encolher, remover botão duplicado, info útil)
+- `src/routes/clients_.$clientId.tsx` (placeholder Stages 2-4)
+- `src/routes/settings.tsx` (placeholder + helper para tagline)
+- `src/components/AppShell.tsx` (data-app-shell + no-print classes)
+- `src/components/BlueprintAiChat.tsx` ou `MicrocyclePanel.tsx` (toast amigável)
+- `src/assets/protocol-mark-print.png` (criar)
+- supabase migration (limpar tagline "Quod Tango Muto")
+- `mem://design/brand-mark.md` actualizar (refere FORGE)
 
-## H. Backlog actualizado
-
-`.lovable/backlog.md` ganha secção "R46 closed" + parqueamentos formais:
-- P2 Atlas pointing/Joyride choreography → R47.
-- P2 Marketing AI avatars (modelos diversos por etnia para vídeos) → Future · Marketing.
-- P2 Google Earth gym/farmácia locator → Future · Missions.
-- P2 Agente reviews/Reddit/Portal da Queixa scrape → Future · Marketing intel.
-
-## Out of scope (esta ronda)
-
-- UI rica das Missions (animações, progresso visual, Atlas a apontar).
-- Marketing AI avatars (parqueado, vou pedir aprovação separada quando tivermos guidelines de uso ético/respeitoso).
-- Joyride choreography full.
-
-## QA checklist antes de fechar
-
-- 375 px Mobile Safari: clique no P leva a `/`, header limpo (sem duplicação), tema toggle roda 120° por clique, last-intake label correcto.
-- Os 3 temas: Dark, Slate, Cream — todos legíveis, accent amber visível, BrandMark P contrasta em todos.
-- AtlasGenie: animação suave, reduced-motion respeitado.
-- Missão schema: migration aplica sem erro, RLS activa, gate funciona (cliente novo sem assessment vê missões em vez de "Gerar plano").
-- PT/EN: zero "Forge", "Workbench" personalizado, "Último link gerado" em ambos os idiomas.
-
-Se aprovares, executo como Atlas. — A.
+Pronto. Aprova e arranco.
