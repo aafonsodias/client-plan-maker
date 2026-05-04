@@ -98,13 +98,15 @@ export function ThisWeekHero({
           </div>
         </div>
 
-        <div className="mt-4">
-          <MacroIndexStrip
-            totalWeeks={totalWeeks}
-            selectedWeek={selectedWeek}
-            onSelect={setSelectedWeek}
-          />
-        </div>
+        {totalWeeks > 1 && (
+          <div className="mt-4">
+            <MacroIndexStrip
+              totalWeeks={totalWeeks}
+              selectedWeek={selectedWeek}
+              onSelect={setSelectedWeek}
+            />
+          </div>
+        )}
       </div>
     </section>
   );
