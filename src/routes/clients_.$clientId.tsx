@@ -394,6 +394,7 @@ function ClientDetail() {
     hasProgressionsDraft?: boolean;
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
+  const [expandedStage, setExpandedStage] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
