@@ -3322,6 +3322,7 @@ function AssessmentSection({
   summaryLine,
   completionPct,
   onShowSynthesis,
+  hideCollapsedStrip = false,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -3334,6 +3335,8 @@ function AssessmentSection({
   completionPct?: number | null;
   /** Optional inline action shown on the right of the collapsed strip. */
   onShowSynthesis?: () => void;
+  /** When true, render nothing while collapsed (the parent ProtocolRail owns the toggle). */
+  hideCollapsedStrip?: boolean;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
