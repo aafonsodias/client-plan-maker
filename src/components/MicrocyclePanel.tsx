@@ -7,8 +7,9 @@ import {
   approveMicrocycle,
   generateMicrocycleDays,
 } from "@/server/phased/stage3-microcycle.functions";
+import { approveDay as approveDayFn, unlockDay as unlockDayFn } from "@/server/phased/microcycle-edit.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, ArrowLeft, CheckCircle2, Lock, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Lock, RefreshCw, AlertTriangle, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { DayCardEditable } from "@/components/DayCardEditable";
@@ -23,6 +24,7 @@ type DayRow = {
   rationale: string;
   content: any;
   updated_at?: string;
+  approved_at?: string | null;
 };
 
 /**
@@ -44,6 +46,8 @@ export function MicrocyclePanel({
   const generateDayFn = useServerFn(generateDay);
   const generateAllDaysFn = useServerFn(generateMicrocycleDays);
   const approveFn = useServerFn(approveMicrocycle);
+  const approveDaySrv = useServerFn(approveDayFn);
+  const unlockDaySrv = useServerFn(unlockDayFn);
 
   const [planTitle, setPlanTitle] = useState("");
   const [planStatus, setPlanStatus] = useState<string | null>(null);
@@ -77,7 +81,7 @@ export function MicrocyclePanel({
   async function loadDays() {
     const { data } = await supabase
       .from("workout_plan_days")
-      .select("id, day_number, status, day_label, focus, rationale, content, updated_at")
+      .select("id, day_number, status, day_label, focus, rationale, content, updated_at, approved_at")
       .eq("plan_id", planId)
       .eq("week_number", 1)
       .order("day_number", { ascending: true });
@@ -153,6 +157,18 @@ export function MicrocyclePanel({
 
   async function regenDay(dayIndex: number) {
     if (regenSet.has(dayIndex)) return;
+    const row = days.find((d) => d.day_number === dayIndex);
+    if (row?.approved_at) {
+      const ok = window.confirm(
+        `Day ${dayIndex} is approved. Unlock and regenerate? Your edits will be replaced.`,
+      );
+      if (!ok) return;
+      const ur = await unlockDaySrv({ data: { planId, dayNumber: dayIndex } });
+      if (!ur.ok) {
+        toast.error(ur.error || "Unlock failed");
+        return;
+      }
+    }
     setRegenSet((s) => { const n = new Set(s); n.add(dayIndex); return n; });
     try {
       const res = await generateDayFn({ data: { planId, dayIndex } });
@@ -163,6 +179,16 @@ export function MicrocyclePanel({
       setRegenSet((s) => { const n = new Set(s); n.delete(dayIndex); return n; });
       await loadDays();
     }
+  }
+
+  async function approveDayLocal(dayIndex: number) {
+    const r = await approveDaySrv({ data: { planId, dayNumber: dayIndex } });
+    if (!r.ok) {
+      toast.error(r.error || `Approve day ${dayIndex} failed`);
+      return;
+    }
+    toast.success(`Day ${dayIndex} approved`, { duration: 1200 });
+    await loadDays();
   }
 
   async function approve() {
