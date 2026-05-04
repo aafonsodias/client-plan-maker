@@ -426,7 +426,7 @@
   "actions": {
     "regenerate": "Regenerate",
     "approve_brief": "Approve brief",
-    "approve_blueprint": "Approve → Day 1",
+    "approve_blueprint": "Approve Master plan →",
     "approve_microcycle": "Approve microcycle",
     "approve_microcycle_disabled": "Finish all days to approve",
     "approve_microcycle_busy": "Approving…",
@@ -444,7 +444,14 @@
     "ready_to_approve": "All set — you can approve",
     "stage_hint": "Microcycle = your template week. It defines order, volume and RPE for each day. Approve once all days look good and the AI will propose progressions for the following weeks.",
     "days_approved": "days approved",
-    "to_review": "to review"
+    "to_review": "to review",
+    "day_label": "Day {{n}}",
+    "review_short": "review",
+    "approve_day": "Approve Day {{n}}",
+    "day_approved": "Day {{n}} approved",
+    "regenerate_short": "regenerate",
+    "resume_hint": "Resuming · {{done}}/{{total}} days done",
+    "retry_remaining": "Continue remaining days"
   },
   "stage": {
     "label": {
