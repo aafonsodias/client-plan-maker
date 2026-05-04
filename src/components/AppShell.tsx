@@ -139,17 +139,17 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             className="group flex min-w-0 items-center gap-2.5 font-light tracking-[0.2em] uppercase text-sm"
             aria-label={t("brand.name")}
           >
-            {/* Captain-seat brand mark: amber under-glow ring, unified across the app.
-                Wordmark hidden on mobile — the mark itself reads as "Protocol". */}
+            {/* R49: wordmark hidden below 2xl — mark itself reads as "Protocol".
+                Founder badge collapses to the verified tick on tighter widths. */}
             <BrandMark size="md" />
-            <span className="hidden truncate sm:inline">{t("brand.name")}</span>
+            <span className="hidden truncate 2xl:inline">{t("brand.name")}</span>
             {isFounder && (
               <span
                 title="Conta de fundador · acesso vitalício"
                 className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-[3px] text-[9px] font-semibold uppercase tracking-widest leading-none text-amber-600 dark:text-amber-400"
               >
                 <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
-                <span className="hidden lg:inline leading-none">Founder</span>
+                <span className="hidden 2xl:inline leading-none">Founder</span>
                 <BadgeCheck className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} aria-label="Verified" />
               </span>
             )}
@@ -183,8 +183,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           <span className="lg:hidden"><ThemeToggle /></span>
           </div>
 
-          {/* Desktop nav (≥ lg) — tighter breakpoint so labels never truncate */}
-          <nav className="hidden min-w-0 items-center gap-1 lg:flex">
+          {/* Desktop nav (≥ lg) — icon-only, tooltip labels. Never truncates. */}
+          <nav className="hidden min-w-0 items-center gap-0.5 lg:flex">
             {primaryNav.map((n) => {
               const active = isActive(n.to);
               return (
@@ -192,83 +192,80 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   key={n.to}
                   to={n.to}
                   title={n.label}
+                  aria-label={n.label}
                   className={cn(
-                    "flex min-w-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition",
+                    "inline-flex h-9 w-9 items-center justify-center rounded-md transition",
                     active
                       ? "bg-secondary text-secondary-foreground"
                       : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
                   )}
                 >
-                  <n.icon className="h-4 w-4 shrink-0" />
-                  <span className="hidden truncate 2xl:inline">{n.label}</span>
+                  <n.icon className="h-4 w-4" />
                 </Link>
               );
             })}
           </nav>
 
-          {/* Desktop right side (≥ lg) */}
+          {/* Desktop right side (≥ lg) — only the avatar menu remains.
+              Secondary nav, locale, theme, sign-out all live inside it. */}
           <div className="hidden items-center gap-1 lg:flex">
-            <div className="hidden 2xl:inline-flex"><ShareAppButton /></div>
-            {secondaryNav.map((n) => (
-              <Button
-                key={n.to}
-                asChild
-                variant="ghost"
-                size="sm"
-                title={n.label}
-                className="min-w-0"
-              >
-                <Link to={n.to}>
-                  <n.icon className="h-4 w-4 shrink-0 2xl:mr-2" />
-                  <span className="hidden truncate 2xl:inline">{n.label}</span>
-                </Link>
-              </Button>
-            ))}
+            <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={t("language.switch_aria")} aria-label={t("language.switch_aria")}>
-                  <Globe className="h-4 w-4" />
-                </Button>
+                {(() => {
+                  const meta = (user as any)?.user_metadata ?? {};
+                  const photo: string | null = meta.avatar_url ?? meta.picture ?? null;
+                  const displayName: string =
+                    meta.full_name ?? meta.name ?? user?.email ?? "Conta";
+                  return (
+                    <button
+                      type="button"
+                      className="ml-1 inline-flex items-center rounded-full ring-offset-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      title={isFounder ? `${displayName} · conta verificada (fundador)` : displayName}
+                      aria-label={t("nav.account", { defaultValue: "Conta" }) as string}
+                    >
+                      <ClientAvatar
+                        name={displayName}
+                        photoUrl={photo}
+                        size={32}
+                        verified={isFounder}
+                      />
+                    </button>
+                  );
+                })()}
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56">
+                {secondaryNav.map((n) => (
+                  <DropdownMenuItem key={n.to} onSelect={() => navigate({ to: n.to as any })}>
+                    <n.icon className="mr-2 h-4 w-4" />
+                    {n.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onSelect={() => navigate({ to: "/me" as any })}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t("nav.account", { defaultValue: "Conta" })}
+                </DropdownMenuItem>
+                <div className="my-1 border-t border-border" />
+                <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {t("language.switch_aria")}
+                </p>
                 {SUPPORTED_LOCALES.map((code) => (
                   <DropdownMenuItem key={code} onSelect={() => changeLocale(code)}>
                     {currentLocale === code ? (
                       <Check className="mr-2 h-4 w-4" />
                     ) : (
-                      <span className="mr-2 inline-block h-4 w-4" />
+                      <Globe className="mr-2 h-4 w-4 opacity-50" />
                     )}
                     {code === "pt" ? t("language.portuguese") : t("language.english")}
                   </DropdownMenuItem>
                 ))}
+                <div className="my-1 border-t border-border" />
+                <DropdownMenuItem onSelect={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t("actions.sign_out")}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <ThemeToggle />
-            {(() => {
-              const meta = (user as any)?.user_metadata ?? {};
-              const photo: string | null =
-                meta.avatar_url ?? meta.picture ?? null;
-              const displayName: string =
-                meta.full_name ?? meta.name ?? user?.email ?? "Conta";
-              return (
-                <span
-                  className="ml-1 mr-1 inline-flex items-center"
-                  title={isFounder ? `${displayName} · conta verificada (fundador)` : displayName}
-                  aria-label={isFounder ? "Conta verificada — fundador" : displayName}
-                >
-                  <ClientAvatar
-                    name={displayName}
-                    photoUrl={photo}
-                    size={30}
-                    verified={isFounder}
-                  />
-                </span>
-              );
-            })()}
-            <Button variant="ghost" size="sm" onClick={handleSignOut} className="min-w-0">
-              <LogOut className="h-4 w-4 shrink-0 2xl:mr-2" />
-              <span className="hidden truncate 2xl:inline">{t("actions.sign_out")}</span>
-            </Button>
           </div>
 
           {/* Mobile hamburger (< lg) */}
