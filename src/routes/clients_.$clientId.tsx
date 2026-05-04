@@ -6,7 +6,7 @@ import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 const DemoOrchestrator = lazy(() =>
   import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
 );
@@ -2492,7 +2492,7 @@ function ClientDetail() {
                       (() => {
                         const allInnerApproved =
                           blueprintApproved && microcycleApproved && progressionsApproved;
-                        const Wrapper = ({ children }: { children: React.ReactNode }) =>
+                        const Wrapper = ({ children }: { children: ReactNode }) =>
                           allInnerApproved ? (
                             <PipelineStrip
                               blockNumber={(plans[0] as any)?.block_number ?? 1}
