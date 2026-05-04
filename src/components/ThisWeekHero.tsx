@@ -90,11 +90,6 @@ export function ThisWeekHero({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <PrimaryCta action={primaryAction} />
-            <Button asChild size="sm" variant="ghost" className="h-9 gap-1.5">
-              <Link to="/plans/$planId" params={{ planId: plan.id }}>
-                <ExternalLink className="h-3.5 w-3.5" /> Abrir plano
-              </Link>
-            </Button>
           </div>
         </div>
 
