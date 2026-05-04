@@ -276,7 +276,7 @@ function Dashboard() {
           </h1>
         </div>
         <div className="flex items-center gap-2 sm:flex-row-reverse">
-          <AtlasGenie trigger="pill" />
+          {/* AtlasGenie pill removed — icon version lives in AppShell header. */}
           <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
