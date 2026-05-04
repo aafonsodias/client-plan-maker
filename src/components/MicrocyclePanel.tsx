@@ -421,13 +421,17 @@ export function MicrocyclePanel({
           {!isFinalized && (
             <div className="flex items-center justify-end gap-2">
               {activeRow.approved_at ? (
-                <button
-                  type="button"
-                  onClick={() => regenDay(activeDay)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20"
-                >
-                  <Unlock className="h-3 w-3" /> Unlock & regenerate
-                </button>
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-1.5 text-xs font-medium text-emerald-400">
+                  <CheckCircle2 className="h-3 w-3" /> Day {activeDay} approved
+                  <button
+                    type="button"
+                    onClick={() => regenDay(activeDay)}
+                    className="ml-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-amber-400"
+                    title="Unlock & regenerate"
+                  >
+                    <Unlock className="h-3 w-3" /> regenerate
+                  </button>
+                </span>
               ) : (
                 <button
                   type="button"

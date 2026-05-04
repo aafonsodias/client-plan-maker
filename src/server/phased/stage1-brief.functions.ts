@@ -397,7 +397,11 @@ export const createPhasedPlan = createServerFn({ method: "POST" })
 export const startPhasedPlanDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ clientId: z.string().uuid(), title: z.string().optional() }).parse(d)
+    z.object({
+      clientId: z.string().uuid(),
+      title: z.string().optional(),
+      durationWeeks: z.number().int().min(2).max(12).optional(),
+    }).parse(d)
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -467,6 +471,7 @@ export const startPhasedPlanDraft = createServerFn({ method: "POST" })
           status: "draft",
           generation_status: "pending",
           generation_state: initialState as any,
+          duration_weeks: data.durationWeeks ?? 4,
           plan_data: { weeks: [] } as any,
         })
         .select("id")

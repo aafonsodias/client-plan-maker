@@ -63,6 +63,7 @@ import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
 import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
+import { downloadPlanById } from "@/lib/download-plan";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -1286,7 +1287,7 @@ function ClientDetail() {
     setPhasedBusy(true);
     const tId = toast.loading("Synthesizing brief…");
     try {
-      const res = await startPhasedPlanFn({ data: { clientId } });
+      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: duration } });
       if (!res.ok) {
         if (res.error === "quota_exceeded") {
           toast.dismiss(tId);
@@ -2650,18 +2651,8 @@ function ClientDetail() {
                             )
                           }
                         />
-                        {progressionsApproved && (
-                          <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-emerald-400">
-                                Plano pronto a entregar
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Todas as fases aprovadas. Descarrega o PDF abaixo na secção <strong>Plano final</strong>.
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                        {/* The "ready" banner used to live here, but it duplicated
+                            the Plano final section's emerald PDF button (R38). */}
                       </>
                     );
                   })()}
@@ -2746,9 +2737,23 @@ function ClientDetail() {
                     const isComplete = stage === "complete";
                     if (isComplete) {
                       return (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const tId = toast.loading("A preparar PDF…");
+                            try {
+                              await downloadPlanById(p.id);
+                              toast.success("PDF descarregado.", { id: tId });
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20"
+                        >
                           <Download className="h-3 w-3" /> Descarregar PDF
-                        </span>
+                        </button>
                       );
                     }
                     const s = planStatusInfo(p as any, tCommon as any);
