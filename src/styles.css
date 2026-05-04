@@ -253,3 +253,9 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(400%); }
 }
+
+/* Soft fade-in used when StageCard rotates its "what AI is doing now" copy. */
+@keyframes stagecard-fade {
+  0%   { opacity: 0; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}

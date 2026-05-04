@@ -1591,22 +1591,10 @@ function ClientDetail() {
           : null;
         return (
           <div className="flex flex-wrap items-center gap-2 self-start">
-            {(coveragePct != null || lastSavedAt) && (
-              <button
-                type="button"
-                onClick={() =>
-                  document
-                    .getElementById("sintese-da-avaliacao")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums transition hover:opacity-80 ${assessTone}`}
-                title="Ver síntese da avaliação"
-              >
-                <span className="text-[9px] uppercase tracking-widest opacity-70">AVALIAÇÃO</span>
-                {coveragePct != null ? `${coveragePct}%` : "—"}
-                {dateShort && <span className="opacity-70">· {dateShort}</span>}
-              </button>
-            )}
+            {/* Avaliação % is shown inside the collapsed AssessmentSection
+                itself (single source of truth); this strip stays focused on
+                ACSM + Recovery so two adjacent UI surfaces don't repeat the
+                same number. (R43) */}
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
               title={t("detail.acsm_chip_title")}
@@ -2440,12 +2428,9 @@ function ClientDetail() {
                       }
                       if (stageBusy) return;
                       setStageBusy(stage);
-                      const labels: Record<string, string> = {
-                        blueprint: "A gerar plano-mestre…",
-                        microcycle: "A gerar semana-tipo (Semana 1)…",
-                        progressions: "A gerar progressões (Semanas 2–4)…",
-                      };
-                      const tId = toast.loading(labels[stage]);
+                      // No toast.loading — the StageCard "generating" panel is
+                      // the visible source of truth (see R43). Centered white
+                      // toasts here just stole attention from the actual card.
                       try {
                         const res: any =
                           stage === "blueprint"
@@ -2457,17 +2442,17 @@ function ClientDetail() {
                           const prefix = stage[0].toUpperCase() + stage.slice(1);
                           const msg = res?.error || `Falha ao gerar ${stage}`;
                           console.error(`[${prefix}] generate failed`, { planId, stage, error: msg });
-                          toast.error(`${prefix}: ${msg}`, { id: tId });
+                          toast.error(`${prefix}: ${msg}`);
                           return;
                         }
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         if (res?.usedFallback) {
                           toast.success(
                             `${prefix} pronto (fallback determinístico — IA falhou, edite à vontade)`,
-                            { id: tId, duration: 6000 },
+                            { duration: 6000 },
                           );
                         } else {
-                          toast.success(`${prefix} pronto`, { id: tId });
+                          toast.success(`${prefix} pronto`);
                         }
                         void refreshPlans();
                         if (opts?.skipNavigate) return;
@@ -2484,7 +2469,7 @@ function ClientDetail() {
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         const msg = e?.message ?? `Falha ao gerar ${stage}`;
                         console.error(`[${prefix}] generate threw`, { planId, stage, error: msg });
-                        toast.error(`${prefix}: ${msg}`, { id: tId });
+                        toast.error(`${prefix}: ${msg}`);
                       } finally {
                         setStageBusy(null);
                       }
@@ -2509,13 +2494,25 @@ function ClientDetail() {
                         <StageCard
                           stageNumber={3}
                           title={t("plan:stage.label.3", "Plano-mestre")}
-                          status={blueprintApproved ? "approved" : "ready"}
+                          status={
+                            stageBusy === "blueprint"
+                              ? "generating"
+                              : blueprintApproved
+                              ? "approved"
+                              : "ready"
+                          }
                           busy={stageBusy === "blueprint"}
                           progressLabel={
                             stageBusy === "blueprint"
                               ? "A redigir Blueprint…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "blueprint"
+                              ? (t("detail.stage.loading_steps.blueprint", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "blueprint"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "blueprint" : null)
@@ -2566,7 +2563,9 @@ function ClientDetail() {
                           stageNumber={4}
                           title={t("plan:stage.label.4", "Semana-tipo")}
                           status={
-                            microcycleApproved
+                            stageBusy === "microcycle"
+                              ? "generating"
+                              : microcycleApproved
                               ? "approved"
                               : blueprintApproved
                               ? "ready"
@@ -2578,6 +2577,12 @@ function ClientDetail() {
                               ? "A gerar microciclo…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "microcycle"
+                              ? (t("detail.stage.loading_steps.microcycle", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "microcycle"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "microcycle" : null)
@@ -2636,7 +2641,9 @@ function ClientDetail() {
                           stageNumber={5}
                           title={t("plan:stage.label.5", "Progressão 12 sem.")}
                           status={
-                            progressionsApproved
+                            stageBusy === "progressions"
+                              ? "generating"
+                              : progressionsApproved
                               ? "approved"
                               : microcycleApproved
                               ? "ready"
@@ -2648,6 +2655,12 @@ function ClientDetail() {
                               ? "A planear progressões (Semanas 2–4)…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "progressions"
+                              ? (t("detail.stage.loading_steps.progressions", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "progressions"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "progressions" : null)

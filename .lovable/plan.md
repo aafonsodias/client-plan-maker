@@ -1,108 +1,79 @@
 
-# Round 41 — Client page: "god's-work" recomposition
+# Round 43 — Polish: identity, dedupe, persistent CTAs, honest loading
 
-## Intent
+Quatro correções pequenas mas de alto impacto, todas dentro do client detail page e do AppShell. Sem mudanças de DB, sem servidor, sem PDF.
 
-Turn `/clients/$id` from "five identical amber bars + a buried plan card" into a composed three-band layout where the eye lands exactly where the trainer needs to act. Same data, same verbs — radically clearer hierarchy.
+## 1. Badge de "verificado" estilo Instagram no header (não no avatar do cliente)
 
-## Final composition
+**Problema**: a `Sparkles` em pílula amber está no avatar do **cliente** dentro da página, mas o que queres é o tique azul/amber no **teu próprio avatar**, em cima à direita do AppShell, depois do login.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ BAND 1 — IDENTITY                                            │
-│  [avatar•dot]  André Periquito Afonso Dias  [ACTIVE · BLK 1] │
-│               aafonsodias@gmail.com                          │
-│                                                              │
-│  [Adesão 78%] [Avaliação 86% · 05/04] [Recovery 63] [ACSM ▾] │
-│                                                              │
-│  [ Avaliação ]  [Ver como cliente]      ⋯ (PDF, Docs, Date)  │
-├──────────────────────────────────────────────────────────────┤
-│ BAND 2 — THIS WEEK  (focal point, amber-glow card)           │
-│                                                              │
-│  Bloco 1 · Semana 2 de 12               [W2 · +load ▾]       │
-│  ●─●─◉─○─○─○─○─○─○─○─○─○                                     │
-│   W1  W2  W3 …                                               │
-│                                                              │
-│  4 sessões esta semana · próxima: Push A (qua)               │
-│                                                              │
-│  [ Descarregar Semana 2 ]   [ Abrir plano ]                  │
-├──────────────────────────────────────────────────────────────┤
-│ BAND 3 — PIPELINE (collapsed)                                │
-│  ✓✓✓✓✓  Pipeline · Bloco 1 completo · 4 Mai      [expandir ▸]│
-│                                                              │
-│ BAND 3b — HISTÓRICO                                          │
-│  Sessões registadas · Planos anteriores · Documentos         │
-└──────────────────────────────────────────────────────────────┘
-```
+**Solução**:
+- Em `src/components/AppShell.tsx`: ao lado / sobreposto ao botão do menu de utilizador (canto superior direito), quando `isFounder === true`, renderizar um `<BadgeCheck />` (já está importado) num pequeno disco com glow amber (`#D4A24C`), posicionado `-top-1 -right-1` sobre o avatar do utilizador autenticado. Usa o mesmo amber do brand mark — não o azul do Instagram, para ser nosso e não cópia.
+- Remover a pílula `Sparkles` do `ClientAvatarUpload` (foi posta ali por engano em R41) — `showFounderDot` deixa de ser usado mas o prop fica para compatibilidade até R44.
+- A11y: `aria-label="Conta verificada — fundador"`, `title` igual.
 
-## Changes
+## 2. Dedupe da chip "Avaliação 86%"
 
-### 1. Identity band
-- Add a small **amber Sparkles dot** to the bottom-right of `<ClientAvatarUpload/>` when `clients.email === founder email` (reuses existing founder check). Same vibe as a verified tick.
-- Subtle radial amber glow (4% opacity) behind name+avatar block to anchor identity.
-- **Unified KPI strip** using `toneChip` from `src/lib/status-tone.ts`. Four chips, same height, same radius:
-  - `Adesão {n}%` — emerald ≥80, amber 60–79, red <60
-  - `Avaliação {pct}% · {DD/MM}` — folds in last-assessed date (kills standalone link)
-  - `Recovery {n}` — emerald/amber/red
-  - `ACSM {tier}` — emerald/amber/red
-- Drop the standalone "Última avaliação · 05/04/2026 →" line and the loose ACSM/Recovery duo.
+**Problema**: a mesma informação aparece duas vezes — na **KPI strip** (chip `AVALIAÇÃO 86% · 04/05`) e dentro da **AssessmentSection colapsada** (`✓ Avaliação · 86% completo`). Redundante.
 
-### 2. Toolbar — two tiers
-- Primary (filled amber, prominent): `Avaliação`
-- Secondary (outline): `Ver como cliente`
-- Overflow `⋯` menu (Popover): `Download PDF`, `Docs`, `Pick assessed date`
-- One bright button = unambiguous next action.
+**Solução**:
+- Manter **apenas** a chip dentro da janela colapsada da `AssessmentSection` (é onde faz sentido contextual — está a descrever aquilo que aquela secção contém).
+- Remover o `<button>` `AVALIAÇÃO {coveragePct}% · {dateShort}` da KPI strip (lines 1593–1609 de `clients_.$clientId.tsx`). A KPI strip fica com **ACSM** + **Recovery**, mais limpa.
+- O click-to-scroll para `#sintese-da-avaliacao` continua disponível através da chip dentro da secção colapsada.
 
-### 3. Hero "This week" card (NEW — replaces flat "Plano final" row)
-New component `src/components/ThisWeekHero.tsx`:
-- Header: `Bloco N · Semana W de TOTAL` + week selector dropdown (defaults to latest approved week, same logic as today).
-- **Macro index strip** — same SVG logic as the PDF cover (`base / +load / +reps / deload` tags). Reusing the visual vocabulary between paper and screen is the magic — it tells the trainer "what you print is what you see".
-- Sub-line: `{n} sessões esta semana · próxima: {dayName} ({weekday})` (best-effort; if no schedule data, omit).
-- Two CTAs: amber filled `Descarregar Semana W` + outline `Abrir plano`.
-- Subtle amber inner-glow border (`shadow-[inset_0_0_24px_rgba(245,158,11,0.06)]`).
-- If client has zero plans: render a calm onboarding card with `Gerar próximo bloco (IA)` + `New plan (manual)` instead.
+## 3. CTA do Stage 3 (e 4 e 5) **sempre visível**, mesmo colapsado, com nome correto
 
-### 4. Pipeline band — single strip (collapsed by default)
-Replace the 5 stacked StageCards with one `<PipelineStrip/>` row:
-- Five emerald dots `●●●●●` + label `Pipeline · Bloco 1 completo · {date}` + chevron.
-- Click → expands the existing 5 stage cards inline (accordion, no nav). Edits stay 1 click away.
-- If any stage is incomplete, expand by default and show pending stage in amber.
+**Problema**: Quando o utilizador colapsa Stage 3 (chevron-right), o botão "Gerar Blueprint" desaparece porque vive dentro do bloco `{open && (...)}` no header do `StageCard`. Resultado: para gerar tens de expandir primeiro. Além disso o nome "Gerar Blueprint" mistura EN/PT — devia ser "Gerar plano-mestre" (igual ao title do stage, em PT).
 
-### 5. Histórico band
-- Existing "Sessões registadas" table moves under a `Histórico` heading.
-- Empty state copy rewritten: "Quando o André começar a registar, este painel mostra adesão, RPE e progressão por padrão." + soft secondary action `Enviar link da app` (uses existing IntakeLinkPanel logic if available, else hidden).
+**Solução em `src/components/StageCard.tsx`**:
+- Mover o bloco `{onApprove && status !== "approved" && !hideHeaderApprove && (...)}` para **fora** do `{open && (...)}`. Continua oculto quando `status === "approved"` ou quando estamos em modo "view draft" expandido (`hideHeaderApprove`), mas fica visível quando colapsado e ainda não gerado. O botão `Regenerate` continua só visível quando expandido (faz sentido: regenerar é uma acção de revisão).
+- Adicionar nova prop opcional `primaryCtaWhenCollapsed?: boolean` (default true) caso queiramos voltar a esconder em algum lado.
 
-### 6. Spacing rhythm
-Apply `space-y-12` between bands, `space-y-6` inside a band, `gap-3` inside a chip row. Today everything is ~20px → reads flat. New rhythm reads composed.
+**Solução em `src/i18n/locales/pt/assessment.json` (chave `detail.stage.generate_blueprint`)**:
+- "Gerar Blueprint" → "Gerar plano-mestre →"
+- "Gerar Microcycle" / equivalente → "Gerar semana-tipo →"
+- "Gerar Progressions" → "Gerar progressões →"
+- EN mantém "Generate blueprint", "Generate week", "Generate progressions".
 
-## Technical details
+## 4. Loading honesto e inline dentro do próprio Stage card
 
-### Files
-- `src/routes/clients_.$clientId.tsx` — recompose render tree; no data-fetching changes.
-- `src/components/ThisWeekHero.tsx` — NEW, ~150 LOC. Receives `plan, weeks, latestWeek, onDownload, onOpen`.
-- `src/components/PipelineStrip.tsx` — NEW, ~80 LOC. Wraps the 5 stage cards in an accordion.
-- `src/components/ClientAvatarUpload.tsx` — add optional `showFounderDot?: boolean` prop; render Sparkles in absolute corner.
-- `src/components/MacroIndexStrip.tsx` — NEW, extract SVG tag-strip logic from `src/lib/pdf.ts` into a reusable React component (DOM, not canvas). PDF keeps its own canvas version; both share the same `weekTagFor(weekN)` helper which moves to `src/lib/macro-index.ts`.
-- `src/i18n/locales/{pt,en}/assessment.json` and `client.json` — new keys: `client.thisWeek.*`, `client.pipeline.*`, `client.kpi.*`, `client.empty.*`. PT uses "você".
-- `src/lib/status-tone.ts` — already exists, reuse `toneChip`.
-- `.lovable/backlog.md` — close R41.
+**Problema**: Carregaste "Gerar", apareceu uma caixa branca a meio do ecrã (o `toast.loading`), depois desapareceu. O Stage 3 em si não mostrou nada de relevante além de uma barrinha de 0.5px no topo. Não dá confiança.
 
-### Out of scope (explicit)
-- No DB changes.
-- No PDF changes (cover already has the strip; this round just mirrors it on screen).
-- No new server functions.
-- WeekMatrix desktop, adaptive repeat assessments, real verified backend pipeline — still parked.
+**Solução**:
 
-## QA checklist
-- 1806×984 desktop (current viewport) — three bands visible without scroll for the common case.
-- 375px Mobile Safari — bands stack, KPI chips wrap to 2×2, hero card scrolls naturally.
-- Founder dot only on aafonsodias@gmail.com client card (which is André himself in your demo).
-- Pipeline strip: clicking expands inline, chevron rotates, edits to brief still work.
-- Empty client (no plan): hero shows onboarding variant, no broken week selector.
-- All new strings via `t()`.
+**a) Suprimir o toast** branco para os 3 stages de geração (blueprint / microcycle / progressions). Mantemos `toast.success` / `toast.error` no fim, mas removemos o `toast.loading(...)` no início — a UI inline torna-o redundante.
 
-## Why this is the right shape
-- **Looks → function → ease.** Hero card is the most beautiful thing on the page *and* the most-used surface — those align.
-- **Consistency between paper and screen.** Reusing the macro index strip from the PDF makes the app feel like one system, not two products.
-- **Honest hierarchy.** Five "approved" banners is decoration; one focal "this week" + a discreet pipeline pill is *information*.
-- **Reversible.** Pipeline collapse is just an accordion — no data lost, no clicks lost beyond the first expand.
+**b) Substituir o `generating` branch do `StageCard.tsx`** por um painel mais informativo (~120px alto) que mostra:
+   - Título: `Stage 3 — Plano-mestre · a gerar`
+   - Linha de status que **roda** (a cada ~1.6s) através de copy honesta do que a IA está a fazer:
+     - blueprint: ["A consultar ACSM e MEV/MAV/MRV…", "A escolher arquétipos de sessão…", "A balancear volume por padrão de movimento…", "A redigir o plano-mestre…"]
+     - microcycle: ["A traduzir blueprint em semana 1…", "A escolher exercícios da biblioteca FORGE…", "A calcular RPE e descansos…"]
+     - progressions: ["A modelar progressão semana a semana…", "A aplicar deload na última semana…", "A escrever justificações…"]
+   - Pequeno spinner amber + barra de progresso "indeterminate shimmer" mais visível (8px alto, gradient amber, já existe — só engrossar e adicionar % aproximado opcional).
+   - Texto auxiliar: `Estimado ~30s. Podes manter esta página aberta.`
+   - Estes labels ficam no `assessment.json` em `detail.stage.loading_steps.{blueprint|microcycle|progressions}: string[]`.
+
+**c) Garantir que o card faz `scrollIntoView({ block: 'center' })`** quando entra em estado `generating`, para que o utilizador veja o sítio onde a coisa está a acontecer (e não procure pela caixa branca que desapareceu).
+
+**d) `runStage` em `clients_.$clientId.tsx`**: setar `stageBusy` **antes** do try, e chamar `cardRef.current?.scrollIntoView(...)` no efeito que reage a `stageBusy`. Adicionar um `useRef` por stage ou um `id={`stage-${n}`}` e usar `document.getElementById`.
+
+## Out of scope (parked para R44)
+
+- Real progress percentage do servidor (precisava de SSE / polling de generation_log).
+- Tour update para apontar à nova badge do header.
+- Mudar a Sparkles do AppShell pill (já existente) para BadgeCheck — fica só o disco verificado, e o pill "Founder" mantém-se à esquerda do nome.
+
+## Files to edit
+
+- `src/components/AppShell.tsx` — adicionar BadgeCheck verificado sobre o avatar do user (top-right do header).
+- `src/components/ClientAvatarUpload.tsx` — remover render do Sparkles dot (manter prop por compat).
+- `src/routes/clients_.$clientId.tsx` — remover chip duplicada da KPI strip; suprimir `toast.loading` em runStage; setar `stageBusy` cedo; scroll-into-view do stage card.
+- `src/components/StageCard.tsx` — CTA primária sempre visível em colapsado; novo painel `generating` com rotação de copy.
+- `src/i18n/locales/pt/assessment.json` + `src/i18n/locales/en/assessment.json` — nomes corretos dos botões + arrays de loading steps.
+
+## QA
+
+- 1544×984 desktop: header mostra BadgeCheck amber sobreposto ao avatar do user para `aafonsodias@gmail.com`; logout/outro user → sem badge. Cliente page: KPI strip só com ACSM+Recovery; "Avaliação 86% completo" só dentro da AssessmentSection colapsada. Stage 3 colapsado mostra `Gerar plano-mestre →`. Click → card expande para `generating` panel com copy a rodar; toast branco desaparece. Após sucesso, card vira "ready" / "approved" naturalmente.
+- 375px Mobile Safari: badge não tapa o menu; CTA do stage colapsado quebra para nova linha sem cortar.
+- PT + EN: copy de loading rotativa traduzida nos dois.
+- Logging: confirmar via console que `generation_log` continua a registar (não tocámos em servidor).

@@ -445,9 +445,9 @@
     "stage": {
       "open": "Abrir",
       "view_draft": "Ver draft →",
-      "generate_blueprint": "Gerar Blueprint →",
-      "generate_microcycle": "Gerar microciclo (Semana 1) →",
-      "generate_progressions": "Gerar progressões (Semanas 2–4) →",
+      "generate_blueprint": "Gerar plano-mestre →",
+      "generate_microcycle": "Gerar semana-tipo →",
+      "generate_progressions": "Gerar progressões →",
       "blueprint_draft_hint": "Tens um rascunho por aprovar — abre para continuar onde deixaste.",
       "blueprint_help": "Esqueleto do mesociclo: arquétipos de sessão, mapa semana × dia, modelo de progressão. Clica para gerar e rever.",
       "microcycle_draft_hint": "Tens dias gerados por aprovar — abre para continuar.",
@@ -455,7 +455,27 @@
       "microcycle_blocked": "Aprova o Blueprint primeiro.",
       "progressions_draft_hint": "Tens deltas propostos por aprovar — abre para rever.",
       "progressions_help": "Deltas de progressão para as semanas 2+. Clica para gerar.",
-      "progressions_blocked": "Aprova o Microcycle primeiro."
+      "progressions_blocked": "Aprova o Microcycle primeiro.",
+      "loading_eta": "Estimado ~30s. Podes manter esta página aberta.",
+      "loading_steps": {
+        "blueprint": [
+          "A consultar ACSM e MEV/MAV/MRV…",
+          "A escolher arquétipos de sessão…",
+          "A balancear volume por padrão de movimento…",
+          "A redigir o plano-mestre…"
+        ],
+        "microcycle": [
+          "A traduzir blueprint em semana 1…",
+          "A escolher exercícios da biblioteca FORGE…",
+          "A calcular RPE e descansos…",
+          "A revisar segurança e contraindicações…"
+        ],
+        "progressions": [
+          "A modelar progressão semana a semana…",
+          "A aplicar deload na última semana…",
+          "A escrever justificações…"
+        ]
+      }
     },
     "plans": {
       "new_manual": "Novo plano (manual)",

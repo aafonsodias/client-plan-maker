@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronRight, Loader2, Check, RefreshCw, ArrowRight } from "lucide-react";
 
 export type StageCardStatus = "placeholder" | "generating" | "ready" | "approved";
@@ -18,6 +18,8 @@ export default function StageCard({
   expandedBody,
   hideHeaderApprove = false,
   progressLabel,
+  loadingSteps,
+  loadingEta,
   tone = "stage",
 }: {
   stageNumber: number;
@@ -38,6 +40,10 @@ export default function StageCard({
   hideHeaderApprove?: boolean;
   /** When set with busy=true, shows an inline progress strip instead of the white spinner box. */
   progressLabel?: string;
+  /** Honest, rotating copy lines describing what the AI is doing right now. */
+  loadingSteps?: string[];
+  /** Auxiliary line under the rotating step (e.g. "~30s. Keep page open."). */
+  loadingEta?: string;
   /** Visual identity of the approved-collapsed strip. "brief" stays amber (the
    *  source of truth that AI stages descend from); "stage" goes emerald to
    *  signal "AI-generated, human-approved" — matches the post-assessment chip. */
@@ -50,6 +56,20 @@ export default function StageCard({
     if (onToggleExpanded) onToggleExpanded(next);
     else setOpenInternal(next);
   };
+
+  // Rotating copy for the generating panel + scroll-into-view when it kicks in.
+  const [stepIdx, setStepIdx] = useState(0);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (status !== "generating") return;
+    setStepIdx(0);
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!loadingSteps || loadingSteps.length <= 1) return;
+    const id = window.setInterval(() => {
+      setStepIdx((i) => (i + 1) % loadingSteps.length);
+    }, 1700);
+    return () => window.clearInterval(id);
+  }, [status, loadingSteps]);
 
   // Approved & collapsed: thin strip
   if (status === "approved" && !open) {
@@ -82,24 +102,59 @@ export default function StageCard({
   }
 
   if (status === "generating") {
+    const currentStep =
+      loadingSteps && loadingSteps.length > 0
+        ? loadingSteps[stepIdx % loadingSteps.length]
+        : (progressLabel ?? `Generating ${title.toLowerCase()}…`);
     return (
-      <div className="overflow-hidden rounded-xl border border-amber-500/40 bg-card shadow-sm">
-        <div className="h-0.5 w-full overflow-hidden bg-amber-500/10">
+      <div
+        ref={cardRef}
+        className="overflow-hidden rounded-xl border border-amber-500/40 bg-gradient-to-b from-amber-500/[0.06] to-transparent shadow-[0_0_0_1px_rgba(245,158,11,0.08),0_8px_32px_-12px_rgba(245,158,11,0.25)]"
+      >
+        <div className="h-1.5 w-full overflow-hidden bg-amber-500/10">
           <div className="h-full w-1/3 animate-[progress_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
         </div>
-        <div className="flex items-center gap-3 px-4 py-5 text-sm">
-          <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
-          <span className="font-medium">
-            Stage {stageNumber} — {progressLabel ?? `Generating ${title.toLowerCase()}…`}
-          </span>
+        <div className="px-5 py-5">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80">
+            Stage {stageNumber} — {title} · a gerar
+          </div>
+          <div className="mt-2 flex items-start gap-2.5">
+            <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
+            <div className="min-w-0">
+              <div
+                key={stepIdx}
+                className="text-sm font-medium text-foreground"
+                style={{ animation: "stagecard-fade 0.45s ease-out" }}
+              >
+                {currentStep}
+              </div>
+              {loadingEta && (
+                <div className="mt-1 text-xs text-muted-foreground">{loadingEta}</div>
+              )}
+            </div>
+          </div>
+          {loadingSteps && loadingSteps.length > 1 && (
+            <div className="mt-3 flex items-center gap-1.5">
+              {loadingSteps.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1 w-6 rounded-full transition-colors ${
+                    i <= stepIdx ? "bg-amber-500/80" : "bg-amber-500/15"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
   // ready or approved+open
+  const showHeaderApprove =
+    onApprove && status !== "approved" && !hideHeaderApprove;
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div ref={cardRef} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {busy && (
         <div className="h-0.5 w-full overflow-hidden bg-amber-500/10">
           <div className="h-full w-1/3 animate-[progress_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
@@ -121,9 +176,8 @@ export default function StageCard({
           </span>
           {status === "approved" && <Check className="h-4 w-4 text-accent" />}
         </button>
-        {open && (
-          <div className="flex items-center gap-2">
-            {onRegenerate && (
+        <div className="flex items-center gap-2">
+          {open && onRegenerate && (
               <button
                 type="button"
                 onClick={() => void onRegenerate()}
@@ -133,8 +187,8 @@ export default function StageCard({
                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                 Regenerate
               </button>
-            )}
-            {onApprove && status !== "approved" && !hideHeaderApprove && (
+          )}
+          {showHeaderApprove && (
               <button
                 type="button"
                 onClick={() => void onApprove()}
@@ -144,9 +198,8 @@ export default function StageCard({
                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
                 {approveLabel}
               </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {open && (
         <div className="p-4">

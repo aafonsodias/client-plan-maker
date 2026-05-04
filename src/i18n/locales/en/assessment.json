@@ -385,9 +385,9 @@
     "stage": {
       "open": "Open",
       "view_draft": "View draft →",
-      "generate_blueprint": "Generate Blueprint →",
-      "generate_microcycle": "Generate Microcycle →",
-      "generate_progressions": "Generate Progressions →",
+      "generate_blueprint": "Generate master plan →",
+      "generate_microcycle": "Generate template week →",
+      "generate_progressions": "Generate progressions →",
       "blueprint_draft_hint": "You have an unapproved draft — open it to pick up where you left off.",
       "blueprint_help": "Mesocycle skeleton: session archetypes, week × day map, progression model. Click to generate and review.",
       "microcycle_draft_hint": "You have generated days waiting for approval — open to continue.",
@@ -395,7 +395,27 @@
       "microcycle_blocked": "Approve the Blueprint first.",
       "progressions_draft_hint": "You have proposed deltas waiting for approval — open to review.",
       "progressions_help": "Progression deltas for weeks 2+. Click to generate.",
-      "progressions_blocked": "Approve the Microcycle first."
+      "progressions_blocked": "Approve the Microcycle first.",
+      "loading_eta": "About ~30s. You can keep this page open.",
+      "loading_steps": {
+        "blueprint": [
+          "Consulting ACSM and MEV/MAV/MRV…",
+          "Choosing session archetypes…",
+          "Balancing volume per movement pattern…",
+          "Drafting the master plan…"
+        ],
+        "microcycle": [
+          "Translating blueprint into week 1…",
+          "Choosing exercises from the FORGE library…",
+          "Computing RPE and rests…",
+          "Reviewing safety and contraindications…"
+        ],
+        "progressions": [
+          "Modeling week-over-week progression…",
+          "Applying deload to the last week…",
+          "Writing rationales…"
+        ]
+      }
     },
     "plans": {
       "new_manual": "New plan (manual)",

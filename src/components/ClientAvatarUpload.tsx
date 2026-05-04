@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
-import { Camera, Loader2, Sparkles } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -20,7 +20,7 @@ export function ClientAvatarUpload({
   photoUrl,
   onChange,
   size = 56,
-  showFounderDot = false,
+  showFounderDot: _showFounderDot = false,
 }: {
   clientId: string;
   trainerId: string;
@@ -72,15 +72,6 @@ export function ClientAvatarUpload({
   return (
     <div className="relative inline-block">
       <ClientAvatar name={name} photoUrl={photoUrl} size={size} />
-      {showFounderDot && (
-        <span
-          aria-label="Founder"
-          title="Founder"
-          className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-amber-400/60 bg-amber-500/20 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.45)]"
-        >
-          <Sparkles className="h-3 w-3" />
-        </span>
-      )}
       <button
         type="button"
         onClick={() => inputRef.current?.click()}

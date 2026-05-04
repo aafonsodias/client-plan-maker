@@ -6,6 +6,7 @@ import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircl
 import { BrandMark } from "@/components/BrandMark";
 import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
+import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AskForgeDock } from "@/components/AskForgeDock";
@@ -238,6 +239,27 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               </DropdownMenuContent>
             </DropdownMenu>
             <ThemeToggle />
+            {(() => {
+              const meta = (user as any)?.user_metadata ?? {};
+              const photo: string | null =
+                meta.avatar_url ?? meta.picture ?? null;
+              const displayName: string =
+                meta.full_name ?? meta.name ?? user?.email ?? "Conta";
+              return (
+                <span
+                  className="ml-1 mr-1 inline-flex items-center"
+                  title={isFounder ? `${displayName} · conta verificada (fundador)` : displayName}
+                  aria-label={isFounder ? "Conta verificada — fundador" : displayName}
+                >
+                  <ClientAvatar
+                    name={displayName}
+                    photoUrl={photo}
+                    size={30}
+                    verified={isFounder}
+                  />
+                </span>
+              );
+            })()}
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="min-w-0">
               <LogOut className="h-4 w-4 shrink-0 2xl:mr-2" />
               <span className="hidden truncate 2xl:inline">{t("actions.sign_out")}</span>
