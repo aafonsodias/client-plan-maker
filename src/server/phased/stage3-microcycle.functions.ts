@@ -274,10 +274,25 @@ function archetypeForDay(blueprint: any, dayIndex: number): {
 } | null {
   const map = blueprint?.week_to_session_map ?? {};
   const week1 = map["1"] ?? Object.values(map)[0];
-  if (!Array.isArray(week1)) return null;
-  const id = week1[dayIndex - 1];
-  if (!id) return null;
-  const arch = (blueprint?.session_archetypes ?? []).find((a: any) => a?.id === id);
+  const archetypes = Array.isArray(blueprint?.session_archetypes)
+    ? blueprint.session_archetypes
+    : [];
+  // Primary path: matrix has an entry for this day.
+  let id: string | undefined =
+    Array.isArray(week1) && dayIndex - 1 < week1.length ? week1[dayIndex - 1] : undefined;
+  // Fallback 1: matrix exists but is too short — round-robin through archetypes.
+  if (!id && archetypes.length > 0) {
+    id = archetypes[(dayIndex - 1) % archetypes.length]?.id;
+  }
+  // Fallback 2: nothing usable — synthesize a generic full-body archetype.
+  if (!id) {
+    return {
+      id: "full_body",
+      focus: "Full body",
+      primary_movements: ["squat", "hinge", "push", "pull"],
+    };
+  }
+  const arch = archetypes.find((a: any) => a?.id === id);
   if (!arch) return { id, focus: id, primary_movements: [] };
   return arch;
 }
