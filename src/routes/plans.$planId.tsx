@@ -13,7 +13,7 @@ import {
   Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
   Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
   ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3, Loader2,
-  TrendingUp,
+  TrendingUp, Minus, RotateCcw,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -1221,6 +1221,59 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
       .sort((a, b) => (b.session_date > a.session_date ? 1 : -1))[0];
   }, [safeSessions, weekNum, dayLabel, date]);
 
+  // Last logged session for this (week, day) — used for ghost values + "duplicate"
+  // when we are NOT editing an existing one. Excludes today's exact match so the
+  // ghost reflects the previous time this slot was trained, not the current draft.
+  const lastSession = useMemo(() => {
+    return safeSessions
+      .filter(
+        (s) =>
+          s.week_number === weekNum &&
+          s.day_label === dayLabel &&
+          s.logged_by === "trainer" &&
+          s.id !== editingSessionId,
+      )
+      .sort((a, b) => (b.session_date > a.session_date ? 1 : -1))[0];
+  }, [safeSessions, weekNum, dayLabel, editingSessionId]);
+
+  const lastByName = useMemo(() => {
+    const m = new Map<string, { reps: string; weight: string }[]>();
+    for (const ent of (lastSession?.entries ?? []) as any[]) {
+      if (ent && typeof ent === "object" && ent.exercise_name && Array.isArray(ent.sets)) {
+        m.set(
+          ent.exercise_name,
+          ent.sets.map((s: any) => ({ reps: String(s?.reps ?? ""), weight: String(s?.weight ?? "") })),
+        );
+      }
+    }
+    return m;
+  }, [lastSession]);
+
+  const duplicateLast = () => {
+    if (!lastSession) return;
+    setEntries((prev) =>
+      prev.map((e) => {
+        const prior = lastByName.get(e.exercise_name);
+        if (!prior || prior.length === 0) return e;
+        return { ...e, sets: prior.map((s) => ({ reps: s.reps, weight: s.weight })) };
+      }),
+    );
+    toast.success("Pre-filled from last session — adjust and save.");
+  };
+
+  // Stepper helpers (FitNotes-style). Reps integer ±1, weight float ±2.5 kg.
+  const bumpReps = (i: number, si: number, delta: number) => {
+    const cur = parseInt(entries[i]?.sets[si]?.reps ?? "", 10);
+    const next = Math.max(0, (Number.isFinite(cur) ? cur : 0) + delta);
+    updateSet(i, si, "reps", String(next));
+  };
+  const bumpWeight = (i: number, si: number, delta: number) => {
+    const cur = parseFloat(entries[i]?.sets[si]?.weight ?? "");
+    const base = Number.isFinite(cur) ? cur : 0;
+    const next = Math.max(0, Math.round((base + delta) * 10) / 10);
+    updateSet(i, si, "weight", String(next));
+  };
+
   useEffect(() => {
     if (!day) { setEntries([]); return; }
     // If a session already exists for this slot, hydrate it so the trainer
@@ -1396,6 +1449,20 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           <History className="h-3 w-3" /> History ({safeSessions.length})
         </Link>
       </div>
+      {lastSession && !editingSessionId && (
+        <div className="-mt-1 mb-2 flex items-center justify-between gap-2 rounded-md border border-dashed border-border/60 bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          <span>
+            Última sessão deste dia: <span className="font-mono text-foreground/80">{lastSession.session_date}</span>
+          </span>
+          <button
+            type="button"
+            onClick={duplicateLast}
+            className="inline-flex items-center gap-1 rounded border border-border bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary/70"
+          >
+            <RotateCcw className="h-3 w-3" /> Duplicar
+          </button>
+        </div>
+      )}
       <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest">
         {editingSessionId ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
@@ -1442,46 +1509,74 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
             )}
 
             {/* Per-set rows */}
-            <div className="mb-1 grid grid-cols-[2.25rem_1fr_1fr_1.5rem] gap-1.5 px-0.5 text-[9px] font-bold uppercase tracking-widest text-foreground">
+            <div className="mb-1 grid grid-cols-[1.75rem_1fr_1fr_1.25rem] gap-1.5 px-0.5 text-[9px] font-bold uppercase tracking-widest text-foreground">
               <span className="text-foreground0">Set</span>
-              <span>Reps</span>
-              <span>Weight</span>
+              <span className="text-center">Reps</span>
+              <span className="text-center">Weight (kg)</span>
               <span />
             </div>
-            <div className="space-y-1">
-              {e.sets.map((st, si) => (
-                <div
-                  key={si}
-                  className={`grid grid-cols-[2.25rem_1fr_1fr_1.5rem] items-center gap-1.5 rounded transition-all ${
-                    rewards[`${i}-${si}`] ? "animate-scale-in bg-accent/15 ring-1 ring-accent/40" : ""
-                  }`}
-                >
-                  <span className="text-center text-xs font-bold text-foreground0">
-                    {rewards[`${i}-${si}`] ? <Heart className="mx-auto h-3.5 w-3.5 fill-accent text-accent" /> : si + 1}
-                  </span>
-                  <input
-                    inputMode="numeric"
-                    value={st.reps}
-                    onChange={(ev) => updateSet(i, si, "reps", ev.target.value)}
-                    placeholder={e.planned.reps || "—"}
-                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <input
-                    value={st.weight}
-                    onChange={(ev) => updateSet(i, si, "weight", ev.target.value)}
-                    placeholder="kg"
-                    className="h-7 w-full rounded bg-secondary px-2 text-center text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <button
-                    onClick={() => removeSet(i, si)}
-                    className="text-muted-foreground/50 hover:text-zinc-200"
-                    aria-label="Remove set"
-                    type="button"
+            <div className="space-y-1.5">
+              {e.sets.map((st, si) => {
+                const ghost = lastByName.get(e.exercise_name)?.[si];
+                const ghostReps = !st.reps && ghost?.reps ? ghost.reps : "";
+                const ghostKg = !st.weight && ghost?.weight ? ghost.weight : "";
+                return (
+                  <div
+                    key={si}
+                    className={`grid grid-cols-[1.75rem_1fr_1fr_1.25rem] items-center gap-1.5 rounded transition-all ${
+                      rewards[`${i}-${si}`] ? "animate-scale-in bg-accent/15 ring-1 ring-accent/40" : ""
+                    }`}
                   >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    <span className="text-center text-xs font-bold text-foreground0">
+                      {rewards[`${i}-${si}`] ? <Heart className="mx-auto h-3.5 w-3.5 fill-accent text-accent" /> : si + 1}
+                    </span>
+                    {/* Reps stepper */}
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => bumpReps(i, si, -1)} aria-label="−1 rep"
+                        className="h-8 w-8 shrink-0 rounded-md border border-border bg-secondary text-foreground active:scale-95 hover:bg-secondary/70 inline-flex items-center justify-center">
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <input
+                        inputMode="numeric"
+                        value={st.reps}
+                        onChange={(ev) => updateSet(i, si, "reps", ev.target.value)}
+                        placeholder={ghostReps || e.planned.reps || "—"}
+                        className={`h-8 w-full rounded bg-secondary px-1 text-center text-sm font-mono text-foreground outline-none focus:ring-1 focus:ring-ring ${!st.reps && ghostReps ? "placeholder:text-foreground/40 placeholder:italic" : "placeholder:text-muted-foreground/50"}`}
+                      />
+                      <button type="button" onClick={() => bumpReps(i, si, 1)} aria-label="+1 rep"
+                        className="h-8 w-8 shrink-0 rounded-md border border-border bg-secondary text-foreground active:scale-95 hover:bg-secondary/70 inline-flex items-center justify-center">
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {/* Weight stepper */}
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => bumpWeight(i, si, -2.5)} aria-label="−2.5 kg"
+                        className="h-8 w-8 shrink-0 rounded-md border border-border bg-secondary text-foreground active:scale-95 hover:bg-secondary/70 inline-flex items-center justify-center">
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <input
+                        inputMode="decimal"
+                        value={st.weight}
+                        onChange={(ev) => updateSet(i, si, "weight", ev.target.value)}
+                        placeholder={ghostKg || "kg"}
+                        className={`h-8 w-full rounded bg-secondary px-1 text-center text-sm font-mono text-foreground outline-none focus:ring-1 focus:ring-ring ${!st.weight && ghostKg ? "placeholder:text-foreground/40 placeholder:italic" : "placeholder:text-muted-foreground/50"}`}
+                      />
+                      <button type="button" onClick={() => bumpWeight(i, si, 2.5)} aria-label="+2.5 kg"
+                        className="h-8 w-8 shrink-0 rounded-md border border-border bg-secondary text-foreground active:scale-95 hover:bg-secondary/70 inline-flex items-center justify-center">
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeSet(i, si)}
+                      className="text-muted-foreground/50 hover:text-foreground"
+                      aria-label="Remove set"
+                      type="button"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
             <div className="mt-1.5 flex items-center gap-2">
               <button
