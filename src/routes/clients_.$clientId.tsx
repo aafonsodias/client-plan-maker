@@ -2253,11 +2253,6 @@ function ClientDetail() {
             // Here we only surface the partial-coverage warning + synthesis.
             return (
               <>
-              {inlineBrief?.approved && coveragePct != null && (
-                <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-500">
-                  <span>Avaliação parcial · {coveragePct}% — brief aprovado com dados incompletos</span>
-                </div>
-              )}
             {synthesisOpen && (
             <AssessmentSynthesisDashboard
               assessment={assessment}
