@@ -197,16 +197,6 @@ function Dashboard() {
     return items.sort((a, b) => Number(!!b.urgent) - Number(!!a.urgent)).slice(0, 6);
   }, [clientRows, t]);
 
-  const quickIntakeClient = useMemo(() => {
-    return clientRows.find((c) => c.intake_token && c.intake_status !== "submitted" && c.intake_status !== "reviewed");
-  }, [clientRows]);
-  const copyQuickIntake = async () => {
-    if (!quickIntakeClient?.intake_token) return;
-    const url = `${window.location.origin}/intake/${quickIntakeClient.intake_token}`;
-    await navigator.clipboard.writeText(url);
-    toast.success(t("dashboard.intake_link_copied", { name: quickIntakeClient.full_name.split(" ")[0] }));
-  };
-
   const isEmpty = clientRows.length === 0;
 
   const createInvite = async () => {
