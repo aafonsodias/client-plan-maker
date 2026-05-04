@@ -493,8 +493,10 @@ Generate ONLY this single day's session.`;
   }
 
   // ---- FITT-VP validator + 1× retry (R2.2 Phase C.3) ---------------------
+  // Only run the expensive retry on block N≥2 (where prior pool exists) — for
+  // block 1 we accept first-pass output to keep generation snappy.
   let finalDay = floored;
-  if (prescriptionParameters) {
+  if (prescriptionParameters && priorExercisePool.length > 0) {
     const violationsInitial: FittVpViolation[] = validateDayAgainstFittVp(
       finalDay,
       prescriptionParameters,
