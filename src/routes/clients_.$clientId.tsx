@@ -2305,8 +2305,8 @@ function ClientDetail() {
                           }
                           onApprove={() =>
                             blueprintApproved || hasBlueprintDraft
-                              ? navigateToStage("blueprint")
-                              : runStage("blueprint", false)
+                              ? setExpandedStage(expandedStage === "blueprint" ? null : "blueprint")
+                              : runStage("blueprint", false).then(() => setExpandedStage("blueprint"))
                           }
                         >
                           <p className="text-sm text-muted-foreground">
@@ -2315,6 +2315,19 @@ function ClientDetail() {
                               : t("detail.stage.blueprint_help")}
                           </p>
                         </StageCard>
+                        {expandedStage === "blueprint" && (hasBlueprintDraft || blueprintApproved) && (
+                          <div className="rounded-2xl border border-border bg-card/50 p-4 sm:p-6">
+                            <BlueprintEditorPanel
+                              planId={planId}
+                              compact
+                              showOpenFullPage
+                              onApproved={() => {
+                                void refreshPlans();
+                                setExpandedStage(null);
+                              }}
+                            />
+                          </div>
+                        )}
                         <StageCard
                           stageNumber={3}
                           title="Microcycle"
