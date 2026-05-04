@@ -783,6 +783,69 @@ function PillsMulti({ options, value, onChange }: { options: { id: string; label
   );
 }
 
+/**
+ * SMART chip palettes — clickable suggestions that fill the measurable /
+ * deadline inputs. Colour-coded by category so the client sees the spread
+ * (body comp · performance · clinical · lifestyle). Chips are suggestions,
+ * never validations — the input remains free-text.
+ */
+type SmartCat = "body" | "perf" | "clin" | "life";
+const SMART_CAT_TONE: Record<SmartCat, string> = {
+  body: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20",
+  perf: "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20",
+  clin: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20",
+  life: "border-muted-foreground/30 bg-muted/40 text-muted-foreground hover:text-foreground",
+};
+const SMART_CAT_DOT: Record<SmartCat, string> = {
+  body: "bg-emerald-500",
+  perf: "bg-sky-500",
+  clin: "bg-amber-500",
+  life: "bg-muted-foreground/60",
+};
+
+function SmartChips({
+  legend,
+  options,
+  onPick,
+}: {
+  legend: { body: string; perf: string; clin: string; life: string };
+  options: Array<{ cat: SmartCat; label: string; value: string }>;
+  onPick: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {options.map((o, i) => (
+          <button
+            key={`${o.cat}-${i}`}
+            type="button"
+            onClick={() => onPick(o.value)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${SMART_CAT_TONE[o.cat]}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+        {(["body", "perf", "clin", "life"] as SmartCat[]).map((c) => (
+          <span key={c} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${SMART_CAT_DOT[c]}`} />
+            {legend[c]}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Format a Date as YYYY-MM-DD in the user's local timezone. */
+function isoDateLocal(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const { i18n, t } = useTranslation("intake");
   const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
@@ -1123,14 +1186,37 @@ function buildSlides(
     {
       title: t("sections.goal_what"),
       body: (
-        <Textarea
-          autoFocus
-          rows={3}
-          value={form.smart_specific}
-          placeholder={t("sections.goal_what_placeholder")}
-          onChange={(e) => set("smart_specific", e.target.value)}
-          className="text-base"
-        />
+        <div className="space-y-3">
+          <Textarea
+            autoFocus
+            rows={3}
+            value={form.smart_specific}
+            placeholder={t("sections.goal_what_placeholder")}
+            onChange={(e) => set("smart_specific", e.target.value)}
+            className="text-base"
+          />
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{t("sections.goal_suggestions")}</p>
+          <SmartChips
+            legend={{
+              body: t("sections.goal_cat_body"),
+              perf: t("sections.goal_cat_perf"),
+              clin: t("sections.goal_cat_clin"),
+              life: t("sections.goal_cat_life"),
+            }}
+            options={[
+              { cat: "body", label: t("sections.goal_chip_lose_fat"), value: t("sections.goal_chip_lose_fat") },
+              { cat: "body", label: t("sections.goal_chip_gain_muscle"), value: t("sections.goal_chip_gain_muscle") },
+              { cat: "perf", label: t("sections.goal_chip_get_stronger"), value: t("sections.goal_chip_get_stronger") },
+              { cat: "perf", label: t("sections.goal_chip_run_distance"), value: t("sections.goal_chip_run_distance") },
+              { cat: "perf", label: t("sections.goal_chip_first_pullup"), value: t("sections.goal_chip_first_pullup") },
+              { cat: "clin", label: t("sections.goal_chip_back_pain"), value: t("sections.goal_chip_back_pain") },
+              { cat: "clin", label: t("sections.goal_chip_post_injury"), value: t("sections.goal_chip_post_injury") },
+              { cat: "life", label: t("sections.goal_chip_more_energy"), value: t("sections.goal_chip_more_energy") },
+              { cat: "life", label: t("sections.goal_chip_routine"), value: t("sections.goal_chip_routine") },
+            ]}
+            onPick={(v) => set("smart_specific", v)}
+          />
+        </div>
       ),
       isValid: () => form.smart_specific.trim().length > 2,
     },
@@ -1140,8 +1226,51 @@ function buildSlides(
       subtitle: t("sections.goal_when"),
       body: (
         <div className="space-y-4">
-          <Input autoFocus value={form.smart_measurable} onChange={(e) => set("smart_measurable", e.target.value)} />
-          <Input type="date" value={form.smart_deadline} onChange={(e) => set("smart_deadline", e.target.value)} />
+          <div className="space-y-2">
+            <Input autoFocus value={form.smart_measurable} onChange={(e) => set("smart_measurable", e.target.value)} placeholder={t("sections.goal_measure_placeholder")} />
+            <SmartChips
+              legend={{
+                body: t("sections.goal_cat_body"),
+                perf: t("sections.goal_cat_perf"),
+                clin: t("sections.goal_cat_clin"),
+                life: t("sections.goal_cat_life"),
+              }}
+              options={[
+                { cat: "body", label: t("sections.goal_meas_kg"), value: t("sections.goal_meas_kg") },
+                { cat: "body", label: t("sections.goal_meas_waist"), value: t("sections.goal_meas_waist") },
+                { cat: "perf", label: t("sections.goal_meas_squat"), value: t("sections.goal_meas_squat") },
+                { cat: "perf", label: t("sections.goal_meas_5k"), value: t("sections.goal_meas_5k") },
+                { cat: "perf", label: t("sections.goal_meas_pullups"), value: t("sections.goal_meas_pullups") },
+                { cat: "clin", label: t("sections.goal_meas_pain"), value: t("sections.goal_meas_pain") },
+                { cat: "life", label: t("sections.goal_meas_sessions"), value: t("sections.goal_meas_sessions") },
+              ]}
+              onPick={(v) => set("smart_measurable", v)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Input type="date" value={form.smart_deadline} onChange={(e) => set("smart_deadline", e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              {[
+                { weeks: 4, key: "goal_dl_1m" },
+                { weeks: 12, key: "goal_dl_3m" },
+                { weeks: 26, key: "goal_dl_6m" },
+                { weeks: 52, key: "goal_dl_1y" },
+              ].map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  onClick={() => {
+                    const dt = new Date();
+                    dt.setDate(dt.getDate() + d.weeks * 7);
+                    set("smart_deadline", isoDateLocal(dt));
+                  }}
+                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition hover:border-accent/50 hover:text-foreground"
+                >
+                  {t(`sections.${d.key}`)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ),
     },
