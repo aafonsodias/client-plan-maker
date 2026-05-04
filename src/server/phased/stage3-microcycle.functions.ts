@@ -443,7 +443,7 @@ Brief context:
 
 Generate ONLY this single day's session.`;
 
-  const model = resolveModel("FORGE_MODEL_STAGE_3", "openai/gpt-5");
+  const model = resolveModel("FORGE_MODEL_STAGE_3", "google/gemini-2.5-flash");
   const result = await callAnthropicWithSchema({
     model,
     system,
