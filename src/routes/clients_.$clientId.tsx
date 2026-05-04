@@ -1646,24 +1646,87 @@ function ClientDetail() {
         const showSidebar = !effectiveCollapsed;
         return (
       <>
-      <div className="mb-3">
-        <ProtocolRail
-          assessmentPct={
-            briefCoverage && briefCoverage.total > 0
-              ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
-              : null
-          }
-          lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
-          briefApproved={!!inlineBrief?.approved}
-          blueprintApproved={(inlineBrief?.approvedStages ?? []).includes("blueprint")}
-          microcycleApproved={(inlineBrief?.approvedStages ?? []).includes("microcycle")}
-          progressionsApproved={(inlineBrief?.approvedStages ?? []).includes("progressions")}
-          onReassessClick={() => setReassessOpen(true)}
-          stage1Expanded={!effectiveCollapsed}
-          onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
-          onShowSynthesis={() => setSynthesisOpen((o) => !o)}
-        />
-      </div>
+      {(() => {
+        const heroPlan = plans.find(
+          (p) => ((p as any).generation_state?.stage ?? null) === "complete",
+        ) ?? null;
+        const zeroState = !heroPlan;
+        const heroDefaultWeek = heroPlan
+          ? Math.min(
+              Math.max(1, (heroPlan as any).duration_weeks ?? 1),
+              planLatestWeek[heroPlan.id] ?? 1,
+            )
+          : 1;
+        const intakeDone =
+          client.intake_status === "submitted" || client.intake_status === "reviewed";
+        const briefReadyLocal = !!inlineBrief && !inlineBrief.approved;
+        const blueprintApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("blueprint");
+        const microcycleApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("microcycle");
+        const progressionsApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("progressions");
+        const allApprovedLocal = briefApproved && blueprintApprovedLocal && microcycleApprovedLocal && progressionsApprovedLocal;
+        const scrollToStages = () => {
+          document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
+        if (!intakeDone && !lastSavedAt) {
+          primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
+        } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
+          primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+        } else if (briefReadyLocal) {
+          primaryAction = { label: "Rever briefing", icon: <ArrowRight className="h-4 w-4" />, onClick: scrollToStages };
+        } else if (briefApproved && !blueprintApprovedLocal) {
+          primaryAction = { label: "Aprovar plano-mestre", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("blueprint"); scrollToStages(); } };
+        } else if (blueprintApprovedLocal && !microcycleApprovedLocal) {
+          primaryAction = { label: "Aprovar semana-tipo", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("microcycle"); scrollToStages(); } };
+        } else if (microcycleApprovedLocal && !progressionsApprovedLocal) {
+          primaryAction = { label: "Aprovar progressão", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("progressions"); scrollToStages(); } };
+        } else if (allApprovedLocal && heroPlan) {
+          primaryAction = { label: "Abrir treino de hoje", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
+        } else if (heroPlan) {
+          primaryAction = { label: "Abrir plano", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
+        } else {
+          primaryAction = { label: "Continuar avaliação", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" }); } };
+        }
+        return (
+          <section
+            aria-label="Protocolo"
+            className={[
+              "mb-3 overflow-hidden rounded-2xl border p-3",
+              heroPlan
+                ? "border-amber-500/30 bg-gradient-to-br from-amber-500/[0.06] via-card to-card shadow-[0_8px_32px_-12px_rgba(245,158,11,0.18)]"
+                : "border-border bg-card/60",
+            ].join(" ")}
+          >
+            <ProtocolRail
+              bare
+              assessmentPct={
+                briefCoverage && briefCoverage.total > 0
+                  ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+                  : null
+              }
+              lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
+              briefApproved={!!inlineBrief?.approved}
+              blueprintApproved={blueprintApprovedLocal}
+              microcycleApproved={microcycleApprovedLocal}
+              progressionsApproved={progressionsApprovedLocal}
+              onReassessClick={() => setReassessOpen(true)}
+              stage1Expanded={!effectiveCollapsed}
+              onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
+              onShowSynthesis={() => setSynthesisOpen((o) => !o)}
+            />
+            <div className="mt-2 border-t border-border/60">
+              <ThisWeekHero
+                bare
+                key={heroPlan?.id ?? "empty"}
+                plan={heroPlan as any}
+                defaultWeek={heroDefaultWeek}
+                zeroState={zeroState}
+                primaryAction={primaryAction}
+              />
+            </div>
+          </section>
+        );
+      })()}
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
         {showSidebar && (
         <aside className="hidden lg:block">
