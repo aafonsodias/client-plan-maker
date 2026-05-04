@@ -199,6 +199,39 @@
   --sidebar-ring: oklch(0.72 0.12 70 / 0.45);
 }
 
+/* Slate — middle ground between Dark and Cream. Slate-blue surfaces,
+ * keeps amber accent. Activated when <html> has class "slate". */
+.slate {
+  color-scheme: dark;
+  --background: oklch(0.28 0.018 250);
+  --foreground: oklch(0.94 0.005 250);
+  --card: oklch(0.32 0.022 250);
+  --card-foreground: oklch(0.94 0.005 250);
+  --popover: oklch(0.32 0.022 250);
+  --popover-foreground: oklch(0.94 0.005 250);
+  --primary: oklch(0.94 0.005 250);
+  --primary-foreground: oklch(0.22 0.018 250);
+  --secondary: oklch(0.36 0.024 250);
+  --secondary-foreground: oklch(0.94 0.005 250);
+  --muted: oklch(0.34 0.022 250);
+  --muted-foreground: oklch(0.68 0.02 250);
+  --accent: oklch(0.78 0.155 70);
+  --accent-foreground: oklch(0.22 0.018 250);
+  --destructive: oklch(0.6 0.18 27);
+  --destructive-foreground: oklch(0.97 0 0);
+  --border: oklch(0.38 0.022 250);
+  --input: oklch(0.36 0.024 250);
+  --ring: oklch(0.78 0.12 70 / 0.5);
+  --sidebar: oklch(0.32 0.022 250);
+  --sidebar-foreground: oklch(0.94 0.005 250);
+  --sidebar-primary: oklch(0.78 0.12 70);
+  --sidebar-primary-foreground: oklch(0.22 0.018 250);
+  --sidebar-accent: oklch(0.36 0.024 250);
+  --sidebar-accent-foreground: oklch(0.94 0.005 250);
+  --sidebar-border: oklch(0.38 0.022 250);
+  --sidebar-ring: oklch(0.78 0.12 70 / 0.5);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
