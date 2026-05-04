@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { I18nextProvider } from "react-i18next";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
@@ -11,6 +12,12 @@ import { TourProvider } from "@/contexts/TourContext";
 import i18n, { applyPersistedLocale } from "@/i18n";
 
 import appCss from "../styles.css?url";
+
+// Defense-in-depth: even though no first-party code imports react-query hooks
+// today, the package is installed and may be pulled in transitively by future
+// deps. Mounting a single client at the root prevents the cryptic
+// "No QueryClient set" crash from blowing up entire routes.
+const queryClient = new QueryClient();
 
 function NotFoundComponent() {
   const { t } = useTranslation("common");
@@ -117,18 +124,20 @@ function RootComponent() {
     applyPersistedLocale();
   }, []);
   return (
-    <I18nextProvider i18n={i18n}>
-      <AuthProvider>
-        <CurrencyProvider>
-          <DemoRunsProvider>
-            <TourProvider>
-              <Outlet />
-              <DemoRunsIndicator />
-              <Toaster />
-            </TourProvider>
-          </DemoRunsProvider>
-        </CurrencyProvider>
-      </AuthProvider>
-    </I18nextProvider>
+    <QueryClientProvider client={queryClient}>
+      <I18nextProvider i18n={i18n}>
+        <AuthProvider>
+          <CurrencyProvider>
+            <DemoRunsProvider>
+              <TourProvider>
+                <Outlet />
+                <DemoRunsIndicator />
+                <Toaster />
+              </TourProvider>
+            </DemoRunsProvider>
+          </CurrencyProvider>
+        </AuthProvider>
+      </I18nextProvider>
+    </QueryClientProvider>
   );
 }
