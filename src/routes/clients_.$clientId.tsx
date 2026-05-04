@@ -3009,6 +3009,11 @@ function ClientDetail() {
         </section>
       )}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
+      <ReassessmentSheet
+        clientId={clientId}
+        open={reassessOpen}
+        onOpenChange={setReassessOpen}
+      />
     </div>
     </TooltipProvider>
   );
