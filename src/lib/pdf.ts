@@ -260,6 +260,28 @@ export async function generatePlanPdf(
 
   const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
 
+  // ---------- Weekly mode setup ----------
+  // If meta.week_number is provided, filter plan.weeks down to just that week
+  // for archetype/session rendering, but keep allWeeks for the macro-index strip.
+  const allWeeks = plan.weeks ?? [];
+  const totalWeeksInPlan = allWeeks.length;
+  const selectedWeekN = meta.week_number ?? null;
+  const renderWeeks = selectedWeekN
+    ? allWeeks.filter((w) => w.week_number === selectedWeekN)
+    : allWeeks;
+  // Re-bind plan to a filtered version for the rest of the function so the
+  // existing archetype loop just works without further changes.
+  plan = { ...plan, weeks: renderWeeks };
+
+  // Tag a week (heuristic for the macro-index strip)
+  const weekTag = (wn: number, total: number): string => {
+    if (total <= 1) return "base";
+    if (wn === total) return "deload";
+    if (wn === 1) return "base";
+    // alternate +load / +reps for middle weeks
+    return wn % 2 === 0 ? "+load" : "+reps";
+  };
+
   const paintPage = () => {
     setFill(doc, theme.bg);
     doc.rect(0, 0, W, H, "F");
