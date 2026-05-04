@@ -123,7 +123,8 @@ export default function StageCard({
             <div className="min-w-0">
               <div
                 key={stepIdx}
-                className="text-sm font-medium text-foreground transition-opacity duration-300 motion-safe:animate-[fadeIn_0.4s_ease-out]"
+                className="text-sm font-medium text-foreground"
+                style={{ animation: "stagecard-fade 0.45s ease-out" }}
               >
                 {currentStep}
               </div>
