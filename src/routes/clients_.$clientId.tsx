@@ -2737,9 +2737,23 @@ function ClientDetail() {
                     const isComplete = stage === "complete";
                     if (isComplete) {
                       return (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const tId = toast.loading("A preparar PDF…");
+                            try {
+                              await downloadPlanById(p.id);
+                              toast.success("PDF descarregado.", { id: tId });
+                            } catch (err: any) {
+                              toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20"
+                        >
                           <Download className="h-3 w-3" /> Descarregar PDF
-                        </span>
+                        </button>
                       );
                     }
                     const s = planStatusInfo(p as any, tCommon as any);
