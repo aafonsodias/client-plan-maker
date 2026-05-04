@@ -2965,28 +2965,37 @@ function AssessmentSection({
   headerProgress,
   children,
   defaultCollapsed = false,
+  collapsed: collapsedProp,
+  onCollapsedChange,
   summaryLine,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
   children: React.ReactNode;
   defaultCollapsed?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (v: boolean) => void;
   summaryLine?: string;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
-  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  const [collapsedInternal, setCollapsedInternal] = useState<boolean>(defaultCollapsed);
+  const collapsed = collapsedProp ?? collapsedInternal;
+  const setCollapsed = (v: boolean) => {
+    if (onCollapsedChange) onCollapsedChange(v);
+    else setCollapsedInternal(v);
+  };
   // Keep in sync when the default flips from "no plan" → "plan ready" while
   // the user is on the page; trainer's local override (after first toggle)
   // wins, so we only auto-update on the initial transition.
   const lastDefaultRef = useRef(defaultCollapsed);
   useEffect(() => {
-    if (lastDefaultRef.current !== defaultCollapsed) {
-      setCollapsed(defaultCollapsed);
+    if (lastDefaultRef.current !== defaultCollapsed && collapsedProp == null) {
+      setCollapsedInternal(defaultCollapsed);
       lastDefaultRef.current = defaultCollapsed;
     }
-  }, [defaultCollapsed]);
+  }, [defaultCollapsed, collapsedProp]);
 
   // Focused mode: render one section at a time with prev/next nav.
   // Persist toggle per client; default = on (the whole point of #9).
