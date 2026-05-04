@@ -1,4 +1,7 @@
 {
+  "brand": {
+    "name": "PROTOCOL"
+  },
   "actions": {
     "sign_in": "Entrar",
     "sign_out": "Terminar sessão",
