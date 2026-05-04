@@ -428,10 +428,6 @@ function Dashboard() {
 
       {/* Clients section — single source of truth */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold">{t("dashboard.clients_heading", { defaultValue: "Clientes" })}</h2>
-        </div>
-
         {isEmpty ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
             <p className="font-medium">{t("dashboard.empty_clients_title", { defaultValue: "Adiciona o teu primeiro cliente" })}</p>
