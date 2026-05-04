@@ -64,6 +64,7 @@ import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/li
 import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
+import { PipelineStrip } from "@/components/PipelineStrip";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
