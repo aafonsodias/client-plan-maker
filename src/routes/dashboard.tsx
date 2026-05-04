@@ -15,7 +15,7 @@ import { OnboardingChecklist, markOnboardingStep } from "@/components/Onboarding
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
 import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
-import { DashboardHint } from "@/components/DashboardHint";
+import { AtlasGenie } from "@/components/AtlasGenie";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -373,7 +373,9 @@ function Dashboard() {
         </Dialog>
       </div>
 
-      <DashboardHint />
+      <div className="flex justify-end">
+        <AtlasGenie trigger="pill" />
+      </div>
 
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
