@@ -398,6 +398,10 @@ function ClientDetail() {
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   const [expandedStage, setExpandedStage] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
+  // Synthesis dashboard expansion (independent of AssessmentSection collapse).
+  // When the trainer clicks the green "Avaliação completa" pill, the synthesis
+  // expands; when collapsed, only the chip remains and stages stay below.
+  const [synthesisOpen, setSynthesisOpen] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
@@ -889,6 +893,62 @@ function ClientDetail() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phasedEnabled, user, hydrated, clientId]);
+
+  // Load a specific phased-draft plan into the inline panel and scroll the
+  // stage cards into view. Used when the trainer clicks a row in the Plans
+  // list — we never navigate away to /plans/$planId/<stage>.
+  const openPhasedDraft = useCallback(async (planId: string, stage?: string) => {
+    const { data: row } = await supabase
+      .from("workout_plans")
+      .select("id, brief, blueprint, progression_plan, generation_state, programming_variables, red_flag_accommodations")
+      .eq("id", planId)
+      .maybeSingle();
+    if (!row || !(row as any).brief) {
+      toast.error("Brief não disponível para este plano.");
+      return;
+    }
+    const parsed = BriefSchema.safeParse((row as any).brief);
+    if (!parsed.success) {
+      toast.error("Brief com formato inválido.");
+      return;
+    }
+    const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+    const stageNow = (row as any).generation_state?.stage as string | undefined;
+    const storedPv = ProgrammingVariablesSchema.safeParse((row as any).programming_variables);
+    const storedAcc = RedFlagAccommodationsSchema.safeParse((row as any).red_flag_accommodations);
+    const hasBlueprintDraft = !!(row as any).blueprint;
+    const hasProgressionsDraft = !!(row as any).progression_plan;
+    let hasMicrocycleDraft = false;
+    try {
+      const { count } = await supabase
+        .from("workout_plan_days")
+        .select("id", { count: "exact", head: true })
+        .eq("plan_id", planId)
+        .eq("week_number", 1);
+      hasMicrocycleDraft = (count ?? 0) > 0;
+    } catch {}
+    setInlineBrief({
+      planId,
+      brief: parsed.data,
+      approved: approvedList.includes("brief") || (!!stageNow && stageNow !== "brief"),
+      programmingVariables: storedPv.success ? storedPv.data : defaultProgrammingVariables(parsed.data),
+      accommodations: storedAcc.success
+        ? reconcileAccommodations(parsed.data, storedAcc.data)
+        : reconcileAccommodations(parsed.data, null),
+      approvedStages: approvedList,
+      hasBlueprintDraft,
+      hasMicrocycleDraft,
+      hasProgressionsDraft,
+    });
+    const target = (stage && (stage === "blueprint" || stage === "microcycle" || stage === "progressions"))
+      ? stage
+      : (hasMicrocycleDraft ? "microcycle" : hasBlueprintDraft ? "blueprint" : null);
+    if (target) setExpandedStage(target as any);
+    // Scroll the stages lane into view so the user sees the chip + stages.
+    requestAnimationFrame(() => {
+      document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [clientId]);
 
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
@@ -2141,6 +2201,9 @@ function ClientDetail() {
           </div>
           )}
 
+        </AssessmentSection>
+      </div>
+
           {/* Post-assessment synthesis — collapses to a chip ONLY when the
               assessment is genuinely complete (≥80% of sections). Below
               that threshold we keep the dashboard expanded with an honest
@@ -2155,7 +2218,7 @@ function ClientDetail() {
               return (
                 <button
                   type="button"
-                  onClick={() => setExpandedStage(null)}
+                  onClick={() => setSynthesisOpen((o) => !o)}
                   className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
                 >
                   <span className="flex items-center gap-2 font-semibold text-emerald-500">
@@ -2172,6 +2235,7 @@ function ClientDetail() {
                   <span>Avaliação parcial · {coveragePct}% — brief aprovado com dados incompletos</span>
                 </div>
               )}
+            {synthesisOpen && (
             <AssessmentSynthesisDashboard
               assessment={assessment}
               sectionAnalyses={sectionAnalyses}
@@ -2180,6 +2244,7 @@ function ClientDetail() {
               whr={whr}
               redFlagAccommodations={inlineBrief?.accommodations ?? null}
             />
+            )}
               </>
             );
           })()}
@@ -2187,11 +2252,12 @@ function ClientDetail() {
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
           {phasedEnabled && inlineBrief && (
-            <div className="space-y-3">
+            <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
                 stageNumber={1}
                 title="Brief"
+                tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
                 onApprove={
@@ -2539,8 +2605,6 @@ function ClientDetail() {
               )}
             </div>
           )}
-        </AssessmentSection>
-      </div>
 
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
@@ -2602,38 +2666,47 @@ function ClientDetail() {
               const stage = (p.generation_state as any)?.stage as string | undefined;
               const phasedStages = ["brief", "blueprint", "microcycle", "progressions"];
               const isPhasedDraft = !!stage && phasedStages.includes(stage);
-              const linkProps = isPhasedDraft && stage === "brief"
-                ? { to: "/plans/$planId/brief" as const, params: { planId: p.id } }
-                : isPhasedDraft
-                ? { to: `/plans/$planId/${stage}` as any, params: { planId: p.id } }
-                : { to: "/plans/$planId" as const, params: { planId: p.id } };
+              const rowInner = (
+                <>
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div className="text-left">
+                      <p className="font-semibold">{p.title}</p>
+                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const s = planStatusInfo(p as any, tCommon as any);
+                    return (
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
+                        {isPhasedDraft ? `Stage: ${s.label}` : s.label}
+                      </span>
+                    );
+                  })()}
+                </>
+              );
               return (
                 <div
                   key={p.id}
                   className="flex items-center justify-between border-b border-border last:border-b-0 hover:bg-secondary/50"
                 >
-                  <Link
-                    {...(linkProps as any)}
-                    className="flex flex-1 items-center justify-between px-5 py-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">{p.title}</p>
-                        <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
-                      </div>
-                    </div>
-                    {(() => {
-                      const s = planStatusInfo(p as any, tCommon as any);
-                      return (
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
-                        >
-                          {isPhasedDraft ? `Stage: ${s.label}` : s.label}
-                        </span>
-                      );
-                    })()}
-                  </Link>
+                  {isPhasedDraft ? (
+                    <button
+                      type="button"
+                      onClick={() => void openPhasedDraft(p.id, stage)}
+                      className="flex flex-1 items-center justify-between px-5 py-4 text-left"
+                    >
+                      {rowInner}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/plans/$planId"
+                      params={{ planId: p.id }}
+                      className="flex flex-1 items-center justify-between px-5 py-4"
+                    >
+                      {rowInner}
+                    </Link>
+                  )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button

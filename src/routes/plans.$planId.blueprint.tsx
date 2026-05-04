@@ -1,30 +1,34 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/AppShell";
-import { BriefContextRail } from "@/components/BriefContextRail";
-import { BlueprintEditorPanel } from "@/components/BlueprintEditorPanel";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/plans/$planId/blueprint")({
-  component: BlueprintRoute,
+  component: RedirectToClient,
 });
 
-function BlueprintRoute() {
+function RedirectToClient() {
   const { planId } = Route.useParams();
+  const navigate = useNavigate();
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from("workout_plans")
+        .select("client_id")
+        .eq("id", planId)
+        .maybeSingle();
+      const clientId = (data as any)?.client_id as string | undefined;
+      if (clientId) {
+        navigate({ to: "/clients/$clientId", params: { clientId }, replace: true });
+      } else {
+        navigate({ to: "/dashboard", replace: true });
+      }
+    })();
+  }, [planId, navigate]);
   return (
-    <AppShell>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="xl:flex xl:gap-6">
-          <main className="min-w-0 flex-1">
-            <div className="mx-auto max-w-4xl p-4 sm:p-6">
-              <BlueprintEditorPanel planId={planId} />
-            </div>
-          </main>
-          <aside className="hidden xl:block w-80 2xl:w-96 flex-shrink-0">
-            <div className="scrollbar-hide sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
-              <BriefContextRail planId={planId} />
-            </div>
-          </aside>
-        </div>
-      </div>
-    </AppShell>
+    <div className="mx-auto max-w-3xl p-8 text-center text-muted-foreground">
+      <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+      <p className="mt-2 text-xs">A abrir o cliente…</p>
+    </div>
   );
 }

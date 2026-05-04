@@ -26,3 +26,4 @@ Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Blo
 
 - [Intake recurrence](mem://principles/intake-recurrence.md) — intake = on-demand re-assessment; continuous data (sleep/HR/wearables) lives on client dashboard
 - [No stage redirects](mem://principles/no-stage-redirects.md) — all 5 stages render inline on /clients/$id, /plans/* are thin back-compat wrappers
+- [Inline-only journey](mem://principles/inline-only-journey.md) — Plans-list rows expand inline (no nav), standalone stage routes are redirects
