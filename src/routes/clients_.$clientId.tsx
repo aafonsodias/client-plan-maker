@@ -2758,7 +2758,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={5}
-                          title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                          title={t("plan:stage.label.5", "Progressões")}
                           status={
                             stageBusy === "progressions"
                               ? "generating"
@@ -2852,7 +2852,7 @@ function ClientDetail() {
                   />
                   <StageCard
                     stageNumber={5}
-                    title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                    title={t("plan:stage.label.5", "Progressões")}
                     status="placeholder"
                   />
                 </>
