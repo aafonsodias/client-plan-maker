@@ -42,7 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Welcome back",
-    "title": "Your Workbench",
+    "title": "Workbench",
     "new_client": "New client",
     "mode_invite": "Send assessment link",
     "mode_manual": "Add manually",
@@ -204,7 +204,8 @@
   "errors": {
     "page_not_found_title": "Page not found",
     "page_not_found_desc": "The page you're looking for doesn't exist or has been moved.",
-    "go_home": "Go home"
+    "go_home": "Go home",
+    "validation_failed": "The plan didn't pass validation. Try again or report it."
   },
   "currency": {
     "title": "Currency",

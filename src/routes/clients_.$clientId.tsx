@@ -26,6 +26,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { friendlyError } from "@/lib/friendly-error";
 import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templates";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
@@ -2442,7 +2443,7 @@ function ClientDetail() {
                           const prefix = stage[0].toUpperCase() + stage.slice(1);
                           const msg = res?.error || `Falha ao gerar ${stage}`;
                           console.error(`[${prefix}] generate failed`, { planId, stage, error: msg });
-                          toast.error(`${prefix}: ${msg}`);
+                          toast.error(`${prefix}: ${friendlyError(msg, `Falha ao gerar ${stage}.`)}`);
                           return;
                         }
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
@@ -2469,7 +2470,7 @@ function ClientDetail() {
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         const msg = e?.message ?? `Falha ao gerar ${stage}`;
                         console.error(`[${prefix}] generate threw`, { planId, stage, error: msg });
-                        toast.error(`${prefix}: ${msg}`);
+                        toast.error(`${prefix}: ${friendlyError(msg, `Falha ao gerar ${stage}.`)}`);
                       } finally {
                         setStageBusy(null);
                       }
@@ -2717,6 +2718,25 @@ function ClientDetail() {
                       })()
                     );
                   })()}
+                </>
+              )}
+              {!inlineBrief.approved && (
+                <>
+                  <StageCard
+                    stageNumber={3}
+                    title={t("plan:stage.label.3", "Plano-mestre")}
+                    status="placeholder"
+                  />
+                  <StageCard
+                    stageNumber={4}
+                    title={t("plan:stage.label.4", "Semana-tipo")}
+                    status="placeholder"
+                  />
+                  <StageCard
+                    stageNumber={5}
+                    title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                    status="placeholder"
+                  />
                 </>
               )}
             </div>
