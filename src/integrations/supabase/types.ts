@@ -704,6 +704,7 @@ export type Database = {
       clients: {
         Row: {
           age: number | null
+          assessment_completion: number
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -728,6 +729,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          assessment_completion?: number
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -752,6 +754,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          assessment_completion?: number
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -919,6 +922,53 @@ export type Database = {
           zod_passed?: boolean
         }
         Relationships: []
+      }
+      missions: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          evidence_required: boolean
+          evidence_url: string | null
+          id: string
+          kind: Database["public"]["Enums"]["mission_kind"]
+          status: Database["public"]["Enums"]["mission_status"]
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          evidence_required?: boolean
+          evidence_url?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["mission_kind"]
+          status?: Database["public"]["Enums"]["mission_status"]
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          evidence_required?: boolean
+          evidence_url?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["mission_kind"]
+          status?: Database["public"]["Enums"]["mission_status"]
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_feedback: {
         Row: {
@@ -1394,6 +1444,14 @@ export type Database = {
     Enums: {
       account_type: "coach" | "solo" | "coached_client"
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
+      mission_kind:
+        | "parq"
+        | "rockport"
+        | "blood_pressure"
+        | "gym_class"
+        | "photos"
+        | "custom"
+      mission_status: "pending" | "in_progress" | "done" | "skipped"
       session_status: "done" | "partial" | "missed" | "in_progress"
     }
     CompositeTypes: {
@@ -1524,6 +1582,15 @@ export const Constants = {
     Enums: {
       account_type: ["coach", "solo", "coached_client"],
       intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
+      mission_kind: [
+        "parq",
+        "rockport",
+        "blood_pressure",
+        "gym_class",
+        "photos",
+        "custom",
+      ],
+      mission_status: ["pending", "in_progress", "done", "skipped"],
       session_status: ["done", "partial", "missed", "in_progress"],
     },
   },
