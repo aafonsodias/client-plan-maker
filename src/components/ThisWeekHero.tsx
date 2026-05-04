@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FileText, Loader2, ExternalLink, Sparkles, Plus } from "lucide-react";
+// Loader2 still used in the zero-state CTAs below.
 import { Link } from "@tanstack/react-router";
 // toast no longer used here — week download moved to the per-plan row.
 import { Button } from "@/components/ui/button";
