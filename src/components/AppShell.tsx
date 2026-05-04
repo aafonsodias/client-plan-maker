@@ -194,7 +194,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   )}
                 >
                   <n.icon className="h-4 w-4 shrink-0" />
-                  <span className="hidden truncate xl:inline">{n.label}</span>
+                  <span className="hidden truncate 2xl:inline">{n.label}</span>
                 </Link>
               );
             })}
@@ -202,7 +202,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
           {/* Desktop right side (≥ lg) */}
           <div className="hidden items-center gap-1 lg:flex">
-            <div className="hidden xl:inline-flex"><ShareAppButton /></div>
+            <div className="hidden 2xl:inline-flex"><ShareAppButton /></div>
             {secondaryNav.map((n) => (
               <Button
                 key={n.to}
@@ -213,8 +213,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 className="min-w-0"
               >
                 <Link to={n.to}>
-                  <n.icon className="h-4 w-4 shrink-0 xl:mr-2" />
-                  <span className="hidden truncate xl:inline">{n.label}</span>
+                  <n.icon className="h-4 w-4 shrink-0 2xl:mr-2" />
+                  <span className="hidden truncate 2xl:inline">{n.label}</span>
                 </Link>
               </Button>
             ))}
@@ -239,8 +239,8 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenu>
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="min-w-0">
-              <LogOut className="h-4 w-4 shrink-0 xl:mr-2" />
-              <span className="hidden truncate xl:inline">{t("actions.sign_out")}</span>
+              <LogOut className="h-4 w-4 shrink-0 2xl:mr-2" />
+              <span className="hidden truncate 2xl:inline">{t("actions.sign_out")}</span>
             </Button>
           </div>
 
