@@ -894,6 +894,62 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phasedEnabled, user, hydrated, clientId]);
 
+  // Load a specific phased-draft plan into the inline panel and scroll the
+  // stage cards into view. Used when the trainer clicks a row in the Plans
+  // list — we never navigate away to /plans/$planId/<stage>.
+  const openPhasedDraft = useCallback(async (planId: string, stage?: string) => {
+    const { data: row } = await supabase
+      .from("workout_plans")
+      .select("id, brief, blueprint, progression_plan, generation_state, programming_variables, red_flag_accommodations")
+      .eq("id", planId)
+      .maybeSingle();
+    if (!row || !(row as any).brief) {
+      toast.error("Brief não disponível para este plano.");
+      return;
+    }
+    const parsed = BriefSchema.safeParse((row as any).brief);
+    if (!parsed.success) {
+      toast.error("Brief com formato inválido.");
+      return;
+    }
+    const approvedList: string[] = (row as any).generation_state?.approved_stages ?? [];
+    const stageNow = (row as any).generation_state?.stage as string | undefined;
+    const storedPv = ProgrammingVariablesSchema.safeParse((row as any).programming_variables);
+    const storedAcc = RedFlagAccommodationsSchema.safeParse((row as any).red_flag_accommodations);
+    const hasBlueprintDraft = !!(row as any).blueprint;
+    const hasProgressionsDraft = !!(row as any).progression_plan;
+    let hasMicrocycleDraft = false;
+    try {
+      const { count } = await supabase
+        .from("workout_plan_days")
+        .select("id", { count: "exact", head: true })
+        .eq("plan_id", planId)
+        .eq("week_number", 1);
+      hasMicrocycleDraft = (count ?? 0) > 0;
+    } catch {}
+    setInlineBrief({
+      planId,
+      brief: parsed.data,
+      approved: approvedList.includes("brief") || (!!stageNow && stageNow !== "brief"),
+      programmingVariables: storedPv.success ? storedPv.data : defaultProgrammingVariables(parsed.data),
+      accommodations: storedAcc.success
+        ? reconcileAccommodations(parsed.data, storedAcc.data)
+        : reconcileAccommodations(parsed.data, null),
+      approvedStages: approvedList,
+      hasBlueprintDraft,
+      hasMicrocycleDraft,
+      hasProgressionsDraft,
+    });
+    const target = (stage && (stage === "blueprint" || stage === "microcycle" || stage === "progressions"))
+      ? stage
+      : (hasMicrocycleDraft ? "microcycle" : hasBlueprintDraft ? "blueprint" : null);
+    if (target) setExpandedStage(target as any);
+    // Scroll the stages lane into view so the user sees the chip + stages.
+    requestAnimationFrame(() => {
+      document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [clientId]);
+
   const flushPendingSave = async () => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
