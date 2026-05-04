@@ -1,6 +1,6 @@
 # Forge — Backlog vivo
 
-Atualizado: Round 27 (3 Mai 2026)
+Atualizado: Round 28 (4 Mai 2026)
 
 ## Concluído (linha do tempo condensada)
 
@@ -70,13 +70,18 @@ Atualizado: Round 27 (3 Mai 2026)
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."
 
 ## Closed this round
-- Demo data cleanup (DB + UI gating already behind ?lab=1 + isFounder)
-- clients.user_id column + RLS for coached client self-read
-- linkClientAccount server fn + ThankYou panel (Google one-click + email/password)
-- /me read-only client portal (plan + trainer brand)
-- Face photo mirrored to clients.photo_url on submit
-- Tier "Studio" → "Oficina"
-- ThankYou copy fixed ("Powered by Forge" line + thanks_desc_v2)
+## Closed Round 28
+- Merged /clients into /dashboard (single home for clients + invite dialog + filters)
+- Deleted src/routes/clients.tsx and src/components/DemoClientBanner.tsx
+- Removed "Clientes" + "Users" import from AppShell nav (5-item nav)
+- Tour: dropped step_banner + step_lab; demo-lab anchor no longer required
+- Plan engine FROZEN this round (no edits to plans/intake-ai/quota/prompts)
+
+## Parked for next round
+- SMART chips (6 measurable + 5 deadline, color-coded grid)
+- Movement spider chart with peer-band overlays (ACSM 12e norms)
+- "Ver como cliente" preview from /clients/$clientId
+- Demo Lab UI resurrection (code kept; flip a flag to re-expose)
 
 ## Next round (P1)
 - Steps widget on /log/$token + trainer view

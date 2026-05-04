@@ -10,8 +10,7 @@ export type RouteHint = {
 };
 
 export const CONCIERGE_ROUTES: RouteHint[] = [
-  { path: "/dashboard", label: "Dashboard", what: "Overview of your clients, recent plans, and onboarding checklist." },
-  { path: "/clients", label: "Clients", what: "List of all clients. Add a new client here. Click any client to open their assessment wizard (PAR-Q, anthropometrics, SMART goal, training, lifestyle, nutrition, mobility, posture, movement screen, history, performance)." },
+  { path: "/dashboard", label: "Dashboard", what: "Single home: clients list with phase filters, attention feed (submitted intakes, birthdays, stale invites), recent plans, and the +Novo cliente invite dialog. Click any client to open their assessment wizard (PAR-Q, anthropometrics, SMART goal, training, lifestyle, nutrition, mobility, posture, movement screen, history, performance)." },
   { path: "/plans", label: "Plans", what: "Library of every plan you've generated. Open one to view, edit, log, or share." },
   { path: "/plans/new", label: "New plan", what: "Manual plan builder for trainers who want to skip the AI flow." },
   { path: "/templates", label: "Templates", what: "Reusable plan blueprints. Save a finalized plan as a template and apply it to other clients without re-running the AI." },

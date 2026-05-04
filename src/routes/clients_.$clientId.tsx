@@ -73,7 +73,7 @@ function ClientDetailRoute() {
   const { clientId } = Route.useParams();
   const { demo } = Route.useSearch();
   return (
-    <AppShell back={{ to: "/clients", label: t("all_clients") }}>
+    <AppShell back={{ to: "/dashboard", label: t("all_clients") }}>
       <ClientDetail />
       {demo === "play" && (
         <Suspense fallback={null}>

@@ -19,9 +19,9 @@ type Steps = {
 };
 
 const STEPS: { key: keyof Steps; to: string }[] = [
-  { key: "add_client",     to: "/clients" },
-  { key: "run_assessment", to: "/clients" },
-  { key: "generate_plan",  to: "/clients" },
+  { key: "add_client",     to: "/dashboard" },
+  { key: "run_assessment", to: "/dashboard" },
+  { key: "generate_plan",  to: "/dashboard" },
   { key: "export_pdf",     to: "/plans" },
 ];
 

@@ -1,100 +1,109 @@
-## Context: how the product works (confirming your model)
+# Round 28 — Clean sweep, freeze the engine
 
-- **Who pays**: PTs (subscription) and self-coached individuals who want AI-assisted plan generation/safety checks. Confirmed.
-- **Client intake link**: belongs to a paying PT. Their clients fill it, then get an account that lets them see *their* plan + logbook (read/log only).
-- **PT view = client view**: I'll add a "Ver como cliente" toggle on `/clients/$id` so you (PT) can preview exactly what the client sees on `/me`. No need to build a separate UI — same component, scoped data.
-- **Stats DB seed**: every submitted intake already lands in `assessments` + `clients`. No extra work needed — the longitudinal dataset accrues naturally as PTs onboard clients.
-
-Wearables (Xiaomi/Garmin/etc.) deferred — agreed, not blocking sales.
+Goal: collapse duplicate surfaces, kill dead-end clicks, leave plan generation untouched. One job: make the chrome honest so the next round can focus 100% on plan quality.
 
 ---
 
-## P0 — bugs blocking sale
+## Decisions (locked from your answers)
 
-### 1. Founder hits "Atingiu o limite do plano gratuito" (CRITICAL)
+1. **Scope** — Dashboard + Roster merge. One screen. No more "Clientes" tab.
+2. **Plan engine** — **Frozen**. Zero edits to `src/server/plans*`, `intake-ai*`, `quota.server.ts`, prompts, or the generation pipeline. Quota fix from last round stays as-is. If a true blocker shows up mid-round I stop and ask — I do not patch silently.
+3. **Demo Lab** — **Hidden from UI, kept in code.** Honest answer: the seeded-fake-account loop *was* useful for spotting empty states early, but right now it's a distraction with its own bugs and 3 entry points. We hide the banner + buttons + `?lab=1` toggle from the UI. Code (`createDemoClient`, `DemoLabPanel`, `demo_runs` table) stays so you can resurrect it with one flag flip later. **No data deletion this round** — destructive migrations need a separate, deliberate decision.
 
-Root cause found: `src/server/quota.server.ts` calls `supabase.rpc("can_create_more_plans")` through the authenticated client. The RPC returns null (not `true`) in that context, the code falls through, and the fallback only reads profile and returns `ok:false` regardless of whether `used<limit` or the user has access. Network log confirms: `used:15, limit:999999`, `subscribed:true` — should obviously pass.
-
-**Fix**: rewrite `checkPlanQuota` to be explicit:
-1. Read `subscribers` row → if `subscribed` true (and not expired) OR `trial_end > now` → `ok:true`.
-2. Read `profiles.plan_quota_used/limit` → if `used < limit` → `ok:true`.
-3. Otherwise `ok:false` with used/limit.
-
-No more reliance on the broken RPC. Founder, paying PTs, and free-tier-with-quota-left all pass.
-
-### 2. Three identical "+ Novo cliente" / "Adicionar cliente" buttons on dashboard
-
-Confirmed in your screenshot. Dedupe to **one** primary action in the hero. Remove:
-- The bare "+ Novo cliente" strip below the hero card (lines 187–197 in `dashboard.tsx`).
-- The duplicate "Adicionar cliente" inside the `DashboardHint` how-it-works card (it already explains the 3 steps; the hero CTA covers the action).
-- The empty-state "Adicionar cliente" inside "Ainda não há planos" — keep that one only when there are zero clients; if `clients > 0`, change to "Ver clientes".
-
-Keep: hero `+ Novo cliente` (top-right) + the "Copiar link de avaliação · André" quick action (because that's a different action, not a duplicate).
-
-### 3. Top bar text truncation at 830px ("Dash…", "Cli…", "Faturação", etc.)
-
-The `lg:` breakpoint shows icons + truncated labels because `xl:inline` hides them only past 1280px. At 830–1279 the labels render but get clipped by `truncate`. Fix: at `lg`-only show **icon-only** with `title` tooltip (drop the label span entirely below `xl`). Already partly true for primary nav; same pattern needs applying to "Faturação", "Página inicial", "Terminar sessão", "Partilhar". Result at 830px: clean icon row, no ellipsis.
-
-Also: the founder badge currently shows just the sparkle icon below xl — that's fine, but tighten the gap so it doesn't crowd "F…" brand truncation. Bump the brand `truncate` min-width so "FORGE" never truncates to "F…".
+> "Why don't I understand /me payments?" — that's a separate conversation. Not in this round. When you want, I'll write a one-page plain-Portuguese explainer of how subscriptions/Stripe flow through the app. Just say the word.
 
 ---
 
-## P0 — UX polish you flagged
+## What changes
 
-### 4. Rebrand "O seu estúdio de treino"
+### 1. Kill `/clients` as a destination
 
-The label feels generic. Replacements I'll wire (PT-aware):
-- `Welcome back, {firstName}` eyebrow
-- Headline: **"A sua oficina"** (matches the new "Oficina" tier name + your craft positioning) or **"O seu estaleiro"** if you prefer a more grounded shipyard metaphor.
+- Delete `src/routes/clients.tsx`.
+- Move the **client list, filters, invite dialog** into `/dashboard` as the single source of truth.
+- Update all `<Link to="/clients">` in `dashboard.tsx`, `templates.tsx`, `settings.tsx`, `plans.index.tsx` to either point to `/dashboard` or be removed (e.g. nav item).
+- Remove "Clientes" entry from `AppShell` nav. Dashboard becomes the home for clients.
+- `/clients/$clientId` and `/clients/$clientId/year` **stay** — those are the per-client deep views, still reachable from the dashboard list.
 
-I'll go with **"A sua oficina"** — coherent with tier naming, honest, not corporate. (Memory rule: "honest craft tool".) If you hate it, one-line change.
+### 2. Redesigned `/dashboard` (single screen, top-to-bottom)
 
-### 5. SMART goal — more suggestions, equipment-style chips with legend
+```text
+┌─ Header ────────────────────────────────────────────┐
+│ DASHBOARD                          [+ Novo cliente] │  ← single primary CTA
+└─────────────────────────────────────────────────────┘
+┌─ DashboardHint (dismissable how-it-works) ──────────┐
+└─────────────────────────────────────────────────────┘
+┌─ Quick actions row (only if clients>0) ─────────────┐
+│ [Copiar link de avaliação · {Nome}]  [Ver planos]   │
+└─────────────────────────────────────────────────────┘
+┌─ Atenção (submitted intakes / birthdays / stale) ───┐
+└─────────────────────────────────────────────────────┘
+┌─ Clientes ──────────────────────────────────────────┐
+│ Filter chips: Todos · Onboarding · Ativos · Prontos │
+│ ─────────────────────────────────────────────────── │
+│ [avatar] Nome · email           [phase pill]    →   │
+│ [avatar] Nome · email           [phase pill]    →   │
+└─────────────────────────────────────────────────────┘
+┌─ Planos recentes (existing block, unchanged) ───────┐
+└─────────────────────────────────────────────────────┘
+```
 
-Current: `interpretGoal` returns 3 measurable + 3 deadline. Bump to **6 measurable + 5 deadline**, render as flat colour-coded chip grid (no subheaders) with a category legend row mirroring the equipment slide:
-- 🟢 emerald = body composition
-- 🔵 blue = performance (strength/endurance)
-- 🟡 amber = health/clinical
-- ⚪ neutral = lifestyle/habit
-- ⬜ muted = "Outro" free-text
+- The "+ Novo cliente" button opens the **same invite dialog** that lived in `/clients` (manual name + intake link generator). One CTA, one dialog. No more 3-buttons-same-thing.
+- Remove the two `StatCard` tiles (Clientes / Planos count) — redundant once the list is right there. Counts live in the filter chips.
+- Empty state: dashed card "Adiciona o teu primeiro cliente" with the invite CTA.
 
-Same `CAT_TONE` mapping used in the equipment picker.
+### 3. Hide Demo Lab from the UI
 
-### 6. Movement spider chart → health-relevant + age/gender norm overlay (memento-mori style)
+- Remove `DemoClientBanner` mount from dashboard.
+- Remove `?lab=1` panel + "+ Cliente demo" button from the merged client list.
+- Keep `demo-client.functions.ts`, `DemoLabPanel.tsx`, `demo_runs` table — code stays, no migration.
+- Remove `data-tour="demo-banner"` step from the Joyride tour config (tour replay still works, just one fewer step).
 
-Current `MuscleVolumeRadar` only shows the trainee's score. Plan:
-- Axes stay: Squat / Hinge / Push / Pull / Carry / Lunge (ACSM-aligned movement competencies).
-- Add **two overlay rings**:
-  - **Peer band** (dashed, semi-transparent): typical score for same age decade + sex. Seeded from ACSM 12e norms in `.lovable/acsm-12e-source.txt` (already in repo).
-  - **Lifetime peak band** (faint amber): typical 25-y-old benchmark for that sex. The "where you could still be" line.
-- Score derivation: combine `formScore` (technique) + `capacity` percentiles per pattern → 0-100. Colour the trainee polygon by tier (green/amber/red).
-- Add a one-line caption: *"Você está em P{percentile} para {age}-{sex}. Pico vitalício ~{peakScore}."* — that's the memento-mori beat without being morbid.
+### 4. AppShell nav
 
-Norms table lives in `src/lib/movement-norms.ts` (new). Sourced from ACSM 12e percentile tables; documented in code.
+- Nav becomes: **Dashboard · Planos · Templates · Calendário · Faturação** (5 items instead of 6, no "Clientes").
+- Founder badge + brand mark unchanged.
 
-### 7. Self-log onboarding pattern
+### 5. i18n
 
-When a self-coached user signs up (no PT), they go through the same intake but the "Powered by {trainer}" footer hides and the thank-you copy switches to "A tua AI vai usar isto para construir o teu plano." Quota and paywall behave identically. (Already 80% wired by the `intake_path: 'self_log'` work — just verify the welcome/thanks copy branches.)
-
-### 8. PT-as-client preview
-
-Add a small "Ver como cliente" link on the client header (`/clients/$id`). Opens `/me?as={clientId}` — same `/me` route, but if the viewer is the trainer that owns the client, it renders read-only with the client's data. Lets you dogfood the client surface without juggling browsers/emails.
+- Move `clients.invite_*`, `clients.filter_*`, `clients.no_email`, `clients.delete_*` keys into `dashboard.*` namespace (or alias) since they now live there.
+- Drop `dashboard.demo_*` strings used only by the hidden banner.
+- PT/EN parity pass on the new dashboard surface.
 
 ---
 
-## Out of scope this round (will land next)
+## What does NOT change this round
 
-- Wearable sync (Xiaomi/Garmin) — deferred per your call.
-- Spider-chart longitudinal lines (block-over-block evolution overlay).
-- Certified-photo badge.
-- Client-side write surfaces (logbook entries, messaging) — read-only `/me` first, write next round.
+- Plan generation pipeline, prompts, quota logic, intake AI suggestions.
+- Intake form itself (`/intake/$token`) — copy and slides untouched.
+- `/me` client portal — read-only as it is today.
+- Spider chart, SMART chips, "Ver como cliente" preview — **deferred** to next round (good ideas, just not this round's job).
+- Pricing, Stripe, billing UI.
+- Database schema. No migrations.
 
 ---
 
-## Files I'll touch
+## Files touched
 
-`src/server/quota.server.ts` (rewrite), `src/routes/dashboard.tsx` (dedupe CTAs, rename hero), `src/components/AppShell.tsx` (icon-only at lg), `src/i18n/locales/{pt,en}/{common,intake}.json` (copy), `src/server/intake-ai.functions.ts` (more SMART suggestions), `src/routes/intake.$token.tsx` (chip grid + legend), `src/lib/movement-norms.ts` (new — ACSM table), `src/components/volume/MuscleVolumeRadar.tsx` (overlays + caption), `src/routes/me.tsx` + `src/routes/clients_.$clientId.tsx` (PT preview link).
+- `src/routes/dashboard.tsx` — major rewrite (merge in client list + invite dialog)
+- `src/routes/clients.tsx` — **deleted**
+- `src/components/AppShell.tsx` — drop "Clientes" nav item
+- `src/components/DashboardHint.tsx` — minor copy tweak
+- `src/components/TourContext.tsx` (or wherever steps live) — drop demo-banner step
+- `src/routes/templates.tsx`, `src/routes/settings.tsx`, `src/routes/plans.index.tsx` — update stale `/clients` links to `/dashboard`
+- `src/i18n/locales/{pt,en}/common.json` — move/rename keys, drop demo strings
+- `.lovable/backlog.md` — log Round 28 closed items + parked (spider chart, SMART chips, /me preview, Demo Lab resurrection)
 
-## On publish
+No new files. No new dependencies. No SQL.
 
-Yes — to let real clients reach the app you publish once. After that the preview URL (id-preview-…) and published URL are independent: each publish snapshots the current preview. You keep iterating in Lovable; the live site only updates when you press Publish again.
+---
+
+## Risk & smoke checklist
+
+- 375px Mobile Safari: hero CTA doesn't overflow, filter chips wrap cleanly.
+- Founder account: no demo button visible anywhere.
+- Empty account (0 clients): empty state + invite CTA only, no broken links.
+- `/clients/$clientId` deep links still work (route file untouched).
+- Tour replay from DashboardHint doesn't crash on the removed demo-banner step.
+- One full plan generation (existing client) still succeeds — sanity check that the engine freeze held.
+
+Approve and I'll ship it in one pass.
