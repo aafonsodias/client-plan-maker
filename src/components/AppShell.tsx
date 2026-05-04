@@ -146,7 +146,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-[3px] text-[9px] font-semibold uppercase tracking-widest leading-none text-amber-600 dark:text-amber-400"
               >
                 <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
-                <span className="hidden 2xl:inline leading-none">Founder</span>
+                <span className="hidden lg:inline leading-none">Founder</span>
               </span>
             )}
           </Link>
