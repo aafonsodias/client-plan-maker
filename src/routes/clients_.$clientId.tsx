@@ -2703,7 +2703,12 @@ function ClientDetail() {
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <div className="text-left">
                       <p className="font-semibold">{p.title}</p>
-                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}
+                        {typeof (p as any).assessment_completion_pct === "number" && (
+                          <span className="ml-1.5 opacity-80">· dados {(p as any).assessment_completion_pct}%</span>
+                        )}
+                      </p>
                     </div>
                   </div>
                   {(() => {
