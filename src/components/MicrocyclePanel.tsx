@@ -287,9 +287,12 @@ export function MicrocyclePanel({
             {planTitle && <h2 className="truncate text-base font-semibold text-foreground">{planTitle}</h2>}
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <span>
-                Stage 4 — Semana-tipo · {approvedDayCount}/{sessionsPerWeek} dias aprovados
+                Stage 4 — {t("stage.label.4", "Semana-tipo")} · {approvedDayCount}/{sessionsPerWeek}{" "}
+                {t("microcycle.days_approved", "dias aprovados")}
                 {doneCount > approvedDayCount && (
-                  <span className="ml-1 opacity-70">({doneCount - approvedDayCount} a rever)</span>
+                  <span className="ml-1 opacity-70">
+                    ({doneCount - approvedDayCount} {t("microcycle.to_review", "a rever")})
+                  </span>
                 )}
               </span>
               <InfoHint tone="neutral" side="bottom" label="O que é um microciclo?">
