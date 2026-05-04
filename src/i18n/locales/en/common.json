@@ -42,7 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Welcome back",
-    "title": "Protocol · Workbench",
+    "title": "Your Workbench",
     "new_client": "New client",
     "mode_invite": "Send assessment link",
     "mode_manual": "Add manually",
@@ -74,7 +74,10 @@
     "sub_stale_hint": "Link sent {{n}} days ago — maybe nudge?",
     "intake_link_copied": "{{name}}'s link copied",
     "new_client_short": "New client",
-    "copy_intake": "Copy intake link · {{name}}",
+    "copy_intake": "Copy intake link",
+    "last_intake_label": "Last intake link generated",
+    "last_intake_for": "for {{name}}",
+    "intake_tooltip": "Client onboarding questionnaire",
     "view_plans": "View plans",
     "manual": "Manual",
     "attention": "Attention",
@@ -102,6 +105,19 @@
       "s3_b": "Generate the plan", "s3_s": "Review, adjust, export PDF.",
       "full_manual": "Open the manual"
     }
+  },
+  "missions": {
+    "title": "Assessment missions",
+    "subtitle": "Complete these missions to unlock plan generation.",
+    "parq": "PARQ — cardiovascular safety",
+    "rockport": "Rockport test (VO₂)",
+    "blood_pressure": "Blood pressure",
+    "photos": "Posture photos",
+    "gym_class": "Gym assessment class",
+    "custom": "Custom mission",
+    "mark_done": "Mark done",
+    "completion": "Assessment {{n}}% complete",
+    "locked_hint": "Plan generation unlocks at 100%."
   },
   "clients": {
     "eyebrow": "Roster",

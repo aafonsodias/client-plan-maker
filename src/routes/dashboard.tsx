@@ -275,7 +275,9 @@ function Dashboard() {
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
-        <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
+        <div className="flex items-center gap-2 sm:flex-row-reverse">
+          <AtlasGenie trigger="pill" />
+          <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
           <DialogTrigger asChild>
             <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
@@ -371,18 +373,26 @@ function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-
-      <div className="flex justify-end">
-        <AtlasGenie trigger="pill" />
+        </div>
       </div>
 
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
           {quickIntakeClient && (
-            <Button size="sm" variant="outline" onClick={copyQuickIntake}>
-              <Copy className="mr-1.5 h-4 w-4" /> {t("dashboard.copy_intake", { name: quickIntakeClient.full_name.split(" ")[0] })}
-            </Button>
+            <button
+              type="button"
+              onClick={copyQuickIntake}
+              title={t("dashboard.intake_tooltip")}
+              className="group flex flex-col items-start gap-0.5 rounded-md border border-border bg-card px-3 py-2 text-left transition hover:border-accent"
+            >
+              <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <Copy className="h-3.5 w-3.5 text-accent" />
+                {t("dashboard.copy_intake")}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {t("dashboard.last_intake_label")} · {t("dashboard.last_intake_for", { name: quickIntakeClient.full_name.split(" ")[0] })}
+              </span>
+            </button>
           )}
           <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> {t("dashboard.view_plans")}</Link></Button>
           {/* "Manual" lives in the footer + Atlas genie now; redundant button removed (R45). */}

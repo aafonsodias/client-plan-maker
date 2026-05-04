@@ -53,9 +53,10 @@ export function AtlasGenie({
           <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_-10%,rgba(232,165,71,0.25),transparent_60%)]" />
           <div className="flex flex-col items-center text-center">
             <div
-              className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-card animate-in zoom-in-50 fade-in duration-300"
+              className="relative inline-flex h-16 w-16 items-center justify-center rounded-full bg-card atlas-genie-mark"
               style={{ filter: "drop-shadow(0 0 22px rgba(232,165,71,0.45))" }}
             >
+              <span className="atlas-genie-halo pointer-events-none absolute inset-0 rounded-full" aria-hidden />
               <Logo className="h-12 w-12" />
             </div>
             <p className="mt-3 text-[10px] uppercase tracking-[0.3em] text-accent">Atlas</p>
