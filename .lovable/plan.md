@@ -1,108 +1,76 @@
+## Round 31 — Brand polish, intake intelligence, inline microcycle
 
-# Round 30 — Inline Microcycle Workbench + Brief Auto-Collapse
-
-Big picture: every stage (Brief → Blueprint → Microcycle → Progressions → PDF) lives inline on `/clients/$id` and behaves the same way — when you approve, it goes golden, collapses, and the next stage opens below it. No more bouncing to dedicated pages mid-flow. The Microcycle becomes a real weekly workbench (5 days at a glance, edit/reorder/superset, AI comments your changes), not a Day-1 stub.
-
-This round closes 5 P0 items. The full backlog (FITT-VP, special populations, NSCA, Bompa, schedule polish, etc.) stays parked in `.lovable/backlog.md` — nothing gets deleted, just deferred honestly.
+Ordered by **visual impact ÷ effort**. Each section ships independently.
 
 ---
 
-## 1. Fix "No archetype for day 1" (P0 hotfix, ~15 min)
+### 1. Brand mark + AI Workbench rename (P0, ~10 min)
 
-In the screenshot the Microcycle page shows `Day 1 failed — No archetype for day 1`. The deterministic Blueprint fallback writes `week_to_session_map["1"]` correctly, but `archetypeForDay()` in `src/server/phased/stage3-microcycle.functions.ts` returns `null` if `sessions_per_week` mismatches the actual `week_to_session_map["1"]` array length, or if a blueprint was approved while the matrix was empty.
+- `BrandMark` (header anvil): center the spark/glow inside its ring — currently the symbol sits ~2px left of the ring center. Adjust SVG `viewBox` / `translate` so the spark + handle visually center, not geometrically.
+- `dashboard.tsx` greeting: rename "Your AI Workbench" → **"Forge · AI Workbench"** with a small `BrandMark size="sm"` glyph to the left of the wordmark, replacing the generic hammer-and-pick emoji icon. Keeps craft tone, no royal vibe.
+- i18n: update `dashboard.welcome.workshop_title` in PT + EN.
 
-Fix in `archetypeForDay()`:
-- If `week_to_session_map["1"]` exists but is shorter than `dayIndex`, fall back to `session_archetypes[(dayIndex - 1) % archetypes.length]` instead of returning `null`.
-- If both are empty, synthesize a generic full-body archetype on the fly (`{ id: "full_body", focus: "Full body", primary_movements: ["squat","hinge","push","pull"] }`) so Stage 3 always has something to work with.
-- Log the recovery to `generation_log` as `stage3:archetype_recovered` so we know when it kicks in.
+### 2. Persistent session on refresh (P0, ~15 min)
 
-Add a defensive validator in `generateMicrocycleDays`: if `bpP.data.sessions_per_week !== Object.values(week_to_session_map["1"]).length`, repair the blueprint in-memory before launching workers.
+Symptom: refresh on `/clients/$id` flashes landing as if logged-out, then redirects.
 
----
+Cause: `__root` checks `supabase.auth.getSession()` synchronously on first render — before the persisted token rehydrates.
 
-## 2. Brief approval → golden + collapsed + section index folds (P0, ~20 min)
+Fix: gate the redirect with a `useState(loading=true)` until `supabase.auth.getSession()` resolves; render a neutral splash (logo + spinner on `bg-background`) instead of the marketing landing during the auth-rehydration window. Same fix used in `AppShell`'s auth guard.
 
-Mirror the Blueprint pattern. In `src/routes/clients_.$clientId.tsx`:
-- After `approveBriefFn` succeeds, set `setExpandedStage("blueprint")` and ensure the Stage-1 (Brief) card switches to `status="approved"` styling (amber → emerald gradient strip + lock icon).
-- Collapse the BriefEditor body (currently stays open) and collapse the BriefContextRail / section index that lives next to it.
-- Same for Assessment: when intake completes (already detected via `intake_completed_at`), collapse the assessment section into a slim "✓ Avaliação completa" pill.
+### 3. Intake link panel — smart visibility + working "opened" state (P0, ~30 min)
 
-Add a small `useStageAutoFlow()` helper so each approval step auto-collapses the previous and auto-expands the next — single source of truth across stages 1→4.
+`IntakeLinkPanel` on `clients_.$clientId.tsx`:
 
----
+- **Hide by default** when `clients.intake_completed_at IS NOT NULL`. Replace with a tiny one-line chip: "Intake recebido · 04/05 · Pedir nova avaliação" → click expands the panel to generate a fresh link (existing behavior, just moved behind an action).
+- **Realtime "opened" state**: subscribe to `client_intake_links` row via `postgres_changes` filter `id=eq.{linkId}` and update `opened_at` live. Currently it only refetches on mount.
+- When `opened_at` is set, auto-collapse the panel into a green "Aberto · há Xm" chip.
+- Copy: rename section from "Client intake link" → **"Pedir nova avaliação"** (PT) / "Request new assessment" (EN) — the current label implies it's required.
 
-## 3. Microcycle becomes a weekly workbench (inline on client page) (P0, ~3-4 h)
+### 4. Documents — distinct medical icon, corner placement (P1, ~25 min)
 
-Replace the dedicated `/plans/$planId/microcycle` redirect with a `MicrocyclePanel` component (mirrors `BlueprintEditorPanel`) embedded as Stage 3's `expandedBody`.
+`ClientDocuments.tsx` is currently a wide card stealing top-of-page real estate.
 
-Layout (compact, all 5 days visible on a 1280px screen, stacked on mobile):
+- Collapse to a **single icon button** in the top-right action row (next to "Carregar/Download PDF/Ver como cliente"): outlined cross/stethoscope SVG (custom — not a generic Lucide icon), color `--clinical: oklch(0.78 0.10 200)` (cool teal, distinct from amber/emerald), with a count badge if docs exist.
+- Click → opens a `Sheet` (right-side drawer) with the upload + list. Same logic, new shell.
+- Add `tone-clinical` to `src/lib/status-tone.ts` for reuse on other medical signals (red flags, exams).
 
-```text
-┌─ MICROCYCLE — Week 1 ────────────────────────────────────┐
-│ [Day 1] [Day 2] [Day 3] [Day 4] [Day 5]   ← lane tabs    │
-│ ┌──────────────────────────────────────────────────────┐ │
-│ │ Warmup ▾ (color: blue)        + add / search        │ │
-│ │ Activation ▾ (color: violet)                         │ │
-│ │ Dynamic stretch ▾ (color: cyan)                      │ │
-│ │ Main work ▾ (color: amber)                           │ │
-│ │   ⋮⋮ A1  Back Squat  4x6 @RPE8     [edit] [×]       │ │
-│ │   ⋮⋮ A2  RDL         4x8 @RPE7     [edit] [×]       │ │
-│ │   ⋮⋮ B   Pull-up     3x AMRAP                        │ │
-│ │ Conditioning ▾ (color: red)                          │ │
-│ │ Cooldown / passive ▾ (color: green)                  │ │
-│ └──────────────────────────────────────────────────────┘ │
-│ AI says: "Swap A1 for Front Squat — better for knee…"    │
-│         [accept] [dismiss]                               │
-│ [⟲ Regenerate this day]    [✓ Approve Day 1]             │
-└──────────────────────────────────────────────────────────┘
-[✓ Approve full week → Stage 4]   ← single CTA at bottom
-```
+### 5. Brief approval honesty (P0, ~10 min)
 
-Capabilities:
-- **Lane switcher**: Day 1..N tabs at the top, fast keyboard arrows, no page navigation.
-- **Searchable add-exercise**: reuse `AddExerciseDialog`, extend with filter by muscle / pattern / equipment. Same picker for warmups, activations, stretches (filtered by `section`).
-- **Color-coded sections**: a single source of truth in `src/lib/section-tone.ts` (mirrors `status-tone.ts`). Each section has `bg/border/text/dot` tokens. Same colour everywhere (workbench, PDF, exercise card).
-- **Reorder + superset**: drag handle (44×44, same `delay:150` pattern as `BlueprintArchetypesList`); two adjacent items can be locked into a superset (A1/A2 prefix) via a "link" button. Lock icon when locked.
-- **AI comment on edits**: after each user edit, debounce 1.5s and call a new `commentMicrocycleEdit` server fn (cheap `gemini-2.5-flash-lite`) that returns 1–2 sentence Forge feedback. Render under the day as an amber-bordered note with accept/dismiss.
-- **Per-day Approve + global Approve**: per-day chip flips to green; global "Approve full week" only enabled when all days are green.
-- **Stage 5 (PDF)** opens automatically when week is approved (no separate trigger).
+Bug: "Avaliação completa" green chip appears after Stage 1 approval even when intake coverage is 43%.
 
-Files involved:
-- new `src/components/MicrocyclePanel.tsx`
-- new `src/components/MicrocycleDayLane.tsx`
-- new `src/components/MicrocycleExerciseRow.tsx` (drag + superset link)
-- new `src/lib/section-tone.ts`
-- new `src/server/phased/microcycle-comment.functions.ts` (1 createServerFn, gemini-2.5-flash-lite)
-- extend `src/components/AddExerciseDialog.tsx` with `section` filter + warmup/stretch catalog support
-- `src/routes/clients_.$clientId.tsx` — Stage 3 card uses `expandedBody={<MicrocyclePanel/>}` instead of navigating away
-- `src/routes/plans.$planId.microcycle.tsx` — keep as fallback deep-link, render the same `MicrocyclePanel`
+Fix: in `clients_.$clientId.tsx` line 2105, change condition from `inlineBrief?.approved` to `inlineBrief?.approved && (assessmentCoverage ?? 0) >= 0.8`. Below 80%, keep the dashboard expanded with an amber "Avaliação parcial · 43%" chip so the trainer knows what they signed off on. (Approval still works; honesty stays.)
 
-Out of scope this round: live multi-week edit (we still only edit Week 1; later weeks inherit until Stage 4). Superset 3+ exercises (only 2-item links for now). Drag across days.
+### 6. Microcycle inlined into client page + progress visibility (P0, ~2 h)
+
+This is the biggest piece — split into 6a (inlining) and 6b (engine speed/visibility).
+
+**6a — Inline (no new window):**
+- Delete the `/plans/$planId/microcycle` redirect-to-page pattern. Move `MicrocycleReview` body into a new `<MicrocyclePanel planId>` component.
+- Render it as Stage 3's `expandedBody` in `clients_.$clientId.tsx` (where StageCard "microcycle" lives). Auto-expands when blueprint is approved.
+- Keep `/plans/$planId/microcycle` as a thin route that just renders `<MicrocyclePanel/>` for back-compat (deep links from notifications/old tabs).
+- Stage 3 card golden+collapses on full-week approval → Stage 4 (Progressions) auto-expands → same pattern for Stage 5 (PDF). The whole flow now lives on `/clients/$id`.
+
+**6b — Engine speed + progress feedback:**
+- `generateMicrocycleDays` currently spins with no visible progress because the server function awaits all N day generations sequentially before returning.
+- Switch to **fire-and-forget**: server inserts N `pending` rows immediately, then `Promise.all` writes results as they finish. Client already subscribes via `postgres_changes` on `workout_plan_days` (line 111), so each day pops in live as it lands.
+- Add per-day skeleton card (5 grey day-cards visible immediately) → each turns amber as it generates → emerald as it finishes. Visible progress = no perceived crash.
+- Use `gemini-2.5-flash` (not -pro) for day-gen with strict JSON mode; model is already chosen — verify in `stage3-microcycle.functions.ts`. If on -pro, downgrade to -flash for ~3× speed.
+- Add a 90s server-side soft-timeout per day with one retry; show a red "Day N falhou — Tentar de novo" inline button instead of silent stall.
+
+### 7. Backlog + memory (P2, ~5 min)
+
+- Append Round 31 entries to `.lovable/backlog.md`.
+- Save `mem://principles/intake-recurrence.md`: "Intake = on-demand re-assessment, not one-shot. Hide once filled; surface as 'Pedir nova avaliação' when trainer needs fresh data. Continuous data (sleep, HR, wearables) flows via client dashboard, not intake."
 
 ---
 
-## 4. Backlog hygiene (P1, ~10 min)
+### Out of scope this round
 
-Update `.lovable/backlog.md`:
-- Move items 40 (Schedule v1), 14 (NextBlockCard) etc. into "Concluído" if done.
-- Add Round 30 entries:
-  - R30 P0 Bug: archetypeForDay null-safe + blueprint repair before microcycle generation
-  - R30 P0 UX: Brief approval auto-collapse + section index fold + useStageAutoFlow helper
-  - R30 P0 Workbench: MicrocyclePanel inline (5-lane workbench, color-coded sections, drag/superset, AI comment-on-edit)
-  - R30 P1 Lib: section-tone tokens + AddExerciseDialog extended with section filter
-- Re-affirm parked: FITT-VP backbone (R2), Bompa overlay (R2.5), special-population overlays (R3), NSCA (R3.5), behaviour change (R4).
+- Wearables sync (Apple Health / Garmin / Whoop integrations) — needs its own architecture round
+- Drag-to-reorder microcycle exercises across days — Round 32
+- Per-day approve UX redesign (currently approve cascades) — keep current logic, only the visual stage container changes
 
-Also save a memory rule under `mem://principles/inline-stage-flow.md`:
-> All 5 stages (Brief → Blueprint → Microcycle → Progressions → PDF) live inline on `/clients/$id`. Approval makes the stage golden, collapses it, and auto-expands the next. Dedicated `/plans/$planId/...` routes remain as deep-links but never as the primary flow.
+### Files touched
 
----
-
-## Risks & non-goals
-
-- The microcycle panel touches the largest file (`clients_.$clientId.tsx`, 3705 lines). Keep changes additive — pass `expandedBody` only, no major refactor of Stage 3 logic.
-- `commentMicrocycleEdit` is a new AI call → costs money. Debounce hard (1.5s), max 1 comment per day per session, opt-out toggle in founder telemetry.
-- Searchable warmup/stretch catalog — we don't have a curated list yet; for now use `AddExerciseDialog`'s existing exercise table filtered by `section in ('warmup','activation','dynamic_stretch','cooldown')`. A real curated catalog ships in a future round.
-- Not touched: PDF, schedule, knowledge roadmap (ACSM/Bompa/NSCA), demo lab — all stay parked.
-
-## Suggested order
-1 (hotfix) → 2 (brief collapse) → 3 (workbench) → 4 (backlog + memory).
+`src/components/BrandMark.tsx`, `src/routes/dashboard.tsx`, `src/i18n/locales/{pt,en}/common.json`, `src/routes/__root.tsx`, `src/components/IntakeLinkPanel.tsx`, `src/components/ClientDocuments.tsx`, `src/lib/status-tone.ts`, `src/routes/clients_.$clientId.tsx`, `src/components/MicrocyclePanel.tsx` (new from extracted route), `src/routes/plans.$planId.microcycle.tsx`, `src/server/phased/stage3-microcycle.functions.ts`, `.lovable/backlog.md`, `mem/principles/intake-recurrence.md`, `mem/index.md`.

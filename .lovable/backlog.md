@@ -104,3 +104,18 @@ Atualizado: Round 28 (4 Mai 2026)
 - Knowledge roadmap (FITT-VP / Bompa / NSCA) — each is a multi-week round; do not box-tick.
 - Steps widget, metabolism panel, e1RM trends, client messages — touch the engine/client surface; resume after engine unfreeze.
 - Demo Lab UI — intentionally hidden last round; do not resurrect without a new decision.
+
+## Closed Round 31
+- BrandMark: optical center fix (-1px nudge) — spark now visually centered in glow ring
+- Dashboard: replaced ⚒ emoji plate with <BrandMark size="sm"/>; title → "Forge · AI Workbench" (PT+EN)
+- index.tsx: gate landing render on authLoading (BrandMark splash) — refresh inside app no longer flashes marketing page
+- IntakeLinkPanel: realtime subscription on clients row + auto-collapse to "Aberto" chip when intake_status=opened
+- clients route: brief approval honesty — "Avaliação completa" only when coverage ≥80%, else amber "Avaliação parcial · X%" chip kept open
+- Microcycle: per-day skeleton lanes (amber Loader2 cards) shown immediately while generating, replacing single opaque spinner
+
+## Open Round 32
+- P0 Documents: collapse ClientDocuments into a single clinical-teal icon button (cross/stethoscope) in client header action row, opens right Sheet drawer
+- P0 Microcycle inline: extract MicrocyclePanel from /plans/$id/microcycle route, render as Stage 3 expandedBody on /clients/$id; keep route as thin back-compat shell
+- P1 Microcycle engine: switch generateMicrocycleDays to fire-and-forget (return after pending insert; background Promise.all writes via realtime); add 90s soft-timeout per day with single retry
+- P1 Wearables: client dashboard fields for sleep / RHR / steps / HRV; surface in trainer view as continuous signals (separate from intake)
+- P2 IntakeLinkPanel hide-by-default once intake_status='reviewed' or 'submitted'; surface as "Pedir nova avaliação" trigger

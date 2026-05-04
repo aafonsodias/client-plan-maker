@@ -21,11 +21,22 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t } = useTranslation(["plan", "common"]);
   const { code: currencyCode } = useCurrency();
   const activeSymbol = CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? "€";
   const signedIn = !!user;
+  // While Supabase rehydrates the persisted session on a hard refresh, the
+  // user briefly looks "logged out" and we'd flash the marketing landing
+  // before the AppShell guard kicks in. Show a neutral splash until the
+  // session resolves so refreshing inside the app stays inside the app.
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <BrandMark size="lg" />
+      </div>
+    );
+  }
   const primaryCtaTo = signedIn ? "/dashboard" : "/auth";
   const primaryCtaLabel = signedIn
     ? t("plan:landing.hero.cta_primary_signed_in")

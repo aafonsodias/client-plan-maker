@@ -21,6 +21,7 @@ import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { BrandMark } from "@/components/BrandMark";
 import { useServerFn } from "@tanstack/react-start";
 import { createInviteClient, createManualClient } from "@/server/intake.functions";
 import { planStatusInfo } from "@/lib/plan-status";
@@ -270,12 +271,7 @@ function Dashboard() {
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
           <h1 className="mt-1 flex items-center gap-3 text-4xl font-light tracking-tight">
-            <span
-              aria-hidden
-              className="grid h-9 w-9 place-items-center rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-300 shadow-[0_0_24px_-8px_rgba(245,158,11,0.6)]"
-            >
-              ⚒
-            </span>
+            <BrandMark size="sm" />
             {t("dashboard.title")}
           </h1>
         </div>
