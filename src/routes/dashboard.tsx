@@ -21,6 +21,7 @@ import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { BrandMark } from "@/components/BrandMark";
 import { useServerFn } from "@tanstack/react-start";
 import { createInviteClient, createManualClient } from "@/server/intake.functions";
 import { planStatusInfo } from "@/lib/plan-status";
