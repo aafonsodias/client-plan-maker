@@ -40,7 +40,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { updateTrainerSummary } from "@/server/measurements.functions";
-import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
 import { generateMicrocycleDays } from "@/server/phased/stage3-microcycle.functions";
@@ -585,8 +584,6 @@ function ClientDetail() {
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
-  const evolvePlanFn = useServerFn(archivePlanAndStartNextBlock);
-  const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
@@ -613,13 +610,6 @@ function ClientDetail() {
   /** Most recent plan eligible for "evolve into next block" — must be marked
    *  finished_logging or already archived, with at least one logged session
    *  (we trust the marker; the server fn sanity-checks adherence). */
-  const evolvableSourcePlan = useMemo(() => {
-    return plans.find(
-      (p) =>
-        p.generation_status === "complete" &&
-        (p.completion_state === "finished_logging" || p.status === "archived"),
-    ) ?? null;
-  }, [plans]);
   // Track signature of last-analysed payload per section to avoid duplicate fires.
   const lastAnalysedSigRef = useRef<Record<string, string>>({});
 
@@ -893,12 +883,16 @@ function ClientDetail() {
   useEffect(() => {
     if (!phasedEnabled || !user || !hydrated) return;
     void (async () => {
+      // Hydrate from the latest plan for this client — including complete
+      // ones — so stages 2..5 stay visible as golden/approved strips after
+      // the plan is shipped (R58). Without this, the entire stage lane
+      // disappears the moment generation finishes and the trainer loses the
+      // golden trail of "what was approved".
       const { data: row } = await supabase
         .from("workout_plans")
         .select("id, brief, blueprint, progression_plan, generation_state, generation_status, programming_variables, red_flag_accommodations")
         .eq("trainer_id", user.id)
         .eq("client_id", clientId)
-        .neq("generation_status", "complete")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -2758,7 +2752,7 @@ function ClientDetail() {
                         />
                         <StageCard
                           stageNumber={5}
-                          title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                          title={t("plan:stage.label.5", "Progressões")}
                           status={
                             stageBusy === "progressions"
                               ? "generating"
@@ -2852,7 +2846,7 @@ function ClientDetail() {
                   />
                   <StageCard
                     stageNumber={5}
-                    title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                    title={t("plan:stage.label.5", "Progressões")}
                     status="placeholder"
                   />
                 </>
@@ -2863,43 +2857,16 @@ function ClientDetail() {
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
       {/* "Around the workout" nutrition cue moved to the plan page (view mode) — it belongs next to the workout, not in the client overview. */}
 
-      {plans.length > 0 && (
+      {plans.length > 1 && (
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            {plans.length === 1 ? "Gerar próximo bloco" : "Histórico de planos"}
+            Histórico de planos
           </h2>
-          <div className="flex items-center gap-2">
-            {/* "New plan (manual)" removed (R57) — one protocol per client.
-                To change direction, adjust the current protocol or evolve into the next block. */}
-            <Button
-              size="sm"
-              disabled={creatingPlan !== null || !evolvableSourcePlan}
-              title={!evolvableSourcePlan
-                ? t("detail.plans.evolve_disabled")
-                : "Arquiva o plano atual e usa-o como base para gerar o próximo bloco com IA."}
-              onClick={async () => {
-                if (!evolvableSourcePlan) return;
-                setCreatingPlan("evolve");
-                try {
-                  const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
-                  if (r?.ok && r?.planId) {
-                    toast.success(t("detail.plans.evolve_success"));
-                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                  } else {
-                    toast.error(r?.error ?? t("detail.plans.evolve_failed"));
-                  }
-                } finally { setCreatingPlan(null); }
-              }}
-            >
-              {creatingPlan === "evolve"
-                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
-              Gerar próximo bloco (IA)
-            </Button>
-          </div>
+          {/* "Gerar próximo bloco (IA)" button removed (R58) — the next block
+              should be born from necessity when the client logs the last
+              session of the current mesocycle, not from a manual button here. */}
         </div>
-        {plans.length > 1 && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => {
               const stage = (p.generation_state as any)?.stage as string | undefined;
@@ -3029,7 +2996,6 @@ function ClientDetail() {
               );
             })}
         </div>
-        )}
       </section>
       )}
 
