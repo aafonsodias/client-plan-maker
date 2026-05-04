@@ -304,6 +304,7 @@
   },
   "generate": {
     "button": "Generate plan draft",
+    "brief_coverage": "Brief preview · {{done}}/{{total}}",
     "safety_button": "Safety review required",
     "safety_title": "Clinical safety check",
     "safety_intro": "This client triggered the safety gate:",

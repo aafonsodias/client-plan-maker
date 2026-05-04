@@ -80,6 +80,13 @@ Atualizado: Round 28 (4 Mai 2026)
 - "Ver como cliente" preview: /me?as={clientId} for trainers, amber preview banner
 - Manual client creation: createManualClient server fn + tabbed dialog (invite | manual)
 
+## Closed Round 29 (Stage 2 unblock + founder telemetry)
+- Stage 2 Blueprint default model switched from `openai/gpt-5-mini` (failing tool-call contract → "Schema validation failed after retry") to `google/gemini-3-flash-preview` (same Lovable Gateway default Stage 1 uses reliably). Override via `FORGE_MODEL_STAGE_2` still respected.
+- Deterministic Blueprint fallback: `buildDeterministicBlueprint(brief, weeks, guidelines)` builds a valid skeleton from primary_goal + tier session window when the AI fails. Stored as the plan's blueprint with `generation_meta.blueprint_source = "deterministic_fallback"` and logged as `stage2:blueprint:fallback` in `generation_log`. Trainer is no longer dead-ended.
+- Toast surfaces fallback honestly ("fallback determinístico — IA falhou, edite à vontade") when used.
+- Founder-only `<FounderAiTelemetryPanel/>` mounted above the StageCard stack on `/clients/$clientId`. Toggles between this-plan and last-7d-account views, reads `generation_log` via two new authenticated server fns (`getPlanGenerationTelemetry`, `getTrainerGenerationTelemetry`). Gated to `aafonsodias@gmail.com`.
+- Fixed missing i18n key `assessment:generate.brief_coverage` (PT + EN). Console warning gone.
+
 ## Deferred (honest scoping)
 - Movement spider chart peer overlay — needs ACSM normatives wired through movement-screen surface, not the volume radar. Real round of work, not a quick add.
 - Knowledge roadmap (FITT-VP / Bompa / NSCA) — each is a multi-week round; do not box-tick.

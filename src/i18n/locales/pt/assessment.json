@@ -364,6 +364,7 @@
   },
   "generate": {
     "button": "Gerar rascunho do plano",
+    "brief_coverage": "Pré-visualização do brief · {{done}}/{{total}}",
     "safety_button": "Revisão de segurança",
     "safety_title": "Verificação clínica de segurança",
     "safety_intro": "Este cliente acionou o gate de segurança:",

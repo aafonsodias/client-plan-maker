@@ -1,109 +1,135 @@
-# Round 28 — Clean sweep, freeze the engine
+## What I found
 
-Goal: collapse duplicate surfaces, kill dead-end clicks, leave plan generation untouched. One job: make the chrome honest so the next round can focus 100% on plan quality.
+You are stuck on Stage 2 because the latest Blueprint calls are failing before a draft is saved.
 
----
-
-## Decisions (locked from your answers)
-
-1. **Scope** — Dashboard + Roster merge. One screen. No more "Clientes" tab.
-2. **Plan engine** — **Frozen**. Zero edits to `src/server/plans*`, `intake-ai*`, `quota.server.ts`, prompts, or the generation pipeline. Quota fix from last round stays as-is. If a true blocker shows up mid-round I stop and ask — I do not patch silently.
-3. **Demo Lab** — **Hidden from UI, kept in code.** Honest answer: the seeded-fake-account loop *was* useful for spotting empty states early, but right now it's a distraction with its own bugs and 3 entry points. We hide the banner + buttons + `?lab=1` toggle from the UI. Code (`createDemoClient`, `DemoLabPanel`, `demo_runs` table) stays so you can resurrect it with one flag flip later. **No data deletion this round** — destructive migrations need a separate, deliberate decision.
-
-> "Why don't I understand /me payments?" — that's a separate conversation. Not in this round. When you want, I'll write a one-page plain-Portuguese explainer of how subscriptions/Stripe flow through the app. Just say the word.
-
----
-
-## What changes
-
-### 1. Kill `/clients` as a destination
-
-- Delete `src/routes/clients.tsx`.
-- Move the **client list, filters, invite dialog** into `/dashboard` as the single source of truth.
-- Update all `<Link to="/clients">` in `dashboard.tsx`, `templates.tsx`, `settings.tsx`, `plans.index.tsx` to either point to `/dashboard` or be removed (e.g. nav item).
-- Remove "Clientes" entry from `AppShell` nav. Dashboard becomes the home for clients.
-- `/clients/$clientId` and `/clients/$clientId/year` **stay** — those are the per-client deep views, still reachable from the dashboard list.
-
-### 2. Redesigned `/dashboard` (single screen, top-to-bottom)
+The generation log already records cost, tokens, duration, model, retries, and errors. For the stuck plan, the two latest Blueprint attempts both failed with:
 
 ```text
-┌─ Header ────────────────────────────────────────────┐
-│ DASHBOARD                          [+ Novo cliente] │  ← single primary CTA
-└─────────────────────────────────────────────────────┘
-┌─ DashboardHint (dismissable how-it-works) ──────────┐
-└─────────────────────────────────────────────────────┘
-┌─ Quick actions row (only if clients>0) ─────────────┐
-│ [Copiar link de avaliação · {Nome}]  [Ver planos]   │
-└─────────────────────────────────────────────────────┘
-┌─ Atenção (submitted intakes / birthdays / stale) ───┐
-└─────────────────────────────────────────────────────┘
-┌─ Clientes ──────────────────────────────────────────┐
-│ Filter chips: Todos · Onboarding · Ativos · Prontos │
-│ ─────────────────────────────────────────────────── │
-│ [avatar] Nome · email           [phase pill]    →   │
-│ [avatar] Nome · email           [phase pill]    →   │
-└─────────────────────────────────────────────────────┘
-┌─ Planos recentes (existing block, unchanged) ───────┐
-└─────────────────────────────────────────────────────┘
+Stage: stage2:blueprint
+Model: openai/gpt-5-mini
+Error: Schema validation failed after retry
+Internal detail: Model did not call the required tool
+Cost: about $0.006789 each
+Time: about 32–34 seconds each
 ```
 
-- The "+ Novo cliente" button opens the **same invite dialog** that lived in `/clients` (manual name + intake link generator). One CTA, one dialog. No more 3-buttons-same-thing.
-- Remove the two `StatCard` tiles (Clientes / Planos count) — redundant once the list is right there. Counts live in the filter chips.
-- Empty state: dashed card "Adiciona o teu primeiro cliente" with the invite CTA.
+So the “money/time panel” is not hard. The data is already there; it mostly needs a clean server function and founder-only UI. The urgent issue is that Blueprint is currently using a model/config that is not reliably following the required tool-call contract.
 
-### 3. Hide Demo Lab from the UI
+## Plan
 
-- Remove `DemoClientBanner` mount from dashboard.
-- Remove `?lab=1` panel + "+ Cliente demo" button from the merged client list.
-- Keep `demo-client.functions.ts`, `DemoLabPanel.tsx`, `demo_runs` table — code stays, no migration.
-- Remove `data-tour="demo-banner"` step from the Joyride tour config (tour replay still works, just one fewer step).
+### 1. Unblock Stage 2 Blueprint first
 
-### 4. AppShell nav
+Fix `src/server/phased/stage2-blueprint.functions.ts` so Blueprint generation becomes reliable again:
 
-- Nav becomes: **Dashboard · Planos · Templates · Calendário · Faturação** (5 items instead of 6, no "Clientes").
-- Founder badge + brand mark unchanged.
+- Change Stage 2’s default model away from the current `openai/gpt-5-mini` path that is failing tool-calls.
+- Use the app’s working Lovable AI default model for this structured step unless an env override is intentionally set.
+- Add a deterministic fallback for Blueprint if the AI still fails:
+  - use the approved brief’s mesocycle length and session frequency;
+  - create simple session archetypes from goal/equipment/tier;
+  - build a valid `week_to_session_map`;
+  - save it as a draft with a clear metadata note that this Blueprint was “safe fallback generated,” not fully AI-authored.
+- Keep logging the failed AI attempt to `generation_log`, then log the deterministic fallback as a zero-cost recovery row.
 
-### 5. i18n
+This means the button should stop dead-ending. Worst case, you get a conservative editable Blueprint instead of being blocked.
 
-- Move `clients.invite_*`, `clients.filter_*`, `clients.no_email`, `clients.delete_*` keys into `dashboard.*` namespace (or alias) since they now live there.
-- Drop `dashboard.demo_*` strings used only by the hidden banner.
-- PT/EN parity pass on the new dashboard surface.
+### 2. Make the generation buttons explain what is happening
 
----
+Improve the StageCard / client detail generation UI:
 
-## What does NOT change this round
+- Replace rudimentary “Generate Blueprint” states with a small “under the hood” strip:
+  - model or method used;
+  - current action: “calling AI,” “validating schema,” “saving draft,” “fallback used”;
+  - elapsed time while running;
+  - last error if it failed;
+  - “view details” line for founder mode.
+- Make failures actionable:
+  - show the friendly error;
+  - if available, show the internal validation reason (`zodError`) in a small founder-only detail area;
+  - leave the user on the page with a retry button and a path forward.
 
-- Plan generation pipeline, prompts, quota logic, intake AI suggestions.
-- Intake form itself (`/intake/$token`) — copy and slides untouched.
-- `/me` client portal — read-only as it is today.
-- Spider chart, SMART chips, "Ver como cliente" preview — **deferred** to next round (good ideas, just not this round's job).
-- Pricing, Stripe, billing UI.
-- Database schema. No migrations.
+### 3. Add founder-only cost/time chips next to calculation/generation stages
 
----
+For `aafonsodias@gmail.com` only:
 
-## Files touched
+- Add a tiny colorful chip beside each StageCard action:
+  - latest cost for that stage;
+  - average duration for that stage;
+  - failure count if relevant.
+- Example display:
 
-- `src/routes/dashboard.tsx` — major rewrite (merge in client list + invite dialog)
-- `src/routes/clients.tsx` — **deleted**
-- `src/components/AppShell.tsx` — drop "Clientes" nav item
-- `src/components/DashboardHint.tsx` — minor copy tweak
-- `src/components/TourContext.tsx` (or wherever steps live) — drop demo-banner step
-- `src/routes/templates.tsx`, `src/routes/settings.tsx`, `src/routes/plans.index.tsx` — update stale `/clients` links to `/dashboard`
-- `src/i18n/locales/{pt,en}/common.json` — move/rename keys, drop demo strings
-- `.lovable/backlog.md` — log Round 28 closed items + parked (spider chart, SMART chips, /me preview, Demo Lab resurrection)
+```text
+Blueprint     $0.0056 avg · 5.5s
+Microcycle    $0.052 avg · 51s/day
+Progressions  $0.014 avg · 11s
+```
 
-No new files. No new dependencies. No SQL.
+This keeps the product light for real users, but gives you founder visibility while building.
 
----
+### 4. Add a compact founder telemetry panel
 
-## Risk & smoke checklist
+Add a founder-only panel on the client detail page, near the generation stages:
 
-- 375px Mobile Safari: hero CTA doesn't overflow, filter chips wrap cleanly.
-- Founder account: no demo button visible anywhere.
-- Empty account (0 clients): empty state + invite CTA only, no broken links.
-- `/clients/$clientId` deep links still work (route file untouched).
-- Tour replay from DashboardHint doesn't crash on the removed demo-banner step.
-- One full plan generation (existing client) still succeeds — sanity check that the engine freeze held.
+```text
+AI spend for this plan
+Stage                  Calls   Cost     Avg time   Failures
+Brief                  1       $0.0003  2.7s       0
+Blueprint              2       $0.0136  33.2s      2
+Pre-analysis total     14      $0.0200  1.2s       3
+```
 
-Approve and I'll ship it in one pass.
+Also include an account-level summary for recent runs:
+
+```text
+Last 7 days: $X.XXXX · N calls · avg Ys · F failures
+```
+
+Important: this panel will read from existing `generation_log`; no new database tables are needed.
+
+### 5. Add server-side telemetry readers
+
+Create a small authenticated server function file, likely `src/server/generation-telemetry.functions.ts`, with functions such as:
+
+- `getPlanGenerationTelemetry(planId)`
+  - verifies the trainer owns the plan;
+  - returns grouped cost/duration/error stats for that plan.
+- `getTrainerGenerationTelemetry()`
+  - returns recent aggregate totals for the logged-in trainer.
+
+Use the existing row-level protections and authenticated server function pattern. No client-side secret access.
+
+### 6. Fix the missing translation warning
+
+Add the missing key in both assessment translation files:
+
+- `assessment:generate.brief_coverage` in English
+- `assessment:generate.brief_coverage` in Portuguese
+
+This removes the repeated console warning.
+
+### 7. Update backlog / plan notes honestly
+
+Update `.lovable/backlog.md` to close this round as:
+
+- Stage 2 Blueprint unblock
+- Founder AI spend/time telemetry
+- Generation buttons explain under-the-hood state
+- Missing i18n key fix
+
+And leave the larger knowledge-roadmap items parked, because they are not the right move while the pipeline itself is blocked.
+
+## What I will not do in this pass
+
+- No new billing/subscription logic.
+- No public AI-cost dashboard for normal users.
+- No new database table unless a hidden schema issue appears.
+- No resurrecting Demo Lab UI.
+- No heavy analytics page; keep it tiny and founder-only.
+
+## Expected result
+
+After implementation:
+
+- You should be able to click Stage 2 Blueprint and get unstuck.
+- If AI fails, the app saves a conservative editable fallback instead of wasting time and money repeatedly.
+- Founder mode shows small, useful cost/time telemetry next to generation stages.
+- The software better justifies itself by showing what it is doing under the hood without making the main UI heavy.
