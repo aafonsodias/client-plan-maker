@@ -1,0 +1,2 @@
+ALTER TABLE public.workout_sessions ADD COLUMN IF NOT EXISTS pr_celebrated_at timestamptz;
+CREATE INDEX IF NOT EXISTS workout_sessions_pr_celebrated_idx ON public.workout_sessions (plan_id) WHERE pr_celebrated_at IS NOT NULL;
