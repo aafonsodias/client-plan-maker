@@ -922,9 +922,6 @@ export const generatePlanDay = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Plan not found." };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, day_number, days_per_week, duration_weeks } = data;
     const safetyBlock = buildSafetyBlock(data.assessment);
 
@@ -945,29 +942,19 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: userMsg },
-          ],
-          tools: [
-            {
-              name: "emit_workout_day",
-              description: "Emit one training day",
-              input_schema: SingleDayPlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_day" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_day",
+            description: "Emit one training day",
+            input_schema: SingleDayPlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_day" },
       });
 
       if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
