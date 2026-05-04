@@ -1,191 +1,212 @@
-# Round 47 — Stabilization
 
-Sem features novas. Triagem dos P0/P1 que ficaram a sangrar de R45/R46. Lista de QA no fim — só fechamos com tudo verde.
+# Round 48 — Logbook real + PR share + favicon + RPE com lógica Bompa
 
-## A. PDF — rebrand + layout + print
+Vou ser honesto sobre o orçamento: 147 créditos. Esta ronda corta tudo o que não é essencial para tu **fazeres log como cliente já amanhã**. Landing aesthetic refresh, newsletter mensal, Google-Earth gym locator e tour Joyride completo ficam parqueados — não morrem, só não entram aqui. O que entra:
 
-Ficheiro principal: `src/lib/pdf.ts` (jsPDF, landscape A4, render directo). NÃO há template HTML/Puppeteer — é tudo desenho jsPDF. A "página de print preto" não vem de `@media print` partido; vem de **falta de logo do trainer** → `theme = LIGHT_THEME` mas `branding.business_name` cai no fallback `"FORGE"`. Quando o utilizador imprime via browser, o que ele vê é a rota `/plans/$id` com background `--background` escuro, não o PDF — esse é outro bug, ver §A6.
+---
 
-1. **Limpar fallback de marca** (`src/lib/pdf.ts:266`):  
-   `branding.business_name || branding.full_name || "FORGE"` → `… || "PROTOCOL"`. Comentários §12 (linhas 187-197) de `FORGE PDF spec` → `PROTOCOL PDF spec`. Token `accent` mantém-se (#E8A547 ambar — brand consistency).
+## A. Favicon e header logo (5 min, custo desprezável)
 
-2. **Tagline `"Quod Tango Muto"`** vem da BD: `profiles.tagline` da row do André. Não é hardcoded em lado nenhum (`rg` confirmou). Acção:  
-   a. Migration que faz `update profiles set tagline = null where tagline = 'Quod Tango Muto'`.  
-   b. Em `src/routes/settings.tsx:127` adicionar placeholder `"Ex.: Evidence-based training"` e helper text "Aparece no header do PDF. Deixa em branco se não quiseres tagline."
+**Problema**: `public/icon-192.png` ainda mostra a forja antiga (martelo + bigorna). Tab do browser e PWA install icon estão errados.
 
-3. **Logo "AP" no PDF** = `logo_data_url` do trainer (Settings → Logo). Não é o BrandMark da app. Acções:  
-   a. Quando `branding.logo_data_url` é null, em vez de não desenhar logo, desenhar o Protocol mark P (rasterizado) — criar `src/assets/protocol-mark-print.png` (export 256×256 PNG do SVG existente, fundo transparente, P em #1A1A1A). Importar via `?url` e fazer fetch→dataURL no início de `generatePlanPdf`.  
-   b. Quando o trainer TEM logo próprio, mantém o do trainer (princípio: o PDF é dele, não nosso).
+**Acção**:
+1. Gerar 4 PNGs novos a partir de `src/assets/protocol-mark.svg` (P preto sobre fundo transparente, com **padding mínimo ~6%** — não 20% como o ícone actual, para o P aparecer grande mesmo a 16px na tab):
+   - `public/icon-192.png` (192×192)
+   - `public/icon-512.png` (512×512)
+   - `public/icon-maskable-512.png` (com safe-area de 10% para máscaras Android)
+   - `public/apple-touch-icon.png` (180×180, fundo branco — Apple não respeita transparência)
+2. Adicionar `<link rel="icon" href="/icon-192.png">` já existe em `__root.tsx` — confirmar que o SVG `protocol-mark.svg` também é servido via `/protocol-mark.svg` para uso em meta og:image.
 
-4. **Cues / reps / rest sem reticências**:  
-   - `src/lib/pdf.ts` tem helper `fitText(s, maxW)` (linha 290) que **trunca com `…`**. É a raiz das reticências.  
-   - Substituir o uso de `fitText` na coluna CUE (linha 919) por `splitTextToSize` com max 2 linhas e `rowH` dinâmico:  
-     ```ts
-     const cueLines = (doc.splitTextToSize(cueText, cueW - 6) as string[]).slice(0, 2);
-     // cada linha 9pt → 10pt line-height
-     ```  
-   - Para colunas STATS (linha 938 — REPS/REST/RPE/TEMPO), `fitText(val, statColW - 6)` trunca `12-15` em `12-1…`. Correcção: alargar `statColW` (ver §A5) e remover `fitText` daí — usar valor cru. Se ainda não couber, reduzir font size para 8 nessa célula.  
-   - **`rowH` deixa de ser fixo (18pt)**: calcular `rowH = max(18, cueLines * 10 + 8, nameLines * 10 + 8)` antes de pintar zebra/linhas S1-S4.
+Ferramenta: gerar via skill `lovable_ai` com `--image` ou directamente com sharp/canvas no script local — **não custa créditos AI** se usar conversão SVG→PNG nativa.
 
-5. **Larguras das colunas** (linhas 835-852):  
-   - Hoje: `colExW=220 + colCueW=130 + 5 stats × 36 + 4 slots × 64 = 786pt`. Usable = 770pt → `slack ≈ -16` → cue espremida.  
-   - Nova distribuição: `colExW=180`, stats `SETS=24, REPS=42, REST=38, RPE=28, TEMPO=42` (174pt), `colCueW=110` flexível, **slot S1-S4 = 84pt cada** (336pt). Total = 180+110+174+336+20 = 820 → `slack` distribuído ao cue.  
-   - Cabeçalho `S1  peso × reps @RPE` (linha 866) → quebrar em 2 linhas:  
-     ```
-     S1
-     peso × reps @RPE
-     ```  
-     Ajustar `y += 4` para `y += 14` para acomodar header de 2 linhas.
+---
 
-6. **Print preview vazia (preto sólido)** — investigação extra antes do fix:  
-   - O utilizador faz `Ctrl+P` em `/plans/$planId` (rota da app), não no PDF descarregado.  
-   - O PDF gerado por jsPDF é descarregado, NÃO renderizado em página. Logo "13 páginas pretas" = browser a tentar imprimir a rota inteira da app com background dark.  
-   - Fix: adicionar em `src/styles.css`:  
-     ```css
-     @media print {
-       html, body { background: white !important; color: black !important; }
-       .no-print, header[data-app-shell], nav, aside { display: none !important; }
-       * { box-shadow: none !important; }
-     }
-     ```  
-   - E adicionar `data-app-shell` ao header do AppShell + classe `no-print` em controlos de UI da rota plan.  
-   - Mensagem clara no topo da rota plan dentro de `@media print`: "Para imprimir o plano, use o botão **Descarregar PDF** — gera o ficheiro pronto a imprimir."
+## B. View Mode mostra sessões logadas (azul-claro do logo)
 
-## B. Forge cleanup — exaustivo
+**Problema**: trainer abre o plano em View, não vê quais sessões o cliente já completou. Hoje o `LogbookTimeline` mostra-os em colunas separadas; queremos **integrar no mesociclo** principal.
 
-Output do `rg -i "forge|quod tango" src/`: ~30 ficheiros. Plano:
+**Acção** (`src/routes/plans.$planId.tsx` + nova lib):
+1. Novo helper `src/lib/session-overlay.ts` — `getLoggedSetsForExercise(workoutSessions, weekN, dayN, exerciseName) → { sets: SetLog[]; isPR: boolean; loggedAt: string }`.
+2. Em `plans.$planId.tsx` View Mode (tabela e cards): para cada célula `WeekN`, se houver `workout_session` com `week_number=N, day_number=D` e o exercício foi logado:
+   - **Background tint** `bg-[#5BA3D8]/8` na célula (azul-claro do logo, 8% opacidade — sutil).
+   - **Border-left** 2px `#5BA3D8/40`.
+   - Tooltip on hover: "Logado em {DD/MM} · {actual_load}×{actual_reps} @{actual_rpe}".
+   - Se `isPR`: pequeno emoji 🏆 amarelo (ou ícone Trophy 12px) no canto superior direito da célula.
+3. Cards mode: mesmo tratamento mas via `ring-1 ring-[#5BA3D8]/30` em vez de bg.
+4. Legend discreta no topo da view: "▮ Sessão registada · 🏆 Recorde pessoal" — uma linha de 11px muted.
 
-1. **`src/routes/__root.tsx:41,43,67,74`** — `head()` meta:  
-   `Forge — Workout plans for personal trainers` → `Protocol — Workout plans for personal trainers`. Idem `og:title`, `twitter:title`, `apple-mobile-web-app-title: "Protocol"`.
+Custo: zero AI. ~120 linhas.
 
-2. **`public/manifest.webmanifest`** — `name`, `short_name` → Protocol.
+---
 
-3. **`src/i18n/locales/{pt,en}/plan.json`** — todas as ocorrências `Forge` / `FORGE` → `Protocol` / `PROTOCOL`. Inclui `landing.comparison.eyebrow`, `landing.why.title`, `mission`, `footer_copy: "© {{year}} Protocol"`, `q10_a` (biblioteca PROTOCOL), etc.
+## C. Logbook MVP no botão "Começar treino"
 
-4. **`src/i18n/locales/{pt,en}/manual.json`, `assessment.json`, `intake.json`, `pt/review.json`** — mesmo passo.
+**Problema**: hoje só há `log/$token` para o cliente externo. O trainer (e o trainer-as-cliente via `?as=`) não tem CTA óbvio para abrir o log.
 
-5. **`src/routes/index.tsx`** — comentários `FORGE vs Excel…`, `<span>FORGE</span>` (linha 770) → `Protocol`. `mailto:hello@forge.app` → `mailto:hello@protocol.app` (se domínio mudar; senão deixar e marcar TODO).
+**Acção**:
+1. **Botão `Log today's workout`** no `<ThisWeekHero/>` (azul `#5BA3D8`, ícone `Play`) — calcula próximo dia não-logado da semana actual e abre a rota `/log/$token?day=N&week=W`.
+2. **Atalhos de teclado** em `ExerciseSetsCard`:
+   - `↓` / `↑`: salta para o próximo/anterior set do mesmo exercício; quando chega ao último set, salta para o primeiro set do próximo exercício.
+   - `→` / `←` continuam a navegar célula a célula (reps → weight → rpe).
+   - `Enter` num set: marca `done=true`, autosave, salta para o próximo set (mesmo comportamento do ↓).
+   - `Esc`: fecha o keyboard, scroll para o save indicator.
+3. **Autosave** já existe — reduzir debounce de 1500ms para 800ms e mostrar "Guardado às HH:MM:SS" no `LogHeader`.
+4. **Slideshow mode** (botão "Modo treino" no LogHeader): full-screen, um exercício por slide, swipe horizontal (ou ←/→ em desktop), mostra sets em cima + foto/cue do exercício abaixo. Sai com `Esc`. Reusa `ExerciseSetsCard` em layout vertical.
 
-6. **`src/i18n/index.ts:19`** — `LOCALE_STORAGE_KEY = "forge.locale"` → `"protocol.locale"`. Adicionar migração:  
-   ```ts
-   const legacy = localStorage.getItem("forge.locale");
-   if (legacy && !localStorage.getItem("protocol.locale")) {
-     localStorage.setItem("protocol.locale", legacy);
-   }
+Custo: zero AI. ~250 linhas (slideshow é o maior).
+
+---
+
+## D. PR moment → snapshot WhatsApp share
+
+**Problema**: confettis aparecem mas perdem-se. Cliente não sabe que partilhar e o trainer não vê snapshot exportável.
+
+**Acção**:
+1. Quando `isPR` dispara em `ExerciseSetsCard`, em vez do confetti volátil:
+   - Modal `<PrShareDialog/>` aparece **5s depois do save** (não interrompe o flow).
+   - Conteúdo: card 1080×1080 SVG com:
+     - Header: BrandMark P + "Recorde pessoal · {client_name}"
+     - Centro grande: nome do exercício + `{kg} × {reps}` + chip "e1RM {epley}kg"
+     - Comentário curto (1 frase, ~80 chars): cached, **NÃO chama AI por defeito**. Banco de 12 frases pré-escritas em `src/lib/pr-quotes.ts` (PT/EN), escolhe por hash do `exercise_name + user_id`. Honesta, sem entusiasmo falso ("Mais 5kg que a melhor série anterior. Vai ficar.").
+     - Footer: "protocol.app · {date}"
+   - Render via `html-to-image` ou `dom-to-image-more` (npm, leve, zero deps nativas) → PNG download + WhatsApp share via `navigator.share({ files: [png] })`.
+   - Botões: `Partilhar via WhatsApp` (primary), `Descarregar PNG`, `Mais tarde`.
+2. **Frequência**: máx 1 prompt por sessão, máx 1 por exercício por semana — guardado em `localStorage.protocol.pr_prompt_seen`. Não bombardear.
+3. Toggle no Settings: `pr_share_prompt: 'always' | 'milestones_only' | 'never'`. Default = `milestones_only` (só PRs onde Δe1RM ≥ 5%).
+
+Custo: zero AI (frases cached). +1 dependência npm `html-to-image` (~14kb).
+
+---
+
+## E. Wave RPE periodization (Bompa & Buzzichelli 6e + ACSM)
+
+**Problema**: hoje o gerador atira RPE 7-8 logo na semana 1 para todos. Tu pediste arranque mais conservador + onda volume→intensidade.
+
+**Princípio Bompa** (parafraseado, citação interna `Bompa & Buzzichelli 6e §7.3-7.5`):
+- Mesociclo de 4 semanas em hipertrofia/perda gordura: **W1 acumular volume a intensidade moderada, W2 aumentar volume, W3 aumentar intensidade mantendo volume, W4 deload**.
+- RPE inicial varia por experiência + sinais de prontidão:
+  - `beginner` ou `injury_active` ou `red_flag_present`: arranque RPE 5-6 (médio-leve)
+  - `intermediate` sem red flags: arranque RPE 6-7 (médio)
+  - `advanced` + lifting history ≥2 anos + recovery_score ≥7: RPE 7-7.5 (médio-pesado)
+
+**Acção** (`src/server/phased/programming-defaults.ts` + `stage4-progressions.functions.ts`):
+1. Nova função `computeWaveRpe(profileTier, weekN, totalWeeks) → { rpe_low, rpe_high, volume_multiplier }`:
    ```
+   beginner:      W1 5.5  W2 6   W3 6.5 W4 5  (volume: 1.0 → 1.15 → 1.15 → 0.6)
+   intermediate:  W1 6.5  W2 7   W3 7.5 W4 5.5 (volume: 1.0 → 1.15 → 1.15 → 0.6)
+   advanced:      W1 7    W2 7.5 W3 8   W4 6   (volume: 1.0 → 1.15 → 1.15 → 0.6)
+   ```
+   *Nota:* W2 sobe **volume primeiro** (mais 1 set por exercício principal), W3 mantém volume e sobe RPE (mesmos sets, mais carga).
+2. `stage4-progressions` consome `computeWaveRpe()` em vez do bloco hardcoded actual. Citação `Bompa & Buzzichelli 6e §7.4` aparece no `generation_meta.periodization_citation`.
+3. UI: no plan summary, substituir "RPE 7-8 · med 7" por chip honesto `W1 vol+0% RPE 6.5 · W2 vol+15% RPE 7 · W3 vol+15% RPE 7.5 · W4 deload`.
 
-7. **Restantes ficheiros** (`hooks/use-auth.tsx`, `contexts/*.tsx`, `server/*.ts`, `routes/welcome.tsx`, `terms.tsx`, `privacy.tsx`, `intake.$token.tsx`, `clients_.$clientId.tsx`, `lib/currency.ts`, `lib/pdf.ts`, `components/{ThemeToggle,ShareAppButton,DashboardHint,LanguageSwitcher}.tsx`, `server/{demo-seed,plan,billing,feedback,phased/*}`) — pass automatizado:  
-   - **Strings visíveis e copy** → Protocol.  
-   - **Comentários e identifiers internos** (`forgeRouter`, `--forge-amber` CSS var, `forge_theme` legacy) → manter, são internos. Memory já documenta isto.  
-   - Critério: se o utilizador alguma vez vê o texto, muda. Se não, deixa para evitar churn.  
-   - **No fim, correr `rg -i "forge|quod tango" src/ public/` e colar output no chat.** Esperado: só CSS vars `--forge-*` e `forge_theme` legacy migration.
+Custo: zero AI extra (lógica determinística, executa antes do prompt).
 
-## C. Regenerate with feedback — schema fix
+---
 
-Erro: `path: ["assessment", "training_location"]`, `expected: "string"`, `received: "array"`.
+## F. Schedule: confirmação 24h antes (cron)
 
-Origem: `src/server/plan.functions.ts:248`  
-```ts
-training_location: z.string().nullable().optional(),
-```
-mas:
-- `src/server/intake.functions.ts:240` guarda como `z.array(z.string()).max(8)`.
-- `src/routes/intake.$token.tsx` usa `string[]` desde sempre.
-- `src/server/demo-client.functions.ts:729` envia `[persona.training_location]`.
+**Problema**: cliente esquece-se da sessão; queres lembrete respeitoso 24h antes.
 
-Acção:
+**Acção**:
+1. Migration: `scheduled_sessions.confirmation_sent_at` (timestamptz, nullable) + `scheduled_sessions.confirmation_status` (enum: `pending|confirmed|declined|noshow`).
+2. Server route `src/routes/api/public/hooks/session-reminder.ts` (corre via pg_cron a cada hora):
+   - SELECT sessions onde `start_at` está entre `now()+23h` e `now()+25h` E `confirmation_sent_at IS NULL`.
+   - Chama Resend (já temos integração se existir; senão **PARQUE este passo** e regista TODO).
+   - Mensagem PT: "Olá {nome}, lembrete da sessão amanhã às {hora} com {trainer}. Confirmas? [Sim] [Reagendar]." — links assinados que mudam `confirmation_status`.
+3. UI no `/schedule`: badge `Confirmada ✓` / `Pendente ⏳` / `Reagendar` por sessão.
 
-1. `src/server/plan.functions.ts:248` →  
-   ```ts
-   training_location: z.union([z.string(), z.array(z.string())])
-     .nullable().optional()
-     .transform((v) => Array.isArray(v) ? v : (v ? [v] : null)),
-   ```  
-   (aceita ambos; normaliza para array). Idem qualquer outro schema duplicado.
+**Honestidade**: se Resend não está configurado, esta secção fica como **stub completo + checklist de activação**. Não envia emails fantasma.
 
-2. `src/server/plan.functions.ts:631` (`Location: ${data.assessment.training_location ?? "—"}`) → `${Array.isArray(...) ? data.assessment.training_location.join(", ") : data.assessment.training_location ?? "—"}`.
+Custo: zero AI. Migration + edge route + 1 componente UI.
 
-3. `src/lib/pdf.ts:1190` (`safe(assessment?.training_location)`) → `safe(Array.isArray(...) ? ....join(", ") : ...)`.
+---
 
-4. **Front-end error UX**: localizar onde o JSON Zod aparece raw (provavelmente `BlueprintAiChat.tsx` ou `MicrocyclePanel.tsx` em catch). Substituir por toast amigável:  
-   - PT: "O plano não passou na validação. Tenta de novo ou reporta."  
-   - EN: "The plan didn't pass validation. Try again or report."  
-   Logar o erro raw em `console.error` + `generation_log` (que já existe), mas nunca mostrar JSON cru ao trainer.
+## G. Cliente no assessment — micro-educação não-patronizing
 
-## D. Workbench title
+**Problema**: cliente preenche assessment longo sem feedback de valor.
 
-`src/i18n/locales/{pt,en}/common.json` chave `dashboard.title`:  
-- PT: `"O teu Workbench"` → `"Workbench"`  
-- EN: `"Your Workbench"` → `"Workbench"`
+**Acção** (`src/routes/intake.$token.tsx`):
+1. Após cada secção (saúde / objectivos / estilo de vida / treino), uma `<MicroLesson/>` cinzenta-suave (não amarela, não AI-tom) de 1-2 frases:
+   - Após "saúde": "Estes dados ficam só com o teu PT. Servem para ajustar carga e evitar exercícios contraindicados."
+   - Após "objectivos": "Objectivos com prazo + medida (kg, reps, %) progridem 2× mais rápido em estudos da ACSM 12e §11.3."
+   - Após "estilo de vida": "Sono <6h reduz ganho de força em 18% (Bompa 6e §3.2). Vamos planear treinos curtos nessas semanas."
+2. **Cached/static**, não AI. Chave: `intake.$token` + section index.
+3. Progress bar visível em cima: `Secção 2 de 4 · 47% completo`.
 
-(Header da app já mostra Protocol via BrandMark.)
+Custo: zero AI. ~60 linhas + 8 strings i18n.
 
-## E. Página do cliente — desinflamar
+---
 
-1. **Stages 2-4 colapsados** — hoje só mostra Stage 1 expandido.  
-   - Verificar lógica em `clients_.$clientId.tsx` (linhas 2291-2640): há StageCard 1, depois `PipelineStrip` que **colapsa as 4 quando todas aprovadas**. Quando apenas Stage 1 está em curso, Stages 2-4 NÃO renderizam de todo.  
-   - Adicionar render placeholder das Stages 2-4 sempre que existem mas ainda não foram geradas:  
-     ```
-     ◯ Stage 2 — Plano-mestre        (bloqueado: aprova Stage 1 primeiro)
-     ◯ Stage 3 — Semana-tipo         (bloqueado)
-     ◯ Stage 4 — Progressões         (bloqueado)
-     ```  
-   - Usar StageCard com `status: "placeholder"` (já existe esse status — linha 4 do StageCard.tsx).  
-   - Click num stage bloqueado mostra tooltip: "Disponível depois de aprovares a fase anterior."
+## H. Parqueado para R49+ (não entra aqui — créditos)
 
-2. **`ThisWeekHero` (`src/components/ThisWeekHero.tsx`)** — encolher e re-focar:  
-   - Remover `min-h` implícita do `p-5 sm:p-6` para `p-4`. Remover halo blob (linha 99-101).  
-   - Reduzir título de `text-lg` para `text-sm`, "Esta semana" de `text-[10px]` para esconder no mobile.  
-   - **Adicionar info útil**: dia da semana de hoje, próximo treino agendado (lookup em `workout_sessions` por `client_id` e `session_date >= today`), `% sessões concluídas esta semana`.  
-   - Cortar copy linha 135: `"Imprima a semana atual…"` → mover para tooltip do botão Download.
+| Item | Razão de adiar |
+|---|---|
+| Landing aesthetic refresh tri-tema | Custa ~30 créditos AI para refazer copy + visual tokens. Espera. |
+| Newsletter mensal / weekly digest | Resend setup + template + agente AI para insights = ronda inteira. |
+| Tour Joyride completo (steps Atlas) | UX polish, não bloqueia uso. |
+| Slideshow swipe gestures avançados | MVP slideshow chega; gestos refinados depois. |
+| Adaptive repeat assessments | R49+ — schema novo. |
+| Real verified/cert backend | R50+. |
+| Google Earth gym locator | R51+. |
 
-3. **Remover botão duplicado de download**:  
-   - `clients_.$clientId.tsx:2896` (`Descarregar Semana`) ao lado do plano — manter (é o granular por plano).  
-   - `clients_.$clientId.tsx:1485` header `download_pdf` — manter (PDF completo).  
-   - `ThisWeekHero` botão `Descarregar Semana {selectedWeek}` — **remover**, deixar só "Abrir plano".  
-   - Resultado: 2 botões, função distinta.
-
-## F. Out of scope
-
-Logbook UI, Mission UI, AtlasGenie animation, tri-tema polish, pagamentos, anti-cópia, OCR, Whatsapp.
+---
 
 ## QA antes de fechar
 
 ```text
-[ ] rg -i "forge|quod tango" src/ public/  →  só vars CSS/legacy migration
-[ ] Tab title diz "Protocol" em / e em /dashboard
-[ ] Landing PT+EN sem Forge visível
-[ ] PDF descarrega em <5s, mostra "PROTOCOL" no footer/header
-[ ] PDF sem reticências em CUE/REPS/REST/RPE
-[ ] PDF colunas S1-S4 com ≥84pt (~3cm) cada
-[ ] PDF com Protocol mark quando trainer não tem logo
-[ ] Tagline do André em DB = null  →  PDF header limpo
-[ ] Ctrl+P numa rota da app mostra fundo branco e tinta preta
-[ ] Regenerate with feedback funciona com training_location string OU array
-[ ] Erro de validação = toast amigável, nunca JSON cru
-[ ] Página do cliente: 4 StageCards visíveis (1 expandido + 3 placeholder)
-[ ] Apenas 2 botões de download na página do cliente
-[ ] ThisWeekHero ocupa <1/3 da viewport, mostra dia + próximo treino + %
-[ ] Workbench title = só "Workbench"
+[ ] Tab do browser mostra P do Protocol (não martelo)
+[ ] iPhone "Add to Home Screen" mostra P, não forja
+[ ] View mode tem células azul-claro nas sessões logadas + 🏆 nos PRs
+[ ] Tooltip nas células logadas mostra carga/reps/RPE/data
+[ ] Botão "Log today's workout" no ThisWeekHero abre /log/$token correcto
+[ ] ↓/↑ no log saltam set-a-set, → continuam célula-a-célula
+[ ] Autosave mostra "Guardado às HH:MM:SS"
+[ ] PR dispara modal share 5s depois do save (1×/sessão, 1×/exercício/semana)
+[ ] Snapshot PNG 1080×1080 com BrandMark + e1RM + frase cached
+[ ] Settings > pr_share_prompt: always|milestones_only|never (default milestones)
+[ ] Plan summary mostra wave honesta W1→W4 (vol/RPE)
+[ ] Beginner gera RPE 5.5 W1, intermediate 6.5, advanced 7
+[ ] computeWaveRpe testado com 3 tiers × 4 semanas
+[ ] /schedule mostra badge confirmation por sessão (mesmo sem Resend ligado)
+[ ] Intake mostra micro-lessons honestas + progress bar
+[ ] rg "FORGE\|Forge" src/ → vazio (excepto vars CSS legacy)
 ```
 
-## Files to touch (resumo)
+## Files to touch
 
-- `src/lib/pdf.ts` (rebrand fallback, fitText→splitTextToSize, larguras colunas, rowH dinâmico, training_location array)
-- `src/styles.css` (`@media print` + reset)
-- `src/routes/__root.tsx` (head meta)
-- `public/manifest.webmanifest`
-- `src/i18n/locales/**/*.json` (Forge → Protocol)
-- `src/i18n/index.ts` (LOCALE_STORAGE_KEY + migration)
-- `src/i18n/locales/{pt,en}/common.json` (dashboard.title = Workbench)
-- `src/server/plan.functions.ts` (training_location union+transform; Location string render)
-- `src/components/ThisWeekHero.tsx` (encolher, remover botão duplicado, info útil)
-- `src/routes/clients_.$clientId.tsx` (placeholder Stages 2-4)
-- `src/routes/settings.tsx` (placeholder + helper para tagline)
-- `src/components/AppShell.tsx` (data-app-shell + no-print classes)
-- `src/components/BlueprintAiChat.tsx` ou `MicrocyclePanel.tsx` (toast amigável)
-- `src/assets/protocol-mark-print.png` (criar)
-- supabase migration (limpar tagline "Quod Tango Muto")
-- `mem://design/brand-mark.md` actualizar (refere FORGE)
+- `public/icon-{192,512,maskable-512}.png` (regenerar)
+- `public/apple-touch-icon.png` (regenerar)
+- `src/lib/session-overlay.ts` (novo)
+- `src/lib/pr-quotes.ts` (novo, 12 PT + 12 EN)
+- `src/routes/plans.$planId.tsx` (View overlay azul + 🏆)
+- `src/components/ThisWeekHero.tsx` (botão Log today's workout)
+- `src/components/log/ExerciseSetsCard.tsx` (atalhos teclado, autosave 800ms)
+- `src/components/log/LogHeader.tsx` (timestamp + Modo treino)
+- `src/components/log/SlideshowMode.tsx` (novo)
+- `src/components/PrShareDialog.tsx` (novo + html-to-image)
+- `src/routes/settings.tsx` (toggle pr_share_prompt)
+- `src/server/phased/programming-defaults.ts` (computeWaveRpe)
+- `src/server/phased/stage4-progressions.functions.ts` (consume wave)
+- `src/routes/intake.$token.tsx` (MicroLesson + progress)
+- `supabase/migrations/...` (scheduled_sessions confirmation columns + pg_cron)
+- `src/routes/api/public/hooks/session-reminder.ts` (novo, stub se sem Resend)
+- `src/i18n/locales/{pt,en}/*.json` (strings novas)
+- `bun add html-to-image`
 
-Pronto. Aprova e arranco.
+## Estimativa créditos
+
+| Bloco | Créditos AI |
+|---|---|
+| A favicon | 0 |
+| B view overlay | 0 |
+| C log MVP | 0 |
+| D PR share (frases cached) | 0 |
+| E wave RPE | 0 (lógica determinística) |
+| F schedule cron | 0 |
+| G micro-lessons (cached) | 0 |
+| **Total ronda** | **~0-5 créditos** (só I/O do meu trabalho) |
+
+Aprova e arranco. Sugiro começar por **A + C + D** (favicon + log MVP + PR share) numa primeira tacada, depois **B + E** (overlay + wave) na segunda, F+G na terceira. Se preferires tudo de uma vez, faço tudo.
+
+— A.
