@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,7 +8,7 @@ import {
   generateMicrocycleDays,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, ArrowLeft, Sparkles, CheckCircle2, Lock } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Lock, RefreshCw, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { DayCardEditable } from "@/components/DayCardEditable";
@@ -49,18 +49,17 @@ export function MicrocyclePanel({
   const [planStatus, setPlanStatus] = useState<string | null>(null);
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [days, setDays] = useState<DayRow[]>([]);
-  const [day1Approved, setDay1Approved] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [generatingSet, setGeneratingSet] = useState<Set<number>>(new Set());
-  const isGenerating = (i: number) => generatingSet.has(i);
-  const addGenerating = (i: number) =>
-    setGeneratingSet((s) => { const n = new Set(s); n.add(i); return n; });
-  const removeGenerating = (i: number) =>
-    setGeneratingSet((s) => { const n = new Set(s); n.delete(i); return n; });
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [regenSet, setRegenSet] = useState<Set<number>>(new Set());
   const [daysLoaded, setDaysLoaded] = useState(false);
-  const day1KickedRef = useRef(false);
-  const [approvedDays, setApprovedDays] = useState<Set<number>>(new Set());
+  const weekKickedRef = useRef(false);
+  // Honest ETA: track first-pending timestamp + cumulative completion times.
+  const startTsRef = useRef<number | null>(null);
+  const [completionTimes, setCompletionTimes] = useState<number[]>([]);
+  const prevDoneCountRef = useRef(0);
+  // Active day shown in the focused detail (defaults to first done day).
+  const [activeDay, setActiveDay] = useState<number>(1);
 
   async function loadPlan() {
     const { data } = await supabase
@@ -102,11 +101,11 @@ export function MicrocyclePanel({
   }, [planId]);
 
   useEffect(() => {
-    if (!blueprint || !daysLoaded || day1KickedRef.current) return;
+    if (!blueprint || !daysLoaded || weekKickedRef.current) return;
     const sessions = blueprint.sessions_per_week ?? 0;
     const haveAny = days.some((d) => d.day_number >= 1 && d.day_number <= sessions);
     if (!haveAny && sessions > 0) {
-      day1KickedRef.current = true;
+      weekKickedRef.current = true;
       kickWeek();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,30 +114,55 @@ export function MicrocyclePanel({
   async function kickWeek() {
     const sessions = blueprint?.sessions_per_week ?? 0;
     if (sessions <= 0) return;
-    setGenerating(true);
-    for (let i = 1; i <= sessions; i++) addGenerating(i);
-    const res = await generateAllDaysFn({ data: { planId } });
-    setGenerating(false);
-    for (let i = 1; i <= sessions; i++) removeGenerating(i);
-    await loadDays();
-    if (!res.ok) toast.error(res.error || "Microcycle generation failed");
+    setBulkRunning(true);
+    startTsRef.current = Date.now();
+    setCompletionTimes([]);
+    prevDoneCountRef.current = 0;
+    try {
+      const res = await generateAllDaysFn({ data: { planId } });
+      if (!res.ok) toast.error(res.error || "Microcycle generation failed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Microcycle generation crashed");
+    } finally {
+      setBulkRunning(false);
+      await loadDays();
+    }
+  }
+
+  async function retryFailed() {
+    const sessions = blueprint?.sessions_per_week ?? 0;
+    if (sessions <= 0) return;
+    const missing: number[] = [];
+    for (let i = 1; i <= sessions; i++) {
+      const row = days.find((d) => d.day_number === i);
+      if (!row || row.status === "error") missing.push(i);
+    }
+    if (missing.length === 0) return;
+    setBulkRunning(true);
+    try {
+      const res = await generateAllDaysFn({ data: { planId, dayIndices: missing } });
+      if (!res.ok) toast.error(res.error || "Retry failed");
+      else toast.success(`Retried ${missing.length} day(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Retry crashed");
+    } finally {
+      setBulkRunning(false);
+      await loadDays();
+    }
   }
 
   async function regenDay(dayIndex: number) {
-    if (isGenerating(dayIndex)) return;
-    addGenerating(dayIndex);
-    const res = await generateDayFn({ data: { planId, dayIndex } });
-    removeGenerating(dayIndex);
-    await loadDays();
-    if (!res.ok) toast.error(res.error || `Day ${dayIndex} failed`);
-  }
-
-  function approveDay1AndContinue() {
-    setDay1Approved(true);
-    setApprovedDays((s) => { const n = new Set(s); n.add(1); return n; });
-  }
-  function approveDay(idx: number) {
-    setApprovedDays((s) => { const n = new Set(s); n.add(idx); return n; });
+    if (regenSet.has(dayIndex)) return;
+    setRegenSet((s) => { const n = new Set(s); n.add(dayIndex); return n; });
+    try {
+      const res = await generateDayFn({ data: { planId, dayIndex } });
+      if (!res.ok) toast.error(res.error || `Day ${dayIndex} failed`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : `Day ${dayIndex} crashed`);
+    } finally {
+      setRegenSet((s) => { const n = new Set(s); n.delete(dayIndex); return n; });
+      await loadDays();
+    }
   }
 
   async function approve() {
@@ -153,34 +177,61 @@ export function MicrocyclePanel({
     onApproved?.();
   }
 
-  const day1 = days.find((d) => d.day_number === 1);
   const sessionsPerWeek = blueprint?.sessions_per_week ?? 0;
   const isFinalized = planStatus === "finalized";
-  const doneCount = days.filter((d) => d.day_number <= sessionsPerWeek && d.status === "done").length;
-  const pendingCount = days.filter((d) => d.day_number <= sessionsPerWeek && d.status === "pending").length;
+  const dayList = useMemo(
+    () => Array.from({ length: sessionsPerWeek }, (_, i) => i + 1),
+    [sessionsPerWeek],
+  );
+  const dayState = (idx: number): "queued" | "generating" | "done" | "error" => {
+    const row = days.find((d) => d.day_number === idx);
+    if (!row) return bulkRunning ? "generating" : "queued";
+    if (row.status === "done") return "done";
+    if (row.status === "error") return "error";
+    return "generating";
+  };
+  const doneCount = dayList.filter((i) => dayState(i) === "done").length;
+  const errorCount = dayList.filter((i) => dayState(i) === "error").length;
   const haveAllRows =
     sessionsPerWeek > 0 &&
     days.filter((d) => d.day_number <= sessionsPerWeek).length >= sessionsPerWeek;
-  const allDone = haveAllRows && doneCount === sessionsPerWeek;
-  const inFlight = pendingCount > 0 || generatingSet.size > 0;
+  const allDone = haveAllRows && doneCount === sessionsPerWeek && errorCount === 0;
+  const inFlight = bulkRunning || dayList.some((i) => dayState(i) === "generating");
   const pct = sessionsPerWeek > 0 ? Math.round((doneCount / sessionsPerWeek) * 100) : 0;
-  // Faster model (Gemini Flash) → ~15s/day instead of 40s.
-  const etaSec = Math.max(0, (sessionsPerWeek - doneCount) * 15);
 
+  // Honest ETA based on observed completion times. Falls back to 18s/day.
   useEffect(() => {
-    if (!sessionsPerWeek || isFinalized) return;
-    for (const idx of approvedDays) {
-      const next = idx + 1;
-      if (next > sessionsPerWeek) continue;
-      const cur = days.find((d) => d.day_number === idx);
-      if (cur?.status !== "done") continue;
-      const nextRow = days.find((d) => d.day_number === next);
-      if (nextRow && (nextRow.status === "done" || nextRow.status === "pending")) continue;
-      if (isGenerating(next)) continue;
-      regenDay(next);
+    if (doneCount > prevDoneCountRef.current && startTsRef.current) {
+      const elapsed = (Date.now() - startTsRef.current) / 1000;
+      const justFinished = doneCount - prevDoneCountRef.current;
+      const perDay = elapsed / Math.max(1, doneCount);
+      setCompletionTimes((arr) => [...arr, ...Array(justFinished).fill(perDay)]);
+      for (let k = 0; k < justFinished; k++) {
+        const i = prevDoneCountRef.current + k + 1;
+        toast.success(`Day ${i} ready`, { duration: 1500 });
+      }
+      prevDoneCountRef.current = doneCount;
+    }
+    if (!inFlight) prevDoneCountRef.current = doneCount;
+  }, [doneCount, inFlight]);
+  const avgPerDay =
+    completionTimes.length > 0
+      ? completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length
+      : 18;
+  const etaSec = Math.max(0, Math.round((sessionsPerWeek - doneCount) * avgPerDay));
+
+  // Auto-focus the first done day if active doesn't exist yet.
+  useEffect(() => {
+    if (activeDay > sessionsPerWeek) setActiveDay(1);
+    const row = days.find((d) => d.day_number === activeDay);
+    if (!row) {
+      const firstDone = dayList.find((i) => dayState(i) === "done");
+      if (firstDone) setActiveDay(firstDone);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approvedDays, days, sessionsPerWeek, isFinalized]);
+  }, [days, sessionsPerWeek]);
+
+  const activeRow = days.find((d) => d.day_number === activeDay);
 
   return (
     <div className="space-y-6">
@@ -247,74 +298,91 @@ export function MicrocyclePanel({
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
           </div>
+          {errorCount > 0 && !inFlight && (
+            <button
+              onClick={() => void retryFailed()}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-500 hover:bg-amber-500/20"
+            >
+              <RefreshCw className="h-3 w-3" /> Retry {errorCount} failed day{errorCount > 1 ? "s" : ""}
+            </button>
+          )}
         </div>
       )}
 
-      {!day1 && (generating || generatingSet.size > 0) && (
-        <div className="space-y-3">
-          {Array.from({ length: Math.max(1, sessionsPerWeek) }, (_, i) => i + 1).map((idx) => (
-            <div key={`skel-${idx}`} className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5">
-              <div className="flex items-center gap-3 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
-                <div>
-                  <p className="font-medium text-foreground">Day {idx}</p>
-                  <p className="text-xs text-muted-foreground">A gerar sessão…</p>
+      {/* Week-at-a-glance: tabs across desktop, swipe-snap on mobile. */}
+      {sessionsPerWeek > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+          {dayList.map((idx) => {
+            const st = dayState(idx);
+            const row = days.find((d) => d.day_number === idx);
+            const focus = row?.focus ?? "";
+            const isActive = idx === activeDay;
+            const tone =
+              st === "done"
+                ? isActive
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                  : "border-emerald-500/30 bg-emerald-500/5 text-emerald-500/90 hover:bg-emerald-500/10"
+                : st === "generating"
+                ? "border-amber-500/40 bg-amber-500/5 text-amber-500"
+                : st === "error"
+                ? "border-red-500/40 bg-red-500/5 text-red-500"
+                : "border-dashed border-border bg-card text-muted-foreground";
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setActiveDay(idx)}
+                className={`min-w-[140px] snap-start rounded-xl border p-3 text-left transition ${tone}`}
+              >
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
+                  <span>Day {idx}</span>
+                  {st === "done" && <CheckCircle2 className="h-3 w-3" />}
+                  {st === "generating" && <Loader2 className="h-3 w-3 animate-spin" />}
+                  {st === "error" && <AlertTriangle className="h-3 w-3" />}
                 </div>
-              </div>
-              <span className="text-[11px] uppercase tracking-widest text-amber-500">Pending</span>
-            </div>
-          ))}
+                <div className="mt-1 truncate text-xs font-medium">{focus || (st === "generating" ? "A gerar…" : st === "error" ? "Falhou" : "Em fila")}</div>
+              </button>
+            );
+          })}
         </div>
       )}
 
-      {day1 && (
+      {/* Active day detail */}
+      {activeRow && activeRow.status === "done" && (
         <DayCardEditable
-          key={`day1-${day1.updated_at ?? day1.status}`}
-          day={day1}
+          key={`day${activeDay}-${activeRow.updated_at ?? activeRow.status}`}
+          dayIndex={activeDay}
+          day={activeRow}
           planId={planId}
-          isGate={!isFinalized && !day1Approved}
-          onRegen={() => regenDay(1)}
-          onApproveDay1={isFinalized ? undefined : approveDay1AndContinue}
+          onRegen={() => regenDay(activeDay)}
+          isGate={false}
         />
       )}
-
-      {(isFinalized || day1Approved) &&
-        Array.from({ length: sessionsPerWeek - 1 }, (_, i) => i + 2).map((idx) => {
-          const row = days.find((d) => d.day_number === idx);
-          if (!row) {
-            return (
-              <div key={idx} className="flex items-center justify-between rounded-2xl border border-dashed border-border p-5">
-                <div className="text-sm">
-                  <p className="font-medium text-foreground">Day {idx}</p>
-                  <p className="text-xs text-muted-foreground">Not generated yet.</p>
-                </div>
-                <button
-                  onClick={() => regenDay(idx)}
-                  disabled={isGenerating(idx)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-                >
-                  {isGenerating(idx) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  Generate Day {idx}
-                </button>
-              </div>
-            );
-          }
-          return (
-            <DayCardEditable
-              key={`day${idx}-${row.updated_at ?? row.status}`}
-              dayIndex={idx}
-              day={row}
-              planId={planId}
-              onRegen={() => regenDay(idx)}
-              isGate={!isFinalized && idx < sessionsPerWeek && !approvedDays.has(idx)}
-              onApproveDay1={
-                isFinalized || idx >= sessionsPerWeek || approvedDays.has(idx)
-                  ? undefined
-                  : () => approveDay(idx)
-              }
-            />
-          );
-        })}
+      {activeRow && activeRow.status === "error" && (
+        <div className="flex items-center justify-between rounded-2xl border border-red-500/40 bg-red-500/5 p-5">
+          <div className="text-sm">
+            <p className="font-medium text-red-500">Day {activeDay} failed</p>
+            <p className="text-xs text-muted-foreground">Try regenerating just this day.</p>
+          </div>
+          <button
+            onClick={() => regenDay(activeDay)}
+            disabled={regenSet.has(activeDay)}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {regenSet.has(activeDay) ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            Regenerate Day {activeDay}
+          </button>
+        </div>
+      )}
+      {!activeRow && sessionsPerWeek > 0 && (
+        <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          {bulkRunning ? (
+            <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> A gerar Day {activeDay}…</span>
+          ) : (
+            <span>Em fila</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

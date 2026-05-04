@@ -402,6 +402,23 @@ function ClientDetail() {
   // When the trainer clicks the green "Avaliação completa" pill, the synthesis
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
+  // Assessment collapse — controlled so sidebar can mirror it. Once brief is
+  // approved, default to collapsed (the trainer is now working in the stages
+  // below). User toggle is persisted per-client.
+  const assessmentCollapseKey = `forge_assessment_top_collapsed_${clientId}`;
+  const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(assessmentCollapseKey);
+      if (v === "1") setAssessmentCollapsed(true);
+      else if (v === "0") setAssessmentCollapsed(false);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+  const setAssessmentCollapsedPersist = (v: boolean) => {
+    setAssessmentCollapsed(v);
+    try { window.localStorage.setItem(assessmentCollapseKey, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
@@ -1578,7 +1595,14 @@ function ClientDetail() {
         );
       })()}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
+      {(() => {
+        const briefApproved = !!inlineBrief?.approved;
+        const effectiveCollapsed =
+          assessmentCollapsed ?? (briefApproved || !!readyPlanForAssessment);
+        const showSidebar = !effectiveCollapsed;
+        return (
+      <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
+        {showSidebar && (
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>
@@ -1595,10 +1619,12 @@ function ClientDetail() {
             ))}
           </nav>
         </aside>
+        )}
 
         <AssessmentSection
           clientId={clientId}
-          defaultCollapsed={!!readyPlanForAssessment}
+          collapsed={effectiveCollapsed}
+          onCollapsedChange={setAssessmentCollapsedPersist}
           summaryLine={
             (assessment as any)?.performed_on
               ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
@@ -2203,6 +2229,8 @@ function ClientDetail() {
 
         </AssessmentSection>
       </div>
+        );
+      })()}
 
           {/* Post-assessment synthesis — collapses to a chip ONLY when the
               assessment is genuinely complete (≥80% of sections). Below
@@ -2937,28 +2965,37 @@ function AssessmentSection({
   headerProgress,
   children,
   defaultCollapsed = false,
+  collapsed: collapsedProp,
+  onCollapsedChange,
   summaryLine,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
   children: React.ReactNode;
   defaultCollapsed?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (v: boolean) => void;
   summaryLine?: string;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
-  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
+  const [collapsedInternal, setCollapsedInternal] = useState<boolean>(defaultCollapsed);
+  const collapsed = collapsedProp ?? collapsedInternal;
+  const setCollapsed = (v: boolean) => {
+    if (onCollapsedChange) onCollapsedChange(v);
+    else setCollapsedInternal(v);
+  };
   // Keep in sync when the default flips from "no plan" → "plan ready" while
   // the user is on the page; trainer's local override (after first toggle)
   // wins, so we only auto-update on the initial transition.
   const lastDefaultRef = useRef(defaultCollapsed);
   useEffect(() => {
-    if (lastDefaultRef.current !== defaultCollapsed) {
-      setCollapsed(defaultCollapsed);
+    if (lastDefaultRef.current !== defaultCollapsed && collapsedProp == null) {
+      setCollapsedInternal(defaultCollapsed);
       lastDefaultRef.current = defaultCollapsed;
     }
-  }, [defaultCollapsed]);
+  }, [defaultCollapsed, collapsedProp]);
 
   // Focused mode: render one section at a time with prev/next nav.
   // Persist toggle per client; default = on (the whole point of #9).

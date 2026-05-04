@@ -265,15 +265,15 @@ export function DayCardEditable({
       </ul>
 
       {isGate && onApproveDay1 && !editing && (
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
           <p className="text-xs text-foreground">
-            Day 1 looks good? Approve to unlock generating the rest of the week.
+            Looks good? Approve this day to confirm.
           </p>
           <button
             onClick={onApproveDay1}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_18px_-6px_oklch(0.75_0.18_70/0.6)] ring-1 ring-amber-400/40 transition-transform hover:-translate-y-0.5"
           >
-            <CheckCircle2 className="h-4 w-4" /> Approve Day 1
+            <CheckCircle2 className="h-4 w-4" /> Approve Day
           </button>
         </div>
       )}
