@@ -38,7 +38,7 @@ export const proposeProgressions = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("trainer_id, brief, blueprint, duration_weeks")
+      .select("trainer_id, brief, blueprint, duration_weeks, generation_meta")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
