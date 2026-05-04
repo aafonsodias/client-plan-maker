@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { ClientDocuments } from "@/components/ClientDocuments";
+import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -1352,9 +1354,6 @@ function ClientDetail() {
             <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
           </div>
         </div>
-        <div className="mt-4">
-          <ClientDocuments clientId={client.id} />
-        </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AssessmentDatePicker
             value={assessment.performed_on || ""}
@@ -1388,21 +1387,62 @@ function ClientDetail() {
               <Eye className="h-3.5 w-3.5" /> Ver como cliente
             </Link>
           </Button>
+          <ClientDocuments clientId={client.id} />
+          {(client.intake_status === "submitted" ||
+            client.intake_status === "reviewed" ||
+            lastSavedAt) && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Pedir nova avaliação"
+                  title="Pedir nova avaliação ao cliente"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-foreground"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Avaliação</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md">
+                <SheetHeader>
+                  <SheetTitle>Pedir nova avaliação</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <IntakeLinkPanel
+                    clientId={client.id}
+                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                    clientPhone={client.phone}
+                    intake={{
+                      intake_token: client.intake_token ?? null,
+                      intake_token_expires_at: client.intake_token_expires_at ?? null,
+                      intake_status: client.intake_status ?? "not_sent",
+                      intake_submitted_at: client.intake_submitted_at ?? null,
+                    }}
+                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
 
-      <IntakeLinkPanel
-        clientId={client.id}
-        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-        clientPhone={client.phone}
-        intake={{
-          intake_token: client.intake_token ?? null,
-          intake_token_expires_at: client.intake_token_expires_at ?? null,
-          intake_status: client.intake_status ?? "not_sent",
-          intake_submitted_at: client.intake_submitted_at ?? null,
-        }}
-        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-      />
+      {!(client.intake_status === "submitted" ||
+        client.intake_status === "reviewed" ||
+        lastSavedAt) && (
+        <IntakeLinkPanel
+          clientId={client.id}
+          clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+          clientPhone={client.phone}
+          intake={{
+            intake_token: client.intake_token ?? null,
+            intake_token_expires_at: client.intake_token_expires_at ?? null,
+            intake_status: client.intake_status ?? "not_sent",
+            intake_submitted_at: client.intake_submitted_at ?? null,
+          }}
+          onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+        />
+      )}
 
       {/* Compact client snapshot — always visible, summarizes latest assessment */}
       {lastSavedAt && (
@@ -2399,8 +2439,16 @@ function ClientDetail() {
                           busy={stageBusy === "microcycle"}
                           progressLabel={
                             stageBusy === "microcycle"
-                              ? "A escrever Day 1…"
+                              ? "A gerar microciclo…"
                               : undefined
+                          }
+                          expanded={expandedStage === "microcycle"}
+                          onToggleExpanded={(next) =>
+                            setExpandedStage(next ? "microcycle" : null)
+                          }
+                          hideHeaderApprove={
+                            (hasMicrocycleDraft || microcycleApproved) &&
+                            expandedStage === "microcycle"
                           }
                           approveLabel={
                             microcycleApproved
@@ -2413,19 +2461,37 @@ function ClientDetail() {
                             blueprintApproved
                               ? () =>
                                   microcycleApproved || hasMicrocycleDraft
-                                    ? navigateToStage("microcycle")
-                                    : runStage("microcycle", false)
+                                    ? setExpandedStage(
+                                        expandedStage === "microcycle" ? null : "microcycle",
+                                      )
+                                    : runStage("microcycle", false, { skipNavigate: true }).then(() =>
+                                        setExpandedStage("microcycle"),
+                                      )
                               : undefined
                           }
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {hasMicrocycleDraft && !microcycleApproved
-                              ? t("detail.stage.microcycle_draft_hint")
-                              : blueprintApproved
-                              ? t("detail.stage.microcycle_help")
-                              : t("detail.stage.microcycle_blocked")}
-                          </p>
-                        </StageCard>
+                          expandedBody={
+                            (hasMicrocycleDraft || microcycleApproved) &&
+                            expandedStage === "microcycle" ? (
+                              <MicrocyclePanel
+                                planId={planId}
+                                showHeader={false}
+                                onApproved={() => {
+                                  void refreshPlans();
+                                  setExpandedStage("progressions");
+                                  void runStage("progressions", false, { skipNavigate: true });
+                                }}
+                              />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {hasMicrocycleDraft && !microcycleApproved
+                                  ? t("detail.stage.microcycle_draft_hint")
+                                  : blueprintApproved
+                                  ? t("detail.stage.microcycle_help")
+                                  : t("detail.stage.microcycle_blocked")}
+                              </p>
+                            )
+                          }
+                        />
                         <StageCard
                           stageNumber={4}
                           title="Progressions"

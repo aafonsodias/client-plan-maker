@@ -119,3 +119,16 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1 Microcycle engine: switch generateMicrocycleDays to fire-and-forget (return after pending insert; background Promise.all writes via realtime); add 90s soft-timeout per day with single retry
 - P1 Wearables: client dashboard fields for sleep / RHR / steps / HRV; surface in trainer view as continuous signals (separate from intake)
 - P2 IntakeLinkPanel hide-by-default once intake_status='reviewed' or 'submitted'; surface as "Pedir nova avaliação" trigger
+
+## Round 32 (done)
+- P0: Stage 3 microcycle inlined on /clients/$id via MicrocyclePanel; no more nav away
+- P0: Microcycle generation switched to gemini-2.5-flash, concurrency 7, FITT-VP retry only on block N≥2
+- P0: Server-side log line in generateMicrocycleDays for observability
+- P1: Documents collapsed to clinical-teal stethoscope icon + Sheet
+- P0: Intake link panel now hides once assessed; available via Send-icon Sheet in header
+
+## Round 33 (next)
+- P1: drag-to-reorder days + supersets in MicrocyclePanel
+- P1: per-exercise inline AI comments on edit
+- P1: searchable warmup catalog
+- P2: Stage 4 Progressions inlined too (currently still navigates)

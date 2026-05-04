@@ -443,7 +443,7 @@ Brief context:
 
 Generate ONLY this single day's session.`;
 
-  const model = resolveModel("FORGE_MODEL_STAGE_3", "openai/gpt-5");
+  const model = resolveModel("FORGE_MODEL_STAGE_3", "google/gemini-2.5-flash");
   const result = await callAnthropicWithSchema({
     model,
     system,
@@ -493,8 +493,10 @@ Generate ONLY this single day's session.`;
   }
 
   // ---- FITT-VP validator + 1× retry (R2.2 Phase C.3) ---------------------
+  // Only run the expensive retry on block N≥2 (where prior pool exists) — for
+  // block 1 we accept first-pass output to keep generation snappy.
   let finalDay = floored;
-  if (prescriptionParameters) {
+  if (prescriptionParameters && priorExercisePool.length > 0) {
     const violationsInitial: FittVpViolation[] = validateDayAgainstFittVp(
       finalDay,
       prescriptionParameters,
@@ -731,8 +733,14 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     // Mark all pending immediately so UI sees them.
     await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
 
+    console.log("[generateMicrocycleDays] start", {
+      planId: data.planId,
+      sessionsPerWeek,
+      dayIndices,
+      priorPoolSize: priorPool.length,
+    });
     const queue = [...dayIndices];
-    const concurrency = 5;
+    const concurrency = 7;
     let okCount = 0;
     let errCount = 0;
 
@@ -779,6 +787,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+    console.log("[generateMicrocycleDays] done", { planId: data.planId, ok: okCount, err: errCount });
 
     // ---- Post-validation: rotation audit (block N>1 only) -----------------
     let rotationAudit: any = null;
