@@ -132,3 +132,16 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1: per-exercise inline AI comments on edit
 - P1: searchable warmup catalog
 - P2: Stage 4 Progressions inlined too (currently still navigates)
+
+## Closed Round 33
+- P0: Assessment collapse only hides the questionnaire — green "Avaliação completa · X%" pill + Brief/Blueprint/Microcycle/Progressions stages stay visible (synthesisOpen state, stages lane lifted out of AssessmentSection)
+- P0: Plans-list rows for phased drafts open inline via openPhasedDraft(planId, stage) — no more standalone /plans/$planId/<stage> windows
+- P1: StageCard tone="brief" keeps amber for the source-of-truth Brief; other approved stages (blueprint/microcycle/progressions) collapse to emerald strips matching the post-assessment chip — clear visual progression amber → emerald
+- P0: /plans/$planId/{brief,blueprint,microcycle,progressions} routes converted to redirect shells → /clients/$clientId
+
+## Round 34 (next)
+- P0: FITT-VP backbone (#45) — workout_plans.prescription_parameters, submax VO₂ test, 9 cardinal sign/symptom checklist
+- P1: drag-to-reorder days + supersets in MicrocyclePanel
+- P1: per-exercise inline AI comments on edit
+- P1: searchable warmup catalog
+- P2: Stage 4 Progressions fully inlined too (the Open button on approved still navigateToStage — convert to inline expansion like microcycle)
