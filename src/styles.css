@@ -247,3 +247,9 @@
 .animate-set-tick {
   animation: set-tick-pop 240ms ease-out;
 }
+
+/* Indeterminate horizontal progress strip used by StageCard while busy. */
+@keyframes progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}

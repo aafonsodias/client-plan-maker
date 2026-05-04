@@ -13,6 +13,11 @@ export default function StageCard({
   busy = false,
   defaultCollapsed = false,
   approveLabel = "Approve",
+  expanded,
+  onToggleExpanded,
+  expandedBody,
+  hideHeaderApprove = false,
+  progressLabel,
 }: {
   stageNumber: number;
   title: string;
@@ -23,8 +28,23 @@ export default function StageCard({
   busy?: boolean;
   defaultCollapsed?: boolean;
   approveLabel?: string;
+  /** Controlled expansion for inline editor body (overrides internal state when provided). */
+  expanded?: boolean;
+  onToggleExpanded?: (next: boolean) => void;
+  /** Rendered inside the same card when expanded (replaces the helper text). */
+  expandedBody?: ReactNode;
+  /** Hide the header-level approve button (use a CTA at the bottom of expandedBody instead). */
+  hideHeaderApprove?: boolean;
+  /** When set with busy=true, shows an inline progress strip instead of the white spinner box. */
+  progressLabel?: string;
 }) {
-  const [open, setOpen] = useState(!defaultCollapsed && status !== "approved");
+  const [openInternal, setOpenInternal] = useState(!defaultCollapsed && status !== "approved");
+  const open = expanded ?? openInternal;
+  const setOpen = (v: boolean | ((o: boolean) => boolean)) => {
+    const next = typeof v === "function" ? (v as (o: boolean) => boolean)(open) : v;
+    if (onToggleExpanded) onToggleExpanded(next);
+    else setOpenInternal(next);
+  };
 
   // Approved & collapsed: thin strip
   if (status === "approved" && !open) {
@@ -56,16 +76,28 @@ export default function StageCard({
 
   if (status === "generating") {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-5 text-sm">
-        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span className="font-medium">Stage {stageNumber} — Generating {title.toLowerCase()}…</span>
+      <div className="overflow-hidden rounded-xl border border-amber-500/40 bg-card shadow-sm">
+        <div className="h-0.5 w-full overflow-hidden bg-amber-500/10">
+          <div className="h-full w-1/3 animate-[progress_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+        </div>
+        <div className="flex items-center gap-3 px-4 py-5 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+          <span className="font-medium">
+            Stage {stageNumber} — {progressLabel ?? `Generating ${title.toLowerCase()}…`}
+          </span>
+        </div>
       </div>
     );
   }
 
   // ready or approved+open
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      {busy && (
+        <div className="h-0.5 w-full overflow-hidden bg-amber-500/10">
+          <div className="h-full w-1/3 animate-[progress_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+        </div>
+      )}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <button
           type="button"
@@ -95,7 +127,7 @@ export default function StageCard({
                 Regenerate
               </button>
             )}
-            {onApprove && status !== "approved" && (
+            {onApprove && status !== "approved" && !hideHeaderApprove && (
               <button
                 type="button"
                 onClick={() => void onApprove()}
@@ -109,7 +141,11 @@ export default function StageCard({
           </div>
         )}
       </div>
-      {open && <div className="p-4">{children}</div>}
+      {open && (
+        <div className="p-4">
+          {expandedBody ?? children}
+        </div>
+      )}
     </div>
   );
 }

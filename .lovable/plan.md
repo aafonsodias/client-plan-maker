@@ -1,47 +1,93 @@
-## Goal
 
-Stop bouncing to `/plans/$planId/blueprint` when the trainer clicks **View draft** / **Generate Blueprint** on the client page. Open the Stage 2 editor **inline, expanded right under the Stage 2 card** — same place the Brief lives — so the whole "Intake → Brief → Blueprint" flow stays on one page.
+# Polish Round — Client Workspace + Stage Flow
 
-Same pattern stays available for Stage 3 (Microcycle) and Stage 4 (Progressions) in a follow-up, but this round only does Blueprint to keep the diff tight and the bug-surface small.
+This is a wide round. Grouped into 6 themes, ordered by impact. Each theme is independently shippable so you can stop me mid-way if priorities shift.
 
-## What changes for the user
+---
 
-- On `/clients/:id`, clicking **Generate Blueprint** or **View draft** no longer navigates away. The Stage 2 card expands and renders the full Blueprint editor in place: Programming Tier chip, Session Archetypes list, Week × Day matrix, Progression Model picker, "Ask AI for changes", "Regenerate", "Approve → Day 1".
-- The **Brief approved** rail stays visible on the right (where it already is), exactly as in the screenshot.
-- After approving the blueprint, Stage 3 card auto-opens inline (or surfaces "Generate Microcycle"); no full-page redirect.
-- A small "Open full page" link stays in the card header for users who prefer the dedicated route — the route keeps working for deep links.
+## Theme 1 — Stage cards: one box per stage, clean transitions (P0)
 
-## Technical plan
+**Problem:** Stage 2 currently shows two stacked boxes ("View draft" header + the actual editor below). Transition Blueprint → Microcycle collapses the editor with a generic spinner instead of advancing the stage.
 
-1. **Extract the editor body** out of `src/routes/plans.$planId.blueprint.tsx` into a reusable component:
-   - New file: `src/components/BlueprintEditorPanel.tsx`.
-   - Exports `BlueprintEditorPanel({ planId, onApproved?, compact? })`.
-   - Contains all state + load/regenerate/approve logic currently in `BlueprintReview` (lines 48–343), minus the `AppShell` and the right-side `BriefContextRail` (the client page already shows brief context above).
-   - `compact` removes the page-level title/back-link; the StageCard provides the chrome.
-   - `onApproved` callback lets the host decide what to do next (client page → expand Stage 3; standalone route → navigate to microcycle).
+**Changes:**
+- `src/components/StageCard.tsx`: when `expandedStage === stage.id`, render the inline panel **inside** the same card, not as a sibling. Header keeps title + status chip; primary action moves to the bottom of the expanded body.
+- `src/routes/clients_.$clientId.tsx`: drop the duplicate StageCard wrapper around `BlueprintEditorPanel` — it lives inside Stage 2's card now.
+- On approve success: set Stage 2 status → `ready` (emerald), auto-collapse Stage 2, set `expandedStage = "microcycle"`, and scroll to it. No full-page spinner.
+- Same pattern applied to Stage 1 (Brief), Stage 3 (Microcycle), Stage 4 (Progressions) for visual consistency — one card, expandable, primary CTA at bottom.
 
-2. **Slim down the route** `src/routes/plans.$planId.blueprint.tsx` to just render `<AppShell><BriefContextRail/> + <BlueprintEditorPanel onApproved={navigate microcycle}/></AppShell>`. Behaviour identical to today for anyone hitting the URL directly.
+## Theme 2 — Approve buttons + loading feel (P0)
 
-3. **Inline mount on the client page** in `src/routes/clients_.$clientId.tsx` (around line 2293, the Stage 2 `StageCard`):
-   - Track local UI state `expandedStage: "blueprint" | "microcycle" | "progressions" | null`.
-   - Replace the current `onApprove → navigateToStage("blueprint")` with `onApprove → setExpandedStage("blueprint")` when a draft exists or generation just succeeded. First-time generation still calls `runStage("blueprint", false)` but, on success, sets `expandedStage = "blueprint"` instead of navigating.
-   - When `expandedStage === "blueprint"`, render `<BlueprintEditorPanel planId={planId} compact onApproved={() => { refreshPlans(); setExpandedStage("microcycle"); }} />` directly underneath the Stage 2 `StageCard`, inside the same vertical stack.
-   - Keep a tiny "Open full page" link in the StageCard header for power users.
+**Approve buttons:**
+- Move primary "Approve → next stage" CTA to the **bottom** of the expanded body (after the user has read everything), full-width on mobile, amber→emerald gradient with check icon. The toolbar at the top keeps only Brief / Ask AI / Regenerate / Full page.
+- File: `src/components/BlueprintEditorPanel.tsx` (and the Brief/Microcycle/Progressions equivalents).
 
-4. **Keep telemetry + fallback toast behaviour** that already lives in `runStage` (Founder telemetry panel, deterministic fallback message) — only the navigation step changes.
+**Loading feel:**
+- Replace the right-aligned white spinner box with an inline progress strip across the top of the active card: thin amber bar + the live stage label (e.g. "A escrever Day 1 — 4 / 8 exercícios"). Reuses the telemetry stream we already have.
+- Component: `src/components/StageProgressStrip.tsx` (new).
 
-5. **i18n**: add two keys in `src/i18n/locales/{pt,en}/clients.json` (or the existing `detail.stage` namespace): `open_inline` ("Abrir aqui" / "Open here") and `open_full_page` ("Página completa" / "Full page").
+## Theme 3 — AI telemetry panel relocation (P0)
 
-6. **No DB / server function changes.** No migrations. No new dependencies.
+**Now:** Floating panel obscures content.
+**Plan:** Dock it under the left "Sections" rail as a collapsible "AI spend" tray. On mobile it becomes a tiny pill in the bottom-left that expands to a sheet on tap. Founder-only (already gated). File: `src/components/FounderAiTelemetryPanel.tsx` + mount point in `clients_.$clientId.tsx`.
 
-## Out of scope (this round)
+## Theme 4 — Copy + visual polish across the assessment (P1)
 
-- Inlining Stage 3 (Microcycle) and Stage 4 (Progressions) — same refactor pattern, but each has its own quirks (day-by-day generation, exercise picker). Will land in the next round once Blueprint inline is validated on Mobile Safari 375px.
-- Removing the standalone `/plans/$planId/blueprint` route — kept as a deep-link target.
-- Any new model/cost work (Stage 2 already on `google/gemini-3-flash-preview` with deterministic fallback).
+**Brand rename:**
+- "Your Workshop" → **"AI Workbench"** with a small ⚒ glyph styled like the brand mark (amber under-glow). Search + replace across i18n + headers.
 
-## Risk + QA
+**Programming Tier card:**
+- Bigger type (text-base instead of text-xs), tier name as the headline, plain-language one-liner, and the swap chips (Remedial / Conservative) become full buttons with their colour. Replace `lower_metabolic` style ids with human labels everywhere user-facing — keep the snake_case only in dev tools / generation_log.
 
-- **Risk**: the BlueprintEditor was written assuming it owns the page (max-w-4xl, p-6). In `compact` mode we drop the outer paddings and let the StageCard frame it. Visual smoke at 1696px desktop and 375px Mobile Safari before closing.
-- **Risk**: two "Approve" buttons could appear if StageCard's footer is also rendered. Solution: when `expandedStage === "blueprint"`, hide StageCard's primary action and rely on the inline editor's own Approve.
-- **QA checklist**: generate blueprint from scratch → editor expands inline; reload page → "View draft" reopens it inline; approve → Stage 3 card highlights and brief rail still visible; deep link `/plans/:id/blueprint` still works standalone.
+**Session archetypes mobile drag:**
+- Increase the drag-handle hit area to 44×44px, switch `PointerSensor` activation from `distance: 4` to `delay: 150, tolerance: 5` so a long-press starts the drag without competing with scroll. File: `src/components/BlueprintArchetypesList.tsx`.
+
+**Client-touched fields legend:**
+- Add `source: "client" | "trainer"` indicator on intake answers. Arrows / checkmarks rendered in cyan when `source === "client"`, amber when `trainer`. Legend chip at the top of the Sections rail explaining the colour code. Requires a small migration to record `last_edited_by` on `intake_answers` (or read from existing audit fields if present — I'll check first).
+
+**Assessment Synthesis upgrade:**
+- Add: VO2max estimate + percentile vs age/sex (when Rockport / step test present), all-cause mortality risk band (Mandsager 2018 reference table), grip-strength percentile if recorded, recovery vs training-load mismatch flag, top 3 movement-pattern weaknesses with one-line "what to train" suggestion.
+- Layout: 2×3 grid of "insight cards" with sparkline / dial visuals.
+
+**Movement Screen field mode:**
+- New compact layout for ≤ 768px: one pattern per swipeable card, big radio buttons, capacity field collapses by default. Desktop layout unchanged. File: `src/components/MovementScreenField.tsx` (new).
+
+## Theme 5 — Documents corner card + intake-link state (P1)
+
+**Documents widget:**
+- Demote from full-width section to a sleek 220×140 corner card top-right of the client header: caduceus glyph, count badge, "Carregar" on hover, opens existing dialog. File: `src/components/ClientDocumentsCard.tsx` (replaces inline list).
+
+**Intake link card:**
+- When `intake_submissions.submitted_at` exists: collapse to "✓ Intake completo · ver respostas" with a soft emerald border. Hide the WhatsApp/email/Generate-new-link controls behind a "..." menu. The state was already in the DB — the UI just wasn't reading it.
+
+## Theme 6 — Referrals, progression models, health vs performance, manual audit (P2)
+
+**Referrals:**
+- New table `referrals(referrer_id, referred_id, redeemed_at, reward_kind)`. Each account gets a `/r/{code}` link in Settings. Reward (mvp): both accounts get +1 plan_limit on redemption. RLS: trainers see only own referrals. Surfaces in `/me` and the welcome email.
+
+**Progression Models picker (Bompa-aware):**
+- Replace the three flat cards with: Linear, Undulating (DUP), Block, Conjugate. Each card gets a hand-drawn-style SVG of the actual loading curve (week-by-week intensity), a 1-line "best for", a "evidence" footnote (Bompa 6e + ACSM ref), and a 🩺 **Health mode** toggle that swaps the proposal toward sub-maximal RPE 5–7 caps and inserts a deload every 3rd week regardless of model. Files: `src/components/ProgressionModelPicker.tsx` + 4 new SVGs in `src/assets/progression/`.
+
+**Manual + copy audit:**
+- Sweep `src/i18n/locales/{pt,en}/*.json` for jargon (`lower_metabolic`, `archetype`, `bulkfill`, `microcycle` only where unavoidable). Replace with everyday PT/EN. Add tooltips for the few technical terms we keep. Update `/manual` page accordingly.
+
+---
+
+## Suggested execution order
+
+1. **Theme 1 + 2** in one shipment — fixes the visible bug you're stuck on.
+2. **Theme 3** — gets the telemetry out of the way.
+3. **Theme 4** — biggest perceived-quality jump; ship Programming Tier + mobile drag + Synthesis first, Movement Screen field mode after.
+4. **Theme 5** — documents card + intake-state are quick wins.
+5. **Theme 6** — referrals & progression-model rework are bigger; do last.
+
+## Out of scope for this round (call out if you want them in)
+
+- Rockport → VO2max → mortality calculator math (I'll wire the UI; the formula table goes in a follow-up so we can review the references together).
+- Reworking the demo personas to exercise the new field-mode layouts.
+- Touch of Stage 5 (bulkfill) — it's not in the screenshots and you didn't mention it.
+
+## Risks
+
+- Stage-card refactor touches `clients_.$clientId.tsx` which is large — I'll snapshot before editing and run the 375px Mobile Safari smoke after.
+- Referrals table needs a migration; I'll back up before applying.
+- Renaming "Your Workshop" → "AI Workbench" hits many keys; I'll grep first to avoid stale strings.
