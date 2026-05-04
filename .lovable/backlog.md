@@ -61,6 +61,19 @@ Atualizado: Round 28 (4 Mai 2026)
 | 50 | P2 | Future | McGill — Ultimate Back Fitness and Performance (2014). Overlay LBP especializado; depende de a infraestrutura de overlays do Round 3 já existir. | parked |
 | 51 | P3 | Future | Linter housekeeping — mover extension(s) fora do schema `public` (Supabase linter `Extension in Public`). Pré-existente, não bloqueia features. | parked |
 
+### Round 54 — Plan-view feedback (4 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 60 | P0 | Plan page | PR confetti idempotente: `workout_sessions.pr_celebrated_at` + `markSessionsCelebrated` server fn + LS fallback | R54 ✅ |
+| 61 | P1 | Plan page | Mesocycle table: linha azul "realizado" debaixo de cada prescrição (`useSessionActuals` overlay) | R55 next |
+| 62 | P1 | Plan page | Header colapsado: 2 linhas sticky (← All plans · Nome cliente · Block · Ready · ⋯) + Resumo do bloco em `<details>` (banner validação dentro) | R55 next |
+| 63 | P1 | Plan page | Nome do cliente sempre visível: `flex-1 min-w-0` + overflow menu p/ os 8 botões | R55 next (#62) |
+| 64 | P1 | Theme | Light-mode contraste tokens (`status-tone.ts` light variants emerald-50/700, amber-50/700, red-50/700) | R54 ✅ |
+| 65 | P2 | Plan page | Avaliar deteção de PR para bodyweight/hold (sem e1RM) — baseline marcado no Block 1 | parked |
+
+**Nota:** #61/#62/#63 ficam para o turno seguinte porque o RPE periodization (Round 53 P0) muda a shape das células do MesocycleTableView — quero o overlay azul sobre a versão final para evitar refazer.
+
 **Cross-source policy** — Bompa 6e + NSCA 3e + ACSM 12e partilham overlap genuíno (variáveis de treino, populações, assessment). Modelo B (tabelas source-agnostic com `source` discriminator) estende-se às três fontes — superficializa concordância (sinal forte) vs discordância (resolver manualmente). Fontes parqueadas: `.lovable/acsm-12e-source.txt`, `.lovable/bompa-buzzichelli-6e-source.txt`, `.lovable/nsca-essentials-3e-source.txt`.
 
 ## Princípio
