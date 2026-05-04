@@ -113,7 +113,7 @@
     },
     "logging": {
       "title": "O plano não acaba no PDF.",
-      "subtitle": "Regista cada série, acompanha cada sessão. A Forge guarda o histórico para que você e o cliente vejam o trabalho a acumular."
+      "subtitle": "Regista cada série, acompanha cada sessão. A Protocol guarda o histórico para que você e o cliente vejam o trabalho a acumular."
     },
     "journey": {
       "eyebrow": "Em construção contínua",
@@ -188,23 +188,23 @@
       "pdf_desc": "Adiciona o seu logótipo e o nome do seu negócio. Envia um plano polido instantaneamente."
     },
     "founder": {
-      "title": "Porquê a Forge?",
-      "img_alt": "André, fundador da Forge",
+      "title": "Porquê a Protocol?",
+      "img_alt": "André, fundador da Protocol",
       "p1": "Em quinze anos como PT vi a mesma coisa repetir-se: planos mal montados porque programar com critério dá demasiado trabalho.",
-      "p2": "A Forge existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), você como filtro humano, IA só para o trabalho repetitivo.",
+      "p2": "A Protocol existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), você como filtro humano, IA só para o trabalho repetitivo.",
       "p3": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
       "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
     },
     "faq": {
       "title": "Perguntas que os treinadores fazem antes de se inscrever.",
       "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
-      "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Forge é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
+      "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Protocol é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
       "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
       "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
       "q3_q": "Posso usar a minha própria marca no PDF?",
-      "q3_a": "Sim. Carrega o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Forge.",
+      "q3_a": "Sim. Carrega o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Protocol.",
       "q4_q": "O que acontece aos dados dos meus clientes?",
-      "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Forge não partilha nem vende dados de clientes — nunca.",
+      "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Protocol não partilha nem vende dados de clientes — nunca.",
       "q5_q": "Em que ciência se baseia a programação?",
       "q5_a": "Volume landmarks (MEV/MAV/MRV) seguem a investigação de Mike Israetel e Renaissance Periodization. A prescrição de RPE e seleção de exercícios bebe de Greg Nuckols e Eric Helms (3DMJ). Triagem de risco usa as guidelines da ACSM e o PAR-Q+ validado.",
       "q6_q": "O que acontece se o meu cliente piorar a meio do bloco?",
@@ -216,16 +216,16 @@
       "q9_q": "Quantos planos posso gerar no plano grátis?",
       "q9_a": "1 plano completo por conta. Suficiente para testar o fluxo end-to-end com um cliente real. Os tiers pagos abrem 8 / 30 / 80 planos por mês conforme escala (cap de clientes = cap de planos, sem letras pequenas).",
       "q10_q": "Como sei que a IA não inventou um exercício perigoso?",
-      "q10_a": "Cada exercício é validado contra a biblioteca FORGE (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração."
+      "q10_a": "Cada exercício é validado contra a biblioteca PROTOCOL (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração."
     },
-    "mission": "A Forge existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
+    "mission": "A Protocol existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
     "closing": {
       "title": "O seu próximo plano, antes da sua próxima sessão.",
       "subtitle": "Grátis durante a fase beta. Sem cartão.",
       "cta_signed_in": "Abrir dashboard",
       "cta_signed_out": "Cria a sua conta"
     },
-    "footer_copy": "© {{year}} Forge",
+    "footer_copy": "© {{year}} Protocol",
     "pricing": {
       "eyebrow": "Preço",
       "title": "Honesto e sem surpresas.",
@@ -275,8 +275,8 @@
       "subtitle": "O logbook não é só registo — a IA lê os seus dados e devolve sinais accionáveis."
     },
     "anti_chatgpt": {
-      "eyebrow": "FORGE vs ChatGPT",
-      "title": "ChatGPT gera o que você PEDE. FORGE gera o que o cliente PRECISA.",
+      "eyebrow": "PROTOCOL vs ChatGPT",
+      "title": "ChatGPT gera o que você PEDE. PROTOCOL gera o que o cliente PRECISA.",
       "body": "14 secções de avaliação clínica antes de 1 exercício. Triagem PAR-Q+, classificação de risco ACSM, seleção de exercícios contraindicados, periodização em blocos com volumes MEV/MAV/MRV — tudo automático, tudo justificado.",
       "sections_label": "Secções avaliadas antes de gerar:",
       "items": [
@@ -297,8 +297,8 @@
       ]
     },
     "comparison": {
-      "eyebrow": "Onde o FORGE encaixa",
-      "title": "Como o FORGE se compara ao que já usas.",
+      "eyebrow": "Onde o PROTOCOL encaixa",
+      "title": "Como o PROTOCOL se compara ao que já usas.",
       "headers": [
         "",
         "PROTOCOL",

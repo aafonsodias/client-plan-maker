@@ -64,7 +64,7 @@
       "q7": "Conheces alguma outra razão para não deveres fazer atividade física?"
     },
     "rationale": {
-      "cardio": "Alerta cardiovascular. Validação médica recomendada antes de intensidade moderada-vigorosa. O Forge pode rascunhar um plano de baixa intensidade, sinalizado para revisão médica.",
+      "cardio": "Alerta cardiovascular. Validação médica recomendada antes de intensidade moderada-vigorosa. O Protocol pode rascunhar um plano de baixa intensidade, sinalizado para revisão médica.",
       "balance": "Alerta de equilíbrio. O plano evitará movimentos overhead com pesos livres e exercícios em pé sem apoio até validação médica.",
       "msk": "Alerta músculo-esquelético. O plano excluirá padrões de alto impacto e progressões de carga agressivas. Protocolo mobility-first disponível.",
       "manual": "Alerta manual. Anota detalhes em condições médicas. O PDF incluirá um disclaimer de revisão médica."
@@ -466,7 +466,7 @@
         ],
         "microcycle": [
           "A traduzir blueprint em semana 1…",
-          "A escolher exercícios da biblioteca FORGE…",
+          "A escolher exercícios da biblioteca PROTOCOL…",
           "A calcular RPE e descansos…",
           "A revisar segurança e contraindicações…"
         ],

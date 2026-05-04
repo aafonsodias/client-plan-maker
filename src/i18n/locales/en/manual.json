@@ -1,6 +1,6 @@
 {
   "title": "Manual",
-  "subtitle": "Everything you need to get the most out of Forge — step by step.",
+  "subtitle": "Everything you need to get the most out of Protocol — step by step.",
   "back_to_app": "Back to app",
   "open": "Open manual",
   "tab_aria": "Manual section",
@@ -122,7 +122,7 @@
       "steps": [
         {
           "h": "Free plan",
-          "p": "1 finalized training plan. Enough to validate if Forge fits your workflow."
+          "p": "1 finalized training plan. Enough to validate if Protocol fits your workflow."
         },
         {
           "h": "Trial",
@@ -134,7 +134,7 @@
         },
         {
           "h": "Founder",
-          "p": "Permanent access for the Forge founder — no trial, no limit, no upgrade banners."
+          "p": "Permanent access for the Protocol founder — no trial, no limit, no upgrade banners."
         }
       ]
     }
@@ -150,7 +150,7 @@
     "items": [
       {
         "q": "Do I have to pay to use it?",
-        "a": "Not to try. The free plan lets you build one full plan end-to-end — enough to see if Forge fits your workflow. You only pay when you scale to more clients."
+        "a": "Not to try. The free plan lets you build one full plan end-to-end — enough to see if Protocol fits your workflow. You only pay when you scale to more clients."
       },
       {
         "q": "Do my clients need an account?",
@@ -182,7 +182,7 @@
       },
       {
         "q": "Does it support multiple mesocycle blocks?",
-        "a": "Yes. When you approve the last cycle, you can start Block 2 — Forge archives the previous one, keeps the history, and uses it as context for the new generation."
+        "a": "Yes. When you approve the last cycle, you can start Block 2 — Protocol archives the previous one, keeps the history, and uses it as context for the new generation."
       },
       {
         "q": "Does it work on mobile?",
@@ -192,7 +192,7 @@
   },
   "contact": {
     "title": "Talk to me",
-    "subtitle": "Forge is under active construction. Bug, suggestion, or just to say hi — I read everything.",
+    "subtitle": "Protocol is under active construction. Bug, suggestion, or just to say hi — I read everything.",
     "email_label": "Direct email",
     "email_value": "aafonsodias@gmail.com",
     "email_hint": "Usually a reply within 24h (EN/PT).",
