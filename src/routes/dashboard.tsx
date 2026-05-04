@@ -469,52 +469,14 @@ function Dashboard() {
 
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
               {filteredClients.map((c) => (
-                <div key={c.id} className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50">
-                  <Link
-                    to="/clients/$clientId"
-                    params={{ clientId: c.id }}
-                    className="flex flex-1 items-center gap-3 px-4 py-4 sm:justify-between sm:px-5"
-                  >
-                    <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-sm font-semibold sm:truncate sm:text-base">{c.full_name}</p>
-                      <p className="truncate text-xs text-muted-foreground sm:text-sm">{c.email ?? t("clients.no_email")}</p>
-                      {phases[c.id] && (
-                        <span className="mt-1 inline-flex sm:hidden">
-                          <ClientPhasePill phase={phases[c.id]} />
-                        </span>
-                      )}
-                    </div>
-                    {phases[c.id] && (
-                      <span className="hidden shrink-0 sm:inline-flex">
-                        <ClientPhasePill phase={phases[c.id]} />
-                      </span>
-                    )}
-                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:inline-block" />
-                  </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button
-                        className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
-                        aria-label={t("clients.delete_aria")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>{t("clients.delete_title", { name: c.full_name })}</AlertDialogTitle>
-                        <AlertDialogDescription>{t("clients.delete_desc")}</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>{t("clients.cancel")}</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => void removeClient(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          {t("clients.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <ClientPlayerCard
+                  key={c.id}
+                  client={c}
+                  phase={phases[c.id]}
+                  plan={planByClient[c.id] ?? null}
+                  logs={logsByClient[c.id] ?? []}
+                  onDelete={() => void removeClient(c.id)}
+                />
               ))}
             </div>
           </>
