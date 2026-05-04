@@ -363,11 +363,16 @@ export function MicrocyclePanel({
             const row = days.find((d) => d.day_number === idx);
             const focus = row?.focus ?? "";
             const isActive = idx === activeDay;
+            const isApproved = !!row?.approved_at;
             const tone =
-              st === "done"
+              st === "done" && isApproved
                 ? isActive
                   ? "border-amber-500 bg-amber-500/15 text-amber-400 shadow-[0_0_18px_-8px_rgba(245,158,11,0.6)]"
                   : "border-amber-500/40 bg-amber-500/5 text-amber-400/90 hover:bg-amber-500/10"
+                : st === "done"
+                ? isActive
+                  ? "border-amber-500/60 bg-amber-500/5 text-foreground"
+                  : "border-border bg-card text-foreground hover:bg-muted/40"
                 : st === "generating"
                 ? "border-amber-500/30 bg-amber-500/5 text-amber-300/80 animate-pulse"
                 : st === "error"
@@ -382,7 +387,8 @@ export function MicrocyclePanel({
               >
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
                   <span>Day {idx}</span>
-                  {st === "done" && <CheckCircle2 className="h-3 w-3" />}
+                  {st === "done" && isApproved && <CheckCircle2 className="h-3 w-3" />}
+                  {st === "done" && !isApproved && <span className="text-[9px] font-medium opacity-60">review</span>}
                   {st === "generating" && <Loader2 className="h-3 w-3 animate-spin" />}
                   {st === "error" && <AlertTriangle className="h-3 w-3" />}
                 </div>
