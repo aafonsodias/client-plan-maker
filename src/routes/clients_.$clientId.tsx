@@ -67,6 +67,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
+import { ProtocolRail } from "@/components/ProtocolRail";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
