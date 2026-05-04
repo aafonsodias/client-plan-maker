@@ -2763,8 +2763,8 @@ function ClientDetail() {
                         if (wn === 1) return "base";
                         return wn % 2 === 0 ? "+load" : "+reps";
                       };
-                      // default = current week (latest week marker if we have it; else W1)
-                      const defaultWeek = 1;
+                      // default = latest week with any approved_at day; fallback W1 (R40)
+                      const defaultWeek = Math.min(totalWeeks, planLatestWeek[p.id] ?? 1);
                       return (
                         <div
                           className="flex items-center gap-2"
