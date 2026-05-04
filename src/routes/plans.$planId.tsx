@@ -44,6 +44,7 @@ import { computeCapacityGain } from "@/lib/capacity-gain";
 import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import { NextBlockCard } from "@/components/NextBlockCard";
+import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
@@ -838,6 +839,20 @@ function PlanEditor() {
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+          {/* Around-the-workout nutrition windows — moved here from the client overview (R55). */}
+          <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+              <span className="inline-flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70" />
+                Around the workout
+                <span className="font-normal normal-case tracking-normal text-[10px] text-muted-foreground/70">— refeições e janelas</span>
+              </span>
+              <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
+            </summary>
+            <div className="px-3 pb-3 pt-1">
+              <NextMealCue />
+            </div>
+          </details>
           {sessions.filter((s) => (s as any).plan_id === planId).length > 0 && (
             <LogbookTimeline
               sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}

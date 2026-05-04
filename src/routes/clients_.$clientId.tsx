@@ -76,7 +76,6 @@ import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
-import { NextMealCue } from "@/components/NextMealCue";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 
 export const Route = createFileRoute("/clients_/$clientId")({
@@ -2849,23 +2848,7 @@ function ClientDetail() {
           )}
 
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
-
-      {/* Compact nutrition windows cue — pre/peri/post-workout suggestions. */}
-      {plans.length > 0 && (
-        <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70" />
-              Around the workout
-              <span className="font-normal normal-case tracking-normal text-[10px] text-muted-foreground/70">— refeições e janelas</span>
-            </span>
-            <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
-          </summary>
-          <div className="px-3 pb-3 pt-1">
-            <NextMealCue />
-          </div>
-        </details>
-      )}
+      {/* "Around the workout" nutrition cue moved to the plan page (view mode) — it belongs next to the workout, not in the client overview. */}
 
       {plans.length > 0 && (
       <section>
