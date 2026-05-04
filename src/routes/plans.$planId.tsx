@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -1197,12 +1197,59 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [rewards, setRewards] = useState<Record<string, number>>({});
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
 
   const week = plan.weeks.find((w) => w.week_number === weekNum) ?? plan.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
 
+  // Find any existing trainer session for this (week, day, date) — so reopening
+  // the picker hydrates the form instead of zeroing the fields. Falls back to
+  // the most recent session for the same (week, day) regardless of date.
+  const existingSession = useMemo(() => {
+    const exact = safeSessions.find(
+      (s) => s.week_number === weekNum && s.day_label === dayLabel && s.session_date === date && s.logged_by === "trainer",
+    );
+    if (exact) return exact;
+    return safeSessions
+      .filter((s) => s.week_number === weekNum && s.day_label === dayLabel && s.logged_by === "trainer")
+      .sort((a, b) => (b.session_date > a.session_date ? 1 : -1))[0];
+  }, [safeSessions, weekNum, dayLabel, date]);
+
   useEffect(() => {
     if (!day) { setEntries([]); return; }
+    // If a session already exists for this slot, hydrate it so the trainer
+    // edits instead of duplicating. Match planned exercises by name; new ones
+    // (added since logging) appear empty at the bottom.
+    if (existingSession) {
+      setEditingSessionId(existingSession.id);
+      if (existingSession.session_date && existingSession.session_date !== date) {
+        setDate(existingSession.session_date);
+      }
+      const loggedByName = new Map<string, any>();
+      for (const ent of (existingSession.entries ?? [])) {
+        if (ent && typeof ent === "object" && ent.exercise_name) loggedByName.set(ent.exercise_name, ent);
+      }
+      setEntries(
+        day.exercises.map((e) => {
+          const n = parsePlannedSets(e.sets ?? "");
+          const planned = {
+            sets: e.sets ?? "", reps: e.reps ?? "", rest: e.rest ?? "", notes: e.notes ?? "",
+            rpe: e.rpe ?? "", tempo: e.tempo ?? "", technique_cues: e.technique_cues ?? "",
+          };
+          const prior = loggedByName.get(e.name);
+          if (prior) {
+            const priorSets: SetLog[] = Array.isArray(prior.sets)
+              ? prior.sets.map((s: any) => ({ reps: String(s?.reps ?? ""), weight: String(s?.weight ?? "") }))
+              : Array.from({ length: n }, () => ({ reps: "", weight: "" }));
+            return { exercise_name: e.name, planned, sets: priorSets, notes: prior.notes ?? "" };
+          }
+          return { exercise_name: e.name, planned, sets: Array.from({ length: n }, () => ({ reps: "", weight: "" })), notes: "" };
+        }),
+      );
+      setNotes(existingSession.session_notes ?? "");
+      return;
+    }
+    setEditingSessionId(null);
     setEntries(
       day.exercises.map((e) => {
         const n = parsePlannedSets(e.sets ?? "");
@@ -1218,7 +1265,7 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
       }),
     );
     setNotes("");
-  }, [weekNum, dayLabel, plan]);
+  }, [weekNum, dayLabel, plan, existingSession?.id]);
 
   const updateSet = (i: number, si: number, k: keyof SetLog, v: string) => {
     const copy = [...entries];
@@ -1257,20 +1304,36 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not signed in");
-      const { data: inserted, error } = await supabase.from("workout_sessions").insert({
-        plan_id: planId,
-        trainer_id: user.id,
-        week_number: weekNum,
-        day_label: dayLabel,
-        session_date: date,
-        session_notes: notes,
-        entries: entries as any,
-        logged_by: "trainer",
-      }).select("id").single();
-      if (error) throw error;
-      const newId = inserted?.id;
+      let newId: string | undefined;
+      let updated = false;
+      if (editingSessionId) {
+        const { data: upd, error } = await supabase.from("workout_sessions").update({
+          week_number: weekNum,
+          day_label: dayLabel,
+          session_date: date,
+          session_notes: notes,
+          entries: entries as any,
+        }).eq("id", editingSessionId).eq("trainer_id", user.id).select("id").single();
+        if (error) throw error;
+        newId = upd?.id;
+        updated = true;
+      } else {
+        const { data: inserted, error } = await supabase.from("workout_sessions").insert({
+          plan_id: planId,
+          trainer_id: user.id,
+          week_number: weekNum,
+          day_label: dayLabel,
+          session_date: date,
+          session_notes: notes,
+          entries: entries as any,
+          logged_by: "trainer",
+        }).select("id").single();
+        if (error) throw error;
+        newId = inserted?.id;
+        if (newId) setEditingSessionId(newId);
+      }
       void markOnboardingStep(user.id, "log_session");
-      toast.success("Session logged · view history", {
+      toast.success(updated ? "Session updated" : "Session logged · view history", {
         description: "Click to see all sessions for this plan",
         action: {
           label: "Open",
@@ -1326,6 +1389,17 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
         >
           <History className="h-3 w-3" /> History ({safeSessions.length})
         </Link>
+      </div>
+      <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest">
+        {editingSessionId ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            Editando sessão de {date}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+            Nova sessão
+          </span>
+        )}
       </div>
 
       {/* Exercise cards */}
