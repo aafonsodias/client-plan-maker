@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { weekTagFor } from "@/lib/macro-index";
 
 // ---------- Public types (kept compatible with existing callers) ----------
 export type Exercise = {
@@ -277,14 +278,8 @@ export async function generatePlanPdf(
   // existing archetype loop just works without further changes.
   plan = { ...plan, weeks: renderWeeks };
 
-  // Tag a week (heuristic for the macro-index strip)
-  const weekTag = (wn: number, total: number): string => {
-    if (total <= 1) return "base";
-    if (wn === total) return "deload";
-    if (wn === 1) return "base";
-    // alternate +load / +reps for middle weeks
-    return wn % 2 === 0 ? "+load" : "+reps";
-  };
+  // Tag a week — shared with the on-screen MacroIndexStrip so PDF and app match.
+  const weekTag = (wn: number, total: number): string => weekTagFor(wn, total);
 
   const paintPage = () => {
     setFill(doc, theme.bg);

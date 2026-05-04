@@ -65,6 +65,7 @@ import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
+import { ThisWeekHero } from "@/components/ThisWeekHero";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -2708,10 +2709,62 @@ function ClientDetail() {
             </div>
           )}
 
+      {/* Hero "Esta semana" card — focal point of the client page. Renders for the
+          most-recent plan; falls back to a calm onboarding card when none exists. */}
+      {(() => {
+        const heroPlan = plans.find(
+          (p) => ((p as any).generation_state?.stage ?? null) === "complete",
+        ) ?? null;
+        const zeroState = !heroPlan;
+        if (zeroState && plans.length === 0) return null; // keep page blank-friendly during pure onboarding above
+        const heroDefaultWeek = heroPlan
+          ? Math.min(
+              Math.max(1, (heroPlan as any).duration_weeks ?? 1),
+              planLatestWeek[heroPlan.id] ?? 1,
+            )
+          : 1;
+        return (
+          <ThisWeekHero
+            key={heroPlan?.id ?? "empty"}
+            plan={heroPlan as any}
+            defaultWeek={heroDefaultWeek}
+            zeroState={zeroState}
+            canEvolve={!!evolvableSourcePlan}
+            creating={creatingPlan}
+            onCreateManual={async () => {
+              setCreatingPlan("manual");
+              try {
+                const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
+                if (r?.ok && r?.planId) {
+                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                } else {
+                  toast.error(r?.error ?? t("detail.plans.manual_failed"));
+                }
+              } finally { setCreatingPlan(null); }
+            }}
+            onEvolve={async () => {
+              if (!evolvableSourcePlan) return;
+              setCreatingPlan("evolve");
+              try {
+                const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
+                if (r?.ok && r?.planId) {
+                  toast.success(t("detail.plans.evolve_success"));
+                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
+                } else {
+                  toast.error(r?.error ?? t("detail.plans.evolve_failed"));
+                }
+              } finally { setCreatingPlan(null); }
+            }}
+          />
+        );
+      })()}
+
       {plans.length > 0 && (
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">Plano final</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+            {plans.length === 1 ? "Plano" : "Histórico de planos"}
+          </h2>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
