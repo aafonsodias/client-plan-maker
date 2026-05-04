@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, X, Send, Loader2, ArrowRight, Compass, MessageSquare, Mic, MicOff } from "lucide-react";
+import { X, Send, Loader2, ArrowRight, Compass, MessageSquare, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ModelPicker } from "@/components/ai/ModelPicker";
 import { useModelPreference } from "@/hooks/use-model-preference";
 import { askConcierge } from "@/server/concierge.functions";
-import { askForge } from "@/server/ask-forge.functions";
+import { askAtlas } from "@/server/atlas.functions";
+import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
 type Mode = "navigate" | "ask";
@@ -18,27 +19,27 @@ type Msg = {
 };
 
 /**
- * AskForgeDock — global floating dock with two modes:
+ * AtlasDock — global floating dock for Atlas, Protocol's named copilot. Two modes:
  *  - Navigate: route-aware concierge ("where is X?") that returns clickable
  *    suggestion chips (replaces the old GuideDock).
  *  - Ask: open-ended coaching/programming chat with the user-chosen AI
  *    model and live credit cost (mirrors OpenAI/Claude UX).
  * Available to every signed-in trainer; not just founders.
  */
-export function AskForgeDock({ enabled }: { enabled: boolean }) {
+export function AtlasDock({ enabled }: { enabled: boolean }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("ask");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [navigateMsgs, setNavigateMsgs] = useState<Msg[]>([
-    { role: "assistant", content: "Diz-me o que procuras na app — eu mostro-te onde está." },
+    { role: "assistant", content: "Sou o Atlas. Diga-me o que procura na app — mostro-lhe onde está." },
   ]);
   const [askMsgs, setAskMsgs] = useState<Msg[]>([
-    { role: "assistant", content: "Pergunta-me qualquer coisa sobre programação, técnica, progressão ou um cliente que tenhas aberto. Escolhe o modelo em baixo — vês os créditos antes de gastar." },
+    { role: "assistant", content: "Sou o Atlas, copiloto do Protocol. Pergunte sobre programação, técnica, progressão ou um cliente que tenha aberto. Escolha o modelo em baixo — vê os créditos antes de gastar." },
   ]);
   const { model, setModel } = useModelPreference();
   const askConciergeFn = useServerFn(askConcierge);
-  const askForgeFn = useServerFn(askForge);
+  const askAtlasFn = useServerFn(askAtlas);
   const location = useLocation();
   const navigate = useNavigate();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -106,7 +107,7 @@ export function AskForgeDock({ enabled }: { enabled: boolean }) {
         }
         setMessages((m) => [...m, { role: "assistant", content: res.reply, suggestions: res.suggestions }]);
       } else {
-        const res: any = await askForgeFn({
+        const res: any = await askAtlasFn({
           data: {
             messages: next.map((m) => ({ role: m.role, content: m.content })),
             model,
@@ -133,11 +134,11 @@ export function AskForgeDock({ enabled }: { enabled: boolean }) {
           type="button"
           onClick={() => setOpen(true)}
           className="fixed bottom-4 left-4 z-40 inline-flex h-12 items-center gap-2 rounded-full border border-accent/40 bg-card px-4 text-sm font-medium shadow-[var(--shadow-elegant)] transition hover:border-accent"
-          aria-label="Ask Forge"
-          title="Ask Forge"
+          aria-label="Atlas"
+          title="Atlas — copiloto do Protocol"
         >
-          <Sparkles className="h-4 w-4 text-accent" />
-          <span>Ask Forge</span>
+          <Logo className="h-4 w-4" />
+          <span>Atlas</span>
         </button>
       )}
       {open && (
@@ -145,8 +146,8 @@ export function AskForgeDock({ enabled }: { enabled: boolean }) {
           {/* Header */}
           <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-accent" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-accent">Ask Forge</span>
+              <Logo className="h-3.5 w-3.5" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-accent">Atlas</span>
             </div>
             <button type="button" onClick={() => setOpen(false)} className="rounded-md p-1 hover:bg-muted" aria-label="Fechar">
               <X className="h-3.5 w-3.5" />
