@@ -2501,6 +2501,12 @@ function ClientDetail() {
                               ? "A redigir Blueprint…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "blueprint"
+                              ? (t("detail.stage.loading_steps.blueprint", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "blueprint"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "blueprint" : null)
@@ -2563,6 +2569,12 @@ function ClientDetail() {
                               ? "A gerar microciclo…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "microcycle"
+                              ? (t("detail.stage.loading_steps.microcycle", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "microcycle"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "microcycle" : null)
@@ -2633,6 +2645,12 @@ function ClientDetail() {
                               ? "A planear progressões (Semanas 2–4)…"
                               : undefined
                           }
+                          loadingSteps={
+                            stageBusy === "progressions"
+                              ? (t("detail.stage.loading_steps.progressions", { returnObjects: true }) as string[])
+                              : undefined
+                          }
+                          loadingEta={t("detail.stage.loading_eta") as string}
                           expanded={expandedStage === "progressions"}
                           onToggleExpanded={(next) =>
                             setExpandedStage(next ? "progressions" : null)
