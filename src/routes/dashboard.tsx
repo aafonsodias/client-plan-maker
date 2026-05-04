@@ -497,80 +497,8 @@ function Dashboard() {
         )}
       </section>
 
-      {(statusCounts.draft + statusCounts.ready + statusCounts.finalized) > 0 && (
-        <PlansStatusBar counts={statusCounts} />
-      )}
-
-      <section>
-        <h2 className="mb-4 text-lg font-bold">{t("dashboard.recent_plans")}</h2>
-        {recent.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
-            <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent" />
-            <p className="font-medium">{t("dashboard.no_plans")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.no_plans_hint")}</p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
-            {recent.map((p) => (
-              <div
-                key={p.id}
-                className="group flex items-center border-b border-border last:border-b-0 hover:bg-secondary/50"
-              >
-                <Link
-                  to="/plans/$planId"
-                  params={{ planId: p.id }}
-                  className="flex flex-1 items-center justify-between px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{p.title}</p>
-                    <p className="truncate text-sm text-muted-foreground">{p.client?.full_name ?? "—"}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <EvolutionChip evo={evolutionByPlan[p.id]} />
-                    {evolutionByPlan[p.id]?.series?.length ? (
-                      <EvolutionSparkline
-                        values={evolutionByPlan[p.id].series}
-                        verdict={evolutionByPlan[p.id].verdict}
-                      />
-                    ) : null}
-                    {(() => {
-                      const s = planStatusInfo(p as any, t as any);
-                      return (
-                        <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
-                          {s.label}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </Link>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); }}
-                      className="mr-3 rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
-                      aria-label={t("dashboard.delete_plan_aria")}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("dashboard.delete_plan_title", { title: p.title })}</AlertDialogTitle>
-                      <AlertDialogDescription>{t("dashboard.delete_plan_desc")}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t("dashboard.cancel")}</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => void removePlan(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        {t("dashboard.delete")}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Plans live inside each client profile — the dashboard stays focused on
+          clients, alerts, and onboarding. (R38) */}
     </div>
   );
 }
