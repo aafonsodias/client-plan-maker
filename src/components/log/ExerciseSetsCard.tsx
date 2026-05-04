@@ -72,12 +72,18 @@ export function ExerciseSetsCard({
   onChange,
   token,
   planId,
+  onSetKeyDown,
 }: {
   entry: LogEntryV2;
   index: number;
   onChange: (i: number, next: LogEntryV2) => void;
   token: string;
   planId: string;
+  onSetKeyDown?: (
+    ev: React.KeyboardEvent<HTMLInputElement>,
+    setIndex: number,
+    field: "reps" | "weight" | "rpe",
+  ) => void;
 }) {
   const fetchHistory = useServerFn(getExerciseHistory);
   const [history, setHistory] = useState<Awaited<ReturnType<typeof getExerciseHistory>>>([]);
