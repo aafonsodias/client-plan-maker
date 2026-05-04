@@ -992,7 +992,8 @@ export async function generatePlanPdf(
     drawFooter(i, pageCount);
   }
 
-  doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}.pdf`);
+  const weekSuffix = meta.week_number ? `_W${meta.week_number}` : "";
+  doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}${weekSuffix}.pdf`);
 }
 
 
