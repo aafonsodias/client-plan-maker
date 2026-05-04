@@ -42,7 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Welcome back",
-    "title": "Workbench",
+    "title": "Clients",
     "new_client": "New client",
     "mode_invite": "Send assessment link",
     "mode_manual": "Add manually",
