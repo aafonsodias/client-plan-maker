@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange, BadgeCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
-import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
