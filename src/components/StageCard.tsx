@@ -21,6 +21,7 @@ export default function StageCard({
   loadingSteps,
   loadingEta,
   tone = "stage",
+  rightSlot,
 }: {
   stageNumber: number;
   title: string;
