@@ -2225,7 +2225,8 @@ function ClientDetail() {
                       });
                     const runStage = async (
                       stage: "blueprint" | "microcycle" | "progressions",
-                      alreadyDone: boolean
+                      alreadyDone: boolean,
+                      opts?: { skipNavigate?: boolean }
                     ) => {
                       // If already approved, just navigate.
                       if (alreadyDone) {
@@ -2272,6 +2273,7 @@ function ClientDetail() {
                           toast.success(`${prefix} pronto`, { id: tId });
                         }
                         void refreshPlans();
+                        if (opts?.skipNavigate) return;
                         navigate({
                           to:
                             stage === "blueprint"
@@ -2307,7 +2309,9 @@ function ClientDetail() {
                           onApprove={() =>
                             blueprintApproved || hasBlueprintDraft
                               ? setExpandedStage(expandedStage === "blueprint" ? null : "blueprint")
-                              : runStage("blueprint", false).then(() => setExpandedStage("blueprint"))
+                              : runStage("blueprint", false, { skipNavigate: true }).then(() =>
+                                  setExpandedStage("blueprint"),
+                                )
                           }
                         >
                           <p className="text-sm text-muted-foreground">
