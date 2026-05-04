@@ -2400,8 +2400,16 @@ function ClientDetail() {
                           busy={stageBusy === "microcycle"}
                           progressLabel={
                             stageBusy === "microcycle"
-                              ? "A escrever Day 1…"
+                              ? "A gerar microciclo…"
                               : undefined
+                          }
+                          expanded={expandedStage === "microcycle"}
+                          onToggleExpanded={(next) =>
+                            setExpandedStage(next ? "microcycle" : null)
+                          }
+                          hideHeaderApprove={
+                            (hasMicrocycleDraft || microcycleApproved) &&
+                            expandedStage === "microcycle"
                           }
                           approveLabel={
                             microcycleApproved
@@ -2414,19 +2422,37 @@ function ClientDetail() {
                             blueprintApproved
                               ? () =>
                                   microcycleApproved || hasMicrocycleDraft
-                                    ? navigateToStage("microcycle")
-                                    : runStage("microcycle", false)
+                                    ? setExpandedStage(
+                                        expandedStage === "microcycle" ? null : "microcycle",
+                                      )
+                                    : runStage("microcycle", false, { skipNavigate: true }).then(() =>
+                                        setExpandedStage("microcycle"),
+                                      )
                               : undefined
                           }
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {hasMicrocycleDraft && !microcycleApproved
-                              ? t("detail.stage.microcycle_draft_hint")
-                              : blueprintApproved
-                              ? t("detail.stage.microcycle_help")
-                              : t("detail.stage.microcycle_blocked")}
-                          </p>
-                        </StageCard>
+                          expandedBody={
+                            (hasMicrocycleDraft || microcycleApproved) &&
+                            expandedStage === "microcycle" ? (
+                              <MicrocyclePanel
+                                planId={planId}
+                                showHeader={false}
+                                onApproved={() => {
+                                  void refreshPlans();
+                                  setExpandedStage("progressions");
+                                  void runStage("progressions", false, { skipNavigate: true });
+                                }}
+                              />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {hasMicrocycleDraft && !microcycleApproved
+                                  ? t("detail.stage.microcycle_draft_hint")
+                                  : blueprintApproved
+                                  ? t("detail.stage.microcycle_help")
+                                  : t("detail.stage.microcycle_blocked")}
+                              </p>
+                            )
+                          }
+                        />
                         <StageCard
                           stageNumber={4}
                           title="Progressions"
