@@ -1355,7 +1355,6 @@ function buildSlides(
             { slot: "front", label: t("photos_front", { defaultValue: "Frente" }), hint: t("photos_front_hint", { defaultValue: "Braços ao lado do corpo, pés à largura dos ombros." }) },
             { slot: "side", label: t("photos_side", { defaultValue: "Lateral" }), hint: t("photos_side_hint", { defaultValue: "Olhar em frente, postura natural." }) },
             { slot: "back", label: t("photos_back", { defaultValue: "Costas" }), hint: t("photos_back_hint", { defaultValue: "Mesma posição, de costas para a câmara." }) },
-            { slot: "face", label: t("photos_face", { defaultValue: "Rosto" }), hint: t("photos_face_hint", { defaultValue: "Foto de perfil simpática :)" }) },
           ] as const).map((opt) => (
             <PhotoSlot
               key={opt.slot}
