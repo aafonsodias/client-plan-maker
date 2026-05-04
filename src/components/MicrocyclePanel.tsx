@@ -395,14 +395,37 @@ export function MicrocyclePanel({
 
       {/* Active day detail */}
       {activeRow && activeRow.status === "done" && (
-        <DayCardEditable
-          key={`day${activeDay}-${activeRow.updated_at ?? activeRow.status}`}
-          dayIndex={activeDay}
-          day={activeRow}
-          planId={planId}
-          onRegen={() => regenDay(activeDay)}
-          isGate={false}
-        />
+        <div className="space-y-3">
+          <DayCardEditable
+            key={`day${activeDay}-${activeRow.updated_at ?? activeRow.status}`}
+            dayIndex={activeDay}
+            day={activeRow}
+            planId={planId}
+            onRegen={() => regenDay(activeDay)}
+            isGate={false}
+          />
+          {!isFinalized && (
+            <div className="flex items-center justify-end gap-2">
+              {activeRow.approved_at ? (
+                <button
+                  type="button"
+                  onClick={() => regenDay(activeDay)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 hover:bg-amber-500/20"
+                >
+                  <Unlock className="h-3 w-3" /> Unlock & regenerate
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => approveDayLocal(activeDay)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_0_14px_-6px_rgba(245,158,11,0.7)] hover:opacity-95"
+                >
+                  <CheckCircle2 className="h-3 w-3" /> Approve day {activeDay}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
       {activeRow && activeRow.status === "error" && (
         <div className="flex items-center justify-between rounded-2xl border border-red-500/40 bg-red-500/5 p-5">
