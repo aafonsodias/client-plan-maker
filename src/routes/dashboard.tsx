@@ -374,27 +374,9 @@ function Dashboard() {
         </div>
       </div>
 
-      {!isEmpty && (
-        <div className="flex flex-wrap items-center gap-2">
-          {quickIntakeClient && (
-            <button
-              type="button"
-              onClick={copyQuickIntake}
-              title={t("dashboard.intake_tooltip")}
-              className="group flex flex-col items-start gap-0.5 rounded-md border border-border bg-card px-3 py-2 text-left transition hover:border-accent"
-            >
-              <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                <Copy className="h-3.5 w-3.5 text-accent" />
-                {t("dashboard.copy_intake")}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {t("dashboard.last_intake_label")} · {t("dashboard.last_intake_for", { name: quickIntakeClient.full_name.split(" ")[0] })}
-              </span>
-            </button>
-          )}
-          {/* "View plans" removed — plans are reachable by clicking a client. */}
-        </div>
-      )}
+      {/* Quick "copy last intake link" button removed — it copied a per-client link
+          and read as a public join link, which it wasn't. Intake links are
+          generated per client from "+ New client" → "Enviar link de avaliação". */}
 
       {attention.length > 0 && (
         <section>
