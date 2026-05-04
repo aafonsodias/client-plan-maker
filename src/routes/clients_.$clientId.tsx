@@ -2871,27 +2871,8 @@ function ClientDetail() {
             {plans.length === 1 ? "Gerar próximo bloco" : "Histórico de planos"}
           </h2>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={creatingPlan !== null}
-              onClick={async () => {
-                setCreatingPlan("manual");
-                try {
-                  const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
-                  if (r?.ok && r?.planId) {
-                    void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                  } else {
-                    toast.error(r?.error ?? t("detail.plans.manual_failed"));
-                  }
-                } finally { setCreatingPlan(null); }
-              }}
-            >
-              {creatingPlan === "manual"
-                ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                : <Plus className="mr-1.5 h-3.5 w-3.5" />}
-              {t("detail.plans.new_manual")}
-            </Button>
+            {/* "New plan (manual)" removed (R57) — one protocol per client.
+                To change direction, adjust the current protocol or evolve into the next block. */}
             <Button
               size="sm"
               disabled={creatingPlan !== null || !evolvableSourcePlan}
