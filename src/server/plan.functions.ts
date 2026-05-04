@@ -508,11 +508,6 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return { ok: false as const, error: "AI gateway is not configured." };
-    }
-
     const parqYes = data.assessment.parq_passed === false;
     const risk = (data.assessment.acsm_risk_category ?? "low").toLowerCase();
     const isHighRisk = risk === "high";
@@ -720,29 +715,19 @@ ${prevSkeleton}`;
     }
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: user + feedbackBlock },
-          ],
-          tools: [
-            {
-              name: "emit_workout_plan",
-              description: "Emit the structured workout plan",
-              input_schema: PlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_plan" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: user + feedbackBlock }],
+        tools: [
+          {
+            name: "emit_workout_plan",
+            description: "Emit the structured workout plan",
+            input_schema: PlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_plan" },
       });
 
       if (res.status === 429) {
