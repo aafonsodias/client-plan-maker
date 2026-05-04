@@ -1,79 +1,100 @@
+## Round 44 — Honest stages, single gates, friendlier names
 
-# Round 43 — Polish: identity, dedupe, persistent CTAs, honest loading
+Address everything you flagged on the client page, plus quietly close the easiest backlog items along the way.
 
-Quatro correções pequenas mas de alto impacto, todas dentro do client detail page e do AppShell. Sem mudanças de DB, sem servidor, sem PDF.
+### 1. Stage 1 = Assessment (color-aligned with the rest)
 
-## 1. Badge de "verificado" estilo Instagram no header (não no avatar do cliente)
+Today the assessment uses its own neutral/amber treatment so it reads as "special." Treat it as Stage 1.
 
-**Problema**: a `Sparkles` em pílula amber está no avatar do **cliente** dentro da página, mas o que queres é o tique azul/amber no **teu próprio avatar**, em cima à direita do AppShell, depois do login.
+- Rename collapsed strip from "Assessment · X% completo" → "**Stage 1 — Avaliação · X% completo**" (PT) / "**Stage 1 — Assessment · X% complete**" (EN). Same for expanded header.
+- Restyle the collapsed-complete strip with the **same emerald palette** the other approved stages use (`PipelineStrip` / approved `StageCard`) — drop the amber-only treatment so Stages 1–5 share one visual language.
+- Keep the "Ver síntese" right-side action.
 
-**Solução**:
-- Em `src/components/AppShell.tsx`: ao lado / sobreposto ao botão do menu de utilizador (canto superior direito), quando `isFounder === true`, renderizar um `<BadgeCheck />` (já está importado) num pequeno disco com glow amber (`#D4A24C`), posicionado `-top-1 -right-1` sobre o avatar do utilizador autenticado. Usa o mesmo amber do brand mark — não o azul do Instagram, para ser nosso e não cópia.
-- Remover a pílula `Sparkles` do `ClientAvatarUpload` (foi posta ali por engano em R41) — `showFounderDot` deixa de ser usado mas o prop fica para compatibilidade até R44.
-- A11y: `aria-label="Conta verificada — fundador"`, `title` igual.
+### 2. One gate per stage (no per-day gate at the wrong level)
 
-## 2. Dedupe da chip "Avaliação 86%"
+The "Approve → Day 1" button in the Blueprint editor is misleading — it implies day-level approval, but the actual gate is **Stage 3 (Master plan) approval**. Fix:
 
-**Problema**: a mesma informação aparece duas vezes — na **KPI strip** (chip `AVALIAÇÃO 86% · 04/05`) e dentro da **AssessmentSection colapsada** (`✓ Avaliação · 86% completo`). Redundante.
+- Rename `actions.approve_blueprint` → "**Aprovar Plano-mestre →**" (PT) / "**Approve Master plan →**" (EN). Sticky bottom CTA + header CTA in `BlueprintEditorPanel`.
+- Each StageCard keeps exactly one approve gate at its bottom (already true for Stages 4 and 5; this brings Stage 3 in line).
 
-**Solução**:
-- Manter **apenas** a chip dentro da janela colapsada da `AssessmentSection` (é onde faz sentido contextual — está a descrever aquilo que aquela secção contém).
-- Remover o `<button>` `AVALIAÇÃO {coveragePct}% · {dateShort}` da KPI strip (lines 1593–1609 de `clients_.$clientId.tsx`). A KPI strip fica com **ACSM** + **Recovery**, mais limpa.
-- O click-to-scroll para `#sintese-da-avaliacao` continua disponível através da chip dentro da secção colapsada.
+### 3. Session archetype names that humans read
 
-## 3. CTA do Stage 3 (e 4 e 5) **sempre visível**, mesmo colapsado, com nome correto
+Keep the canonical id (lowercase snake) for the engine, but show only the human focus by default.
 
-**Problema**: Quando o utilizador colapsa Stage 3 (chevron-right), o botão "Gerar Blueprint" desaparece porque vive dentro do bloco `{open && (...)}` no header do `StageCard`. Resultado: para gerar tens de expandir primeiro. Além disso o nome "Gerar Blueprint" mistura EN/PT — devia ser "Gerar plano-mestre" (igual ao title do stage, em PT).
+- In `BlueprintArchetypesList`, demote the id to a small mono chip on hover/focus; the focus field becomes the primary input. The id becomes editable via a small "id" toggle to keep power users happy.
+- Add suggested **friendly labels** when the engine emits the canonical 5-template ids (`lower_quad_bias` → "Inferior · Quadríceps", `upper_push_core` → "Superior · Empurrar + core", etc.). Pure cosmetic mapping in `src/lib/archetype-labels.ts`; canonical id unchanged in DB.
 
-**Solução em `src/components/StageCard.tsx`**:
-- Mover o bloco `{onApprove && status !== "approved" && !hideHeaderApprove && (...)}` para **fora** do `{open && (...)}`. Continua oculto quando `status === "approved"` ou quando estamos em modo "view draft" expandido (`hideHeaderApprove`), mas fica visível quando colapsado e ainda não gerado. O botão `Regenerate` continua só visível quando expandido (faz sentido: regenerar é uma acção de revisão).
-- Adicionar nova prop opcional `primaryCtaWhenCollapsed?: boolean` (default true) caso queiramos voltar a esconder em algum lado.
+### 4. Week × Day matrix — make it actually work
 
-**Solução em `src/i18n/locales/pt/assessment.json` (chave `detail.stage.generate_blueprint`)**:
-- "Gerar Blueprint" → "Gerar plano-mestre →"
-- "Gerar Microcycle" / equivalente → "Gerar semana-tipo →"
-- "Gerar Progressions" → "Gerar progressões →"
-- EN mantém "Generate blueprint", "Generate week", "Generate progressions".
+The matrix renders but feels broken because (a) it lives below the archetypes list with the same heading style, so users miss it, and (b) when archetype ids change the matrix shows red "(em falta)" without offering a fix.
 
-## 4. Loading honesto e inline dentro do próprio Stage card
+- Visually elevate: amber ring + small caption "Distribui os archetypes pelos dias da semana".
+- For each day cell, when the referenced id is missing, show a one-click "Substituir por: [first valid archetype]" affordance instead of just red text.
+- Default empty days to the first archetype on load (so a fresh blueprint is never half-blank).
 
-**Problema**: Carregaste "Gerar", apareceu uma caixa branca a meio do ecrã (o `toast.loading`), depois desapareceu. O Stage 3 em si não mostrou nada de relevante além de uma barrinha de 0.5px no topo. Não dá confiança.
+### 5. Stage 4 — approve-day chip lives where the approved tab is
 
-**Solução**:
+Today the per-day "Approve day N" CTA lives at the bottom of the day detail. Move it to the top, anchored next to the day tab strip, and **auto-advance** to the next un-approved day on success.
 
-**a) Suprimir o toast** branco para os 3 stages de geração (blueprint / microcycle / progressions). Mantemos `toast.success` / `toast.error` no fim, mas removemos o `toast.loading(...)` no início — a UI inline torna-o redundante.
+- Add a top-right "Approve day N" / "Day N approved · Unlock" chip aligned with the day tabs in `MicrocyclePanel` (right side of the swipe row).
+- After `approveDayLocal(idx)` succeeds, `setActiveDay(nextUnapprovedDay)` so the next day appears in front of the trainer (matches the "press to show next" feel you described).
+- Keep the bottom approve-button as a fallback for keyboard / scroll users, but remove the duplicate chip from the bottom row.
 
-**b) Substituir o `generating` branch do `StageCard.tsx`** por um painel mais informativo (~120px alto) que mostra:
-   - Título: `Stage 3 — Plano-mestre · a gerar`
-   - Linha de status que **roda** (a cada ~1.6s) através de copy honesta do que a IA está a fazer:
-     - blueprint: ["A consultar ACSM e MEV/MAV/MRV…", "A escolher arquétipos de sessão…", "A balancear volume por padrão de movimento…", "A redigir o plano-mestre…"]
-     - microcycle: ["A traduzir blueprint em semana 1…", "A escolher exercícios da biblioteca FORGE…", "A calcular RPE e descansos…"]
-     - progressions: ["A modelar progressão semana a semana…", "A aplicar deload na última semana…", "A escrever justificações…"]
-   - Pequeno spinner amber + barra de progresso "indeterminate shimmer" mais visível (8px alto, gradient amber, já existe — só engrossar e adicionar % aproximado opcional).
-   - Texto auxiliar: `Estimado ~30s. Podes manter esta página aberta.`
-   - Estes labels ficam no `assessment.json` em `detail.stage.loading_steps.{blueprint|microcycle|progressions}: string[]`.
+### 6. Honest loaders — real work, real speed, real autosave
 
-**c) Garantir que o card faz `scrollIntoView({ block: 'center' })`** quando entra em estado `generating`, para que o utilizador veja o sítio onde a coisa está a acontecer (e não procure pela caixa branca que desapareceu).
+The current rotating copy is honest in shape but lies in two places: it advertises "Applying deload to the last week…" on Stage 5 (which is true but reads odd for first block), and `Computing RPE and rests` on Stage 4 fires even when no real work is happening yet. Fix:
 
-**d) `runStage` em `clients_.$clientId.tsx`**: setar `stageBusy` **antes** do try, e chamar `cardRef.current?.scrollIntoView(...)` no efeito que reage a `stageBusy`. Adicionar um `useRef` por stage ou um `id={`stage-${n}`}` e usar `document.getElementById`.
+- **Stage 5 (Progressions) loader copy** — drop "Applying deload to the last week…" and replace with neutral lines ("A modelar W2 vs W1…", "A escolher onde subir reps vs carga…", "A redigir racional curto por exercício…"). The deload line was misleading on first block.
+- **Stage 4 (Microcycle) loader copy** — derive lines from real day completion: "Day 1 ready · generating Day 2…" / "Day 3 ready · generating Day 4…" using the already-tracked `doneCount` and `etaSec`. Real percentage drives a real bar (we already have `pct`); replace the rotating fake copy with this.
+- **Autosave on each completed day**: `workout_plan_days` rows are already inserted per-day by `generateMicrocycleDays`, so the work is already persisted — the missing piece is **resume**: when the user re-opens Stage 4 mid-generation, surface "Resuming · 2/5 days done" with a "Retry remaining" button instead of restarting the whole batch.
+- **Stage 5 speed**: switch `FORGE_MODEL_STAGE_4` default from `openai/gpt-5-mini` to `google/gemini-3-flash-preview` (same swap that fixed Stage 2 in R29). Document in code comment. Override env var still respected.
+- **Stage 5 timeout handling**: wrap the `proposeFn` call in `ProgressionsPanel` with a 90s soft warning ("A IA está lenta — a tentar de novo em 5s") and one automatic retry on `upstream request timeout`, so the toast you saw becomes a recoverable event instead of a dead end.
 
-## Out of scope (parked para R44)
+### 7. Remove "Sem plano ativo" duplication
 
-- Real progress percentage do servidor (precisava de SSE / polling de generation_log).
-- Tour update para apontar à nova badge do header.
-- Mudar a Sparkles do AppShell pill (já existente) para BadgeCheck — fica só o disco verificado, e o pill "Founder" mantém-se à esquerda do nome.
+The empty-state hero card and the "Plano" / "Histórico de planos" section currently render the same two CTAs and the same client title row.
 
-## Files to edit
+- When `plans.length > 0` AND the most recent plan is **not** `complete` (i.e., still drafting), **hide the `ThisWeekHero` zero-state** entirely — the in-progress draft surface above it already tells that story.
+- Show `ThisWeekHero` only when there's a `complete` plan; otherwise fall through to the "Plano / Histórico" list.
+- In the "Plano / Histórico" list, hide the duplicate "New plan (manual) / Gerar próximo bloco (IA)" row when the hero already shows them (they only need to appear once on the page).
 
-- `src/components/AppShell.tsx` — adicionar BadgeCheck verificado sobre o avatar do user (top-right do header).
-- `src/components/ClientAvatarUpload.tsx` — remover render do Sparkles dot (manter prop por compat).
-- `src/routes/clients_.$clientId.tsx` — remover chip duplicada da KPI strip; suprimir `toast.loading` em runStage; setar `stageBusy` cedo; scroll-into-view do stage card.
-- `src/components/StageCard.tsx` — CTA primária sempre visível em colapsado; novo painel `generating` com rotação de copy.
-- `src/i18n/locales/pt/assessment.json` + `src/i18n/locales/en/assessment.json` — nomes corretos dos botões + arrays de loading steps.
+### 8. PT/EN consistency in microcycle
 
-## QA
+Spotted "Day 1 · Lower Body - Quads & Calves Heavy / Day 2…" tab labels in PT context. Mirror with PT day labels:
 
-- 1544×984 desktop: header mostra BadgeCheck amber sobreposto ao avatar do user para `aafonsodias@gmail.com`; logout/outro user → sem badge. Cliente page: KPI strip só com ACSM+Recovery; "Avaliação 86% completo" só dentro da AssessmentSection colapsada. Stage 3 colapsado mostra `Gerar plano-mestre →`. Click → card expande para `generating` panel com copy a rodar; toast branco desaparece. Após sucesso, card vira "ready" / "approved" naturalmente.
-- 375px Mobile Safari: badge não tapa o menu; CTA do stage colapsado quebra para nova linha sem cortar.
-- PT + EN: copy de loading rotativa traduzida nos dois.
-- Logging: confirmar via console que `generation_log` continua a registar (não tocámos em servidor).
+- Day tab label uses the locale-aware `t("plan:day_label", { n: idx })` → "Dia 1" (PT) / "Day 1" (EN). Same for "Week 1" subheader inside `DayCardEditable`.
+- Translate the two leftover hardcoded EN strings in `MicrocyclePanel` ("Approve day N", "Day N approved", "regenerate") to use `plan.json` keys with PT fallbacks.
+
+### Backlog items closed in this round
+
+From `.lovable/backlog.md` "Open Round 32" / "Round 33 (next)":
+
+- ✅ Round 33 P2: **Stage 4 Progressions inlined** — already done in R38, mark closed.
+- ✅ R32 P2: hide IntakeLinkPanel when intake is reviewed/submitted — already true; verify and mark closed.
+- ✅ Pick up R36 deferred **Stage 1 i18n label** — relabel "Assessment" → use `plan:stage.label.1` everywhere (item 1 above already does this).
+
+Items explicitly **not** in this round (parked, real work):
+- Drag-to-reorder days + supersets in MicrocyclePanel
+- Per-exercise inline AI comments on edit
+- Searchable warmup catalog
+- WeekMatrix desktop view (needs a design pass)
+
+### Files touched
+
+- `src/routes/clients_.$clientId.tsx` — AssessmentSection title/tone, hide-hero logic, hide duplicate CTA row, Stage 5 timeout handling.
+- `src/components/StageCard.tsx` — emerald collapsed-strip variant for Stage 1 parity (no logic change).
+- `src/components/BlueprintEditorPanel.tsx` — approve-button rename, Week×Day matrix elevation + auto-fix.
+- `src/components/BlueprintArchetypesList.tsx` — id-as-secondary, friendly label resolver.
+- `src/lib/archetype-labels.ts` (new) — canonical id → friendly label.
+- `src/components/MicrocyclePanel.tsx` — top-aligned approve chip, auto-advance to next day, real progress copy, resume hint, PT day labels.
+- `src/components/ProgressionsPanel.tsx` — 90s soft warning + 1 retry on timeout.
+- `src/server/phased/stage4-progressions.functions.ts` — model default swap (with comment).
+- `src/i18n/locales/{pt,en}/{plan,assessment}.json` — Stage 1 label, approve-master-plan, microcycle day strings, new loader copy for Stage 5.
+- `.lovable/backlog.md` — close R32/R33 items, log R44.
+
+### Out of scope explicitly
+
+- No schema migrations.
+- No new server functions.
+- No changes to the actual generation prompts beyond the model swap.
+- No changes to PDF rendering.
