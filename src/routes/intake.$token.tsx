@@ -1101,6 +1101,24 @@ function buildSlides(
       ),
       isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
     },
+    // 1c. Profile photo — own slide, not part of reference grid
+    {
+      title: t("photos_profile_title"),
+      subtitle: t("photos_profile_subtitle"),
+      body: (
+        <div className="mx-auto max-w-xs">
+          <PhotoSlot
+            token={token}
+            slot="face"
+            label={t("photos_profile_face_label")}
+            hint={t("photos_profile_face_hint")}
+            tutorial={t("photos_profile_face_hint")}
+          />
+        </div>
+      ),
+      canSkip: true,
+      skipKeys: ["profile_photo"],
+    },
     // 2. SMART goal — what
     {
       title: t("sections.goal_what"),
