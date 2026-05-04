@@ -442,16 +442,17 @@ export const getSessionStreak = createServerFn({ method: "POST" })
  * fire again on subsequent loads. Trainer-scoped via RLS.
  */
 export const markSessionsCelebrated = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ session_ids: z.array(z.string().uuid()).min(1).max(50) }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const { user } = await requireSupabaseAuth();
-    const { error } = await supabaseAdmin
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
       .from("workout_sessions")
       .update({ pr_celebrated_at: new Date().toISOString() })
       .in("id", data.session_ids)
-      .eq("trainer_id", user.id)
+      .eq("trainer_id", userId)
       .is("pr_celebrated_at", null);
     if (error) fail(error, "Could not mark PR celebration.");
     return { ok: true };
