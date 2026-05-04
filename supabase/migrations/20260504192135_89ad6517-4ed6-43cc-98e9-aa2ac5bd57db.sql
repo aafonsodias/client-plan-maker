@@ -1,0 +1,1 @@
+UPDATE public.profiles SET tagline = NULL WHERE tagline = 'Quod Tango Muto';
