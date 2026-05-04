@@ -2650,18 +2650,8 @@ function ClientDetail() {
                             )
                           }
                         />
-                        {progressionsApproved && (
-                          <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-emerald-400">
-                                Plano pronto a entregar
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Todas as fases aprovadas. Descarrega o PDF abaixo na secção <strong>Plano final</strong>.
-                              </p>
-                            </div>
-                          </div>
-                        )}
+                        {/* The "ready" banner used to live here, but it duplicated
+                            the Plano final section's emerald PDF button (R38). */}
                       </>
                     );
                   })()}
