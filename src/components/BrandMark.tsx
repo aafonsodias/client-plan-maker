@@ -101,7 +101,10 @@ export function BrandMark({
           : undefined
       }
     >
-      <Logo className={s.logo} />
+      {/* Optical centering: the source PNG has slightly more padding on the
+          right than the left, which makes the spark sit ~1-2px off-center
+          inside its glow ring. Nudge left by 1px to center visually. */}
+      <Logo className={cn(s.logo, "-translate-x-px")} />
     </span>
   );
 }
