@@ -402,6 +402,23 @@ function ClientDetail() {
   // When the trainer clicks the green "Avaliação completa" pill, the synthesis
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
+  // Assessment collapse — controlled so sidebar can mirror it. Once brief is
+  // approved, default to collapsed (the trainer is now working in the stages
+  // below). User toggle is persisted per-client.
+  const assessmentCollapseKey = `forge_assessment_top_collapsed_${clientId}`;
+  const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(assessmentCollapseKey);
+      if (v === "1") setAssessmentCollapsed(true);
+      else if (v === "0") setAssessmentCollapsed(false);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+  const setAssessmentCollapsedPersist = (v: boolean) => {
+    setAssessmentCollapsed(v);
+    try { window.localStorage.setItem(assessmentCollapseKey, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
