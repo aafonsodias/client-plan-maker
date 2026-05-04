@@ -1,4 +1,4 @@
-import { Check, Circle } from "lucide-react";
+import { Check, Circle, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -19,6 +19,9 @@ export function ProtocolRail({
   progressionsApproved,
   intervalDays = 14,
   onReassessClick,
+  onStage1Click,
+  onShowSynthesis,
+  stage1Expanded = false,
 }: {
   assessmentPct: number | null;
   lastAssessmentAt: string | null;
@@ -28,6 +31,11 @@ export function ProtocolRail({
   progressionsApproved: boolean;
   intervalDays?: number;
   onReassessClick?: () => void;
+  /** Click handler for the Stage 1 chip — expands/collapses the assessment editor below. */
+  onStage1Click?: () => void;
+  /** When set and stage 1 is complete, renders a "synthesis" chip next to it. */
+  onShowSynthesis?: () => void;
+  stage1Expanded?: boolean;
 }) {
   const { t } = useTranslation("plan");
   const stage1Done = (assessmentPct ?? 0) >= 80;
@@ -64,16 +72,18 @@ export function ProtocolRail({
           Protocolo
         </span>
         <div className="flex flex-1 flex-wrap items-center gap-1.5">
-          {stages.map((s, i) => (
-            <div key={s.n} className="flex items-center gap-1.5">
-              <span
-                className={[
-                  "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
-                  s.done
-                    ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
-                    : "border-border bg-background text-muted-foreground",
-                ].join(" ")}
-              >
+          {stages.map((s, i) => {
+            const isClickableStage1 = s.n === 1 && !!onStage1Click;
+            const baseCls = [
+              "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
+              s.done
+                ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
+                : "border-border bg-background text-muted-foreground",
+              isClickableStage1 ? "cursor-pointer hover:brightness-110" : "",
+              isClickableStage1 && stage1Expanded ? "ring-1 ring-amber-500/40" : "",
+            ].join(" ");
+            const inner = (
+              <>
                 {s.done ? (
                   <Check className="h-3 w-3" strokeWidth={2.75} />
                 ) : (
@@ -81,12 +91,42 @@ export function ProtocolRail({
                 )}
                 <span className="font-bold">{s.n}</span>
                 <span className="hidden sm:inline">{s.label}</span>
-              </span>
-              {i < stages.length - 1 && (
-                <span className="text-muted-foreground/40">·</span>
-              )}
-            </div>
-          ))}
+                {s.n === 1 && assessmentPct != null && (
+                  <span className="opacity-80">· {assessmentPct}%</span>
+                )}
+              </>
+            );
+            return (
+              <div key={s.n} className="flex items-center gap-1.5">
+                {isClickableStage1 ? (
+                  <button
+                    type="button"
+                    onClick={onStage1Click}
+                    className={baseCls}
+                    aria-expanded={stage1Expanded}
+                    title={stage1Expanded ? "Recolher avaliação" : "Abrir avaliação"}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <span className={baseCls}>{inner}</span>
+                )}
+                {s.n === 1 && stage1Done && onShowSynthesis && (
+                  <button
+                    type="button"
+                    onClick={onShowSynthesis}
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/[0.05] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                    title="Ver síntese da avaliação"
+                  >
+                    <Sparkles className="h-2.5 w-2.5" /> Síntese
+                  </button>
+                )}
+                {i < stages.length - 1 && (
+                  <span className="text-muted-foreground/40">·</span>
+                )}
+              </div>
+            );
+          })}
         </div>
         {nextDueChip && (
           <button

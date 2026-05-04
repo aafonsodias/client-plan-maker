@@ -1659,6 +1659,9 @@ function ClientDetail() {
           microcycleApproved={(inlineBrief?.approvedStages ?? []).includes("microcycle")}
           progressionsApproved={(inlineBrief?.approvedStages ?? []).includes("progressions")}
           onReassessClick={() => setReassessOpen(true)}
+          stage1Expanded={!effectiveCollapsed}
+          onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
+          onShowSynthesis={() => setSynthesisOpen((o) => !o)}
         />
       </div>
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
@@ -1685,6 +1688,7 @@ function ClientDetail() {
           clientId={clientId}
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
+          hideCollapsedStrip
           completionPct={
             briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
@@ -3318,6 +3322,7 @@ function AssessmentSection({
   summaryLine,
   completionPct,
   onShowSynthesis,
+  hideCollapsedStrip = false,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -3330,6 +3335,8 @@ function AssessmentSection({
   completionPct?: number | null;
   /** Optional inline action shown on the right of the collapsed strip. */
   onShowSynthesis?: () => void;
+  /** When true, render nothing while collapsed (the parent ProtocolRail owns the toggle). */
+  hideCollapsedStrip?: boolean;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
@@ -3403,6 +3410,7 @@ function AssessmentSection({
   const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
 
   if (collapsed) {
+    if (hideCollapsedStrip) return null;
     const isComplete = (completionPct ?? 0) >= 80;
     // Stage 1 sits in the same approved/draft visual language as Stages 2-5:
     // emerald when complete (matches PipelineStrip + approved StageCard),
