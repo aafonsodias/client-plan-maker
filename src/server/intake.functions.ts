@@ -92,7 +92,7 @@ const tokenSchema = z.object({ token: z.string().uuid() });
 export type IntakeContext = {
   status: "valid" | "expired" | "submitted";
   client?: { id: string; first_name: string; full_name: string | null; email: string | null; phone: string | null; date_of_birth: string | null; needs_identity: boolean };
-  trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null; tagline?: string | null };
+  trainer?: { business_name: string | null; full_name: string | null; logo_url: string | null; primary_color: string | null; tagline?: string | null; user_id?: string | null };
   assessment?: any | null;
   submittedAt?: string | null;
 };
@@ -144,7 +144,7 @@ export const loadIntake = createServerFn({ method: "POST" })
         date_of_birth: (client as any).date_of_birth ?? null,
         needs_identity: placeholder,
       },
-      trainer: (profile as any) ?? { business_name: null, full_name: null, logo_url: null, primary_color: null, tagline: null },
+      trainer: { ...((profile as any) ?? { business_name: null, full_name: null, logo_url: null, primary_color: null, tagline: null }), user_id: client.trainer_id },
       assessment: assessment ?? null,
     };
   });
