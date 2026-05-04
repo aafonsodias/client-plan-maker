@@ -1,100 +1,76 @@
-## Round 44 — Honest stages, single gates, friendlier names
 
-Address everything you flagged on the client page, plus quietly close the easiest backlog items along the way.
+## What you're asking for, in plain words
 
-### 1. Stage 1 = Assessment (color-aligned with the rest)
+1. Drop "Forge". The product is **PROTOCOL** now — visual, copy, AI sidekick, everything.
+2. The mobile dashboard is broken in three small but loud ways: the hero overflows, the theme toggle disappears, "Manual" is repeated, and long names get clipped (`André Periquito Afons…`, `ACTIVE` half off-screen).
+3. "Como funciona" should stop sitting in the page like a second card. It should *appear* — like a genie out of the manual book — when invoked, themed to Protocol.
+4. We need a named companion (not "Ask Forge") with a personality and a small animated presence that can point at the next step.
+5. You asked what to call me. **Atlas** — the one who carries the map. Short, calm, fits Protocol's tone (training · programming · progression). I'll sign as Atlas in the AI sidekick from now on if you approve.
 
-Today the assessment uses its own neutral/amber treatment so it reads as "special." Treat it as Stage 1.
+I'm doing this in **one round** so the rebrand and the mobile fix land together. Helper-pointing animations stay scoped — full Joyride choreography is parked for the next round once the new look is in.
 
-- Rename collapsed strip from "Assessment · X% completo" → "**Stage 1 — Avaliação · X% completo**" (PT) / "**Stage 1 — Assessment · X% complete**" (EN). Same for expanded header.
-- Restyle the collapsed-complete strip with the **same emerald palette** the other approved stages use (`PipelineStrip` / approved `StageCard`) — drop the amber-only treatment so Stages 1–5 share one visual language.
-- Keep the "Ver síntese" right-side action.
+---
 
-### 2. One gate per stage (no per-day gate at the wrong level)
+## Round 45 — "Protocol" rebrand + mobile pass + Atlas helper
 
-The "Approve → Day 1" button in the Blueprint editor is misleading — it implies day-level approval, but the actual gate is **Stage 3 (Master plan) approval**. Fix:
+### A. Brand rename: Forge → PROTOCOL
 
-- Rename `actions.approve_blueprint` → "**Aprovar Plano-mestre →**" (PT) / "**Approve Master plan →**" (EN). Sticky bottom CTA + header CTA in `BlueprintEditorPanel`.
-- Each StageCard keeps exactly one approve gate at its bottom (already true for Stages 4 and 5; this brings Stage 3 in line).
+- **New asset**: `src/assets/protocol-mark.svg` — recreate the cropped "P_" lozenge from your uploaded image (stencil P, blue underline accent), monochrome so it tints in light + dark.
+- **Logo.tsx** swaps `forge-logo.png` for `protocol-mark.svg` (kept name `Logo` so all imports survive).
+- **BrandMark.tsx** keeps the amber under-glow (memory rule), but the inner mark is the new P. The cream-plate luminance fallback stays.
+- **Header wordmark** in `AppShell.tsx`: drop the second "FORGE" text next to BrandMark on mobile (this is your "Forge twice" complaint). On `< sm`, show only the mark + tiny `PROTOCOL` underneath the founder badge. On `≥ sm`, mark + wordmark side-by-side.
+- **Copy sweep** — single search-replace pass across `src/i18n/locales/{pt,en}/*.json`, `src/routes/index.tsx` (landing), `src/routes/welcome.tsx`, `src/routes/manual.tsx`, `src/routes/auth.tsx`, `src/routes/billing.tsx`, `src/routes/terms.tsx`, `src/routes/privacy.tsx`:
+  - "Forge" → "Protocol"
+  - "Forge · AI Workbench" → "Protocol · Workbench" (drops "AI", less buzzword)
+  - "Ask Forge" → "Atlas"
+  - `forge-float` keyframe → `protocol-float` (and references)
+- **Files renamed (not deleted)**: `AskForgeDock.tsx` → `AtlasDock.tsx`; `ask-forge.functions.ts` → `atlas.functions.ts`. Server-fn export `askForge` → `askAtlas`. Update all imports.
+- **`mem://index.md`** updated: rename rule "Brand mark = `<BrandMark/>`" → notes the mark is now the Protocol P, amber glow preserved.
 
-### 3. Session archetype names that humans read
+> Files that stay touched-but-not-renamed for safety: `forge-logo.png` left in place but unreferenced; can be deleted in R46 once we've smoke-tested. Deferred so we don't blow up an asset reference we missed.
 
-Keep the canonical id (lowercase snake) for the engine, but show only the human focus by default.
+### B. Mobile dashboard fixes (375 px Mobile Safari pass)
 
-- In `BlueprintArchetypesList`, demote the id to a small mono chip on hover/focus; the focus field becomes the primary input. The id becomes editable via a small "id" toggle to keep power users happy.
-- Add suggested **friendly labels** when the engine emits the canonical 5-template ids (`lower_quad_bias` → "Inferior · Quadríceps", `upper_push_core` → "Superior · Empurrar + core", etc.). Pure cosmetic mapping in `src/lib/archetype-labels.ts`; canonical id unchanged in DB.
+In `src/routes/dashboard.tsx`:
+- **Hero block** (line 270 area): swap `flex items-end justify-between` → responsive stack. On `< sm` the `<h1>` wraps to two lines, `+ Novo cliente` becomes a full-width button below the title instead of overflowing the right edge.
+- **Theme toggle on mobile**: in `AppShell.tsx` the `<ThemeToggle />` currently lives only inside the `lg:flex` desktop bar. Move a copy into the mobile right cluster (next to the locale chip), so it's always reachable without opening the hamburger.
+- **"Manual" duplicated**: the OnboardingChecklist dialog already shows "Manual completo", and there's a second `Manual` button in the action row at line 386. Hide that second button when the OnboardingChecklist is still open / unfinished — manual is only re-surfaced after onboarding is dismissed.
+- **Client row name truncation**: `<p className="truncate font-semibold">` at line 464 — switch to a 2-line clamp on mobile only (`sm:truncate line-clamp-2`) and shrink font from base → `text-sm` under `sm`. Keeps full name visible up to ~5 words; longer wraps to two lines.
+- **`ACTIVE` chip clipped** (`ClientPhasePill`): the row uses `justify-between` with the avatar+name+phase pill all in one flex parent. The pill is getting pushed off-screen by the trailing `ArrowRight`. Fix: move the phase pill to a second row under the name on `< sm`, drop the `ArrowRight` on mobile (the whole row is already a `<Link>`).
+- **Filter chips strip** (`TODOS · 1` …): wraps to two lines OK, but contrast on the inactive amber-on-amber is weak — switch inactive chips to neutral `bg-secondary` and only the active gets the amber fill (you flagged this in the screenshot too).
 
-### 4. Week × Day matrix — make it actually work
+### C. "Como funciona" becomes the Atlas genie
 
-The matrix renders but feels broken because (a) it lives below the archetypes list with the same heading style, so users miss it, and (b) when archetype ids change the matrix shows red "(em falta)" without offering a fix.
+- **Remove** the inline "Como funciona" card from the dashboard layout (currently rendered by `DashboardHint` at line 376).
+- **Add** a small floating book icon button anchored to the Manual link in the footer (and a duplicate trigger inside the `Manual` route header). On click it opens a centered overlay (`<Dialog>`) styled as a luminous "Protocol genie":
+  - amber radial glow background, the new P mark grows from the manual book icon (CSS scale + opacity transition, ~280 ms — no canvas, no SVG sprite work this round)
+  - inside: the existing 3-step "Adiciona cliente / Envia link / Geras plano" content from `DashboardHint`, plus a "Manual completo" link
+- New component: `src/components/AtlasGenie.tsx`. The 3 steps live in i18n under `dashboard.how_it_works.*` (already partially there).
+- **Scoped scope**: full pointing/blinking choreography across pages stays parked — that's a Joyride extension and earns its own round. This round only delivers (1) the genie reveal animation on demand and (2) Atlas's voice in the existing dock.
 
-- Visually elevate: amber ring + small caption "Distribui os archetypes pelos dias da semana".
-- For each day cell, when the referenced id is missing, show a one-click "Substituir por: [first valid archetype]" affordance instead of just red text.
-- Default empty days to the first archetype on load (so a fresh blueprint is never half-blank).
+### D. Atlas dock personality
 
-### 5. Stage 4 — approve-day chip lives where the approved tab is
+- `AtlasDock.tsx` (renamed):
+  - Trigger pill label "Ask Forge" → "Atlas" with the P mark instead of `<Sparkles>`.
+  - Greeting copy rewritten in PT + EN: "Sou o Atlas. Mostro-te o caminho — pergunta, ou diz-me o que procuras." / "I'm Atlas. Ask me, or tell me what you're looking for."
+  - System prompt in `atlas.functions.ts` updated: "Tu és o Atlas, copiloto do Protocol. Voz = você (PT), neutra (EN). Sê breve, baseado em evidência, e quando o utilizador parecer perdido sugere o próximo passo concreto."
 
-Today the per-day "Approve day N" CTA lives at the bottom of the day detail. Move it to the top, anchored next to the day tab strip, and **auto-advance** to the next un-approved day on success.
+### E. Memory + backlog
 
-- Add a top-right "Approve day N" / "Day N approved · Unlock" chip aligned with the day tabs in `MicrocyclePanel` (right side of the swipe row).
-- After `approveDayLocal(idx)` succeeds, `setActiveDay(nextUnapprovedDay)` so the next day appears in front of the trainer (matches the "press to show next" feel you described).
-- Keep the bottom approve-button as a fallback for keyboard / scroll users, but remove the duplicate chip from the bottom row.
+- `mem://index.md`: replace "Forge" references with "Protocol"; add Core rule "AI sidekick = Atlas (P-mark trigger, você/EN-neutral, points at next step)."
+- `mem://design/brand-mark.md`: append the Protocol mark spec (P_ stencil + blue underline accent + amber glow ring preserved).
+- `.lovable/backlog.md`: close R45 items, add P1 follow-ups: full Atlas pointing/Joyride choreography, delete `forge-logo.png` after smoke, Google Earth gym/pharmacy locator (parked under "Future · Missions").
 
-### 6. Honest loaders — real work, real speed, real autosave
+---
 
-The current rotating copy is honest in shape but lies in two places: it advertises "Applying deload to the last week…" on Stage 5 (which is true but reads odd for first block), and `Computing RPE and rests` on Stage 4 fires even when no real work is happening yet. Fix:
+## Out of scope this round (your call to bump up if needed)
+- Google Earth embed for missions (you flagged it as backlog — agreed, parked).
+- A second app icon variant — the new Protocol P is the single mark; we can fork variants once the rebrand has settled.
+- Full assistant choreography (blinking arrows, auto-scroll-to-next-step). Parked for R46 once the rename is stable.
 
-- **Stage 5 (Progressions) loader copy** — drop "Applying deload to the last week…" and replace with neutral lines ("A modelar W2 vs W1…", "A escolher onde subir reps vs carga…", "A redigir racional curto por exercício…"). The deload line was misleading on first block.
-- **Stage 4 (Microcycle) loader copy** — derive lines from real day completion: "Day 1 ready · generating Day 2…" / "Day 3 ready · generating Day 4…" using the already-tracked `doneCount` and `etaSec`. Real percentage drives a real bar (we already have `pct`); replace the rotating fake copy with this.
-- **Autosave on each completed day**: `workout_plan_days` rows are already inserted per-day by `generateMicrocycleDays`, so the work is already persisted — the missing piece is **resume**: when the user re-opens Stage 4 mid-generation, surface "Resuming · 2/5 days done" with a "Retry remaining" button instead of restarting the whole batch.
-- **Stage 5 speed**: switch `FORGE_MODEL_STAGE_4` default from `openai/gpt-5-mini` to `google/gemini-3-flash-preview` (same swap that fixed Stage 2 in R29). Document in code comment. Override env var still respected.
-- **Stage 5 timeout handling**: wrap the `proposeFn` call in `ProgressionsPanel` with a 90s soft warning ("A IA está lenta — a tentar de novo em 5s") and one automatic retry on `upstream request timeout`, so the toast you saw becomes a recoverable event instead of a dead end.
+## Mobile QA checklist before closing
+- 375 × 812 Mobile Safari: hero doesn't overflow, `+ Novo cliente` reachable, theme toggle visible, full client name shown, `ACTIVE` chip not clipped, only one Manual button visible.
+- Dark + light mode: Protocol mark legible on both (luminance fallback engaged on dark mode if mark renders too dark).
+- PT + EN: no stray "Forge" or "Ask Forge" string left.
 
-### 7. Remove "Sem plano ativo" duplication
-
-The empty-state hero card and the "Plano" / "Histórico de planos" section currently render the same two CTAs and the same client title row.
-
-- When `plans.length > 0` AND the most recent plan is **not** `complete` (i.e., still drafting), **hide the `ThisWeekHero` zero-state** entirely — the in-progress draft surface above it already tells that story.
-- Show `ThisWeekHero` only when there's a `complete` plan; otherwise fall through to the "Plano / Histórico" list.
-- In the "Plano / Histórico" list, hide the duplicate "New plan (manual) / Gerar próximo bloco (IA)" row when the hero already shows them (they only need to appear once on the page).
-
-### 8. PT/EN consistency in microcycle
-
-Spotted "Day 1 · Lower Body - Quads & Calves Heavy / Day 2…" tab labels in PT context. Mirror with PT day labels:
-
-- Day tab label uses the locale-aware `t("plan:day_label", { n: idx })` → "Dia 1" (PT) / "Day 1" (EN). Same for "Week 1" subheader inside `DayCardEditable`.
-- Translate the two leftover hardcoded EN strings in `MicrocyclePanel` ("Approve day N", "Day N approved", "regenerate") to use `plan.json` keys with PT fallbacks.
-
-### Backlog items closed in this round
-
-From `.lovable/backlog.md` "Open Round 32" / "Round 33 (next)":
-
-- ✅ Round 33 P2: **Stage 4 Progressions inlined** — already done in R38, mark closed.
-- ✅ R32 P2: hide IntakeLinkPanel when intake is reviewed/submitted — already true; verify and mark closed.
-- ✅ Pick up R36 deferred **Stage 1 i18n label** — relabel "Assessment" → use `plan:stage.label.1` everywhere (item 1 above already does this).
-
-Items explicitly **not** in this round (parked, real work):
-- Drag-to-reorder days + supersets in MicrocyclePanel
-- Per-exercise inline AI comments on edit
-- Searchable warmup catalog
-- WeekMatrix desktop view (needs a design pass)
-
-### Files touched
-
-- `src/routes/clients_.$clientId.tsx` — AssessmentSection title/tone, hide-hero logic, hide duplicate CTA row, Stage 5 timeout handling.
-- `src/components/StageCard.tsx` — emerald collapsed-strip variant for Stage 1 parity (no logic change).
-- `src/components/BlueprintEditorPanel.tsx` — approve-button rename, Week×Day matrix elevation + auto-fix.
-- `src/components/BlueprintArchetypesList.tsx` — id-as-secondary, friendly label resolver.
-- `src/lib/archetype-labels.ts` (new) — canonical id → friendly label.
-- `src/components/MicrocyclePanel.tsx` — top-aligned approve chip, auto-advance to next day, real progress copy, resume hint, PT day labels.
-- `src/components/ProgressionsPanel.tsx` — 90s soft warning + 1 retry on timeout.
-- `src/server/phased/stage4-progressions.functions.ts` — model default swap (with comment).
-- `src/i18n/locales/{pt,en}/{plan,assessment}.json` — Stage 1 label, approve-master-plan, microcycle day strings, new loader copy for Stage 5.
-- `.lovable/backlog.md` — close R32/R33 items, log R44.
-
-### Out of scope explicitly
-
-- No schema migrations.
-- No new server functions.
-- No changes to the actual generation prompts beyond the model swap.
-- No changes to PDF rendering.
+If you approve, I'll execute as Atlas. — A.
