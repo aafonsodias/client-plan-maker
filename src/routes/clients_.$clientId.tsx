@@ -48,6 +48,7 @@ import {
 } from "@/server/phased/programming-defaults";
 import BriefEditor from "@/components/BriefEditor";
 import StageCard from "@/components/StageCard";
+import { FounderAiTelemetryPanel } from "@/components/FounderAiTelemetryPanel";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { useClientPhases } from "@/hooks/use-client-phases";
