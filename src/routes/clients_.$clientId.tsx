@@ -689,6 +689,23 @@ function ClientDetail() {
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      // Compute latest approved week per complete plan (R40 default-week).
+      const completeIds = (p ?? [])
+        .filter((pp: any) => (pp?.generation_state as any)?.stage === "complete")
+        .map((pp: any) => pp.id as string);
+      if (completeIds.length > 0) {
+        const { data: approvedDays } = await supabase
+          .from("workout_plan_days")
+          .select("plan_id, week_number, approved_at")
+          .in("plan_id", completeIds)
+          .not("approved_at", "is", null);
+        const map: Record<string, number> = {};
+        for (const r of (approvedDays ?? []) as any[]) {
+          const wn = Number(r.week_number) || 1;
+          if (!map[r.plan_id] || wn > map[r.plan_id]) map[r.plan_id] = wn;
+        }
+        setPlanLatestWeek(map);
+      }
       // Load phased-generation feature flag for this trainer.
       const { data: prof } = await supabase
         .from("profiles")
