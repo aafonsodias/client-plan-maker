@@ -1513,15 +1513,6 @@ function ClientDetail() {
                   <Eye className="mr-2 h-3.5 w-3.5" /> Ver como cliente
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel>Cliente</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                {/* ClientDocuments renders its own trigger inline; we wrap to keep
-                    a single visual entry point. */}
-                <div className="px-0 py-0">
-                  <ClientDocuments clientId={client.id} />
-                </div>
-              </DropdownMenuItem>
               {(client.intake_status === "submitted" ||
                 client.intake_status === "reviewed" ||
                 lastSavedAt) && (
@@ -1555,6 +1546,9 @@ function ClientDetail() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Documents has its own popover trigger; keep it visible as a small
+              chip rather than nesting buttons inside the dropdown. */}
+          <ClientDocuments clientId={client.id} />
         </div>
       </div>
 
