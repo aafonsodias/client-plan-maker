@@ -1595,7 +1595,14 @@ function ClientDetail() {
         );
       })()}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[200px_1fr] [&>*]:min-w-0">
+      {(() => {
+        const briefApproved = !!inlineBrief?.approved;
+        const effectiveCollapsed =
+          assessmentCollapsed ?? (briefApproved || !!readyPlanForAssessment);
+        const showSidebar = !effectiveCollapsed;
+        return (
+      <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
+        {showSidebar && (
         <aside className="hidden lg:block">
           <nav className="sticky top-20 space-y-1 rounded-xl border border-border bg-card p-2 text-sm">
             <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("sections_label")}</p>
@@ -1612,10 +1619,12 @@ function ClientDetail() {
             ))}
           </nav>
         </aside>
+        )}
 
         <AssessmentSection
           clientId={clientId}
-          defaultCollapsed={!!readyPlanForAssessment}
+          collapsed={effectiveCollapsed}
+          onCollapsedChange={setAssessmentCollapsedPersist}
           summaryLine={
             (assessment as any)?.performed_on
               ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
