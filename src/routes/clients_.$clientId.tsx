@@ -1476,69 +1476,85 @@ function ClientDetail() {
             label={t("performed_on_label")}
             placeholder={t("performed_on_placeholder")}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5"
-            onClick={async () => {
-              try {
-                const { renderAssessmentPdf } = await import("@/lib/pdf");
-                renderAssessmentPdf({
-                  assessment,
-                  client,
-                  t: t as any,
-                });
-              } catch (e: any) {
-                toast.error(e?.message ?? "PDF error");
-              }
-            }}
-          >
-            <Download className="h-3.5 w-3.5" />
-            {t("download_pdf")}
-          </Button>
-          <Button asChild type="button" variant="ghost" size="sm" className="h-8 gap-1.5">
-            <Link to="/me" search={{ as: client.id }} title="Pré-visualizar como cliente">
-              <Eye className="h-3.5 w-3.5" /> Ver como cliente
-            </Link>
-          </Button>
-          <ClientDocuments clientId={client.id} />
-          {(client.intake_status === "submitted" ||
-            client.intake_status === "reviewed" ||
-            lastSavedAt) && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Pedir nova avaliação"
-                  title="Pedir nova avaliação ao cliente"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-foreground"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  <span>Avaliação</span>
-                </button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle>Pedir nova avaliação</SheetTitle>
-                </SheetHeader>
-                <div className="mt-4">
-                  <IntakeLinkPanel
-                    clientId={client.id}
-                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-                    clientPhone={client.phone}
-                    intake={{
-                      intake_token: client.intake_token ?? null,
-                      intake_token_expires_at: client.intake_token_expires_at ?? null,
-                      intake_status: client.intake_status ?? "not_sent",
-                      intake_submitted_at: client.intake_submitted_at ?? null,
-                    }}
-                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-                  />
+          {/* Secondary actions collapse into a single overflow menu so the page
+              has only one obvious primary action (the contextual CTA in the
+              ThisWeekHero card below). R52 — UX feedback. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                title="Mais ações"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+                Mais ações
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Documentos</DropdownMenuLabel>
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const { renderAssessmentPdf } = await import("@/lib/pdf");
+                    renderAssessmentPdf({ assessment, client, t: t as any });
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "PDF error");
+                  }
+                }}
+              >
+                <Download className="mr-2 h-3.5 w-3.5" />
+                {t("download_pdf")}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/me" search={{ as: client.id }} title="Pré-visualizar como cliente">
+                  <Eye className="mr-2 h-3.5 w-3.5" /> Ver como cliente
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Cliente</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                {/* ClientDocuments renders its own trigger inline; we wrap to keep
+                    a single visual entry point. */}
+                <div className="px-0 py-0">
+                  <ClientDocuments clientId={client.id} />
                 </div>
-              </SheetContent>
-            </Sheet>
-          )}
+              </DropdownMenuItem>
+              {(client.intake_status === "submitted" ||
+                client.intake_status === "reviewed" ||
+                lastSavedAt) && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Send className="mr-2 h-3.5 w-3.5" />
+                      Pedir nova avaliação
+                    </DropdownMenuItem>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>Pedir nova avaliação</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <IntakeLinkPanel
+                        clientId={client.id}
+                        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                        clientPhone={client.phone}
+                        intake={{
+                          intake_token: client.intake_token ?? null,
+                          intake_token_expires_at: client.intake_token_expires_at ?? null,
+                          intake_status: client.intake_status ?? "not_sent",
+                          intake_submitted_at: client.intake_submitted_at ?? null,
+                        }}
+                        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
