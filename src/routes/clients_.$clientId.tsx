@@ -409,6 +409,9 @@ function ClientDetail() {
   // below). User toggle is persisted per-client.
   const assessmentCollapseKey = `forge_assessment_top_collapsed_${clientId}`;
   const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  // Map plan_id → latest week_number with any approved_at day. Used to default
+  // the per-week PDF download to the most useful week (R40).
+  const [planLatestWeek, setPlanLatestWeek] = useState<Record<string, number>>({});
   useEffect(() => {
     try {
       const v = window.localStorage.getItem(assessmentCollapseKey);
@@ -686,6 +689,23 @@ function ClientDetail() {
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
+      // Compute latest approved week per complete plan (R40 default-week).
+      const completeIds = (p ?? [])
+        .filter((pp: any) => (pp?.generation_state as any)?.stage === "complete")
+        .map((pp: any) => pp.id as string);
+      if (completeIds.length > 0) {
+        const { data: approvedDays } = await supabase
+          .from("workout_plan_days")
+          .select("plan_id, week_number, approved_at")
+          .in("plan_id", completeIds)
+          .not("approved_at", "is", null);
+        const map: Record<string, number> = {};
+        for (const r of (approvedDays ?? []) as any[]) {
+          const wn = Number(r.week_number) || 1;
+          if (!map[r.plan_id] || wn > map[r.plan_id]) map[r.plan_id] = wn;
+        }
+        setPlanLatestWeek(map);
+      }
       // Load phased-generation feature flag for this trainer.
       const { data: prof } = await supabase
         .from("profiles")
@@ -2743,8 +2763,8 @@ function ClientDetail() {
                         if (wn === 1) return "base";
                         return wn % 2 === 0 ? "+load" : "+reps";
                       };
-                      // default = current week (latest week marker if we have it; else W1)
-                      const defaultWeek = 1;
+                      // default = latest week with any approved_at day; fallback W1 (R40)
+                      const defaultWeek = Math.min(totalWeeks, planLatestWeek[p.id] ?? 1);
                       return (
                         <div
                           className="flex items-center gap-2"

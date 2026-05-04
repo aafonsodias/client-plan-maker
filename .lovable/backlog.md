@@ -181,3 +181,14 @@ Atualizado: Round 28 (4 Mai 2026)
 - WeekMatrix desktop view (carry-over).
 - Adaptive repeat assessments — first = rich baseline, subsequent = small contextual re-checks; question/measurement set adapts to goal/context (glutes for women prioritising glutes, biceps for men prioritising arms, etc.). Parked, real round of work.
 - Backend-stored "verified" flag (currently founder-only via email gate). Real cert/verification pipeline is out of scope.
+
+## Closed Round 40 (PDF richness footer + small polish)
+- PDF cover: assessment richness chip (`AVALIAÇÃO {pct}% · gerado {date}`), tonal stripe (≥80 emerald, ≥60 amber, else muted). Wired through `download-plan.ts`.
+- PDF cover: honest amber banner "Mostrando Semana 1 — semanas seguintes ainda não geradas" when the trainer asks for a later week but only W1 exists. No silent empty PDFs.
+- Plano final row: per-week select now defaults to latest week with any `approved_at` day (small `planLatestWeek` lookup populated on mount).
+- Backlog re-parked: WeekMatrix desktop, adaptive repeat assessments, backend verified pipeline — each is a real round, not a polish item.
+
+## Open after Round 40 (parked — real rounds)
+- WeekMatrix desktop view: full grid surface + interaction model. Needs design pass, not a small edit.
+- Adaptive repeat assessments: schema for assessment versions + context-aware question sets (gender/goal-driven).
+- Real verified/cert backend: today is just the founder email gate. Needs cert source-of-truth + UI to prove/verify.

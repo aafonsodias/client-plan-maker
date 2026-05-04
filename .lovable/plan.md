@@ -1,74 +1,44 @@
-## Round 39 — Weekly-only PDF + finish R38 backlog
+## Round 40 — Close R39 carry-overs (PDF richness footer + small polish)
 
-You're right to walk back the "12-week PDF" direction. PTs print one week at a time and update on weekends. The PDF should be a **single-week clipboard tool with a compact macro/meso index strip** so you always know where this week sits in the block. Less paper, more useful.
+The remaining open items split into "real round" (WeekMatrix desktop, adaptive repeat assessments, backend verified pipeline) and "shippable now". This round ships the now-items and parks the rest honestly.
 
-### 1. Weekly PDF (the main change)
+### Ship this round
 
-- Make `generatePlanPdf` accept `{ weekNumber }` and render **only that week** (cover + 1 page per session, landscape A4).
-- Add a **compact macro index strip** to the cover:
-  - Row of N small chips (one per week of the block), current week highlighted.
-  - Each chip shows week number + a 1-word tag (`base`, `+load`, `+reps`, `deload`).
-  - Block label: `Bloco N · Semana W de Total` so you orient at a glance.
-- Drop the old "all weeks at once" rendering paths and the 12-week cover totals that were lying (DURATION 4 wk, TOTAL SESSIONS 5).
-- Cover totals become honest: `DURATION 1 wk · SESSIONS THIS WEEK X`.
+1. **PDF richness footer** (R36 carry-over)
+   - `PdfMeta.assessment_completion_pct` (already persisted on `workout_plans`).
+   - `download-plan.ts` passes it through.
+   - `generatePlanPdf` cover footer line: `Avaliação: 86% · gerado 04 Mai 2026` so the trainer sees how solid the inputs were before they print.
+   - Tonal hint: <60% muted/red, 60–80% amber, ≥80% emerald.
 
-### 2. Per-week download UI
+2. **PDF "Esta semana" honesty when only Week 1 exists**
+   - When `selectedWeekN > totalWeeksInPlan`, fall back to `weeksMap.get(1)` and show an amber "Mostrando Semana 1 — semanas seguintes ainda não geradas" banner on the cover. No silent empty PDFs.
 
-- In **Plano final** (`clients_.$clientId.tsx`), replace the single "Descarregar PDF" pill with a small week selector:
-  - Default = current week (latest week with `approved_at` on any day, else W1).
-  - Dropdown of weeks 1..N with the same `base/+load/+reps/deload` tag.
-  - Primary button = "Descarregar Semana W (PDF)".
-- `downloadPlanById(planId, weekNumber?)` — pass through to `generatePlanPdf`.
-- Keep "open full plan page" only as a quiet secondary link (it's the in-app log; PT works from PDF).
+3. **Plano final row — current-week default**
+   - Default the per-week select to the latest week with any `approved_at` day; fall back to W1.
+   - Tiny `useMemo` over `workout_plan_days` already loaded for the plan row.
 
-### 3. PDF table polish
+4. **i18n: PDF strings**
+   - Move new copy (`BLOCO N · SEMANA W DE T`, `ESTA SEMANA`, footer richness label, week-tags `base/+load/+reps/deload`) into `pdf.weekly.*` keys in `pt/plan.json` + `en/plan.json`. Default still PT.
 
-- Fix table column clipping observed in your sample PDF (`10-1…`, `Reverse Hyperextension Bodywei…`):
-  - Recompute exercise-name column width from page width minus measured stat columns; let it grow now that we only render one session per page.
-  - Wrap exercise names to a 2nd line instead of truncating.
-- Fix mixed PT/EN headers in PDF (`SETS/REPS/REST/RPE/NOTES`) — drive from i18n `pdf.*` keys, default PT.
-- Add a tiny footer per session page: `Forge · {client} · Bloco N · Semana W · gerado {date}`.
+5. **Backlog housekeeping**
+   - Mark R39 closed.
+   - Re-park: WeekMatrix desktop view, adaptive repeat assessments, backend verified pipeline — each is a real round, called out as such.
+   - Open R40 closed list with the four items above.
 
-### 4. Founder verified badge wiring
+### Out of scope (parked, called out in backlog)
 
-- `ClientAvatar` already accepts `verified`. Wire it on:
-  - The header avatar in `AppShell` for the founder email (`aafonsodias@gmail.com`).
-  - The profile/settings avatar surface.
-- No backend change needed — same gate as the existing Founder pill.
-
-### 5. i18n + copy sweep
-
-- Remaining mixed strings: "Gerar Microcycle", "Gerar Progressions", any lingering "Stage:" prefix in the Plano final row.
-- Move the new weekly-PDF copy (`pdf.weekly.*`, `detail.plans.download_week`, week tags) to `pt/plan.json` + `en/plan.json`.
-
-### 6. Backlog housekeeping (close out R38)
-
-- Mark R38 items done in `.lovable/backlog.md`.
-- Open R39 section listing the items above + carry-overs:
-  - WeekMatrix desktop view (was R36 deferred) — defer again, real round of work.
-  - Adaptive repeat assessments (rich baseline → small contextual re-checks) — note as parked.
+- WeekMatrix desktop view — full grid surface, not a small polish.
+- Adaptive repeat assessments — needs schema design (assessment versions, context-aware question sets).
+- Real verified/cert backend (currently founder-email gate).
 
 ### Files touched
 
-- `src/lib/pdf.ts` — weekly mode, macro index strip, table widths, i18n headers.
-- `src/lib/download-plan.ts` — accept `weekNumber`.
-- `src/routes/clients_.$clientId.tsx` — week selector in Plano final.
-- `src/components/AppShell.tsx` (or wherever the header avatar lives) — pass `verified` for founder.
-- `src/i18n/locales/{pt,en}/plan.json` (+ `common.json` for week tags).
-- `.lovable/backlog.md`.
-
-### Out of scope
-
-- No DB changes.
-- No engine/prompt changes (engine stays frozen this round).
-- No new PDF for full-block export — explicitly walked back per your note.
+- `src/lib/pdf.ts` — richness footer, "Mostrando Semana 1" fallback banner, i18n hooks.
+- `src/lib/download-plan.ts` — pass `assessment_completion_pct`.
+- `src/routes/clients_.$clientId.tsx` — default-week computation in Plano final row.
+- `src/i18n/locales/{pt,en}/plan.json` — new `pdf.weekly.*` keys.
+- `.lovable/backlog.md` — R40 closed + re-parked items.
 
 ### Expected result
 
-```text
-Plano final
-  Bloco 2 · Semana 3 de 4   [base] [+load] [+reps●] [deload]
-  [ Descarregar Semana 3 (PDF) ▾ ]   open plan page
-```
-
-PDF you print on Sunday: 1 cover with the week-strip, then one page per session, names no longer clipped, headers in PT, honest totals.
+Single-week PDF cover now answers three questions at a glance: where this week sits in the meso (chip strip), how rich the assessment was (footer richness chip), and whether the rest of the plan really exists (honest banner if only W1 is generated). Plano final row defaults to the most useful week instead of always W1.
