@@ -782,7 +782,7 @@ export async function generatePlanPdf(
       // so the trainer reads and writes on the SAME row. Week-over-week
       // progressions are still visible in-app (Mesociclo view).
       const colNumW = 20;
-      const colExW = 170;
+      const colExW = 220;     // wider — single-session-per-page leaves room
       const colCueW = 130;
       const statCols = ["SETS", "REPS", "REST", "RPE", "TEMPO"];
       const statColW = 36;
