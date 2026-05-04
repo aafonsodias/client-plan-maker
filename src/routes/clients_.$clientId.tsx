@@ -6,7 +6,7 @@ import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 const DemoOrchestrator = lazy(() =>
   import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
 );
@@ -64,6 +64,7 @@ import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/li
 import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
+import { PipelineStrip } from "@/components/PipelineStrip";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -1443,6 +1444,7 @@ function ClientDetail() {
               photoUrl={client.photo_url ?? null}
               onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
               size={56}
+              showFounderDot={(client.email ?? "").toLowerCase() === "aafonsodias@gmail.com"}
             />
           )}
           <div className="min-w-0">
@@ -1543,29 +1545,6 @@ function ClientDetail() {
         />
       )}
 
-      {/* Compact client snapshot — always visible, summarizes latest assessment */}
-      {lastSavedAt && (
-        <a
-          href="#sintese-da-avaliacao"
-          onClick={(e) => {
-            e.preventDefault();
-            document.getElementById("sintese-da-avaliacao")?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-          }}
-          className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground transition hover:text-foreground"
-        >
-          Última avaliação ·{" "}
-          {new Date(lastSavedAt).toLocaleDateString(dateLocale, {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}{" "}
-          <ArrowRight className="h-3 w-3" />
-        </a>
-      )}
-
       {/* Readiness strip — at-a-glance ACSM risk + recovery score from latest data.
           Hidden until at least one signal exists so it doesn't render as "Baixo / —". */}
       {(() => {
@@ -1574,7 +1553,11 @@ function ClientDetail() {
         const sore = Number((assessment as any).soreness ?? 0);
         const haveSignals = Number.isFinite(sleep) && sleep > 0;
         const haveRisk = !!assessment.acsm_risk_category || riskCategory !== "low" || parqYes;
-        if (!haveSignals && !haveRisk) return null;
+        const coveragePct =
+          briefCoverage && briefCoverage.total > 0
+            ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+            : null;
+        if (!haveSignals && !haveRisk && coveragePct == null && !lastSavedAt) return null;
         // Readiness 0-100: sleep (1-10) drives 50%, low stress 30%, low soreness 20%.
         const sleepPart = Number.isFinite(sleep) && sleep > 0 ? (sleep / 10) * 50 : 25;
         const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
@@ -1594,8 +1577,35 @@ function ClientDetail() {
               : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
         const riskLabel =
           riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
+        const assessTone =
+          coveragePct == null
+            ? "border-border bg-secondary text-muted-foreground"
+            : coveragePct >= 80
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              : coveragePct >= 60
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
+        const dateShort = lastSavedAt
+          ? new Date(lastSavedAt).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit" })
+          : null;
         return (
           <div className="flex flex-wrap items-center gap-2 self-start">
+            {(coveragePct != null || lastSavedAt) && (
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("sintese-da-avaliacao")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums transition hover:opacity-80 ${assessTone}`}
+                title="Ver síntese da avaliação"
+              >
+                <span className="text-[9px] uppercase tracking-widest opacity-70">AVALIAÇÃO</span>
+                {coveragePct != null ? `${coveragePct}%` : "—"}
+                {dateShort && <span className="opacity-70">· {dateShort}</span>}
+              </button>
+            )}
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
               title={t("detail.acsm_chip_title")}
@@ -2479,7 +2489,22 @@ function ClientDetail() {
                       }
                     };
                     return (
-                      <>
+                      (() => {
+                        const allInnerApproved =
+                          blueprintApproved && microcycleApproved && progressionsApproved;
+                        const Wrapper = ({ children }: { children: ReactNode }) =>
+                          allInnerApproved ? (
+                            <PipelineStrip
+                              blockNumber={(plans[0] as any)?.block_number ?? 1}
+                              approvedAt={(plans[0] as any)?.updated_at ?? null}
+                            >
+                              {children}
+                            </PipelineStrip>
+                          ) : (
+                            <>{children}</>
+                          );
+                        return (
+                          <Wrapper>
                         <StageCard
                           stageNumber={3}
                           title={t("plan:stage.label.3", "Plano-mestre")}
@@ -2673,7 +2698,9 @@ function ClientDetail() {
                         />
                         {/* The "ready" banner used to live here, but it duplicated
                             the Plano final section's emerald PDF button (R38). */}
-                      </>
+                          </Wrapper>
+                        );
+                      })()
                     );
                   })()}
                 </>
