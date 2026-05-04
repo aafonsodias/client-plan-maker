@@ -237,7 +237,29 @@ function Dashboard() {
       setOptionalName("");
       setShowOptionalName(false);
       setCreatedClient(null);
+      setManualName("");
+      setManualEmail("");
+      setMode("invite");
     }, 200);
+  };
+
+  const createManual = async () => {
+    if (!user || creating) return;
+    if (!manualName.trim()) return;
+    setCreating(true);
+    try {
+      const row: any = await createManualFn({ data: { fullName: manualName.trim(), email: manualEmail.trim() || null } });
+      if (!row?.id) throw new Error("Resposta inválida");
+      toast.success(t("dashboard.manual_added_toast", { defaultValue: "Cliente adicionado." }));
+      void markOnboardingStep(user.id, "add_client");
+      void load();
+      closeAndReset();
+      navigate({ to: "/clients/$clientId", params: { clientId: row.id } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível criar o cliente.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
