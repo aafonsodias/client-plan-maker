@@ -91,6 +91,13 @@ export type PdfMeta = {
     deltaPct: number | null;
     verdict: "gain" | "flat" | "regression" | "unknown";
   }> | null;
+  /**
+   * If set, render ONLY this week (1-indexed) instead of every week in the plan.
+   * The cover then shows a compact macro-index strip highlighting where this
+   * week sits in the meso/macro. PTs print one week at a time and update on
+   * weekends, so single-week is the default rendering mode.
+   */
+  week_number?: number | null;
 };
 
 // ---------- Asset + luminance helpers ----------
