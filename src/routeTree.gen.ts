@@ -18,7 +18,6 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -80,11 +79,6 @@ const ManualRoute = ManualRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientsRoute = ClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillingRoute = BillingRouteImport.update({
@@ -178,7 +172,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
@@ -207,7 +200,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
@@ -237,7 +229,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
-  '/clients': typeof ClientsRoute
   '/dashboard': typeof DashboardRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
@@ -268,7 +259,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/billing'
-    | '/clients'
     | '/dashboard'
     | '/manual'
     | '/me'
@@ -297,7 +287,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/billing'
-    | '/clients'
     | '/dashboard'
     | '/manual'
     | '/me'
@@ -326,7 +315,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/billing'
-    | '/clients'
     | '/dashboard'
     | '/manual'
     | '/me'
@@ -356,7 +344,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
-  ClientsRoute: typeof ClientsRoute
   DashboardRoute: typeof DashboardRoute
   ManualRoute: typeof ManualRoute
   MeRoute: typeof MeRoute
@@ -438,13 +425,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clients': {
-      id: '/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/billing': {
@@ -617,7 +597,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
-  ClientsRoute: ClientsRoute,
   DashboardRoute: DashboardRoute,
   ManualRoute: ManualRoute,
   MeRoute: MeRoute,
