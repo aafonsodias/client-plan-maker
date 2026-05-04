@@ -1011,7 +1011,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       }
 
       const critic1 = await criticDay({
-        apiKey,
         model: "claude-haiku-4-5-20251001",
         pass: "critic-1",
         client: data.client,
@@ -1030,7 +1029,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
         if (shouldRepair(critic1.verdict)) {
           repairAttempted = true;
           const repaired = await repairDay({
-            apiKey,
             model: "claude-haiku-4-5-20251001",
             client: data.client,
             assessment: data.assessment,
@@ -1050,7 +1048,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
               focus: workingDay?.focus,
             });
             const critic2 = await criticDay({
-              apiKey,
               model: "claude-haiku-4-5-20251001",
               pass: "critic-2",
               client: data.client,
@@ -1395,7 +1392,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       focus: day?.focus,
     });
     const critic = await criticDay({
-      apiKey,
       model: ESCALATE_MODEL,
       pass: "escalate-critic",
       client: data.client,
