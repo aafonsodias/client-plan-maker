@@ -16,6 +16,7 @@ import {
   type CallTelemetry,
   makeTelemetry,
 } from "./plan-cost.server";
+import { anthropicCompatFetch } from "./anthropic-compat.server";
 import type { CriticVerdict } from "./plan-critic.server";
 
 export type RepairResult =
