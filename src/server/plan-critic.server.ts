@@ -14,6 +14,7 @@ import {
   type CallTelemetry,
   makeTelemetry,
 } from "./plan-cost.server";
+import { anthropicCompatFetch } from "./anthropic-compat.server";
 
 export type CriticIssue = {
   severity: "blocker" | "major" | "minor";
@@ -110,27 +111,19 @@ You will also receive a list of PROGRAMMATIC WARNINGS that a deterministic linte
 
   const t0 = Date.now();
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": args.apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: args.model,
-        max_tokens: 2000,
-        system: sys,
-        messages: [{ role: "user", content: ctx }],
-        tools: [
-          {
-            name: "emit_critic_verdict",
-            description: "Emit the structured critic verdict for this training day.",
-            input_schema: CriticInputSchema,
-          },
-        ],
-        tool_choice: { type: "tool", name: "emit_critic_verdict" },
-      }),
+    const res = await anthropicCompatFetch({
+      model: args.model,
+      max_tokens: 2000,
+      system: sys,
+      messages: [{ role: "user", content: ctx }],
+      tools: [
+        {
+          name: "emit_critic_verdict",
+          description: "Emit the structured critic verdict for this training day.",
+          input_schema: CriticInputSchema as unknown as Record<string, unknown>,
+        },
+      ],
+      tool_choice: { type: "tool", name: "emit_critic_verdict" },
     });
 
     const elapsed = Date.now() - t0;
