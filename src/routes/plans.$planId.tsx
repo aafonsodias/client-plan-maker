@@ -1221,6 +1221,59 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
       .sort((a, b) => (b.session_date > a.session_date ? 1 : -1))[0];
   }, [safeSessions, weekNum, dayLabel, date]);
 
+  // Last logged session for this (week, day) — used for ghost values + "duplicate"
+  // when we are NOT editing an existing one. Excludes today's exact match so the
+  // ghost reflects the previous time this slot was trained, not the current draft.
+  const lastSession = useMemo(() => {
+    return safeSessions
+      .filter(
+        (s) =>
+          s.week_number === weekNum &&
+          s.day_label === dayLabel &&
+          s.logged_by === "trainer" &&
+          s.id !== editingSessionId,
+      )
+      .sort((a, b) => (b.session_date > a.session_date ? 1 : -1))[0];
+  }, [safeSessions, weekNum, dayLabel, editingSessionId]);
+
+  const lastByName = useMemo(() => {
+    const m = new Map<string, { reps: string; weight: string }[]>();
+    for (const ent of (lastSession?.entries ?? []) as any[]) {
+      if (ent && typeof ent === "object" && ent.exercise_name && Array.isArray(ent.sets)) {
+        m.set(
+          ent.exercise_name,
+          ent.sets.map((s: any) => ({ reps: String(s?.reps ?? ""), weight: String(s?.weight ?? "") })),
+        );
+      }
+    }
+    return m;
+  }, [lastSession]);
+
+  const duplicateLast = () => {
+    if (!lastSession) return;
+    setEntries((prev) =>
+      prev.map((e) => {
+        const prior = lastByName.get(e.exercise_name);
+        if (!prior || prior.length === 0) return e;
+        return { ...e, sets: prior.map((s) => ({ reps: s.reps, weight: s.weight })) };
+      }),
+    );
+    toast.success("Pre-filled from last session — adjust and save.");
+  };
+
+  // Stepper helpers (FitNotes-style). Reps integer ±1, weight float ±2.5 kg.
+  const bumpReps = (i: number, si: number, delta: number) => {
+    const cur = parseInt(entries[i]?.sets[si]?.reps ?? "", 10);
+    const next = Math.max(0, (Number.isFinite(cur) ? cur : 0) + delta);
+    updateSet(i, si, "reps", String(next));
+  };
+  const bumpWeight = (i: number, si: number, delta: number) => {
+    const cur = parseFloat(entries[i]?.sets[si]?.weight ?? "");
+    const base = Number.isFinite(cur) ? cur : 0;
+    const next = Math.max(0, Math.round((base + delta) * 10) / 10);
+    updateSet(i, si, "weight", String(next));
+  };
+
   useEffect(() => {
     if (!day) { setEntries([]); return; }
     // If a session already exists for this slot, hydrate it so the trainer
