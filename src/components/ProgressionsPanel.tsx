@@ -70,7 +70,21 @@ export function ProgressionsPanel({
     setGenerating(true);
     const tId = toast.loading("A gerar progressões…");
     try {
-      const res: any = await proposeFn({ data: { planId } });
+      // Stage 5 occasionally hits "upstream request timeout" — retry
+      // once automatically before surfacing a hard error.
+      let res: any = await proposeFn({ data: { planId } }).catch((e) => ({
+        ok: false,
+        error: e?.message ?? "timeout",
+      }));
+      const isTimeout = !res?.ok && /timeout/i.test(String(res?.error ?? ""));
+      if (isTimeout) {
+        toast.loading("A IA está lenta — a tentar de novo…", { id: tId });
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await proposeFn({ data: { planId } }).catch((e) => ({
+          ok: false,
+          error: e?.message ?? "timeout",
+        }));
+      }
       if (!res?.ok) {
         toast.error(res?.error ?? "Falha a gerar progressões.", { id: tId });
         return;

@@ -189,6 +189,16 @@ export function MicrocyclePanel({
     }
     toast.success(`Day ${dayIndex} approved`, { duration: 1200 });
     await loadDays();
+    // Auto-advance to the next un-approved day so the next session
+    // appears in front of the trainer (matches "press to show next").
+    const sessions = blueprint?.sessions_per_week ?? 0;
+    for (let n = dayIndex + 1; n <= sessions; n++) {
+      const row = days.find((d) => d.day_number === n);
+      if (!row?.approved_at) {
+        setActiveDay(n);
+        return;
+      }
+    }
   }
 
   async function approve() {
