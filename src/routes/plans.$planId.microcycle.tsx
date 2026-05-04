@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   generateDay,
   approveMicrocycle,
+  generateMicrocycleDays,
 } from "@/server/phased/stage3-microcycle.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
 import { Loader2, ArrowLeft, Sparkles, CheckCircle2, Lock } from "lucide-react";
@@ -59,6 +60,7 @@ function MicrocycleReview() {
   const navigate = useNavigate();
   const { t } = useTranslation("plan");
   const generateDayFn = useServerFn(generateDay);
+  const generateAllDaysFn = useServerFn(generateMicrocycleDays);
   const approveFn = useServerFn(approveMicrocycle);
 
   const [planTitle, setPlanTitle] = useState("");
@@ -123,23 +125,25 @@ function MicrocycleReview() {
   // Auto-fire Day 1 only once we know days are loaded (prevents double-gen race)
   useEffect(() => {
     if (!blueprint || !daysLoaded || day1KickedRef.current) return;
-    const day1 = days.find((d) => d.day_number === 1);
-    if (!day1) {
+    const sessions = blueprint.sessions_per_week ?? 0;
+    const haveAny = days.some((d) => d.day_number >= 1 && d.day_number <= sessions);
+    if (!haveAny && sessions > 0) {
       day1KickedRef.current = true;
-      kickDay1();
+      kickWeek();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blueprint, daysLoaded, days]);
 
-  async function kickDay1() {
-    if (isGenerating(1)) return;
+  async function kickWeek() {
+    const sessions = blueprint?.sessions_per_week ?? 0;
+    if (sessions <= 0) return;
     setGenerating(true);
-    addGenerating(1);
-    const res = await generateDayFn({ data: { planId, dayIndex: 1 } });
+    for (let i = 1; i <= sessions; i++) addGenerating(i);
+    const res = await generateAllDaysFn({ data: { planId } });
     setGenerating(false);
-    removeGenerating(1);
+    for (let i = 1; i <= sessions; i++) removeGenerating(i);
     await loadDays();
-    if (!res.ok) toast.error(res.error || "Day 1 generation failed");
+    if (!res.ok) toast.error(res.error || "Microcycle generation failed");
   }
 
   async function regenDay(dayIndex: number) {
