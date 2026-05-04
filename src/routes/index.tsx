@@ -189,7 +189,7 @@ function Landing() {
           </div>
           <div className="flex min-w-0 flex-col items-center">
             <div className="relative origin-top scale-[0.95]">
-              {/* Forge glow — replaces the dark drop shadow */}
+              {/* Protocol glow — replaces the dark drop shadow */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl"
@@ -246,7 +246,7 @@ function Landing() {
         <HowItWorksAnimation />
       </section>
 
-      {/* Comparison table — FORGE vs Excel vs ChatGPT vs Generic apps */}
+      {/* Comparison table — Protocol vs Excel vs ChatGPT vs Generic apps */}
       <ComparisonTableSection />
 
       {/* Programming tier badges — 3-tier methodology shown on landing */}
@@ -767,7 +767,7 @@ function HeroPlanMockup() {
       {/* Footer */}
       <div className="mt-4 h-px bg-border" />
       <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground/60">
-        <span>FORGE</span>
+        <span>PROTOCOL</span>
         <span className="normal-case tracking-normal">{t("landing.mockups.personalized_for")}</span>
       </div>
     </FloatCard>
