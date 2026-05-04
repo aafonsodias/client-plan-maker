@@ -394,8 +394,7 @@ function Dashboard() {
               </span>
             </button>
           )}
-          <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> {t("dashboard.view_plans")}</Link></Button>
-          {/* "Manual" lives in the footer + Atlas genie now; redundant button removed (R45). */}
+          {/* "View plans" removed — plans are reachable by clicking a client. */}
         </div>
       )}
 
