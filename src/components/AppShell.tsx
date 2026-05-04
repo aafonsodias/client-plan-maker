@@ -132,7 +132,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   return (
     <div className="min-h-screen bg-background">
       <header data-app-shell className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-2 px-4 sm:px-6">
+        <div className="mx-auto grid h-16 max-w-screen-xl grid-cols-[auto_1fr_auto] items-center gap-2 px-4 sm:px-6">
           <Link
             to="/"
             className="group flex min-w-0 items-center gap-2.5 font-light tracking-[0.2em] uppercase text-sm"
@@ -155,7 +155,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           </Link>
 
           {/* Mobile-only quick controls — locale chip + theme toggle, always reachable without opening the hamburger */}
-          <div className="ml-auto flex items-center gap-1 lg:hidden">
+          <div className="col-start-3 flex items-center justify-end gap-1 lg:hidden">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -183,7 +183,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           </div>
 
           {/* Desktop nav (≥ lg) — icon-only, tooltip labels. Never truncates. */}
-          <nav className="hidden min-w-0 items-center gap-0.5 lg:flex">
+          <nav className="col-start-2 hidden min-w-0 items-center justify-center gap-0.5 lg:flex">
             {primaryNav.map((n) => {
               const active = isActive(n.to);
               return (
@@ -207,7 +207,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
 
           {/* Desktop right side (≥ lg) — only the avatar menu remains.
               Secondary nav, locale, theme, sign-out all live inside it. */}
-          <div className="hidden items-center gap-1 lg:flex">
+          <div className="col-start-3 hidden items-center justify-end gap-1 lg:flex">
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
