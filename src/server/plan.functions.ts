@@ -10,6 +10,7 @@ import {
 import { criticDay, shouldRepair } from "./plan-critic.server";
 import { repairDay } from "./plan-repair.server";
 import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
+import { anthropicCompatFetch } from "./anthropic-compat.server";
 import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
 
 // ============================================================================
@@ -507,11 +508,6 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return { ok: false as const, error: "AI gateway is not configured." };
-    }
-
     const parqYes = data.assessment.parq_passed === false;
     const risk = (data.assessment.acsm_risk_category ?? "low").toLowerCase();
     const isHighRisk = risk === "high";
@@ -719,29 +715,19 @@ ${prevSkeleton}`;
     }
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: user + feedbackBlock },
-          ],
-          tools: [
-            {
-              name: "emit_workout_plan",
-              description: "Emit the structured workout plan",
-              input_schema: PlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_plan" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: user + feedbackBlock }],
+        tools: [
+          {
+            name: "emit_workout_plan",
+            description: "Emit the structured workout plan",
+            input_schema: PlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_plan" },
       });
 
       if (res.status === 429) {
@@ -798,9 +784,6 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, duration_weeks } = data;
     const isFirstWeek = week_number === 1;
 
@@ -827,29 +810,19 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: userMsg },
-          ],
-          tools: [
-            {
-              name: "emit_workout_week",
-              description: "Emit one week of the workout plan",
-              input_schema: SingleWeekPlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_week" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_week",
+            description: "Emit one week of the workout plan",
+            input_schema: SingleWeekPlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_week" },
       });
 
       if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
@@ -949,9 +922,6 @@ export const generatePlanDay = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Plan not found." };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, day_number, days_per_week, duration_weeks } = data;
     const safetyBlock = buildSafetyBlock(data.assessment);
 
@@ -972,29 +942,19 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: userMsg },
-          ],
-          tools: [
-            {
-              name: "emit_workout_day",
-              description: "Emit one training day",
-              input_schema: SingleDayPlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_day" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_day",
+            description: "Emit one training day",
+            input_schema: SingleDayPlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_day" },
       });
 
       if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
@@ -1051,7 +1011,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       }
 
       const critic1 = await criticDay({
-        apiKey,
         model: "claude-haiku-4-5-20251001",
         pass: "critic-1",
         client: data.client,
@@ -1070,7 +1029,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
         if (shouldRepair(critic1.verdict)) {
           repairAttempted = true;
           const repaired = await repairDay({
-            apiKey,
             model: "claude-haiku-4-5-20251001",
             client: data.client,
             assessment: data.assessment,
@@ -1090,7 +1048,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
               focus: workingDay?.focus,
             });
             const critic2 = await criticDay({
-              apiKey,
               model: "claude-haiku-4-5-20251001",
               pass: "critic-2",
               client: data.client,
@@ -1375,9 +1332,6 @@ export const escalatePlanDay = createServerFn({ method: "POST" })
       .maybeSingle();
     const previousMeta: any = existingRow?.validation_meta ?? {};
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, day_number, days_per_week, duration_weeks } = data;
     const ESCALATE_MODEL: AnthropicModelId = "claude-sonnet-4-5-20250929";
     const safetyBlock = buildSafetyBlock(data.assessment);
@@ -1392,27 +1346,19 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       `\n\nGENERATE: week ${week_number} of ${duration_weeks}, day ${day_number} of ${days_per_week}.`;
 
     const t0 = Date.now();
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ESCALATE_MODEL,
-        max_tokens: 8000,
-        system: sys,
-        messages: [{ role: "user", content: userMsg }],
-        tools: [
-          {
-            name: "emit_workout_day",
-            description: "Emit one training day",
-            input_schema: SingleDayPlanSchema,
-          },
-        ],
-        tool_choice: { type: "tool", name: "emit_workout_day" },
-      }),
+    const res = await anthropicCompatFetch({
+      model: ESCALATE_MODEL,
+      max_tokens: 8000,
+      system: sys,
+      messages: [{ role: "user", content: userMsg }],
+      tools: [
+        {
+          name: "emit_workout_day",
+          description: "Emit one training day",
+          input_schema: SingleDayPlanSchema as unknown as Record<string, unknown>,
+        },
+      ],
+      tool_choice: { type: "tool", name: "emit_workout_day" },
     });
 
     if (!res.ok) {
@@ -1435,7 +1381,6 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       focus: day?.focus,
     });
     const critic = await criticDay({
-      apiKey,
       model: ESCALATE_MODEL,
       pass: "escalate-critic",
       client: data.client,
