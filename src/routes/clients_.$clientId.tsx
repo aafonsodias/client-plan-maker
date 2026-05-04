@@ -2914,7 +2914,7 @@ function ClientDetail() {
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            {plans.length === 1 ? "Plano" : "Histórico de planos"}
+            {plans.length === 1 ? "Gerar próximo bloco" : "Histórico de planos"}
           </h2>
           <div className="flex items-center gap-2">
             <Button
