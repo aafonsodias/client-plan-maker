@@ -1549,6 +1549,7 @@ function RegenerateWithFeedbackDialog({
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<"idle" | "context" | "ai" | "saving" | "done">("idle");
   const generateFn = useServerFn(generatePlanDraft);
 
   const submit = async () => {
@@ -1557,6 +1558,7 @@ function RegenerateWithFeedbackDialog({
       return;
     }
     setBusy(true);
+    setStage("context");
     try {
       // Pull client + assessment for context
       const { data: client, error: clientErr } = await supabase
@@ -1590,6 +1592,7 @@ function RegenerateWithFeedbackDialog({
         })),
       };
 
+      setStage("ai");
       const result = await generateFn({
         data: {
           client: {
@@ -1614,26 +1617,44 @@ function RegenerateWithFeedbackDialog({
         throw new Error(result.error);
       }
 
+      setStage("saving");
       // Persist new plan_data + title/summary
       const newWeeks = result.plan.weeks ?? [];
+      // Read current version so we can bump it (stale-session detection).
+      const { data: cur } = await supabase
+        .from("workout_plans")
+        .select("plan_data_version")
+        .eq("id", planId)
+        .maybeSingle();
+      const nextVersion = ((cur?.plan_data_version as number | null) ?? 1) + 1;
       const { error: upErr } = await supabase
         .from("workout_plans")
         .update({
           title: result.plan.title || previousPlan.title,
           summary: result.plan.summary || previousPlan.summary,
           plan_data: { weeks: newWeeks },
+          plan_data_version: nextVersion,
         })
         .eq("id", planId);
       if (upErr) throw upErr;
 
       onRegenerated({ title: result.plan.title, summary: result.plan.summary, weeks: newWeeks });
-      toast.success("Plan regenerated with your feedback");
+      setStage("done");
+      const totalEx = newWeeks.reduce(
+        (acc: number, w: any) =>
+          acc + (w.days ?? []).reduce((a: number, d: any) => a + (d.exercises ?? []).length, 0),
+        0,
+      );
+      toast.success("Plan regenerated", {
+        description: `Wave-RPE applied · ${newWeeks.length} weeks · ${totalEx} exercises. Older sessions moved to "Archived".`,
+      });
       setFeedback("");
       setOpen(false);
     } catch (e: any) {
       toast.error(e.message ?? "Regeneration failed");
     } finally {
       setBusy(false);
+      setStage("idle");
     }
   };
 
@@ -1662,9 +1683,25 @@ function RegenerateWithFeedbackDialog({
             onChange={(e) => setFeedback(e.target.value)}
             placeholder={`E.g. "Week 2 Day 3: drop back squat — client reports knee discomfort. Replace with goblet squat or split squat. Cap RPE at 7 for all squat patterns."`}
           />
-          <p className="text-[11px] text-muted-foreground">
-            The previous plan structure and rationales are sent as context so the AI keeps what worked.
-          </p>
+          <div className="rounded-md border border-border/60 bg-muted/30 p-2 text-[11px] text-muted-foreground space-y-1">
+            <p>
+              Wave-loading periodisation is auto-injected (W1 base → W2 +volume → W3 +intensity → W4 deload, anchored by training age). Your feedback can shift the anchor but cannot flatten the wave — that&apos;s the program working.
+            </p>
+            <p>
+              Older sessions stay archived under this plan so your logging history isn&apos;t lost.
+            </p>
+          </div>
+          {busy && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-200">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>
+                {stage === "context" && "Reading client + assessment context…"}
+                {stage === "ai" && "Asking the AI to redesign with wave-RPE (~30s)…"}
+                {stage === "saving" && "Saving new plan + archiving old sessions…"}
+                {stage === "done" && "Done."}
+              </span>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>Cancel</Button>
