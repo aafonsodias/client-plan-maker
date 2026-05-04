@@ -2736,30 +2736,59 @@ function ClientDetail() {
                   {(() => {
                     const isComplete = stage === "complete";
                     if (isComplete) {
+                      const totalWeeks = Math.max(1, (p as any).duration_weeks ?? 1);
+                      const tagFor = (wn: number, total: number) => {
+                        if (total <= 1) return "base";
+                        if (wn === total) return "deload";
+                        if (wn === 1) return "base";
+                        return wn % 2 === 0 ? "+load" : "+reps";
+                      };
+                      // default = current week (latest week marker if we have it; else W1)
+                      const defaultWeek = 1;
                       return (
-                        <button
-                          type="button"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const tId = toast.loading("A preparar PDF…");
-                            try {
-                              await downloadPlanById(p.id);
-                              toast.success("PDF descarregado.", { id: tId });
-                            } catch (err: any) {
-                              toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20"
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         >
-                          <Download className="h-3 w-3" /> Descarregar PDF
-                        </button>
+                          <select
+                            defaultValue={String(defaultWeek)}
+                            id={`week-${p.id}`}
+                            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+                            aria-label="Semana"
+                          >
+                            {Array.from({ length: totalWeeks }).map((_, i) => {
+                              const wn = i + 1;
+                              return (
+                                <option key={wn} value={wn}>
+                                  W{wn} · {tagFor(wn, totalWeeks)}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const sel = document.getElementById(`week-${p.id}`) as HTMLSelectElement | null;
+                              const wn = sel ? parseInt(sel.value, 10) : 1;
+                              const tId = toast.loading(`A preparar PDF da Semana ${wn}…`);
+                              try {
+                                await downloadPlanById(p.id, wn);
+                                toast.success("PDF descarregado.", { id: tId });
+                              } catch (err: any) {
+                                toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20"
+                          >
+                            <Download className="h-3 w-3" /> Descarregar Semana
+                          </button>
+                        </div>
                       );
                     }
                     const s = planStatusInfo(p as any, tCommon as any);
                     return (
                       <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
-                        {isPhasedDraft ? `Stage: ${s.label}` : s.label}
+                        {isPhasedDraft ? `Etapa: ${s.label}` : s.label}
                       </span>
                     );
                   })()}

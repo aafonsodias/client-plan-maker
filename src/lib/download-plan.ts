@@ -7,7 +7,7 @@ import type { PlanData, Day, Week } from "@/lib/pdf";
  * /plans/$planId first. Mirrors the loader logic in plans.$planId.tsx but
  * stripped of UI state.
  */
-export async function downloadPlanById(planId: string): Promise<void> {
+export async function downloadPlanById(planId: string, weekNumber?: number): Promise<void> {
   const { data: plan } = await supabase
     .from("workout_plans")
     .select("*")
@@ -101,6 +101,7 @@ export async function downloadPlanById(planId: string): Promise<void> {
       block_number: (plan as any).block_number ?? 1,
       block_transition_summary: (plan as any).block_transition_summary ?? null,
       block_evolution: null,
+      week_number: weekNumber ?? null,
     },
     data,
     {

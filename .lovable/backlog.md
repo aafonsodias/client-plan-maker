@@ -157,3 +157,27 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1: WeekMatrix desktop view (D from R35 plan)
 - P1: VerifiedBadge (F from R35 plan)
 - P1: PDF richness footer (uses `assessment_completion_pct` already persisted)
+
+## Closed Round 38 (finish-line polish)
+- Dashboard: removed Recent plans + Plans by status (focus = clients/alerts).
+- Stage 4: approved-day shows quiet emerald chip + small Unlock link instead of amber CTA.
+- Stage 5: inlined ProgressionsPanel with how-to-edit guide; approveProgressions now triggers bulkFillRemainingWeeks so weeks 2–N are real.
+- Plano final: direct PDF download via downloadPlanById (no nav to /plans/$id).
+- Duration mismatch: phased draft now stores duration_weeks from assessment.
+- ClientAvatar: verified prop + amber BadgeCheck overlay.
+- AppShell: BadgeCheck added next to Founder pill (visible verified marker).
+- i18n: "Gerar Microcycle/Progressions" → PT-correct strings; "Stage:" → "Etapa:".
+
+## Closed Round 39 (weekly PDF + finish R38)
+- PDF: weekly mode (`PdfMeta.week_number`). Renders one cover (with macro index strip + "Esta semana" session list + honest BLOCK/WEEK/SESSIONS KPIs) + one page per session. Walked back full-block export — PTs print weekly and update on weekends.
+- PDF: macro index strip = N chips (W1..WN) with current highlighted + 1-word tag (base/+load/+reps/deload).
+- PDF: exercise name column widened to 220pt + wraps to 2 lines (no more "Reverse Hyperextension Bodywei…" clipping).
+- PDF: footer per page now reads `Forge · {client} · Bloco N · Semana W · email`.
+- Plano final UI: per-week selector + "Descarregar Semana" button replaces single "Descarregar PDF".
+- AppShell: founder pill now also carries the verified BadgeCheck (visible marker requested).
+- i18n cleanup: removed mixed PT/EN ("Gerar Microcycle/Progressions", "Stage:").
+
+## Open after Round 39
+- WeekMatrix desktop view (carry-over).
+- Adaptive repeat assessments — first = rich baseline, subsequent = small contextual re-checks; question/measurement set adapts to goal/context (glutes for women prioritising glutes, biceps for men prioritising arms, etc.). Parked, real round of work.
+- Backend-stored "verified" flag (currently founder-only via email gate). Real cert/verification pipeline is out of scope.

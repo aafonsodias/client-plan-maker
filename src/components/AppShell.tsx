@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange } from "lucide-react";
+import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange, BadgeCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { ShareAppButton } from "@/components/ShareAppButton";
 import { Logo } from "@/components/Logo";
@@ -147,6 +147,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               >
                 <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
                 <span className="hidden lg:inline leading-none">Founder</span>
+                <BadgeCheck className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} aria-label="Verified" />
               </span>
             )}
           </Link>

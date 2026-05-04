@@ -1,112 +1,74 @@
-## Round 38 plan — make the finish line usable and honest
+## Round 39 — Weekly-only PDF + finish R38 backlog
 
-### What I’ll fix
+You're right to walk back the "12-week PDF" direction. PTs print one week at a time and update on weekends. The PDF should be a **single-week clipboard tool with a compact macro/meso index strip** so you always know where this week sits in the block. Less paper, more useful.
 
-1. **Dashboard cleanup**
-   - Remove **Recent plans** from `/dashboard`.
-   - Remove **Plans by status** from `/dashboard`.
-   - Keep dashboard focused on clients, alerts, onboarding, and actions. Plans stay inside each client profile.
+### 1. Weekly PDF (the main change)
 
-2. **Day approval cleanup in Stage 4**
-   - When a day is already approved, replace the amber **“Approve day 1”** button with a quiet approved state/check.
-   - Keep **Unlock/regenerate** available only when useful, so approved days do not look like they still need action.
+- Make `generatePlanPdf` accept `{ weekNumber }` and render **only that week** (cover + 1 page per session, landscape A4).
+- Add a **compact macro index strip** to the cover:
+  - Row of N small chips (one per week of the block), current week highlighted.
+  - Each chip shows week number + a 1-word tag (`base`, `+load`, `+reps`, `deload`).
+  - Block label: `Bloco N · Semana W de Total` so you orient at a glance.
+- Drop the old "all weeks at once" rendering paths and the 12-week cover totals that were lying (DURATION 4 wk, TOTAL SESSIONS 5).
+- Cover totals become honest: `DURATION 1 wk · SESSIONS THIS WEEK X`.
 
-3. **Stage 5 becomes a coaching tool, not a spreadsheet of mysteries**
-   - Redesign `ProgressionsPanel` around a clear weekly ramp:
-     - **Week 1:** base week.
-     - **Weeks 2–3/11:** progressive overload.
-     - **Final week:** deload / unload.
-   - Add a short “How to edit” guide directly in Stage 5:
-     - load examples: `+2.5kg`, `+5%`, `-10%`
-     - reps examples: `+1rep`, `+2reps`, `-1rep`
-     - sets examples: `+1set`, `-1set`
-     - RPE examples: `+0.5rpe`, `-1rpe`
-     - guidance on when to prefer reps vs load vs sets.
-   - Rename the visible concept away from “39 deltas” as the main thing. The user should see **exercise progressions grouped by exercise/week**, with the row count as secondary metadata only.
-   - Add a **micro summary per exercise** showing the intended strategy: load, reps, sets, RPE, deload.
-   - Make it clear these fields are optional coach overrides, and the normal path is: review → regenerate if wrong → approve.
+### 2. Per-week download UI
 
-4. **Fix Stage 5 finalization so the final plan really has all weeks**
-   - Currently `approveProgressions` marks the plan complete but does **not** run the bulk-fill step that creates weeks 2+ from the progression plan. That explains why the PDF/page only showed Week 1.
-   - Wire `bulkFillRemainingWeeks` into the Stage 5 approval flow, so approving progressions:
-     1. saves the progressions,
-     2. creates the remaining weeks,
-     3. marks the plan `ready/complete`,
-     4. refreshes the client final plan list.
-   - Update the final plan list query to include `duration_weeks`, `generation_status`, `block_number`, etc., so rows don’t lose required metadata after refresh.
+- In **Plano final** (`clients_.$clientId.tsx`), replace the single "Descarregar PDF" pill with a small week selector:
+  - Default = current week (latest week with `approved_at` on any day, else W1).
+  - Dropdown of weeks 1..N with the same `base/+load/+reps/deload` tag.
+  - Primary button = "Descarregar Semana W (PDF)".
+- `downloadPlanById(planId, weekNumber?)` — pass through to `generatePlanPdf`.
+- Keep "open full plan page" only as a quiet secondary link (it's the in-app log; PT works from PDF).
 
-5. **Fix duration mismatch**
-   - The phased plan draft currently inserts without `duration_weeks`, so the flow defaults to **4 weeks** even if the assessment UI says 12.
-   - Pass/store the selected assessment duration when starting the phased plan draft, so a 12-week plan remains 12 weeks through brief, blueprint, progressions, PDF, and final view.
+### 3. PDF table polish
 
-6. **Make the final PDF button a real download, not a route jump**
-   - Replace the green “Descarregar PDF” pill/link in **Plano final** with a single true export button.
-   - Clicking it will generate/download the PDF directly from the client page instead of navigating to `/plans/$planId` first.
-   - Keep opening the plan/page as a secondary, less prominent action only if needed.
-   - Remove redundant green button/card wording where it repeats the same action.
+- Fix table column clipping observed in your sample PDF (`10-1…`, `Reverse Hyperextension Bodywei…`):
+  - Recompute exercise-name column width from page width minus measured stat columns; let it grow now that we only render one session per page.
+  - Wrap exercise names to a 2nd line instead of truncating.
+- Fix mixed PT/EN headers in PDF (`SETS/REPS/REST/RPE/NOTES`) — drive from i18n `pdf.*` keys, default PT.
+- Add a tiny footer per session page: `Forge · {client} · Bloco N · Semana W · gerado {date}`.
 
-7. **PDF red-team fixes from your uploaded PDF**
-   - The parsed PDF confirms the current export has major issues:
-     - cover says **DURATION 4 wk** even though you expected 12;
-     - **TOTAL SESSIONS** shows 5 instead of duration × sessions/week;
-     - only Week 1 pages appear;
-     - table columns clip text heavily (`10-1…`, `Reverse Hyperextension Bodywei…`);
-     - mixed PT/EN labels and malformed table rows appear on some pages.
-   - After fixing Stage 5 finalization, update PDF generation to better reflect all generated weeks and avoid misleading totals.
-   - If the current PDF layout still cannot fit 12 weeks cleanly, I’ll make the PDF honest: cover + session archetype pages + clear week progression columns/notes rather than pretending every week is rendered when only Week 1 appears.
+### 4. Founder verified badge wiring
 
-8. **Assessment polish and redundancy reduction**
-   - Remove the extra green success banner/button that duplicates the Assessment/first-stage completion state.
-   - Keep one unified assessment row/card as the source of truth.
-   - Leave the assessment mostly as-is because it is “almost good”, but reduce redundant CTAs and make completion/synthesis cleaner.
-   - Add a backlog note for future **adaptive repeat assessments**:
-     - first assessment = rich baseline;
-     - later assessments = smaller context-aware re-checks;
-     - measurements/questions adapt to goal/context, e.g. glute measurements for a woman prioritizing glutes, arm measurements for a man prioritizing biceps.
+- `ClientAvatar` already accepts `verified`. Wire it on:
+  - The header avatar in `AppShell` for the founder email (`aafonsodias@gmail.com`).
+  - The profile/settings avatar surface.
+- No backend change needed — same gate as the existing Founder pill.
 
-9. **Verified/certified badge on profile photo**
-   - Add a small certified badge overlay to the client/profile photo when the account/profile is verified enough for the app’s current logic.
-   - For your founder account, ensure it appears on the photo area as a subtle badge, separate from the existing Founder pill.
-   - I’ll avoid implying external credential verification unless the backend actually stores that; visually it will read as an in-app certified/verified profile marker.
+### 5. i18n + copy sweep
 
-10. **Language/i18n cleanup**
-   - Fix remaining mixed strings such as **“Gerar Progressions”**, **“Gerar Microcycle”**, and Stage copy in Portuguese.
-   - Move new visible copy to i18n files.
-   - Keep PT voice as formal/neutral **você**.
+- Remaining mixed strings: "Gerar Microcycle", "Gerar Progressions", any lingering "Stage:" prefix in the Plano final row.
+- Move the new weekly-PDF copy (`pdf.weekly.*`, `detail.plans.download_week`, week tags) to `pt/plan.json` + `en/plan.json`.
 
-### Technical notes
+### 6. Backlog housekeeping (close out R38)
 
-- Files likely touched:
-  - `src/routes/dashboard.tsx`
-  - `src/components/MicrocyclePanel.tsx`
-  - `src/components/ProgressionsPanel.tsx`
-  - `src/components/ProgressionExerciseCard.tsx`
-  - `src/server/phased/stage1-brief.functions.ts`
-  - `src/server/phased/stage4-progressions.functions.ts`
-  - `src/server/phased/stage5-bulkfill.functions.ts`
-  - `src/routes/clients_.$clientId.tsx`
-  - `src/routes/plans.$planId.tsx`
-  - `src/lib/pdf.ts`
-  - `src/components/ClientAvatar.tsx` / `ClientAvatarUpload.tsx`
-  - `src/i18n/locales/pt/*`, `src/i18n/locales/en/*`
-  - `.lovable/backlog.md`
+- Mark R38 items done in `.lovable/backlog.md`.
+- Open R39 section listing the items above + carry-overs:
+  - WeekMatrix desktop view (was R36 deferred) — defer again, real round of work.
+  - Adaptive repeat assessments (rich baseline → small contextual re-checks) — note as parked.
 
-- I’ll keep the inline-stage rule: no stage should navigate away from `/clients/$id`.
-- No new database tables are needed for this round.
-- I may need a small function/API helper for direct client-page PDF export if the existing route-only PDF exporter is too coupled to `/plans/$planId` UI state.
+### Files touched
+
+- `src/lib/pdf.ts` — weekly mode, macro index strip, table widths, i18n headers.
+- `src/lib/download-plan.ts` — accept `weekNumber`.
+- `src/routes/clients_.$clientId.tsx` — week selector in Plano final.
+- `src/components/AppShell.tsx` (or wherever the header avatar lives) — pass `verified` for founder.
+- `src/i18n/locales/{pt,en}/plan.json` (+ `common.json` for week tags).
+- `.lovable/backlog.md`.
+
+### Out of scope
+
+- No DB changes.
+- No engine/prompt changes (engine stays frozen this round).
+- No new PDF for full-block export — explicitly walked back per your note.
 
 ### Expected result
 
-The end-to-end flow should feel like:
-
 ```text
-Assessment complete
-→ Brief approved
-→ Master plan approved
-→ Week approved
-→ Progression strategy clearly reviewed/approved
-→ Final plan appears only when real weeks exist
-→ One beautiful PDF download button
+Plano final
+  Bloco 2 · Semana 3 de 4   [base] [+load] [+reps●] [deload]
+  [ Descarregar Semana 3 (PDF) ▾ ]   open plan page
 ```
 
-And the dashboard stops acting like a plan archive.
+PDF you print on Sunday: 1 cover with the week-strip, then one page per session, names no longer clipped, headers in PT, honest totals.

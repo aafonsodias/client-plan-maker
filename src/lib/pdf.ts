@@ -91,6 +91,13 @@ export type PdfMeta = {
     deltaPct: number | null;
     verdict: "gain" | "flat" | "regression" | "unknown";
   }> | null;
+  /**
+   * If set, render ONLY this week (1-indexed) instead of every week in the plan.
+   * The cover then shows a compact macro-index strip highlighting where this
+   * week sits in the meso/macro. PTs print one week at a time and update on
+   * weekends, so single-week is the default rendering mode.
+   */
+  week_number?: number | null;
 };
 
 // ---------- Asset + luminance helpers ----------
@@ -229,9 +236,11 @@ function setDraw(doc: jsPDF, c: [number, number, number]) {
  */
 export async function generatePlanPdf(
   meta: PdfMeta,
-  plan: PlanData,
+  planArg: PlanData,
   branding: PdfBranding,
 ) {
+  // local mutable alias so we can substitute a filtered (single-week) view below
+  let plan: PlanData = planArg;
   // Landscape A4 — 842 × 595 pt. Wider canvas means the dense exercise
   // table no longer clips and we can fit one whole session per page.
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
@@ -252,6 +261,28 @@ export async function generatePlanPdf(
   }
 
   const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
+
+  // ---------- Weekly mode setup ----------
+  // If meta.week_number is provided, filter plan.weeks down to just that week
+  // for archetype/session rendering, but keep allWeeks for the macro-index strip.
+  const allWeeks = plan.weeks ?? [];
+  const totalWeeksInPlan = allWeeks.length;
+  const selectedWeekN = meta.week_number ?? null;
+  const renderWeeks = selectedWeekN
+    ? allWeeks.filter((w) => w.week_number === selectedWeekN)
+    : allWeeks;
+  // Re-bind plan to a filtered version for the rest of the function so the
+  // existing archetype loop just works without further changes.
+  plan = { ...plan, weeks: renderWeeks };
+
+  // Tag a week (heuristic for the macro-index strip)
+  const weekTag = (wn: number, total: number): string => {
+    if (total <= 1) return "base";
+    if (wn === total) return "deload";
+    if (wn === 1) return "base";
+    // alternate +load / +reps for middle weeks
+    return wn % 2 === 0 ? "+load" : "+reps";
+  };
 
   const paintPage = () => {
     setFill(doc, theme.bg);
@@ -289,7 +320,12 @@ export async function generatePlanPdf(
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    const left = [branding.business_name, branding.contact_email].filter(Boolean).join("  ·  ");
+    const blockLabel = meta.week_number
+      ? `Bloco ${meta.block_number ?? 1} · Semana ${meta.week_number}`
+      : null;
+    const left = [branding.business_name, meta.client_name, blockLabel, branding.contact_email]
+      .filter(Boolean)
+      .join("  ·  ");
     if (left) doc.text(left, M, H - 22);
     doc.text(`${pageIdx} / ${total}`, W - M, H - 22, { align: "right" });
   };
@@ -444,19 +480,27 @@ export async function generatePlanPdf(
     y += sumLines.length * 11 + 10;
   }
 
-  // KPI strip
-  const totalSessions = (plan.weeks ?? []).reduce((acc, w) => acc + (w.days?.length ?? 0), 0);
-  const totalExercises = (plan.weeks ?? []).reduce(
+  // KPI strip — honest in weekly mode (this week only)
+  const sessionsThisRender = (plan.weeks ?? []).reduce((acc, w) => acc + (w.days?.length ?? 0), 0);
+  const exercisesThisRender = (plan.weeks ?? []).reduce(
     (a, w) => a + (w.days ?? []).reduce((b, d) => b + (d.exercises?.length ?? 0), 0), 0,
   );
-  const sessionsPerWeek = plan.weeks?.length ? Math.round(totalSessions / plan.weeks.length) : 0;
-  const kpis: [string, string][] = [
-    ["DURATION", meta.duration_weeks ? `${meta.duration_weeks} wk` : `${plan.weeks?.length ?? 0} wk`],
-    ["SESSIONS / WK", String(sessionsPerWeek)],
-    ["TOTAL SESSIONS", String(totalSessions)],
-    ["EXERCISES", String(totalExercises)],
-    ["ARCHETYPES", String(archetypes.length)],
-  ];
+  const totalMesoWeeks = meta.duration_weeks ?? totalWeeksInPlan ?? plan.weeks?.length ?? 0;
+  const kpis: [string, string][] = selectedWeekN
+    ? [
+        ["BLOCK", `${meta.block_number ?? 1}`],
+        ["WEEK", `${selectedWeekN} / ${totalMesoWeeks || "?"}`],
+        ["SESSIONS", String(sessionsThisRender)],
+        ["EXERCISES", String(exercisesThisRender)],
+        ["ARCHETYPES", String(archetypes.length)],
+      ]
+    : [
+        ["DURATION", `${totalMesoWeeks || plan.weeks?.length || 0} wk`],
+        ["SESSIONS / WK", plan.weeks?.length ? String(Math.round(sessionsThisRender / plan.weeks.length)) : "0"],
+        ["TOTAL SESSIONS", String(sessionsThisRender)],
+        ["EXERCISES", String(exercisesThisRender)],
+        ["ARCHETYPES", String(archetypes.length)],
+      ];
   const kpiW = (W - M * 2 - 8 * (kpis.length - 1)) / kpis.length;
   for (let i = 0; i < kpis.length; i++) {
     const x = M + i * (kpiW + 8);
@@ -534,54 +578,121 @@ export async function generatePlanPdf(
     }
   }
 
-  // Plan-at-a-glance: one row per archetype × week
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text("PLAN AT A GLANCE", M, y);
-  y += 4;
-  setDraw(doc, theme.rule);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, W - M, y);
-  y += 12;
-
-  // Header row
-  const glanceLeftW = 220;
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.5);
-  doc.text("SESSION", M, y);
-  doc.text("FOCUS", M + 110, y);
-  for (let wi = 0; wi < numWeeks; wi++) {
-    const wx = M + glanceLeftW + 60 + wi * 80;
-    doc.text(`W${wi + 1} EX`, wx, y, { align: "center" });
-  }
-  y += 4;
-  setDraw(doc, theme.rule);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, W - M, y);
-  y += 10;
-
-  for (const arc of archetypes) {
-    if (y + 14 > H - M - 20) break;
-    setText(doc, theme.ink);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(fitText(arc.label, 100), M, y);
+  // ---------- Macro index strip (weekly mode) ----------
+  // Compact row of N chips, one per week of the meso, current week highlighted.
+  // PT prints one week at a time and needs to know where this week sits in
+  // the block at a glance.
+  if (selectedWeekN && totalMesoWeeks > 0) {
     setText(doc, theme.inkMuted);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(fitText(arc.focus || "—", glanceLeftW - 10), M + 110, y);
-    for (let wi = 0; wi < numWeeks; wi++) {
-      const wx = M + glanceLeftW + 60 + wi * 80;
-      const w = arc.weeks.find((ww) => ww.week_number === wi + 1);
-      const exCount = w?.day.exercises?.length ?? 0;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(`BLOCO ${meta.block_number ?? 1} · SEMANA ${selectedWeekN} DE ${totalMesoWeeks}`, M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+
+    const stripW = W - M * 2;
+    const gap = 6;
+    const chipW = (stripW - gap * (totalMesoWeeks - 1)) / totalMesoWeeks;
+    const chipH = 28;
+    for (let i = 0; i < totalMesoWeeks; i++) {
+      const wn = i + 1;
+      const cx = M + i * (chipW + gap);
+      const isCur = wn === selectedWeekN;
+      if (isCur) {
+        setFill(doc, theme.accent);
+        doc.rect(cx, y, chipW, chipH, "F");
+        setText(doc, theme.bg);
+      } else {
+        setFill(doc, theme.bgSubtle);
+        doc.rect(cx, y, chipW, chipH, "F");
+        setText(doc, theme.inkMuted);
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text(`W${wn}`, cx + chipW / 2, y + 11, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(weekTag(wn, totalMesoWeeks), cx + chipW / 2, y + 22, { align: "center" });
+    }
+    y += chipH + 14;
+
+    // THIS WEEK session list (no cross-week deltas — those live in-app)
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("ESTA SEMANA", M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+    for (const arc of archetypes) {
+      if (y + 14 > H - M - 20) break;
       setText(doc, theme.ink);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.text(exCount ? `${exCount}` : "—", wx, y, { align: "center" });
+      doc.text(fitText(arc.label, 160), M, y);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.focus || "—", W - M * 2 - 260), M + 170, y);
+      const exCount = arc.base.exercises?.length ?? 0;
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(`${exCount} ex`, W - M, y, { align: "right" });
+      y += 13;
     }
-    y += 13;
+  } else {
+    // Legacy multi-week glance (kept for back-compat; unused once weekly mode is default)
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("PLAN AT A GLANCE", M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+    const glanceLeftW = 220;
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text("SESSION", M, y);
+    doc.text("FOCUS", M + 110, y);
+    for (let wi = 0; wi < numWeeks; wi++) {
+      const wx = M + glanceLeftW + 60 + wi * 80;
+      doc.text(`W${wi + 1} EX`, wx, y, { align: "center" });
+    }
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 10;
+    for (const arc of archetypes) {
+      if (y + 14 > H - M - 20) break;
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.label, 100), M, y);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.focus || "—", glanceLeftW - 10), M + 110, y);
+      for (let wi = 0; wi < numWeeks; wi++) {
+        const wx = M + glanceLeftW + 60 + wi * 80;
+        const w = arc.weeks.find((ww) => ww.week_number === wi + 1);
+        const exCount = w?.day.exercises?.length ?? 0;
+        setText(doc, theme.ink);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(exCount ? `${exCount}` : "—", wx, y, { align: "center" });
+      }
+      y += 13;
+    }
   }
 
   // ============================================================
@@ -676,7 +787,7 @@ export async function generatePlanPdf(
       // so the trainer reads and writes on the SAME row. Week-over-week
       // progressions are still visible in-app (Mesociclo view).
       const colNumW = 20;
-      const colExW = 170;
+      const colExW = 220;     // wider — single-session-per-page leaves room
       const colCueW = 130;
       const statCols = ["SETS", "REPS", "REST", "RPE", "TEMPO"];
       const statColW = 36;
@@ -742,11 +853,14 @@ export async function generatePlanPdf(
         doc.setFontSize(8.5);
         doc.text(String(i + 1).padStart(2, "0"), xNum + 4, rowTop + 12);
 
-        // Name
+        // Name — wrap to 2 lines instead of ellipsis when long
         setText(doc, theme.ink);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
-        doc.text(fitText(ex.name, colExW - 4), xEx, rowTop + 12);
+        const nameLines = (doc.splitTextToSize(ex.name, colExW - 4) as string[]).slice(0, 2);
+        for (let nli = 0; nli < nameLines.length; nli++) {
+          doc.text(nameLines[nli], xEx, rowTop + 12 + nli * 10);
+        }
 
         // Cue (single line)
         let cueText = (ex.cue ?? "").trim();
@@ -878,7 +992,8 @@ export async function generatePlanPdf(
     drawFooter(i, pageCount);
   }
 
-  doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}.pdf`);
+  const weekSuffix = meta.week_number ? `_W${meta.week_number}` : "";
+  doc.save(`${meta.client_name.replace(/\s+/g, "_")}_${meta.title.replace(/\s+/g, "_")}${weekSuffix}.pdf`);
 }
 
 
