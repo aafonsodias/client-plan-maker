@@ -383,7 +383,7 @@ function Dashboard() {
             </Button>
           )}
           <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> {t("dashboard.view_plans")}</Link></Button>
-          <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> {t("dashboard.manual")}</Link></Button>
+          {/* "Manual" lives in the footer + Atlas genie now; redundant button removed (R45). */}
         </div>
       )}
 
@@ -456,17 +456,24 @@ function Dashboard() {
                   <Link
                     to="/clients/$clientId"
                     params={{ clientId: c.id }}
-                    className="flex flex-1 items-center justify-between px-5 py-4"
+                    className="flex flex-1 items-center gap-3 px-4 py-4 sm:justify-between sm:px-5"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{c.full_name}</p>
-                        <p className="truncate text-sm text-muted-foreground">{c.email ?? t("clients.no_email")}</p>
-                      </div>
-                      {phases[c.id] && <ClientPhasePill phase={phases[c.id]} />}
+                    <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-semibold sm:truncate sm:text-base">{c.full_name}</p>
+                      <p className="truncate text-xs text-muted-foreground sm:text-sm">{c.email ?? t("clients.no_email")}</p>
+                      {phases[c.id] && (
+                        <span className="mt-1 inline-flex sm:hidden">
+                          <ClientPhasePill phase={phases[c.id]} />
+                        </span>
+                      )}
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {phases[c.id] && (
+                      <span className="hidden shrink-0 sm:inline-flex">
+                        <ClientPhasePill phase={phases[c.id]} />
+                      </span>
+                    )}
+                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:inline-block" />
                   </Link>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
