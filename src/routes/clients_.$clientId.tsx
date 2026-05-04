@@ -409,6 +409,9 @@ function ClientDetail() {
   // below). User toggle is persisted per-client.
   const assessmentCollapseKey = `forge_assessment_top_collapsed_${clientId}`;
   const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  // Map plan_id → latest week_number with any approved_at day. Used to default
+  // the per-week PDF download to the most useful week (R40).
+  const [planLatestWeek, setPlanLatestWeek] = useState<Record<string, number>>({});
   useEffect(() => {
     try {
       const v = window.localStorage.getItem(assessmentCollapseKey);
