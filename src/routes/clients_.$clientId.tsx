@@ -2428,12 +2428,9 @@ function ClientDetail() {
                       }
                       if (stageBusy) return;
                       setStageBusy(stage);
-                      const labels: Record<string, string> = {
-                        blueprint: "A gerar plano-mestre…",
-                        microcycle: "A gerar semana-tipo (Semana 1)…",
-                        progressions: "A gerar progressões (Semanas 2–4)…",
-                      };
-                      const tId = toast.loading(labels[stage]);
+                      // No toast.loading — the StageCard "generating" panel is
+                      // the visible source of truth (see R43). Centered white
+                      // toasts here just stole attention from the actual card.
                       try {
                         const res: any =
                           stage === "blueprint"
@@ -2445,17 +2442,17 @@ function ClientDetail() {
                           const prefix = stage[0].toUpperCase() + stage.slice(1);
                           const msg = res?.error || `Falha ao gerar ${stage}`;
                           console.error(`[${prefix}] generate failed`, { planId, stage, error: msg });
-                          toast.error(`${prefix}: ${msg}`, { id: tId });
+                          toast.error(`${prefix}: ${msg}`);
                           return;
                         }
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         if (res?.usedFallback) {
                           toast.success(
                             `${prefix} pronto (fallback determinístico — IA falhou, edite à vontade)`,
-                            { id: tId, duration: 6000 },
+                            { duration: 6000 },
                           );
                         } else {
-                          toast.success(`${prefix} pronto`, { id: tId });
+                          toast.success(`${prefix} pronto`);
                         }
                         void refreshPlans();
                         if (opts?.skipNavigate) return;
@@ -2472,7 +2469,7 @@ function ClientDetail() {
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         const msg = e?.message ?? `Falha ao gerar ${stage}`;
                         console.error(`[${prefix}] generate threw`, { planId, stage, error: msg });
-                        toast.error(`${prefix}: ${msg}`, { id: tId });
+                        toast.error(`${prefix}: ${msg}`);
                       } finally {
                         setStageBusy(null);
                       }
