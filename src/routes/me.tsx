@@ -5,9 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { loadMe } from "@/server/me.functions";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { BrandMark } from "@/components/BrandMark";
-import { Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/me")({
+  validateSearch: (s: Record<string, unknown>): { as?: string } => ({
+    as: typeof s.as === "string" ? s.as : undefined,
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
@@ -16,12 +19,13 @@ export const Route = createFileRoute("/me")({
 });
 
 function MePage() {
+  const search = Route.useSearch();
   const load = useServerFn(loadMe);
   const [state, setState] = useState<any>(null);
 
   useEffect(() => {
-    void (async () => setState(await load()))();
-  }, [load]);
+    void (async () => setState(await load({ data: { as: search.as ?? null } })))();
+  }, [load, search.as]);
 
   if (!state) {
     return (
@@ -49,10 +53,25 @@ function MePage() {
   }
 
   const { client, plan, trainer } = state;
+  const previewing = !!state.previewing;
 
   return (
     <div className="min-h-screen bg-background px-6 py-12">
       <div className="mx-auto max-w-2xl space-y-8">
+        {previewing && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-2">
+              <Eye className="h-3.5 w-3.5" /> Pré-visualização como cliente · {client.full_name}
+            </span>
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId: client.id }}
+              className="rounded-full border border-amber-500/40 bg-amber-500/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest hover:bg-amber-500/30"
+            >
+              Voltar à ficha
+            </Link>
+          </div>
+        )}
         <header className="flex items-center gap-4">
           <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={56} />
           <div>
