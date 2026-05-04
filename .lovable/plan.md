@@ -1,89 +1,113 @@
 
-# Round 54 — Plan-view feedback do user (4 P1 + 1 P2)
+# Round 55 — MVP focus: Log que não perde dados, mobile-first, mapa da app + landing refresh
 
-Continuação direta do Round 53 (que ainda tem P0-RPE/PROTOCOL/PDF por fechar). Aqui foco-me só no que o user reportou agora — **plan view chrome, PR celebration, log overlay**. Adiciono ao backlog e implemento no mesmo turno.
+107 créditos restantes. Vou alocar com critério: o **bug do log a aparecer vazio** é P0 e barato; o **redesign do logbook desktop+mobile** é o item de maior impacto para MVP; mapa da app + landing refresh são entregáveis paralelos baratos. **Open-source recon: passo, mas com defesa** (ver §5).
 
 ---
 
-## 1. PR confetti dispara em cada refresh (P0 — bug, 5 cr)
+## 1. Bug "Log apareceu vazio mas eu já tinha preenchido" (P0 — 8 cr)
 
-**Causa:** em `src/components/plan/LogbookTimeline.tsx:97-114`, `seenRef` é um `useRef(new Set())` em memória. Refresh → set vazio → re-dispara confetti+toast para todas as sessões com PR. E só "alguns" exercícios celebraram porque a deteção de PR (`isPR` em `ExerciseSetsCard.tsx:150`) compara `currentTop > historicalBest` — primeiro treino tem historicalBest=0 então qualquer set conta, mas a agregação por sessão em `LogbookTimeline` filtra por nome de exercício que aparece em `prs[]` calculado pelo hook upstream — vou verificar `usePlanPRs` ou similar para perceber se o filtro está a perder exercícios sem `e1RM` calculável (bodyweight sem carga, hold-time, etc.).
+**Causa exacta** (li `src/routes/plans.$planId.tsx:1188-1295`, função `LogMode`):
+- Cada vez que mudas de dia/semana/data, o `useEffect` em 1204-1221 **reseta `entries` a partir de `plan.exercises`** com sets vazios.
+- A submissão chama `INSERT INTO workout_sessions` (1260) — **nunca lê** se já existe uma sessão para `(plan_id, week, day_label, session_date, logged_by='trainer')`.
+- Resultado: a sessão antiga existe na DB (por isso "History (1)" mostra), mas o formulário arranca em branco e cada `submit` cria uma sessão duplicada com a data de hoje.
 
 **Correção:**
-- **Persistir "celebrado" por sessão**: nova coluna `workout_sessions.pr_celebrated_at timestamptz` (migration). Quando o burst dispara, marca via server function `markPRCelebrated(sessionId)`. Ao carregar, filtra sessões já celebradas → nada de confetti em refresh.
-- **Fallback localStorage** por `planId:sessionId` para o caso de a server-fn falhar (rede caída) — UX nunca quebra mas a fonte da verdade é a DB.
-- Investigar por que apenas "alguns" exercícios marcaram PR no primeiro treino (suspeita: bodyweight sem carga não gera e1RM → ficam de fora da `prs[]`). Se confirmado, alargar deteção para "primeira execução registada de exercício novo" no Block 1 → marca como PR baseline.
+1. Quando o seletor (week/day/date) muda, **fazer lookup local** em `safeSessions` por `(week_number, day_label, session_date, logged_by='trainer')`. Se existir, hidratar `entries` + `notes` a partir dela em vez de zerar.
+2. Mostrar chip "📝 a editar sessão de DD/MM" vs "✨ nova sessão" no header do picker para o trainer perceber qual o estado.
+3. `submit` passa a fazer **upsert**: se `editingSessionId` existe → `UPDATE`; senão → `INSERT`. Sem duplicados.
+4. Toast a desambiguar: "Sessão atualizada" vs "Sessão registada".
 
-## 2. Prescrição + Log lado-a-lado no MesocycleTableView (P1 — 20 cr, redux do Round 53)
+**Não toca em sharing público (`saveClientSession` já tem lógica de upsert por outro caminho).**
 
-Já estava no Round 53 mas reformulo segundo o feedback: **debaixo de cada célula de prescrição, uma linha azul com o que foi efetivamente feito**.
+## 2. Logbook desktop ↔ mobile redesign (P0 — 35 cr)
 
-```
-4×12-15  RPE 8  180-240 sec        ← prescrição (muted)
-4×12 @ 60kg  RPE 8.5  ~200 sec     ← realizado (azul oklch(0.68 0.16 240))
-```
+Este é o core da tua mensagem. Premissa: **PT vê o telemóvel para ver/registar o cliente; cliente regista no telemóvel; tu vês o desktop para passar o olho num bloco.** São 2 jobs diferentes — não vou tentar fazer um layout só.
 
-- Se a sessão dessa célula (week+day+exercise) ainda não foi logada → mostra apenas a prescrição.
-- Se foi parcial → cor mantém-se mas ícone `⚠` antes do texto.
-- Click na linha azul → popover com sets individuais (já existe a data, só costurar).
-- Implementação: novo helper `useSessionActuals(planId)` que devolve `Map<weekDay+exerciseName, ActualRow>` — alimenta `MesocycleTableView` sem mudar a shape do plano.
+### 2.1 Mobile (≤640px) — *fast logging in 3 taps*
+- **Sticky bottom bar** com 3 ações: `← Anterior · Próximo →` + `Guardar` (âmbar). Sempre visível.
+- Cada exercício é um **card colapsável**: header "Bodyweight Squats · Set 2/4 · 12 reps × 60kg" (último set preenchido em destaque).
+- **Stepper grande para reps/peso**: tap-tap-tap, sem teclado a saltar. Botões `+1 / +5 / +0.5kg / +1kg` ao lado do input — copia padrão do FitNotes.
+- **Auto-collapse do exercício** quando todos os sets prescritos estão preenchidos. Vai sozinho ao próximo.
+- **RPE wheel** (oklch âmbar 0-10) no fim de cada exercício, opcional, 1 tap.
+- Sem cabeçalho gordo: o picker de week/day/date colapsa para `Week 1 · Day 1 · 04 mai ▾` (1 linha).
 
-## 3. Header do plano colapsado (P1 — 12 cr)
+### 2.2 Desktop (≥1024px) — *bird's-eye + tabular*
+- Layout **2 colunas**: à esquerda lista de exercícios do dia (sticky), à direita a tabela de sets editável. Click num exercício → scroll-to e foco.
+- **Tabela densa** com `Set | Prescrição | Reps | Peso | RPE | ✓` por linha, edita inline com Tab.
+- **Atalhos**: `Tab`/`Enter` salta de campo; `Cmd+S` guarda; `Cmd+→` próximo dia.
+- Coluna direita extra: **history strip** das últimas 3 execuções desse exercício (carga + reps), trazida pelo `getExerciseHistory` server-fn já existente.
+- **Dirty indicator** no botão Guardar (âmbar pulsante quando há alterações por gravar) + auto-save draft em `localStorage` por `planId+week+day` para resistir a F5.
 
-**Hoje** (vide screenshot): All-plans link → nome → status chip → 8 botões → Summary card → Suggestion card → Bloco card → Banner amarelo de validação → modes → Table/Cards → TSV/MD/Detailed → finalmente o plano. **400+ px vertical antes do plano.**
+### 2.3 Componentização (sem partir nada)
+- Novo `src/components/log/LogPickerCompact.tsx` — picker de 1 linha responsive.
+- Novo `src/components/log/LogExerciseRowMobile.tsx` — card stepper.
+- Novo `src/components/log/LogExerciseTableDesktop.tsx` — tabela inline.
+- `LogMode` em `plans.$planId.tsx` orquestra; usa `useMediaQuery('(min-width: 1024px)')` ou Tailwind `lg:hidden / hidden lg:flex` (preferido — sem JS).
 
-**Proposta:**
-- **Linha 1 (sticky)**: ← All plans · **Nome do cliente truncado mas sempre visível** · Block N chip · Ready chip · `⋯` overflow menu (Share, Assessment, Template, Re-ancorar, Delete, Branding, Import log).
-- **Linha 2 (sticky)**: PDF (primário, âmbar) · Regenerate with feedback · Modes (View/Edit/Log/Resultados/Progresso).
-- **Summary + Suggestion + Bloco + Banner** → todos colapsam num `<details>` único chamado **"Resumo do bloco"** (fechado por defeito, aberto se há `Iniciar Bloco N+1` pendente).
-- Banner "Validação automática indisponível" → só visível dentro do `<details>` (não polui).
-- Remover o toggle Table/Cards quando só há 1 vista útil para o utilizador atual; manter TSV/MD/Detailed dentro de um `Export ▾`.
+## 3. Mapa da app + screenshots (P1 — 12 cr)
 
-**Resultado: ~120 px antes do plano em vez de 400 px.**
+Não consegui autenticar o browser-tool (loading infinito sem sessão) — vou produzir o mapa **a partir do código** + 6 screenshots PNG renderizados a partir das rotas-chave através de um script Puppeteer-em-edge **OU** mais honestamente: peço-te para teres a sessão aberta no preview e eu uso o browser-tool no próximo turno para tirar prints reais. **No turno actual, entrego o mapa textual + identificação visual baseada em código.**
 
-## 4. Nome do cliente nunca colapsa (P1 — 3 cr, dentro do #3)
+Ficheiro `.lovable/app-map.md` com:
+- Diagrama Mermaid das 28 rotas e como se ligam.
+- Por cada rota: **status MVP** (✅ pronto · 🟡 funcional mas tosco · 🔴 falta) + 1 frase do que faz + ficheiros principais.
+- Lista única "MVP-blocking gaps" — máx 5 items que faltam para enviar a v1 honesta.
 
-No screenshot 184C1082 vê-se "André Periquito Af…" truncado com avatar; nos outros mostra só "An…" ou "And". Causa: o nome está num `flex` que cede espaço aos 8 botões. Com a re-arrumação do #3 (botões em overflow menu), o nome ganha `flex-1 min-w-0` e o truncate faz-se só a partir do meio (`text-overflow: ellipsis` com largura mínima de 16ch).
+## 4. Landing page refresh (P1 — 25 cr)
 
-## 5. White-theme: chip "Ready" e "P" do BrandMark com contraste OK (P1 — 5 cr)
+`src/routes/index.tsx` tem 1158 linhas — não vou reescrever, vou **cirurgicamente actualizar 4 secções**:
 
-- O chip verde "Ready" no light mode usa `--success` muito claro sobre fundo branco. Forçar `bg-emerald-50 text-emerald-700 border-emerald-200` no light, mantendo `oklch` atual no dark via `dark:` prefix.
-- O "P" do BrandMark (logo) na barra inferior do screenshot tem o under-glow âmbar mas o glyph quase não se vê em fundo claro — adicionar `text-foreground` explícito + aumentar peso do glyph no light.
+1. **Hero**: trocar promessa para reflectir o estado real ("Periodização honesta + logbook que não te perde + PDF de oferecer ao cliente"). Hoje fala em coisas que ainda não existem.
+2. **5-stage journey strip** (Intake → Brief → Blueprint → Microcycle → Progressions): adicionar sub-bullets do que é real **agora**: red-flag tiers, capacity gain inter-blocos, rotation audit, e1RM PRs com confetti.
+3. **"What's new"** (substitui qualquer fake testimonial): linha do tempo Round 6→54 com 6-8 milestones honestos (multi-block, capacity-gain, rotation audit, PR celebration, light-mode contrast, etc).
+4. **Pricing**: confirmar que os caps (8/30/80) batem com `tier_to_plan_quota` e remover qualquer "soon" que já tenha sido entregue.
+
+**Não toco**: copy legal, FAQ, footer.
+
+## 5. Open-source recon — fazer mas em modo "tomar uma ideia, não importar dependência" (P2 — 7 cr)
+
+Vou navegar a 3 projetos relevantes (browser tool externo) e produzir `.lovable/oss-recon.md` com:
+- **FitNotes** (Android, GPL): padrões de stepper para reps/peso, plate calculator. Não copiamos código, copiamos UX.
+- **wger** (web, AGPL — incompatível com nosso modelo, NÃO importar): exercícios + tradução, mas a parte de planos é fraca. Lessons learned, não código.
+- **OpenWorkout / Gymrats**: histórico de sessões, gráficos de e1RM. Confirmar que o nosso `ExerciseTrendChart` cobre o caso.
+
+**Linha vermelha**: *zero* dependências GPL/AGPL adicionadas. Só MIT/Apache/ISC, e mesmo essas só se encurtarem caminho >2 dias. Hoje provavelmente a recon devolve "padrões UX a copiar" e não "lib a importar" — e isso é o resultado certo.
+
+## 6. Não está incluído (parcado / próximo round)
+
+- Round 53 P0 (RPE periodization, FORGE→PROTOCOL rename, PDF repaint) — fica para Round 56. Quero o Log fix antes porque desbloqueia tudo.
+- Header colapsado do plano (#62/#63 do Round 54) — fica para Round 56 também, depois do RPE.
+- Mesocycle table com overlay azul (#61) — depende do RPE periodization.
+- "Acompanhar treino do cliente em tempo real / lembretes / receita semanal":
+  - **Receita semanal** já existe em `src/routes/schedule.tsx` (revenue panel, R28). Posso só **promovê-la ao dashboard** num próximo round (Round 57, ~10 cr).
+  - **Lembretes / push** seria backend-pesado (cron + email/push provider) → Round 58+, requer decisão de canal (email Resend já está; push é outro projecto).
 
 ---
 
-## Backlog — adicionar entradas
+## Custo total: ~87 cr (sobra 20 para imprevistos)
 
-```
-| 60 | P0 | Plan page | PR confetti idempotente: workout_sessions.pr_celebrated_at + fallback localStorage | R54 |
-| 61 | P1 | Plan page | Mesocycle table: linha azul "realizado" debaixo de cada prescrição | R54 |
-| 62 | P1 | Plan page | Header colapsado: 2 linhas sticky + Resumo do bloco em <details> | R54 |
-| 63 | P1 | Plan page | Nome do cliente sempre visível (flex-1 min-w-0 + overflow menu p/ botões) | R54 |
-| 64 | P1 | Theme  | Light-mode contraste: chip Ready + glyph BrandMark | R54 |
-| 65 | P2 | Plan page | Avaliar deteção de PR para bodyweight/hold (sem e1RM) — baseline no Block 1 | R54+ |
-```
+| Tarefa | Cr | Prioridade |
+|---|---|---|
+| 1. Log re-edita em vez de duplicar | 8 | P0 bug |
+| 2. Logbook mobile+desktop redesign | 35 | P0 |
+| 3. Mapa da app + status MVP | 12 | P1 |
+| 4. Landing refresh (4 secções) | 25 | P1 |
+| 5. OSS recon (3 projectos, MD report) | 7 | P2 |
+| **Total** | **87** | |
 
----
+## Ficheiros tocados
 
-## Ficheiros tocados (estimativa)
+- `src/routes/plans.$planId.tsx` — `LogMode` refactor (orquestrador, ~80 linhas mudadas)
+- `src/components/log/LogPickerCompact.tsx` — novo
+- `src/components/log/LogExerciseRowMobile.tsx` — novo
+- `src/components/log/LogExerciseTableDesktop.tsx` — novo
+- `src/components/log/useDirtyDraft.ts` — novo (autosave LS)
+- `src/routes/index.tsx` — 4 secções
+- `.lovable/app-map.md` — novo
+- `.lovable/oss-recon.md` — novo
+- `.lovable/backlog.md` — entradas 70-75
 
-- `supabase/migrations/<ts>_pr_celebrated_at.sql` — nova coluna + index
-- `src/server/sessions.functions.ts` — `markPRCelebrated`
-- `src/components/plan/LogbookTimeline.tsx` — usar `pr_celebrated_at` como fonte
-- `src/components/plan/MesocycleTableView.tsx` — overlay de actuals
-- `src/hooks/useSessionActuals.ts` — novo
-- `src/routes/plans.$planId.tsx` — header refactor (2-line sticky + details)
-- `src/components/BrandMark.tsx` + `src/lib/status-tone.ts` — light-theme tokens
-- `.lovable/backlog.md` — entradas 60-65
+## Pergunta antes de seguir
 
-## Custo estimado: ~45 cr
-
-(separado dos ~125 cr ainda pendentes do Round 53 para PROTOCOL+PDF+RPE periodization)
-
-## O que NÃO está incluído
-
-- Round 53 P0 RPE periodization, FORGE→PROTOCOL rename, PDF repaint — esses ficam para o turno seguinte (já aprovados, só falta executar).
-- AI-coach, longitudinal, cliente page rewrite — Round 55+.
-- Reescrita de CUEs.
-
-Aprovas para executar agora? Posso encadear isto **antes** ou **depois** dos P0 do Round 53 — recomendo **depois** porque o RPE periodization muda a shape das células do MesocycleTableView e quero fazer o overlay azul (#2) sobre a versão final.
+A 2.1 (mobile redesign) é a única decisão que pode beliscar a tua estética: o **stepper grande +1/+5/+0.5/+1kg** é UX de gym-bro app (FitNotes-style). Funciona bem mas é menos "minimalista craft". Alternativa é **só inputs maiores com `inputmode='decimal'`** — mais sóbrio, menos rápido. **Default vou no stepper porque "looks → function → ease" inverte para "ease" quando o cliente está suado entre sets.** Confirmas, ou queres a versão sóbria?
