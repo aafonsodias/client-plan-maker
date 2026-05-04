@@ -39,7 +39,7 @@ import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templa
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
-import { createManualPlan, updateTrainerSummary } from "@/server/measurements.functions";
+import { updateTrainerSummary } from "@/server/measurements.functions";
 import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
@@ -584,7 +584,6 @@ function ClientDetail() {
   const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
-  const createManualPlanFn = useServerFn(createManualPlan);
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
   const evolvePlanFn = useServerFn(archivePlanAndStartNextBlock);
   const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
