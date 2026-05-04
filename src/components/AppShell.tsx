@@ -9,7 +9,7 @@ import { Logo } from "@/components/Logo";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { AskForgeDock } from "@/components/AskForgeDock";
+import { AtlasDock } from "@/components/AtlasDock";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -138,9 +138,10 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             className="group flex min-w-0 items-center gap-2.5 font-light tracking-[0.2em] uppercase text-sm"
             aria-label={t("brand.name")}
           >
-            {/* Captain-seat brand mark: amber under-glow ring, unified across the app. */}
+            {/* Captain-seat brand mark: amber under-glow ring, unified across the app.
+                Wordmark hidden on mobile — the mark itself reads as "Protocol". */}
             <BrandMark size="md" />
-            <span className="truncate">{t("brand.name")}</span>
+            <span className="hidden truncate sm:inline">{t("brand.name")}</span>
             {isFounder && (
               <span
                 title="Conta de fundador · acesso vitalício"
