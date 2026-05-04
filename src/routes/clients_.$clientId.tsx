@@ -1591,22 +1591,10 @@ function ClientDetail() {
           : null;
         return (
           <div className="flex flex-wrap items-center gap-2 self-start">
-            {(coveragePct != null || lastSavedAt) && (
-              <button
-                type="button"
-                onClick={() =>
-                  document
-                    .getElementById("sintese-da-avaliacao")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums transition hover:opacity-80 ${assessTone}`}
-                title="Ver síntese da avaliação"
-              >
-                <span className="text-[9px] uppercase tracking-widest opacity-70">AVALIAÇÃO</span>
-                {coveragePct != null ? `${coveragePct}%` : "—"}
-                {dateShort && <span className="opacity-70">· {dateShort}</span>}
-              </button>
-            )}
+            {/* Avaliação % is shown inside the collapsed AssessmentSection
+                itself (single source of truth); this strip stays focused on
+                ACSM + Recovery so two adjacent UI surfaces don't repeat the
+                same number. (R43) */}
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
               title={t("detail.acsm_chip_title")}
