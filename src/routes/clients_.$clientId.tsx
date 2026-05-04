@@ -398,6 +398,10 @@ function ClientDetail() {
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
   const [expandedStage, setExpandedStage] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
+  // Synthesis dashboard expansion (independent of AssessmentSection collapse).
+  // When the trainer clicks the green "Avaliação completa" pill, the synthesis
+  // expands; when collapsed, only the chip remains and stages stay below.
+  const [synthesisOpen, setSynthesisOpen] = useState(false);
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
