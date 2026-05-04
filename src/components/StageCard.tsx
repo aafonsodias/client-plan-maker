@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight, Loader2, Check, RefreshCw, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Check, RefreshCw, ArrowRight, CircleDashed } from "lucide-react";
 
-export type StageCardStatus = "placeholder" | "generating" | "ready" | "approved";
+export type StageCardStatus = "placeholder" | "generating" | "ready" | "approved" | "done";
 
 export default function StageCard({
   stageNumber,
@@ -21,6 +21,7 @@ export default function StageCard({
   loadingSteps,
   loadingEta,
   tone = "stage",
+  rightSlot,
 }: {
   stageNumber: number;
   title: string;
@@ -48,6 +49,8 @@ export default function StageCard({
    *  source of truth that AI stages descend from); "stage" goes emerald to
    *  signal "AI-generated, human-approved" — matches the post-assessment chip. */
   tone?: "brief" | "stage";
+  /** Optional right-side chip (e.g. "Próxima · 18 mai"). */
+  rightSlot?: ReactNode;
 }) {
   const [openInternal, setOpenInternal] = useState(!defaultCollapsed && status !== "approved");
   const open = expanded ?? openInternal;
@@ -90,13 +93,32 @@ export default function StageCard({
     );
   }
 
+  if (status === "done") {
+    return (
+      <div className="flex w-full items-center justify-between rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] px-4 py-2.5 text-sm">
+        <span className="flex items-center gap-2">
+          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/90">
+            Stage {stageNumber}
+          </span>
+          <span className="text-foreground/80">{title}</span>
+        </span>
+        {rightSlot}
+      </div>
+    );
+  }
+
   if (status === "placeholder") {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-5 text-sm text-muted-foreground">
-        <div className="font-semibold uppercase tracking-wide text-xs text-muted-foreground/70">
-          Stage {stageNumber} — {title}
-        </div>
-        <div className="mt-1 text-xs">Will appear here once the previous stage is approved.</div>
+      <div className="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 px-4 py-2.5 text-sm">
+        <span className="flex items-center gap-2">
+          <CircleDashed className="h-3.5 w-3.5 text-muted-foreground/60" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+            Stage {stageNumber}
+          </span>
+          <span className="text-muted-foreground">{title}</span>
+        </span>
+        {rightSlot}
       </div>
     );
   }

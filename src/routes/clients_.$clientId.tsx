@@ -67,6 +67,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
+import { ProtocolRail } from "@/components/ProtocolRail";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -1623,6 +1624,21 @@ function ClientDetail() {
           assessmentCollapsed ?? (briefApproved || !!readyPlanForAssessment);
         const showSidebar = !effectiveCollapsed;
         return (
+      <>
+      <div className="mb-3">
+        <ProtocolRail
+          assessmentPct={
+            briefCoverage && briefCoverage.total > 0
+              ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+              : null
+          }
+          lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
+          briefApproved={!!inlineBrief?.approved}
+          blueprintApproved={(inlineBrief?.approvedStages ?? []).includes("blueprint")}
+          microcycleApproved={(inlineBrief?.approvedStages ?? []).includes("microcycle")}
+          progressionsApproved={(inlineBrief?.approvedStages ?? []).includes("progressions")}
+        />
+      </div>
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
         {showSidebar && (
         <aside className="hidden lg:block">
@@ -2257,6 +2273,7 @@ function ClientDetail() {
 
         </AssessmentSection>
       </div>
+      </>
         );
       })()}
 
