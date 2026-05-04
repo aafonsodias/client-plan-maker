@@ -227,3 +227,22 @@ Atualizado: Round 28 (4 Mai 2026)
 - Marketing AI avatars (diverse models para vídeos) — needs ethical-use guidelines first
 - Google Earth gym/farmácia locator
 - Reviews/Reddit/Portal da Queixa scrape agent
+
+## Closed Round 49 (compact shell + protocol rail)
+- AppShell: icon-only nav < 2xl, secondary controls (locale/theme/billing/sign-out) collapsed into avatar DropdownMenu — header no longer truncates at 1280–1544px.
+- BrandMark behaviour: wordmark only ≥2xl, P-mark always visible.
+- New <ProtocolRail/>: permanent 5-stage spine on /clients/$id (Avaliação→Briefing→Plano-mestre→Semana-tipo→Progressão), emerald check when done, amber "Reavaliação · em Nd" / "Nd em atraso" chip when last assessment + 14d is approaching/past.
+- StageCard: added `done` (emerald) status + `rightSlot` for inline supplemental info.
+
+## Closed Round 50 (nutrition cue + backlog grooming)
+- New `src/lib/nutrition-suggestions.ts` (PT/EN, no AI, no DB) — three windows: big meal 3–4h, pre 30–60min, post 0–2h, each with 3 example foods + rationale.
+- New <NextMealCue/> rendered under <ThisWeekHero/> on /clients/$id — collapsed by default, click expands 3-column grid.
+- Stage 1 re-assessment cadence: **chip-only** (ProtocolRail amber "Reavaliação" chip) — no editor surface, no migration. Schema (`client_measurement_prefs.periodic_interval_days` + `client_measurements`) is ready when we promote the editor.
+
+## Open after Round 50 (P0/P1 next)
+- P0 **Re-assessment metrics editor**: VO₂max (submax: Rockport / 1.5-mi / Ebbeling), dead-hang/active-hang (s), plank (s), box squats (reps), BP+RHR with 5-min rest protocol copy, 6 circumferences (waist/hip/chest/arm/thigh/calf cm). Writes to existing `client_measurements` (cadence='periodic'). Real round, not a polish.
+- P1 **PR snapshot share**: dedicated card the trainer can screenshot to send via WhatsApp (e1RM Δ, lift name, date, brand mark). First-workout PR is noisy → gate to PRs after week 2 OR an explicit "share" button.
+- P1 **Logbook session replay**: linear timeline of completed sessions inside /clients/$id with set-by-set view + emoji RPE strip.
+- P1 Email reminders (Resend): 24h-before-session + 2h-before-session opt-in per client. Pure server fn + cron.
+- P2 Multi-modality framework (vision only): hooks for cardio/mobility/breathwork tracks alongside resistance.
+- P3 (parked, no work): leaderboards, longevity dashboard, meditation/nutrition tracking modules.
