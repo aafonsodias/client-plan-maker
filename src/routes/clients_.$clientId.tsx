@@ -1659,6 +1659,9 @@ function ClientDetail() {
           microcycleApproved={(inlineBrief?.approvedStages ?? []).includes("microcycle")}
           progressionsApproved={(inlineBrief?.approvedStages ?? []).includes("progressions")}
           onReassessClick={() => setReassessOpen(true)}
+          stage1Expanded={!effectiveCollapsed}
+          onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
+          onShowSynthesis={() => setSynthesisOpen((o) => !o)}
         />
       </div>
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
