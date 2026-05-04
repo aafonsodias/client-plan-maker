@@ -40,7 +40,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
 import { updateTrainerSummary } from "@/server/measurements.functions";
-import { archivePlanAndStartNextBlock } from "@/server/blocks.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
 import { generateMicrocycleDays } from "@/server/phased/stage3-microcycle.functions";
@@ -585,8 +584,6 @@ function ClientDetail() {
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
-  const evolvePlanFn = useServerFn(archivePlanAndStartNextBlock);
-  const [creatingPlan, setCreatingPlan] = useState<"manual" | "evolve" | null>(null);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
@@ -613,13 +610,6 @@ function ClientDetail() {
   /** Most recent plan eligible for "evolve into next block" — must be marked
    *  finished_logging or already archived, with at least one logged session
    *  (we trust the marker; the server fn sanity-checks adherence). */
-  const evolvableSourcePlan = useMemo(() => {
-    return plans.find(
-      (p) =>
-        p.generation_status === "complete" &&
-        (p.completion_state === "finished_logging" || p.status === "archived"),
-    ) ?? null;
-  }, [plans]);
   // Track signature of last-analysed payload per section to avoid duplicate fires.
   const lastAnalysedSigRef = useRef<Record<string, string>>({});
 
