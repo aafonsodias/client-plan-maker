@@ -784,9 +784,6 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, duration_weeks } = data;
     const isFirstWeek = week_number === 1;
 
@@ -813,29 +810,19 @@ Return ONLY structured JSON via the emit_workout_week tool — emit exactly one 
       buildFeedbackBlock(data.trainer_feedback, data.previous_plan);
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 8000,
-          system: sys,
-          messages: [
-            { role: "user", content: userMsg },
-          ],
-          tools: [
-            {
-              name: "emit_workout_week",
-              description: "Emit one week of the workout plan",
-              input_schema: SingleWeekPlanSchema,
-            },
-          ],
-          tool_choice: { type: "tool", name: "emit_workout_week" },
-        }),
+      const res = await anthropicCompatFetch({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 8000,
+        system: sys,
+        messages: [{ role: "user", content: userMsg }],
+        tools: [
+          {
+            name: "emit_workout_week",
+            description: "Emit one week of the workout plan",
+            input_schema: SingleWeekPlanSchema as unknown as Record<string, unknown>,
+          },
+        ],
+        tool_choice: { type: "tool", name: "emit_workout_week" },
       });
 
       if (res.status === 429) return { ok: false as const, error: "AI rate limit reached. Try again in a moment." };
