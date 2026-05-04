@@ -2150,6 +2150,8 @@ function ClientDetail() {
                           });
                           void refreshPlans();
                           toast.success("Brief approved", { id: tId });
+                          // Auto-flow: collapse Stage 1, expand Stage 2 (Blueprint).
+                          setExpandedStage("blueprint");
                         } finally {
                           setBriefStageBusy(false);
                         }
