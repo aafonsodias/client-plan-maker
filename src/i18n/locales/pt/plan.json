@@ -443,5 +443,14 @@
   "microcycle": {
     "ready_to_approve": "Tudo pronto — podes aprovar",
     "stage_hint": "Microciclo = a sua semana-modelo. Define ordem, volume e RPE de cada dia. Aprovas quando os 3 dias estão ok e a IA propõe progressões para as semanas seguintes."
+  },
+  "stage": {
+    "label": {
+      "1": "Avaliação",
+      "2": "Briefing",
+      "3": "Plano-mestre",
+      "4": "Semana-tipo",
+      "5": "Progressão 12 sem."
+    }
   }
 }

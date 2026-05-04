@@ -443,5 +443,14 @@
   "microcycle": {
     "ready_to_approve": "All set — you can approve",
     "stage_hint": "Microcycle = your template week. It defines order, volume and RPE for each day. Approve once all days look good and the AI will propose progressions for the following weeks."
+  },
+  "stage": {
+    "label": {
+      "1": "Assessment",
+      "2": "Brief",
+      "3": "Master plan",
+      "4": "Weekly cycle",
+      "5": "12-week roadmap"
+    }
   }
 }
