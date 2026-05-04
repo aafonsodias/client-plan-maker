@@ -292,3 +292,24 @@
   0%   { opacity: 0; transform: translateY(2px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* AtlasGenie — the P mark emerges from below the book, blurred and small,
+ * lands centered. Halo amber fades around it. */
+@keyframes atlas-genie-emerge {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.2); filter: blur(8px); }
+  60%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+@keyframes atlas-genie-halo {
+  0%   { opacity: 0; transform: scale(0.4); }
+  40%  { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+.atlas-genie-mark { animation: atlas-genie-emerge 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.atlas-genie-halo {
+  background: radial-gradient(circle, rgba(232,165,71,0.55) 0%, rgba(232,165,71,0) 70%);
+  animation: atlas-genie-halo 600ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-genie-mark, .atlas-genie-halo { animation: none; }
+}
