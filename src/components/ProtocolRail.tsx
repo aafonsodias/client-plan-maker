@@ -22,6 +22,7 @@ export function ProtocolRail({
   onStage1Click,
   onShowSynthesis,
   stage1Expanded = false,
+  bare = false,
 }: {
   assessmentPct: number | null;
   lastAssessmentAt: string | null;
@@ -36,6 +37,8 @@ export function ProtocolRail({
   /** When set and stage 1 is complete, renders a "synthesis" chip next to it. */
   onShowSynthesis?: () => void;
   stage1Expanded?: boolean;
+  /** When true, renders without its own card chrome (used when embedded inside another card). */
+  bare?: boolean;
 }) {
   const { t } = useTranslation("plan");
   const stage1Done = (assessmentPct ?? 0) >= 80;
@@ -62,11 +65,10 @@ export function ProtocolRail({
     }
   }
 
+  const Wrapper: any = bare ? "div" : "section";
+  const wrapperCls = bare ? "" : "rounded-2xl border border-border bg-card/60 p-3";
   return (
-    <section
-      aria-label="Protocolo"
-      className="rounded-2xl border border-border bg-card/60 p-3"
-    >
+    <Wrapper aria-label={bare ? undefined : "Protocolo"} className={wrapperCls}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           Protocolo
@@ -148,6 +150,6 @@ export function ProtocolRail({
           </button>
         )}
       </div>
-    </section>
+    </Wrapper>
   );
 }
