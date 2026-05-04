@@ -51,7 +51,7 @@ type FormState = {
   client_phone: string;
   client_dob: string;
   // Coaching mode: how the client will train with this PT
-  intake_path: "" | "in_person" | "online" | "hybrid";
+  intake_path: "" | "self_log" | "coached" | "in_person" | "online" | "hybrid";
   // Scheduling (PT-guided path)
   sched_days: string[];
   sched_window: string;
@@ -587,19 +587,27 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
   const firstName = placeholders.has(rawFirst.toLowerCase()) ? "" : rawFirst;
   const link = useServerFn(linkClientAccount);
 
-  const [mode, setMode] = useState<"intro" | "email">("intro");
+  // Email/password is the primary path. Google sits below as a secondary option.
   const [email, setEmail] = useState(ctx.client?.email ?? "");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [trainerSelf, setTrainerSelf] = useState(false);
 
-  // If the user is already authenticated (e.g. came back after Google), link
-  // automatically and confirm.
+  // If the user is already authenticated (e.g. came back after Google):
+  //  - If they're the trainer that owns this intake, refuse to link them as
+  //    a client (they're testing their own link). Show a friendly hint.
+  //  - Otherwise, link the auth user to the client row and show success.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (cancelled || !data.user) return;
+      const trainerId = (ctx as any)?.trainer?.user_id ?? null;
+      if (trainerId && data.user.id === trainerId) {
+        setTrainerSelf(true);
+        return;
+      }
       try {
         await link({ data: { token } });
         if (!cancelled) setDone(true);
@@ -608,7 +616,7 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [link, token]);
+  }, [link, token, ctx]);
 
   const google = async () => {
     setBusy(true);
@@ -663,48 +671,43 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
           {firstName ? t("thanks_title_named", { name: firstName }) : t("thanks_title_anon")}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {t("thanks_desc_v2", { trainer: trainerName, defaultValue: `${trainerName} vai rever as tuas respostas antes da nossa primeira sessão.` })}
+          {t("thanks_desc_v2", { trainer: trainerName })}
         </p>
 
-        {done ? (
+        {trainerSelf ? (
+          <div className="mt-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left">
+            <p className="text-sm font-medium">{t("thanks_trainer_self_title")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_trainer_self_desc")}</p>
+            <Button asChild variant="outline" size="sm" className="mt-3">
+              <a href="/dashboard">{t("thanks_trainer_self_back")}</a>
+            </Button>
+          </div>
+        ) : done ? (
           <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
-            <p className="text-sm font-medium">{t("thanks_account_ready", { defaultValue: "Conta criada." })}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("thanks_account_ready_desc", { defaultValue: "Daqui a pouco vais conseguir ver o teu plano, mensagens e progresso." })}
-            </p>
+            <p className="text-sm font-medium">{t("thanks_account_ready")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_account_ready_desc")}</p>
           </div>
         ) : (
           <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
-            <p className="text-sm font-medium">{t("thanks_create_account_title", { defaultValue: "Cria a tua conta" })}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("thanks_create_account_desc", { defaultValue: "Para acompanhares o teu plano, registar treinos e falar com o treinador." })}
-            </p>
+            <p className="text-sm font-medium">{t("thanks_create_account_title")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_create_account_desc")}</p>
 
-            <div className="mt-4 space-y-2">
-              <Button type="button" onClick={google} disabled={busy} className="w-full">
+            <form onSubmit={emailSignup} className="mt-4 space-y-2">
+              <Input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input type="password" placeholder="palavra-passe (mín. 8)" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Button type="submit" disabled={busy} className="w-full">
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {t("thanks_continue_google", { defaultValue: "Continuar com Google" })}
+                {t("thanks_create_account_btn")}
               </Button>
-
-              {mode === "intro" ? (
-                <button
-                  type="button"
-                  onClick={() => setMode("email")}
-                  className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  {t("thanks_use_email", { defaultValue: "Usar email e palavra-passe" })}
-                </button>
-              ) : (
-                <form onSubmit={emailSignup} className="space-y-2 pt-2">
-                  <Input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  <Input type="password" placeholder="palavra-passe" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                  <Button type="submit" variant="outline" disabled={busy} className="w-full">
-                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {t("thanks_create_account_btn", { defaultValue: "Criar conta" })}
-                  </Button>
-                </form>
-              )}
-            </div>
+            </form>
+            <button
+              type="button"
+              onClick={google}
+              disabled={busy}
+              className="mt-3 block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {t("thanks_continue_google")}
+            </button>
           </div>
         )}
 
@@ -785,21 +788,25 @@ function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: s
   const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
   const [q, setQ] = useState("");
   const filtered = q.trim() ? searchEquipment(q) : EQUIPMENT_CATALOG;
-  const grouped = useMemo(() => {
-    const by: Record<EquipmentCategory, typeof EQUIPMENT_CATALOG> = {
-      free_weights: [], machines: [], racks_benches: [], bodyweight_accessory: [],
-      conditioning: [], mobility: [], misc: [],
-    } as any;
-    for (const it of filtered) by[it.category].push(it);
-    return by;
-  }, [filtered]);
   const labelFor = (cat: EquipmentCategory) =>
     locale === "en" ? CATEGORY_LABEL_EN[cat] : CATEGORY_LABEL_PT[cat];
+  // Category palette — semantic per status-tone family. Each category gets a
+  // (border, text, selected-bg) trio so pills stay legible in dark mode.
+  const CAT_TONE: Record<EquipmentCategory, { off: string; on: string; dot: string }> = {
+    free_weights:         { off: "border-amber-500/40 text-amber-200/90",  on: "bg-amber-500/20 border-amber-400 text-amber-100",     dot: "bg-amber-400" },
+    machines:             { off: "border-sky-500/40 text-sky-200/90",      on: "bg-sky-500/20 border-sky-400 text-sky-100",           dot: "bg-sky-400" },
+    racks_benches:        { off: "border-violet-500/40 text-violet-200/90", on: "bg-violet-500/20 border-violet-400 text-violet-100", dot: "bg-violet-400" },
+    bodyweight_accessory: { off: "border-emerald-500/40 text-emerald-200/90", on: "bg-emerald-500/20 border-emerald-400 text-emerald-100", dot: "bg-emerald-400" },
+    conditioning:         { off: "border-rose-500/40 text-rose-200/90",    on: "bg-rose-500/20 border-rose-400 text-rose-100",         dot: "bg-rose-400" },
+    mobility:             { off: "border-teal-500/40 text-teal-200/90",    on: "bg-teal-500/20 border-teal-400 text-teal-100",         dot: "bg-teal-400" },
+    misc:                 { off: "border-border text-muted-foreground",     on: "bg-secondary border-foreground/40 text-foreground",   dot: "bg-muted-foreground" },
+  };
   const toggle = (canonical: string) => {
     onChange(value.includes(canonical)
       ? value.filter((x) => x !== canonical)
       : [...value, canonical]);
   };
+  const cats: EquipmentCategory[] = ["free_weights","machines","racks_benches","bodyweight_accessory","conditioning","mobility","misc"];
   return (
     <div className="space-y-3">
       <Input
@@ -808,30 +815,33 @@ function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: s
         placeholder={t("equipment_search", { defaultValue: "Procurar equipamento…" })}
         className="h-9"
       />
-      <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
-        {(Object.keys(grouped) as EquipmentCategory[]).map((cat) => {
-          const items = grouped[cat];
-          if (items.length === 0) return null;
+      {/* Legend — colour key for the categories below. */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+        {cats.map((cat) => (
+          <span key={cat} className="inline-flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${CAT_TONE[cat].dot}`} />
+            {labelFor(cat)}
+          </span>
+        ))}
+      </div>
+      {/* Flat colour-coded grid. No inner scroll. */}
+      <div className="flex flex-wrap gap-1.5">
+        {filtered.map((it) => {
+          const on = value.includes(it.en);
+          const tone = CAT_TONE[it.category];
+          const label = locale === "en" ? it.en : it.pt;
           return (
-            <div key={cat}>
-              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">{labelFor(cat)}</p>
-              <div className="flex flex-wrap gap-2">
-                {items.map((it) => {
-                  const on = value.includes(it.en);
-                  const label = locale === "en" ? it.en : it.pt;
-                  return (
-                    <button
-                      key={it.id}
-                      type="button"
-                      onClick={() => toggle(it.en)}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-                    >{label}</button>
-                  );
-                })}
-              </div>
-            </div>
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => toggle(it.en)}
+              className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? tone.on : `bg-transparent ${tone.off} hover:bg-card`}`}
+            >{label}</button>
           );
         })}
+        {filtered.length === 0 && (
+          <p className="text-xs text-muted-foreground">{locale === "pt" ? "Sem resultados." : "No results."}</p>
+        )}
       </div>
     </div>
   );
@@ -1035,11 +1045,10 @@ function buildSlides(
       title: t("mode_title"),
       subtitle: t("mode_subtitle"),
       body: (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {([
-            { id: "in_person", label: t("mode_in_person"), desc: t("mode_in_person_desc") },
-            { id: "online", label: t("mode_online"), desc: t("mode_online_desc") },
-            { id: "hybrid", label: t("mode_hybrid"), desc: t("mode_hybrid_desc") },
+            { id: "self_log", label: t("mode_self_log"), desc: t("mode_self_log_desc") },
+            { id: "coached", label: t("mode_coached"), desc: t("mode_coached_desc") },
           ] as const).map((opt) => {
             const on = form.intake_path === opt.id;
             return (
@@ -1091,6 +1100,24 @@ function buildSlides(
         </div>
       ),
       isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
+    },
+    // 1c. Profile photo — own slide, not part of reference grid
+    {
+      title: t("photos_profile_title"),
+      subtitle: t("photos_profile_subtitle"),
+      body: (
+        <div className="mx-auto max-w-xs">
+          <PhotoSlot
+            token={token}
+            slot="face"
+            label={t("photos_profile_face_label")}
+            hint={t("photos_profile_face_hint")}
+            tutorial={t("photos_profile_face_hint")}
+          />
+        </div>
+      ),
+      canSkip: true,
+      skipKeys: ["profile_photo"],
     },
     // 2. SMART goal — what
     {
@@ -1328,7 +1355,6 @@ function buildSlides(
             { slot: "front", label: t("photos_front", { defaultValue: "Frente" }), hint: t("photos_front_hint", { defaultValue: "Braços ao lado do corpo, pés à largura dos ombros." }) },
             { slot: "side", label: t("photos_side", { defaultValue: "Lateral" }), hint: t("photos_side_hint", { defaultValue: "Olhar em frente, postura natural." }) },
             { slot: "back", label: t("photos_back", { defaultValue: "Costas" }), hint: t("photos_back_hint", { defaultValue: "Mesma posição, de costas para a câmara." }) },
-            { slot: "face", label: t("photos_face", { defaultValue: "Rosto" }), hint: t("photos_face_hint", { defaultValue: "Foto de perfil simpática :)" }) },
           ] as const).map((opt) => (
             <PhotoSlot
               key={opt.slot}
