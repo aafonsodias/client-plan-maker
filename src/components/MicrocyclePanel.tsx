@@ -251,7 +251,7 @@ export function MicrocyclePanel({
           <div className="min-w-0">
             {planTitle && <h2 className="truncate text-base font-semibold text-foreground">{planTitle}</h2>}
             <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-              <span>Stage 3 — Microcycle (Week 1) · {doneCount}/{sessionsPerWeek} done</span>
+              <span>Stage 4 — Semana-tipo · {doneCount}/{sessionsPerWeek} dias prontos</span>
               <InfoHint tone="neutral" side="bottom" label="O que é um microciclo?">
                 {t("microcycle.stage_hint")}
               </InfoHint>
