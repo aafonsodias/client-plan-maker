@@ -392,7 +392,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
       </footer>
       <ScrollToTopButton />
       {/* Available to every signed-in trainer; isFounder no longer gates it. */}
-      <AskForgeDock enabled={!!user} />
+      <AtlasDock enabled={!!user} />
     </div>
   );
 }
