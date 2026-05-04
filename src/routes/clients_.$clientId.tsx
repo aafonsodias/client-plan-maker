@@ -2569,9 +2569,13 @@ function ClientDetail() {
                               <MicrocyclePanel
                                 planId={planId}
                                 showHeader={false}
-                                onApproved={() => {
+                                onApproved={async () => {
                                   void refreshPlans();
-                                  setExpandedStage("progressions");
+                                  // Re-read approved_stages from DB so
+                                  // microcycleApproved flips to true and
+                                  // Stage 4 unlocks (was stuck because the
+                                  // local snapshot was never refreshed).
+                                  await openPhasedDraft(planId, "progressions");
                                   void runStage("progressions", false, { skipNavigate: true });
                                 }}
                               />
