@@ -1353,9 +1353,6 @@ function ClientDetail() {
             <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
           </div>
         </div>
-        <div className="mt-4">
-          <ClientDocuments clientId={client.id} />
-        </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <AssessmentDatePicker
             value={assessment.performed_on || ""}
@@ -1389,21 +1386,62 @@ function ClientDetail() {
               <Eye className="h-3.5 w-3.5" /> Ver como cliente
             </Link>
           </Button>
+          <ClientDocuments clientId={client.id} />
+          {(client.intake_status === "submitted" ||
+            client.intake_status === "reviewed" ||
+            lastSavedAt) && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Pedir nova avaliação"
+                  title="Pedir nova avaliação ao cliente"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-foreground"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Avaliação</span>
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md">
+                <SheetHeader>
+                  <SheetTitle>Pedir nova avaliação</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <IntakeLinkPanel
+                    clientId={client.id}
+                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                    clientPhone={client.phone}
+                    intake={{
+                      intake_token: client.intake_token ?? null,
+                      intake_token_expires_at: client.intake_token_expires_at ?? null,
+                      intake_status: client.intake_status ?? "not_sent",
+                      intake_submitted_at: client.intake_submitted_at ?? null,
+                    }}
+                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
 
-      <IntakeLinkPanel
-        clientId={client.id}
-        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-        clientPhone={client.phone}
-        intake={{
-          intake_token: client.intake_token ?? null,
-          intake_token_expires_at: client.intake_token_expires_at ?? null,
-          intake_status: client.intake_status ?? "not_sent",
-          intake_submitted_at: client.intake_submitted_at ?? null,
-        }}
-        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-      />
+      {!(client.intake_status === "submitted" ||
+        client.intake_status === "reviewed" ||
+        lastSavedAt) && (
+        <IntakeLinkPanel
+          clientId={client.id}
+          clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+          clientPhone={client.phone}
+          intake={{
+            intake_token: client.intake_token ?? null,
+            intake_token_expires_at: client.intake_token_expires_at ?? null,
+            intake_status: client.intake_status ?? "not_sent",
+            intake_submitted_at: client.intake_submitted_at ?? null,
+          }}
+          onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+        />
+      )}
 
       {/* Compact client snapshot — always visible, summarizes latest assessment */}
       {lastSavedAt && (
