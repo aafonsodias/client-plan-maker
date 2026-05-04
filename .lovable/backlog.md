@@ -76,16 +76,12 @@ Atualizado: Round 28 (4 Mai 2026)
 - Removed "Clientes" + "Users" import from AppShell nav (5-item nav)
 - Tour: dropped step_banner + step_lab; demo-lab anchor no longer required
 - Plan engine FROZEN this round (no edits to plans/intake-ai/quota/prompts)
+- SMART suggestion chips on intake (color-coded body/perf/clin/life + 1m/3m/6m/1y deadline shortcuts)
+- "Ver como cliente" preview: /me?as={clientId} for trainers, amber preview banner
+- Manual client creation: createManualClient server fn + tabbed dialog (invite | manual)
 
-## Parked for next round
-- SMART chips (6 measurable + 5 deadline, color-coded grid)
-- Movement spider chart with peer-band overlays (ACSM 12e norms)
-- "Ver como cliente" preview from /clients/$clientId
-- Demo Lab UI resurrection (code kept; flip a flag to re-expose)
-
-## Next round (P1)
-- Steps widget on /log/$token + trainer view
-- AI-suggested SMART helper (cheapest model)
-- Metabolism panel (BMR/TDEE pure-math)
-- Manual client creation (name+email, intake_status="manual")
-- Client portal: messages, e1RM trends
+## Deferred (honest scoping)
+- Movement spider chart peer overlay — needs ACSM normatives wired through movement-screen surface, not the volume radar. Real round of work, not a quick add.
+- Knowledge roadmap (FITT-VP / Bompa / NSCA) — each is a multi-week round; do not box-tick.
+- Steps widget, metabolism panel, e1RM trends, client messages — touch the engine/client surface; resume after engine unfreeze.
+- Demo Lab UI — intentionally hidden last round; do not resurrect without a new decision.
