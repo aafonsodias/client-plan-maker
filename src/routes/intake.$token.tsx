@@ -1035,11 +1035,10 @@ function buildSlides(
       title: t("mode_title"),
       subtitle: t("mode_subtitle"),
       body: (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {([
-            { id: "in_person", label: t("mode_in_person"), desc: t("mode_in_person_desc") },
-            { id: "online", label: t("mode_online"), desc: t("mode_online_desc") },
-            { id: "hybrid", label: t("mode_hybrid"), desc: t("mode_hybrid_desc") },
+            { id: "self_log", label: t("mode_self_log"), desc: t("mode_self_log_desc") },
+            { id: "coached", label: t("mode_coached"), desc: t("mode_coached_desc") },
           ] as const).map((opt) => {
             const on = form.intake_path === opt.id;
             return (
