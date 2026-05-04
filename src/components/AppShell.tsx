@@ -10,6 +10,7 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AtlasDock } from "@/components/AtlasDock";
+import { AtlasGenie } from "@/components/AtlasGenie";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -384,6 +385,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             <Link to="/manual" className="transition hover:text-foreground">
               {t("nav.manual")}
             </Link>
+            <AtlasGenie trigger="icon" />
             <Link to="/privacy" className="transition hover:text-foreground">
               Privacidade
             </Link>
