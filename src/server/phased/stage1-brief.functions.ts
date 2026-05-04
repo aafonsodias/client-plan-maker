@@ -260,6 +260,7 @@ export const approveBrief = createServerFn({ method: "POST" })
         brief: BriefSchema,
         programmingVariables: ProgrammingVariablesSchema.optional(),
         redFlagAccommodations: RedFlagAccommodationsSchema.optional(),
+        assessmentCompletionPct: z.number().int().min(0).max(100).optional(),
       })
       .parse(d)
   )
@@ -294,6 +295,9 @@ export const approveBrief = createServerFn({ method: "POST" })
     }
     if (data.redFlagAccommodations) {
       update.red_flag_accommodations = data.redFlagAccommodations as any;
+    }
+    if (typeof data.assessmentCompletionPct === "number") {
+      update.assessment_completion_pct = data.assessmentCompletionPct;
     }
 
     const { error: updErr } = await supabase
