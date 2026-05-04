@@ -573,54 +573,121 @@ export async function generatePlanPdf(
     }
   }
 
-  // Plan-at-a-glance: one row per archetype × week
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text("PLAN AT A GLANCE", M, y);
-  y += 4;
-  setDraw(doc, theme.rule);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, W - M, y);
-  y += 12;
-
-  // Header row
-  const glanceLeftW = 220;
-  setText(doc, theme.inkMuted);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.5);
-  doc.text("SESSION", M, y);
-  doc.text("FOCUS", M + 110, y);
-  for (let wi = 0; wi < numWeeks; wi++) {
-    const wx = M + glanceLeftW + 60 + wi * 80;
-    doc.text(`W${wi + 1} EX`, wx, y, { align: "center" });
-  }
-  y += 4;
-  setDraw(doc, theme.rule);
-  doc.setLineWidth(0.3);
-  doc.line(M, y, W - M, y);
-  y += 10;
-
-  for (const arc of archetypes) {
-    if (y + 14 > H - M - 20) break;
-    setText(doc, theme.ink);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(fitText(arc.label, 100), M, y);
+  // ---------- Macro index strip (weekly mode) ----------
+  // Compact row of N chips, one per week of the meso, current week highlighted.
+  // PT prints one week at a time and needs to know where this week sits in
+  // the block at a glance.
+  if (selectedWeekN && totalMesoWeeks > 0) {
     setText(doc, theme.inkMuted);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(fitText(arc.focus || "—", glanceLeftW - 10), M + 110, y);
-    for (let wi = 0; wi < numWeeks; wi++) {
-      const wx = M + glanceLeftW + 60 + wi * 80;
-      const w = arc.weeks.find((ww) => ww.week_number === wi + 1);
-      const exCount = w?.day.exercises?.length ?? 0;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text(`BLOCO ${meta.block_number ?? 1} · SEMANA ${selectedWeekN} DE ${totalMesoWeeks}`, M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+
+    const stripW = W - M * 2;
+    const gap = 6;
+    const chipW = (stripW - gap * (totalMesoWeeks - 1)) / totalMesoWeeks;
+    const chipH = 28;
+    for (let i = 0; i < totalMesoWeeks; i++) {
+      const wn = i + 1;
+      const cx = M + i * (chipW + gap);
+      const isCur = wn === selectedWeekN;
+      if (isCur) {
+        setFill(doc, theme.accent);
+        doc.rect(cx, y, chipW, chipH, "F");
+        setText(doc, theme.bg);
+      } else {
+        setFill(doc, theme.bgSubtle);
+        doc.rect(cx, y, chipW, chipH, "F");
+        setText(doc, theme.inkMuted);
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text(`W${wn}`, cx + chipW / 2, y + 11, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(weekTag(wn, totalMesoWeeks), cx + chipW / 2, y + 22, { align: "center" });
+    }
+    y += chipH + 14;
+
+    // THIS WEEK session list (no cross-week deltas — those live in-app)
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("ESTA SEMANA", M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+    for (const arc of archetypes) {
+      if (y + 14 > H - M - 20) break;
       setText(doc, theme.ink);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
-      doc.text(exCount ? `${exCount}` : "—", wx, y, { align: "center" });
+      doc.text(fitText(arc.label, 160), M, y);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.focus || "—", W - M * 2 - 260), M + 170, y);
+      const exCount = arc.base.exercises?.length ?? 0;
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(`${exCount} ex`, W - M, y, { align: "right" });
+      y += 13;
     }
-    y += 13;
+  } else {
+    // Legacy multi-week glance (kept for back-compat; unused once weekly mode is default)
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("PLAN AT A GLANCE", M, y);
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 12;
+    const glanceLeftW = 220;
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text("SESSION", M, y);
+    doc.text("FOCUS", M + 110, y);
+    for (let wi = 0; wi < numWeeks; wi++) {
+      const wx = M + glanceLeftW + 60 + wi * 80;
+      doc.text(`W${wi + 1} EX`, wx, y, { align: "center" });
+    }
+    y += 4;
+    setDraw(doc, theme.rule);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+    y += 10;
+    for (const arc of archetypes) {
+      if (y + 14 > H - M - 20) break;
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.label, 100), M, y);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(fitText(arc.focus || "—", glanceLeftW - 10), M + 110, y);
+      for (let wi = 0; wi < numWeeks; wi++) {
+        const wx = M + glanceLeftW + 60 + wi * 80;
+        const w = arc.weeks.find((ww) => ww.week_number === wi + 1);
+        const exCount = w?.day.exercises?.length ?? 0;
+        setText(doc, theme.ink);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(exCount ? `${exCount}` : "—", wx, y, { align: "center" });
+      }
+      y += 13;
+    }
   }
 
   // ============================================================
