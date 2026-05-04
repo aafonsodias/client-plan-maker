@@ -63,6 +63,7 @@ import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
 import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
+import { downloadPlanById } from "@/lib/download-plan";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
