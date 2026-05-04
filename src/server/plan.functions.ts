@@ -751,9 +751,9 @@ EXERCISE COUNT PER DAY — at least 5 working exercises in the main 'exercises' 
     try {
       const res = await anthropicCompatFetch({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
+        max_tokens: 12000,
         system: sys,
-        messages: [{ role: "user", content: user + feedbackBlock }],
+        messages: [{ role: "user", content: user + waveBlock + feedbackBlock }],
         tools: [
           {
             name: "emit_workout_plan",
