@@ -320,10 +320,10 @@ export function MicrocyclePanel({
             const tone =
               st === "done"
                 ? isActive
-                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                  : "border-emerald-500/30 bg-emerald-500/5 text-emerald-500/90 hover:bg-emerald-500/10"
+                  ? "border-amber-500 bg-amber-500/15 text-amber-400 shadow-[0_0_18px_-8px_rgba(245,158,11,0.6)]"
+                  : "border-amber-500/40 bg-amber-500/5 text-amber-400/90 hover:bg-amber-500/10"
                 : st === "generating"
-                ? "border-amber-500/40 bg-amber-500/5 text-amber-500"
+                ? "border-amber-500/30 bg-amber-500/5 text-amber-300/80 animate-pulse"
                 : st === "error"
                 ? "border-red-500/40 bg-red-500/5 text-red-500"
                 : "border-dashed border-border bg-card text-muted-foreground";
