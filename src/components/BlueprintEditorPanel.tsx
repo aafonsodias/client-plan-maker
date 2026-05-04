@@ -151,7 +151,7 @@ export function BlueprintEditorPanel({
                   <button
                     onClick={regenerate}
                     disabled={busy}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
                   >
                     {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                     Tentar de novo
@@ -263,7 +263,7 @@ export function BlueprintEditorPanel({
             <button
               onClick={approve}
               disabled={busy || hasIntegrityError}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 transition hover:bg-amber-500/15 disabled:opacity-50"
               title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
@@ -343,7 +343,7 @@ export function BlueprintEditorPanel({
       </section>
 
       {/* Bottom "sign here" CTA — primary place to approve after reading. */}
-      <div className="sticky bottom-3 z-10 mt-2 flex flex-col items-stretch gap-2 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-amber-500/5 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky bottom-3 z-10 mt-2 flex flex-col items-stretch gap-2 rounded-xl border border-border bg-card/95 p-3 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <div className="text-xs text-muted-foreground sm:max-w-md">
           {locale === "pt"
             ? "Quando estiver pronto, aprove a Blueprint para gerar a Semana 1."
@@ -352,7 +352,7 @@ export function BlueprintEditorPanel({
         <button
           onClick={approve}
           disabled={busy || hasIntegrityError}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-amber-500 px-5 py-2.5 text-sm font-semibold text-black shadow-md transition hover:opacity-95 disabled:opacity-50"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-500 transition hover:bg-amber-500/15 disabled:opacity-50"
           title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
