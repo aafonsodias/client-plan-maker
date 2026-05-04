@@ -236,7 +236,7 @@ function setDraw(doc: jsPDF, c: [number, number, number]) {
  */
 export async function generatePlanPdf(
   meta: PdfMeta,
-  plan: PlanData,
+  planArg: PlanData,
   branding: PdfBranding,
 ) {
   // Landscape A4 — 842 × 595 pt. Wider canvas means the dense exercise
