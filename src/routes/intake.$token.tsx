@@ -788,21 +788,25 @@ function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: s
   const locale = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
   const [q, setQ] = useState("");
   const filtered = q.trim() ? searchEquipment(q) : EQUIPMENT_CATALOG;
-  const grouped = useMemo(() => {
-    const by: Record<EquipmentCategory, typeof EQUIPMENT_CATALOG> = {
-      free_weights: [], machines: [], racks_benches: [], bodyweight_accessory: [],
-      conditioning: [], mobility: [], misc: [],
-    } as any;
-    for (const it of filtered) by[it.category].push(it);
-    return by;
-  }, [filtered]);
   const labelFor = (cat: EquipmentCategory) =>
     locale === "en" ? CATEGORY_LABEL_EN[cat] : CATEGORY_LABEL_PT[cat];
+  // Category palette — semantic per status-tone family. Each category gets a
+  // (border, text, selected-bg) trio so pills stay legible in dark mode.
+  const CAT_TONE: Record<EquipmentCategory, { off: string; on: string; dot: string }> = {
+    free_weights:         { off: "border-amber-500/40 text-amber-200/90",  on: "bg-amber-500/20 border-amber-400 text-amber-100",     dot: "bg-amber-400" },
+    machines:             { off: "border-sky-500/40 text-sky-200/90",      on: "bg-sky-500/20 border-sky-400 text-sky-100",           dot: "bg-sky-400" },
+    racks_benches:        { off: "border-violet-500/40 text-violet-200/90", on: "bg-violet-500/20 border-violet-400 text-violet-100", dot: "bg-violet-400" },
+    bodyweight_accessory: { off: "border-emerald-500/40 text-emerald-200/90", on: "bg-emerald-500/20 border-emerald-400 text-emerald-100", dot: "bg-emerald-400" },
+    conditioning:         { off: "border-rose-500/40 text-rose-200/90",    on: "bg-rose-500/20 border-rose-400 text-rose-100",         dot: "bg-rose-400" },
+    mobility:             { off: "border-teal-500/40 text-teal-200/90",    on: "bg-teal-500/20 border-teal-400 text-teal-100",         dot: "bg-teal-400" },
+    misc:                 { off: "border-border text-muted-foreground",     on: "bg-secondary border-foreground/40 text-foreground",   dot: "bg-muted-foreground" },
+  };
   const toggle = (canonical: string) => {
     onChange(value.includes(canonical)
       ? value.filter((x) => x !== canonical)
       : [...value, canonical]);
   };
+  const cats: EquipmentCategory[] = ["free_weights","machines","racks_benches","bodyweight_accessory","conditioning","mobility","misc"];
   return (
     <div className="space-y-3">
       <Input
@@ -811,30 +815,33 @@ function EquipmentPicker({ value, onChange }: { value: string[]; onChange: (v: s
         placeholder={t("equipment_search", { defaultValue: "Procurar equipamento…" })}
         className="h-9"
       />
-      <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
-        {(Object.keys(grouped) as EquipmentCategory[]).map((cat) => {
-          const items = grouped[cat];
-          if (items.length === 0) return null;
+      {/* Legend — colour key for the categories below. */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+        {cats.map((cat) => (
+          <span key={cat} className="inline-flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${CAT_TONE[cat].dot}`} />
+            {labelFor(cat)}
+          </span>
+        ))}
+      </div>
+      {/* Flat colour-coded grid. No inner scroll. */}
+      <div className="flex flex-wrap gap-1.5">
+        {filtered.map((it) => {
+          const on = value.includes(it.en);
+          const tone = CAT_TONE[it.category];
+          const label = locale === "en" ? it.en : it.pt;
           return (
-            <div key={cat}>
-              <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">{labelFor(cat)}</p>
-              <div className="flex flex-wrap gap-2">
-                {items.map((it) => {
-                  const on = value.includes(it.en);
-                  const label = locale === "en" ? it.en : it.pt;
-                  return (
-                    <button
-                      key={it.id}
-                      type="button"
-                      onClick={() => toggle(it.en)}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}
-                    >{label}</button>
-                  );
-                })}
-              </div>
-            </div>
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => toggle(it.en)}
+              className={`rounded-full border px-3 py-1.5 text-xs transition ${on ? tone.on : `bg-transparent ${tone.off} hover:bg-card`}`}
+            >{label}</button>
           );
         })}
+        {filtered.length === 0 && (
+          <p className="text-xs text-muted-foreground">{locale === "pt" ? "Sem resultados." : "No results."}</p>
+        )}
       </div>
     </div>
   );
