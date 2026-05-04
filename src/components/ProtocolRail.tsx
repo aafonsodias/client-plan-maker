@@ -18,6 +18,7 @@ export function ProtocolRail({
   microcycleApproved,
   progressionsApproved,
   intervalDays = 14,
+  onReassessClick,
 }: {
   assessmentPct: number | null;
   lastAssessmentAt: string | null;
@@ -26,6 +27,7 @@ export function ProtocolRail({
   microcycleApproved: boolean;
   progressionsApproved: boolean;
   intervalDays?: number;
+  onReassessClick?: () => void;
 }) {
   const { t } = useTranslation("plan");
   const stage1Done = (assessmentPct ?? 0) >= 80;
@@ -87,9 +89,14 @@ export function ProtocolRail({
           ))}
         </div>
         {nextDueChip && (
-          <span
+          <button
+            type="button"
+            onClick={onReassessClick}
+            disabled={!onReassessClick}
+            title={onReassessClick ? "Registar reavaliação" : undefined}
             className={[
-              "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+              "rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
+              onReassessClick ? "hover:brightness-110 cursor-pointer" : "cursor-default",
               nextDueChip.tone === "due"
                 ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
                 : nextDueChip.tone === "soon"
@@ -98,7 +105,7 @@ export function ProtocolRail({
             ].join(" ")}
           >
             {nextDueChip.label}
-          </span>
+          </button>
         )}
       </div>
     </section>

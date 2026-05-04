@@ -240,9 +240,13 @@ Atualizado: Round 28 (4 Mai 2026)
 - Stage 1 re-assessment cadence: **chip-only** (ProtocolRail amber "Reavaliação" chip) — no editor surface, no migration. Schema (`client_measurement_prefs.periodic_interval_days` + `client_measurements`) is ready when we promote the editor.
 
 ## Open after Round 50 (P0/P1 next)
-- P0 **Re-assessment metrics editor**: VO₂max (submax: Rockport / 1.5-mi / Ebbeling), dead-hang/active-hang (s), plank (s), box squats (reps), BP+RHR with 5-min rest protocol copy, 6 circumferences (waist/hip/chest/arm/thigh/calf cm). Writes to existing `client_measurements` (cadence='periodic'). Real round, not a polish.
 - P1 **PR snapshot share**: dedicated card the trainer can screenshot to send via WhatsApp (e1RM Δ, lift name, date, brand mark). First-workout PR is noisy → gate to PRs after week 2 OR an explicit "share" button.
 - P1 **Logbook session replay**: linear timeline of completed sessions inside /clients/$id with set-by-set view + emoji RPE strip.
 - P1 Email reminders (Resend): 24h-before-session + 2h-before-session opt-in per client. Pure server fn + cron.
 - P2 Multi-modality framework (vision only): hooks for cardio/mobility/breathwork tracks alongside resistance.
 - P3 (parked, no work): leaderboards, longevity dashboard, meditation/nutrition tracking modules.
+
+## Closed Round 51 (re-assessment editor)
+- New `<ReassessmentSheet/>` (`src/components/ReassessmentSheet.tsx`) — right Sheet with 4 grouped sections: Cardio (VO₂máx, FC repouso), Força · resistência (dead-hang, active-hang, plank, box squats), TA (sistólica/diastólica + 5-min rest protocol copy), Circunferências (cintura/anca/peito/braço/coxa/gémeo).
+- Writes one `client_measurements` row (cadence='periodic') via existing `recordMeasurement` server fn — zero migration, all fields live inside `values` jsonb.
+- `ProtocolRail` "Reavaliação" chip is now a button (always shown when stage 1 ≥80%) with `onReassessClick`; opens the sheet on click.

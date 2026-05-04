@@ -69,6 +69,7 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { NextMealCue } from "@/components/NextMealCue";
+import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -409,6 +410,7 @@ function ClientDetail() {
   // When the trainer clicks the green "Avaliação completa" pill, the synthesis
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
+  const [reassessOpen, setReassessOpen] = useState(false);
   // Assessment collapse — controlled so sidebar can mirror it. Once brief is
   // approved, default to collapsed (the trainer is now working in the stages
   // below). User toggle is persisted per-client.
@@ -1638,6 +1640,7 @@ function ClientDetail() {
           blueprintApproved={(inlineBrief?.approvedStages ?? []).includes("blueprint")}
           microcycleApproved={(inlineBrief?.approvedStages ?? []).includes("microcycle")}
           progressionsApproved={(inlineBrief?.approvedStages ?? []).includes("progressions")}
+          onReassessClick={() => setReassessOpen(true)}
         />
       </div>
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
@@ -3006,6 +3009,11 @@ function ClientDetail() {
         </section>
       )}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
+      <ReassessmentSheet
+        clientId={clientId}
+        open={reassessOpen}
+        onOpenChange={setReassessOpen}
+      />
     </div>
     </TooltipProvider>
   );
