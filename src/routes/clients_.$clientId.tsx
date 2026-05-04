@@ -2102,14 +2102,27 @@ function ClientDetail() {
           )}
 
           {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
-          <AssessmentSynthesisDashboard
-            assessment={assessment}
-            sectionAnalyses={sectionAnalyses}
-            totalSections={totalSections}
-            riskCategory={riskCategory}
-            whr={whr}
-            redFlagAccommodations={inlineBrief?.accommodations ?? null}
-          />
+          {inlineBrief?.approved ? (
+            <button
+              type="button"
+              onClick={() => setExpandedStage(null)}
+              className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
+            >
+              <span className="flex items-center gap-2 font-semibold text-emerald-500">
+                <Check className="h-4 w-4" /> Avaliação completa
+              </span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          ) : (
+            <AssessmentSynthesisDashboard
+              assessment={assessment}
+              sectionAnalyses={sectionAnalyses}
+              totalSections={totalSections}
+              riskCategory={riskCategory}
+              whr={whr}
+              redFlagAccommodations={inlineBrief?.accommodations ?? null}
+            />
+          )}
 
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
@@ -2150,6 +2163,8 @@ function ClientDetail() {
                           });
                           void refreshPlans();
                           toast.success("Brief approved", { id: tId });
+                          // Auto-flow: collapse Stage 1, expand Stage 2 (Blueprint).
+                          setExpandedStage("blueprint");
                         } finally {
                           setBriefStageBusy(false);
                         }
