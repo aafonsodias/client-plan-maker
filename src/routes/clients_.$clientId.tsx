@@ -2101,19 +2101,37 @@ function ClientDetail() {
           </div>
           )}
 
-          {/* Post-assessment synthesis — sits at the end of the assessment, before brief */}
-          {inlineBrief?.approved ? (
-            <button
-              type="button"
-              onClick={() => setExpandedStage(null)}
-              className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
-            >
-              <span className="flex items-center gap-2 font-semibold text-emerald-500">
-                <Check className="h-4 w-4" /> Avaliação completa
-              </span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
-          ) : (
+          {/* Post-assessment synthesis — collapses to a chip ONLY when the
+              assessment is genuinely complete (≥80% of sections). Below
+              that threshold we keep the dashboard expanded with an honest
+              "Avaliação parcial · X%" chip so the trainer knows what they
+              actually approved. */}
+          {(() => {
+            const coveragePct = briefCoverage && briefCoverage.total > 0
+              ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+              : null;
+            const isComplete = inlineBrief?.approved && (coveragePct ?? 0) >= 80;
+            if (isComplete) {
+              return (
+                <button
+                  type="button"
+                  onClick={() => setExpandedStage(null)}
+                  className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
+                >
+                  <span className="flex items-center gap-2 font-semibold text-emerald-500">
+                    <Check className="h-4 w-4" /> Avaliação completa · {coveragePct}%
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              );
+            }
+            return (
+              <>
+              {inlineBrief?.approved && coveragePct != null && (
+                <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-500">
+                  <span>Avaliação parcial · {coveragePct}% — brief aprovado com dados incompletos</span>
+                </div>
+              )}
             <AssessmentSynthesisDashboard
               assessment={assessment}
               sectionAnalyses={sectionAnalyses}
@@ -2122,7 +2140,9 @@ function ClientDetail() {
               whr={whr}
               redFlagAccommodations={inlineBrief?.accommodations ?? null}
             />
-          )}
+              </>
+            );
+          })()}
 
           {/* Phased generation: stages stack vertically below the action row.
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
