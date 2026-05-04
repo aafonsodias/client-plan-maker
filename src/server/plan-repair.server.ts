@@ -28,7 +28,9 @@ export type RepairResult =
   | { ok: false; error: string; telemetry: CallTelemetry };
 
 export async function repairDay(args: {
-  apiKey: string;
+  /** Deprecated — kept for callsite compatibility. The Lovable Gateway shim
+   *  reads LOVABLE_API_KEY directly. */
+  apiKey?: string;
   model: AnthropicModelId;
   client: PlanClient;
   assessment: PlanAssessment;
@@ -64,27 +66,19 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
 
   const t0 = Date.now();
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": args.apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: args.model,
-        max_tokens: 8000,
-        system: sys,
-        messages: [{ role: "user", content: userMsg }],
-        tools: [
-          {
-            name: "emit_workout_day",
-            description: "Emit one repaired training day.",
-            input_schema: SingleDayPlanSchema,
-          },
-        ],
-        tool_choice: { type: "tool", name: "emit_workout_day" },
-      }),
+    const res = await anthropicCompatFetch({
+      model: args.model,
+      max_tokens: 8000,
+      system: sys,
+      messages: [{ role: "user", content: userMsg }],
+      tools: [
+        {
+          name: "emit_workout_day",
+          description: "Emit one repaired training day.",
+          input_schema: SingleDayPlanSchema as unknown as Record<string, unknown>,
+        },
+      ],
+      tool_choice: { type: "tool", name: "emit_workout_day" },
     });
 
     const elapsed = Date.now() - t0;
