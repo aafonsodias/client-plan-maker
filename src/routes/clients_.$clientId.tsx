@@ -2273,6 +2273,7 @@ function ClientDetail() {
 
         </AssessmentSection>
       </div>
+      </>
         );
       })()}
 
