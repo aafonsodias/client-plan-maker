@@ -5,6 +5,8 @@ import { toneChip, toneDot, type Tone } from "@/lib/status-tone";
 import { epley } from "@/lib/capacity-gain";
 import { Confetti } from "@/components/log/Confetti";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { markSessionsCelebrated } from "@/server/sessions.functions";
 
 /**
  * LogbookTimeline — agrupa as sessões registadas por semana e narra a
@@ -21,6 +23,7 @@ type Session = {
   status?: string | null;
   session_notes?: string | null;
   entries?: any[] | null;
+  pr_celebrated_at?: string | null;
 };
 
 type Props = { sessions: Session[] };
@@ -73,6 +76,7 @@ function avgSessionRpe(s: Session): number | null {
 
 export function LogbookTimeline({ sessions }: Props) {
   const { t, i18n } = useTranslation("common");
+  const markCelebratedFn = useServerFn(markSessionsCelebrated);
   // PRs: best e1RM per exercise across the whole plan; mark the session that hit it.
   const prSessionByExercise = useMemo(() => {
     const best = new Map<string, { e1rm: number; sessionId: string }>();
@@ -98,9 +102,17 @@ export function LogbookTimeline({ sessions }: Props) {
   const [burst, setBurst] = useState(0);
   useEffect(() => {
     let fired = false;
+    const toMark: string[] = [];
     for (const [sessionId, names] of prSessionByExercise.entries()) {
       if (seenRef.current.has(sessionId)) continue;
       seenRef.current.add(sessionId);
+      // Skip if this session was already celebrated (DB) or in this browser (LS fallback).
+      const session = sessions.find((s) => s.id === sessionId);
+      if (session?.pr_celebrated_at) continue;
+      const lsKey = `pr_celebrated:${sessionId}`;
+      if (typeof window !== "undefined" && window.localStorage.getItem(lsKey)) continue;
+      if (typeof window !== "undefined") window.localStorage.setItem(lsKey, "1");
+      toMark.push(sessionId);
       if (!fired) {
         setBurst((n) => n + 1);
         fired = true;
@@ -111,7 +123,12 @@ export function LogbookTimeline({ sessions }: Props) {
         : t("logbook.pr_toast", { names: head });
       toast.success(msg, { description: t("logbook.pr_desc") });
     }
-  }, [prSessionByExercise]);
+    if (toMark.length > 0) {
+      void markCelebratedFn({ data: { session_ids: toMark } }).catch(() => {
+        // Soft-fail: localStorage already prevents replay this browser.
+      });
+    }
+  }, [prSessionByExercise, sessions, markCelebratedFn, t]);
 
   const weeks = useMemo(() => {
     const map = new Map<number, Session[]>();
