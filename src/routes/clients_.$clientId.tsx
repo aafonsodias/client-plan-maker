@@ -1286,7 +1286,7 @@ function ClientDetail() {
     setPhasedBusy(true);
     const tId = toast.loading("Synthesizing brief…");
     try {
-      const res = await startPhasedPlanFn({ data: { clientId } });
+      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: duration } });
       if (!res.ok) {
         if (res.error === "quota_exceeded") {
           toast.dismiss(tId);
