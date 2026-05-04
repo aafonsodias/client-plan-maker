@@ -2489,7 +2489,22 @@ function ClientDetail() {
                       }
                     };
                     return (
-                      <>
+                      (() => {
+                        const allInnerApproved =
+                          blueprintApproved && microcycleApproved && progressionsApproved;
+                        const Wrapper = ({ children }: { children: React.ReactNode }) =>
+                          allInnerApproved ? (
+                            <PipelineStrip
+                              blockNumber={(plans[0] as any)?.block_number ?? 1}
+                              approvedAt={(plans[0] as any)?.updated_at ?? null}
+                            >
+                              {children}
+                            </PipelineStrip>
+                          ) : (
+                            <>{children}</>
+                          );
+                        return (
+                          <Wrapper>
                         <StageCard
                           stageNumber={3}
                           title={t("plan:stage.label.3", "Plano-mestre")}
@@ -2683,7 +2698,9 @@ function ClientDetail() {
                         />
                         {/* The "ready" banner used to live here, but it duplicated
                             the Plano final section's emerald PDF button (R38). */}
-                      </>
+                          </Wrapper>
+                        );
+                      })()
                     );
                   })()}
                 </>
