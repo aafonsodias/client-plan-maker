@@ -267,17 +267,17 @@ function Dashboard() {
     <div className="space-y-10">
       <OnboardingChecklist />
 
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
-          <h1 className="mt-1 flex items-center gap-3 text-4xl font-light tracking-tight">
+          <h1 className="mt-1 flex items-center gap-3 text-3xl font-light tracking-tight sm:text-4xl">
             <BrandMark size="sm" />
-            {t("dashboard.title")}
+            <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
         <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
             </Button>
           </DialogTrigger>
