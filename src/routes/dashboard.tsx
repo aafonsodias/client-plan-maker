@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Plus, FileText, Sparkles, Trash2, BookOpen, Cake, Inbox, Clock, Copy,
-  TrendingUp, TrendingDown, Minus, ArrowRight, Loader2,
+  Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
+  TrendingUp, TrendingDown, Minus, Loader2,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
@@ -17,8 +17,6 @@ import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
 import { AtlasGenie } from "@/components/AtlasGenie";
 import { useClientPhases } from "@/hooks/use-client-phases";
-import { ClientPhasePill } from "@/components/ClientPhasePill";
-import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPlayerCard } from "@/components/ClientPlayerCard";
 import type { CardPlan, CardLog } from "@/lib/client-card-data";
 import { PhaseKind } from "@/lib/client-phase";
@@ -29,10 +27,6 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
