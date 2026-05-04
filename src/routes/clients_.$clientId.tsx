@@ -3410,6 +3410,7 @@ function AssessmentSection({
   const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
 
   if (collapsed) {
+    if (hideCollapsedStrip) return null;
     const isComplete = (completionPct ?? 0) >= 80;
     // Stage 1 sits in the same approved/draft visual language as Stages 2-5:
     // emerald when complete (matches PipelineStrip + approved StageCard),
