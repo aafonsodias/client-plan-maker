@@ -165,7 +165,10 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
-    const model = resolveModel("FORGE_MODEL_STAGE_2", "openai/gpt-5-mini");
+    // Default to the same Lovable Gateway model that Stage 1 uses reliably.
+    // gpt-5-mini was failing the tool-call contract here, leaving trainers
+    // stuck on Blueprint; gemini-3-flash-preview consistently emits the tool.
+    const model = resolveModel("FORGE_MODEL_STAGE_2", "google/gemini-3-flash-preview");
 
     // Up to 2 attempts: first run, then a stricter retry if the shape fails
     // the tier validator.
@@ -212,8 +215,34 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
       output_snapshot: result.ok ? result.data : (result as any).zodError ?? null,
     });
 
+    let usedFallback = false;
+    let blueprintData: any = result.ok ? (result.data as any) : null;
+
     if (!result.ok) {
-      return { ok: false as const, error: result.error, zodError: (result as any).zodError };
+      // Honest deterministic fallback: build a valid skeleton from the brief +
+      // tier so the trainer can keep moving and edit instead of being blocked.
+      const fallback = buildDeterministicBlueprint(brief, weeks, guidelines);
+      const parsed = BlueprintSchema.safeParse(fallback);
+      if (!parsed.success) {
+        // Should not happen — but if it does, surface the original AI error.
+        return { ok: false as const, error: result.error, zodError: (result as any).zodError };
+      }
+      blueprintData = parsed.data;
+      usedFallback = true;
+      await logGeneration(supabase, {
+        trainer_id: userId,
+        plan_id: data.planId,
+        stage: "stage2:blueprint:fallback",
+        model_used: "deterministic",
+        input_tokens: 0,
+        output_tokens: 0,
+        cost_usd: 0,
+        zod_passed: true,
+        retry_count: 0,
+        duration_ms: 0,
+        error: result.error,
+        output_snapshot: parsed.data,
+      });
     }
 
     // ---- Derive FITT-VP prescription_parameters (R2.2 Phase C.1) ---------
@@ -268,7 +297,7 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        blueprint: result.data as any,
+        blueprint: blueprintData as any,
         generation_state: newState as any,
         // Persist tier so Stage 3 + 4 don't re-classify and so the UI can show it
         generation_meta: {
@@ -276,6 +305,7 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
           tier_auto: autoTier,
           tier_override: overrideTier ?? null,
           tier_guidelines: guidelines,
+          blueprint_source: usedFallback ? "deterministic_fallback" : "ai",
           prepart_summary: {
             clearance_required: prepart.clearance_required,
             clearance_reason: prepart.clearance_reason,
@@ -291,8 +321,69 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, blueprint: result.data, tier };
+    return { ok: true as const, blueprint: blueprintData, tier, usedFallback };
   });
+
+// Deterministic fallback: clamp sessions/week to the tier window, build a few
+// safe archetypes from the brief's primary goal + emphasis, and assign them
+// across the week. Never fails schema validation.
+function buildDeterministicBlueprint(
+  brief: any,
+  weeks: number,
+  guidelines: { sessionsPerWeekMin: number; sessionsPerWeekMax: number },
+): any {
+  const reqSessions =
+    Number(brief?.sessions_per_week?.recommended ?? guidelines.sessionsPerWeekMin) || guidelines.sessionsPerWeekMin;
+  const sessions = Math.max(
+    guidelines.sessionsPerWeekMin,
+    Math.min(guidelines.sessionsPerWeekMax, reqSessions),
+  );
+  const goal: string = String(brief?.primary_goal ?? "general");
+  const emphasis = brief?.emphasis_split ?? { upper: 0.4, lower: 0.4, conditioning: 0.2 };
+  const archetypes: Array<{ id: string; focus: string; primary_movements: string[] }> = [];
+  if (goal === "conditioning") {
+    archetypes.push(
+      { id: "full_body_strength", focus: "Força full-body", primary_movements: ["squat", "hinge", "push"] },
+      { id: "conditioning_circuit", focus: "Condicionamento metabólico", primary_movements: ["carry", "lunge", "row"] },
+    );
+    if (sessions >= 3) archetypes.push({ id: "mixed_session", focus: "Misto força + cardio", primary_movements: ["push", "pull", "carry"] });
+  } else if (goal === "strength") {
+    archetypes.push(
+      { id: "lower_squat", focus: "Lower — squat focus", primary_movements: ["squat", "lunge"] },
+      { id: "upper_push", focus: "Upper — push focus", primary_movements: ["push", "carry"] },
+    );
+    if (sessions >= 3) archetypes.push({ id: "lower_hinge", focus: "Lower — hinge focus", primary_movements: ["hinge", "carry"] });
+    if (sessions >= 4) archetypes.push({ id: "upper_pull", focus: "Upper — pull focus", primary_movements: ["pull", "carry"] });
+  } else {
+    archetypes.push(
+      { id: "full_body_a", focus: "Full body A", primary_movements: ["squat", "push", "pull"] },
+      { id: "full_body_b", focus: "Full body B", primary_movements: ["hinge", "lunge", "carry"] },
+    );
+    if (sessions >= 3) archetypes.push({ id: "full_body_c", focus: "Full body C", primary_movements: ["squat", "pull", "carry"] });
+  }
+  // Round-robin archetype ids across `sessions` slots per week.
+  const ids = archetypes.map((a) => a.id);
+  const dayList: string[] = [];
+  for (let i = 0; i < sessions; i++) dayList.push(ids[i % ids.length]);
+  const week_to_session_map: Record<string, string[]> = {};
+  for (let w = 1; w <= weeks; w++) week_to_session_map[String(w)] = dayList;
+  const model = brief?.training_age_band === "advanced"
+    ? "block"
+    : brief?.training_age_band === "intermediate"
+    ? "undulating"
+    : "linear";
+  void emphasis;
+  return {
+    mesocycle_length_weeks: weeks,
+    sessions_per_week: sessions,
+    session_archetypes: archetypes,
+    week_to_session_map,
+    progression_model_proposal: {
+      model,
+      rationale: "Fallback determinístico: arquétipos derivados do brief + tier por o motor de IA não ter respondido a tempo. Editável.",
+    },
+  };
+}
 
 export const approveBlueprint = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
