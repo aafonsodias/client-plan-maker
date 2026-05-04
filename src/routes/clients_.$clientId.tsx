@@ -2442,7 +2442,7 @@ function ClientDetail() {
                           const prefix = stage[0].toUpperCase() + stage.slice(1);
                           const msg = res?.error || `Falha ao gerar ${stage}`;
                           console.error(`[${prefix}] generate failed`, { planId, stage, error: msg });
-                          toast.error(`${prefix}: ${msg}`);
+                          toast.error(`${prefix}: ${friendlyError(msg, `Falha ao gerar ${stage}.`)}`);
                           return;
                         }
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
@@ -2469,7 +2469,7 @@ function ClientDetail() {
                         const prefix = stage[0].toUpperCase() + stage.slice(1);
                         const msg = e?.message ?? `Falha ao gerar ${stage}`;
                         console.error(`[${prefix}] generate threw`, { planId, stage, error: msg });
-                        toast.error(`${prefix}: ${msg}`);
+                        toast.error(`${prefix}: ${friendlyError(msg, `Falha ao gerar ${stage}.`)}`);
                       } finally {
                         setStageBusy(null);
                       }
