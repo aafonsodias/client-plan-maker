@@ -270,8 +270,7 @@ function Dashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
-          <h1 className="mt-1 flex items-center gap-3 text-3xl font-light tracking-tight sm:text-4xl">
-            <BrandMark size="sm" />
+          <h1 className="mt-1 text-3xl font-light tracking-tight sm:text-4xl">
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
