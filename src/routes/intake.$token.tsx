@@ -1186,14 +1186,37 @@ function buildSlides(
     {
       title: t("sections.goal_what"),
       body: (
-        <Textarea
-          autoFocus
-          rows={3}
-          value={form.smart_specific}
-          placeholder={t("sections.goal_what_placeholder")}
-          onChange={(e) => set("smart_specific", e.target.value)}
-          className="text-base"
-        />
+        <div className="space-y-3">
+          <Textarea
+            autoFocus
+            rows={3}
+            value={form.smart_specific}
+            placeholder={t("sections.goal_what_placeholder")}
+            onChange={(e) => set("smart_specific", e.target.value)}
+            className="text-base"
+          />
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{t("sections.goal_suggestions")}</p>
+          <SmartChips
+            legend={{
+              body: t("sections.goal_cat_body"),
+              perf: t("sections.goal_cat_perf"),
+              clin: t("sections.goal_cat_clin"),
+              life: t("sections.goal_cat_life"),
+            }}
+            options={[
+              { cat: "body", label: t("sections.goal_chip_lose_fat"), value: t("sections.goal_chip_lose_fat") },
+              { cat: "body", label: t("sections.goal_chip_gain_muscle"), value: t("sections.goal_chip_gain_muscle") },
+              { cat: "perf", label: t("sections.goal_chip_get_stronger"), value: t("sections.goal_chip_get_stronger") },
+              { cat: "perf", label: t("sections.goal_chip_run_distance"), value: t("sections.goal_chip_run_distance") },
+              { cat: "perf", label: t("sections.goal_chip_first_pullup"), value: t("sections.goal_chip_first_pullup") },
+              { cat: "clin", label: t("sections.goal_chip_back_pain"), value: t("sections.goal_chip_back_pain") },
+              { cat: "clin", label: t("sections.goal_chip_post_injury"), value: t("sections.goal_chip_post_injury") },
+              { cat: "life", label: t("sections.goal_chip_more_energy"), value: t("sections.goal_chip_more_energy") },
+              { cat: "life", label: t("sections.goal_chip_routine"), value: t("sections.goal_chip_routine") },
+            ]}
+            onPick={(v) => set("smart_specific", v)}
+          />
+        </div>
       ),
       isValid: () => form.smart_specific.trim().length > 2,
     },
@@ -1203,8 +1226,51 @@ function buildSlides(
       subtitle: t("sections.goal_when"),
       body: (
         <div className="space-y-4">
-          <Input autoFocus value={form.smart_measurable} onChange={(e) => set("smart_measurable", e.target.value)} />
-          <Input type="date" value={form.smart_deadline} onChange={(e) => set("smart_deadline", e.target.value)} />
+          <div className="space-y-2">
+            <Input autoFocus value={form.smart_measurable} onChange={(e) => set("smart_measurable", e.target.value)} placeholder={t("sections.goal_measure_placeholder")} />
+            <SmartChips
+              legend={{
+                body: t("sections.goal_cat_body"),
+                perf: t("sections.goal_cat_perf"),
+                clin: t("sections.goal_cat_clin"),
+                life: t("sections.goal_cat_life"),
+              }}
+              options={[
+                { cat: "body", label: t("sections.goal_meas_kg"), value: t("sections.goal_meas_kg") },
+                { cat: "body", label: t("sections.goal_meas_waist"), value: t("sections.goal_meas_waist") },
+                { cat: "perf", label: t("sections.goal_meas_squat"), value: t("sections.goal_meas_squat") },
+                { cat: "perf", label: t("sections.goal_meas_5k"), value: t("sections.goal_meas_5k") },
+                { cat: "perf", label: t("sections.goal_meas_pullups"), value: t("sections.goal_meas_pullups") },
+                { cat: "clin", label: t("sections.goal_meas_pain"), value: t("sections.goal_meas_pain") },
+                { cat: "life", label: t("sections.goal_meas_sessions"), value: t("sections.goal_meas_sessions") },
+              ]}
+              onPick={(v) => set("smart_measurable", v)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Input type="date" value={form.smart_deadline} onChange={(e) => set("smart_deadline", e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              {[
+                { weeks: 4, key: "goal_dl_1m" },
+                { weeks: 12, key: "goal_dl_3m" },
+                { weeks: 26, key: "goal_dl_6m" },
+                { weeks: 52, key: "goal_dl_1y" },
+              ].map((d) => (
+                <button
+                  key={d.key}
+                  type="button"
+                  onClick={() => {
+                    const dt = new Date();
+                    dt.setDate(dt.getDate() + d.weeks * 7);
+                    set("smart_deadline", isoDateLocal(dt));
+                  }}
+                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground transition hover:border-accent/50 hover:text-foreground"
+                >
+                  {t(`sections.${d.key}`)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       ),
     },
