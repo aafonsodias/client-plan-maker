@@ -2666,38 +2666,47 @@ function ClientDetail() {
               const stage = (p.generation_state as any)?.stage as string | undefined;
               const phasedStages = ["brief", "blueprint", "microcycle", "progressions"];
               const isPhasedDraft = !!stage && phasedStages.includes(stage);
-              const linkProps = isPhasedDraft && stage === "brief"
-                ? { to: "/plans/$planId/brief" as const, params: { planId: p.id } }
-                : isPhasedDraft
-                ? { to: `/plans/$planId/${stage}` as any, params: { planId: p.id } }
-                : { to: "/plans/$planId" as const, params: { planId: p.id } };
+              const rowInner = (
+                <>
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div className="text-left">
+                      <p className="font-semibold">{p.title}</p>
+                      <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
+                    </div>
+                  </div>
+                  {(() => {
+                    const s = planStatusInfo(p as any, tCommon as any);
+                    return (
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
+                        {isPhasedDraft ? `Stage: ${s.label}` : s.label}
+                      </span>
+                    );
+                  })()}
+                </>
+              );
               return (
                 <div
                   key={p.id}
                   className="flex items-center justify-between border-b border-border last:border-b-0 hover:bg-secondary/50"
                 >
-                  <Link
-                    {...(linkProps as any)}
-                    className="flex flex-1 items-center justify-between px-5 py-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">{p.title}</p>
-                        <p className="text-xs text-muted-foreground">{t("plans.updated", { date: new Date(p.updated_at).toLocaleDateString() })}</p>
-                      </div>
-                    </div>
-                    {(() => {
-                      const s = planStatusInfo(p as any, tCommon as any);
-                      return (
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}
-                        >
-                          {isPhasedDraft ? `Stage: ${s.label}` : s.label}
-                        </span>
-                      );
-                    })()}
-                  </Link>
+                  {isPhasedDraft ? (
+                    <button
+                      type="button"
+                      onClick={() => void openPhasedDraft(p.id, stage)}
+                      className="flex flex-1 items-center justify-between px-5 py-4 text-left"
+                    >
+                      {rowInner}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/plans/$planId"
+                      params={{ planId: p.id }}
+                      className="flex flex-1 items-center justify-between px-5 py-4"
+                    >
+                      {rowInner}
+                    </Link>
+                  )}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <button
