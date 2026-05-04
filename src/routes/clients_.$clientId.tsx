@@ -2598,8 +2598,16 @@ function ClientDetail() {
                           busy={stageBusy === "progressions"}
                           progressLabel={
                             stageBusy === "progressions"
-                              ? "A planear progressões…"
+                              ? "A planear progressões (Semanas 2–4)…"
                               : undefined
+                          }
+                          expanded={expandedStage === "progressions"}
+                          onToggleExpanded={(next) =>
+                            setExpandedStage(next ? "progressions" : null)
+                          }
+                          hideHeaderApprove={
+                            (hasProgressionsDraft || progressionsApproved) &&
+                            expandedStage === "progressions"
                           }
                           approveLabel={
                             progressionsApproved
@@ -2612,19 +2620,48 @@ function ClientDetail() {
                             microcycleApproved
                               ? () =>
                                   progressionsApproved || hasProgressionsDraft
-                                    ? navigateToStage("progressions")
-                                    : runStage("progressions", false)
+                                    ? setExpandedStage(
+                                        expandedStage === "progressions" ? null : "progressions",
+                                      )
+                                    : runStage("progressions", false, { skipNavigate: true }).then(() =>
+                                        setExpandedStage("progressions"),
+                                      )
                               : undefined
                           }
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {hasProgressionsDraft && !progressionsApproved
-                              ? t("detail.stage.progressions_draft_hint")
-                              : microcycleApproved
-                              ? t("detail.stage.progressions_help")
-                              : t("detail.stage.progressions_blocked")}
-                          </p>
-                        </StageCard>
+                          expandedBody={
+                            (hasProgressionsDraft || progressionsApproved) &&
+                            expandedStage === "progressions" ? (
+                              <ProgressionsPanel
+                                planId={planId}
+                                onApproved={async () => {
+                                  void refreshPlans();
+                                  await openPhasedDraft(planId, "complete" as any);
+                                  setExpandedStage(null);
+                                }}
+                              />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {hasProgressionsDraft && !progressionsApproved
+                                  ? t("detail.stage.progressions_draft_hint")
+                                  : microcycleApproved
+                                  ? t("detail.stage.progressions_help")
+                                  : t("detail.stage.progressions_blocked")}
+                              </p>
+                            )
+                          }
+                        />
+                        {progressionsApproved && (
+                          <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-emerald-400">
+                                Plano pronto a entregar
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Todas as fases aprovadas. Descarrega o PDF abaixo na secção <strong>Plano final</strong>.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </>
                     );
                   })()}
