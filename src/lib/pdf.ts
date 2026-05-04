@@ -848,11 +848,14 @@ export async function generatePlanPdf(
         doc.setFontSize(8.5);
         doc.text(String(i + 1).padStart(2, "0"), xNum + 4, rowTop + 12);
 
-        // Name
+        // Name — wrap to 2 lines instead of ellipsis when long
         setText(doc, theme.ink);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(9.5);
-        doc.text(fitText(ex.name, colExW - 4), xEx, rowTop + 12);
+        const nameLines = (doc.splitTextToSize(ex.name, colExW - 4) as string[]).slice(0, 2);
+        for (let nli = 0; nli < nameLines.length; nli++) {
+          doc.text(nameLines[nli], xEx, rowTop + 12 + nli * 10);
+        }
 
         // Cue (single line)
         let cueText = (ex.cue ?? "").trim();
