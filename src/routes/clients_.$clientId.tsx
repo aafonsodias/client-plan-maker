@@ -2278,7 +2278,7 @@ function ClientDetail() {
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
                 stageNumber={2}
-                title="Briefing"
+                title={t("plan:stage.label.2", "Briefing")}
                 tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
