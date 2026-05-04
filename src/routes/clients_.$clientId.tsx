@@ -1625,6 +1625,12 @@ function ClientDetail() {
           clientId={clientId}
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
+          completionPct={
+            briefCoverage && briefCoverage.total > 0
+              ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+              : null
+          }
+          onShowSynthesis={() => setSynthesisOpen((o) => !o)}
           summaryLine={
             (assessment as any)?.performed_on
               ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
