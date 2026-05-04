@@ -2502,13 +2502,12 @@ function ClientDetail() {
                                 planId={planId}
                                 compact
                                 showOpenFullPage
-                                onApproved={() => {
+                                onApproved={async () => {
                                   void refreshPlans();
-                                  setExpandedStage("microcycle");
-                                  // Kick off Stage 3 generation immediately so
-                                  // Stage 2 closes (emerald approved) and
-                                  // Stage 3 shows progress in-place.
-                                  void runStage("microcycle", false);
+                                  // Refetch so approvedStages includes
+                                  // "blueprint" before we render Stage 3.
+                                  await openPhasedDraft(planId, "microcycle");
+                                  void runStage("microcycle", false, { skipNavigate: true });
                                 }}
                               />
                             ) : (
