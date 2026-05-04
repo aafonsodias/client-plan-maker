@@ -443,7 +443,7 @@ function Dashboard() {
                   key={f.id}
                   to="/dashboard"
                   search={{ filter: f.id }}
-                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground shadow-sm" : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
                 >
                   {f.label}
                 </Link>
