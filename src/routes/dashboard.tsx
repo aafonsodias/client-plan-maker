@@ -185,7 +185,6 @@ function Dashboard() {
       {/* Quick actions strip — visible once there's at least one client */}
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild size="sm"><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-1.5 h-4 w-4" /> {t("dashboard.new_client_short")}</Link></Button>
           {quickIntakeClient && (
             <Button size="sm" variant="outline" onClick={copyQuickIntake}>
               <Copy className="mr-1.5 h-4 w-4" /> {t("dashboard.copy_intake", { name: quickIntakeClient.full_name.split(" ")[0] })}
@@ -269,9 +268,15 @@ function Dashboard() {
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-accent" />
             <p className="font-medium">{t("dashboard.no_plans")}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.no_plans_hint")}</p>
-            <Button asChild className="mt-4">
-              <Link to="/clients" search={{ filter: "all" }}>{t("dashboard.add_a_client")}</Link>
-            </Button>
+            {isEmpty ? (
+              <Button asChild className="mt-4">
+                <Link to="/clients" search={{ filter: "all" }}>{t("dashboard.add_a_client")}</Link>
+              </Button>
+            ) : (
+              <Button asChild className="mt-4" variant="outline">
+                <Link to="/clients" search={{ filter: "all" }}>{t("dashboard.view_clients")}</Link>
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">

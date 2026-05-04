@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, X, HelpCircle } from "lucide-react";
+import { BookOpen, X, HelpCircle } from "lucide-react";
 
 const KEY = "forge.hint.dashboard.dismissed";
 
@@ -65,7 +65,6 @@ export function DashboardHint() {
         ))}
       </ol>
       <div className="mt-5 flex flex-wrap gap-2">
-        <Button asChild size="sm"><Link to="/clients" search={{ filter: "all" }}><Plus className="mr-1.5 h-4 w-4" /> Adicionar cliente</Link></Button>
         <Button asChild size="sm" variant="outline"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> Manual completo</Link></Button>
       </div>
     </div>
