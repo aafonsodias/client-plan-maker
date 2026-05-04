@@ -2971,6 +2971,8 @@ function AssessmentSection({
   collapsed: collapsedProp,
   onCollapsedChange,
   summaryLine,
+  completionPct,
+  onShowSynthesis,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -2979,6 +2981,10 @@ function AssessmentSection({
   collapsed?: boolean;
   onCollapsedChange?: (v: boolean) => void;
   summaryLine?: string;
+  /** When ≥80, the collapsed strip styles itself as a golden "complete" chip. */
+  completionPct?: number | null;
+  /** Optional inline action shown on the right of the collapsed strip. */
+  onShowSynthesis?: () => void;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
@@ -3052,23 +3058,45 @@ function AssessmentSection({
   const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
 
   if (collapsed) {
+    const isComplete = (completionPct ?? 0) >= 80;
+    const stripClass = isComplete
+      ? "rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-500/5 p-3 hover:from-amber-500/15"
+      : "rounded-2xl border border-border bg-card p-3";
+    const labelClass = isComplete ? "text-amber-400" : "";
     return (
-      <section className="rounded-2xl border border-border bg-card p-3">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="flex w-full items-center justify-between gap-3 text-left"
-          aria-expanded={false}
-        >
-          <div className="flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-bold">{t("detail.section.title")}</span>
+      <section className={stripClass}>
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            className="flex flex-1 items-center gap-2 text-left"
+            aria-expanded={false}
+          >
+            {isComplete ? (
+              <Check className="h-4 w-4 text-amber-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className={`text-sm font-bold ${labelClass}`}>
+              {t("detail.section.title")}
+              {completionPct != null && (
+                <span className="ml-1.5 font-semibold">· {completionPct}% completo</span>
+              )}
+            </span>
             {summaryLine && (
               <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
             )}
-          </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.section.expand_short")}</span>
-        </button>
+          </button>
+          {onShowSynthesis && isComplete && (
+            <button
+              type="button"
+              onClick={onShowSynthesis}
+              className="rounded-md border border-amber-500/30 px-2 py-1 text-[10px] font-medium uppercase tracking-widest text-amber-400 hover:bg-amber-500/10"
+            >
+              Ver síntese
+            </button>
+          )}
+        </div>
       </section>
     );
   }
