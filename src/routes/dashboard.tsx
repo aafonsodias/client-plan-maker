@@ -283,8 +283,21 @@ function Dashboard() {
                 <DialogHeader>
                   <DialogTitle>{t("clients.invite_dialog_title")}</DialogTitle>
                 </DialogHeader>
-                <p className="text-sm text-muted-foreground">{t("clients.invite_intro")}</p>
+                <div className="flex gap-1 rounded-full border border-border bg-secondary/40 p-1 text-xs">
+                  {(["invite", "manual"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setMode(m)}
+                      className={`flex-1 rounded-full px-3 py-1.5 transition ${mode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {m === "invite" ? t("dashboard.mode_invite", { defaultValue: "Enviar link de avaliação" }) : t("dashboard.mode_manual", { defaultValue: "Adicionar manualmente" })}
+                    </button>
+                  ))}
+                </div>
+                {mode === "invite" ? (
                 <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{t("clients.invite_intro")}</p>
                   {!showOptionalName ? (
                     <button
                       type="button"
@@ -306,6 +319,25 @@ function Dashboard() {
                     </Button>
                   </DialogFooter>
                 </div>
+                ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{t("dashboard.manual_intro", { defaultValue: "Cria a ficha agora; envias o questionário quando quiseres." })}</p>
+                  <div className="space-y-1.5">
+                    <Label>{t("dashboard.manual_name", { defaultValue: "Nome completo" })}</Label>
+                    <Input value={manualName} onChange={(e) => setManualName(e.target.value)} autoFocus />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>{t("dashboard.manual_email", { defaultValue: "Email (opcional)" })}</Label>
+                    <Input type="email" value={manualEmail} onChange={(e) => setManualEmail(e.target.value)} />
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" onClick={() => void createManual()} disabled={creating || !manualName.trim()}>
+                      {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {t("dashboard.manual_create", { defaultValue: "Criar cliente" })}
+                    </Button>
+                  </DialogFooter>
+                </div>
+                )}
               </>
             ) : (
               <>
