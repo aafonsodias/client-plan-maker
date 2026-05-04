@@ -2247,21 +2247,9 @@ function ClientDetail() {
             const coveragePct = briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
               : null;
-            const isComplete = inlineBrief?.approved && (coveragePct ?? 0) >= 80;
-            if (isComplete) {
-              return (
-                <button
-                  type="button"
-                  onClick={() => setSynthesisOpen((o) => !o)}
-                  className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
-                >
-                  <span className="flex items-center gap-2 font-semibold text-emerald-500">
-                    <Check className="h-4 w-4" /> Avaliação completa · {coveragePct}%
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              );
-            }
+            // The "Assessment · X% completo" chip is now rendered by the
+            // collapsed AssessmentSection itself (single merged button).
+            // Here we only surface the partial-coverage warning + synthesis.
             return (
               <>
               {inlineBrief?.approved && coveragePct != null && (
