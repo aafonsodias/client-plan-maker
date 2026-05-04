@@ -19,6 +19,8 @@ import { AtlasGenie } from "@/components/AtlasGenie";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { ClientPlayerCard } from "@/components/ClientPlayerCard";
+import type { CardPlan, CardLog } from "@/lib/client-card-data";
 import { PhaseKind } from "@/lib/client-phase";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { useServerFn } from "@tanstack/react-start";
@@ -65,6 +67,8 @@ function Dashboard() {
   const [clientRows, setClientRows] = useState<ClientRow[]>([]);
   const [recent, setRecent] = useState<Array<{ id: string; title: string; status: string; updated_at: string; client: { full_name: string } | null }>>([]);
   const [statusCounts, setStatusCounts] = useState<{ draft: number; ready: number; finalized: number }>({ draft: 0, ready: 0, finalized: 0 });
+  const [planByClient, setPlanByClient] = useState<Record<string, CardPlan | null>>({});
+  const [logsByClient, setLogsByClient] = useState<Record<string, CardLog[]>>({});
 
   // Invite dialog state
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -105,6 +109,42 @@ function Dashboard() {
       else counts.draft++;
     }
     setStatusCounts(counts);
+
+    // Per-client latest plan + recent logs (for the player card).
+    const ids = rows.map((c) => c.id);
+    if (ids.length > 0) {
+      const [{ data: plans }, { data: sessions }] = await Promise.all([
+        supabase
+          .from("workout_plans")
+          .select("id, client_id, title, status, duration_weeks, block_number, block_transition_summary, generation_status, created_at, updated_at")
+          .in("client_id", ids)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("workout_sessions")
+          .select("plan_id, session_date, week_number")
+          .order("session_date", { ascending: false }),
+      ]);
+      const planMap: Record<string, CardPlan | null> = {};
+      const planClient: Record<string, string> = {};
+      for (const p of (plans ?? []) as any[]) {
+        if (planMap[p.client_id] === undefined) {
+          planMap[p.client_id] = p as CardPlan;
+          planClient[p.id] = p.client_id;
+        }
+      }
+      const logMap: Record<string, CardLog[]> = {};
+      for (const s of (sessions ?? []) as any[]) {
+        const cid = planClient[s.plan_id];
+        if (!cid) continue;
+        if (!logMap[cid]) logMap[cid] = [];
+        if (logMap[cid].length < 10) logMap[cid].push({ session_date: s.session_date, week_number: s.week_number });
+      }
+      setPlanByClient(planMap);
+      setLogsByClient(logMap);
+    } else {
+      setPlanByClient({});
+      setLogsByClient({});
+    }
   };
 
   useEffect(() => {
