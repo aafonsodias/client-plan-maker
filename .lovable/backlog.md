@@ -192,3 +192,19 @@ Atualizado: Round 28 (4 Mai 2026)
 - WeekMatrix desktop view: full grid surface + interaction model. Needs design pass, not a small edit.
 - Adaptive repeat assessments: schema for assessment versions + context-aware question sets (gender/goal-driven).
 - Real verified/cert backend: today is just the founder email gate. Needs cert source-of-truth + UI to prove/verify.
+
+## Closed Round 41 (client page recomposition — pass 1)
+- Founder dot: amber Sparkles overlay on `<ClientAvatarUpload/>` (only on aafonsodias@gmail.com clients) — visible "verified" marker on the avatar itself, not just the header pill.
+- Identity chip strip: folded "Última avaliação · DD/MM/AAAA →" into a single `AVALIAÇÃO {pct}% · DD/MM` chip with tonal colour (≥80 emerald / ≥60 amber / else red). Click scrolls to synthesis. ACSM + Recovery chips kept, same height/shape.
+- Pipeline collapse: when Plano-mestre + Semana-tipo + Progressão are all approved, the three StageCards fold into a single emerald `<PipelineStrip/>` ("Pipeline · Bloco N completo · {date}") with click-to-expand-inline. Stage 2 (Briefing) stays open for tweaks.
+
+## Closed Round 42 (client page recomposition — hero card)
+- Shared macro-index helper: extracted `weekTagFor(weekNumber, totalWeeks)` to `src/lib/macro-index.ts`. PDF (`src/lib/pdf.ts`) now uses it — single source of truth for base/+load/+reps/deload tagging.
+- New `<MacroIndexStrip/>` component mirrors the PDF cover strip in the DOM (chips W1..WN, current highlighted, click-to-select). Trainers see the same visual language on paper and on screen.
+- New `<ThisWeekHero/>` focal-point card replaces the flat "Plano final" row: amber-glow background, plan title, Bloco/Semana/tag headline, full macro index strip, primary "Descarregar Semana N" CTA + secondary "Abrir plano" link. Onboarding variant (no complete plan) renders a calm "Sem plano ativo" card with manual + IA generation buttons.
+- Plano final section demoted to "Histórico de planos" (uppercase muted heading) and only matters now when the trainer has multiple plans / drafts to manage.
+
+## Open after Round 42 (parked — real rounds, unchanged)
+- WeekMatrix desktop view.
+- Adaptive repeat assessments.
+- Real verified/cert backend pipeline.
