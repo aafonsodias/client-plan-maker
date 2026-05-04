@@ -2299,6 +2299,19 @@ function ClientDetail() {
                           title="Blueprint"
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
+                          progressLabel={
+                            stageBusy === "blueprint"
+                              ? "A redigir Blueprint…"
+                              : undefined
+                          }
+                          expanded={expandedStage === "blueprint"}
+                          onToggleExpanded={(next) =>
+                            setExpandedStage(next ? "blueprint" : null)
+                          }
+                          hideHeaderApprove={
+                            (hasBlueprintDraft || blueprintApproved) &&
+                            expandedStage === "blueprint"
+                          }
                           approveLabel={
                             blueprintApproved
                               ? t("detail.stage.open")
@@ -2313,26 +2326,31 @@ function ClientDetail() {
                                   setExpandedStage("blueprint"),
                                 )
                           }
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {hasBlueprintDraft && !blueprintApproved
-                              ? t("detail.stage.blueprint_draft_hint")
-                              : t("detail.stage.blueprint_help")}
-                          </p>
-                        </StageCard>
-                        {expandedStage === "blueprint" && (hasBlueprintDraft || blueprintApproved) && (
-                          <div className="rounded-2xl border border-border bg-card/50 p-4 sm:p-6">
-                            <BlueprintEditorPanel
-                              planId={planId}
-                              compact
-                              showOpenFullPage
-                              onApproved={() => {
-                                void refreshPlans();
-                                setExpandedStage(null);
-                              }}
-                            />
-                          </div>
-                        )}
+                          expandedBody={
+                            (hasBlueprintDraft || blueprintApproved) &&
+                            expandedStage === "blueprint" ? (
+                              <BlueprintEditorPanel
+                                planId={planId}
+                                compact
+                                showOpenFullPage
+                                onApproved={() => {
+                                  void refreshPlans();
+                                  setExpandedStage("microcycle");
+                                  // Kick off Stage 3 generation immediately so
+                                  // Stage 2 closes (emerald approved) and
+                                  // Stage 3 shows progress in-place.
+                                  void runStage("microcycle", false);
+                                }}
+                              />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {hasBlueprintDraft && !blueprintApproved
+                                  ? t("detail.stage.blueprint_draft_hint")
+                                  : t("detail.stage.blueprint_help")}
+                              </p>
+                            )
+                          }
+                        />
                         <StageCard
                           stageNumber={3}
                           title="Microcycle"
@@ -2344,6 +2362,11 @@ function ClientDetail() {
                               : "placeholder"
                           }
                           busy={stageBusy === "microcycle"}
+                          progressLabel={
+                            stageBusy === "microcycle"
+                              ? "A escrever Day 1…"
+                              : undefined
+                          }
                           approveLabel={
                             microcycleApproved
                               ? t("detail.stage.open")
@@ -2379,6 +2402,11 @@ function ClientDetail() {
                               : "placeholder"
                           }
                           busy={stageBusy === "progressions"}
+                          progressLabel={
+                            stageBusy === "progressions"
+                              ? "A planear progressões…"
+                              : undefined
+                          }
                           approveLabel={
                             progressionsApproved
                               ? t("detail.stage.open")
