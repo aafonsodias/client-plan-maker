@@ -2788,7 +2788,7 @@ function ClientDetail() {
                     const s = planStatusInfo(p as any, tCommon as any);
                     return (
                       <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
-                        {isPhasedDraft ? `Stage: ${s.label}` : s.label}
+                        {isPhasedDraft ? `Etapa: ${s.label}` : s.label}
                       </span>
                     );
                   })()}
