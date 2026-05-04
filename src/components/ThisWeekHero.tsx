@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { FileText, Loader2, ExternalLink, ArrowRight } from "lucide-react";
+import { FileText, Loader2, ArrowRight, Download } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { MacroIndexStrip } from "@/components/MacroIndexStrip";
 import { weekTagFor } from "@/lib/macro-index";
+import { downloadPlanById } from "@/lib/download-plan";
+import { toast } from "sonner";
 
 /** Single dominant action that changes per client lifecycle state. */
 export type HeroPrimaryAction = {
@@ -41,6 +43,7 @@ export function ThisWeekHero({
   primaryAction: HeroPrimaryAction;
 }) {
   const [selectedWeek, setSelectedWeek] = useState(defaultWeek);
+  const [downloading, setDownloading] = useState(false);
 
   if (zeroState || !plan) {
     return (
@@ -69,6 +72,24 @@ export function ThisWeekHero({
   const blockN = plan.block_number ?? 1;
   const tag = weekTagFor(selectedWeek, totalWeeks);
 
+  // If the primary CTA is just "open this plan", it's redundant with the
+  // clickable plan title — collapse to the download-only affordance.
+  const ctaIsOpenPlan = !!primaryAction.href && primaryAction.href === `/plans/${plan.id}`;
+
+  const handleDownload = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    const tId = toast.loading(`A preparar PDF da Semana ${selectedWeek}…`);
+    try {
+      await downloadPlanById(plan.id, selectedWeek);
+      toast.success("PDF descarregado.", { id: tId });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <section
       aria-label="Esta semana"
@@ -78,18 +99,35 @@ export function ThisWeekHero({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
-              Esta semana · o que fazer agora
+              Protocolo · esta semana
             </p>
-            <h2 className="mt-1 flex items-center gap-2 text-base font-semibold text-foreground">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate">{plan.title}</span>
+            <h2 className="mt-1 text-base font-semibold text-foreground">
+              <Link
+                to="/plans/$planId"
+                params={{ planId: plan.id }}
+                className="group inline-flex items-center gap-2 hover:text-amber-400"
+                title="Abrir plano"
+              >
+                <FileText className="h-4 w-4 text-muted-foreground group-hover:text-amber-400" />
+                <span className="truncate underline-offset-4 group-hover:underline">{plan.title}</span>
+              </Link>
             </h2>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
               Bloco {blockN} · Semana {selectedWeek} de {totalWeeks} · <span className="uppercase tracking-wider text-foreground/80">{tag}</span>
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <PrimaryCta action={primaryAction} />
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-60"
+              title={`Descarregar PDF da Semana ${selectedWeek}`}
+            >
+              {downloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+              Semana {selectedWeek} · PDF
+            </button>
+            {!ctaIsOpenPlan && <PrimaryCta action={primaryAction} />}
           </div>
         </div>
 
