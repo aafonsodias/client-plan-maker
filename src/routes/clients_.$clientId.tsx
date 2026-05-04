@@ -2720,6 +2720,25 @@ function ClientDetail() {
                   })()}
                 </>
               )}
+              {!inlineBrief.approved && (
+                <>
+                  <StageCard
+                    stageNumber={3}
+                    title={t("plan:stage.label.3", "Plano-mestre")}
+                    status="placeholder"
+                  />
+                  <StageCard
+                    stageNumber={4}
+                    title={t("plan:stage.label.4", "Semana-tipo")}
+                    status="placeholder"
+                  />
+                  <StageCard
+                    stageNumber={5}
+                    title={t("plan:stage.label.5", "Progressão 12 sem.")}
+                    status="placeholder"
+                  />
+                </>
+              )}
             </div>
           )}
 
