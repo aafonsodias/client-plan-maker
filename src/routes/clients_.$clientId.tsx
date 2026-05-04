@@ -410,6 +410,7 @@ function ClientDetail() {
   // When the trainer clicks the green "Avaliação completa" pill, the synthesis
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
+  const [reassessOpen, setReassessOpen] = useState(false);
   // Assessment collapse — controlled so sidebar can mirror it. Once brief is
   // approved, default to collapsed (the trainer is now working in the stages
   // below). User toggle is persisted per-client.
