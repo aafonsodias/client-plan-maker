@@ -274,3 +274,6 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1 **Compliance qualitative tags + goal-aware verdicts** (e.g. "volume adequado para fase base"). Needs a per-client objective model first.
 - P1 **Compliance grouped layout**: "Consistência / Carga / Distribuição" with 1-2 well-interpreted KPIs each instead of 4-grid of telemetry.
 - P2 Goals model (per-client primary objective: força / hipertrofia / saúde / performance) feeding both Hero CTA copy and Compliance verdicts.
+
+## Open after Round 53 (P1)
+- P1 **Public "Train with me" join link** — single, shareable URL (e.g. `/join/{trainerSlug}`) that anyone can open, see a short pitch (in-person or online), and submit a lead form (name + email + goals + modality). Creates a draft client in `pending` status; trainer accepts/declines from dashboard. Replaces the dropped per-client "copy intake link" shortcut. Needs: public route, Zod-validated server fn + rate limit, basic anti-spam, RLS-friendly `pending` client state, dashboard "Pending requests" inbox.
