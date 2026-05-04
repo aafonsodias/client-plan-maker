@@ -76,7 +76,6 @@ import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
-import { NextMealCue } from "@/components/NextMealCue";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 
 export const Route = createFileRoute("/clients_/$clientId")({
