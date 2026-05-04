@@ -106,6 +106,19 @@
       "full_manual": "Open the manual"
     }
   },
+  "missions": {
+    "title": "Assessment missions",
+    "subtitle": "Complete these missions to unlock plan generation.",
+    "parq": "PARQ — cardiovascular safety",
+    "rockport": "Rockport test (VO₂)",
+    "blood_pressure": "Blood pressure",
+    "photos": "Posture photos",
+    "gym_class": "Gym assessment class",
+    "custom": "Custom mission",
+    "mark_done": "Mark done",
+    "completion": "Assessment {{n}}% complete",
+    "locked_hint": "Plan generation unlocks at 100%."
+  },
   "clients": {
     "eyebrow": "Roster",
     "title": "Clients",
