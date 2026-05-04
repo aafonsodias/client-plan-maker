@@ -2494,7 +2494,13 @@ function ClientDetail() {
                         <StageCard
                           stageNumber={3}
                           title={t("plan:stage.label.3", "Plano-mestre")}
-                          status={blueprintApproved ? "approved" : "ready"}
+                          status={
+                            stageBusy === "blueprint"
+                              ? "generating"
+                              : blueprintApproved
+                              ? "approved"
+                              : "ready"
+                          }
                           busy={stageBusy === "blueprint"}
                           progressLabel={
                             stageBusy === "blueprint"
@@ -2557,7 +2563,9 @@ function ClientDetail() {
                           stageNumber={4}
                           title={t("plan:stage.label.4", "Semana-tipo")}
                           status={
-                            microcycleApproved
+                            stageBusy === "microcycle"
+                              ? "generating"
+                              : microcycleApproved
                               ? "approved"
                               : blueprintApproved
                               ? "ready"
@@ -2633,7 +2641,9 @@ function ClientDetail() {
                           stageNumber={5}
                           title={t("plan:stage.label.5", "Progressão 12 sem.")}
                           status={
-                            progressionsApproved
+                            stageBusy === "progressions"
+                              ? "generating"
+                              : progressionsApproved
                               ? "approved"
                               : microcycleApproved
                               ? "ready"
