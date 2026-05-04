@@ -2787,52 +2787,114 @@ function ClientDetail() {
             </div>
           )}
 
-      {/* Hero "Esta semana" card — focal point of the client page. Renders for the
-          most-recent plan; falls back to a calm onboarding card when none exists. */}
+      {/* Hero "Esta semana" card — focal point of the client page. Holds the ONE
+          contextual primary action so the trainer always sees a single obvious
+          next step (R52). All other actions live in "Mais ações" above. */}
       {(() => {
         const heroPlan = plans.find(
           (p) => ((p as any).generation_state?.stage ?? null) === "complete",
         ) ?? null;
         const zeroState = !heroPlan;
-        if (zeroState && plans.length === 0) return null; // keep page blank-friendly during pure onboarding above
+        // Even with no plans yet, we still render the hero so the trainer sees
+        // a primary CTA ("Pedir avaliação" / "Rever briefing"). The intake
+        // panel above keeps its standalone form for first-time onboarding.
         const heroDefaultWeek = heroPlan
           ? Math.min(
               Math.max(1, (heroPlan as any).duration_weeks ?? 1),
               planLatestWeek[heroPlan.id] ?? 1,
             )
           : 1;
+
+        // Resolve the single contextual primary action for this client.
+        const intakeDone =
+          client.intake_status === "submitted" || client.intake_status === "reviewed";
+        const briefReady = !!inlineBrief && !inlineBrief.approved;
+        const briefApproved = !!inlineBrief?.approved;
+        const blueprintApproved = (inlineBrief?.approvedStages ?? []).includes("blueprint");
+        const microcycleApproved = (inlineBrief?.approvedStages ?? []).includes("microcycle");
+        const progressionsApproved = (inlineBrief?.approvedStages ?? []).includes("progressions");
+        const allApproved = briefApproved && blueprintApproved && microcycleApproved && progressionsApproved;
+
+        const scrollToStages = () => {
+          document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
+        if (!intakeDone && !lastSavedAt) {
+          primaryAction = {
+            label: "Pedir avaliação",
+            icon: <Send className="h-4 w-4" />,
+            onClick: () => {
+              document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            },
+          };
+        } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
+          primaryAction = {
+            label: "Iniciar briefing IA",
+            icon: <Sparkles className="h-4 w-4" />,
+            busy: phasedBusy,
+            onClick: async () => {
+              try {
+                setPhasedBusy(true);
+                const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
+                if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); }
+                else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
+              } finally { setPhasedBusy(false); }
+            },
+          };
+        } else if (briefReady) {
+          primaryAction = {
+            label: "Rever briefing",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: scrollToStages,
+          };
+        } else if (briefApproved && !blueprintApproved) {
+          primaryAction = {
+            label: "Aprovar plano-mestre",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("blueprint"); scrollToStages(); },
+          };
+        } else if (blueprintApproved && !microcycleApproved) {
+          primaryAction = {
+            label: "Aprovar semana-tipo",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("microcycle"); scrollToStages(); },
+          };
+        } else if (microcycleApproved && !progressionsApproved) {
+          primaryAction = {
+            label: "Aprovar progressão",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("progressions"); scrollToStages(); },
+          };
+        } else if (allApproved && heroPlan) {
+          primaryAction = {
+            label: "Abrir treino de hoje",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
+          };
+        } else if (heroPlan) {
+          primaryAction = {
+            label: "Abrir plano",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
+          };
+        } else {
+          primaryAction = {
+            label: "Continuar avaliação",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => {
+              document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            },
+          };
+        }
+
         return (
           <ThisWeekHero
             key={heroPlan?.id ?? "empty"}
             plan={heroPlan as any}
             defaultWeek={heroDefaultWeek}
             zeroState={zeroState}
-            canEvolve={!!evolvableSourcePlan}
-            creating={creatingPlan}
-            onCreateManual={async () => {
-              setCreatingPlan("manual");
-              try {
-                const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
-                if (r?.ok && r?.planId) {
-                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                } else {
-                  toast.error(r?.error ?? t("detail.plans.manual_failed"));
-                }
-              } finally { setCreatingPlan(null); }
-            }}
-            onEvolve={async () => {
-              if (!evolvableSourcePlan) return;
-              setCreatingPlan("evolve");
-              try {
-                const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
-                if (r?.ok && r?.planId) {
-                  toast.success(t("detail.plans.evolve_success"));
-                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                } else {
-                  toast.error(r?.error ?? t("detail.plans.evolve_failed"));
-                }
-              } finally { setCreatingPlan(null); }
-            }}
+            primaryAction={primaryAction}
           />
         );
       })()}
