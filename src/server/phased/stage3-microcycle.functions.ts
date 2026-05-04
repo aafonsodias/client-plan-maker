@@ -733,8 +733,14 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     // Mark all pending immediately so UI sees them.
     await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
 
+    console.log("[generateMicrocycleDays] start", {
+      planId: data.planId,
+      sessionsPerWeek,
+      dayIndices,
+      priorPoolSize: priorPool.length,
+    });
     const queue = [...dayIndices];
-    const concurrency = 5;
+    const concurrency = 7;
     let okCount = 0;
     let errCount = 0;
 
