@@ -94,6 +94,14 @@
     "delete": "Delete",
     "plan_deleted": "Plan deleted",
     "evo_title": "Evolution vs prior block · {{label}}"
+    ,"how_it_works": {
+      "open": "How it works",
+      "title": "3 steps to your first plan",
+      "s1_b": "Add a client", "s1_s": "Just name and email.",
+      "s2_b": "Send the assessment link", "s2_s": "They fill it on their phone.",
+      "s3_b": "Generate the plan", "s3_s": "Review, adjust, export PDF.",
+      "full_manual": "Open the manual"
+    }
   },
   "clients": {
     "eyebrow": "Roster",
