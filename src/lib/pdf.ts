@@ -184,8 +184,8 @@ type Theme = {
 
 const LIGHT_THEME: Theme = {
   mode: "light",
-  // FORGE PDF spec §12: bg #FAF8F4, text #1A1A1A, accent #D4A574 ochre.
-  // We deliberately keep accent = FORGE amber (#E8A547) instead of ochre
+  // PROTOCOL PDF spec §12: bg #FAF8F4, text #1A1A1A, accent #D4A574 ochre.
+  // We deliberately keep accent = Protocol amber (#E8A547) instead of ochre
   // because amber is the brand token used everywhere else (BrandMark, chips,
   // toneChip warn). Diverging only in PDFs would break visual continuity.
   bg: [250, 248, 244],         // #FAF8F4 — spec
@@ -194,7 +194,7 @@ const LIGHT_THEME: Theme = {
   inkMuted: [120, 118, 112],
   inkGhost: [232, 229, 222],
   rule: [220, 216, 208],
-  accent: [232, 165, 71],      // FORGE amber (brand) — see note above
+  accent: [232, 165, 71],      // Protocol amber (brand) — see note above
   bannerBg: [244, 241, 234],
   bannerInk: [26, 26, 26],
 };
@@ -263,7 +263,7 @@ export async function generatePlanPdf(
     else theme = LIGHT_THEME;
   }
 
-  const brand = (branding.business_name || branding.full_name || "FORGE").toUpperCase();
+  const brand = (branding.business_name || branding.full_name || "PROTOCOL").toUpperCase();
 
   // ---------- Weekly mode setup ----------
   // If meta.week_number is provided, filter plan.weeks down to just that week
@@ -1187,7 +1187,11 @@ export function renderAssessmentPdf({ assessment, client, t }: RenderAssessmentA
       [tr("pdf.experience", "Experience"), safe(assessment?.experience_level)],
       [tr("pdf.training_days", "Days/week"), safe(assessment?.training_days_per_week)],
       [tr("pdf.session_duration", "Session (min)"), safe(assessment?.session_duration_minutes)],
-      [tr("pdf.location", "Location"), safe(assessment?.training_location)],
+      [tr("pdf.location", "Location"), safe(
+        Array.isArray(assessment?.training_location)
+          ? assessment.training_location.join(", ")
+          : assessment?.training_location,
+      )],
       [tr("pdf.years_training", "Years training"), safe(assessment?.years_training)],
     ],
     3,
