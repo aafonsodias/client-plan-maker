@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_MODEL_ID, isAllowedModel } from "@/lib/ai-models";
 
-const KEY = "forge.ai.model";
+const KEY = "protocol.ai.model";
 
 export function useModelPreference() {
   const [model, setModelState] = useState<string>(DEFAULT_MODEL_ID);
