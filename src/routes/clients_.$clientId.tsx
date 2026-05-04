@@ -65,6 +65,7 @@ import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
+import { ThisWeekHero } from "@/components/ThisWeekHero";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
