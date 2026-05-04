@@ -1,25 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  generateBlueprint,
-  approveBlueprint,
-  setTierOverride,
-} from "@/server/phased/stage2-blueprint.functions";
-import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
 import { BriefContextRail } from "@/components/BriefContextRail";
-import { BriefSheetButton } from "@/components/BriefSheetButton";
-import { BlueprintArchetypesList } from "@/components/BlueprintArchetypesList";
-import { BlueprintAiChat } from "@/components/BlueprintAiChat";
-import { WeekMatrixGrid } from "@/components/WeekMatrixGrid";
-import { ProgressionModelPicker } from "@/components/ProgressionModelPicker";
-import { TierChip, type TierGuidelinesShape } from "@/components/TierChip";
-import { useTranslation } from "react-i18next";
-import type { Tier } from "@/server/phased/programming-tier.server";
+import { BlueprintEditorPanel } from "@/components/BlueprintEditorPanel";
 
 export const Route = createFileRoute("/plans/$planId/blueprint")({
   component: BlueprintRoute,
@@ -32,7 +14,9 @@ function BlueprintRoute() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="xl:flex xl:gap-6">
           <main className="min-w-0 flex-1">
-            <BlueprintReview />
+            <div className="mx-auto max-w-4xl p-4 sm:p-6">
+              <BlueprintEditorPanel planId={planId} />
+            </div>
           </main>
           <aside className="hidden xl:block w-80 2xl:w-96 flex-shrink-0">
             <div className="scrollbar-hide sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pb-6">
