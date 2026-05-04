@@ -218,6 +218,12 @@ export function MicrocyclePanel({
   };
   const doneCount = dayList.filter((i) => dayState(i) === "done").length;
   const errorCount = dayList.filter((i) => dayState(i) === "error").length;
+  const approvedDayCount = dayList.filter((i) => {
+    const r = days.find((d) => d.day_number === i);
+    return !!r?.approved_at;
+  }).length;
+  const allDaysApproved =
+    sessionsPerWeek > 0 && approvedDayCount === sessionsPerWeek;
   const haveAllRows =
     sessionsPerWeek > 0 &&
     days.filter((d) => d.day_number <= sessionsPerWeek).length >= sessionsPerWeek;
@@ -230,11 +236,14 @@ export function MicrocyclePanel({
   const autoApprovedRef = useRef(false);
   useEffect(() => {
     if (autoApprovedRef.current) return;
-    if (!allDone || isFinalized || busy) return;
+    // Honest gate: only auto-advance when the trainer has approved every
+    // single day (not merely "AI finished writing them"). Prevents the
+    // silent jump to Stage 5 that loses unreviewed edits.
+    if (!allDaysApproved || isFinalized || busy) return;
     autoApprovedRef.current = true;
     void approve();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allDone, isFinalized, busy]);
+  }, [allDaysApproved, isFinalized, busy]);
 
   // Honest ETA based on observed completion times. Falls back to 18s/day.
   useEffect(() => {
