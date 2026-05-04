@@ -12,6 +12,7 @@ import { repairDay } from "./plan-repair.server";
 import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
 import { anthropicCompatFetch } from "./anthropic-compat.server";
 import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
+import { pickWaveTier, buildWavePlan } from "./phased/programming-defaults";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
@@ -714,12 +715,45 @@ ${feedback || "(no free-text feedback — use the previous plan as anchor and im
 ${prevSkeleton}`;
     }
 
+    // ---- Wave RPE periodisation (Bompa & Buzzichelli 6e §7.3-7.5) ----
+    // The single-shot model collapses to RPE 7 across all weeks unless we
+    // explicitly hand it the wave. We always inject it; trainer feedback can
+    // shift the anchor but cannot flatten the wave.
+    const waveTier = pickWaveTier({
+      trainingAgeBand:
+        (data.assessment.experience_level ?? "").toLowerCase() === "beginner"
+          ? "beginner"
+          : (data.assessment.experience_level ?? "").toLowerCase() === "advanced"
+          ? "advanced"
+          : "intermediate",
+      redFlagsCount: (data.assessment.med_flags ?? []).length + (parqYes ? 1 : 0),
+      injuryActive: !!(data.assessment.injuries ?? "").trim(),
+    });
+    const wave = buildWavePlan(waveTier, data.duration_weeks);
+    const waveBlock = `
+
+WAVE-LOADING PERIODISATION — apply these RPE caps and volume multipliers EXACTLY (Bompa & Buzzichelli 6e §7.3-7.5). Do NOT flatten — the wave is the program:
+${wave
+  .map(
+    (w) =>
+      `  • Week ${w.week} (${w.tag}): RPE ${w.rpe_low}-${w.rpe_high}, volume ×${w.volume_multiplier} (relative to W1 base).`
+  )
+  .join("\n")}
+
+SET COUNTS — calibrate by training age (NSCA Essentials 3e Cap. 17 + ACSM 12e Cap. 7):
+- beginner: 2-3 working sets per main exercise, 1-2 for accessories.
+- intermediate: 3-4 sets main, 2-3 accessories.
+- advanced: 3-5 sets main, 2-4 accessories.
+
+EXERCISE COUNT PER DAY — at least 5 working exercises in the main 'exercises' section (4 minimum only on a true mobility/recovery day). NEVER collapse below 4 — that is a structural failure, not a creative choice.
+`;
+
     try {
       const res = await anthropicCompatFetch({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 8000,
+        max_tokens: 12000,
         system: sys,
-        messages: [{ role: "user", content: user + feedbackBlock }],
+        messages: [{ role: "user", content: user + waveBlock + feedbackBlock }],
         tools: [
           {
             name: "emit_workout_plan",

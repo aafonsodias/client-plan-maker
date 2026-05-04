@@ -1,113 +1,138 @@
 
-# Round 55 — MVP focus: Log que não perde dados, mobile-first, mapa da app + landing refresh
+## Crítica primeiro — o que está mesmo a partir-se
 
-107 créditos restantes. Vou alocar com critério: o **bug do log a aparecer vazio** é P0 e barato; o **redesign do logbook desktop+mobile** é o item de maior impacto para MVP; mapa da app + landing refresh são entregáveis paralelos baratos. **Open-source recon: passo, mas com defesa** (ver §5).
+### 1. "Regenerate with feedback" usa o motor errado (P0, urgente)
 
----
+Olhei para `src/routes/plans.$planId.tsx:1554` (RegenerateWithFeedbackDialog) e ele chama `generatePlanDraft` — o **pipeline single-shot legacy**. Esse motor:
 
-## 1. Bug "Log apareceu vazio mas eu já tinha preenchido" (P0 — 8 cr)
+- Não passa pelo Stage 2/3/4/5 phased (que é o source-of-truth desde Round 30+).
+- Não aplica `computeWaveRpe` nem o anchor RPE por training age (W1 = 5.5/6.5/7.0 conforme tier).
+- Não tem critic/repair (auditor).
+- Limita-se a 8000 tokens num único call → o Claude colapsa para 4 exercícios e ignora o pedido de "2 sets".
 
-**Causa exacta** (li `src/routes/plans.$planId.tsx:1188-1295`, função `LogMode`):
-- Cada vez que mudas de dia/semana/data, o `useEffect` em 1204-1221 **reseta `entries` a partir de `plan.exercises`** com sets vazios.
-- A submissão chama `INSERT INTO workout_sessions` (1260) — **nunca lê** se já existe uma sessão para `(plan_id, week, day_label, session_date, logged_by='trainer')`.
-- Resultado: a sessão antiga existe na DB (por isso "History (1)" mostra), mas o formulário arranca em branco e cada `submit` cria uma sessão duplicada com a data de hoje.
+Por isso vês:
+- "RPE 7" rígido em vez da onda 6.5→7.5→+0.5 (o teu pedido de "RPE properly starting from 6.5").
+- "3×" em todos os exercícios em vez dos 2× pedidos.
+- Estrutura colapsada (4 exercícios/dia em vez dos ~6).
+- Banner "No progression was applied" porque os progressions deltas (Stage 4) nunca foram corridos.
 
-**Correção:**
-1. Quando o seletor (week/day/date) muda, **fazer lookup local** em `safeSessions` por `(week_number, day_label, session_date, logged_by='trainer')`. Se existir, hidratar `entries` + `notes` a partir dela em vez de zerar.
-2. Mostrar chip "📝 a editar sessão de DD/MM" vs "✨ nova sessão" no header do picker para o trainer perceber qual o estado.
-3. `submit` passa a fazer **upsert**: se `editingSessionId` existe → `UPDATE`; senão → `INSERT`. Sem duplicados.
-4. Toast a desambiguar: "Sessão atualizada" vs "Sessão registada".
+**O que os livros dizem (rápido):**
+- **Bompa & Buzzichelli 6e §6.4**: novato 2–3 séries, RPE 6–7 anchor; intermediate 3–4 séries, RPE 7–8.
+- **NSCA Essentials 3e Cap. 17**: novato 1–3 séries é defensável para hipertrofia inicial. Acima disso só com base.
+- **ACSM 12e Cap. 7**: 2–4 séries é o típico, 1 série aceitável para recém-iniciados.
+- Conclusão: o pedido do utilizador (2× @ RPE 6.5 W1) é academicamente correto para novato. O motor é que não obedeceu.
 
-**Não toca em sharing público (`saveClientSession` já tem lógica de upsert por outro caminho).**
+### 2. Sessões órfãs após regen (P0)
 
-## 2. Logbook desktop ↔ mobile redesign (P0 — 35 cr)
+Quando regeneras, o `plan_data` é reescrito mas as `workout_sessions` antigas continuam atadas ao `plan_id`. O Logbook lê tudo e mostra Day 1 Week 1 vazio porque o nome dos exercícios mudou e já não há match. **Não as devemos apagar** — são histórico real. Devemos marcá-las como `legacy` (ou guardar `plan_data_version`) e mostrar num drawer "Sessões antes do redesenho".
 
-Este é o core da tua mensagem. Premissa: **PT vê o telemóvel para ver/registar o cliente; cliente regista no telemóvel; tu vês o desktop para passar o olho num bloco.** São 2 jobs diferentes — não vou tentar fazer um layout só.
+### 3. Falta de transparência durante a regeneração
 
-### 2.1 Mobile (≤640px) — *fast logging in 3 taps*
-- **Sticky bottom bar** com 3 ações: `← Anterior · Próximo →` + `Guardar` (âmbar). Sempre visível.
-- Cada exercício é um **card colapsável**: header "Bodyweight Squats · Set 2/4 · 12 reps × 60kg" (último set preenchido em destaque).
-- **Stepper grande para reps/peso**: tap-tap-tap, sem teclado a saltar. Botões `+1 / +5 / +0.5kg / +1kg` ao lado do input — copia padrão do FitNotes.
-- **Auto-collapse do exercício** quando todos os sets prescritos estão preenchidos. Vai sozinho ao próximo.
-- **RPE wheel** (oklch âmbar 0-10) no fim de cada exercício, opcional, 1 tap.
-- Sem cabeçalho gordo: o picker de week/day/date colapsa para `Week 1 · Day 1 · 04 mai ▾` (1 linha).
+Clicaste, viste "Regenerating…", esperaste, toast minúsculo. Sem indicação de:
+- Qual modelo/motor.
+- Em que stage (W1, W2, audit, etc.).
+- ETA.
+- Possibilidade de cancelar.
 
-### 2.2 Desktop (≥1024px) — *bird's-eye + tabular*
-- Layout **2 colunas**: à esquerda lista de exercícios do dia (sticky), à direita a tabela de sets editável. Click num exercício → scroll-to e foco.
-- **Tabela densa** com `Set | Prescrição | Reps | Peso | RPE | ✓` por linha, edita inline com Tab.
-- **Atalhos**: `Tab`/`Enter` salta de campo; `Cmd+S` guarda; `Cmd+→` próximo dia.
-- Coluna direita extra: **history strip** das últimas 3 execuções desse exercício (carga + reps), trazida pelo `getExerciseHistory` server-fn já existente.
-- **Dirty indicator** no botão Guardar (âmbar pulsante quando há alterações por gravar) + auto-save draft em `localStorage` por `planId+week+day` para resistir a F5.
+A `DemoRunsContext` + `DemoRunsIndicator` já fazem isto para a Demo Lab. Reusar.
 
-### 2.3 Componentização (sem partir nada)
-- Novo `src/components/log/LogPickerCompact.tsx` — picker de 1 linha responsive.
-- Novo `src/components/log/LogExerciseRowMobile.tsx` — card stepper.
-- Novo `src/components/log/LogExerciseTableDesktop.tsx` — tabela inline.
-- `LogMode` em `plans.$planId.tsx` orquestra; usa `useMediaQuery('(min-width: 1024px)')` ou Tailwind `lg:hidden / hidden lg:flex` (preferido — sem JS).
+### 4. Avaliação parece colada de outro produto (P1)
 
-## 3. Mapa da app + screenshots (P1 — 12 cr)
+Confirmado pela tua descrição: bege/off-white em vez de respeitar `--background`/`--card`/`--muted`, sem `shadow-sm`, sem `border` consistente, hierarquia plana. O ficheiro `src/i18n/locales/en/assessment.json` está cuidado, mas o componente em si (provavelmente em `src/components/PlanAssessmentSheet.tsx` + sub-blocos) usa cores hard-coded em vez dos tokens do design system.
 
-Não consegui autenticar o browser-tool (loading infinito sem sessão) — vou produzir o mapa **a partir do código** + 6 screenshots PNG renderizados a partir das rotas-chave através de um script Puppeteer-em-edge **OU** mais honestamente: peço-te para teres a sessão aberta no preview e eu uso o browser-tool no próximo turno para tirar prints reais. **No turno actual, entrego o mapa textual + identificação visual baseada em código.**
+### 5. Logbook (já com bug fix do Round 54)
 
-Ficheiro `.lovable/app-map.md` com:
-- Diagrama Mermaid das 28 rotas e como se ligam.
-- Por cada rota: **status MVP** (✅ pronto · 🟡 funcional mas tosco · 🔴 falta) + 1 frase do que faz + ficheiros principais.
-- Lista única "MVP-blocking gaps" — máx 5 items que faltam para enviar a v1 honesta.
-
-## 4. Landing page refresh (P1 — 25 cr)
-
-`src/routes/index.tsx` tem 1158 linhas — não vou reescrever, vou **cirurgicamente actualizar 4 secções**:
-
-1. **Hero**: trocar promessa para reflectir o estado real ("Periodização honesta + logbook que não te perde + PDF de oferecer ao cliente"). Hoje fala em coisas que ainda não existem.
-2. **5-stage journey strip** (Intake → Brief → Blueprint → Microcycle → Progressions): adicionar sub-bullets do que é real **agora**: red-flag tiers, capacity gain inter-blocos, rotation audit, e1RM PRs com confetti.
-3. **"What's new"** (substitui qualquer fake testimonial): linha do tempo Round 6→54 com 6-8 milestones honestos (multi-block, capacity-gain, rotation audit, PR celebration, light-mode contrast, etc).
-4. **Pricing**: confirmar que os caps (8/30/80) batem com `tier_to_plan_quota` e remover qualquer "soon" que já tenha sido entregue.
-
-**Não toco**: copy legal, FAQ, footer.
-
-## 5. Open-source recon — fazer mas em modo "tomar uma ideia, não importar dependência" (P2 — 7 cr)
-
-Vou navegar a 3 projetos relevantes (browser tool externo) e produzir `.lovable/oss-recon.md` com:
-- **FitNotes** (Android, GPL): padrões de stepper para reps/peso, plate calculator. Não copiamos código, copiamos UX.
-- **wger** (web, AGPL — incompatível com nosso modelo, NÃO importar): exercícios + tradução, mas a parte de planos é fraca. Lessons learned, não código.
-- **OpenWorkout / Gymrats**: histórico de sessões, gráficos de e1RM. Confirmar que o nosso `ExerciseTrendChart` cobre o caso.
-
-**Linha vermelha**: *zero* dependências GPL/AGPL adicionadas. Só MIT/Apache/ISC, e mesmo essas só se encurtarem caminho >2 dias. Hoje provavelmente a recon devolve "padrões UX a copiar" e não "lib a importar" — e isso é o resultado certo.
-
-## 6. Não está incluído (parcado / próximo round)
-
-- Round 53 P0 (RPE periodization, FORGE→PROTOCOL rename, PDF repaint) — fica para Round 56. Quero o Log fix antes porque desbloqueia tudo.
-- Header colapsado do plano (#62/#63 do Round 54) — fica para Round 56 também, depois do RPE.
-- Mesocycle table com overlay azul (#61) — depende do RPE periodization.
-- "Acompanhar treino do cliente em tempo real / lembretes / receita semanal":
-  - **Receita semanal** já existe em `src/routes/schedule.tsx` (revenue panel, R28). Posso só **promovê-la ao dashboard** num próximo round (Round 57, ~10 cr).
-  - **Lembretes / push** seria backend-pesado (cron + email/push provider) → Round 58+, requer decisão de canal (email Resend já está; push é outro projecto).
+Confirma primeiro. Depois MVP do redesign — stepper no mobile + tabela densa no desktop. O Grok tem razão.
 
 ---
 
-## Custo total: ~87 cr (sobra 20 para imprevistos)
+## Plano (~95 cr, ordem P0 → P1)
 
-| Tarefa | Cr | Prioridade |
-|---|---|---|
-| 1. Log re-edita em vez de duplicar | 8 | P0 bug |
-| 2. Logbook mobile+desktop redesign | 35 | P0 |
-| 3. Mapa da app + status MVP | 12 | P1 |
-| 4. Landing refresh (4 secções) | 25 | P1 |
-| 5. OSS recon (3 projectos, MD report) | 7 | P2 |
-| **Total** | **87** | |
+### P0 — 35 cr · Regen pelo motor certo + transparência + sessões órfãs
 
-## Ficheiros tocados
+**P0.a (15 cr)** — Reescrever `RegenerateWithFeedbackDialog` para chamar o **pipeline phased** em vez de `generatePlanDraft`:
 
-- `src/routes/plans.$planId.tsx` — `LogMode` refactor (orquestrador, ~80 linhas mudadas)
-- `src/components/log/LogPickerCompact.tsx` — novo
-- `src/components/log/LogExerciseRowMobile.tsx` — novo
-- `src/components/log/LogExerciseTableDesktop.tsx` — novo
-- `src/components/log/useDirtyDraft.ts` — novo (autosave LS)
-- `src/routes/index.tsx` — 4 secções
-- `.lovable/app-map.md` — novo
-- `.lovable/oss-recon.md` — novo
-- `.lovable/backlog.md` — entradas 70-75
+1. Novo server fn `regeneratePlanWithFeedback` em `src/server/plan.functions.ts` que:
+   - Recebe `plan_id` + `trainer_feedback`.
+   - Lê o `brief` + `programming_variables` existentes (não recalcula tudo).
+   - Injeta o feedback como override **antes** do Stage 3 (microcycle) — passa `trainer_feedback` no prompt do Stage 3 com instrução "estas correções têm prioridade sobre os defaults; aplicar literalmente".
+   - Re-corre Stage 3 (microcycle) → Stage 4 (progressions) → critic → repair se preciso.
+   - Mantém os mesmos `block_number` e `prior_plan_id`.
+   - Escreve `generation_meta.regen_feedback_history` (array, append).
+2. Aplica o **wave RPE** (`computeWaveRpe`) por defeito — não confiar no modelo.
+3. Aplica o auditor (já existe em `plan-critic.server.ts`) automaticamente — remove o banner "No progression was applied".
 
-## Pergunta antes de seguir
+**P0.b (12 cr)** — Indicador de progresso real:
+- Registar o run em `DemoRunsContext` (já tem `registerRun`).
+- Stages: `prep → microcycle → progressions → audit → done`.
+- Pill global no canto + dentro do diálogo (substituir "Regenerating…" por barra com stages).
+- Botão Cancelar (abort signal).
 
-A 2.1 (mobile redesign) é a única decisão que pode beliscar a tua estética: o **stepper grande +1/+5/+0.5/+1kg** é UX de gym-bro app (FitNotes-style). Funciona bem mas é menos "minimalista craft". Alternativa é **só inputs maiores com `inputmode='decimal'`** — mais sóbrio, menos rápido. **Default vou no stepper porque "looks → function → ease" inverte para "ease" quando o cliente está suado entre sets.** Confirmas, ou queres a versão sóbria?
+**P0.c (8 cr)** — Sessões órfãs:
+- Migration: `workout_sessions.plan_data_version` (int, default 1) + index.
+- Bump `plan_data_version` no plano sempre que `regenerate*` corre.
+- `LogbookTimeline`: agrupa `current` (version match) vs `previous` (version mismatch), mostra as antigas dentro de `<details>` "X sessões antes do último redesenho", desactiva PR confetti nas antigas.
+- Quando o picker do Log abre uma sessão antiga, banner amber "Esta sessão é de uma versão anterior do plano. Editar não a re-vincula aos exercícios atuais."
+
+### P1 — 35 cr · Logbook v1 (mobile stepper + desktop denso)
+
+**P1.a (15 cr)** — Mobile (≤640px):
+- `LogExerciseRowMobile.tsx`: cartão por exercício, set rows com `+1 / +5 / +0.5kg / +1kg` steppers (FitNotes pattern), inputs grandes, RPE wheel 6→10 com 0.5 steps, auto-collapse quando todos os sets preenchidos.
+- Sticky bottom bar: `Salvar · Próximo dia · Histórico`.
+- Tap no nome do exercício abre mini-history (últimas 3 sessões + e1RM trend).
+
+**P1.b (12 cr)** — Desktop (≥1024px):
+- `LogExerciseTableDesktop.tsx`: tabela densa, coluna por set, inputs inline.
+- "Última sessão" em cinza dentro da célula como ghost (Hevy pattern).
+- Atalhos: Enter = próximo set; Tab = próximo exercício; +/- ajusta peso; R abre rest timer.
+- Indicador "modificado" por linha; auto-save a cada 3s para `localStorage` (`useDirtyDraft`).
+
+**P1.c (8 cr)** — Picker compacto + UX:
+- Substituir o picker atual por `LogPickerCompact` (semana ⇆, dia ⇆, data, chip "📝 a editar" / "✨ nova").
+- "Duplicar última sessão" botão (1 clique → pré-preenche pesos da última).
+
+### P1 — 18 cr · Avaliação rescue (versão única, sóbria-impactante)
+
+Escolho **uma só versão** em vez das 2 que pediste — poupa créditos e a "conservadora" sem o design system não acrescenta nada. Direto à boa:
+
+- Auditar `src/components/PlanAssessmentSheet.tsx` + os blocos PARQ/Risk/Anthro: substituir todos os `bg-white`, `bg-gray-*`, `border-gray-*` hard-coded por `bg-card`, `bg-muted`, `border-border`.
+- PAR-Q+ block: cards com `shadow-sm border` separados por pergunta, número grande à esquerda (1/7), botões Sim/Não 56px de altura, `data-state` highlight em amber quando "Sim" disparada (usa `status-tone.ts warn`).
+- Hierarquia: H1 da secção 24px, subtitle muted, perguntas em `text-base`, rationale em `text-xs text-muted-foreground` dentro de `<details>`.
+- Stepper topo: já existe — confirmar contraste em todos os 3 temas (light/dark/system).
+- Mobile: botões Sim/Não full-width stack, scroll suave entre perguntas.
+
+### P2 — 7 cr · Polish
+
+- Toast da regen mais informativo (modelo, stages, "Auditor aprovou ✓ ou levantou X warnings").
+- Smoke test 375px Mobile Safari + 1280px desktop, screenshots no `.lovable/r55-smoke.md`.
+- Backlog: marca P0/P1 como done, adiciona itens parqueados (PR detection bodyweight, voice-log, rest-timer auto, duplicar semana).
+
+### Não faço neste turno (defendido)
+
+- **Landing page upgrade** — o Grok tem razão, é fora de scope MVP. Vai para P2 backlog.
+- **App-map global** — só faz sentido depois do logbook estabilizar.
+- **2 versões da Avaliação** — desperdício, vou direto à boa.
+- **Compliance card / FAB / dashboard hierarchy** — backlog R56.
+- **Voice-log / offline robusto** — futuro.
+
+---
+
+## Orçamento
+
+| Bloco | Cr |
+|---|---|
+| P0 regen pelo motor certo + transparência + órfãs | 35 |
+| P1 Logbook v1 mobile + desktop | 35 |
+| P1 Avaliação rescue | 18 |
+| P2 polish + smoke + backlog | 7 |
+| **Total** | **95** |
+
+Sobra ~5 cr para imprevistos. Cada bloco é commit independente — paro a meio se quiseres.
+
+---
+
+## Decisão que preciso de ti
+
+**Apenas 1 confirmação** (o stepper já tinhas dito que sim implicitamente via Grok):
+
+A regen-with-feedback nova vai obrigar **wave-RPE** mesmo quando o trainer não pede explicitamente — i.e. o motor força W1 anchor 6.5, W2 +volume, W3 +intensity, W4 deload conforme `computeWaveRpe`. O feedback do trainer pode **deslocar o anchor** ("começa a 5.5") mas não pode **achatar a onda** ("RPE 7 fixo todas as semanas"). É a forma honesta de programar — concordas, ou queres permitir override total?
