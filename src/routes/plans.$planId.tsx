@@ -1390,6 +1390,17 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           <History className="h-3 w-3" /> History ({safeSessions.length})
         </Link>
       </div>
+      <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest">
+        {editingSessionId ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            Editando sessão de {date}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+            Nova sessão
+          </span>
+        )}
+      </div>
 
       {/* Exercise cards */}
       <div className="space-y-2">
