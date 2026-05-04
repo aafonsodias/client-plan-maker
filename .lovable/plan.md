@@ -1,91 +1,89 @@
 
-# Round 53 — Destilar ao golden standard MVP (revisto)
+# Round 54 — Plan-view feedback do user (4 P1 + 1 P2)
 
-Mantenho a espinha do plano anterior, com 3 mudanças baseadas no teu feedback:
-- Renomeação **FORGE → PROTOCOL** em todos os sítios visíveis.
-- **Repaint do PDF** para ficar mais bonito e vendável, sem perder legibilidade impressa (CMYK-safe, contraste AA+).
-- Pequeno ajuste: o "FORGE" que aparece no teu PDF vem do campo `business_name` do teu perfil de trainer, não do código. O código já usa fallback `"PROTOCOL"`. Há uma fix em duas frentes: (a) corrigir o teu profile, (b) auditar e renomear menções restantes em código/comentários/seed para "PROTOCOL".
+Continuação direta do Round 53 (que ainda tem P0-RPE/PROTOCOL/PDF por fechar). Aqui foco-me só no que o user reportou agora — **plan view chrome, PR celebration, log overlay**. Adiciono ao backlog e implemento no mesmo turno.
 
 ---
 
-## 1) Mudanças vs plano anterior
+## 1. PR confetti dispara em cada refresh (P0 — bug, 5 cr)
 
-### 1a) FORGE → PROTOCOL (5 cr, é cosmético)
+**Causa:** em `src/components/plan/LogbookTimeline.tsx:97-114`, `seenRef` é um `useRef(new Set())` em memória. Refresh → set vazio → re-dispara confetti+toast para todas as sessões com PR. E só "alguns" exercícios celebraram porque a deteção de PR (`isPR` em `ExerciseSetsCard.tsx:150`) compara `currentTop > historicalBest` — primeiro treino tem historicalBest=0 então qualquer set conta, mas a agregação por sessão em `LogbookTimeline` filtra por nome de exercício que aparece em `prs[]` calculado pelo hook upstream — vou verificar `usePlanPRs` ou similar para perceber se o filtro está a perder exercícios sem `e1RM` calculável (bodyweight sem carga, hold-time, etc.).
 
-- **Investigação feita:** `rg -nw FORGE src public` devolve só:
-  - `src/styles.css` linhas 67/69/150 — **comentários** ("FORGE design system tokens"). Renomear comentários para "PROTOCOL design system tokens".
-  - `src/server/phased/schemas.ts:199` — comentário ("Mirrors the existing FORGE day shape"). Renomear.
-  - **`src/lib/pdf.ts:266`** já tem `const brand = (branding.business_name || branding.full_name || "PROTOCOL").toUpperCase();` — o "FORGE" vem do `profile.business_name` armazenado. Vou:
-    - Adicionar migration que faz `UPDATE profiles SET business_name = 'PROTOCOL' WHERE business_name = 'FORGE'` (só onde literal, não toca em nomes legítimos).
-    - Defender no PDF: se `business_name` for vazio ou `FORGE`, usar `"PROTOCOL"`.
-- Manter os tokens CSS `--forge-*` por enquanto (renomear isso é um round inteiro de churn). Comentário diz "PROTOCOL palette tokens (var name kept for back-compat)".
+**Correção:**
+- **Persistir "celebrado" por sessão**: nova coluna `workout_sessions.pr_celebrated_at timestamptz` (migration). Quando o burst dispara, marca via server function `markPRCelebrated(sessionId)`. Ao carregar, filtra sessões já celebradas → nada de confetti em refresh.
+- **Fallback localStorage** por `planId:sessionId` para o caso de a server-fn falhar (rede caída) — UX nunca quebra mas a fonte da verdade é a DB.
+- Investigar por que apenas "alguns" exercícios marcaram PR no primeiro treino (suspeita: bodyweight sem carga não gera e1RM → ficam de fora da `prs[]`). Se confirmado, alargar deteção para "primeira execução registada de exercício novo" no Block 1 → marca como PR baseline.
 
-### 1b) PDF mais bonito sem perder print (10 cr extra → bloco PDF passa de 15 → 25 cr)
+## 2. Prescrição + Log lado-a-lado no MesocycleTableView (P1 — 20 cr, redux do Round 53)
 
-Princípio: **papel branco quente + tinta preta densa + 1 cor accent + 1 cor secundária para data/log**. CMYK-safe (nenhum azul fluorescente, nenhum gradiente que vire blob no jacto de tinta).
+Já estava no Round 53 mas reformulo segundo o feedback: **debaixo de cada célula de prescrição, uma linha azul com o que foi efetivamente feito**.
 
-Nova paleta `LIGHT_THEME`:
 ```
-bg          #FAF7F0   warm ivory (era #FAF8F4 — fica "menos hospital")
-bgSubtle    #F1ECE0   sand para zebra rows
-ink         #14110D   ink quente, denso (era #1A1A1A)
-inkMuted    #6B6357   warm grey (era #787670)
-inkGhost    #D9D0BD   linhas de tabela
-rule        #C9BFA8   réguas
-accent      #C8861E   Protocol amber escurecido p/ print (era #E8A547 — em CMYK estoura)
-accentSoft  #F4E2BD   wash para band do header e zebra accent
-ink-on-accent #14110D
-secondary   #2E5C8A   Protocol blue (logo "P") — usado APENAS no slot de log
-                       (S1–S4, "actual" cells); cria distinção visual prescrito vs registado
-                       e amarra digital → papel
+4×12-15  RPE 8  180-240 sec        ← prescrição (muted)
+4×12 @ 60kg  RPE 8.5  ~200 sec     ← realizado (azul oklch(0.68 0.16 240))
 ```
 
-Mudanças visuais:
-1. **Header band (top 30mm de cada página)** — barra de `accentSoft` com filete `accent` por baixo e logo+brand em `ink`. Em vez do header monocromático.
-2. **Glance table na capa** — cells com `bgSubtle` zebra e header em `ink-on-accent` (amber sólido). Usa o teu spec §12 mas mais quente.
-3. **Tabela de exercícios** — colunas `S1–S4` com micro-label `LOG` em azul (`secondary`), texto vazio mas a borda da célula em azul ténue. Diz visualmente "isto é para registar".
-4. **Periodização visível na coluna do header** (vem do P0 RPE):
-   - `WEEK 1 · base · RPE 6` (ink)
-   - `WEEK 2 · +load · RPE 7` (accent, bold)
-   - `WEEK 3 · +reps · RPE 7.5` (accent escuro)
-   - `WEEK 4 · DELOAD · RPE 6` (chip ink-on-accentSoft)
-5. **Footer** — uma única linha fina `accent` + texto `inkMuted` "PROTOCOL · {trainer} · página X / Y". Tira o ruído da linha de email actual.
-6. **Tipografia (jsPDF embedded)** — Helvetica para data densa, mas **título da sessão em weight 700 + tracking +1** para parecer "design-led". Sem instalar fontes (mantém o bundle leve).
-7. **DARK_THEME** — actualizar accent para o mesmo `#C8861E` para consistência (mas a app continua a usar `#E8A547` no ecrã, só PDF muda — print≠screen é normal).
+- Se a sessão dessa célula (week+day+exercise) ainda não foi logada → mostra apenas a prescrição.
+- Se foi parcial → cor mantém-se mas ícone `⚠` antes do texto.
+- Click na linha azul → popover com sets individuais (já existe a data, só costurar).
+- Implementação: novo helper `useSessionActuals(planId)` que devolve `Map<weekDay+exerciseName, ActualRow>` — alimenta `MesocycleTableView` sem mudar a shape do plano.
 
-Garantias de impressão:
-- Nenhuma área >40% de cor accent (evita banding em laser).
-- Texto sempre ≥9pt sobre `bgSubtle`.
-- Réguas ≥0.4pt.
-- Logo: se `logo_data_url` for inexistente, render a "P" amber (mesmo glyph do BrandMark) em vez de espaço vazio.
+## 3. Header do plano colapsado (P1 — 12 cr)
+
+**Hoje** (vide screenshot): All-plans link → nome → status chip → 8 botões → Summary card → Suggestion card → Bloco card → Banner amarelo de validação → modes → Table/Cards → TSV/MD/Detailed → finalmente o plano. **400+ px vertical antes do plano.**
+
+**Proposta:**
+- **Linha 1 (sticky)**: ← All plans · **Nome do cliente truncado mas sempre visível** · Block N chip · Ready chip · `⋯` overflow menu (Share, Assessment, Template, Re-ancorar, Delete, Branding, Import log).
+- **Linha 2 (sticky)**: PDF (primário, âmbar) · Regenerate with feedback · Modes (View/Edit/Log/Resultados/Progresso).
+- **Summary + Suggestion + Bloco + Banner** → todos colapsam num `<details>` único chamado **"Resumo do bloco"** (fechado por defeito, aberto se há `Iniciar Bloco N+1` pendente).
+- Banner "Validação automática indisponível" → só visível dentro do `<details>` (não polui).
+- Remover o toggle Table/Cards quando só há 1 vista útil para o utilizador atual; manter TSV/MD/Detailed dentro de um `Export ▾`.
+
+**Resultado: ~120 px antes do plano em vez de 400 px.**
+
+## 4. Nome do cliente nunca colapsa (P1 — 3 cr, dentro do #3)
+
+No screenshot 184C1082 vê-se "André Periquito Af…" truncado com avatar; nos outros mostra só "An…" ou "And". Causa: o nome está num `flex` que cede espaço aos 8 botões. Com a re-arrumação do #3 (botões em overflow menu), o nome ganha `flex-1 min-w-0` e o truncate faz-se só a partir do meio (`text-overflow: ellipsis` com largura mínima de 16ch).
+
+## 5. White-theme: chip "Ready" e "P" do BrandMark com contraste OK (P1 — 5 cr)
+
+- O chip verde "Ready" no light mode usa `--success` muito claro sobre fundo branco. Forçar `bg-emerald-50 text-emerald-700 border-emerald-200` no light, mantendo `oklch` atual no dark via `dark:` prefix.
+- O "P" do BrandMark (logo) na barra inferior do screenshot tem o under-glow âmbar mas o glyph quase não se vê em fundo claro — adicionar `text-foreground` explícito + aumentar peso do glyph no light.
 
 ---
 
-## 2) Plano completo (revisto, ~125 créditos)
+## Backlog — adicionar entradas
 
-```text
-P0   5 cr  Rename FORGE → PROTOCOL (comentários, profile migration, PDF defensive default)
-P0  15 cr  Regen 401 → migrar para Lovable Gateway (callAnthropicWithSchema)
-P0  20 cr  RPE periodiza W1→W4 (Stage 3 prompt + Zod validator + day labels deterministic)
-P1  25 cr  PDF: nova paleta + log-blue accents + column tags com RPE + start hints + rationale
-P1  25 cr  Log overlay azul (oklch 0.68 0.16 240) sobre MesocycleTableView + popover inline
-P1  20 cr  Plan-view = daily-driver: header colapsado, 3 modos, atalho do client-view
-P2   0 cr  Cortes: esconder banner partido, colapsar 8 botões em ⋯, remover modo Edit
-P2  15 cr  Dialog de regen com 4 chips estruturados
-─────────
-   125 cr  (margem ~−5; se faltar dou prioridade P0+P1, P2 fica para 54)
+```
+| 60 | P0 | Plan page | PR confetti idempotente: workout_sessions.pr_celebrated_at + fallback localStorage | R54 |
+| 61 | P1 | Plan page | Mesocycle table: linha azul "realizado" debaixo de cada prescrição | R54 |
+| 62 | P1 | Plan page | Header colapsado: 2 linhas sticky + Resumo do bloco em <details> | R54 |
+| 63 | P1 | Plan page | Nome do cliente sempre visível (flex-1 min-w-0 + overflow menu p/ botões) | R54 |
+| 64 | P1 | Theme  | Light-mode contraste: chip Ready + glyph BrandMark | R54 |
+| 65 | P2 | Plan page | Avaliar deteção de PR para bodyweight/hold (sem e1RM) — baseline no Block 1 | R54+ |
 ```
 
 ---
 
-## 3) O que não muda do plano original
+## Ficheiros tocados (estimativa)
 
-- Sem AI-coach por cima dos logs (P3).
-- Sem refundar a página do cliente (só atalho).
-- Sem reescrever CUEs com IA mais cara.
+- `supabase/migrations/<ts>_pr_celebrated_at.sql` — nova coluna + index
+- `src/server/sessions.functions.ts` — `markPRCelebrated`
+- `src/components/plan/LogbookTimeline.tsx` — usar `pr_celebrated_at` como fonte
+- `src/components/plan/MesocycleTableView.tsx` — overlay de actuals
+- `src/hooks/useSessionActuals.ts` — novo
+- `src/routes/plans.$planId.tsx` — header refactor (2-line sticky + details)
+- `src/components/BrandMark.tsx` + `src/lib/status-tone.ts` — light-theme tokens
+- `.lovable/backlog.md` — entradas 60-65
 
----
+## Custo estimado: ~45 cr
 
-## 4) Pergunta directa antes de começar
+(separado dos ~125 cr ainda pendentes do Round 53 para PROTOCOL+PDF+RPE periodization)
 
-Confirma só uma coisa: o azul do "P" que queres como cor do log é **o mesmo da PROTOCOL flag** (~`#2E5C8A`) ou queres mais saturado tipo `oklch(0.68 0.16 240)` que já uso no `MuscleVolumeRadar`? Sugestão: usar `#2E5C8A` no PDF (calmo, imprime bem) e `oklch(0.68 0.16 240)` no ecrã (vivo, contrasta no dark mode). Se aprovares, sigo assim.
+## O que NÃO está incluído
+
+- Round 53 P0 RPE periodization, FORGE→PROTOCOL rename, PDF repaint — esses ficam para o turno seguinte (já aprovados, só falta executar).
+- AI-coach, longitudinal, cliente page rewrite — Round 55+.
+- Reescrita de CUEs.
+
+Aprovas para executar agora? Posso encadear isto **antes** ou **depois** dos P0 do Round 53 — recomendo **depois** porque o RPE periodization muda a shape das células do MesocycleTableView e quero fazer o overlay azul (#2) sobre a versão final.

@@ -1375,6 +1375,7 @@ export type Database = {
           id: string
           logged_by: string
           plan_id: string
+          pr_celebrated_at: string | null
           session_date: string
           session_notes: string | null
           status: Database["public"]["Enums"]["session_status"]
@@ -1390,6 +1391,7 @@ export type Database = {
           id?: string
           logged_by?: string
           plan_id: string
+          pr_celebrated_at?: string | null
           session_date?: string
           session_notes?: string | null
           status?: Database["public"]["Enums"]["session_status"]
@@ -1405,6 +1407,7 @@ export type Database = {
           id?: string
           logged_by?: string
           plan_id?: string
+          pr_celebrated_at?: string | null
           session_date?: string
           session_notes?: string | null
           status?: Database["public"]["Enums"]["session_status"]
