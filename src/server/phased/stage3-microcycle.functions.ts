@@ -787,6 +787,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
 
     await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+    console.log("[generateMicrocycleDays] done", { planId: data.planId, ok: okCount, err: errCount });
 
     // ---- Post-validation: rotation audit (block N>1 only) -----------------
     let rotationAudit: any = null;
