@@ -320,7 +320,12 @@ export async function generatePlanPdf(
     setText(doc, theme.inkMuted);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    const left = [branding.business_name, branding.contact_email].filter(Boolean).join("  ·  ");
+    const blockLabel = meta.week_number
+      ? `Bloco ${meta.block_number ?? 1} · Semana ${meta.week_number}`
+      : null;
+    const left = [branding.business_name, meta.client_name, blockLabel, branding.contact_email]
+      .filter(Boolean)
+      .join("  ·  ");
     if (left) doc.text(left, M, H - 22);
     doc.text(`${pageIdx} / ${total}`, W - M, H - 22, { align: "right" });
   };
