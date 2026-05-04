@@ -1,79 +1,112 @@
+## Round 38 plan — make the finish line usable and honest
 
-# Round 37 — Stage 5 inline, honest empty states, polished finale
+### What I’ll fix
 
-You're hitting four real bugs and several copy/UX rough edges. The biggest one explains the rest:
+1. **Dashboard cleanup**
+   - Remove **Recent plans** from `/dashboard`.
+   - Remove **Plans by status** from `/dashboard`.
+   - Keep dashboard focused on clients, alerts, onboarding, and actions. Plans stay inside each client profile.
 
-**Why "A gerar Progressions…" never finishes and Stage 5 never opens**
-`/plans/$planId/progressions` was converted to a redirect-back-to-client shell in R34 (no UI left there). But Stage 5 still tries to *navigate* to it after generation — so the panel bounces back to the client page, the loading toast clears, and the new `progression_plan` is silently in the DB with no surface to view. The "deltas waiting for approval — open to review" copy then lies (there's no review screen). Inlining Stage 5 the same way Stages 3 & 4 are inlined fixes all three symptoms at once.
+2. **Day approval cleanup in Stage 4**
+   - When a day is already approved, replace the amber **“Approve day 1”** button with a quiet approved state/check.
+   - Keep **Unlock/regenerate** available only when useful, so approved days do not look like they still need action.
 
-## Scope
+3. **Stage 5 becomes a coaching tool, not a spreadsheet of mysteries**
+   - Redesign `ProgressionsPanel` around a clear weekly ramp:
+     - **Week 1:** base week.
+     - **Weeks 2–3/11:** progressive overload.
+     - **Final week:** deload / unload.
+   - Add a short “How to edit” guide directly in Stage 5:
+     - load examples: `+2.5kg`, `+5%`, `-10%`
+     - reps examples: `+1rep`, `+2reps`, `-1rep`
+     - sets examples: `+1set`, `-1set`
+     - RPE examples: `+0.5rpe`, `-1rpe`
+     - guidance on when to prefer reps vs load vs sets.
+   - Rename the visible concept away from “39 deltas” as the main thing. The user should see **exercise progressions grouped by exercise/week**, with the row count as secondary metadata only.
+   - Add a **micro summary per exercise** showing the intended strategy: load, reps, sets, RPE, deload.
+   - Make it clear these fields are optional coach overrides, and the normal path is: review → regenerate if wrong → approve.
 
-### A. Inline Stage 5 (Progressions) — kills the bounce-redirect bug
+4. **Fix Stage 5 finalization so the final plan really has all weeks**
+   - Currently `approveProgressions` marks the plan complete but does **not** run the bulk-fill step that creates weeks 2+ from the progression plan. That explains why the PDF/page only showed Week 1.
+   - Wire `bulkFillRemainingWeeks` into the Stage 5 approval flow, so approving progressions:
+     1. saves the progressions,
+     2. creates the remaining weeks,
+     3. marks the plan `ready/complete`,
+     4. refreshes the client final plan list.
+   - Update the final plan list query to include `duration_weeks`, `generation_status`, `block_number`, etc., so rows don’t lose required metadata after refresh.
 
-- New `src/components/ProgressionsPanel.tsx` mirroring `MicrocyclePanel`'s shape:
-  - Loads `workout_plans.progression_plan` + Week-1 `workout_plan_days`.
-  - If empty: "Gerar progressões" CTA → `proposeProgressions({planId})`.
-  - Renders one row per Week-1 exercise using existing `ProgressionExerciseCard` (W2/W3/W4 deltas, RPE, rationale).
-  - Per-row "regenerate this exercise" stays out-of-scope (R38).
-  - Bottom CTA "Aprovar progressões" → `approveProgressions({planId, progressionPlan})`. On success calls `onApproved()`.
-- In `clients_.$clientId.tsx` Stage 5 `StageCard`:
-  - Add `expanded` / `onToggleExpanded` / `expandedBody` exactly like Stage 4.
-  - `expandedBody` mounts `<ProgressionsPanel planId onApproved={...}/>`.
-  - `onApproved`: refetch via `openPhasedDraft(planId, "complete")`, `void refreshPlans()`, auto-collapse Stage 5.
-  - Once `progressionsApproved`: the collapsed amber strip shows; below the stages we render a new emerald **"Plano pronto · Descarregar PDF"** CTA card.
-- Remove the four `navigate({to:"/plans/$planId/progressions"...})` calls from the Stage 5 / runStage paths. The `plans.$planId.progressions.tsx` redirect file stays (back-compat for old bookmarks) but is no longer reached from in-app code.
+5. **Fix duration mismatch**
+   - The phased plan draft currently inserts without `duration_weeks`, so the flow defaults to **4 weeks** even if the assessment UI says 12.
+   - Pass/store the selected assessment duration when starting the phased plan draft, so a 12-week plan remains 12 weeks through brief, blueprint, progressions, PDF, and final view.
 
-### B. Honest progress + no PT/EN mix
+6. **Make the final PDF button a real download, not a route jump**
+   - Replace the green “Descarregar PDF” pill/link in **Plano final** with a single true export button.
+   - Clicking it will generate/download the PDF directly from the client page instead of navigating to `/plans/$planId` first.
+   - Keep opening the plan/page as a secondary, less prominent action only if needed.
+   - Remove redundant green button/card wording where it repeats the same action.
 
-- Replace the `"A gerar Progressions…"` toast literal with `t("plan:detail.stage.toast.generating_progressions", "A gerar progressões…")` and add equivalent EN key. Same for Blueprint / Microcycle toasts that still mix languages.
-- The `StageCard` "generating" state already has a slow indeterminate progress bar (R36). We extend it: while `stageBusy === "progressions"`, surface step labels via `progressLabel` that walk through `"A ler microciclo…" → "A escrever ondas RPE…" → "A validar volume…"` on a 6s rotation (pure cosmetic; the underlying call is one shot but the user explicitly asked for honest, slow-feeling progress).
+7. **PDF red-team fixes from your uploaded PDF**
+   - The parsed PDF confirms the current export has major issues:
+     - cover says **DURATION 4 wk** even though you expected 12;
+     - **TOTAL SESSIONS** shows 5 instead of duration × sessions/week;
+     - only Week 1 pages appear;
+     - table columns clip text heavily (`10-1…`, `Reverse Hyperextension Bodywei…`);
+     - mixed PT/EN labels and malformed table rows appear on some pages.
+   - After fixing Stage 5 finalization, update PDF generation to better reflect all generated weeks and avoid misleading totals.
+   - If the current PDF layout still cannot fit 12 weeks cleanly, I’ll make the PDF honest: cover + session archetype pages + clear week progression columns/notes rather than pretending every week is rendered when only Week 1 appears.
 
-### C. Single Assessment row, unified expanded look
+8. **Assessment polish and redundancy reduction**
+   - Remove the extra green success banner/button that duplicates the Assessment/first-stage completion state.
+   - Keep one unified assessment row/card as the source of truth.
+   - Leave the assessment mostly as-is because it is “almost good”, but reduce redundant CTAs and make completion/synthesis cleaner.
+   - Add a backlog note for future **adaptive repeat assessments**:
+     - first assessment = rich baseline;
+     - later assessments = smaller context-aware re-checks;
+     - measurements/questions adapt to goal/context, e.g. glute measurements for a woman prioritizing glutes, arm measurements for a man prioritizing biceps.
 
-Today the page renders two amber rows: the merged AssessmentSection chip ("Assessment · 86% completo … VER SÍNTESE") **and** the standalone `"Avaliação parcial · 86% — brief aprovado com dados incompletos"` strip below it. They say the same thing.
+9. **Verified/certified badge on profile photo**
+   - Add a small certified badge overlay to the client/profile photo when the account/profile is verified enough for the app’s current logic.
+   - For your founder account, ensure it appears on the photo area as a subtle badge, separate from the existing Founder pill.
+   - I’ll avoid implying external credential verification unless the backend actually stores that; visually it will read as an in-app certified/verified profile marker.
 
-- Delete the standalone "Avaliação parcial" strip block (around L2255-2259). The "X% completo" already lives in the merged chip.
-- When expanded, the AssessmentSection currently uses one border but its inner sub-cards (PAR-Q+, Risk strat., …) are styled with their own heavy borders and a separate "Show all / Collapse Assessment" header that visually feels like a second card. Tighten the inner styling so the whole expanded form sits inside a single amber-bordered shell:
-  - Drop the inner `border` on each section block; keep just a `border-b border-border/40` divider.
-  - Move the "Collapse Assessment" toggle into the header row of the same outer card (right side, ghost button) instead of floating as a second pill.
-  - When collapsed, the chip is visually identical to today (already pretty).
+10. **Language/i18n cleanup**
+   - Fix remaining mixed strings such as **“Gerar Progressions”**, **“Gerar Microcycle”**, and Stage copy in Portuguese.
+   - Move new visible copy to i18n files.
+   - Keep PT voice as formal/neutral **você**.
 
-### D. Plans section: don't render when empty, dignified naming, finale CTA
+### Technical notes
 
-Today "Plans" + "New plan (manual)" + "Evoluir do último (IA)" header always renders, even with zero plans, and even when the only plan is the still-in-progress phased draft.
+- Files likely touched:
+  - `src/routes/dashboard.tsx`
+  - `src/components/MicrocyclePanel.tsx`
+  - `src/components/ProgressionsPanel.tsx`
+  - `src/components/ProgressionExerciseCard.tsx`
+  - `src/server/phased/stage1-brief.functions.ts`
+  - `src/server/phased/stage4-progressions.functions.ts`
+  - `src/server/phased/stage5-bulkfill.functions.ts`
+  - `src/routes/clients_.$clientId.tsx`
+  - `src/routes/plans.$planId.tsx`
+  - `src/lib/pdf.ts`
+  - `src/components/ClientAvatar.tsx` / `ClientAvatarUpload.tsx`
+  - `src/i18n/locales/pt/*`, `src/i18n/locales/en/*`
+  - `.lovable/backlog.md`
 
-- Hide the entire `<section>` (header + grid) when `plans.length === 0`.
-- Rename header `"Plans"` → `t("plan:detail.plans.finale", "Plano final")` (PT) / `"Final plan"` (EN). One plan = one header word; "Plans" felt like a list of drafts.
-- Rename `"Evoluir do último (IA)"` → **"Gerar próximo bloco (IA)"** with hover tooltip `"Arquiva o plano atual e usa-o como base para gerar o bloco seguinte com IA."` Same handler.
-- For each plan row whose `generation_state.stage === "complete"`, replace the right-side `STAGE: PROGRESSIONS` chip with an emerald **"Descarregar PDF"** button (existing `renderPlanPdf` flow).
-- Above the finale section, when `progressionsApproved && plans.length > 0`: show a one-liner emerald banner card "Plano pronto para entregar — descarrega o PDF abaixo." (single source of joy, replaces the misleading "deltas waiting for approval" copy which is gone with point A).
+- I’ll keep the inline-stage rule: no stage should navigate away from `/clients/$id`.
+- No new database tables are needed for this round.
+- I may need a small function/API helper for direct client-page PDF export if the existing route-only PDF exporter is too coupled to `/plans/$planId` UI state.
 
-### E. Backlog hygiene
+### Expected result
 
-- Mark R37 closed in `.lovable/backlog.md`.
-- Move to P1: drag-and-drop in WeekMatrix, AI inline comments, FITT-VP backbone (#45), per-row "regenerate this exercise" in ProgressionsPanel.
+The end-to-end flow should feel like:
 
-## Out of scope (parked for R38)
+```text
+Assessment complete
+→ Brief approved
+→ Master plan approved
+→ Week approved
+→ Progression strategy clearly reviewed/approved
+→ Final plan appears only when real weeks exist
+→ One beautiful PDF download button
+```
 
-- Desktop weekly-cycle matrix (D1) — still parked.
-- Per-row regenerate inside ProgressionsPanel.
-- PDF richness footer using `assessment_completion_pct`.
-- Verified-trainer badge (R36 D was deferred and stays deferred).
-
-## Files touched
-
-- **new** `src/components/ProgressionsPanel.tsx`
-- `src/routes/clients_.$clientId.tsx` — Stage 5 inlined, drop `Avaliação parcial` strip, rename Plans section, hide when empty, finale CTA, "Gerar próximo bloco (IA)" rename, drop progressions-route navigate calls.
-- `src/components/StageCard.tsx` — accept rotating `progressLabel` array (cosmetic walk-through).
-- `src/i18n/locales/{pt,en}/plan.json` — new keys: `detail.plans.finale`, `detail.plans.evolve_help` (rewrite), `detail.stage.toast.generating_progressions|blueprint|microcycle`, `detail.stage.progressions_steps[]`, `detail.finale.ready_banner`, `detail.finale.download_pdf`.
-- `.lovable/backlog.md`
-
-## Acceptance checklist
-
-1. Approve Stage 4 → Stage 5 expands inline, no navigation, no white screen on refresh.
-2. Click "Gerar progressões" → progress bar + rotating labels → panel renders deltas → Approve → emerald collapsed strip + "Plano pronto · Descarregar PDF" appears.
-3. Refresh page mid-generation: lands back on the same client page (no white screen, no /progressions redirect bounce).
-4. Page with zero plans renders no "Plano final" section.
-5. Only one Assessment row exists at all times (collapsed = chip, expanded = unified amber shell).
-6. No PT/EN mixed strings in toasts or stage labels.
-7. Hovering "Gerar próximo bloco (IA)" shows the new tooltip.
+And the dashboard stops acting like a plan archive.
