@@ -1267,6 +1267,7 @@ export type Database = {
           id: string
           is_demo: boolean
           plan_data: Json
+          plan_data_version: number
           prescription_parameters: Json
           prior_plan_id: string | null
           programming_variables: Json | null
@@ -1298,6 +1299,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           plan_data?: Json
+          plan_data_version?: number
           prescription_parameters?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
@@ -1329,6 +1331,7 @@ export type Database = {
           id?: string
           is_demo?: boolean
           plan_data?: Json
+          plan_data_version?: number
           prescription_parameters?: Json
           prior_plan_id?: string | null
           programming_variables?: Json | null
@@ -1374,6 +1377,7 @@ export type Database = {
           entries: Json
           id: string
           logged_by: string
+          plan_data_version: number
           plan_id: string
           pr_celebrated_at: string | null
           session_date: string
@@ -1390,6 +1394,7 @@ export type Database = {
           entries?: Json
           id?: string
           logged_by?: string
+          plan_data_version?: number
           plan_id: string
           pr_celebrated_at?: string | null
           session_date?: string
@@ -1406,6 +1411,7 @@ export type Database = {
           entries?: Json
           id?: string
           logged_by?: string
+          plan_data_version?: number
           plan_id?: string
           pr_celebrated_at?: string | null
           session_date?: string
