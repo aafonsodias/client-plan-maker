@@ -692,7 +692,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     z
       .object({
         planId: z.string().uuid(),
-        dayIndices: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+        dayIndices: z.array(z.number().int().min(1).max(7)).min(1).max(7).optional(),
       })
       .parse(d)
   )
@@ -705,6 +705,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
+    const sessionsPerWeek = Math.max(1, Math.min(7, bpP.data.sessions_per_week ?? 0));
+    const dayIndices = data.dayIndices ?? Array.from({ length: sessionsPerWeek }, (_, i) => i + 1);
     const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
@@ -712,9 +714,9 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
 
     // Mark all pending immediately so UI sees them.
-    await Promise.all(data.dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
+    await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
 
-    const queue = [...data.dayIndices];
+    const queue = [...dayIndices];
     const concurrency = 5;
     let okCount = 0;
     let errCount = 0;
