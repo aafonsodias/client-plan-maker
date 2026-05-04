@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { MicrocyclePanel } from "@/components/MicrocyclePanel";
+import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -2252,11 +2253,6 @@ function ClientDetail() {
             // Here we only surface the partial-coverage warning + synthesis.
             return (
               <>
-              {inlineBrief?.approved && coveragePct != null && (
-                <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-xs text-amber-500">
-                  <span>Avaliação parcial · {coveragePct}% — brief aprovado com dados incompletos</span>
-                </div>
-              )}
             {synthesisOpen && (
             <AssessmentSynthesisDashboard
               assessment={assessment}
@@ -2413,9 +2409,9 @@ function ClientDetail() {
                       if (stageBusy) return;
                       setStageBusy(stage);
                       const labels: Record<string, string> = {
-                        blueprint: "A gerar Blueprint…",
-                        microcycle: "A gerar Microcycle (Semana 1)…",
-                        progressions: "A gerar Progressions…",
+                        blueprint: "A gerar plano-mestre…",
+                        microcycle: "A gerar semana-tipo (Semana 1)…",
+                        progressions: "A gerar progressões (Semanas 2–4)…",
                       };
                       const tId = toast.loading(labels[stage]);
                       try {
@@ -2602,8 +2598,16 @@ function ClientDetail() {
                           busy={stageBusy === "progressions"}
                           progressLabel={
                             stageBusy === "progressions"
-                              ? "A planear progressões…"
+                              ? "A planear progressões (Semanas 2–4)…"
                               : undefined
+                          }
+                          expanded={expandedStage === "progressions"}
+                          onToggleExpanded={(next) =>
+                            setExpandedStage(next ? "progressions" : null)
+                          }
+                          hideHeaderApprove={
+                            (hasProgressionsDraft || progressionsApproved) &&
+                            expandedStage === "progressions"
                           }
                           approveLabel={
                             progressionsApproved
@@ -2616,19 +2620,48 @@ function ClientDetail() {
                             microcycleApproved
                               ? () =>
                                   progressionsApproved || hasProgressionsDraft
-                                    ? navigateToStage("progressions")
-                                    : runStage("progressions", false)
+                                    ? setExpandedStage(
+                                        expandedStage === "progressions" ? null : "progressions",
+                                      )
+                                    : runStage("progressions", false, { skipNavigate: true }).then(() =>
+                                        setExpandedStage("progressions"),
+                                      )
                               : undefined
                           }
-                        >
-                          <p className="text-sm text-muted-foreground">
-                            {hasProgressionsDraft && !progressionsApproved
-                              ? t("detail.stage.progressions_draft_hint")
-                              : microcycleApproved
-                              ? t("detail.stage.progressions_help")
-                              : t("detail.stage.progressions_blocked")}
-                          </p>
-                        </StageCard>
+                          expandedBody={
+                            (hasProgressionsDraft || progressionsApproved) &&
+                            expandedStage === "progressions" ? (
+                              <ProgressionsPanel
+                                planId={planId}
+                                onApproved={async () => {
+                                  void refreshPlans();
+                                  await openPhasedDraft(planId, "complete" as any);
+                                  setExpandedStage(null);
+                                }}
+                              />
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                {hasProgressionsDraft && !progressionsApproved
+                                  ? t("detail.stage.progressions_draft_hint")
+                                  : microcycleApproved
+                                  ? t("detail.stage.progressions_help")
+                                  : t("detail.stage.progressions_blocked")}
+                              </p>
+                            )
+                          }
+                        />
+                        {progressionsApproved && (
+                          <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-emerald-400">
+                                Plano pronto a entregar
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Todas as fases aprovadas. Descarrega o PDF abaixo na secção <strong>Plano final</strong>.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </>
                     );
                   })()}
@@ -2637,9 +2670,10 @@ function ClientDetail() {
             </div>
           )}
 
+      {plans.length > 0 && (
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">{t("plans.title")}</h2>
+          <h2 className="text-lg font-bold">Plano final</h2>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
@@ -2667,7 +2701,7 @@ function ClientDetail() {
               disabled={creatingPlan !== null || !evolvableSourcePlan}
               title={!evolvableSourcePlan
                 ? t("detail.plans.evolve_disabled")
-                : t("detail.plans.evolve_help")}
+                : "Arquiva o plano atual e usa-o como base para gerar o próximo bloco com IA."}
               onClick={async () => {
                 if (!evolvableSourcePlan) return;
                 setCreatingPlan("evolve");
@@ -2685,14 +2719,11 @@ function ClientDetail() {
               {creatingPlan === "evolve"
                 ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 : <Sparkles className="mr-1.5 h-3.5 w-3.5" />}
-              Evoluir do último (IA)
+              Gerar próximo bloco (IA)
             </Button>
           </div>
         </div>
-        {plans.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("plans.empty")}</p>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => {
               const stage = (p.generation_state as any)?.stage as string | undefined;
               const phasedStages = ["brief", "blueprint", "microcycle", "progressions"];
@@ -2712,6 +2743,14 @@ function ClientDetail() {
                     </div>
                   </div>
                   {(() => {
+                    const isComplete = stage === "complete";
+                    if (isComplete) {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                          <Download className="h-3 w-3" /> Descarregar PDF
+                        </span>
+                      );
+                    }
                     const s = planStatusInfo(p as any, tCommon as any);
                     return (
                       <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider ${s.className}`}>
@@ -2769,9 +2808,9 @@ function ClientDetail() {
                 </div>
               );
             })}
-          </div>
-        )}
+        </div>
       </section>
+      )}
 
       {plans.length > 0 && (
         <section>
