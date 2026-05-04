@@ -2296,6 +2296,12 @@ function ClientDetail() {
                               brief: inlineBrief.brief,
                               programmingVariables: inlineBrief.programmingVariables,
                               redFlagAccommodations: inlineBrief.accommodations,
+                              assessmentCompletionPct:
+                                briefCoverage && briefCoverage.total > 0
+                                  ? Math.round(
+                                      (briefCoverage.done / briefCoverage.total) * 100,
+                                    )
+                                  : undefined,
                             },
                           });
                           if (!res.ok) {
