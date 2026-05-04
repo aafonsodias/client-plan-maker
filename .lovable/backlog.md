@@ -87,6 +87,18 @@ Atualizado: Round 28 (4 Mai 2026)
 - Founder-only `<FounderAiTelemetryPanel/>` mounted above the StageCard stack on `/clients/$clientId`. Toggles between this-plan and last-7d-account views, reads `generation_log` via two new authenticated server fns (`getPlanGenerationTelemetry`, `getTrainerGenerationTelemetry`). Gated to `aafonsodias@gmail.com`.
 - Fixed missing i18n key `assessment:generate.brief_coverage` (PT + EN). Console warning gone.
 
+## Closed Round 30 (Inline stage flow + microcycle hotfix)
+- Stage 3 hotfix: `archetypeForDay()` is now null-safe — falls back to round-robin over `session_archetypes`, then to a synthetic `full_body` archetype, so Day 1 never errors with "No archetype for day 1" again.
+- `/plans/$planId/microcycle` now batch-generates the full week (`generateMicrocycleDays`) on first open instead of just Day 1, so the trainer sees the whole microcycle to review.
+- Brief approval auto-flow: approving the brief on `/clients/$id` collapses the Stage 1 card AND the assessment synthesis (folds into a green "✓ Avaliação completa" pill) and auto-expands Stage 2 (Blueprint) — same pattern Blueprint already had.
+- Memory rule saved: `mem://principles/inline-stage-flow.md`.
+
+## Open after Round 30 (P0 next)
+- Microcycle workbench inline on `/clients/$id` (5-lane day tabs, color-coded sections, drag/superset, AI comment-on-edit) — designed in `.lovable/plan.md` Round 30 §3 but deferred from this round to keep the hotfix isolated.
+- Searchable warmup/activation/stretch picker (extends `AddExerciseDialog` with `section` filter).
+- `useStageAutoFlow()` helper to centralize the collapse/expand pattern across all 5 stages.
+- Backlog parked items unchanged: FITT-VP backbone (R2), Bompa overlay (R2.5), special-population overlays (R3), NSCA (R3.5), behaviour change (R4), McGill (Future), schedule polish (Schedule v2+).
+
 ## Deferred (honest scoping)
 - Movement spider chart peer overlay — needs ACSM normatives wired through movement-screen surface, not the volume radar. Real round of work, not a quick add.
 - Knowledge roadmap (FITT-VP / Bompa / NSCA) — each is a multi-week round; do not box-tick.
