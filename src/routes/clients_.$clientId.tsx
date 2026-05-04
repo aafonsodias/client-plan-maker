@@ -2145,6 +2145,9 @@ function ClientDetail() {
           </div>
           )}
 
+        </AssessmentSection>
+      </div>
+
           {/* Post-assessment synthesis — collapses to a chip ONLY when the
               assessment is genuinely complete (≥80% of sections). Below
               that threshold we keep the dashboard expanded with an honest
@@ -2159,7 +2162,7 @@ function ClientDetail() {
               return (
                 <button
                   type="button"
-                  onClick={() => setExpandedStage(null)}
+                  onClick={() => setSynthesisOpen((o) => !o)}
                   className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
                 >
                   <span className="flex items-center gap-2 font-semibold text-emerald-500">
@@ -2176,6 +2179,7 @@ function ClientDetail() {
                   <span>Avaliação parcial · {coveragePct}% — brief aprovado com dados incompletos</span>
                 </div>
               )}
+            {synthesisOpen && (
             <AssessmentSynthesisDashboard
               assessment={assessment}
               sectionAnalyses={sectionAnalyses}
@@ -2184,6 +2188,7 @@ function ClientDetail() {
               whr={whr}
               redFlagAccommodations={inlineBrief?.accommodations ?? null}
             />
+            )}
               </>
             );
           })()}
@@ -2196,6 +2201,7 @@ function ClientDetail() {
               <StageCard
                 stageNumber={1}
                 title="Brief"
+                tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
                 onApprove={
@@ -2543,8 +2549,6 @@ function ClientDetail() {
               )}
             </div>
           )}
-        </AssessmentSection>
-      </div>
 
       <section>
         <div className="mb-4 flex items-center justify-between gap-3">
