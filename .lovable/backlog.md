@@ -208,3 +208,22 @@ Atualizado: Round 28 (4 Mai 2026)
 - WeekMatrix desktop view.
 - Adaptive repeat assessments.
 - Real verified/cert backend pipeline.
+
+## Closed Round 46
+- Mission schema migration (missions table + assessment_completion column on clients) + RLS
+- src/lib/missions.ts helper with weights + computeAssessmentCompletion
+- Tri-mode theme: Dark · Slate · Cream — ThemeToggle 120° rotation, .slate class added to styles.css
+- Brand mark refactored to inline SVG (currentColor) — auto-adapts to all 3 themes, deleted protocol-mark.png
+- AtlasGenie animation upgraded: emerge from below + amber halo, prefers-reduced-motion respected
+- Dashboard last-intake button: 2-line label "Último link de intake gerado / para {nome}"
+- IntakeLinkPanel terminology: "Copiar link de intake" + tooltip
+- Workbench title personalised: "O teu Workbench" / "Your Workbench"
+- AtlasGenie pill moved into hero (next to + Novo cliente), removed solo row
+- Forge cleanup: deleted forge-logo.png, renamed STORAGE_KEY → protocol_theme, model key → protocol.ai.model
+
+## Parked for R47+
+- Missions UI rico (panel, Atlas-pointing, confetti on completion)
+- Atlas pointing/Joyride choreography (full helper with auto-scroll + blink)
+- Marketing AI avatars (diverse models para vídeos) — needs ethical-use guidelines first
+- Google Earth gym/farmácia locator
+- Reviews/Reddit/Portal da Queixa scrape agent
