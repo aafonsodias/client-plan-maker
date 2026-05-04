@@ -1,85 +1,63 @@
-# Round 32 — Stop the redirects, hide the noise, make Stage 3 fast
+## Round 33 — Inline-only journey, honest collapse, distinct stage styling
 
-The user is right on all three counts:
+### Problems observed (your screenshot + feedback)
 
-1. **Stage 3 still navigates away** to `/plans/$planId/microcycle`. The whole journey (Brief → Blueprint → Microcycle → Progressions → PDF) must stay on `/clients/$id`.
-2. **Documents and Intake link panels** still take the full width above the assessment, even when there is nothing to see. They should be small corner icons that expand on click.
-3. **Microcycle generation hangs**. We're calling `openai/gpt-5` per day with a 1× FITT-VP retry, behind concurrency=5 — for 5 sessions that's 5 sequential heavy GPT-5 calls + retries, easily 200s+ with no progress signal.
+1. **Collapse hides everything.** Today the post-assessment synthesis, the green "Avaliação completa · X%" pill AND all the stage cards (Brief → Blueprint → Microcycle → Progressions) are rendered *inside* `<AssessmentSection>` (clients_.$clientId.tsx lines 1539→2542). So collapsing the assessment collapses brief + blueprint + microcycle + progressions too — exactly what the screenshot shows: green pill, and the Plans block jumps right under it.
+2. **"Approved" stage chips look identical to the Brief chip.** Both use the same amber/accent treatment from `StageCard`'s collapsed-approved branch — visually monotonous and dishonest about what stage you're in.
+3. **Plans list opens the old standalone microcycle/blueprint windows.** `linkProps` in the Plans section sends users to `/plans/$planId/<stage>`, which violates the new "every stage stays inline on `/clients/$id`" principle.
 
-Below is a tight plan to fix all three in one round.
+### What changes
 
-## 1. Inline Stage 3 microcycle on the client page (P0)
+**1. Restructure the page so assessment collapse only hides assessment content (P0)**
 
-Create `src/components/MicrocyclePanel.tsx` — extract the body of `MicrocycleReview` from `src/routes/plans.$planId.microcycle.tsx` (load plan, days, realtime subscription, `kickWeek`, regen, approve). Same UI, but:
+In `src/routes/clients_.$clientId.tsx`:
 
-- Drop `AppShell`, `BriefContextRail`, `BriefSheetButton` — those are the page chrome the user does NOT want.
-- Drop `navigate({to: "/plans/$planId/progressions"})` after approve. Instead expose an `onApproved()` callback so `clients_.$clientId.tsx` can `setExpandedStage("progressions")` and kick Stage 4.
-- Keep the per-day skeleton cards + ETA bar already added in Round 31.
+- Move the green "Avaliação completa · X%" / amber "Avaliação parcial" chip (lines 2144–2185) and the entire `phasedEnabled && inlineBrief` stages block (2187–2541) *out* of `<AssessmentSection>`. They become siblings under the same parent grid cell.
+- `<AssessmentSection>` keeps only: `headerProgress`, the section sidebar, and the questionnaire `SectionBlock`s (PAR-Q+, Risk strat, Anthropometry, …, Performance) plus the synthesis dashboard.
+- Result: clicking the green pill (`setExpandedStage(null)` → also calls a new `setAssessmentCollapsed(true)`) now only collapses the questionnaire + section index. The Brief / Blueprint / Microcycle / Progressions cards remain visible directly below the green pill — exactly the layout you described ("green button followed by the next steps").
+- The section index sidebar (`<aside class="hidden lg:block">`) is moved *inside* `<AssessmentSection>` so it collapses together with the questionnaire (matches your earlier request "section index too should go golden and collapse").
 
-Wire it into `clients_.$clientId.tsx` Stage 3 `StageCard` (around line 2389):
+**2. Distinct visual identity for Brief vs Approved stages (P1)**
 
-- Add `expanded={expandedStage === "microcycle"} onToggleExpanded={...}`
-- Add `expandedBody={<MicrocyclePanel planId={planId} onApproved={() => { void refreshPlans(); setExpandedStage("progressions"); void runStage("progressions", false); }} />}` when `hasMicrocycleDraft || microcycleApproved`.
-- Change `onApprove` so once Blueprint is approved, clicking "Generate Microcycle" calls `runStage("microcycle", false, { skipNavigate: true })` then `setExpandedStage("microcycle")` — never navigate.
-- Apply the same "expand inline, no nav" pattern to Stage 4 Progressions for consistency (the route still exists for back-compat, but the client page never navigates there).
+In `src/components/StageCard.tsx`:
 
-Keep `/plans/$planId/microcycle` route as a thin back-compat wrapper that just renders `<MicrocyclePanel planId={...} />` inside `AppShell` (in case an old link is shared) — but the primary entry is inline.
+- Add a `tone` prop (`"brief" | "stage"`, default `"stage"`).
+- The collapsed-approved strip currently uses `border-accent/40 bg-accent/5` (amber). Repaint:
+  - Brief approved → amber (current look) — keeps the warm "this is the source of truth" feel.
+  - Other stages approved → emerald (`border-emerald-500/30 bg-emerald-500/5 text-emerald-500`), with a subtle dot prefix instead of the Check icon, and the label in lowercase tracking ("blueprint · approved", "microcycle · approved", "progressions · approved"). This matches the existing emerald "Avaliação completa" pill, gives the page a real progression: amber pill (assessment) → amber pill (brief) → emerald pills (the AI-built stages).
+- Wire `tone="brief"` only on the Stage 1 card; Stage 2/3/4 stay default.
 
-## 2. Documents → corner icon (P1)
+**3. Plans list never opens a separate stage window (P0)**
 
-Refactor `ClientDocuments.tsx` into a slim icon button:
+In the Plans `<section>` (lines 2545–2665):
 
-- Default render: a single `<button>` with a `Stethoscope` icon (lucide), sized `h-9 w-9`, outline + clinical-teal accent (`text-[oklch(0.78_0.10_200)]`). When `items.length > 0` show a tiny count badge in the top-right corner of the button.
-- Click opens a shadcn `<Sheet side="right">` containing the existing list + upload UI verbatim.
-- In `clients_.$clientId.tsx`, move `<ClientDocuments />` from its full-width row (line 1356) into the header action row alongside `Download PDF` / `Ver como cliente` (line 1358).
+- Replace the `linkProps` branch that points to `/plans/$planId/<stage>` with logic that, when the plan is a phased draft, **stays on the current route** and just expands the matching stage:
+  - `onClick={() => { setInlineBrief(briefForPlan(p.id)); setExpandedStage(stageOf(p)); window.scrollTo(...top of stages...); }}`
+  - For finalized (non-phased / `complete`) plans, keep the link to `/plans/$planId` (that's the read-only logbook view, which is fine).
+- The Plans card stops being a `<Link>` for phased drafts; it becomes a `<button>` row with the same visual.
+- `src/routes/plans.$planId.brief.tsx`, `.blueprint.tsx`, `.microcycle.tsx`, `.progressions.tsx` get a tiny `useEffect` redirect → `navigate({ to: "/clients/$clientId", params, replace: true })` using the plan's `client_id` (one server fetch). Back-compat for anyone with a bookmarked URL; no new dead pages.
 
-Add a `tone-clinical` token to `src/lib/status-tone.ts` so the color is reusable.
+**4. Backlog + memory hygiene (P2)**
 
-## 3. Intake link → corner icon, but only when relevant (P0)
+- `.lovable/backlog.md` — append "Closed Round 33" with the three items above; add a new "Em aberto" entry referencing the FITT-VP work (#45) which is still the next P0 motor item, plus the Special-population overlays (#47).
+- New memory `mem/principles/inline-only-journey.md`: "Every stage from Assessment → Brief → Blueprint → Microcycle → Progressions → PDF lives on `/clients/$id`. Plans-list rows expand inline. Standalone `/plans/$planId/<stage>` routes are redirects only."
+- Update `mem/index.md` Core line for "no-stage-redirects" to also cover Plans-list clicks.
 
-In `clients_.$clientId.tsx`, gate `<IntakeLinkPanel />` (line 1394):
+### Files touched
 
-- If `client.intake_status === "submitted"` OR `client.intake_status === "reviewed"` OR an assessment has been saved (`lastSavedAt` exists), DO NOT render the panel inline. Instead render a small `<Send>`-icon button next to Documents in the header action row, labeled "Pedir nova avaliação" on hover. Click opens a `<Sheet>` containing the existing IntakeLinkPanel (which already collapses opened links to a chip).
-- Only render the panel inline when the client truly hasn't been assessed yet AND no intake link exists — the original "first-time onboarding" path.
+- `src/routes/clients_.$clientId.tsx` — restructure (move chip + stages out of AssessmentSection; rewrite Plans-list click handler).
+- `src/components/StageCard.tsx` — `tone` prop + emerald approved style for non-brief stages.
+- `src/routes/plans.$planId.brief.tsx`, `…blueprint.tsx`, `…microcycle.tsx`, `…progressions.tsx` — replace body with a redirect to `/clients/$clientId`.
+- `.lovable/backlog.md`, `mem/index.md` — entries.
+- New: `mem/principles/inline-only-journey.md`.
 
-This solves the user's complaint: "I had already filled and opened up the client" → the link panel disappears once the assessment exists, available on demand from a corner icon.
+### Out of scope (deferred to R34)
 
-## 4. Make microcycle generation actually fast + visible (P0)
+- Microcycle generation speed beyond what R32 already delivered (Gemini 2.5 Flash + skip-FITT-VP-on-first + concurrency 7). If you still see hangs after this round, R34 will add per-day streaming.
+- The corner-icon Documents/Intake refactor was already done in R32 — no further change.
+- FITT-VP backbone (#45) is still the next motor P0 but stays in its own round to keep this one focused on UX.
 
-Three changes in `src/server/phased/stage3-microcycle.functions.ts`:
+### What stays the same
 
-- **Switch model**: change `resolveModel("FORGE_MODEL_STAGE_3", "openai/gpt-5")` (line 446) to `"google/gemini-2.5-flash"`. ~3–5× faster, same tool-call schema. GPT-5 stays available via env override for users who want it.
-- **Skip the FITT-VP retry on first generation**: the retry doubles latency for marginal quality gain. Run it only when `prescriptionParameters` AND `priorPool.length > 0` (i.e. block N≥2 where stale-rotation matters most). For block 1, accept first-pass output.
-- **Increase concurrency to 7** (one per max session count) so all days fire in parallel instead of in two waves.
-
-Combined ETA estimate update in `plans.$planId.microcycle.tsx` / `MicrocyclePanel.tsx`: change `(sessionsPerWeek - doneCount) * 40` to `* 15` to match Flash latency.
-
-Add a server-side log line at the top of `generateMicrocycleDays` handler so we can confirm in `stack_modern--server-function-logs` that the call landed (the user reported "stayed spinning for a long time without any response" — we need observability).
-
-## 5. Backlog + memory (P2)
-
-Append to `.lovable/backlog.md`:
-- Round 32 done: inline Stage 3, corner-icon Documents/Intake, Flash for Stage 3.
-- P1 deferred: drag-to-reorder days, per-exercise inline AI comments on edit, searchable warmup catalog.
-
-Save `mem://principles/no-stage-redirects.md`:
-> "All 5 stages of the trainer journey (Brief, Blueprint, Microcycle, Progressions, PDF) MUST render inline on `/clients/$id` via expandedBody on the StageCard. Approval auto-collapses the current stage and auto-expands the next. The `/plans/$planId/*` routes exist only for back-compat deep links and must never be `navigate()`d to from the client page flow."
-
-Update `mem://index.md` Memories list.
-
-## Files touched
-
-- new: `src/components/MicrocyclePanel.tsx`
-- edited: `src/routes/clients_.$clientId.tsx` (Stage 3 expandedBody, inline Documents/Intake icons, drop Stage 3 navigation)
-- edited: `src/components/ClientDocuments.tsx` (collapse to icon + Sheet)
-- edited: `src/components/IntakeLinkPanel.tsx` (no internal change unless needed for Sheet)
-- edited: `src/routes/plans.$planId.microcycle.tsx` (thin wrapper around new MicrocyclePanel; ETA constant update)
-- edited: `src/server/phased/stage3-microcycle.functions.ts` (model swap, conditional FITT-VP retry, concurrency 7, log line)
-- edited: `src/lib/status-tone.ts` (add `tone-clinical`)
-- edited: `.lovable/backlog.md`, `mem/index.md`
-- new: `mem/principles/no-stage-redirects.md`
-
-## Out of scope (explicit)
-
-- Drag-to-reorder days, AI inline comments on per-exercise edit, warmup catalog search — Round 33.
-- Touching Brief / Blueprint stage internals (already inline and working).
+- Auto-save, section analysis, accommodations, paywall, all server functions — untouched.
+- `MicrocyclePanel` continues to be the single component for microcycle, used by the inline path (and now by no other page).
