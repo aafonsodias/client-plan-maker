@@ -277,6 +277,8 @@ export function ExerciseSetsCard({
               placeholder="reps"
               value={s.reps}
               onChange={(ev) => updateSet(si, { reps: ev.target.value })}
+              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "reps")}
+              data-set-input={`${index}:${si}:reps`}
             />
             <span className="text-[10px] text-muted-foreground">×</span>
             <input
@@ -284,6 +286,8 @@ export function ExerciseSetsCard({
               placeholder="kg"
               value={s.weight}
               onChange={(ev) => updateSet(si, { weight: ev.target.value })}
+              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "weight")}
+              data-set-input={`${index}:${si}:weight`}
             />
             {entry.planned.rpe && (
               <input
@@ -291,6 +295,8 @@ export function ExerciseSetsCard({
                 placeholder="RPE"
                 value={s.rpe ?? ""}
                 onChange={(ev) => updateSet(si, { rpe: ev.target.value })}
+                onKeyDown={(ev) => onSetKeyDown?.(ev, si, "rpe")}
+                data-set-input={`${index}:${si}:rpe`}
               />
             )}
           </div>
