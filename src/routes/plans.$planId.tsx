@@ -1449,6 +1449,20 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
           <History className="h-3 w-3" /> History ({safeSessions.length})
         </Link>
       </div>
+      {lastSession && !editingSessionId && (
+        <div className="-mt-1 mb-2 flex items-center justify-between gap-2 rounded-md border border-dashed border-border/60 bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          <span>
+            Última sessão deste dia: <span className="font-mono text-foreground/80">{lastSession.session_date}</span>
+          </span>
+          <button
+            type="button"
+            onClick={duplicateLast}
+            className="inline-flex items-center gap-1 rounded border border-border bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary/70"
+          >
+            <RotateCcw className="h-3 w-3" /> Duplicar
+          </button>
+        </div>
+      )}
       <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest">
         {editingSessionId ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
