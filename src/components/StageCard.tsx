@@ -53,26 +53,19 @@ export default function StageCard({
 
   // Approved & collapsed: thin strip
   if (status === "approved" && !open) {
-    const isBrief = tone === "brief";
-    const stripClass = isBrief
-      ? "border-accent/40 bg-accent/5 hover:bg-accent/10"
-      : "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10";
-    const labelClass = isBrief ? "" : "text-emerald-500";
+    // Approved = golden across the journey. Emerald is reserved for the
+    // final shipped plan (Stage 5 / PDF), not for intermediate stages.
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition ${stripClass}`}
+        className="flex w-full items-center justify-between rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-500/5 px-4 py-3 text-left text-sm transition hover:from-amber-500/15 hover:to-amber-500/10"
       >
-        <span className={`flex items-center gap-2 font-semibold ${labelClass}`}>
-          {isBrief ? (
-            <Check className="h-4 w-4 text-accent" />
-          ) : (
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          )}
+        <span className="flex items-center gap-2 font-semibold text-amber-500">
+          <Check className="h-4 w-4" />
           {`Stage ${stageNumber} — ${title} approved`}
         </span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <ChevronRight className="h-4 w-4 text-amber-500/70" />
       </button>
     );
   }

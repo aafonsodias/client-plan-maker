@@ -1625,6 +1625,12 @@ function ClientDetail() {
           clientId={clientId}
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
+          completionPct={
+            briefCoverage && briefCoverage.total > 0
+              ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+              : null
+          }
+          onShowSynthesis={() => setSynthesisOpen((o) => !o)}
           summaryLine={
             (assessment as any)?.performed_on
               ? `Última avaliação · ${new Date((assessment as any).performed_on).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })} · ${totalSections} secções · ${pct}%`
@@ -2241,21 +2247,9 @@ function ClientDetail() {
             const coveragePct = briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
               : null;
-            const isComplete = inlineBrief?.approved && (coveragePct ?? 0) >= 80;
-            if (isComplete) {
-              return (
-                <button
-                  type="button"
-                  onClick={() => setSynthesisOpen((o) => !o)}
-                  className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-left text-sm transition hover:bg-emerald-500/10"
-                >
-                  <span className="flex items-center gap-2 font-semibold text-emerald-500">
-                    <Check className="h-4 w-4" /> Avaliação completa · {coveragePct}%
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              );
-            }
+            // The "Assessment · X% completo" chip is now rendered by the
+            // collapsed AssessmentSection itself (single merged button).
+            // Here we only surface the partial-coverage warning + synthesis.
             return (
               <>
               {inlineBrief?.approved && coveragePct != null && (
@@ -2283,8 +2277,8 @@ function ClientDetail() {
             <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
-                stageNumber={1}
-                title="Brief"
+                stageNumber={2}
+                title="Briefing"
                 tone="brief"
                 status={inlineBrief.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
@@ -2464,8 +2458,8 @@ function ClientDetail() {
                     return (
                       <>
                         <StageCard
-                          stageNumber={2}
-                          title="Blueprint"
+                          stageNumber={3}
+                          title="Plano-mestre"
                           status={blueprintApproved ? "approved" : "ready"}
                           busy={stageBusy === "blueprint"}
                           progressLabel={
@@ -2502,13 +2496,12 @@ function ClientDetail() {
                                 planId={planId}
                                 compact
                                 showOpenFullPage
-                                onApproved={() => {
+                                onApproved={async () => {
                                   void refreshPlans();
-                                  setExpandedStage("microcycle");
-                                  // Kick off Stage 3 generation immediately so
-                                  // Stage 2 closes (emerald approved) and
-                                  // Stage 3 shows progress in-place.
-                                  void runStage("microcycle", false);
+                                  // Refetch so approvedStages includes
+                                  // "blueprint" before we render Stage 3.
+                                  await openPhasedDraft(planId, "microcycle");
+                                  void runStage("microcycle", false, { skipNavigate: true });
                                 }}
                               />
                             ) : (
@@ -2521,8 +2514,8 @@ function ClientDetail() {
                           }
                         />
                         <StageCard
-                          stageNumber={3}
-                          title="Microcycle"
+                          stageNumber={4}
+                          title="Semana-tipo"
                           status={
                             microcycleApproved
                               ? "approved"
@@ -2569,9 +2562,13 @@ function ClientDetail() {
                               <MicrocyclePanel
                                 planId={planId}
                                 showHeader={false}
-                                onApproved={() => {
+                                onApproved={async () => {
                                   void refreshPlans();
-                                  setExpandedStage("progressions");
+                                  // Re-read approved_stages from DB so
+                                  // microcycleApproved flips to true and
+                                  // Stage 4 unlocks (was stuck because the
+                                  // local snapshot was never refreshed).
+                                  await openPhasedDraft(planId, "progressions");
                                   void runStage("progressions", false, { skipNavigate: true });
                                 }}
                               />
@@ -2587,8 +2584,8 @@ function ClientDetail() {
                           }
                         />
                         <StageCard
-                          stageNumber={4}
-                          title="Progressions"
+                          stageNumber={5}
+                          title="Progressão 12 sem."
                           status={
                             progressionsApproved
                               ? "approved"
@@ -2968,6 +2965,8 @@ function AssessmentSection({
   collapsed: collapsedProp,
   onCollapsedChange,
   summaryLine,
+  completionPct,
+  onShowSynthesis,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -2976,6 +2975,10 @@ function AssessmentSection({
   collapsed?: boolean;
   onCollapsedChange?: (v: boolean) => void;
   summaryLine?: string;
+  /** When ≥80, the collapsed strip styles itself as a golden "complete" chip. */
+  completionPct?: number | null;
+  /** Optional inline action shown on the right of the collapsed strip. */
+  onShowSynthesis?: () => void;
 }) {
   const { t } = useTranslation("assessment");
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
@@ -3049,23 +3052,45 @@ function AssessmentSection({
   const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
 
   if (collapsed) {
+    const isComplete = (completionPct ?? 0) >= 80;
+    const stripClass = isComplete
+      ? "rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-500/5 p-3 hover:from-amber-500/15"
+      : "rounded-2xl border border-border bg-card p-3";
+    const labelClass = isComplete ? "text-amber-400" : "";
     return (
-      <section className="rounded-2xl border border-border bg-card p-3">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="flex w-full items-center justify-between gap-3 text-left"
-          aria-expanded={false}
-        >
-          <div className="flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-bold">{t("detail.section.title")}</span>
+      <section className={stripClass}>
+        <div className="flex w-full items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            className="flex flex-1 items-center gap-2 text-left"
+            aria-expanded={false}
+          >
+            {isComplete ? (
+              <Check className="h-4 w-4 text-amber-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className={`text-sm font-bold ${labelClass}`}>
+              {t("detail.section.title")}
+              {completionPct != null && (
+                <span className="ml-1.5 font-semibold">· {completionPct}% completo</span>
+              )}
+            </span>
             {summaryLine && (
               <span className="text-[11px] text-muted-foreground">· {summaryLine}</span>
             )}
-          </div>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.section.expand_short")}</span>
-        </button>
+          </button>
+          {onShowSynthesis && isComplete && (
+            <button
+              type="button"
+              onClick={onShowSynthesis}
+              className="rounded-md border border-amber-500/30 px-2 py-1 text-[10px] font-medium uppercase tracking-widest text-amber-400 hover:bg-amber-500/10"
+            >
+              Ver síntese
+            </button>
+          )}
+        </div>
       </section>
     );
   }
