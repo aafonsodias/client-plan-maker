@@ -4,18 +4,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isAllowedModel, DEFAULT_MODEL_ID } from "@/lib/ai-models";
 
 /**
- * askForge — open-ended coaching/programming Q&A used by the in-app
- * "Ask Forge" dock. Unlike askConcierge (which only navigates the app),
- * this is a free-form chat with the user-chosen model and optional client
- * context. Returns a single completion (non-streaming) for simplicity;
- * we can upgrade to SSE streaming when chats get long.
+ * askAtlas — open-ended coaching/programming Q&A used by the in-app
+ * Atlas dock. Atlas is the named copilot for Protocol. Unlike askConcierge
+ * (which only navigates the app), this is a free-form chat with the
+ * user-chosen model and optional client context.
  */
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
   content: z.string().min(1).max(8000),
 });
 
-export const askForge = createServerFn({ method: "POST" })
+export const askAtlas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z
@@ -51,12 +50,12 @@ export const askForge = createServerFn({ method: "POST" })
       if (c.restrictions) ctxLines.push(`Restrictions: ${c.restrictions}`);
     }
 
-    const systemPrompt = `You are Forge — an honest strength & conditioning coach embedded inside the trainer's tool.
+    const systemPrompt = `You are Atlas — the copilot inside Protocol, an honest strength & conditioning workbench for personal trainers. You carry the map: when the trainer seems lost, suggest the next concrete step.
 
-Reply in the same language the user wrote (PT or EN). Be direct, brief, and grounded in evidence.
+Reply in the same language the user wrote. PT voice = "você" (formal/neutral). EN = neutral 2nd person. Be direct, brief, and grounded in evidence.
 Format with light markdown: short paragraphs, bullets when listing exercises, **bold** for key cues. No emojis. No marketing tone.
 
-If the user asks for programming, default to: sets × reps @ RPE notation, mention progression, and call out risks/red-flags honestly.
+If the user asks for programming, default to: sets × reps @ RPE notation, mention progression, call out risks/red-flags honestly.
 If the question is outside coaching/training, say so in one sentence.
 
 ${ctxLines.length ? `Context the trainer has open right now:\n${ctxLines.join("\n")}` : ""}`.trim();
@@ -77,7 +76,7 @@ ${ctxLines.length ? `Context the trainer has open right now:\n${ctxLines.join("\
       if (aiRes.status === 429) return { ok: false as const, error: "Limite de pedidos atingido. Tenta de novo em ~1 minuto." };
       if (aiRes.status === 402) return { ok: false as const, error: "Créditos de IA esgotados. Adiciona crédito em Lovable Cloud." };
       const text = await aiRes.text().catch(() => "");
-      console.error("[ask-forge] gateway", aiRes.status, text.slice(0, 300));
+      console.error("[atlas] gateway", aiRes.status, text.slice(0, 300));
       return { ok: false as const, error: `AI gateway error ${aiRes.status}` };
     }
 

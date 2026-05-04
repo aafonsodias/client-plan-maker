@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
-import logoUrl from "@/assets/forge-logo.png";
+import logoUrl from "@/assets/protocol-mark.png";
 type Size = "sm" | "md" | "lg";
 
 const sizeMap: Record<Size, { wrap: string; logo: string }> = {

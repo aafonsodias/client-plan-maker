@@ -15,7 +15,7 @@ import { OnboardingChecklist, markOnboardingStep } from "@/components/Onboarding
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
 import { EvolutionSparkline } from "@/components/EvolutionSparkline";
 import { DropoffAlerts } from "@/components/DropoffAlerts";
-import { DashboardHint } from "@/components/DashboardHint";
+import { AtlasGenie } from "@/components/AtlasGenie";
 import { useClientPhases } from "@/hooks/use-client-phases";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -267,17 +267,17 @@ function Dashboard() {
     <div className="space-y-10">
       <OnboardingChecklist />
 
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
-          <h1 className="mt-1 flex items-center gap-3 text-4xl font-light tracking-tight">
+          <h1 className="mt-1 flex items-center gap-3 text-3xl font-light tracking-tight sm:text-4xl">
             <BrandMark size="sm" />
-            {t("dashboard.title")}
+            <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
         <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
             </Button>
           </DialogTrigger>
@@ -373,7 +373,9 @@ function Dashboard() {
         </Dialog>
       </div>
 
-      <DashboardHint />
+      <div className="flex justify-end">
+        <AtlasGenie trigger="pill" />
+      </div>
 
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-2">
@@ -383,7 +385,7 @@ function Dashboard() {
             </Button>
           )}
           <Button asChild size="sm" variant="outline"><Link to="/plans" search={{}}><FileText className="mr-1.5 h-4 w-4" /> {t("dashboard.view_plans")}</Link></Button>
-          <Button asChild size="sm" variant="ghost" className="ml-auto"><Link to="/manual"><BookOpen className="mr-1.5 h-4 w-4" /> {t("dashboard.manual")}</Link></Button>
+          {/* "Manual" lives in the footer + Atlas genie now; redundant button removed (R45). */}
         </div>
       )}
 
@@ -443,7 +445,7 @@ function Dashboard() {
                   key={f.id}
                   to="/dashboard"
                   search={{ filter: f.id }}
-                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground shadow-sm" : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
                 >
                   {f.label}
                 </Link>
@@ -456,17 +458,24 @@ function Dashboard() {
                   <Link
                     to="/clients/$clientId"
                     params={{ clientId: c.id }}
-                    className="flex flex-1 items-center justify-between px-5 py-4"
+                    className="flex flex-1 items-center gap-3 px-4 py-4 sm:justify-between sm:px-5"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{c.full_name}</p>
-                        <p className="truncate text-sm text-muted-foreground">{c.email ?? t("clients.no_email")}</p>
-                      </div>
-                      {phases[c.id] && <ClientPhasePill phase={phases[c.id]} />}
+                    <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={36} />
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-semibold sm:truncate sm:text-base">{c.full_name}</p>
+                      <p className="truncate text-xs text-muted-foreground sm:text-sm">{c.email ?? t("clients.no_email")}</p>
+                      {phases[c.id] && (
+                        <span className="mt-1 inline-flex sm:hidden">
+                          <ClientPhasePill phase={phases[c.id]} />
+                        </span>
+                      )}
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {phases[c.id] && (
+                      <span className="hidden shrink-0 sm:inline-flex">
+                        <ClientPhasePill phase={phases[c.id]} />
+                      </span>
+                    )}
+                    <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:inline-block" />
                   </Link>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

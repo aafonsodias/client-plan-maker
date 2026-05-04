@@ -1,4 +1,7 @@
 {
+  "brand": {
+    "name": "PROTOCOL"
+  },
   "actions": {
     "sign_in": "Entrar",
     "sign_out": "Terminar sessão",
@@ -39,7 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Bem-vindo de volta",
-    "title": "Forge · AI Workbench",
+    "title": "Protocol · Workbench",
     "new_client": "Novo cliente",
     "mode_invite": "Enviar link de avaliação",
     "mode_manual": "Adicionar manualmente",
@@ -91,6 +94,14 @@
     "delete": "Eliminar",
     "plan_deleted": "Plano eliminado",
     "evo_title": "Evolução vs bloco anterior · {{label}}"
+    ,"how_it_works": {
+      "open": "Como funciona",
+      "title": "3 passos para o primeiro plano",
+      "s1_b": "Adicione um cliente", "s1_s": "Só nome e email.",
+      "s2_b": "Envie o link de avaliação", "s2_s": "Ele preenche no telemóvel.",
+      "s3_b": "Gere o plano", "s3_s": "Reveja, ajuste, exporte em PDF.",
+      "full_manual": "Manual completo"
+    }
   },
   "clients": {
     "eyebrow": "Lista",
@@ -130,7 +141,7 @@
     "done": "Concluído"
   },
   "onboarding": {
-    "title": "Bem-vindo à Forge",
+    "title": "Bem-vindo ao Protocol",
     "description": "Um ciclo completo de coaching, em {{total}} passos. {{done}}/{{total}} feitos.",
     "remind_later": "Lembrar mais tarde",
     "got_it": "Já percebi",
@@ -433,7 +444,7 @@
   "share_app": {
     "label": "Partilhar",
     "title": "Partilhar a app",
-    "share_title": "Forge — Workout plans for personal trainers",
+    "share_title": "Protocol — Workout plans for personal trainers",
     "share_text": "Estou a usar isto para escrever planos de treino. Experimente com 1 cliente — grátis.",
     "copied": "Link copiado.",
     "failed": "Não consegui partilhar."
@@ -586,8 +597,8 @@
     "subtitle_em": "não",
     "subtitle_3": " conta como geração nova. Sem letras pequenas.",
     "loading": "A carregar…",
-    "active_tier": "Forge {{tier}} — activo",
-    "active_generic": "Forge — activo",
+    "active_tier": "Protocol {{tier}} — ativo",
+    "active_generic": "Protocol — ativo",
     "renews_on": "Renova a {{date}}",
     "trial_label": "Trial",
     "trial_days": "{{n}} dia restante",
@@ -615,7 +626,7 @@
     "checkout_cancelled": "Checkout cancelado — sem cobrança.",
     "topup_cancelled": "Pack cancelado — sem cobrança.",
     "footer_secure": "Pagamentos seguros via Stripe. Cancela a qualquer momento no portal.",
-    "welcome_toast": "Bem-vindo ao Forge!",
+    "welcome_toast": "Bem-vindo ao Protocol!",
     "topup_added": "Pack premium adicionado.",
     "load_failed": "Falha ao carregar billing",
     "checkout_failed": "Checkout falhou",
