@@ -2113,6 +2113,7 @@ function ClientDetail() {
               Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
           {phasedEnabled && inlineBrief && (
             <div className="space-y-3">
+              <FounderAiTelemetryPanel planId={inlineBrief.planId} />
               <StageCard
                 stageNumber={1}
                 title="Brief"
