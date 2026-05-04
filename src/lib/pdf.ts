@@ -98,6 +98,8 @@ export type PdfMeta = {
    * weekends, so single-week is the default rendering mode.
    */
   week_number?: number | null;
+  /** 0–100 — tonal richness chip on cover (R36 carry-over). */
+  assessment_completion_pct?: number | null;
 };
 
 // ---------- Asset + luminance helpers ----------
