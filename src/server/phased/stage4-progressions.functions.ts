@@ -293,10 +293,20 @@ The W2/W3/W4 deltas you emit must move weekly volume toward each week's target b
 
     const { error: updErr } = await supabase
       .from("workout_plans")
-      .update({ progression_plan: progressionData as any })
+      .update({
+        progression_plan: progressionData as any,
+        generation_meta: {
+          ...((plan as any).generation_meta ?? {}),
+          wave_periodization: {
+            tier: waveTier,
+            citation: "Bompa & Buzzichelli 6e §7.3-7.5",
+            weeks: wave,
+          },
+        } as any,
+      })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, progressionPlan: progressionData, exerciseList };
+    return { ok: true as const, progressionPlan: progressionData, exerciseList, wave };
   });
 
 export const approveProgressions = createServerFn({ method: "POST" })
