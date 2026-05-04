@@ -2229,6 +2229,8 @@ function ClientDetail() {
 
         </AssessmentSection>
       </div>
+        );
+      })()}
 
           {/* Post-assessment synthesis — collapses to a chip ONLY when the
               assessment is genuinely complete (≥80% of sections). Below
