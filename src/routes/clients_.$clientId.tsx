@@ -893,12 +893,16 @@ function ClientDetail() {
   useEffect(() => {
     if (!phasedEnabled || !user || !hydrated) return;
     void (async () => {
+      // Hydrate from the latest plan for this client — including complete
+      // ones — so stages 2..5 stay visible as golden/approved strips after
+      // the plan is shipped (R58). Without this, the entire stage lane
+      // disappears the moment generation finishes and the trainer loses the
+      // golden trail of "what was approved".
       const { data: row } = await supabase
         .from("workout_plans")
         .select("id, brief, blueprint, progression_plan, generation_state, generation_status, programming_variables, red_flag_accommodations")
         .eq("trainer_id", user.id)
         .eq("client_id", clientId)
-        .neq("generation_status", "complete")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
