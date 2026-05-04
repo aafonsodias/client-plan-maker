@@ -250,3 +250,14 @@ Atualizado: Round 28 (4 Mai 2026)
 - New `<ReassessmentSheet/>` (`src/components/ReassessmentSheet.tsx`) — right Sheet with 4 grouped sections: Cardio (VO₂máx, FC repouso), Força · resistência (dead-hang, active-hang, plank, box squats), TA (sistólica/diastólica + 5-min rest protocol copy), Circunferências (cintura/anca/peito/braço/coxa/gémeo).
 - Writes one `client_measurements` row (cadence='periodic') via existing `recordMeasurement` server fn — zero migration, all fields live inside `values` jsonb.
 - `ProtocolRail` "Reavaliação" chip is now a button (always shown when stage 1 ≥80%) with `onReassessClick`; opens the sheet on click.
+
+## Closed Round 52 (client page UX overhaul)
+- **Header simplified**: 7 toolbar buttons → 1 (`Mais ações ▾`) + the date picker + ClientDocuments chip. PDF, "Ver como cliente", "Pedir nova avaliação" moved into the dropdown.
+- **ThisWeekHero now owns the single primary action**: contextual CTA changes by client lifecycle state (Pedir avaliação → Iniciar briefing IA → Aprovar plano-mestre → Aprovar semana-tipo → Aprovar progressão → Abrir treino de hoje). Hero card promoted (heavier border, amber glow shadow, 11px CTA height).
+- **StageCard prefix change**: removed "Stage N — " text; numbers now appear as small badges. Reduces three-vocabulary overlap (Avaliação/Briefing… vs Stage N vs Bloco N).
+- **ComplianceDashboard upgrade**: KPIs show Δ% vs the immediately-prior window (computed client-side, no schema change). "Adherence — No plan baseline" replaced by "Consistência" when no planned baseline exists. Adesão KPI now carries inline verdict ("no alvo / abaixo do alvo / muito abaixo"). Top exercises split into "Por carga (kg)" (only weighed) and "Por volume (séries)" — bodyweight no longer mis-compared in kg. Sparkline gained a 3-week moving-average trend line (SVG, no libs).
+
+## Open after Round 52 (P0/P1 next)
+- P1 **Compliance qualitative tags + goal-aware verdicts** (e.g. "volume adequado para fase base"). Needs a per-client objective model first.
+- P1 **Compliance grouped layout**: "Consistência / Carga / Distribuição" with 1-2 well-interpreted KPIs each instead of 4-grid of telemetry.
+- P2 Goals model (per-client primary objective: força / hipertrofia / saúde / performance) feeding both Hero CTA copy and Compliance verdicts.

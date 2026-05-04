@@ -21,7 +21,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -1468,69 +1476,79 @@ function ClientDetail() {
             label={t("performed_on_label")}
             placeholder={t("performed_on_placeholder")}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5"
-            onClick={async () => {
-              try {
-                const { renderAssessmentPdf } = await import("@/lib/pdf");
-                renderAssessmentPdf({
-                  assessment,
-                  client,
-                  t: t as any,
-                });
-              } catch (e: any) {
-                toast.error(e?.message ?? "PDF error");
-              }
-            }}
-          >
-            <Download className="h-3.5 w-3.5" />
-            {t("download_pdf")}
-          </Button>
-          <Button asChild type="button" variant="ghost" size="sm" className="h-8 gap-1.5">
-            <Link to="/me" search={{ as: client.id }} title="Pré-visualizar como cliente">
-              <Eye className="h-3.5 w-3.5" /> Ver como cliente
-            </Link>
-          </Button>
+          {/* Secondary actions collapse into a single overflow menu so the page
+              has only one obvious primary action (the contextual CTA in the
+              ThisWeekHero card below). R52 — UX feedback. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                title="Mais ações"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+                Mais ações
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Documentos</DropdownMenuLabel>
+              <DropdownMenuItem
+                onSelect={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const { renderAssessmentPdf } = await import("@/lib/pdf");
+                    renderAssessmentPdf({ assessment, client, t: t as any });
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "PDF error");
+                  }
+                }}
+              >
+                <Download className="mr-2 h-3.5 w-3.5" />
+                {t("download_pdf")}
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/me" search={{ as: client.id }} title="Pré-visualizar como cliente">
+                  <Eye className="mr-2 h-3.5 w-3.5" /> Ver como cliente
+                </Link>
+              </DropdownMenuItem>
+              {(client.intake_status === "submitted" ||
+                client.intake_status === "reviewed" ||
+                lastSavedAt) && (
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Send className="mr-2 h-3.5 w-3.5" />
+                      Pedir nova avaliação
+                    </DropdownMenuItem>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>Pedir nova avaliação</SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-4">
+                      <IntakeLinkPanel
+                        clientId={client.id}
+                        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                        clientPhone={client.phone}
+                        intake={{
+                          intake_token: client.intake_token ?? null,
+                          intake_token_expires_at: client.intake_token_expires_at ?? null,
+                          intake_status: client.intake_status ?? "not_sent",
+                          intake_submitted_at: client.intake_submitted_at ?? null,
+                        }}
+                        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Documents has its own popover trigger; keep it visible as a small
+              chip rather than nesting buttons inside the dropdown. */}
           <ClientDocuments clientId={client.id} />
-          {(client.intake_status === "submitted" ||
-            client.intake_status === "reviewed" ||
-            lastSavedAt) && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Pedir nova avaliação"
-                  title="Pedir nova avaliação ao cliente"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-2.5 text-xs font-medium text-muted-foreground hover:border-accent hover:text-foreground"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                  <span>Avaliação</span>
-                </button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:max-w-md">
-                <SheetHeader>
-                  <SheetTitle>Pedir nova avaliação</SheetTitle>
-                </SheetHeader>
-                <div className="mt-4">
-                  <IntakeLinkPanel
-                    clientId={client.id}
-                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-                    clientPhone={client.phone}
-                    intake={{
-                      intake_token: client.intake_token ?? null,
-                      intake_token_expires_at: client.intake_token_expires_at ?? null,
-                      intake_status: client.intake_status ?? "not_sent",
-                      intake_submitted_at: client.intake_submitted_at ?? null,
-                    }}
-                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
         </div>
       </div>
 
@@ -2763,52 +2781,114 @@ function ClientDetail() {
             </div>
           )}
 
-      {/* Hero "Esta semana" card — focal point of the client page. Renders for the
-          most-recent plan; falls back to a calm onboarding card when none exists. */}
+      {/* Hero "Esta semana" card — focal point of the client page. Holds the ONE
+          contextual primary action so the trainer always sees a single obvious
+          next step (R52). All other actions live in "Mais ações" above. */}
       {(() => {
         const heroPlan = plans.find(
           (p) => ((p as any).generation_state?.stage ?? null) === "complete",
         ) ?? null;
         const zeroState = !heroPlan;
-        if (zeroState && plans.length === 0) return null; // keep page blank-friendly during pure onboarding above
+        // Even with no plans yet, we still render the hero so the trainer sees
+        // a primary CTA ("Pedir avaliação" / "Rever briefing"). The intake
+        // panel above keeps its standalone form for first-time onboarding.
         const heroDefaultWeek = heroPlan
           ? Math.min(
               Math.max(1, (heroPlan as any).duration_weeks ?? 1),
               planLatestWeek[heroPlan.id] ?? 1,
             )
           : 1;
+
+        // Resolve the single contextual primary action for this client.
+        const intakeDone =
+          client.intake_status === "submitted" || client.intake_status === "reviewed";
+        const briefReady = !!inlineBrief && !inlineBrief.approved;
+        const briefApproved = !!inlineBrief?.approved;
+        const blueprintApproved = (inlineBrief?.approvedStages ?? []).includes("blueprint");
+        const microcycleApproved = (inlineBrief?.approvedStages ?? []).includes("microcycle");
+        const progressionsApproved = (inlineBrief?.approvedStages ?? []).includes("progressions");
+        const allApproved = briefApproved && blueprintApproved && microcycleApproved && progressionsApproved;
+
+        const scrollToStages = () => {
+          document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
+        if (!intakeDone && !lastSavedAt) {
+          primaryAction = {
+            label: "Pedir avaliação",
+            icon: <Send className="h-4 w-4" />,
+            onClick: () => {
+              document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            },
+          };
+        } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
+          primaryAction = {
+            label: "Iniciar briefing IA",
+            icon: <Sparkles className="h-4 w-4" />,
+            busy: phasedBusy,
+            onClick: async () => {
+              try {
+                setPhasedBusy(true);
+                const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
+                if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); }
+                else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
+              } finally { setPhasedBusy(false); }
+            },
+          };
+        } else if (briefReady) {
+          primaryAction = {
+            label: "Rever briefing",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: scrollToStages,
+          };
+        } else if (briefApproved && !blueprintApproved) {
+          primaryAction = {
+            label: "Aprovar plano-mestre",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("blueprint"); scrollToStages(); },
+          };
+        } else if (blueprintApproved && !microcycleApproved) {
+          primaryAction = {
+            label: "Aprovar semana-tipo",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("microcycle"); scrollToStages(); },
+          };
+        } else if (microcycleApproved && !progressionsApproved) {
+          primaryAction = {
+            label: "Aprovar progressão",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => { setExpandedStage("progressions"); scrollToStages(); },
+          };
+        } else if (allApproved && heroPlan) {
+          primaryAction = {
+            label: "Abrir treino de hoje",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
+          };
+        } else if (heroPlan) {
+          primaryAction = {
+            label: "Abrir plano",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
+          };
+        } else {
+          primaryAction = {
+            label: "Continuar avaliação",
+            icon: <ArrowRight className="h-4 w-4" />,
+            onClick: () => {
+              document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            },
+          };
+        }
+
         return (
           <ThisWeekHero
             key={heroPlan?.id ?? "empty"}
             plan={heroPlan as any}
             defaultWeek={heroDefaultWeek}
             zeroState={zeroState}
-            canEvolve={!!evolvableSourcePlan}
-            creating={creatingPlan}
-            onCreateManual={async () => {
-              setCreatingPlan("manual");
-              try {
-                const r: any = await createManualPlanFn({ data: { clientId, durationWeeks: 4 } });
-                if (r?.ok && r?.planId) {
-                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                } else {
-                  toast.error(r?.error ?? t("detail.plans.manual_failed"));
-                }
-              } finally { setCreatingPlan(null); }
-            }}
-            onEvolve={async () => {
-              if (!evolvableSourcePlan) return;
-              setCreatingPlan("evolve");
-              try {
-                const r: any = await evolvePlanFn({ data: { priorPlanId: evolvableSourcePlan.id } });
-                if (r?.ok && r?.planId) {
-                  toast.success(t("detail.plans.evolve_success"));
-                  void navigate({ to: "/plans/$planId", params: { planId: r.planId } });
-                } else {
-                  toast.error(r?.error ?? t("detail.plans.evolve_failed"));
-                }
-              } finally { setCreatingPlan(null); }
-            }}
+            primaryAction={primaryAction}
           />
         );
       })()}

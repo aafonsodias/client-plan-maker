@@ -86,7 +86,10 @@ export default function StageCard({
       >
         <span className="flex items-center gap-2 font-semibold text-amber-500">
           <Check className="h-4 w-4" />
-          {`Stage ${stageNumber} — ${title} approved`}
+          <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-amber-500/15 px-1.5 text-[10px] font-bold tracking-wider">
+            {stageNumber}
+          </span>
+          <span>{title} · aprovado</span>
         </span>
         <ChevronRight className="h-4 w-4 text-amber-500/70" />
       </button>
@@ -98,8 +101,8 @@ export default function StageCard({
       <div className="flex w-full items-center justify-between rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] px-4 py-2.5 text-sm">
         <span className="flex items-center gap-2">
           <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/90">
-            Stage {stageNumber}
+          <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-emerald-500/15 px-1.5 text-[10px] font-bold tracking-wider text-emerald-500/90">
+            {stageNumber}
           </span>
           <span className="text-foreground/80">{title}</span>
         </span>
@@ -113,8 +116,8 @@ export default function StageCard({
       <div className="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/20 px-4 py-2.5 text-sm">
         <span className="flex items-center gap-2">
           <CircleDashed className="h-3.5 w-3.5 text-muted-foreground/60" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-            Stage {stageNumber}
+          <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-muted/40 px-1.5 text-[10px] font-bold tracking-wider text-muted-foreground/70">
+            {stageNumber}
           </span>
           <span className="text-muted-foreground">{title}</span>
         </span>
@@ -137,8 +140,9 @@ export default function StageCard({
           <div className="h-full w-1/3 animate-[progress_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
         </div>
         <div className="px-5 py-5">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80">
-            Stage {stageNumber} — {title} · a gerar
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80">
+            <span className="inline-flex h-4 min-w-[1rem] items-center justify-center rounded bg-amber-500/15 px-1">{stageNumber}</span>
+            <span>{title} · a gerar</span>
           </div>
           <div className="mt-2 flex items-start gap-2.5">
             <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
@@ -193,8 +197,11 @@ export default function StageCard({
           ) : (
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-sm font-semibold">
-            Stage {stageNumber} — {title}
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-md bg-muted px-1.5 text-[10px] font-bold tracking-wider text-muted-foreground">
+              {stageNumber}
+            </span>
+            {title}
           </span>
           {status === "approved" && <Check className="h-4 w-4 text-accent" />}
         </button>
