@@ -1,77 +1,79 @@
-## Round 36 — Close R35 leftovers, inline Stage 5, honest per-day lock
 
-R35 shipped golden tone, merged Assessment button, Stage 4 auto-approve, and stage rename. What stayed open is what the user actually needs next: Stage 5 still pops a separate page, the microcycle loses approved-day state on regenerate, EN copy still says "Plano-mestre", and the desktop week-matrix never landed. R36 closes those, in this order.
+# Round 37 — Stage 5 inline, honest empty states, polished finale
 
-### A. Stage 5 (Progressions) inlined — same pattern as Microcycle
-Currently the Stage 5 StageCard's only action is `navigateToStage("progressions")`. Convert it to an inline expandedBody so the trainer never leaves `/clients/$id` from intake → PDF.
+You're hitting four real bugs and several copy/UX rough edges. The biggest one explains the rest:
 
-- Extract `ProgressionsPanel` from `src/routes/plans.$planId.progressions.tsx` (mirror of MicrocyclePanel: header optional, `onApproved` callback, no own routing).
-- In `clients_.$clientId.tsx` Stage 5 block: add `expanded` / `onToggleExpanded` / `expandedBody` like Stage 4.
-- `onApproved` for Progressions: `await openPhasedDraft(planId, "complete")`, `void refreshPlans()`, then auto-collapse and surface a single emerald "Plano pronto · Descarregar PDF" CTA (final-stage tone is the only emerald in the journey, per memory).
-- Convert `src/routes/plans.$planId.progressions.tsx` to a redirect shell → `/clients/$clientId` (same as we did for brief/blueprint/microcycle in R33).
+**Why "A gerar Progressions…" never finishes and Stage 5 never opens**
+`/plans/$planId/progressions` was converted to a redirect-back-to-client shell in R34 (no UI left there). But Stage 5 still tries to *navigate* to it after generation — so the panel bounces back to the client page, the loading toast clears, and the new `progression_plan` is silently in the DB with no surface to view. The "deltas waiting for approval — open to review" copy then lies (there's no review screen). Inlining Stage 5 the same way Stages 3 & 4 are inlined fixes all three symptoms at once.
 
-### B. Per-day approval lock (the "I lost my edits" bug)
-Right now any "Regenerate Day N" silently overwrites a day even if the trainer reviewed it. Add an honest lock.
+## Scope
 
-- Migration: `ALTER TABLE workout_plan_days ADD COLUMN approved_at timestamptz;`
-- New server fn `approveDay({ planId, dayIndex })` in `src/server/phased/microcycle-edit.functions.ts` — sets `approved_at = now()`.
-- New server fn `unlockDay({ planId, dayIndex })` — clears `approved_at`.
-- `MicrocyclePanel`: each day-tab gets an amber `Approve day` button when `status==='done' && !approved_at`. Once approved, the regen button becomes `Unlock day` (confirm dialog) before allowing regenerate.
-- Auto-approve-microcycle effect (already in R35) only fires when `every day has approved_at`, not just `status='done'`. Removes the silent jump to Stage 5.
+### A. Inline Stage 5 (Progressions) — kills the bounce-redirect bug
 
-### C. Persist & surface assessment richness
-The merged Assessment button already shows `% completo`. Now persist that number so it follows the plan into the PDF and into AI prompts later.
+- New `src/components/ProgressionsPanel.tsx` mirroring `MicrocyclePanel`'s shape:
+  - Loads `workout_plans.progression_plan` + Week-1 `workout_plan_days`.
+  - If empty: "Gerar progressões" CTA → `proposeProgressions({planId})`.
+  - Renders one row per Week-1 exercise using existing `ProgressionExerciseCard` (W2/W3/W4 deltas, RPE, rationale).
+  - Per-row "regenerate this exercise" stays out-of-scope (R38).
+  - Bottom CTA "Aprovar progressões" → `approveProgressions({planId, progressionPlan})`. On success calls `onApproved()`.
+- In `clients_.$clientId.tsx` Stage 5 `StageCard`:
+  - Add `expanded` / `onToggleExpanded` / `expandedBody` exactly like Stage 4.
+  - `expandedBody` mounts `<ProgressionsPanel planId onApproved={...}/>`.
+  - `onApproved`: refetch via `openPhasedDraft(planId, "complete")`, `void refreshPlans()`, auto-collapse Stage 5.
+  - Once `progressionsApproved`: the collapsed amber strip shows; below the stages we render a new emerald **"Plano pronto · Descarregar PDF"** CTA card.
+- Remove the four `navigate({to:"/plans/$planId/progressions"...})` calls from the Stage 5 / runStage paths. The `plans.$planId.progressions.tsx` redirect file stays (back-compat for old bookmarks) but is no longer reached from in-app code.
 
-- Migration: `ALTER TABLE workout_plans ADD COLUMN assessment_completion_pct int;`
-- In `approveBrief` (server fn), compute current assessment coverage and store it on the plan row.
-- Surface as a small muted chip on:
-  - Plans-list row: `· dados 86%`
-  - Plan PDF cover footer: `Riqueza dos dados: 86%`
-  - Brief sheet header
-- (R37 will use this as a prompt-conservatism factor — out of scope here.)
+### B. Honest progress + no PT/EN mix
 
-### D. EN i18n for the renamed stages
-R35 renamed PT labels inline. EN still shows "Plano-mestre" / "Semana-tipo" because they were hardcoded.
+- Replace the `"A gerar Progressions…"` toast literal with `t("plan:detail.stage.toast.generating_progressions", "A gerar progressões…")` and add equivalent EN key. Same for Blueprint / Microcycle toasts that still mix languages.
+- The `StageCard` "generating" state already has a slow indeterminate progress bar (R36). We extend it: while `stageBusy === "progressions"`, surface step labels via `progressLabel` that walk through `"A ler microciclo…" → "A escrever ondas RPE…" → "A validar volume…"` on a 6s rotation (pure cosmetic; the underlying call is one shot but the user explicitly asked for honest, slow-feeling progress).
 
-- Add `plan.json` keys: `stage.label.{1..5}` and `stage.short.{1..5}` (PT + EN).
-- Replace the 4 hardcoded `title="Plano-mestre"|"Semana-tipo"|"Progressão 12 sem."` strings in `clients_.$clientId.tsx` with `t("plan:stage.label.3")` etc.
-- Update `MicrocyclePanel` header `Stage 4 — Semana-tipo` to use the same key.
-- Sweep `lib/plan-status.ts` chip labels to use the new keys.
+### C. Single Assessment row, unified expanded look
 
-### E. Desktop weekly-cycle matrix (D1 from R35)
-Mobile keeps the current swipe-tab UI. On `lg:` and up, render the matrix the user explicitly asked for.
+Today the page renders two amber rows: the merged AssessmentSection chip ("Assessment · 86% completo … VER SÍNTESE") **and** the standalone `"Avaliação parcial · 86% — brief aprovado com dados incompletos"` strip below it. They say the same thing.
 
-- New `src/components/WeekMatrix.tsx`:
-  - Columns = days (1..sessionsPerWeek), rows = unique exercise names across the week.
-  - Cells = `4×8 @ RPE 7.5` or `—`.
-  - Approved day column gets the golden gradient header + ✓ chip; per-day approve button at column footer.
-  - Click a cell → opens the existing DayCardEditable in a right-side `<Sheet>` for that day, focused on that exercise.
-- In `MicrocyclePanel`: render `<WeekMatrix>` inside a `hidden lg:block` wrapper, keep current swipe tabs in `lg:hidden`. Same source data, no duplication.
-- Drag/superset, cross-day move, AI inline comments stay parked for R37 (we got burned scoping all of it last time).
+- Delete the standalone "Avaliação parcial" strip block (around L2255-2259). The "X% completo" already lives in the merged chip.
+- When expanded, the AssessmentSection currently uses one border but its inner sub-cards (PAR-Q+, Risk strat., …) are styled with their own heavy borders and a separate "Show all / Collapse Assessment" header that visually feels like a second card. Tighten the inner styling so the whole expanded form sits inside a single amber-bordered shell:
+  - Drop the inner `border` on each section block; keep just a `border-b border-border/40` divider.
+  - Move the "Collapse Assessment" toggle into the header row of the same outer card (right side, ghost button) instead of floating as a second pill.
+  - When collapsed, the chip is visually identical to today (already pretty).
 
-### F. Verified-trainer badge (small, last)
-- New `src/components/VerifiedBadge.tsx` — small blue check, same Lucide icon set.
-- Show next to the trainer name in `/clients/$id` header when `profile.full_name && profile.logo_url && active_clients_count >= 1`. Founder pill stays separate.
+### D. Plans section: don't render when empty, dignified naming, finale CTA
 
-### Files touched
-- DB: migration adds `workout_plan_days.approved_at`, `workout_plans.assessment_completion_pct`
-- `src/components/ProgressionsPanel.tsx` — NEW (extracted)
-- `src/components/WeekMatrix.tsx` — NEW
-- `src/components/VerifiedBadge.tsx` — NEW
-- `src/server/phased/microcycle-edit.functions.ts` — `approveDay`, `unlockDay`
-- `src/server/phased/stage3-microcycle.functions.ts` — auto-approve gated on `approved_at` not `status`
-- `src/server/phased/stage1-brief.functions.ts` (or wherever `approveBrief` lives) — persist `assessment_completion_pct`
-- `src/components/MicrocyclePanel.tsx` — per-day approve/unlock UI, WeekMatrix mount
-- `src/routes/clients_.$clientId.tsx` — Stage 5 inlined, i18n keys swapped
-- `src/routes/plans.$planId.progressions.tsx` — collapse to redirect shell
-- `src/i18n/locales/{pt,en}/plan.json` — `stage.label.*`, `stage.short.*`
-- `src/lib/plan-status.ts` — i18n keys
-- `src/lib/pdf.ts` — richness footer
-- `.lovable/backlog.md` — close R35 leftovers, open R37
+Today "Plans" + "New plan (manual)" + "Evoluir do último (IA)" header always renders, even with zero plans, and even when the only plan is the still-in-progress phased draft.
 
-### Out of scope (parked)
-- Drag-and-drop / supersets in WeekMatrix (R37)
-- AI inline comment-on-edit (R37)
-- Cross-week duplication (R37)
-- Using `assessment_completion_pct` to weight prompts (R37)
-- FITT-VP backbone #45 (still parked at the top of P0 backlog — bigger round)
+- Hide the entire `<section>` (header + grid) when `plans.length === 0`.
+- Rename header `"Plans"` → `t("plan:detail.plans.finale", "Plano final")` (PT) / `"Final plan"` (EN). One plan = one header word; "Plans" felt like a list of drafts.
+- Rename `"Evoluir do último (IA)"` → **"Gerar próximo bloco (IA)"** with hover tooltip `"Arquiva o plano atual e usa-o como base para gerar o bloco seguinte com IA."` Same handler.
+- For each plan row whose `generation_state.stage === "complete"`, replace the right-side `STAGE: PROGRESSIONS` chip with an emerald **"Descarregar PDF"** button (existing `renderPlanPdf` flow).
+- Above the finale section, when `progressionsApproved && plans.length > 0`: show a one-liner emerald banner card "Plano pronto para entregar — descarrega o PDF abaixo." (single source of joy, replaces the misleading "deltas waiting for approval" copy which is gone with point A).
+
+### E. Backlog hygiene
+
+- Mark R37 closed in `.lovable/backlog.md`.
+- Move to P1: drag-and-drop in WeekMatrix, AI inline comments, FITT-VP backbone (#45), per-row "regenerate this exercise" in ProgressionsPanel.
+
+## Out of scope (parked for R38)
+
+- Desktop weekly-cycle matrix (D1) — still parked.
+- Per-row regenerate inside ProgressionsPanel.
+- PDF richness footer using `assessment_completion_pct`.
+- Verified-trainer badge (R36 D was deferred and stays deferred).
+
+## Files touched
+
+- **new** `src/components/ProgressionsPanel.tsx`
+- `src/routes/clients_.$clientId.tsx` — Stage 5 inlined, drop `Avaliação parcial` strip, rename Plans section, hide when empty, finale CTA, "Gerar próximo bloco (IA)" rename, drop progressions-route navigate calls.
+- `src/components/StageCard.tsx` — accept rotating `progressLabel` array (cosmetic walk-through).
+- `src/i18n/locales/{pt,en}/plan.json` — new keys: `detail.plans.finale`, `detail.plans.evolve_help` (rewrite), `detail.stage.toast.generating_progressions|blueprint|microcycle`, `detail.stage.progressions_steps[]`, `detail.finale.ready_banner`, `detail.finale.download_pdf`.
+- `.lovable/backlog.md`
+
+## Acceptance checklist
+
+1. Approve Stage 4 → Stage 5 expands inline, no navigation, no white screen on refresh.
+2. Click "Gerar progressões" → progress bar + rotating labels → panel renders deltas → Approve → emerald collapsed strip + "Plano pronto · Descarregar PDF" appears.
+3. Refresh page mid-generation: lands back on the same client page (no white screen, no /progressions redirect bounce).
+4. Page with zero plans renders no "Plano final" section.
+5. Only one Assessment row exists at all times (collapsed = chip, expanded = unified amber shell).
+6. No PT/EN mixed strings in toasts or stage labels.
+7. Hovering "Gerar próximo bloco (IA)" shows the new tooltip.
