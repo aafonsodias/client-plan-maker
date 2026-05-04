@@ -75,6 +75,35 @@ export const markIntakeReviewed = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Direct/manual client creation — name (required) + email (optional).
+ * No intake link generated; trainer fills the assessment themselves later.
+ * intake_status stays "not_sent" until the trainer chooses to send a link.
+ */
+export const createManualClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { fullName: string; email?: string | null }) =>
+    z.object({
+      fullName: z.string().trim().min(1).max(120),
+      email: z.string().trim().email().max(200).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: row, error } = await supabaseAdmin
+      .from("clients")
+      .insert({
+        trainer_id: userId,
+        full_name: data.fullName,
+        email: data.email || null,
+        intake_status: "not_sent",
+      } as any)
+      .select("id, full_name, email")
+      .single();
+    if (error || !row) throw new Error("Could not create client.");
+    return row;
+  });
+
 /* ─────────────── Public: validate token + load form context ─────────────── */
 
 // Very small in-memory rate limiter (per-process). Best-effort only.
