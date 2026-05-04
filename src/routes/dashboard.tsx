@@ -22,7 +22,7 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { PhaseKind } from "@/lib/client-phase";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { useServerFn } from "@tanstack/react-start";
-import { createInviteClient } from "@/server/intake.functions";
+import { createInviteClient, createManualClient } from "@/server/intake.functions";
 import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
@@ -68,6 +68,7 @@ function Dashboard() {
 
   // Invite dialog state
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [mode, setMode] = useState<"invite" | "manual">("invite");
   const [optionalName, setOptionalName] = useState("");
   const [showOptionalName, setShowOptionalName] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -75,7 +76,10 @@ function Dashboard() {
     id: string; full_name: string; phone: string | null;
     intake_token: string; intake_token_expires_at: string; intake_status: any;
   } | null>(null);
+  const [manualName, setManualName] = useState("");
+  const [manualEmail, setManualEmail] = useState("");
   const createInviteFn = useServerFn(createInviteClient);
+  const createManualFn = useServerFn(createManualClient);
 
   const load = async () => {
     const [{ data: cRows }, { data: r }, { data: allPlans }] = await Promise.all([
