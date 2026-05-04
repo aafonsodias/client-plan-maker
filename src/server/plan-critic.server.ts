@@ -62,7 +62,9 @@ const CriticInputSchema = {
 } as const;
 
 export async function criticDay(args: {
-  apiKey: string;
+  /** Deprecated — kept for callsite compatibility. The Lovable Gateway shim
+   *  reads LOVABLE_API_KEY directly. */
+  apiKey?: string;
   model: AnthropicModelId;
   pass: "critic-1" | "critic-2" | "escalate-critic";
   client: PlanClient;
