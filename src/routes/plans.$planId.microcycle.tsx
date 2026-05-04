@@ -308,10 +308,23 @@ function MicrocycleReview() {
         </div>
       )}
 
-      {!day1 && generating && (
-        <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-          <Loader2 className="mx-auto h-5 w-5 animate-spin" />
-          <p className="mt-2">{t("microcycleProgress.day_quality_gate")}</p>
+      {!day1 && (generating || generatingSet.size > 0) && (
+        <div className="space-y-3">
+          {Array.from({ length: Math.max(1, sessionsPerWeek) }, (_, i) => i + 1).map((idx) => (
+            <div
+              key={`skel-${idx}`}
+              className="flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5"
+            >
+              <div className="flex items-center gap-3 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                <div>
+                  <p className="font-medium text-foreground">Day {idx}</p>
+                  <p className="text-xs text-muted-foreground">A gerar sessão…</p>
+                </div>
+              </div>
+              <span className="text-[11px] uppercase tracking-widest text-amber-500">Pending</span>
+            </div>
+          ))}
         </div>
       )}
 
