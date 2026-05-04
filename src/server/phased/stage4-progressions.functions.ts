@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
+import { buildWavePlan, pickWaveTier, type WaveTier } from "./programming-defaults";
 
 const PROG_TOOL_SCHEMA = {
   type: "object",
@@ -37,7 +38,7 @@ export const proposeProgressions = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("trainer_id, brief, blueprint, duration_weeks")
+      .select("trainer_id, brief, blueprint, duration_weeks, generation_meta")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
@@ -83,12 +84,25 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     const appetiteShift =
       appetite === "conservador" ? -0.5 : appetite === "agressivo" ? +0.5 : 0;
     const rpeCeiling = Math.min(9.5, Math.max(6, tierCeiling + appetiteShift));
-    const ramp =
-      appetite === "conservador"
-        ? `RPE W1→W2→W3 = 5 → 6 → 6.5; W${weeks} deload (RPE 4).`
-        : appetite === "agressivo"
-        ? `RPE W1→W2→W3 = 7 → 8 → 8.5; W${weeks} deload (RPE 6).`
-        : `RPE W1→W2→W3 = 6 → 7 → 7.5; W${weeks} deload (RPE 5).`;
+    // Bompa & Buzzichelli 6e §7.3-7.5 wave: tier from brief + red flags,
+    // shifted by coach intensity appetite. Citation persisted on plan.
+    const briefRedFlags: string[] = ((plan as any).brief?.red_flags ?? []) as string[];
+    const briefAge = String((plan as any).brief?.training_age_band ?? "").toLowerCase();
+    let waveTier: WaveTier = pickWaveTier({
+      trainingAgeBand: briefAge,
+      redFlagsCount: briefRedFlags.length,
+      injuryActive: briefRedFlags.length >= 1 && /pain|acute|sharp|inflam/.test(briefRedFlags.join(" ").toLowerCase()),
+    });
+    if (appetite === "agressivo") waveTier = waveTier === "beginner" ? "intermediate" : "advanced";
+    if (appetite === "conservador") waveTier = waveTier === "advanced" ? "intermediate" : "beginner";
+    const wave = buildWavePlan(waveTier, weeks);
+    const ramp = wave
+      .map((w) =>
+        w.tag === "deload"
+          ? `W${w.week} DELOAD RPE ${w.rpe_low}-${w.rpe_high} vol×${w.volume_multiplier}`
+          : `W${w.week} RPE ${w.rpe_low}-${w.rpe_high} (${w.tag}, vol×${w.volume_multiplier})`,
+      )
+      .join("; ");
     const loadStep =
       appetite === "conservador"
         ? "+2.5kg every other week on free-weight compounds; +1 rep/wk on accessories."
@@ -279,10 +293,20 @@ The W2/W3/W4 deltas you emit must move weekly volume toward each week's target b
 
     const { error: updErr } = await supabase
       .from("workout_plans")
-      .update({ progression_plan: progressionData as any })
+      .update({
+        progression_plan: progressionData as any,
+        generation_meta: {
+          ...((plan as any).generation_meta ?? {}),
+          wave_periodization: {
+            tier: waveTier,
+            citation: "Bompa & Buzzichelli 6e §7.3-7.5",
+            weeks: wave,
+          },
+        } as any,
+      })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, progressionPlan: progressionData, exerciseList };
+    return { ok: true as const, progressionPlan: progressionData, exerciseList, wave };
   });
 
 export const approveProgressions = createServerFn({ method: "POST" })

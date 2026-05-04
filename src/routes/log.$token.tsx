@@ -326,6 +326,22 @@ function ClientLogPage() {
             onChange={(idx, next) => updateEntry(idx, next)}
             token={token}
             planId={info.id}
+            onSetKeyDown={(ev, si, field) => {
+              // ↓/↑ jump to the same field on the next/prev set; Enter behaves like ↓.
+              const isDown = ev.key === "ArrowDown" || ev.key === "Enter";
+              const isUp = ev.key === "ArrowUp";
+              if (!isDown && !isUp) return;
+              ev.preventDefault();
+              const total = e.sets.length;
+              let nextIdx = i;
+              let nextSi = si + (isDown ? 1 : -1);
+              if (nextSi >= total) { nextIdx = i + 1; nextSi = 0; }
+              if (nextSi < 0) { nextIdx = i - 1; nextSi = entries[nextIdx]?.sets.length ? entries[nextIdx].sets.length - 1 : 0; }
+              const sel = `[data-set-input="${nextIdx}:${nextSi}:${field}"]`;
+              const target = document.querySelector(sel) as HTMLInputElement | null;
+              target?.focus();
+              target?.select?.();
+            }}
           />
         ))}
       </div>

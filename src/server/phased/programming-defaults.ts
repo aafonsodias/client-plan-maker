@@ -66,3 +66,76 @@ export function reconcileAccommodations(
       }
   );
 }
+
+/**
+ * Wave-loading periodization (Bompa & Buzzichelli 6e §7.3-7.5):
+ * - Week 1: accumulate volume at moderate intensity (anchor RPE).
+ * - Week 2: raise volume first (+15%), keep intensity.
+ * - Week 3: keep volume, raise intensity (+0.5 RPE).
+ * - Week 4: deload (volume -40%, RPE -1.5 from anchor).
+ *
+ * Anchor RPE varies by training age + red flags:
+ * - beginner / red flag present: 5.5 (médio-leve)
+ * - intermediate: 6.5 (médio)
+ * - advanced: 7.0 (médio-pesado)
+ */
+export type WaveTier = "beginner" | "intermediate" | "advanced";
+export type WaveWeek = {
+  week: number;
+  rpe_low: number;
+  rpe_high: number;
+  volume_multiplier: number;
+  tag: "base" | "+volume" | "+intensity" | "deload";
+};
+
+const WAVE_ANCHOR: Record<WaveTier, number> = {
+  beginner: 5.5,
+  intermediate: 6.5,
+  advanced: 7.0,
+};
+
+export function pickWaveTier(opts: {
+  trainingAgeBand?: string | null;
+  redFlagsCount?: number;
+  injuryActive?: boolean;
+}): WaveTier {
+  if (opts.injuryActive || (opts.redFlagsCount ?? 0) >= 2) return "beginner";
+  const band = (opts.trainingAgeBand ?? "").toLowerCase();
+  if (band === "advanced") return "advanced";
+  if (band === "beginner") return "beginner";
+  return "intermediate";
+}
+
+export function computeWaveRpe(
+  tier: WaveTier,
+  weekN: number,
+  totalWeeks: number
+): WaveWeek {
+  const anchor = WAVE_ANCHOR[tier];
+  // Last week of any block ≥3 weeks is deload.
+  const isDeload = totalWeeks >= 3 && weekN === totalWeeks;
+  if (isDeload) {
+    return {
+      week: weekN,
+      rpe_low: Math.max(4, anchor - 1.5),
+      rpe_high: Math.max(5, anchor - 1.0),
+      volume_multiplier: 0.6,
+      tag: "deload",
+    };
+  }
+  // W1 base, W2 +volume, W3 +intensity, then cycle if more weeks.
+  const phase = ((weekN - 1) % 3) as 0 | 1 | 2;
+  if (phase === 0) {
+    return { week: weekN, rpe_low: anchor, rpe_high: anchor + 1, volume_multiplier: 1.0, tag: "base" };
+  }
+  if (phase === 1) {
+    return { week: weekN, rpe_low: anchor, rpe_high: anchor + 1, volume_multiplier: 1.15, tag: "+volume" };
+  }
+  return { week: weekN, rpe_low: anchor + 0.5, rpe_high: anchor + 1.5, volume_multiplier: 1.15, tag: "+intensity" };
+}
+
+export function buildWavePlan(tier: WaveTier, totalWeeks: number): WaveWeek[] {
+  const out: WaveWeek[] = [];
+  for (let w = 1; w <= totalWeeks; w++) out.push(computeWaveRpe(tier, w, totalWeeks));
+  return out;
+}

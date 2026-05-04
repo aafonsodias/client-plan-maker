@@ -72,12 +72,18 @@ export function ExerciseSetsCard({
   onChange,
   token,
   planId,
+  onSetKeyDown,
 }: {
   entry: LogEntryV2;
   index: number;
   onChange: (i: number, next: LogEntryV2) => void;
   token: string;
   planId: string;
+  onSetKeyDown?: (
+    ev: React.KeyboardEvent<HTMLInputElement>,
+    setIndex: number,
+    field: "reps" | "weight" | "rpe",
+  ) => void;
 }) {
   const fetchHistory = useServerFn(getExerciseHistory);
   const [history, setHistory] = useState<Awaited<ReturnType<typeof getExerciseHistory>>>([]);
@@ -277,6 +283,8 @@ export function ExerciseSetsCard({
               placeholder="reps"
               value={s.reps}
               onChange={(ev) => updateSet(si, { reps: ev.target.value })}
+              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "reps")}
+              data-set-input={`${index}:${si}:reps`}
             />
             <span className="text-[10px] text-muted-foreground">×</span>
             <input
@@ -284,6 +292,8 @@ export function ExerciseSetsCard({
               placeholder="kg"
               value={s.weight}
               onChange={(ev) => updateSet(si, { weight: ev.target.value })}
+              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "weight")}
+              data-set-input={`${index}:${si}:weight`}
             />
             {entry.planned.rpe && (
               <input
@@ -291,6 +301,8 @@ export function ExerciseSetsCard({
                 placeholder="RPE"
                 value={s.rpe ?? ""}
                 onChange={(ev) => updateSet(si, { rpe: ev.target.value })}
+                onKeyDown={(ev) => onSetKeyDown?.(ev, si, "rpe")}
+                data-set-input={`${index}:${si}:rpe`}
               />
             )}
           </div>
