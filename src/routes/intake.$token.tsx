@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { EQUIPMENT_CATALOG, CATEGORY_LABEL_PT, CATEGORY_LABEL_EN, type EquipmentCategory, searchEquipment } from "@/lib/equipment-catalog";
+import { SMART_GOAL_TEMPLATES, deadlineFromWeeks, type SmartGoalCategory } from "@/lib/smart-goal-templates";
 
 function TrainerLogo({ url }: { url?: string | null }) {
   const [failed, setFailed] = useState(false);
