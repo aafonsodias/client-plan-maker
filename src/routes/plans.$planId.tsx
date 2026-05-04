@@ -839,7 +839,10 @@ function PlanEditor() {
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
           {sessions.filter((s) => (s as any).plan_id === planId).length > 0 && (
-            <LogbookTimeline sessions={sessions.filter((s) => (s as any).plan_id === planId) as any} />
+            <LogbookTimeline
+              sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
+              currentPlanVersion={(plan as any)?.plan_data_version ?? 1}
+            />
           )}
         </>
       ) : mode === "edit" ? (
@@ -862,7 +865,10 @@ function PlanEditor() {
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           <ResultsPanel plan={data} sessions={sessions as any} />
-          <LogbookTimeline sessions={sessions.filter((s) => (s as any).plan_id === planId) as any} />
+          <LogbookTimeline
+            sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
+            currentPlanVersion={(plan as any)?.plan_data_version ?? 1}
+          />
         </>
       ) : mode === "progress" ? (
         <ExerciseTrendChart
