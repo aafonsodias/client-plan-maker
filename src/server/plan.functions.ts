@@ -1332,9 +1332,6 @@ export const escalatePlanDay = createServerFn({ method: "POST" })
       .maybeSingle();
     const previousMeta: any = existingRow?.validation_meta ?? {};
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI gateway is not configured." };
-
     const { week_number, day_number, days_per_week, duration_weeks } = data;
     const ESCALATE_MODEL: AnthropicModelId = "claude-sonnet-4-5-20250929";
     const safetyBlock = buildSafetyBlock(data.assessment);
@@ -1349,27 +1346,19 @@ Return ONLY structured JSON via the emit_workout_day tool — emit exactly one '
       `\n\nGENERATE: week ${week_number} of ${duration_weeks}, day ${day_number} of ${days_per_week}.`;
 
     const t0 = Date.now();
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: ESCALATE_MODEL,
-        max_tokens: 8000,
-        system: sys,
-        messages: [{ role: "user", content: userMsg }],
-        tools: [
-          {
-            name: "emit_workout_day",
-            description: "Emit one training day",
-            input_schema: SingleDayPlanSchema,
-          },
-        ],
-        tool_choice: { type: "tool", name: "emit_workout_day" },
-      }),
+    const res = await anthropicCompatFetch({
+      model: ESCALATE_MODEL,
+      max_tokens: 8000,
+      system: sys,
+      messages: [{ role: "user", content: userMsg }],
+      tools: [
+        {
+          name: "emit_workout_day",
+          description: "Emit one training day",
+          input_schema: SingleDayPlanSchema as unknown as Record<string, unknown>,
+        },
+      ],
+      tool_choice: { type: "tool", name: "emit_workout_day" },
     });
 
     if (!res.ok) {
