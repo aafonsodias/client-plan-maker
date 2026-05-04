@@ -1,135 +1,47 @@
-## What I found
+## Goal
 
-You are stuck on Stage 2 because the latest Blueprint calls are failing before a draft is saved.
+Stop bouncing to `/plans/$planId/blueprint` when the trainer clicks **View draft** / **Generate Blueprint** on the client page. Open the Stage 2 editor **inline, expanded right under the Stage 2 card** — same place the Brief lives — so the whole "Intake → Brief → Blueprint" flow stays on one page.
 
-The generation log already records cost, tokens, duration, model, retries, and errors. For the stuck plan, the two latest Blueprint attempts both failed with:
+Same pattern stays available for Stage 3 (Microcycle) and Stage 4 (Progressions) in a follow-up, but this round only does Blueprint to keep the diff tight and the bug-surface small.
 
-```text
-Stage: stage2:blueprint
-Model: openai/gpt-5-mini
-Error: Schema validation failed after retry
-Internal detail: Model did not call the required tool
-Cost: about $0.006789 each
-Time: about 32–34 seconds each
-```
+## What changes for the user
 
-So the “money/time panel” is not hard. The data is already there; it mostly needs a clean server function and founder-only UI. The urgent issue is that Blueprint is currently using a model/config that is not reliably following the required tool-call contract.
+- On `/clients/:id`, clicking **Generate Blueprint** or **View draft** no longer navigates away. The Stage 2 card expands and renders the full Blueprint editor in place: Programming Tier chip, Session Archetypes list, Week × Day matrix, Progression Model picker, "Ask AI for changes", "Regenerate", "Approve → Day 1".
+- The **Brief approved** rail stays visible on the right (where it already is), exactly as in the screenshot.
+- After approving the blueprint, Stage 3 card auto-opens inline (or surfaces "Generate Microcycle"); no full-page redirect.
+- A small "Open full page" link stays in the card header for users who prefer the dedicated route — the route keeps working for deep links.
 
-## Plan
+## Technical plan
 
-### 1. Unblock Stage 2 Blueprint first
+1. **Extract the editor body** out of `src/routes/plans.$planId.blueprint.tsx` into a reusable component:
+   - New file: `src/components/BlueprintEditorPanel.tsx`.
+   - Exports `BlueprintEditorPanel({ planId, onApproved?, compact? })`.
+   - Contains all state + load/regenerate/approve logic currently in `BlueprintReview` (lines 48–343), minus the `AppShell` and the right-side `BriefContextRail` (the client page already shows brief context above).
+   - `compact` removes the page-level title/back-link; the StageCard provides the chrome.
+   - `onApproved` callback lets the host decide what to do next (client page → expand Stage 3; standalone route → navigate to microcycle).
 
-Fix `src/server/phased/stage2-blueprint.functions.ts` so Blueprint generation becomes reliable again:
+2. **Slim down the route** `src/routes/plans.$planId.blueprint.tsx` to just render `<AppShell><BriefContextRail/> + <BlueprintEditorPanel onApproved={navigate microcycle}/></AppShell>`. Behaviour identical to today for anyone hitting the URL directly.
 
-- Change Stage 2’s default model away from the current `openai/gpt-5-mini` path that is failing tool-calls.
-- Use the app’s working Lovable AI default model for this structured step unless an env override is intentionally set.
-- Add a deterministic fallback for Blueprint if the AI still fails:
-  - use the approved brief’s mesocycle length and session frequency;
-  - create simple session archetypes from goal/equipment/tier;
-  - build a valid `week_to_session_map`;
-  - save it as a draft with a clear metadata note that this Blueprint was “safe fallback generated,” not fully AI-authored.
-- Keep logging the failed AI attempt to `generation_log`, then log the deterministic fallback as a zero-cost recovery row.
+3. **Inline mount on the client page** in `src/routes/clients_.$clientId.tsx` (around line 2293, the Stage 2 `StageCard`):
+   - Track local UI state `expandedStage: "blueprint" | "microcycle" | "progressions" | null`.
+   - Replace the current `onApprove → navigateToStage("blueprint")` with `onApprove → setExpandedStage("blueprint")` when a draft exists or generation just succeeded. First-time generation still calls `runStage("blueprint", false)` but, on success, sets `expandedStage = "blueprint"` instead of navigating.
+   - When `expandedStage === "blueprint"`, render `<BlueprintEditorPanel planId={planId} compact onApproved={() => { refreshPlans(); setExpandedStage("microcycle"); }} />` directly underneath the Stage 2 `StageCard`, inside the same vertical stack.
+   - Keep a tiny "Open full page" link in the StageCard header for power users.
 
-This means the button should stop dead-ending. Worst case, you get a conservative editable Blueprint instead of being blocked.
+4. **Keep telemetry + fallback toast behaviour** that already lives in `runStage` (Founder telemetry panel, deterministic fallback message) — only the navigation step changes.
 
-### 2. Make the generation buttons explain what is happening
+5. **i18n**: add two keys in `src/i18n/locales/{pt,en}/clients.json` (or the existing `detail.stage` namespace): `open_inline` ("Abrir aqui" / "Open here") and `open_full_page` ("Página completa" / "Full page").
 
-Improve the StageCard / client detail generation UI:
+6. **No DB / server function changes.** No migrations. No new dependencies.
 
-- Replace rudimentary “Generate Blueprint” states with a small “under the hood” strip:
-  - model or method used;
-  - current action: “calling AI,” “validating schema,” “saving draft,” “fallback used”;
-  - elapsed time while running;
-  - last error if it failed;
-  - “view details” line for founder mode.
-- Make failures actionable:
-  - show the friendly error;
-  - if available, show the internal validation reason (`zodError`) in a small founder-only detail area;
-  - leave the user on the page with a retry button and a path forward.
+## Out of scope (this round)
 
-### 3. Add founder-only cost/time chips next to calculation/generation stages
+- Inlining Stage 3 (Microcycle) and Stage 4 (Progressions) — same refactor pattern, but each has its own quirks (day-by-day generation, exercise picker). Will land in the next round once Blueprint inline is validated on Mobile Safari 375px.
+- Removing the standalone `/plans/$planId/blueprint` route — kept as a deep-link target.
+- Any new model/cost work (Stage 2 already on `google/gemini-3-flash-preview` with deterministic fallback).
 
-For `aafonsodias@gmail.com` only:
+## Risk + QA
 
-- Add a tiny colorful chip beside each StageCard action:
-  - latest cost for that stage;
-  - average duration for that stage;
-  - failure count if relevant.
-- Example display:
-
-```text
-Blueprint     $0.0056 avg · 5.5s
-Microcycle    $0.052 avg · 51s/day
-Progressions  $0.014 avg · 11s
-```
-
-This keeps the product light for real users, but gives you founder visibility while building.
-
-### 4. Add a compact founder telemetry panel
-
-Add a founder-only panel on the client detail page, near the generation stages:
-
-```text
-AI spend for this plan
-Stage                  Calls   Cost     Avg time   Failures
-Brief                  1       $0.0003  2.7s       0
-Blueprint              2       $0.0136  33.2s      2
-Pre-analysis total     14      $0.0200  1.2s       3
-```
-
-Also include an account-level summary for recent runs:
-
-```text
-Last 7 days: $X.XXXX · N calls · avg Ys · F failures
-```
-
-Important: this panel will read from existing `generation_log`; no new database tables are needed.
-
-### 5. Add server-side telemetry readers
-
-Create a small authenticated server function file, likely `src/server/generation-telemetry.functions.ts`, with functions such as:
-
-- `getPlanGenerationTelemetry(planId)`
-  - verifies the trainer owns the plan;
-  - returns grouped cost/duration/error stats for that plan.
-- `getTrainerGenerationTelemetry()`
-  - returns recent aggregate totals for the logged-in trainer.
-
-Use the existing row-level protections and authenticated server function pattern. No client-side secret access.
-
-### 6. Fix the missing translation warning
-
-Add the missing key in both assessment translation files:
-
-- `assessment:generate.brief_coverage` in English
-- `assessment:generate.brief_coverage` in Portuguese
-
-This removes the repeated console warning.
-
-### 7. Update backlog / plan notes honestly
-
-Update `.lovable/backlog.md` to close this round as:
-
-- Stage 2 Blueprint unblock
-- Founder AI spend/time telemetry
-- Generation buttons explain under-the-hood state
-- Missing i18n key fix
-
-And leave the larger knowledge-roadmap items parked, because they are not the right move while the pipeline itself is blocked.
-
-## What I will not do in this pass
-
-- No new billing/subscription logic.
-- No public AI-cost dashboard for normal users.
-- No new database table unless a hidden schema issue appears.
-- No resurrecting Demo Lab UI.
-- No heavy analytics page; keep it tiny and founder-only.
-
-## Expected result
-
-After implementation:
-
-- You should be able to click Stage 2 Blueprint and get unstuck.
-- If AI fails, the app saves a conservative editable fallback instead of wasting time and money repeatedly.
-- Founder mode shows small, useful cost/time telemetry next to generation stages.
-- The software better justifies itself by showing what it is doing under the hood without making the main UI heavy.
+- **Risk**: the BlueprintEditor was written assuming it owns the page (max-w-4xl, p-6). In `compact` mode we drop the outer paddings and let the StageCard frame it. Visual smoke at 1696px desktop and 375px Mobile Safari before closing.
+- **Risk**: two "Approve" buttons could appear if StageCard's footer is also rendered. Solution: when `expandedStage === "blueprint"`, hide StageCard's primary action and rely on the inline editor's own Approve.
+- **QA checklist**: generate blueprint from scratch → editor expands inline; reload page → "View draft" reopens it inline; approve → Stage 3 card highlights and brief rail still visible; deep link `/plans/:id/blueprint` still works standalone.

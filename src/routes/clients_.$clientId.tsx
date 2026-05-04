@@ -49,6 +49,7 @@ import {
 import BriefEditor from "@/components/BriefEditor";
 import StageCard from "@/components/StageCard";
 import { FounderAiTelemetryPanel } from "@/components/FounderAiTelemetryPanel";
+import { BlueprintEditorPanel } from "@/components/BlueprintEditorPanel";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { useClientPhases } from "@/hooks/use-client-phases";
@@ -394,6 +395,7 @@ function ClientDetail() {
     hasProgressionsDraft?: boolean;
   } | null>(null);
   const [briefStageBusy, setBriefStageBusy] = useState(false);
+  const [expandedStage, setExpandedStage] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   // Per-section AI post-processing analyses (Pre-Stage 0).
   const [sectionAnalyses, setSectionAnalyses] = useState<Record<string, SectionAnalysis | null>>({});
   const [analysingSections, setAnalysingSections] = useState<Record<string, boolean>>({});
@@ -2223,7 +2225,8 @@ function ClientDetail() {
                       });
                     const runStage = async (
                       stage: "blueprint" | "microcycle" | "progressions",
-                      alreadyDone: boolean
+                      alreadyDone: boolean,
+                      opts?: { skipNavigate?: boolean }
                     ) => {
                       // If already approved, just navigate.
                       if (alreadyDone) {
@@ -2270,6 +2273,7 @@ function ClientDetail() {
                           toast.success(`${prefix} pronto`, { id: tId });
                         }
                         void refreshPlans();
+                        if (opts?.skipNavigate) return;
                         navigate({
                           to:
                             stage === "blueprint"
@@ -2304,8 +2308,10 @@ function ClientDetail() {
                           }
                           onApprove={() =>
                             blueprintApproved || hasBlueprintDraft
-                              ? navigateToStage("blueprint")
-                              : runStage("blueprint", false)
+                              ? setExpandedStage(expandedStage === "blueprint" ? null : "blueprint")
+                              : runStage("blueprint", false, { skipNavigate: true }).then(() =>
+                                  setExpandedStage("blueprint"),
+                                )
                           }
                         >
                           <p className="text-sm text-muted-foreground">
@@ -2314,6 +2320,19 @@ function ClientDetail() {
                               : t("detail.stage.blueprint_help")}
                           </p>
                         </StageCard>
+                        {expandedStage === "blueprint" && (hasBlueprintDraft || blueprintApproved) && (
+                          <div className="rounded-2xl border border-border bg-card/50 p-4 sm:p-6">
+                            <BlueprintEditorPanel
+                              planId={planId}
+                              compact
+                              showOpenFullPage
+                              onApproved={() => {
+                                void refreshPlans();
+                                setExpandedStage(null);
+                              }}
+                            />
+                          </div>
+                        )}
                         <StageCard
                           stageNumber={3}
                           title="Microcycle"
