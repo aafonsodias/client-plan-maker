@@ -2965,6 +2965,7 @@ function ClientDetail() {
             </Button>
           </div>
         </div>
+        {plans.length > 1 && (
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
             {plans.map((p) => {
               const stage = (p.generation_state as any)?.stage as string | undefined;
@@ -3094,6 +3095,7 @@ function ClientDetail() {
               );
             })}
         </div>
+        )}
       </section>
       )}
 
