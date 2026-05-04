@@ -1,6 +1,6 @@
 {
   "brand": {
-    "name": "FORGE"
+    "name": "PROTOCOL"
   },
   "actions": {
     "sign_in": "Sign in",
@@ -42,7 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Welcome back",
-    "title": "Forge · AI Workbench",
+    "title": "Protocol · Workbench",
     "new_client": "New client",
     "mode_invite": "Send assessment link",
     "mode_manual": "Add manually",
@@ -133,7 +133,7 @@
     "done": "Done"
   },
   "onboarding": {
-    "title": "Welcome to Forge",
+    "title": "Welcome to Protocol",
     "description": "A full coaching loop, in {{total}} steps. {{done}}/{{total}} done.",
     "remind_later": "Remind me later",
     "got_it": "I've got it",
@@ -436,7 +436,7 @@
   "share_app": {
     "label": "Share",
     "title": "Share the app",
-    "share_title": "Forge — Workout plans for personal trainers",
+    "share_title": "Protocol — Workout plans for personal trainers",
     "share_text": "I'm using this to write training plans. Try it with 1 client — free.",
     "copied": "Link copied.",
     "failed": "Couldn't share."
@@ -589,8 +589,8 @@
     "subtitle_em": "doesn't",
     "subtitle_3": " count as a new generation. No fine print.",
     "loading": "Loading…",
-    "active_tier": "Forge {{tier}} — active",
-    "active_generic": "Forge — active",
+    "active_tier": "Protocol {{tier}} — active",
+    "active_generic": "Protocol — active",
     "renews_on": "Renews on {{date}}",
     "trial_label": "Trial",
     "trial_days": "{{n}} day left",
@@ -618,7 +618,7 @@
     "checkout_cancelled": "Checkout cancelled — no charge.",
     "topup_cancelled": "Pack cancelled — no charge.",
     "footer_secure": "Secure payments via Stripe. Cancel anytime in the portal.",
-    "welcome_toast": "Welcome to Forge!",
+    "welcome_toast": "Welcome to Protocol!",
     "topup_added": "Premium pack added.",
     "load_failed": "Failed to load billing",
     "checkout_failed": "Checkout failed",
