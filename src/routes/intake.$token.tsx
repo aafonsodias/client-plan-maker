@@ -51,7 +51,7 @@ type FormState = {
   client_phone: string;
   client_dob: string;
   // Coaching mode: how the client will train with this PT
-  intake_path: "" | "in_person" | "online" | "hybrid";
+  intake_path: "" | "self_log" | "coached" | "in_person" | "online" | "hybrid";
   // Scheduling (PT-guided path)
   sched_days: string[];
   sched_window: string;
