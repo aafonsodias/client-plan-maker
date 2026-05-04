@@ -519,6 +519,55 @@ export async function generatePlanPdf(
   }
   y += 38 + 18;
 
+  // ---------- Honesty banner: only W1 generated but trainer asked for a later week ----------
+  if (selectedWeekN && totalWeeksInPlan === 1 && selectedWeekN > 1) {
+    const bannerH = 24;
+    setFill(doc, theme.bgSubtle);
+    doc.rect(M, y, W - M * 2, bannerH, "F");
+    setDraw(doc, theme.accent);
+    doc.setLineWidth(1);
+    doc.line(M, y, M, y + bannerH);
+    setText(doc, theme.ink);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text(
+      `Mostrando Semana 1 — semanas seguintes ainda não geradas (pediu Semana ${selectedWeekN}).`,
+      M + 10,
+      y + 15,
+    );
+    y += bannerH + 12;
+  }
+
+  // ---------- Assessment richness chip ----------
+  if (typeof meta.assessment_completion_pct === "number") {
+    const pct = Math.max(0, Math.min(100, Math.round(meta.assessment_completion_pct)));
+    const chipW = 220;
+    const chipH = 22;
+    setFill(doc, theme.bgSubtle);
+    doc.rect(M, y, chipW, chipH, "F");
+    // Tonal accent stripe
+    let stripe: [number, number, number];
+    if (pct >= 80) stripe = [16, 185, 129];      // emerald
+    else if (pct >= 60) stripe = theme.accent;   // amber
+    else stripe = [180, 180, 180];               // muted
+    setFill(doc, stripe);
+    doc.rect(M, y, 3, chipH, "F");
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text("AVALIAÇÃO", M + 10, y + 9);
+    setText(doc, theme.ink);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`${pct}%`, M + 10, y + 19);
+    setText(doc, theme.inkMuted);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    const today = new Date().toLocaleDateString("pt-PT", { day: "2-digit", month: "short", year: "numeric" });
+    doc.text(`gerado ${today}`, M + chipW - 8, y + 14, { align: "right" });
+    y += chipH + 14;
+  }
+
   // ---------- Block evolution (only when block_number > 1) ----------
   const blockN = meta.block_number ?? 1;
   const evoRows = (meta.block_evolution ?? []).filter((r) => r.deltaPct != null);
