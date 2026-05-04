@@ -2260,7 +2260,15 @@ function ClientDetail() {
                           toast.error(`${prefix}: ${msg}`, { id: tId });
                           return;
                         }
-                        toast.success(`${stage[0].toUpperCase() + stage.slice(1)} pronto`, { id: tId });
+                        const prefix = stage[0].toUpperCase() + stage.slice(1);
+                        if (res?.usedFallback) {
+                          toast.success(
+                            `${prefix} pronto (fallback determinístico — IA falhou, edite à vontade)`,
+                            { id: tId, duration: 6000 },
+                          );
+                        } else {
+                          toast.success(`${prefix} pronto`, { id: tId });
+                        }
                         void refreshPlans();
                         navigate({
                           to:
