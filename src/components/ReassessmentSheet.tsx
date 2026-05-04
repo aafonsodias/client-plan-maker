@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Activity, Heart, Ruler, Timer, Loader2 } from "lucide-react";
 import {
@@ -20,13 +19,6 @@ import { recordMeasurement } from "@/server/measurements.functions";
  * actually move under structured training, without re-doing the full
  * intake. Writes a single `client_measurements` row (cadence='periodic')
  * with everything inside the `values` jsonb. No schema change required.
- *
- * Field set (chosen for honesty + easy to repeat in any gym):
- *  - Cardio: VO₂max estimate (submax) + RHR
- *  - Strength holds: dead-hang / active-hang (s), plank (s)
- *  - Lower body capacity: box squats (reps @ bodyweight)
- *  - Resting BP (systolic/diastolic) — 5-min seated rest protocol copy
- *  - 6 circumferences (cm): waist, hip, chest, arm, thigh, calf
  */
 
 type Values = Record<string, number | "">;
@@ -72,17 +64,19 @@ export function ReassessmentSheet({
 }) {
   const [values, setValues] = useState<Values>({});
   const [notes, setNotes] = useState("");
-  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
 
-  const save = useMutation({
-    mutationFn: async () => {
-      const cleaned = Object.fromEntries(
-        Object.entries(values).filter(([, v]) => v !== "" && v !== null && !Number.isNaN(v)),
-      ) as Record<string, number>;
-      if (Object.keys(cleaned).length === 0) {
-        throw new Error("Nada para guardar — preenche pelo menos um campo.");
-      }
-      return recordMeasurement({
+  const handleSave = async () => {
+    const cleaned = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v !== "" && v !== null && !Number.isNaN(v)),
+    ) as Record<string, number>;
+    if (Object.keys(cleaned).length === 0) {
+      toast.error("Nada para guardar — preenche pelo menos um campo.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const r: any = await recordMeasurement({
         data: {
           clientId,
           cadence: "periodic",
@@ -90,8 +84,6 @@ export function ReassessmentSheet({
           notes: notes.trim() || undefined,
         },
       });
-    },
-    onSuccess: (r: any) => {
       if (r?.ok === false) {
         toast.error(r.error ?? "Falha ao guardar");
         return;
@@ -99,11 +91,13 @@ export function ReassessmentSheet({
       toast.success("Reavaliação registada");
       setValues({});
       setNotes("");
-      void qc.invalidateQueries({ queryKey: ["measurements", clientId] });
       onOpenChange(false);
-    },
-    onError: (e: any) => toast.error(e?.message ?? "Falha ao guardar"),
-  });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao guardar");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setVal = (k: string, raw: string) => {
     if (raw === "") {
@@ -145,8 +139,7 @@ export function ReassessmentSheet({
                   {fields.map((f) => (
                     <div key={f.key} className="space-y-1">
                       <Label htmlFor={f.key} className="text-[11px] text-muted-foreground">
-                        {f.label}{" "}
-                        <span className="opacity-60">· {f.unit}</span>
+                        {f.label} <span className="opacity-60">· {f.unit}</span>
                       </Label>
                       <Input
                         id={f.key}
@@ -183,18 +176,12 @@ export function ReassessmentSheet({
                 variant="ghost"
                 size="sm"
                 onClick={() => onOpenChange(false)}
-                disabled={save.isPending}
+                disabled={saving}
               >
                 Cancelar
               </Button>
-              <Button
-                size="sm"
-                onClick={() => save.mutate()}
-                disabled={save.isPending}
-              >
-                {save.isPending ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : null}
+              <Button size="sm" onClick={() => void handleSave()} disabled={saving}>
+                {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
                 Guardar reavaliação
               </Button>
             </div>
