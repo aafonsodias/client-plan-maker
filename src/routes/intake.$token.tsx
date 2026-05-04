@@ -587,19 +587,27 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
   const firstName = placeholders.has(rawFirst.toLowerCase()) ? "" : rawFirst;
   const link = useServerFn(linkClientAccount);
 
-  const [mode, setMode] = useState<"intro" | "email">("intro");
+  // Email/password is the primary path. Google sits below as a secondary option.
   const [email, setEmail] = useState(ctx.client?.email ?? "");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [trainerSelf, setTrainerSelf] = useState(false);
 
-  // If the user is already authenticated (e.g. came back after Google), link
-  // automatically and confirm.
+  // If the user is already authenticated (e.g. came back after Google):
+  //  - If they're the trainer that owns this intake, refuse to link them as
+  //    a client (they're testing their own link). Show a friendly hint.
+  //  - Otherwise, link the auth user to the client row and show success.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase.auth.getUser();
       if (cancelled || !data.user) return;
+      const trainerId = (ctx as any)?.trainer?.user_id ?? null;
+      if (trainerId && data.user.id === trainerId) {
+        setTrainerSelf(true);
+        return;
+      }
       try {
         await link({ data: { token } });
         if (!cancelled) setDone(true);
@@ -608,7 +616,7 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [link, token]);
+  }, [link, token, ctx]);
 
   const google = async () => {
     setBusy(true);
@@ -663,48 +671,43 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
           {firstName ? t("thanks_title_named", { name: firstName }) : t("thanks_title_anon")}
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          {t("thanks_desc_v2", { trainer: trainerName, defaultValue: `${trainerName} vai rever as tuas respostas antes da nossa primeira sessão.` })}
+          {t("thanks_desc_v2", { trainer: trainerName })}
         </p>
 
-        {done ? (
+        {trainerSelf ? (
+          <div className="mt-8 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left">
+            <p className="text-sm font-medium">{t("thanks_trainer_self_title")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_trainer_self_desc")}</p>
+            <Button asChild variant="outline" size="sm" className="mt-3">
+              <a href="/dashboard">{t("thanks_trainer_self_back")}</a>
+            </Button>
+          </div>
+        ) : done ? (
           <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
-            <p className="text-sm font-medium">{t("thanks_account_ready", { defaultValue: "Conta criada." })}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("thanks_account_ready_desc", { defaultValue: "Daqui a pouco vais conseguir ver o teu plano, mensagens e progresso." })}
-            </p>
+            <p className="text-sm font-medium">{t("thanks_account_ready")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_account_ready_desc")}</p>
           </div>
         ) : (
           <div className="mt-8 rounded-2xl border border-border bg-card p-5 text-left">
-            <p className="text-sm font-medium">{t("thanks_create_account_title", { defaultValue: "Cria a tua conta" })}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("thanks_create_account_desc", { defaultValue: "Para acompanhares o teu plano, registar treinos e falar com o treinador." })}
-            </p>
+            <p className="text-sm font-medium">{t("thanks_create_account_title")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("thanks_create_account_desc")}</p>
 
-            <div className="mt-4 space-y-2">
-              <Button type="button" onClick={google} disabled={busy} className="w-full">
+            <form onSubmit={emailSignup} className="mt-4 space-y-2">
+              <Input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input type="password" placeholder="palavra-passe (mín. 8)" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Button type="submit" disabled={busy} className="w-full">
                 {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {t("thanks_continue_google", { defaultValue: "Continuar com Google" })}
+                {t("thanks_create_account_btn")}
               </Button>
-
-              {mode === "intro" ? (
-                <button
-                  type="button"
-                  onClick={() => setMode("email")}
-                  className="block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                >
-                  {t("thanks_use_email", { defaultValue: "Usar email e palavra-passe" })}
-                </button>
-              ) : (
-                <form onSubmit={emailSignup} className="space-y-2 pt-2">
-                  <Input type="email" placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  <Input type="password" placeholder="palavra-passe" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                  <Button type="submit" variant="outline" disabled={busy} className="w-full">
-                    {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {t("thanks_create_account_btn", { defaultValue: "Criar conta" })}
-                  </Button>
-                </form>
-              )}
-            </div>
+            </form>
+            <button
+              type="button"
+              onClick={google}
+              disabled={busy}
+              className="mt-3 block w-full text-center text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {t("thanks_continue_google")}
+            </button>
           </div>
         )}
 
