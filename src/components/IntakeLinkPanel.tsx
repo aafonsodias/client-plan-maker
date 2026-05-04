@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,33 @@ export function IntakeLinkPanel({
     }
   }, [intake.intake_token, intake.intake_status, override]);
   const view: IntakeFields = { ...intake, ...(override ?? {}) };
+
+  // Realtime: watch this client row so `opened`/`submitted` updates land
+  // without requiring a manual refresh. Without this the panel says
+  // "Not opened yet" forever even after the client clicked the link.
+  useEffect(() => {
+    if (!clientId) return;
+    const channel = supabase
+      .channel(`intake-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "clients", filter: `id=eq.${clientId}` },
+        (payload) => {
+          const next = payload.new as any;
+          onChange({
+            intake_token: next.intake_token,
+            intake_token_expires_at: next.intake_token_expires_at,
+            intake_status: next.intake_status,
+            intake_submitted_at: next.intake_submitted_at,
+          });
+          setOverride(null);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [clientId, onChange]);
 
   const url = view.intake_token
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/intake/${view.intake_token}`
@@ -155,6 +183,24 @@ export function IntakeLinkPanel({
   /* State 2 — link generated, not yet submitted (sent / opened) */
   const dotColor = view.intake_status === "opened" ? "bg-accent" : "bg-muted-foreground/50";
   const statusText = view.intake_status === "opened" ? t("intake.status_opened") : t("intake.status_pending");
+
+  /* State 2b — opened but not submitted: collapse into a slim chip with
+     "Reabrir" / "Regenerar". Reduces noise once we know the link works. */
+  const [expanded, setExpanded] = useState(false);
+  if (view.intake_status === "opened" && !expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="flex w-full items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-2.5 text-left text-sm transition hover:bg-emerald-500/10"
+      >
+        <span className="flex items-center gap-2 font-medium text-emerald-500">
+          <Check className="h-4 w-4" /> {t("intake.status_opened")}
+        </span>
+        <span className="text-xs text-muted-foreground">{t("intake.tap_to_manage", { defaultValue: "Toque para gerir" })}</span>
+      </button>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 max-w-full overflow-hidden">
