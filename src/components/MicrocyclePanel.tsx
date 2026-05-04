@@ -199,6 +199,17 @@ export function MicrocyclePanel({
   const inFlight = bulkRunning || dayList.some((i) => dayState(i) === "generating");
   const pct = sessionsPerWeek > 0 ? Math.round((doneCount / sessionsPerWeek) * 100) : 0;
 
+  // Auto-approve when the whole week is done, so the parent can collapse
+  // Stage 3 to its golden strip and unlock Stage 4 without an extra click.
+  const autoApprovedRef = useRef(false);
+  useEffect(() => {
+    if (autoApprovedRef.current) return;
+    if (!allDone || isFinalized || busy) return;
+    autoApprovedRef.current = true;
+    void approve();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDone, isFinalized, busy]);
+
   // Honest ETA based on observed completion times. Falls back to 18s/day.
   useEffect(() => {
     if (doneCount > prevDoneCountRef.current && startTsRef.current) {
