@@ -8,7 +8,7 @@ import {
   setTierOverride,
 } from "@/server/phased/stage2-blueprint.functions";
 import { BlueprintSchema, type Blueprint } from "@/server/phased/schemas";
-import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, ExternalLink } from "lucide-react";
+import { Loader2, RefreshCw, ArrowRight, ArrowLeft, AlertTriangle, ExternalLink, Check } from "lucide-react";
 import { toast } from "sonner";
 import { BriefSheetButton } from "@/components/BriefSheetButton";
 import { BlueprintArchetypesList } from "@/components/BlueprintArchetypesList";
@@ -259,15 +259,17 @@ export function BlueprintEditorPanel({
               <ExternalLink className="h-3 w-3" /> {locale === "pt" ? "Página completa" : "Full page"}
             </Link>
           )}
-          <button
-            onClick={approve}
-            disabled={busy || hasIntegrityError}
-            className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            {t("actions.approve_blueprint")}
-          </button>
+          {!compact && (
+            <button
+              onClick={approve}
+              disabled={busy || hasIntegrityError}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {t("actions.approve_blueprint")}
+            </button>
+          )}
         </div>
       </div>
 
@@ -332,6 +334,24 @@ export function BlueprintEditorPanel({
           }
         />
       </section>
+
+      {/* Bottom "sign here" CTA — primary place to approve after reading. */}
+      <div className="sticky bottom-3 z-10 mt-2 flex flex-col items-stretch gap-2 rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-amber-500/5 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-xs text-muted-foreground sm:max-w-md">
+          {locale === "pt"
+            ? "Quando estiver pronto, aprove a Blueprint para gerar a Semana 1."
+            : "When you're happy with it, approve the blueprint to generate Week 1."}
+        </div>
+        <button
+          onClick={approve}
+          disabled={busy || hasIntegrityError}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-amber-500 px-5 py-2.5 text-sm font-semibold text-black shadow-md transition hover:opacity-95 disabled:opacity-50"
+          title={hasIntegrityError ? "Resolve as referências em falta antes de aprovar" : undefined}
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {t("actions.approve_blueprint")}
+        </button>
+      </div>
     </div>
   );
 }
