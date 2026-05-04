@@ -2303,29 +2303,6 @@ function ClientDetail() {
           {phasedEnabled && inlineBrief && (
             <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
-              {(() => {
-                const approvedStagesAll = inlineBrief.approvedStages ?? [];
-                const allApproved =
-                  inlineBrief.approved &&
-                  approvedStagesAll.includes("blueprint") &&
-                  approvedStagesAll.includes("microcycle") &&
-                  approvedStagesAll.includes("progressions");
-                return allApproved;
-              })() ? (
-                <PipelineStrip
-                  blockNumber={(plans[0] as any)?.block_number ?? 1}
-                  approvedAt={(plans[0] as any)?.updated_at ?? null}
-                >
-                  {/* PIPELINE_BODY_START */}
-                  {renderPhasedStages()}
-                  {/* PIPELINE_BODY_END */}
-                </PipelineStrip>
-              ) : (
-                <>{renderPhasedStages()}</>
-              )}
-            </div>
-          )}
-
               <StageCard
                 stageNumber={2}
                 title={t("plan:stage.label.2", "Briefing")}
