@@ -24,9 +24,10 @@ type Session = {
   session_notes?: string | null;
   entries?: any[] | null;
   pr_celebrated_at?: string | null;
+  plan_data_version?: number | null;
 };
 
-type Props = { sessions: Session[] };
+type Props = { sessions: Session[]; currentPlanVersion?: number };
 
 const STATUS_TONE: Record<string, Tone> = {
   done: "success",
@@ -74,13 +75,23 @@ function avgSessionRpe(s: Session): number | null {
   return all.length ? Number((all.reduce((x, y) => x + y, 0) / all.length).toFixed(1)) : null;
 }
 
-export function LogbookTimeline({ sessions }: Props) {
+export function LogbookTimeline({ sessions, currentPlanVersion = 1 }: Props) {
   const { t, i18n } = useTranslation("common");
   const markCelebratedFn = useServerFn(markSessionsCelebrated);
+  // Segregate sessions logged against an older version of the plan
+  // (regen-with-feedback bumps plan_data_version on workout_plans).
+  const liveSessions = useMemo(
+    () => sessions.filter((s) => (s.plan_data_version ?? 1) >= currentPlanVersion),
+    [sessions, currentPlanVersion],
+  );
+  const archivedSessions = useMemo(
+    () => sessions.filter((s) => (s.plan_data_version ?? 1) < currentPlanVersion),
+    [sessions, currentPlanVersion],
+  );
   // PRs: best e1RM per exercise across the whole plan; mark the session that hit it.
   const prSessionByExercise = useMemo(() => {
     const best = new Map<string, { e1rm: number; sessionId: string }>();
-    for (const s of sessions) {
+    for (const s of liveSessions) {
       for (const e of s.entries ?? []) {
         const r = bestE1rm(e);
         if (!r) continue;
@@ -95,7 +106,7 @@ export function LogbookTimeline({ sessions }: Props) {
       sessionToPRs.set(v.sessionId, arr);
     }
     return sessionToPRs;
-  }, [sessions]);
+  }, [liveSessions]);
 
   // Surface PRs with a one-shot confetti + toast per session id (per mount).
   const seenRef = useRef<Set<string>>(new Set());
@@ -107,7 +118,7 @@ export function LogbookTimeline({ sessions }: Props) {
       if (seenRef.current.has(sessionId)) continue;
       seenRef.current.add(sessionId);
       // Skip if this session was already celebrated (DB) or in this browser (LS fallback).
-      const session = sessions.find((s) => s.id === sessionId);
+      const session = liveSessions.find((s) => s.id === sessionId);
       if (session?.pr_celebrated_at) continue;
       const lsKey = `pr_celebrated:${sessionId}`;
       if (typeof window !== "undefined" && window.localStorage.getItem(lsKey)) continue;
@@ -128,11 +139,11 @@ export function LogbookTimeline({ sessions }: Props) {
         // Soft-fail: localStorage already prevents replay this browser.
       });
     }
-  }, [prSessionByExercise, sessions, markCelebratedFn, t]);
+  }, [prSessionByExercise, liveSessions, markCelebratedFn, t]);
 
   const weeks = useMemo(() => {
     const map = new Map<number, Session[]>();
-    for (const s of sessions) {
+    for (const s of liveSessions) {
       const arr = map.get(s.week_number) ?? [];
       arr.push(s);
       map.set(s.week_number, arr);
@@ -143,7 +154,7 @@ export function LogbookTimeline({ sessions }: Props) {
         wk,
         list: list.sort((a, b) => a.session_date.localeCompare(b.session_date)),
       }));
-  }, [sessions]);
+  }, [liveSessions]);
 
   if (sessions.length === 0) {
     return (
@@ -152,6 +163,32 @@ export function LogbookTimeline({ sessions }: Props) {
       </div>
     );
   }
+
+  const archivedBlock = archivedSessions.length > 0 ? (
+    <details className="rounded-xl border border-amber-500/30 bg-amber-500/5">
+      <summary className="flex cursor-pointer items-center gap-2 p-3 text-xs text-amber-200">
+        <ChevronDown className="h-4 w-4 -rotate-90 group-open:rotate-0 transition-transform" />
+        <span className="font-semibold">
+          {archivedSessions.length} session{archivedSessions.length === 1 ? "" : "s"} from a previous version of this plan
+        </span>
+      </summary>
+      <div className="border-t border-amber-500/20 p-2 space-y-1 text-[11px] text-muted-foreground">
+        {archivedSessions
+          .sort((a, b) => b.session_date.localeCompare(a.session_date))
+          .map((s) => (
+            <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-1">
+              <span className="truncate">W{s.week_number} · {s.day_label}</span>
+              <span className="tabular-nums">
+                {new Date(s.session_date).toLocaleDateString(i18n.language === "pt" ? "pt-PT" : "en-US", { day: "2-digit", month: "short" })}
+              </span>
+            </div>
+          ))}
+        <p className="px-2 pt-1 italic">
+          These were logged before the plan was redesigned. The exercises no longer match — kept here for history.
+        </p>
+      </div>
+    </details>
+  ) : null;
 
   return (
     <section className="space-y-3">
@@ -164,6 +201,7 @@ export function LogbookTimeline({ sessions }: Props) {
         </span>
       </header>
       <div className="space-y-2">
+        {archivedBlock}
         {weeks.map(({ wk, list }) => {
           const done = list.filter((s) => s.status === "done").length;
           const partial = list.filter((s) => s.status === "partial").length;
