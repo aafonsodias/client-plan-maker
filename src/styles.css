@@ -313,3 +313,21 @@
 @media (prefers-reduced-motion: reduce) {
   .atlas-genie-mark, .atlas-genie-halo { animation: none; }
 }
+
+/* R47 — print mode reset.
+ * The trainer sometimes hits Ctrl+P inside the app instead of using the
+ * "Download PDF" button, which renders a dark background as solid black on
+ * paper. Force a white-on-black palette and hide app chrome so what comes out
+ * is at least a readable text dump, plus a banner pointing to the real export.
+ */
+@media print {
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+  * { box-shadow: none !important; }
+  .no-print,
+  [data-app-shell],
+  nav,
+  aside { display: none !important; }
+}
