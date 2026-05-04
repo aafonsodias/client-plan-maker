@@ -12,6 +12,7 @@ import { repairDay } from "./plan-repair.server";
 import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
 import { anthropicCompatFetch } from "./anthropic-compat.server";
 import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
+import { pickWaveTier, buildWavePlan } from "./phased/programming-defaults";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
