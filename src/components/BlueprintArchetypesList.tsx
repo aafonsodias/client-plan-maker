@@ -30,7 +30,7 @@ export function BlueprintArchetypesList({
 }) {
   const [query, setQuery] = useState("");
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(PointerSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -154,7 +154,7 @@ function SortableRow({
         {...listeners}
         disabled={dragDisabled}
         aria-label="Reordenar"
-        className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-30"
+        className="flex h-11 w-11 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-muted active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-30 touch-none"
       >
         <GripVertical className="h-4 w-4" />
       </button>
