@@ -1723,6 +1723,20 @@ function ClientDetail() {
                 primaryAction={primaryAction}
               />
             </div>
+            {plans.length > 0 && (
+              <details className="group mt-2 border-t border-border/60 pt-2">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-1 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
+                    Compliance &amp; estatísticas
+                  </span>
+                  <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
+                </summary>
+                <div className="px-1 pb-1 pt-2">
+                  <ComplianceDashboard clientId={clientId} />
+                </div>
+              </details>
+            )}
           </section>
         );
       })()}
@@ -3039,20 +3053,7 @@ function ClientDetail() {
       </section>
       )}
 
-      {plans.length > 0 && (
-        <details className="group rounded-2xl border border-border bg-card/40 open:bg-card" open>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-              Compliance &amp; estatísticas
-            </span>
-            <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
-          </summary>
-          <div className="px-3 pb-3 pt-1">
-            <ComplianceDashboard clientId={clientId} />
-          </div>
-        </details>
-      )}
+      {/* Compliance & estatísticas — moved into the Protocolo card above (R56). */}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
       <ReassessmentSheet
         clientId={clientId}
