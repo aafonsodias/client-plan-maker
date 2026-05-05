@@ -397,3 +397,9 @@ Atualizado: Round 28 (4 Mai 2026)
 - ✅ Single icon-only `MoreHorizontal` overflow menu (`align="end"`, `ml-auto`) — agrega Download PDF, Ver como cliente, Pedir nova avaliação.
 - ✅ Readiness strip (ACSM + Recovery chips) removida do header — duplicava `ClientCockpit`/`ProtocolRail` 200px abaixo. Single source of truth.
 - ✅ AssessmentDatePicker + ClientDocuments mantidos numa segunda linha discreta abaixo do header.
+
+## Round 69 — `/me` trainee cockpit (5 Mai 2026)
+- ✅ #84 (P1): `loadMe` agora devolve `currentWeek`, `weekDays` (dias prescritos da última semana) e `recentSessions` (últimas 3) — read-only, RLS-safe via `supabaseAdmin` filtrado por trainer ownership.
+- ✅ `/me` reescrita: hero plano com gradient amber + chip "X/Y feitos", lista de sessões da semana com check ✅/⭕ por `day_label`, lista de sessões recentes com data + nº exercícios.
+- ✅ Voz PT: "tu" → "você" ("a sua conta", "peça ao seu treinador", "o seu treinador") — alinhada com Core memory.
+- ✅ Sem write paths nesta surface: registo continua via link partilhado `/log/$token` (assinatura com bearer ≠ session). Próximo passo (#86 next) = mensagem do treinador.
