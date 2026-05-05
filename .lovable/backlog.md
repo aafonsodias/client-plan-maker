@@ -322,3 +322,13 @@ Atualizado: Round 28 (4 Mai 2026)
 | 72 | P1 | Roles | Trainee /me cockpit (logbook + mesocycle + previsão Bloco N+1) | R59 next |
 | 73 | P2 | AI | "Reescrever com IA" no MessageComposerSheet (tom + comprimento) | R59 |
 | 74 | P2 | Schedule | ICS export one-way para Google/Apple Calendar | parked |
+
+### Round 59 — Less surface (5 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 75 | P1 | Landing | Fundir Anti-ChatGPT + ForWhom em WhoAndWhySection (−1 secção, ~−400px scroll) | R59 ✅ |
+| 76 | P1 | Routes | Fusão `/templates` → `/plans?tab=templates` (Tabs + redirect) | R60 next |
+| 77 | P1 | Routes | Fusão `/schedule/packs` → `/schedule?tab=packs` | R60 next |
+| 78 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock + recent logs) com useUserMode | R60 |
+| 79 | P1 | Client | Trim header `/clients/$id` (4206-line file) — chips clínicos em <details> | R60 |

@@ -202,11 +202,8 @@ function Landing() {
         </div>
       </section>
 
-      {/* Anti-ChatGPT — sharp positioning vs the obvious alternative */}
-      <AntiChatGPTSection />
-
-      {/* Para quem é — inclusivity + medical responsibility */}
-      <ForWhomSection />
+      {/* Quem (personas) + Porquê (vs ChatGPT) — duas perguntas, uma secção */}
+      <WhoAndWhySection />
 
       {/* The journey — 5 stages of the in-app generator + tier chips inline */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
@@ -711,6 +708,67 @@ function ForWhomSection() {
       <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm leading-relaxed text-foreground/85">
         <p className="font-semibold text-amber-500">{t("landing.for_whom.medical_title")}</p>
         <p className="mt-1.5 text-muted-foreground">{t("landing.for_whom.medical_body")}</p>
+      </div>
+    </section>
+  );
+}
+
+// ─── Who + Why — fusão das duas secções acima numa só (R59) ───────────
+function WhoAndWhySection() {
+  const { t } = useTranslation("plan");
+  const personas = (t("landing.for_whom.personas", { returnObjects: true }) as { title: string; body: string }[]) ?? [];
+  const items = (t("landing.anti_chatgpt.items", { returnObjects: true }) as string[]) ?? [];
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card p-8 sm:p-12">
+        {/* Quem */}
+        <p className="text-xs uppercase tracking-widest text-accent">{t("landing.for_whom.eyebrow")}</p>
+        <h2 className="mt-2 max-w-2xl text-3xl font-light tracking-tight sm:text-4xl">
+          {t("landing.for_whom.title")}
+        </h2>
+        <p className="mt-3 max-w-2xl text-base font-light text-muted-foreground">
+          {t("landing.for_whom.subtitle")}
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {personas.map((p, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-background/40 p-4">
+              <p className="text-sm font-semibold text-foreground">{p.title}</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-4 text-sm leading-relaxed">
+          <p className="font-semibold text-amber-500">{t("landing.for_whom.medical_title")}</p>
+          <p className="mt-1 text-muted-foreground">{t("landing.for_whom.medical_body")}</p>
+        </div>
+
+        {/* Divisor + Porquê */}
+        <div className="mt-10 border-t border-border/60 pt-8">
+          <p className="text-xs uppercase tracking-widest text-accent">
+            {t("landing.anti_chatgpt.eyebrow")}
+          </p>
+          <h3 className="mt-2 max-w-3xl text-2xl font-light leading-tight tracking-tight sm:text-3xl">
+            <span className="block">{t("landing.anti_chatgpt.title_line1")}</span>
+            <span className="block text-accent">{t("landing.anti_chatgpt.title_line2")}</span>
+          </h3>
+          <p className="mt-3 max-w-2xl text-sm font-light text-muted-foreground">
+            {t("landing.anti_chatgpt.body")}
+          </p>
+          <p className="mt-6 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("landing.anti_chatgpt.sections_label")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {items.map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs font-medium text-foreground/85"
+              >
+                <ClipboardCheck className="h-3 w-3 text-accent" />
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

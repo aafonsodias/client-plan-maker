@@ -1,87 +1,71 @@
-## What's left (honest snapshot)
+# Round 59 — Less surface, more signal
 
-The MVP spine is whole: 5-stage journey, blocks, logbook, volume, PDFs, demo year, regional names, schedule v1, packs, billing, RealInsightsCard. What's missing is **the room you walk into**. Today login lands on a clients list — functional, lonely. Your vision is right: the landing should be a **role-aware cockpit**.
+Princípio: cada mudança remove ruído visual ou rotas duplicadas, mantendo (ou aumentando) utilidade. Nada de features novas grandes — esta ronda é de condensação.
 
-## The vision, sharpened
+## 1. Trainee `/me` cockpit (fecha promessa do R58)
 
-Three personas, one app, one mental model — **"the dashboard is what you use the app for."**
+`/me` hoje é uma página de definições. Para quem é trainee (sem clientes), entrar na app cai em `/dashboard` que mostra "lista de clientes vazia" — frustrante.
 
-| Role | Dashboard = | Editable | Tone |
-|---|---|---|---|
-| **Coach** (PT mode) | This week's calendar + clients pulse + money + relationship reminders | Everything | Operating room |
-| **Individual** (trainer-of-self) | Their own protocol (assessment → plan → log) | Everything on self | Personal craft |
-| **Trainee** (client of a PT) | Their plan, logbook, progress, PT messages | Log + feedback only | Connected, never lost |
-| **Long-distance trainee** | Same as Trainee but self-fills + can request edits | Log + intake fields + feedback | Autonomous |
+Adicionar em `src/routes/me.tsx`:
+- **Hero faixa**: próximo treino (data + foco) + Δ% e1RM esta semana + sleep/energy mais recente
+- **Mini-mesocycle** (4 semanas): grid 7 dias × 4, igual ao `MiniWeek` do CoachCockpit mas para o próprio plano
+- **Próximo bloco**: usa `NextBlockCard` já existente (deload/normal/push)
+- **Logbook recente**: últimas 3 sessões com PR badges
 
-**Insight:** Individual and Coach are the same surface with the clients-list tab hidden when there are 0 non-self clients. Trainee and Long-distance are the same surface with `read_only_plan` flag flipped. Two surfaces, four roles. No code duplication.
+Detecção: `useUserMode()` → se `coach`, redirect para `/dashboard`; se `individual` ou `trainee`, fica em `/me`.
 
-## Round 58 — Coach Cockpit at `/dashboard` (what I'd ship now)
+Sem nova migration — usa `useClientPhases`, `computeCapacityGain`, `listSessions` já existentes, parametrizando `clientId = self`.
 
-Convert `/dashboard` from "clients list" → "this-week cockpit" with the clients list as one panel among several. **Zero migration, zero AI, reuses every existing query.**
+## 2. Trim do header em `/clients/$id`
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Esta semana · 12-18 mai · 14 sessões · 1 120 € esperado │  ← hero strip
-├──────────────────────────┬──────────────────────────────┤
-│ WeeklyCalendarStrip      │ AttentionFeed                │
-│ (mon-sun timetable, mini)│ • Maria — aniversário 3ªf    │
-│ click → /schedule        │ • João — sem log há 9d       │
-│                          │ • Ana — pack acaba esta sem  │
-│                          │ • Submissões intake (2)      │
-├──────────────────────────┼──────────────────────────────┤
-│ ClientsPulse             │ RevenueGlance                │
-│ avatar grid · phase dot  │ esta sem · próx 4 sem        │
-│ click → /clients/$id     │ packs a renovar              │
-└──────────────────────────┴──────────────────────────────┘
-        ↓
-[ Lista completa de clientes — colapsável, mantém todo o filtro/busca atual ]
+Hoje o `/clients/$clientId` repete: avatar plate + ACSM/Recovery chips + ProtocolRail + ThisWeekHero. Tudo isso já está no `ClientCockpit` expansível na dashboard.
+
+Reduzir o header para 3 linhas finas:
+```
+← Todos os clientes  ·  Maria Silva  ·  [Phase pill]  ·  [Mais ações ▾]
+```
+Mover ACSM/Recovery chips para dentro de um `<details>` "Contexto clínico" colapsado por padrão. ProtocolRail desce para baixo das StageCards (já está duplicado).
+
+Ganho: `/clients/$id` lê como builder puro. Cockpit fica como overview.
+
+## 3. Fusão de rotas: Templates + Packs
+
+- `/templates` → `/plans?tab=templates` (nova `<Tabs>` no topo de `/plans`: "Active · Drafts · Templates")
+- `/schedule/packs` → `/schedule?tab=packs` (já existe `Tabs` no `/schedule`, só falta a aba)
+
+Manter os ficheiros antigos como redirects (`createFileRoute` com `beforeLoad: () => redirect(...)`) por 1 round antes de apagar.
+
+Ganho: 5 rotas top-level → 3. Sidebar/AppShell fica mais leve.
+
+## 4. Landing: fundir "Anti-ChatGPT" + "Para quem é"
+
+São 2 secções consecutivas com a mesma estrutura (eyebrow + título + chips/grid). Fundir numa só:
+
+```
+"Para quem (e contra quem)"
+   [Personas: Coach / Solo / PT-online]
+   ─── divisor fino ───
+   "Não é ChatGPT genérico — é um sistema com memória"
+   [Chips das 5 secções estruturadas]
 ```
 
-### Concrete files
+Ganho: ~400px de scroll a menos no desktop, mesma informação. Aumenta densidade percebida.
 
-**New:**
-- `src/components/dashboard/WeekHeroStrip.tsx` — reuses `listWeekBookings()` + `RevenuePanel` math; one-line summary.
-- `src/components/dashboard/WeeklyCalendarStrip.tsx` — compact 7-day mini timetable (read-only); cells use the same `ClientAvatar` + `packBlockClasses` from `src/lib/schedule.ts`. Click → `/schedule`.
-- `src/components/dashboard/ClientsPulse.tsx` — avatar grid (max 12) with phase dot from `useClientPhases`. Hover = name + days-since-log. Click → client page.
-- `src/components/dashboard/RelationshipNudges.tsx` — merges existing `daysUntilBirthday` + new "pack ending in ≤7 days" + "stale ≥7d" into one feed. Each nudge has a **"Compor mensagem"** action that opens a sheet with a pre-filled, editable template (birthday / christmas / re-engagement / new-client schedule). Copy-to-clipboard + WhatsApp deeplink (`https://wa.me/?text=...`). **No AI in this round** — templates are hand-written PT/EN with `{{name}}` `{{age}}` `{{free_slots}}` interpolation. AI rewriting can come in Round 59 if you want.
-- `src/lib/dashboard-aggregate.ts` — single hook `useCoachCockpit()` that runs the 4-5 reads in parallel.
+## Fora de scope (para próxima ronda)
 
-**Edited:**
-- `src/routes/dashboard.tsx` — top section becomes the cockpit grid; existing clients section moves below a `<details>` "Todos os clientes" (default open if no other content yet, default collapsed if cockpit has data). Keeps all the existing invite/manual dialog code untouched.
-- `src/components/AppShell.tsx` — header: rename "Dashboard" → "Hoje" in PT / "Today" in EN.
+- Reescrita IA no MessageComposer (R60)
+- Field/gym assessment expansion (precisa decisão de UX antes)
+- Public "Train with me" join link (P1, próprio round por ter rate-limit + RLS pending)
 
-### Role plumbing (just enough, no over-engineering)
+## Ficheiros tocados (estimativa)
 
-Add a tiny derived helper `useUserMode()` returning `'coach' | 'individual' | 'trainee'`:
-- `coach` if `clients.count > 0` AND any client where `is_self=false`
-- `individual` if only `is_self=true` clients (or none + trial)
-- `trainee` if route is `/me` OR `clients.user_id = auth.uid()` exists
+- `src/routes/me.tsx` — reescrita parcial (cockpit + fallback settings)
+- `src/routes/clients_.$clientId.tsx` — header slim
+- `src/routes/plans.tsx` + `src/routes/templates.tsx` (redirect)
+- `src/routes/schedule.tsx` + `src/routes/schedule.packs.tsx` (redirect)
+- `src/routes/index.tsx` — merge de duas secções
+- `src/i18n/locales/{pt,en}/plan.json` — merge de chaves anti_chatgpt + for_whom
+- `src/hooks/useUserMode.ts` — pequena extensão para incluir "trainee"
+- `.lovable/backlog.md` — fechar #72, abrir #73 e nova nota R59
 
-In R58 we **only branch the dashboard hero copy** ("As tuas semanas" vs "Esta semana com os teus clientes"). Full trainee dashboard refactor (`/me` becomes a real cockpit with logbook + mesocycle + next-block prediction) → **Round 59**.
-
-### Out of scope (explicit, so we don't drift)
-- AI message rewriting (R59)
-- Calendar sync / ICS export (parked)
-- Trainee `/me` upgrade beyond current state (R59)
-- Long-distance billing flow (R60+)
-- "Reminders / automatic alarms for workouts" (push notifications) — needs PWA push setup, parked
-
-### Why this round, not the bigger split
-
-You asked "what would add value?" Three things move the needle on day-1 retention:
-1. **Seeing the week** instead of a wall of names (calendar = orientation).
-2. **Seeing the money** (revenue glance = "this app pays for itself").
-3. **Being prompted to be human** (birthday / pack-ending nudges with one-click message = the unfair advantage no Trainerize/Excel competitor has).
-
-Splitting individual/trainee dashboards before we've even shown coaches a real cockpit is rearranging rooms before furnishing one. Round 58 furnishes. Round 59 splits.
-
-### Backlog updates
-- `.lovable/backlog.md` — Round 58 entry (P0 Coach Cockpit), R59 (Trainee `/me` cockpit + AI message rewrite), R60 (long-distance pay-to-connect flow).
-- `mem/index.md` — add Core line: "Dashboard = role-aware cockpit. Coach=this-week+pulse+money+nudges. Individual=own protocol. Trainee=read-only plan+log+feedback."
-
-### Estimated cost
-~1 round of credits. No DB migration, no AI calls, no new server functions — pure UI composition over existing queries.
-
----
-
-**If you'd rather:** I can instead spend this round on R59 (split trainee/individual `/me` into a real cockpit) — but my honest recommendation is cockpit first because it's the surface 100% of paying users see daily.
+Sem migrations. Sem novas server fns. Tudo reusa o que já existe.
