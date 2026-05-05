@@ -185,8 +185,8 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       med_flags: f.med_flags,
       extended: {
         smart_extra: f.smart_extra || null,
-        ext_hours_seated: f.ext_hours_seated ? Number(f.ext_hours_seated) : null,
-        ext_daily_steps: f.ext_daily_steps ? Number(f.ext_daily_steps) : null,
+        ext_hours_seated: parseLooseNumber(f.ext_hours_seated),
+        ext_daily_steps: parseLooseNumber(f.ext_daily_steps),
         ext_job_type: f.ext_job_type || null,
         ext_meals_per_day: f.ext_meals_per_day ? Number(f.ext_meals_per_day) : null,
         ext_water_l_per_day: f.ext_water_l_per_day ? Number(f.ext_water_l_per_day) : null,
