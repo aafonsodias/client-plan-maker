@@ -1559,6 +1559,7 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
   const [done, setDone] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const cameraRef = useRef<HTMLInputElement | null>(null);
 
   // Hydrate: if a photo for this slot was already uploaded, mark done and
   // show the signed URL preview so the user knows it's saved.
@@ -1641,7 +1642,6 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png"
-        capture="environment"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -1649,16 +1649,38 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
           if (inputRef.current) inputRef.current.value = "";
         }}
       />
-      <Button
-        type="button"
-        size="sm"
-        variant={done ? "outline" : "default"}
-        className="mt-3 w-full"
-        disabled={busy}
-        onClick={() => inputRef.current?.click()}
-      >
-        {busy ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> A enviar…</> : done ? "Tirar outra" : "Tirar foto"}
-      </Button>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          if (cameraRef.current) cameraRef.current.value = "";
+        }}
+      />
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Carregar"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={done ? "outline" : "default"}
+          disabled={busy}
+          onClick={() => cameraRef.current?.click()}
+        >
+          {done ? "Tirar outra" : "Tirar foto"}
+        </Button>
+      </div>
     </div>
   );
 }
