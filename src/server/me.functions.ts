@@ -6,11 +6,11 @@ import { z } from "zod";
 /**
  * Coached-client portal loader.
  *
- * Returns the client row + most recent active plan for the authenticated user.
- * Read-only; no costs, no AI surface, no trainer data beyond branding.
+ * Returns the client row + most recent active plan + current-week prescription
+ * + the last 3 logged sessions. Read-only; no costs, no AI.
  *
  * If `as` is provided AND the caller owns that client (trainer_id = auth.uid()),
- * preview that client's portal instead — used by the "Ver como cliente" link.
+ * preview that client's portal — used by the "Ver como cliente" link.
  */
 export const loadMe = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -64,11 +64,68 @@ export const loadMe = createServerFn({ method: "GET" })
         .maybeSingle(),
     ]);
 
+    let weekDays: Array<{
+      week_number: number;
+      day_number: number;
+      day_label: string | null;
+      focus: string | null;
+      exercise_count: number;
+    }> = [];
+    let recentSessions: Array<{
+      id: string;
+      session_date: string;
+      day_label: string;
+      week_number: number;
+      exercise_count: number;
+    }> = [];
+    let currentWeek = 1;
+
+    if ((plan as any)?.id) {
+      const { data: allDays } = await supabaseAdmin
+        .from("workout_plan_days")
+        .select("week_number, day_number, day_label, focus, content")
+        .eq("plan_id", (plan as any).id)
+        .order("week_number", { ascending: false })
+        .order("day_number", { ascending: true });
+
+      const days = (allDays ?? []) as any[];
+      if (days.length > 0) {
+        currentWeek = Math.max(...days.map((d) => d.week_number));
+        weekDays = days
+          .filter((d) => d.week_number === currentWeek)
+          .map((d) => ({
+            week_number: d.week_number,
+            day_number: d.day_number,
+            day_label: d.day_label,
+            focus: d.focus,
+            exercise_count: Array.isArray(d?.content?.exercises) ? d.content.exercises.length : 0,
+          }));
+      }
+
+      const { data: sessions } = await supabaseAdmin
+        .from("workout_sessions")
+        .select("id, session_date, day_label, week_number, entries")
+        .eq("plan_id", (plan as any).id)
+        .order("session_date", { ascending: false })
+        .limit(3);
+
+      recentSessions = (sessions ?? []).map((s: any) => ({
+        id: s.id,
+        session_date: s.session_date,
+        day_label: s.day_label,
+        week_number: s.week_number,
+        exercise_count: Array.isArray(s.entries) ? s.entries.length : 0,
+      }));
+    }
+
     return {
       linked: true as const,
       previewing,
       client: { id: client.id, full_name: client.full_name, photo_url: client.photo_url },
       plan: plan ?? null,
       trainer: trainer ?? null,
+      currentWeek,
+      weekDays,
+      recentSessions,
     };
   });
