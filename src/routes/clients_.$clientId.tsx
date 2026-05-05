@@ -1442,7 +1442,7 @@ function ClientDetail() {
     <TooltipProvider delayDuration={200}>
     <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
-        <div className="flex flex-wrap items-center gap-4 min-w-0">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           {user?.id && (
             <ClientAvatarUpload
               clientId={client.id}
@@ -1450,42 +1450,33 @@ function ClientDetail() {
               name={client.full_name}
               photoUrl={client.photo_url ?? null}
               onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
-              size={56}
+              size={48}
               showFounderDot={(client.email ?? "").toLowerCase() === "aafonsodias@gmail.com"}
             />
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
             </div>
-            <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
+            <p className="text-sm text-muted-foreground break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
           </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <AssessmentDatePicker
-            value={assessment.performed_on || ""}
-            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
-            label={t("performed_on_label")}
-            placeholder={t("performed_on_placeholder")}
-          />
-          {/* Secondary actions collapse into a single overflow menu so the page
-              has only one obvious primary action (the contextual CTA in the
-              ThisWeekHero card below). R52 — UX feedback. */}
+          {/* Single icon-only overflow menu for every secondary action.
+              R68 — header trim for mobile. */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
+                size="icon"
+                className="h-8 w-8 ml-auto shrink-0"
+                aria-label="Mais ações"
                 title="Mais ações"
               >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-                Mais ações
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel>Documentos</DropdownMenuLabel>
               <DropdownMenuItem
                 onSelect={async (e) => {
@@ -1539,8 +1530,14 @@ function ClientDetail() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Documents has its own popover trigger; keep it visible as a small
-              chip rather than nesting buttons inside the dropdown. */}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <AssessmentDatePicker
+            value={assessment.performed_on || ""}
+            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
+            label={t("performed_on_label")}
+            placeholder={t("performed_on_placeholder")}
+          />
           <ClientDocuments clientId={client.id} />
         </div>
       </div>
@@ -1562,75 +1559,8 @@ function ClientDetail() {
         />
       )}
 
-      {/* Readiness strip — at-a-glance ACSM risk + recovery score from latest data.
-          Hidden until at least one signal exists so it doesn't render as "Baixo / —". */}
-      {(() => {
-        const sleep = Number(assessment.sleep_quality);
-        const stress = Number(assessment.stress_level);
-        const sore = Number((assessment as any).soreness ?? 0);
-        const haveSignals = Number.isFinite(sleep) && sleep > 0;
-        const haveRisk = !!assessment.acsm_risk_category || riskCategory !== "low" || parqYes;
-        const coveragePct =
-          briefCoverage && briefCoverage.total > 0
-            ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
-            : null;
-        if (!haveSignals && !haveRisk && coveragePct == null && !lastSavedAt) return null;
-        // Readiness 0-100: sleep (1-10) drives 50%, low stress 30%, low soreness 20%.
-        const sleepPart = Number.isFinite(sleep) && sleep > 0 ? (sleep / 10) * 50 : 25;
-        const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
-        const sorePart = Number.isFinite(sore) && sore > 0 ? ((11 - sore) / 10) * 20 : 10;
-        const readiness = Math.round(sleepPart + stressPart + sorePart);
-        const readyTone =
-          readiness >= 75
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : readiness >= 50
-              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-              : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
-        const riskTone =
-          riskCategory === "high"
-            ? "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
-            : riskCategory === "moderate"
-              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
-        const riskLabel =
-          riskCategory === "high" ? "Alto" : riskCategory === "moderate" ? "Moderado" : "Baixo";
-        const assessTone =
-          coveragePct == null
-            ? "border-border bg-secondary text-muted-foreground"
-            : coveragePct >= 80
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-              : coveragePct >= 60
-                ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
-        const dateShort = lastSavedAt
-          ? new Date(lastSavedAt).toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit" })
-          : null;
-        return (
-          <div className="flex flex-wrap items-center gap-2 self-start">
-            {/* Avaliação % is shown inside the collapsed AssessmentSection
-                itself (single source of truth); this strip stays focused on
-                ACSM + Recovery so two adjacent UI surfaces don't repeat the
-                same number. (R43) */}
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}
-              title={t("detail.acsm_chip_title")}
-            >
-              <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.acsm_label")}</span>
-              {riskLabel}
-              {parqYes && <span className="opacity-70">· PAR-Q+</span>}
-            </span>
-            {haveSignals && (
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums ${readyTone}`}
-                title={t("detail.recovery_chip_tooltip", { sleep: sleep || "—", stress: stress || "—", sore: sore || "—" })}
-              >
-                <span className="text-[9px] uppercase tracking-widest opacity-70">{t("detail.recovery_label")}</span>
-                {readiness}/100
-              </span>
-            )}
-          </div>
-        );
-      })()}
+      {/* R68 — Readiness strip removed: ACSM + Recovery already render inside
+          ClientCockpit/ProtocolRail below. Single source of truth. */}
 
       {(() => {
         const briefApproved = !!inlineBrief?.approved;
