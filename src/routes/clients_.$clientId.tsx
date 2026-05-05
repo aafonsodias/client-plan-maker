@@ -1697,7 +1697,9 @@ function ClientDetail() {
             <ProtocolRail
               bare
               assessmentPct={
-                briefCoverage && briefCoverage.total > 0
+                heroPlanComplete
+                  ? 100
+                  : briefCoverage && briefCoverage.total > 0
                   ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
                   : null
               }
