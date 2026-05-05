@@ -304,3 +304,11 @@ Atualizado: Round 28 (4 Mai 2026)
 - [ ] P1: Fusion B — `/templates` → `/plans?tab=templates` (own round)
 - [ ] P1: Fusion C — `/schedule/packs` → `/schedule?tab=packs` (own round)
 - [ ] P2: Fusion A — `/me` → `/settings?as=…` (gentle, low value alone)
+
+
+## Closed Round 56 (insights wired to real data)
+- Mock clients on landing CoachWorkbench renamed to most-populous-country classics: Maria Silva (BR), John Smith (US), Priya Sharma (IN), Wei Chen (CN), Chioma Okafor (NG).
+- New `<RealInsightsCard/>` (`src/components/RealInsightsCard.tsx`) — reads last 60 periodic `client_measurements`, picks 2 latest values per metric, computes Δ + window in days, renders a chip per metric (VO₂máx, dead_hang_s, active_hang_s, plank_s). Empty state offers explicit "Abrir reavaliação" CTA — no fake numbers.
+- Mounted on `/clients/$clientId` above the Compliance details. Uses existing `setReassessOpen` to open `<ReassessmentSheet/>`. Zero migration, zero new server fn — reuses `listMeasurements` + the periodic fields the sheet already writes.
+- i18n PT+EN added under `plan:insights.*` (loading, header, cta_record, empty_*, no_data, delta_window, first_measurement, disclaimer, metric.{vo2max,dead_hang_s,active_hang_s,plank_s}).
+- Closes the gap between the landing's "Insights da IA" promise and what the app actually surfaces. App now delivers the same 4 metrics it advertises.
