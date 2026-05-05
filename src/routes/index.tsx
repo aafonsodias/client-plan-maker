@@ -954,17 +954,19 @@ function HeroHeadlineRotator() {
           <span className="block text-accent">{v.line2}</span>
         </h1>
       </div>
-      <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
-        {variants.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Variant ${i + 1}`}
-            onClick={() => setIdx(i)}
-            className={`h-1 rounded-full transition-all ${i === idx ? "w-8 bg-accent" : "w-3 bg-border hover:bg-muted-foreground/40"}`}
-          />
-        ))}
-      </div>
+      {variants.length > 1 && (
+        <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
+          {variants.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Variant ${i + 1}`}
+              onClick={() => setIdx(i)}
+              className={`h-1 rounded-full transition-all ${i === idx ? "w-8 bg-accent" : "w-3 bg-border hover:bg-muted-foreground/40"}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
