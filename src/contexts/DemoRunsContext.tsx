@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -76,6 +77,7 @@ function saveToStorage(userId: string, runs: ActiveDemoRun[]) {
 export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [runs, setRuns] = useState<ActiveDemoRun[]>([]);
   const startFn = useServerFn(startDemoClientFull);
   const pollFn = useServerFn(getDemoRun);
@@ -199,7 +201,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
   const startRun = useCallback<Ctx["startRun"]>(
     async ({ durationWeeks }) => {
       try {
-        const res: any = await startFn({ data: { durationWeeks } });
+        const res: any = await startFn({ data: { durationWeeks, locale: i18n.language } });
         if (!res?.ok || !res?.runId) {
           toast.error(res?.error ?? "Falhou a iniciar a simulação.");
           return null;
@@ -223,7 +225,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
     },
-    [startFn],
+    [startFn, i18n.language],
   );
 
   const registerRun = useCallback<Ctx["registerRun"]>(({ runId, kind, title, durationWeeks }) => {

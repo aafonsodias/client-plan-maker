@@ -19,6 +19,7 @@ export const startDemoClientFull = createServerFn({ method: "POST" })
       .object({
         archetype: z.string().optional(),
         durationWeeks: z.number().int().min(2).max(12).optional(),
+        locale: z.string().optional(),
       })
       .parse(d ?? {}),
   )

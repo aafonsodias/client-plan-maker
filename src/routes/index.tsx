@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { detectRegionFromLocale, generateRoster, initialsFor } from "@/lib/names/regional-names";
+import { pickDemoAvatar } from "@/lib/demo-avatars";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
@@ -923,54 +925,28 @@ type MockClient = {
 };
 
 function CoachWorkbenchMockup() {
-  const { t } = useTranslation("plan");
-  const clients: MockClient[] = [
-    {
-      name: "Maria Silva",
-      initials: "MS",
-      photo: "https://randomuser.me/api/portraits/women/68.jpg",
-      phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" },
-      status: { text: "Avaliação por concluir", tone: "neutral" },
-    },
-    {
-      name: "John Smith",
-      initials: "JS",
-      photo: "https://randomuser.me/api/portraits/men/45.jpg",
-      phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" },
-      block: "Bloco 1 · Sem 1 · Calistenia",
-      cvd: { label: "Risco CV baixo", tone: "ok" },
-      recovery: { pct: 63, tone: "warn" },
-      status: { text: "Último log ontem", tone: "ok" },
-    },
-    {
-      name: "Priya Sharma",
-      initials: "PS",
-      photo: "https://randomuser.me/api/portraits/women/65.jpg",
-      phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" },
-      cvd: { label: "Risco CV baixo", tone: "ok" },
-      recovery: { pct: 81, tone: "ok" },
-      status: { text: "Plano pronto a enviar", tone: "ok" },
-    },
-    {
-      name: "Wei Chen",
-      initials: "WC",
-      photo: "https://randomuser.me/api/portraits/men/22.jpg",
-      phase: { label: "Active · Block 2", cls: "bg-accent/90 text-accent-foreground" },
-      block: "Bloco 2 · Sem 3 · Hipertrofia",
-      cvd: { label: "Risco CV baixo", tone: "ok" },
-      recovery: { pct: 74, tone: "ok" },
-      status: { text: "3 logs esta semana", tone: "ok" },
-    },
-    {
-      name: "Chioma Okafor",
-      initials: "CO",
-      photo: "https://randomuser.me/api/portraits/women/79.jpg",
-      phase: { label: "Reassessment due", cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" },
-      block: "Bloco 1 · Sem 6",
-      recovery: { pct: 58, tone: "warn" },
-      status: { text: "Reavaliação em atraso", tone: "warn" },
-    },
-  ];
+  const { t, i18n } = useTranslation("plan");
+  // Region-aware roster: pick a probability-weighted name pool for the
+  // viewer's locale so a Brazilian/Indian/Nigerian visitor doesn't see five
+  // Portuguese strangers. See `src/lib/names/regional-names.ts`.
+  const slots = useMemo(() => {
+    const region = detectRegionFromLocale(i18n.language);
+    const roster = generateRoster({ region, count: 5, seed: `landing::${region}` });
+    const phases = [
+      { phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" }, status: { text: "Avaliação por concluir", tone: "neutral" as const } },
+      { phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" }, block: "Bloco 1 · Sem 1 · Calistenia", cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 63, tone: "warn" as const }, status: { text: "Último log ontem", tone: "ok" as const } },
+      { phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" }, cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 81, tone: "ok" as const }, status: { text: "Plano pronto a enviar", tone: "ok" as const } },
+      { phase: { label: "Active · Block 2", cls: "bg-accent/90 text-accent-foreground" }, block: "Bloco 2 · Sem 3 · Hipertrofia", cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 74, tone: "ok" as const }, status: { text: "3 logs esta semana", tone: "ok" as const } },
+      { phase: { label: "Reassessment due", cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" }, block: "Bloco 1 · Sem 6", recovery: { pct: 58, tone: "warn" as const }, status: { text: "Reavaliação em atraso", tone: "warn" as const } },
+    ];
+    return roster.map((n, i) => ({
+      name: n.full,
+      initials: initialsFor(n),
+      photo: pickDemoAvatar({ sex: n.sex === "f" ? "female" : "male", archetype: "landing", fullName: n.full }),
+      ...phases[i]!,
+    }));
+  }, [i18n.language]);
+  const clients: MockClient[] = slots;
   const chipCls = (tone: "ok" | "warn" | "bad") =>
     tone === "ok"
       ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
@@ -994,6 +970,9 @@ function CoachWorkbenchMockup() {
           12 ativos
         </span>
       </div>
+      <p className="mt-2 text-[10px] italic text-muted-foreground/70">
+        {t("landing.mockups.workbench_subtitle", { defaultValue: "Nomes de exemplo, ajustados à sua região." })}
+      </p>
       <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-background/40">
         {clients.map((c, i) => (
           <div
