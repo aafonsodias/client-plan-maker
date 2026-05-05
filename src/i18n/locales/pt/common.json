@@ -166,7 +166,11 @@
       "plan_ready": "Plano pronto · aguarda 1.º log",
       "last_log": "Último log {{when}}",
       "ready_to_build": "Avaliação pronta · monte o plano",
-      "intake_pending": "Avaliação por completar"
+      "intake_pending": "Avaliação por completar",
+      "cvd_low": "Risco CV baixo",
+      "cvd_mod": "Risco CV moderado",
+      "cvd_high": "Risco CV alto",
+      "recovery_pct": "Recuperação {{n}}%"
     },
     "cockpit": {
       "recovery": "Recuperação",
