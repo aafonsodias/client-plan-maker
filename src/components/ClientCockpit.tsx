@@ -173,15 +173,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
     if (activeStage === 4) {
       return (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold">{t("clients.cockpit.stage.4.title")}</p>
-            {planLink(t("clients.cockpit.stage.4.cta"))}
-          </div>
-          <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
-            <ComplianceDashboard clientId={clientId} />
-          </Suspense>
-        </div>
+        <Stage4Compliance clientId={clientId} planLink={planLink(t("clients.cockpit.stage.4.cta"))} />
       );
     }
 
@@ -196,6 +188,31 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       </div>
     );
   }, [activeStage, plan, coverage, realPct, totalWeeks, t, clientId]);
+
+  // — Stage 4 inline panel: header with summary, body collapsed by default —
+  function Stage4Compliance({ clientId, planLink }: { clientId: string; planLink: React.ReactNode }) {
+    const [openCompliance, setOpenCompliance] = useState(false);
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setOpenCompliance((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold hover:text-amber-400"
+          >
+            <ChevronDown className={`h-3 w-3 transition-transform ${openCompliance ? "rotate-0" : "-rotate-90"}`} />
+            {t("clients.cockpit.stage.4.title")} · Compliance
+          </button>
+          {planLink}
+        </div>
+        {openCompliance && (
+          <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
+            <ComplianceDashboard clientId={clientId} />
+          </Suspense>
+        )}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
