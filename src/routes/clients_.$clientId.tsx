@@ -1442,7 +1442,7 @@ function ClientDetail() {
     <TooltipProvider delayDuration={200}>
     <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
-        <div className="flex flex-wrap items-center gap-4 min-w-0">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           {user?.id && (
             <ClientAvatarUpload
               clientId={client.id}
@@ -1450,42 +1450,33 @@ function ClientDetail() {
               name={client.full_name}
               photoUrl={client.photo_url ?? null}
               onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
-              size={56}
+              size={48}
               showFounderDot={(client.email ?? "").toLowerCase() === "aafonsodias@gmail.com"}
             />
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
             </div>
-            <p className="text-muted-foreground break-words min-w-0">{client.email ?? t("no_email")}</p>
+            <p className="text-sm text-muted-foreground break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
           </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <AssessmentDatePicker
-            value={assessment.performed_on || ""}
-            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
-            label={t("performed_on_label")}
-            placeholder={t("performed_on_placeholder")}
-          />
-          {/* Secondary actions collapse into a single overflow menu so the page
-              has only one obvious primary action (the contextual CTA in the
-              ThisWeekHero card below). R52 — UX feedback. */}
+          {/* Single icon-only overflow menu for every secondary action.
+              R68 — header trim for mobile. */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
+                size="icon"
+                className="h-8 w-8 ml-auto shrink-0"
+                aria-label="Mais ações"
                 title="Mais ações"
               >
-                <MoreHorizontal className="h-3.5 w-3.5" />
-                Mais ações
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel>Documentos</DropdownMenuLabel>
               <DropdownMenuItem
                 onSelect={async (e) => {
@@ -1537,11 +1528,21 @@ function ClientDetail() {
                   </SheetContent>
                 </Sheet>
               )}
+              <DropdownMenuItem asChild>
+                <div className="cursor-default" onSelect={(e: any) => e.preventDefault?.()}>
+                  <ClientDocuments clientId={client.id} />
+                </div>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {/* Documents has its own popover trigger; keep it visible as a small
-              chip rather than nesting buttons inside the dropdown. */}
-          <ClientDocuments clientId={client.id} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <AssessmentDatePicker
+            value={assessment.performed_on || ""}
+            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
+            label={t("performed_on_label")}
+            placeholder={t("performed_on_placeholder")}
+          />
         </div>
       </div>
 
