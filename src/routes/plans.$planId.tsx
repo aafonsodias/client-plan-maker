@@ -48,6 +48,7 @@ import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
+import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -283,6 +284,16 @@ function PlanEditor() {
       }
     }
     const { generatePlanPdf } = await import("@/lib/pdf");
+    // Round 63 — pull assessment so the PDF cover can render the missions ladder.
+    let assessmentRow: any = null;
+    if ((plan as any).assessment_id) {
+      const { data: a } = await supabase
+        .from("assessments")
+        .select("*")
+        .eq("id", (plan as any).assessment_id)
+        .maybeSingle();
+      assessmentRow = a;
+    }
     await generatePlanPdf(
       {
         title: plan.title,
@@ -292,6 +303,10 @@ function PlanEditor() {
         block_number: blockN,
         block_transition_summary: (plan as any)?.block_transition_summary ?? null,
         block_evolution: blockEvolution,
+        assessment: assessmentRow,
+        client: client as any,
+        training_days_per_week: assessmentRow?.training_days_per_week ?? null,
+        assessment_completion_pct: (plan as any).assessment_completion_pct ?? null,
       },
       data,
       {
@@ -310,6 +325,9 @@ function PlanEditor() {
 
   return (
     <div className="space-y-4">
+      {/* Round 63 — "Needs human review" lives on its own surface, above
+          the collapsed plan chrome. Discreet amber, not error red. */}
+      <HumanReviewBanner generationMeta={plan.generation_meta} />
       {/* Plan chrome — collapsed by default so the workout table is the first
           thing on the page. Trainer expands when they need title, actions,
           summary, block transition, etc. */}
