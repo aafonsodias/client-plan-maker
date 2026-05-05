@@ -2401,8 +2401,17 @@ function ClientDetail() {
           })()}
 
           {/* Phased generation: stages stack vertically below the action row.
-              Stage 1 (brief) is the only live stage; 2–4 are placeholders. */}
-          {phasedEnabled && inlineBrief && (
+              Stage 1 (brief) is the only live stage; 2–4 are placeholders.
+              R59: when every stage is approved, the lane is redundant with
+              the Protocol Rail at the top of the page (it already shows all
+              5 ✓ chips + the PDF in the plan header strip). Hide it so the
+              client overview reads as a single cockpit card. */}
+          {phasedEnabled && inlineBrief && !(
+            inlineBrief.approved
+            && (inlineBrief.approvedStages ?? []).includes("blueprint")
+            && (inlineBrief.approvedStages ?? []).includes("microcycle")
+            && (inlineBrief.approvedStages ?? []).includes("progressions")
+          ) && (
             <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
