@@ -2,39 +2,63 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
-import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
-import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
+import { logGeneration } from "./ai.server";
 import { buildWavePlan, pickWaveTier, type WaveTier } from "./programming-defaults";
 
-const PROG_TOOL_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["rows"],
-  properties: {
-    rows: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["exercise_id", "dimension", "week_2_delta", "week_3_delta", "week_4_delta"],
-        properties: {
-          exercise_id: { type: "string" },
-          dimension: { type: "string", enum: ["load", "reps", "sets", "intensity_rpe", "tempo", "complexity_variant"] },
-          week_2_delta: { type: "string" },
-          week_3_delta: { type: "string" },
-          week_4_delta: { type: "string" },
-          rationale: { type: "string", maxLength: 120 },
-        },
-      },
-    },
-  },
-};
+/**
+ * Round 63: AI is no longer allowed to generate progressions.
+ *
+ * Per project rule: "AI gera só 1 semana, nunca mais." Weeks 2..N are derived
+ * deterministically from Week 1 + the wave model (Bompa 6e §7.3-7.5) + a load
+ * step keyed to coach intensity appetite (NSCA 4e §17.4 increment table).
+ *
+ * The next-week programming uses real logged sessions (see programNextWeek
+ * in src/server/blocks.functions.ts → next-week function) — this stage just
+ * provides the *plan* skeleton so trainer can preview the full mesocycle
+ * before the client trains a single rep.
+ */
+
+function classifyExercise(name: string): "compound" | "isolator" | "machine" | "bodyweight" {
+  const n = (name ?? "").toLowerCase();
+  if (/\b(squat|deadlift|bench|press|row|clean|snatch|pull[- ]?up|chin[- ]?up|dip)\b/.test(n)) {
+    if (/machine|smith|hack|leg press|chest press|cable/.test(n)) return "machine";
+    return "compound";
+  }
+  if (/curl|extension|raise|fly|kickback|pushdown|crunch|plank/.test(n)) return "isolator";
+  if (/machine|cable|smith|leg press|hack|chest press|lat pulldown/.test(n)) return "machine";
+  if (/bodyweight|push[- ]?up|pull[- ]?up|chin[- ]?up|dip|lunge|step[- ]?up/.test(n)) return "bodyweight";
+  return "isolator";
+}
+
+function deltaForExercise(
+  cat: ReturnType<typeof classifyExercise>,
+  appetite: "conservador" | "padrao" | "agressivo",
+  weekTag: "base" | "+volume" | "+intensity" | "deload",
+): Array<{ dimension: "load" | "reps" | "intensity_rpe" | "sets"; value: string }> {
+  if (weekTag === "deload") {
+    return [{ dimension: "intensity_rpe", value: "-1.5rpe" }, { dimension: "sets", value: "-1set" }];
+  }
+  const big = appetite === "agressivo" ? "+5kg" : "+2.5kg";
+  const small = appetite === "agressivo" ? "+5%" : appetite === "conservador" ? "+2.5%" : "+2.5%";
+  if (weekTag === "+volume") {
+    if (cat === "compound") return [{ dimension: "reps", value: "+1rep" }, { dimension: "intensity_rpe", value: "+0.5rpe" }];
+    if (cat === "machine") return [{ dimension: "reps", value: appetite === "agressivo" ? "+2reps" : "+1rep" }];
+    if (cat === "isolator") return [{ dimension: "reps", value: appetite === "agressivo" ? "+2reps" : "+1rep" }];
+    return [{ dimension: "reps", value: "+1rep" }];
+  }
+  // +intensity
+  if (cat === "compound") return [{ dimension: "load", value: big }, { dimension: "intensity_rpe", value: "+0.5rpe" }];
+  if (cat === "machine") return [{ dimension: "load", value: small }, { dimension: "intensity_rpe", value: "+0.5rpe" }];
+  if (cat === "isolator") return [{ dimension: "intensity_rpe", value: "+1rpe" }];
+  return [{ dimension: "intensity_rpe", value: "+0.5rpe" }];
+}
 
 export const proposeProgressions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ planId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const t0 = Date.now();
 
     const { data: plan } = await supabase
       .from("workout_plans")
@@ -68,22 +92,9 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     }
 
     const weeks = (plan as any).duration_weeks ?? 4;
-    const model = resolveModel("FORGE_MODEL_STAGE_4", "openai/gpt-5-mini");
-    const progModel = (plan as any).blueprint?.progression_model_proposal?.model ?? "linear";
-    // Tier-derived RPE ceiling — falls back to 8 if not present on the blueprint.
-    const tierRaw = String(
-      (plan as any).blueprint?.programming_tier ??
-        (plan as any).generation_meta?.tier_override ??
-        "conservative"
-    ).toLowerCase();
-    const appetite = String(
+    const appetite = (String(
       (plan as any).brief?.intensity_appetite ?? "padrao",
-    ).toLowerCase();
-    const tierCeiling =
-      tierRaw === "remedial" ? 7 : tierRaw === "advanced" ? 9 : 8;
-    const appetiteShift =
-      appetite === "conservador" ? -0.5 : appetite === "agressivo" ? +0.5 : 0;
-    const rpeCeiling = Math.min(9.5, Math.max(6, tierCeiling + appetiteShift));
+    ).toLowerCase() as "conservador" | "padrao" | "agressivo");
     // Bompa & Buzzichelli 6e §7.3-7.5 wave: tier from brief + red flags,
     // shifted by coach intensity appetite. Citation persisted on plan.
     const briefRedFlags: string[] = ((plan as any).brief?.red_flags ?? []) as string[];
@@ -96,205 +107,75 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     if (appetite === "agressivo") waveTier = waveTier === "beginner" ? "intermediate" : "advanced";
     if (appetite === "conservador") waveTier = waveTier === "advanced" ? "intermediate" : "beginner";
     const wave = buildWavePlan(waveTier, weeks);
-    const ramp = wave
-      .map((w) =>
-        w.tag === "deload"
-          ? `W${w.week} DELOAD RPE ${w.rpe_low}-${w.rpe_high} vol×${w.volume_multiplier}`
-          : `W${w.week} RPE ${w.rpe_low}-${w.rpe_high} (${w.tag}, vol×${w.volume_multiplier})`,
-      )
-      .join("; ");
-    const loadStep =
-      appetite === "conservador"
-        ? "+2.5kg every other week on free-weight compounds; +1 rep/wk on accessories."
-        : appetite === "agressivo"
-        ? "+5kg/wk on free-weight compounds (or +5%); +2 reps/wk on accessories."
-        : "+2.5kg/wk on free-weight compounds (or +2.5–5%); +1–2 reps/wk on accessories.";
 
-    const system = `You are a senior strength coach writing PROGRESSION DELTAS for weeks 2..${weeks} of a ${tierRaw.toUpperCase()} tier mesocycle.
-Coach intensity appetite: ${appetite.toUpperCase()}.
-Target RPE wave: ${ramp}
-Target load step: ${loadStep}
-
-Delta DSL (use empty string "" only for the deload week or when truly nothing should change):
-- load: "+2.5kg" / "+5lb" / "-5%"
-- reps: "+1rep" / "+2reps" / "-1rep"
-- sets: "+1set"
-- intensity_rpe: "+0.5rpe"
-- tempo: explicit "3-1-1-0"
-- complexity_variant: text describing variant swap
-
-HARD RULES — apply to EVERY exercise:
-1. Each exercise MUST have at least ONE non-empty delta across W2/W3/W4. No exceptions, including accessory work.
-2. Bias by exercise type:
-   - Machine / cable / bodyweight: prefer reps (+1-2/wk) and intensity_rpe waves. Load deltas optional (auto-regulated).
-   - Free-weight compounds (DB press, goblet squat, RDL, trap-bar DL, row): prefer load (+2.5kg/wk small, +5kg/wk strong lifters), keep reps stable.
-   - Isolation / arms / calves: prefer reps and sets. Load is secondary.
-3. RPE ceiling for this tier+appetite: ${rpeCeiling}. Never propose intensity_rpe that would push an exercise above this number. Only main compounds may touch the ceiling. Match the RPE wave above — do NOT leave RPE flat across all 4 weeks.
-4. Progression model: ${progModel}.
-   - linear: each week +1 small step (reps OR load OR rpe). Steady climb.
-   - undulating: alternate reps-up weeks with intensity-up weeks. W2 may differ from W3.
-   - block: W2 accumulation (+reps), W3 intensification (+load / +rpe).
-5. Week ${weeks} is a DELOAD: use "-1set" OR "-20%" load OR drop intensity_rpe by 1.0–1.5. Never empty across the board. The deload week MUST clearly read lower than W3.
-6. Keep "rationale" ≤ 10 words.
-7. RPE WAVE COVERAGE: at least 70% of all exercises MUST receive a non-empty intensity_rpe delta in W2 OR W3. Flat RPE across the mesocycle is the #1 failure mode — do NOT repeat it. If a main compound is already at the ceiling in W1, keep RPE flat for W2 and use reps/load deltas instead, but accessory work should still ride the wave.
-
-Call record_progressions exactly once with one or more rows per exercise. Aim for 1-2 rows per exercise; return more only when both load AND reps need to move together.
-
-${prescriptionPromptBlock(weeks)}
-The W2/W3/W4 deltas you emit must move weekly volume toward each week's target band. A "+1set" or "-1set" is your primary lever — use it whenever the W1 baseline is below or above the prescribed band for the muscles that exercise trains.`;
-
-    const user = `Mesocycle length: ${weeks} weeks.\nWeek 1 exercise list:\n${JSON.stringify(exerciseList, null, 2)}`;
-
-    const result = await callAnthropicWithSchema({
-      model,
-      system,
-      userMessage: user,
-      toolName: "record_progressions",
-      toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
-      toolJsonSchema: PROG_TOOL_SCHEMA,
-      schema: ProgressionPlanSchema,
-      maxTokens: 8000,
-    });
+    // Deterministic build: one row per exercise per week-tag, keyed by category.
+    const rows: Array<{
+      exercise_id: string;
+      dimension: string;
+      week_2_delta: string;
+      week_3_delta: string;
+      week_4_delta: string;
+      rationale: string;
+    }> = [];
+    for (const ex of exerciseList) {
+      const cat = classifyExercise(ex.name);
+      const get = (w: number) => {
+        const tag = wave.find((x) => x.week === w)?.tag ?? "base";
+        if (tag === "base") return null;
+        return deltaForExercise(cat, appetite, tag);
+      };
+      const w2 = get(2) ?? [];
+      const w3 = get(3) ?? [];
+      const w4 = get(4) ?? [];
+      // Collapse onto one row per primary dimension (load > reps > intensity_rpe > sets).
+      const dimPriority = ["load", "reps", "intensity_rpe", "sets"] as const;
+      const used = new Set<string>();
+      for (const dim of dimPriority) {
+        const w2v = w2.find((d) => d.dimension === dim)?.value ?? "";
+        const w3v = w3.find((d) => d.dimension === dim)?.value ?? "";
+        const w4v = w4.find((d) => d.dimension === dim)?.value ?? "";
+        if (!w2v && !w3v && !w4v) continue;
+        used.add(dim);
+        rows.push({
+          exercise_id: ex.id,
+          dimension: dim,
+          week_2_delta: w2v,
+          week_3_delta: w3v,
+          week_4_delta: w4v,
+          rationale: `${cat} · ${appetite}`,
+        });
+        if (used.size >= 2) break;
+      }
+    }
+    const progressionData = { rows };
+    const durMs = Date.now() - t0;
 
     await logGeneration(supabase, {
       trainer_id: userId,
       plan_id: data.planId,
-      stage: "stage4:progressions",
-      model_used: model,
-      input_tokens: result.inputTokens,
-      output_tokens: result.outputTokens,
-      cost_usd: result.costUsd,
-      zod_passed: result.ok,
-      retry_count: result.retryCount,
-      duration_ms: result.durationMs,
-      error: result.ok ? null : result.error,
-      input_snapshot: { exerciseCount: exerciseList.length, weeks },
-      output_snapshot: result.ok ? { rowCount: (result.data as any)?.rows?.length ?? 0 } : { raw: (result as any).zodError ?? null },
+      stage: "stage4:progressions:deterministic",
+      model_used: "deterministic-bompa-nsca",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: true,
+      retry_count: 0,
+      duration_ms: durMs,
+      error: null,
+      input_snapshot: { exerciseCount: exerciseList.length, weeks, appetite, waveTier },
+      output_snapshot: { rowCount: rows.length },
     });
 
-    if (!result.ok) return { ok: false as const, error: result.error };
-
-    if (!result.data || !Array.isArray((result.data as any).rows) || (result.data as any).rows.length === 0) {
-      return { ok: false as const, error: "AI returned no progression deltas. Try Regenerate." };
-    }
-
-    // Post-validation: ensure most exercises have at least one non-empty delta.
-    // If ≥30% of exercises are flat across W2-W4, retry once with a stricter message.
-    const evaluateCoverage = (rows: any[]) => {
-      const covered = new Set<string>();
-      for (const r of rows) {
-        const hasAny =
-          (r.week_2_delta && String(r.week_2_delta).trim() !== "") ||
-          (r.week_3_delta && String(r.week_3_delta).trim() !== "") ||
-          (r.week_4_delta && String(r.week_4_delta).trim() !== "");
-        if (hasAny && r.exercise_id) covered.add(String(r.exercise_id));
-      }
-      const total = exerciseList.length || 1;
-      const flat = exerciseList.filter((e) => !covered.has(e.id));
-      return { coveredCount: covered.size, total, flatRatio: flat.length / total, flat };
-    };
-
-    let progressionData: any = result.data;
-    let coverage = evaluateCoverage((progressionData as any).rows ?? []);
-
-    // RPE-wave coverage: % of distinct exercises that received a non-empty
-    // intensity_rpe delta in W2 or W3. Stage 4's whole purpose is to make the
-    // mesocycle *progress*, so flat RPE across all weeks is a hard failure.
-    const evaluateRpeWave = (rows: any[]) => {
-      const moved = new Set<string>();
-      for (const r of rows) {
-        if (r?.dimension !== "intensity_rpe") continue;
-        const w2 = String(r?.week_2_delta ?? "").trim();
-        const w3 = String(r?.week_3_delta ?? "").trim();
-        if ((w2 || w3) && r?.exercise_id) moved.add(String(r.exercise_id));
-      }
-      const total = exerciseList.length || 1;
-      return { movedCount: moved.size, total, ratio: moved.size / total };
-    };
-    let rpeWave = evaluateRpeWave((progressionData as any).rows ?? []);
-
-    if (coverage.flatRatio >= 0.3 && coverage.flat.length > 0) {
-      const retrySystem = `${system}\n\nYour previous attempt left ${coverage.flat.length} exercises with ZERO non-empty deltas across W2-W${weeks}. That violates Hard Rule 1. Re-issue ALL exercises (not just the flat ones) with at least one non-empty delta each. Specifically these exercise_ids were flat: ${coverage.flat.map((e) => e.id).join(", ")}.`;
-      const retry = await callAnthropicWithSchema({
-        model,
-        system: retrySystem,
-        userMessage: user,
-        toolName: "record_progressions",
-        toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
-        toolJsonSchema: PROG_TOOL_SCHEMA,
-        schema: ProgressionPlanSchema,
-        maxTokens: 8000,
-      });
-      await logGeneration(supabase, {
-        trainer_id: userId,
-        plan_id: data.planId,
-        stage: "stage4:progressions:retry",
-        model_used: model,
-        input_tokens: retry.inputTokens,
-        output_tokens: retry.outputTokens,
-        cost_usd: retry.costUsd,
-        zod_passed: retry.ok,
-        retry_count: retry.retryCount,
-        duration_ms: retry.durationMs,
-        error: retry.ok ? null : retry.error,
-        input_snapshot: { reason: "flat_coverage", flatCount: coverage.flat.length, flatRatio: coverage.flatRatio },
-        output_snapshot: retry.ok ? { rowCount: (retry.data as any)?.rows?.length ?? 0 } : null,
-      });
-      if (retry.ok && retry.data) {
-        const retryCoverage = evaluateCoverage((retry.data as any).rows ?? []);
-        // Keep retry if it improved coverage; otherwise keep original.
-        if (retryCoverage.flatRatio < coverage.flatRatio) {
-          progressionData = retry.data;
-          coverage = retryCoverage;
-          rpeWave = evaluateRpeWave((progressionData as any).rows ?? []);
-        }
-      }
-    }
-
-    // Second-pass guard: even if delta coverage is fine, ensure the RPE WAVE
-    // is real. < 50% wave coverage triggers a retry that says exactly that.
-    if (rpeWave.ratio < 0.5) {
-      const waveRetrySystem = `${system}\n\nYour previous attempt waved intensity_rpe on only ${rpeWave.movedCount} of ${rpeWave.total} exercises (${Math.round(
-        rpeWave.ratio * 100,
-      )}%). That violates Hard Rule 7. Re-issue progressions so AT LEAST 70% of exercises have a non-empty intensity_rpe in W2 or W3, matching the target ramp ${ramp}. Pair RPE deltas with reps/load only when both genuinely move together.`;
-      const retry = await callAnthropicWithSchema({
-        model,
-        system: waveRetrySystem,
-        userMessage: user,
-        toolName: "record_progressions",
-        toolDescription: "Record per-exercise progression deltas for weeks 2..N.",
-        toolJsonSchema: PROG_TOOL_SCHEMA,
-        schema: ProgressionPlanSchema,
-        maxTokens: 8000,
-      });
-      await logGeneration(supabase, {
-        trainer_id: userId,
-        plan_id: data.planId,
-        stage: "stage4:progressions:retry_wave",
-        model_used: model,
-        input_tokens: retry.inputTokens,
-        output_tokens: retry.outputTokens,
-        cost_usd: retry.costUsd,
-        zod_passed: retry.ok,
-        retry_count: retry.retryCount,
-        duration_ms: retry.durationMs,
-        error: retry.ok ? null : retry.error,
-        input_snapshot: { reason: "flat_rpe_wave", waveRatio: rpeWave.ratio, movedCount: rpeWave.movedCount },
-        output_snapshot: retry.ok ? { rowCount: (retry.data as any)?.rows?.length ?? 0 } : null,
-      });
-      if (retry.ok && retry.data) {
-        const retryWave = evaluateRpeWave((retry.data as any).rows ?? []);
-        if (retryWave.ratio > rpeWave.ratio) {
-          progressionData = retry.data;
-          rpeWave = retryWave;
-        }
-      }
+    // Validate against the public schema so callers and DB share contract.
+    const parsed = ProgressionPlanSchema.safeParse(progressionData);
+    if (!parsed.success) {
+      return { ok: false as const, error: "Deterministic progression failed schema." };
     }
 
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        progression_plan: progressionData as any,
+        progression_plan: parsed.data as any,
         generation_meta: {
           ...((plan as any).generation_meta ?? {}),
           wave_periodization: {
@@ -302,11 +183,12 @@ The W2/W3/W4 deltas you emit must move weekly volume toward each week's target b
             citation: "Bompa & Buzzichelli 6e §7.3-7.5",
             weeks: wave,
           },
+          progressions_source: "deterministic",
         } as any,
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
-    return { ok: true as const, progressionPlan: progressionData, exerciseList, wave };
+    return { ok: true as const, progressionPlan: parsed.data, exerciseList, wave };
   });
 
 export const approveProgressions = createServerFn({ method: "POST" })
