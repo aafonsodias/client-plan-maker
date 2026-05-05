@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -24,6 +24,8 @@ import {
 } from "@/server/schedule.functions";
 import { RevenuePanel } from "@/components/schedule/RevenuePanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PacksPanel } from "./schedule.packs";
 import {
   type Booking,
   type Pack,
@@ -35,6 +37,9 @@ import {
 } from "@/lib/schedule";
 
 export const Route = createFileRoute("/schedule")({
+  validateSearch: (s: Record<string, unknown>): { tab?: "week" | "packs" } => ({
+    tab: s.tab === "packs" ? "packs" : "week",
+  }),
   component: () => (
     <AppShell back={{ to: "/dashboard" }}>
       <ScheduleShell />
@@ -44,11 +49,31 @@ export const Route = createFileRoute("/schedule")({
 
 function ScheduleShell() {
   const location = useLocation();
-  // Render nested /schedule/packs via Outlet, otherwise the index view.
   if (location.pathname.startsWith("/schedule/")) {
     return <Outlet />;
   }
-  return <ScheduleWeek />;
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const tab = (search.tab as "week" | "packs") ?? "week";
+  return (
+    <Tabs
+      value={tab}
+      onValueChange={(v) =>
+        navigate({ to: "/schedule", search: { tab: v === "packs" ? "packs" : "week" } })
+      }
+    >
+      <TabsList>
+        <TabsTrigger value="week">Week</TabsTrigger>
+        <TabsTrigger value="packs">Packs</TabsTrigger>
+      </TabsList>
+      <TabsContent value="week" className="mt-4">
+        <ScheduleWeek />
+      </TabsContent>
+      <TabsContent value="packs" className="mt-4">
+        <PacksPanel />
+      </TabsContent>
+    </Tabs>
+  );
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
