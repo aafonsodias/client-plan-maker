@@ -795,7 +795,7 @@ function PlanEditor() {
 
       {/* Mode tabs */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+        <div className="inline-flex w-full max-w-full overflow-x-auto rounded-lg border border-border bg-card p-0.5 text-xs sm:w-auto">
         <button
           onClick={() => setMode("view")}
           className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
