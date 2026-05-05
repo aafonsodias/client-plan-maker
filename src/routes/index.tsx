@@ -834,7 +834,7 @@ function ComparisonTableSection() {
                     key={i}
                     className="rounded-md border border-border/60 bg-background/40 px-2 py-1.5 text-center"
                   >
-                    <div className="truncate text-[9px] uppercase tracking-widest text-muted-foreground/70">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground/70 leading-tight break-words">
                       {h}
                     </div>
                     <div className="mt-0.5 flex justify-center">{renderCell(v, i + 2)}</div>
