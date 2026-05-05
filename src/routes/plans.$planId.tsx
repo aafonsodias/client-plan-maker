@@ -311,6 +311,9 @@ function PlanEditor() {
 
   return (
     <div className="space-y-4">
+      {/* Round 63 — "Needs human review" lives on its own surface, above
+          the collapsed plan chrome. Discreet amber, not error red. */}
+      <HumanReviewBanner generationMeta={plan.generation_meta} />
       {/* Plan chrome — collapsed by default so the workout table is the first
           thing on the page. Trainer expands when they need title, actions,
           summary, block transition, etc. */}
