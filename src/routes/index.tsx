@@ -267,6 +267,7 @@ function Landing() {
             <Button asChild size="lg" className="mt-8 w-full">
               <Link to={primaryCtaTo}>{t("plan:landing.pricing.beta_cta")}</Link>
             </Button>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">{t("plan:landing.pricing.trial_note")}</p>
           </div>
           {/* Pro card */}
           <div className="relative rounded-2xl border border-border bg-card/60 p-8">
@@ -331,6 +332,10 @@ function Landing() {
             { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
             { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
             { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
+            { q: t("plan:landing.faq.q11_q"), a: t("plan:landing.faq.q11_a") },
+            { q: t("plan:landing.faq.q12_q"), a: t("plan:landing.faq.q12_a") },
+            { q: t("plan:landing.faq.q13_q"), a: t("plan:landing.faq.q13_a") },
+            { q: t("plan:landing.faq.q14_q"), a: t("plan:landing.faq.q14_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
