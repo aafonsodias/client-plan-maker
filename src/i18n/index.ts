@@ -13,8 +13,20 @@ import ptIntake from "./locales/pt/intake.json";
 import ptAssessment from "./locales/pt/assessment.json";
 import ptManual from "./locales/pt/manual.json";
 import ptSchedule from "./locales/pt/schedule.json";
+import esCommon from "./locales/es/common.json";
+import esPlan from "./locales/es/plan.json";
+import esIntake from "./locales/es/intake.json";
+import esAssessment from "./locales/es/assessment.json";
+import esManual from "./locales/es/manual.json";
+import esSchedule from "./locales/es/schedule.json";
+import hiCommon from "./locales/hi/common.json";
+import hiPlan from "./locales/hi/plan.json";
+import hiIntake from "./locales/hi/intake.json";
+import hiAssessment from "./locales/hi/assessment.json";
+import hiManual from "./locales/hi/manual.json";
+import hiSchedule from "./locales/hi/schedule.json";
 
-export const SUPPORTED_LOCALES = ["en", "pt"] as const;
+export const SUPPORTED_LOCALES = ["en", "pt", "es", "hi"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const LOCALE_STORAGE_KEY = "forge.locale";
 
@@ -37,6 +49,8 @@ if (!i18n.isInitialized) {
       resources: {
         en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment, manual: enManual, schedule: enSchedule },
         pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment, manual: ptManual, schedule: ptSchedule },
+        es: { common: esCommon, plan: esPlan, intake: esIntake, assessment: esAssessment, manual: esManual, schedule: esSchedule },
+        hi: { common: hiCommon, plan: hiPlan, intake: hiIntake, assessment: hiAssessment, manual: hiManual, schedule: hiSchedule },
       },
       interpolation: { escapeValue: false }, // React already escapes
       returnNull: false,

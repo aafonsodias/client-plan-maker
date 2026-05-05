@@ -63,7 +63,13 @@ export function LanguageSwitcher({ className }: { className?: string }) {
             ) : (
               <span className="mr-2 inline-block h-4 w-4" />
             )}
-            {code === "pt" ? t("language.portuguese") : t("language.english")}
+            {code === "pt"
+              ? t("language.portuguese", "Português")
+              : code === "es"
+                ? t("language.spanish", "Español")
+                : code === "hi"
+                  ? t("language.hindi", "हिन्दी")
+                  : t("language.english", "English")}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
