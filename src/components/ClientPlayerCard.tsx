@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ArrowRight } from "lucide-react";
+import { Trash2, ChevronDown } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientPhase } from "@/lib/client-phase";
@@ -12,6 +12,7 @@ import { toneDot } from "@/lib/status-tone";
 import {
   CardPlan, CardLog, planFocus, currentWeek, daysSinceLog, formatRelativeDays,
 } from "@/lib/client-card-data";
+import { ClientCockpit } from "@/components/ClientCockpit";
 
 type Props = {
   client: { id: string; full_name: string; email: string | null; photo_url: string | null };
@@ -24,6 +25,7 @@ type Props = {
 export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props) {
   const { t, i18n } = useTranslation("common");
   const lang = i18n.language === "pt" ? "pt" : "en";
+  const [open, setOpen] = useState(false);
 
   const focus = planFocus(plan);
   const week = currentWeek(plan, logs);
@@ -66,11 +68,13 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
   }
 
   return (
-    <div className="group relative flex items-stretch border-b border-border last:border-b-0 hover:bg-secondary/40">
-      <Link
-        to="/clients/$clientId"
-        params={{ clientId: client.id }}
-        className="flex flex-1 items-center gap-4 px-4 py-4 sm:px-5"
+    <div className="group relative border-b border-border last:border-b-0">
+      <div className="flex items-stretch hover:bg-secondary/40">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex flex-1 items-center gap-4 px-4 py-4 text-left sm:px-5"
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={44} />
         <div className="min-w-0 flex-1 space-y-1">
@@ -95,8 +99,8 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
             <p className="truncate text-xs text-muted-foreground">{client.email ?? t("clients.no_email")}</p>
           )}
         </div>
-        <ArrowRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:inline-block" />
-      </Link>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
@@ -119,6 +123,8 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
+      {open && <ClientCockpit clientId={client.id} plan={plan} logs={logs} />}
     </div>
   );
 }
