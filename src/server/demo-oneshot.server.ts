@@ -14,7 +14,7 @@ import { PHASED_SECTIONS } from "@/server/phased/section-map";
 export async function runInstantPipelineForUser(
   _userId: string,
   runId: string,
-  data: { archetype?: string; durationWeeks?: number },
+  data: { archetype?: string; durationWeeks?: number; locale?: string },
 ): Promise<void> {
   const setStage = async (
     stage: string,
