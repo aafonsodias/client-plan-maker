@@ -284,6 +284,16 @@ function PlanEditor() {
       }
     }
     const { generatePlanPdf } = await import("@/lib/pdf");
+    // Round 63 — pull assessment so the PDF cover can render the missions ladder.
+    let assessmentRow: any = null;
+    if ((plan as any).assessment_id) {
+      const { data: a } = await supabase
+        .from("assessments")
+        .select("*")
+        .eq("id", (plan as any).assessment_id)
+        .maybeSingle();
+      assessmentRow = a;
+    }
     await generatePlanPdf(
       {
         title: plan.title,
@@ -293,6 +303,10 @@ function PlanEditor() {
         block_number: blockN,
         block_transition_summary: (plan as any)?.block_transition_summary ?? null,
         block_evolution: blockEvolution,
+        assessment: assessmentRow,
+        client: client as any,
+        training_days_per_week: assessmentRow?.training_days_per_week ?? null,
+        assessment_completion_pct: (plan as any).assessment_completion_pct ?? null,
       },
       data,
       {
