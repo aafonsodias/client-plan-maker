@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown, AlertTriangle, Activity } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientPhase } from "@/lib/client-phase";
@@ -26,6 +27,33 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
   const { t, i18n } = useTranslation("common");
   const lang = i18n.language === "pt" ? "pt" : "en";
   const [open, setOpen] = useState(false);
+  const [signals, setSignals] = useState<{ risk: string | null; readiness: number | null }>({ risk: null, readiness: null });
+
+  // Tiny lightweight fetch for the inline ACSM/Recovery chips. Single row, cheap.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("assessments")
+        .select("acsm_risk_category, sleep_quality, stress_level")
+        .eq("client_id", client.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const sleep = Number((data as any).sleep_quality);
+      const stress = Number((data as any).stress_level);
+      const haveSleep = Number.isFinite(sleep) && sleep > 0;
+      let readiness: number | null = null;
+      if (haveSleep) {
+        const sleepPart = (sleep / 10) * 50;
+        const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
+        readiness = Math.round(sleepPart + stressPart + 10);
+      }
+      setSignals({ risk: (data as any).acsm_risk_category ?? null, readiness });
+    })();
+    return () => { cancelled = true; };
+  }, [client.id]);
 
   const focus = planFocus(plan);
   const week = currentWeek(plan, logs);
@@ -88,6 +116,38 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
           </div>
           {blockLine && (
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{blockLine}</p>
+          )}
+          {(signals.risk || signals.readiness != null) && (
+            <div className="flex flex-wrap items-center gap-1">
+              {signals.risk && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
+                    signals.risk === "high"
+                      ? "border-red-500/40 bg-red-500/10 text-red-400"
+                      : signals.risk === "moderate"
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                  }`}
+                  title={`ACSM ${signals.risk}`}
+                >
+                  <AlertTriangle className="h-2.5 w-2.5" /> ACSM
+                </span>
+              )}
+              {signals.readiness != null && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${
+                    signals.readiness >= 75
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                      : signals.readiness >= 50
+                        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                        : "border-red-500/40 bg-red-500/10 text-red-400"
+                  }`}
+                  title={t("clients.cockpit.recovery")}
+                >
+                  <Activity className="h-2.5 w-2.5" /> {signals.readiness}
+                </span>
+              )}
+            </div>
           )}
           {statusText && (
             <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
