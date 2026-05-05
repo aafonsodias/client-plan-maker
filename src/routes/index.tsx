@@ -889,14 +889,21 @@ function HeroVisualRotator() {
   //  2 = Para quem treina sozinho → SoloTrainer
   const slides = [<CoachWorkbenchMockup />, <HeroPlanMockup />, <SoloTrainerMockup />];
   return (
-    <div className="relative h-[680px] lg:h-[780px] w-full">
+    // Active slide drives container height (relative); inactive slides stack
+    // absolutely on top for the cross-fade. This eliminates the empty space
+    // inside the amber ring when slides have different natural heights.
+    <div className="relative w-full">
       {slides.map((slide, i) => (
         <div
           key={i}
           aria-hidden={i !== idx}
-          className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${i === idx ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`transition-opacity duration-700 ${
+            i === idx
+              ? "relative opacity-100"
+              : "pointer-events-none absolute inset-0 opacity-0"
+          }`}
         >
-          <div className="h-full overflow-hidden">{slide}</div>
+          {slide}
         </div>
       ))}
     </div>
