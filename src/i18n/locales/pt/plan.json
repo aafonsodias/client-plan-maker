@@ -303,7 +303,28 @@
     "logbook_insights": {
       "eyebrow": "LOGBOOK INTELIGENTE",
       "title": "Sessões anotadas. Padrões revelados.",
-      "subtitle": "O logbook não é só registo — a IA lê os seus dados e devolve sinais accionáveis."
+      "subtitle": "O logbook não é só registo — a IA lê os seus dados e devolve sinais accionáveis.",
+      "header": "Insights da IA",
+      "window": "últimos 21 dias",
+      "disclaimer": "Métricas derivadas do que regista. VO₂máx é estimativa, não medição clínica.",
+      "cards": {
+        "sleep": {
+          "title": "Sono médio · 7h12 (+38min vs mês passado)",
+          "body": "Recuperação a melhorar. Janela boa para subir um pouco a intensidade."
+        },
+        "energy": {
+          "title": "Energia pré-treino · 7.4 / 10 — em subida",
+          "body": "Os treinos estão a deixá-lo com mais bateria do que tinham antes."
+        },
+        "vo2": {
+          "title": "VO₂máx estimado · 42 ml/kg/min (zona “Bom”)",
+          "body": "Estimativa derivada do submáximo. Reavaliar em 6 semanas."
+        },
+        "hang": {
+          "title": "Dead hang ativo · 38s (+9s em 4 semanas)",
+          "body": "Pega e ombros mais fortes — bom marcador de saúde geral."
+        }
+      }
     },
     "anti_chatgpt": {
       "eyebrow": "PROTOCOL vs ChatGPT",
