@@ -303,7 +303,28 @@
     "logbook_insights": {
       "eyebrow": "INTELLIGENT LOGBOOK",
       "title": "Sessions logged. Patterns surfaced.",
-      "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals."
+      "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals.",
+      "header": "AI insights",
+      "window": "last 21 days",
+      "disclaimer": "Metrics derived from what you log. VO₂max is an estimate, not a clinical measurement.",
+      "cards": {
+        "sleep": {
+          "title": "Avg sleep · 7h12 (+38min vs last month)",
+          "body": "Recovery trending up. Good window to nudge intensity."
+        },
+        "energy": {
+          "title": "Pre-workout energy · 7.4 / 10 — rising",
+          "body": "Sessions are leaving you with more battery than they used to."
+        },
+        "vo2": {
+          "title": "Estimated VO₂max · 42 ml/kg/min (\"Good\" zone)",
+          "body": "Submaximal estimate. Re-test in 6 weeks."
+        },
+        "hang": {
+          "title": "Active dead hang · 38s (+9s in 4 weeks)",
+          "body": "Stronger grip and shoulders — a solid general-health marker."
+        }
+      }
     },
     "anti_chatgpt": {
       "eyebrow": "PROTOCOL vs ChatGPT",
