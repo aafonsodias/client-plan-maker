@@ -724,6 +724,8 @@ function PlanEditor() {
             fullyLogged={isPlanFullyLogged(plan, sessions.length)}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
           />
+          {/* R66: deterministic next-week generator, gated by adherence ≥ 80%. */}
+          <NextWeekCard planId={planId} onCreated={reloadSessions} />
         {(() => {
           const fullyLogged = isPlanFullyLogged(plan, sessions.length);
           const wrapClass = fullyLogged
