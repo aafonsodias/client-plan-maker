@@ -1,71 +1,92 @@
-# Round 59 — Less surface, more signal
+# Round 60 — Condensar rotas e fechar promessa do trainee
 
-Princípio: cada mudança remove ruído visual ou rotas duplicadas, mantendo (ou aumentando) utilidade. Nada de features novas grandes — esta ronda é de condensação.
+Princípio: zero novas features grandes. Reduzir 5 rotas top-level → 3, dar ao trainee uma página com sinal real, e tornar `/clients/$id` num builder limpo. Tudo reusa código existente. Sem migrations. Sem novas server fns.
 
-## 1. Trainee `/me` cockpit (fecha promessa do R58)
+## 1. Fusão `/templates` → `/plans?tab=templates`
 
-`/me` hoje é uma página de definições. Para quem é trainee (sem clientes), entrar na app cai em `/dashboard` que mostra "lista de clientes vazia" — frustrante.
+`src/routes/plans.index.tsx` ganha um `<Tabs>` no topo:
 
-Adicionar em `src/routes/me.tsx`:
-- **Hero faixa**: próximo treino (data + foco) + Δ% e1RM esta semana + sleep/energy mais recente
-- **Mini-mesocycle** (4 semanas): grid 7 dias × 4, igual ao `MiniWeek` do CoachCockpit mas para o próprio plano
-- **Próximo bloco**: usa `NextBlockCard` já existente (deload/normal/push)
-- **Logbook recente**: últimas 3 sessões com PR badges
-
-Detecção: `useUserMode()` → se `coach`, redirect para `/dashboard`; se `individual` ou `trainee`, fica em `/me`.
-
-Sem nova migration — usa `useClientPhases`, `computeCapacityGain`, `listSessions` já existentes, parametrizando `clientId = self`.
-
-## 2. Trim do header em `/clients/$id`
-
-Hoje o `/clients/$clientId` repete: avatar plate + ACSM/Recovery chips + ProtocolRail + ThisWeekHero. Tudo isso já está no `ClientCockpit` expansível na dashboard.
-
-Reduzir o header para 3 linhas finas:
-```
-← Todos os clientes  ·  Maria Silva  ·  [Phase pill]  ·  [Mais ações ▾]
-```
-Mover ACSM/Recovery chips para dentro de um `<details>` "Contexto clínico" colapsado por padrão. ProtocolRail desce para baixo das StageCards (já está duplicado).
-
-Ganho: `/clients/$id` lê como builder puro. Cockpit fica como overview.
-
-## 3. Fusão de rotas: Templates + Packs
-
-- `/templates` → `/plans?tab=templates` (nova `<Tabs>` no topo de `/plans`: "Active · Drafts · Templates")
-- `/schedule/packs` → `/schedule?tab=packs` (já existe `Tabs` no `/schedule`, só falta a aba)
-
-Manter os ficheiros antigos como redirects (`createFileRoute` com `beforeLoad: () => redirect(...)`) por 1 round antes de apagar.
-
-Ganho: 5 rotas top-level → 3. Sidebar/AppShell fica mais leve.
-
-## 4. Landing: fundir "Anti-ChatGPT" + "Para quem é"
-
-São 2 secções consecutivas com a mesma estrutura (eyebrow + título + chips/grid). Fundir numa só:
-
-```
-"Para quem (e contra quem)"
-   [Personas: Coach / Solo / PT-online]
-   ─── divisor fino ───
-   "Não é ChatGPT genérico — é um sistema com memória"
-   [Chips das 5 secções estruturadas]
+```text
+[ Activos · Drafts · Templates ]
 ```
 
-Ganho: ~400px de scroll a menos no desktop, mesma informação. Aumenta densidade percebida.
+- `validateSearch` aceita `tab: "active" | "drafts" | "templates"` (default `active`).
+- Abas Activos/Drafts particionam a lista actual de planos por `status`.
+- Aba Templates importa o corpo de `TemplatesIndex` (mover para `src/components/plans/TemplatesPanel.tsx`, sem AppShell — o panel só renderiza grid + acções).
+- Sidebar/AppShell deixa de ter entrada "Templates" — passa a ser `Link to="/plans" search={{ tab: "templates" }}`.
 
-## Fora de scope (para próxima ronda)
+`src/routes/templates.tsx` reduz para redirect:
 
-- Reescrita IA no MessageComposer (R60)
-- Field/gym assessment expansion (precisa decisão de UX antes)
-- Public "Train with me" join link (P1, próprio round por ter rate-limit + RLS pending)
+```ts
+export const Route = createFileRoute("/templates")({
+  beforeLoad: () => { throw redirect({ to: "/plans", search: { tab: "templates" } }); },
+});
+```
 
-## Ficheiros tocados (estimativa)
+## 2. Fusão `/schedule/packs` → `/schedule?tab=packs`
 
-- `src/routes/me.tsx` — reescrita parcial (cockpit + fallback settings)
-- `src/routes/clients_.$clientId.tsx` — header slim
-- `src/routes/plans.tsx` + `src/routes/templates.tsx` (redirect)
-- `src/routes/schedule.tsx` + `src/routes/schedule.packs.tsx` (redirect)
-- `src/routes/index.tsx` — merge de duas secções
-- `src/i18n/locales/{pt,en}/plan.json` — merge de chaves anti_chatgpt + for_whom
-- `src/hooks/useUserMode.ts` — pequena extensão para incluir "trainee"
-- `.lovable/backlog.md` — fechar #72, abrir #73 e nova nota R59
+`src/routes/schedule.tsx` ganha o mesmo padrão (`tab: "week" | "packs"`, default `week`).
+- Aba Week = conteúdo actual da agenda.
+- Aba Packs = corpo de `SchedulePacksIndex` extraído para `src/components/schedule/PacksPanel.tsx`.
+- Botão "Manage packs" do `RevenuePanel` muda para `<Link to="/schedule" search={{ tab: "packs" }}>`.
 
-Sem migrations. Sem novas server fns. Tudo reusa o que já existe.
+`src/routes/schedule.packs.tsx` vira redirect equivalente. (Manter ambos os redirects 1 round antes de apagar — bookmarks/quick-search ainda resolvem.)
+
+## 3. Trainee `/me` cockpit
+
+Hoje `/me` é uma página de boas-vindas + plano actual em texto. Para um trainee que vem treinar, isto é pouco. Reescrita parcial mantendo o fallback "conta não ligada":
+
+```text
+┌── header (foto + nome + treinador) ──┐
+│ Próximo treino · Ter 06:30 · Push    │
+│ Última sessão · há 2d · 3 PRs        │
+├── Mini mesocycle (4 semanas × 7d) ───┤
+│ grid colorido por status, hoje destacado
+├── Próximo bloco ─────────────────────┤
+│ <NextBlockCard/> (deload/normal/push)
+├── Logbook recente (3 últimas) ───────┤
+│ data · foco · Δ% e1RM · PR badge
+└──────────────────────────────────────┘
+```
+
+- `loadMe` server fn estende o que retorna: próxima sessão (`listWeekBookings` filtrado por `clientId`), 3 últimas sessões logadas (`listSessions`), `phases` para o mini-mesocycle (reusa `useClientPhases` no client).
+- Componentes 100% reusados: `MiniWeek` (extrair de `CoachCockpit` para `src/components/MiniWeek.tsx`), `NextBlockCard`, `LogbookTimeline`.
+- `useUserMode()` redirect: se `coach`, navegar para `/dashboard`; se `individual` ou `trainee`, ficar em `/me`.
+
+## 4. Slim header `/clients/$id`
+
+Hoje o topo do client page tem: avatar plate, ACSM/Recovery/Phase chips, ProtocolRail, ThisWeekHero — informação que já vive no `ClientCockpit` da dashboard.
+
+Reduzir para 3 linhas finas:
+```text
+← Todos os clientes  ·  Maria Silva  ·  [Phase pill]  ·  [Mais ▾]
+```
+- Chips clínicos (ACSM/Recovery/idade/equipamento) entram num `<details>` "Contexto clínico", colapsado por defeito.
+- ProtocolRail desce para baixo das StageCards (já estava duplicado).
+- Sem nova lógica — só re-arranjar JSX e envolver em `<details>`.
+
+## Out of scope (R61)
+
+- AI rewriter no `MessageComposerSheet` (ainda hand-written).
+- Field/gym assessment expansion.
+- Public "Train with me" join link (precisa de RLS + rate-limit próprios).
+
+## Ficheiros tocados
+
+- `src/routes/plans.index.tsx` — Tabs + validateSearch.
+- `src/components/plans/TemplatesPanel.tsx` — extracção do corpo de templates.
+- `src/routes/templates.tsx` — redirect.
+- `src/routes/schedule.tsx` — Tabs + validateSearch + extracção de packs.
+- `src/components/schedule/PacksPanel.tsx` — extracção do corpo packs.
+- `src/routes/schedule.packs.tsx` — redirect.
+- `src/components/schedule/RevenuePanel.tsx` — link "Manage packs" actualizado.
+- `src/components/AppShell.tsx` — remover entrada "Templates" do menu (se existir).
+- `src/components/MiniWeek.tsx` — extracção a partir de `CoachCockpit.tsx`.
+- `src/components/dashboard/CoachCockpit.tsx` — usar o `MiniWeek` partilhado.
+- `src/server/me.functions.ts` — estender `loadMe` (next session, recent logs, phases).
+- `src/routes/me.tsx` — reescrita parcial com cockpit (mantém branch "not linked").
+- `src/routes/clients_.$clientId.tsx` — header slim + `<details>` contexto clínico + ProtocolRail abaixo.
+- `.lovable/backlog.md` — fechar 76/77/78/79, abrir R61.
+- `mem/index.md` — adicionar Core rule "trainee /me = mini-cockpit, não settings".
+
+Sem migrations. Sem novas server fns além de extensão de `loadMe`. Tudo reusa componentes existentes.
