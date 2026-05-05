@@ -184,11 +184,35 @@
       "pdf_tooltip": "Descargar PDF",
       "editor_tooltip": "Abrir en el editor",
       "stage": {
-        "1": { "title": "Evaluación", "summary": "{{done}}/{{total}} secciones · {{pct}}%", "cta": "Continuar evaluación" },
-        "2": { "title": "Briefing", "summary": "Resumen de lo que la IA usará para el plan.", "cta": "Abrir briefing", "empty": "El Briefing aparece una vez que el plan supera la evaluación." },
-        "3": { "title": "Plan maestro", "summary": "Estructura de mesociclo · {{weeks}} semanas.", "cta": "Abrir plan maestro", "empty": "El plan maestro aparece una vez que el plan se genera." },
-        "4": { "title": "Ciclo semanal", "summary": "Cumplimiento y series por semana.", "cta": "Abrir semana", "empty": "El ciclo semanal aparece una vez que el plan se genera." },
-        "5": { "title": "Progresiones", "summary": "Cómo avanza la carga a lo largo del bloque.", "cta": "Abrir progresiones", "empty": "Las progresiones aparecen una vez que el plan se genera." }
+        "1": {
+          "title": "Evaluación",
+          "summary": "{{done}}/{{total}} secciones · {{pct}}%",
+          "cta": "Continuar evaluación"
+        },
+        "2": {
+          "title": "Briefing",
+          "summary": "Resumen de lo que la IA usará para el plan.",
+          "cta": "Abrir briefing",
+          "empty": "El Briefing aparece una vez que el plan supera la evaluación."
+        },
+        "3": {
+          "title": "Plan maestro",
+          "summary": "Estructura de mesociclo · {{weeks}} semanas.",
+          "cta": "Abrir plan maestro",
+          "empty": "El plan maestro aparece una vez que el plan se genera."
+        },
+        "4": {
+          "title": "Ciclo semanal",
+          "summary": "Cumplimiento y series por semana.",
+          "cta": "Abrir semana",
+          "empty": "El ciclo semanal aparece una vez que el plan se genera."
+        },
+        "5": {
+          "title": "Progresiones",
+          "summary": "Cómo avanza la carga a lo largo del bloque.",
+          "cta": "Abrir progresiones",
+          "empty": "Las progresiones aparecen una vez que el plan se genera."
+        }
       }
     }
   },
@@ -223,7 +247,9 @@
   "language": {
     "switch_aria": "Cambiar idioma",
     "english": "Inglés",
-    "portuguese": "Português"
+    "portuguese": "Português",
+    "spanish": "Español",
+    "hindi": "Hindi"
   },
   "theme": {
     "toggle_aria": "Alternar tema"
