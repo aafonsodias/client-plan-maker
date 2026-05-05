@@ -790,28 +790,4 @@ function InlineTierChips() {
   );
 }
 
-// ─── Mid-page repeat CTA ───────────────────────────────────────────────
-function MidCtaSection({ primaryCtaTo }: { primaryCtaTo: string }) {
-  const { t } = useTranslation("plan");
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] px-6 py-8 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
-        <div>
-          <h3 className="text-2xl font-light tracking-tight">
-            {t("landing.mid_cta.title")}
-          </h3>
-          <p className="mt-1 text-sm font-light text-muted-foreground">
-            {t("landing.mid_cta.subtitle")}
-          </p>
-        </div>
-        <div className="mt-5 sm:mt-0">
-          <Button asChild size="lg">
-            <Link to={primaryCtaTo}>
-              {t("landing.mid_cta.button")} <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
+
