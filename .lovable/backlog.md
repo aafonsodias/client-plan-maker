@@ -89,10 +89,12 @@ Atualizado: Round 28 (4 Mai 2026)
 | 73 | P0 | UI | `<IntensityCockpit/>` (5 knobs + 6 presets) montado no BriefEditor; remove fields duplicados na "Configuração de programação" | R64 ✅ |
 | 74 | P0 | Motor | Stage 4 lê `programming_variables.wave_model` + `deload_frequency` e persiste `generation_meta.cockpit` | R64 ✅ |
 | 75 | P1 | Plan page | Mount cockpit também em `/plans/$id` modo edit (sticky no topo do Stage 4 panel) | R65 next |
-| 76 | P1 | Motor | `programNextWeek(planId)` — autoreg_strictness corta carga 5% se RPE realizado > prescrito + 0.7 (apenas em modo strict) | R65 |
+| 76 | P1 | Motor | `programNextWeek(planId)` — autoreg_strictness corta carga 5% se RPE realizado > prescrito + 0.7 (apenas em modo strict) | R65 ✅ |
 | 77 | P2 | Motor | Modo `conjugate` (Westside) — exige tagging max-effort/dynamic-effort em Stage 3 | parked |
 | 78 | P2 | Analytics | Dashboard de adesão por preset (hypertrophy_classic vs strength_base etc.) | parked |
-| 79 | P1 | i18n | EN strings para Cockpit + presets (hoje hardcoded em PT) | R65 |
+| 79 | P1 | i18n | EN strings para Cockpit + presets (hoje hardcoded em PT) | R65 ✅ |
+| 80 | P1 | Plan page | Botão "Programar próxima semana" no header — chama programNextWeek e mostra adherence + flagged count | R66 next |
+| 81 | P1 | UX | Surface programNextWeek error "low_adherence" com CTA para abrir logbook da semana actual | R66 |
 
 ## Meta-prompt sugerido
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."
