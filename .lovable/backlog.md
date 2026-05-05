@@ -312,3 +312,13 @@ Atualizado: Round 28 (4 Mai 2026)
 - Mounted on `/clients/$clientId` above the Compliance details. Uses existing `setReassessOpen` to open `<ReassessmentSheet/>`. Zero migration, zero new server fn — reuses `listMeasurements` + the periodic fields the sheet already writes.
 - i18n PT+EN added under `plan:insights.*` (loading, header, cta_record, empty_*, no_data, delta_window, first_measurement, disclaimer, metric.{vo2max,dead_hang_s,active_hang_s,plank_s}).
 - Closes the gap between the landing's "Insights da IA" promise and what the app actually surfaces. App now delivers the same 4 metrics it advertises.
+
+### Round 58 — Coach Cockpit (5 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 70 | P0 | Dashboard | CoachCockpit: hero (semana · sessões · €) + mini-week timetable + nudges (aniversários + pack ending) | R58 ✅ |
+| 71 | P0 | Dashboard | MessageComposerSheet — templates PT/EN editáveis (birthday/christmas/reengage/pack_ending/new_client) + WhatsApp deeplink + copiar | R58 ✅ |
+| 72 | P1 | Roles | Trainee /me cockpit (logbook + mesocycle + previsão Bloco N+1) | R59 next |
+| 73 | P2 | AI | "Reescrever com IA" no MessageComposerSheet (tom + comprimento) | R59 |
+| 74 | P2 | Schedule | ICS export one-way para Google/Apple Calendar | parked |

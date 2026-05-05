@@ -27,6 +27,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -43,6 +44,7 @@ type ClientRow = {
   id: string;
   full_name: string;
   email: string | null;
+  phone: string | null;
   date_of_birth: string | null;
   photo_url: string | null;
   intake_status: string;
@@ -83,7 +85,7 @@ function Dashboard() {
     const [{ data: cRows }, { data: r }, { data: allPlans }] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, full_name, email, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
+        .select("id, full_name, email, phone, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
         .order("created_at", { ascending: false }),
       supabase
         .from("workout_plans")
@@ -401,6 +403,19 @@ function Dashboard() {
       {/* Quick "copy last intake link" button removed — it copied a per-client link
           and read as a public join link, which it wasn't. Intake links are
           generated per client from "+ New client" → "Enviar link de avaliação". */}
+
+      {!isEmpty && (
+        <CoachCockpit
+          clients={clientRows.map((c) => ({
+            id: c.id,
+            full_name: c.full_name,
+            photo_url: c.photo_url,
+            phone: (c as any).phone ?? null,
+            date_of_birth: c.date_of_birth,
+            intake_status: c.intake_status,
+          }))}
+        />
+      )}
 
       {attention.length > 0 && (
         <section>
