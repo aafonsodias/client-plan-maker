@@ -501,9 +501,9 @@ function HeroPlanMockup() {
       {/* 2-week microcycle slice */}
       <div className="overflow-hidden rounded-lg border border-border/60">
         {/* Column header */}
-        <div className="grid grid-cols-[minmax(0,1fr)_72px_72px_64px] items-center gap-1 border-b border-border/60 bg-background/40 px-2 py-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="grid grid-cols-[minmax(0,1fr)_64px_60px] items-center gap-1 border-b border-border/60 bg-background/40 px-2 py-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground sm:grid-cols-[minmax(0,1fr)_72px_72px_64px]">
           <span>{t("landing.mockups.col_exercise")}</span>
-          <span className="text-right">W1</span>
+          <span className="hidden text-right sm:inline">W1</span>
           <span className="text-right">W2</span>
           <span className="text-center">Δ</span>
         </div>
@@ -528,10 +528,10 @@ function HeroPlanMockup() {
             {d.rows.map((r, ri) => (
               <div
                 key={ri}
-                className="grid grid-cols-[minmax(0,1fr)_72px_72px_64px] items-center gap-1 border-b border-border/30 px-2 py-1.5 last:border-b-0 hover:bg-background/40"
+                className="grid grid-cols-[minmax(0,1fr)_64px_60px] items-center gap-1 border-b border-border/30 px-2 py-1.5 last:border-b-0 hover:bg-background/40 sm:grid-cols-[minmax(0,1fr)_72px_72px_64px]"
               >
                 <span className="truncate text-[12px] font-medium text-foreground">{r.name}</span>
-                <span className="text-right font-mono text-[10px] tabular-nums text-muted-foreground">{r.w1}</span>
+                <span className="hidden text-right font-mono text-[10px] tabular-nums text-muted-foreground sm:inline">{r.w1}</span>
                 <span className="text-right font-mono text-[10px] tabular-nums text-foreground/85">{r.w2}</span>
                 <span className="flex justify-center">
                   {r.delta && (
@@ -813,7 +813,41 @@ function ComparisonTableSection() {
           {t("landing.comparison.title")}
         </h2>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+      {/* Mobile: stacked cards (no horizontal scroll) */}
+      <div className="space-y-3 md:hidden">
+        {rows.map((row, ri) => {
+          const label = row[0];
+          const protocolValue = row[1];
+          const others = headers.slice(2).map((h, i) => ({ h, v: row[2 + i] }));
+          return (
+            <div key={ri} className="rounded-xl border border-border bg-card p-4">
+              <p className="text-sm font-medium text-foreground/90">{label}</p>
+              <div className="mt-3 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-accent">
+                  {headers[1]}
+                </span>
+                <span>{renderCell(protocolValue, 1)}</span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {others.map(({ h, v }, i) => (
+                  <div
+                    key={i}
+                    className="rounded-md border border-border/60 bg-background/40 px-2 py-1.5 text-center"
+                  >
+                    <div className="truncate text-[9px] uppercase tracking-widest text-muted-foreground/70">
+                      {h}
+                    </div>
+                    <div className="mt-0.5 flex justify-center">{renderCell(v, i + 2)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: original table */}
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card md:block">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border">
