@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Download, Edit3, BookOpen, RefreshCw, Loader2, AlertTriangle, Activity } from "lucide-react";
+import { Download, Edit3, ChevronRight, Loader2, AlertTriangle, Activity, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ProtocolRail } from "@/components/ProtocolRail";
@@ -22,19 +22,21 @@ type Props = {
 
 /**
  * Read-mode cockpit shown inline under a player card on /dashboard.
- * Mirrors the header strip from /clients/$clientId so trainers don't need
- * to leave the list to *check* a client. The detail route stays as the
- * builder/editor surface.
  *
- * Fetches its own auxiliary data (assessment + generation_state) on mount
- * so the dashboard list stays cheap until cards are expanded.
+ * Layout (top → bottom):
+ *   1. ProtocolRail — 5 clickable stages, drives the StagePanel below.
+ *   2. StagePanel  — content for the active stage.
+ *   3. Plan strip  — title is a Link to /plans/$id; PDF + editor are icon buttons.
+ *   4. Signals     — ACSM + Recovery chips, separated from the protocol.
  */
 export function ClientCockpit({ clientId, plan, logs }: Props) {
-  const { t, i18n } = useTranslation("common");
+  const { t } = useTranslation("common");
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<any | null>(null);
   const [genState, setGenState] = useState<any | null>(null);
+  const [coverage, setCoverage] = useState<{ done: number; total: number } | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [activeStage, setActiveStage] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,22 +45,35 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       const [{ data: a }, planRow] = await Promise.all([
         supabase
           .from("assessments")
-          .select("acsm_risk_category, parq_passed, sleep_quality, stress_level, updated_at, performed_on")
+          .select("id, acsm_risk_category, parq_passed, sleep_quality, stress_level, updated_at, performed_on")
           .eq("client_id", clientId)
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
         plan
-          ? supabase
-              .from("workout_plans")
-              .select("generation_state")
-              .eq("id", plan.id)
-              .maybeSingle()
+          ? supabase.from("workout_plans").select("generation_state, generation_meta").eq("id", plan.id).maybeSingle()
           : Promise.resolve({ data: null } as any),
       ]);
       if (cancelled) return;
       setAssessment(a ?? null);
-      setGenState((planRow as any)?.data?.generation_state ?? null);
+      setGenState((planRow as any)?.data ?? null);
+
+      // Pull real coverage if we have an assessment id.
+      const aId = (a as any)?.id;
+      if (aId) {
+        const { data: cov } = await supabase
+          .from("assessments")
+          .select("section_analyses")
+          .eq("id", aId)
+          .maybeSingle();
+        const analyses = ((cov as any)?.section_analyses ?? {}) as Record<string, unknown>;
+        // 14 phased sections (kept in sync with PHASED_SECTIONS server-side)
+        const TOTAL = 14;
+        const done = Object.values(analyses).filter(Boolean).length;
+        setCoverage({ done: Math.min(done, TOTAL), total: TOTAL });
+      } else {
+        setCoverage(null);
+      }
       setLoading(false);
     })();
     return () => {
@@ -66,12 +81,9 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
     };
   }, [clientId, plan?.id]);
 
-  const approvedStages: string[] = Array.isArray(genState?.approved_stages) ? genState.approved_stages : [];
-  // A finalized plan (PDF printed → generation_status === "complete") implies
-  // every upstream stage of the protocol cleared, even if approved_stages was
-  // never populated (legacy plans, manual builds, demo seeds). Treat the plan
-  // existing + complete as ground truth so the rail reflects what the trainer
-  // actually shipped.
+  const approvedStages: string[] = Array.isArray(genState?.generation_state?.approved_stages)
+    ? genState.generation_state.approved_stages
+    : [];
   const planComplete = !!plan && plan.generation_status === "complete";
   const briefApproved = approvedStages.includes("brief") || planComplete;
   const blueprintApproved = approvedStages.includes("blueprint") || planComplete;
@@ -82,14 +94,26 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   const totalWeeks = plan?.duration_weeks ?? null;
   const block = plan?.block_number ?? 1;
 
-  // Recovery score (sleep 50%, stress 30%, soreness 20%) — same formula as detail page.
+  // Real assessment %: from coverage if available, else null.
+  const realPct = coverage && coverage.total > 0
+    ? Math.round((coverage.done / coverage.total) * 100)
+    : null;
+
+  // Pick a sensible default stage when data lands.
+  useEffect(() => {
+    if (loading) return;
+    if (planComplete) setActiveStage(4);
+    else if (plan) setActiveStage(2);
+    else setActiveStage(1);
+  }, [loading, planComplete, plan?.id]);
+
+  // Recovery score
   const sleep = Number(assessment?.sleep_quality);
   const stress = Number(assessment?.stress_level);
-  const sore = 0; // soreness not stored on assessments; recovery falls back to neutral
   const haveSignals = Number.isFinite(sleep) && sleep > 0;
   const sleepPart = haveSignals ? (sleep / 10) * 50 : 25;
   const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
-  const sorePart = Number.isFinite(sore) && sore > 0 ? ((11 - sore) / 10) * 20 : 10;
+  const sorePart = 10;
   const readiness = Math.round(sleepPart + stressPart + sorePart);
 
   const risk: string = assessment?.acsm_risk_category ?? "low";
@@ -119,6 +143,68 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
     }
   };
 
+  const stagePanel = useMemo(() => {
+    const baseLink = (label: string, href: string) => (
+      <Link
+        to={href as any}
+        params={{ clientId, planId: plan?.id ?? "" } as any}
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-secondary"
+      >
+        {label} <ArrowRight className="h-3 w-3" />
+      </Link>
+    );
+
+    if (activeStage === 1) {
+      const summary = coverage
+        ? t("clients.cockpit.stage.1.summary", { done: coverage.done, total: coverage.total, pct: realPct ?? 0 })
+        : "—";
+      return (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0 text-xs text-muted-foreground">
+            <p className="font-semibold text-foreground">{t("clients.cockpit.stage.1.title")}</p>
+            <p className="truncate">{summary}</p>
+          </div>
+          {baseLink(t("clients.cockpit.stage.1.cta"), "/clients/$clientId")}
+        </div>
+      );
+    }
+
+    const stageKey = String(activeStage) as "2" | "3" | "4" | "5";
+    if (!plan) {
+      return (
+        <div className="text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">{t(`clients.cockpit.stage.${stageKey}.title` as const)}</p>
+          <p>{t(`clients.cockpit.stage.${stageKey}.empty` as const)}</p>
+        </div>
+      );
+    }
+
+    if (activeStage === 4) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold">{t("clients.cockpit.stage.4.title")}</p>
+            {baseLink(t("clients.cockpit.stage.4.cta"), "/plans/$planId")}
+          </div>
+          <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
+            <ComplianceDashboard clientId={clientId} />
+          </Suspense>
+        </div>
+      );
+    }
+
+    let summary: string = t(`clients.cockpit.stage.${stageKey}.summary` as const, { weeks: totalWeeks ?? "—" });
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 text-xs text-muted-foreground">
+          <p className="font-semibold text-foreground">{t(`clients.cockpit.stage.${stageKey}.title` as const)}</p>
+          <p className="truncate">{summary}</p>
+        </div>
+        {baseLink(t(`clients.cockpit.stage.${stageKey}.cta` as const), "/plans/$planId")}
+      </div>
+    );
+  }, [activeStage, plan, coverage, realPct, totalWeeks, t, clientId]);
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-5 py-4 text-xs text-muted-foreground">
@@ -129,9 +215,67 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
   return (
     <div className="space-y-3 border-t border-border bg-secondary/20 px-4 py-4 sm:px-5">
-      {/* Readiness chips */}
+      {/* 1. Protocol rail — drives stage selection */}
+      <ProtocolRail
+        bare
+        assessmentPct={realPct}
+        lastAssessmentAt={assessment?.performed_on ?? assessment?.updated_at ?? null}
+        briefApproved={briefApproved}
+        blueprintApproved={blueprintApproved}
+        microcycleApproved={microcycleApproved}
+        progressionsApproved={progressionsApproved}
+        activeStage={activeStage}
+        onStageClick={(n) => setActiveStage(n as 1 | 2 | 3 | 4 | 5)}
+      />
+
+      {/* 2. Stage panel */}
+      <div className="rounded-xl border border-border bg-card/40 p-3">
+        {stagePanel}
+      </div>
+
+      {/* 3. Plan strip — title is the primary link, PDF/editor are icon buttons */}
+      {plan && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card/60 p-2">
+          <Link
+            to="/plans/$planId"
+            params={{ planId: plan.id }}
+            className="group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-secondary/60 hover:ring-1 hover:ring-amber-500/40"
+            title={t("clients.cockpit.open_plan")}
+          >
+            <ChevronRight className="h-4 w-4 shrink-0 text-amber-400 transition group-hover:translate-x-0.5" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{plan.title ?? t("clients.cockpit.no_title")}</p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {t("clients.card.block_n", { n: block })} · {t("clients.cockpit.week_x_of_y", { x: week, y: totalWeeks ?? "—" })} · {t("clients.cockpit.open_plan")}
+              </p>
+            </div>
+          </Link>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleDownload}
+              disabled={downloading}
+              title={t("clients.cockpit.pdf_tooltip")}
+              aria-label={t("clients.cockpit.pdf_tooltip")}
+            >
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            </Button>
+            <Button size="icon" variant="ghost" asChild title={t("clients.cockpit.editor_tooltip")} aria-label={t("clients.cockpit.editor_tooltip")}>
+              <Link to="/clients/$clientId" params={{ clientId }}>
+                <Edit3 className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Signals — separated from the protocol by a divider */}
       {(assessment || haveSignals) && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {t("clients.cockpit.signals_label")}
+          </span>
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}>
             <AlertTriangle className="h-3 w-3" />
             <span className="text-[9px] uppercase tracking-widest opacity-70">ACSM</span>
@@ -146,56 +290,6 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
           )}
         </div>
       )}
-
-      {/* Protocol rail (read-only — chips reflect approvals, no expand handlers) */}
-      <ProtocolRail
-        bare
-        assessmentPct={planComplete ? 100 : null}
-        lastAssessmentAt={assessment?.performed_on ?? assessment?.updated_at ?? null}
-        briefApproved={briefApproved}
-        blueprintApproved={blueprintApproved}
-        microcycleApproved={microcycleApproved}
-        progressionsApproved={progressionsApproved}
-      />
-
-      {/* Plan header strip */}
-      {plan && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card/60 px-3 py-2">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{plan.title ?? t("clients.cockpit.no_title")}</p>
-            <p className="text-[11px] text-muted-foreground">
-              {t("clients.card.block_n", { n: block })} · {t("clients.cockpit.week_x_of_y", { x: week, y: totalWeeks ?? "—" })}
-            </p>
-          </div>
-          <Button size="sm" variant="outline" onClick={handleDownload} disabled={downloading}>
-            {downloading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
-            {t("clients.cockpit.pdf")}
-          </Button>
-        </div>
-      )}
-
-      {/* Compliance — lazy, only when there's a plan to compare against */}
-      {plan && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card/40 p-3">
-          <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
-            <ComplianceDashboard clientId={clientId} />
-          </Suspense>
-        </div>
-      )}
-
-      {/* Action row */}
-      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-        <Button size="sm" variant="ghost" asChild>
-          <Link to="/clients/$clientId/year" params={{ clientId }}>
-            <BookOpen className="mr-1.5 h-3.5 w-3.5" /> {t("clients.cockpit.open_logbook")}
-          </Link>
-        </Button>
-        <Button size="sm" variant="outline" asChild>
-          <Link to="/clients/$clientId" params={{ clientId }}>
-            <Edit3 className="mr-1.5 h-3.5 w-3.5" /> {t("clients.cockpit.open_editor")}
-          </Link>
-        </Button>
-      </div>
     </div>
   );
 }
