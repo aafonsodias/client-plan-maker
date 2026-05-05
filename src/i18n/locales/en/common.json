@@ -768,6 +768,14 @@
     "body_composition": "Body composition",
     "show_all_sections": "Show all sections",
     "focus_one_section": "Focus on one section at a time",
-    "assessment_sections_aria": "Assessment sections"
+    "assessment_sections_aria": "Assessment sections",
+    "next_week": {
+      "title": "Program next week",
+      "subtitle": "Deterministic, no AI. Reads adherence + RPE from the last week and adjusts load per the autoregulation rule.",
+      "cta": "Program next week",
+      "created": "Week {{week}} created — {{flagged}} exercise(s) flagged.",
+      "low_adherence": "Adherence {{pct}}% ({{logged}}/{{expected}} sessions logged). Log at least 80% before advancing.",
+      "failed": "Could not program the next week."
+    }
   }
 }
