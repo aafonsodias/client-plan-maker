@@ -576,6 +576,50 @@ export async function generatePlanPdf(
     y += chipH + 14;
   }
 
+  // ---------- Assessment missions ladder (Round 63) ----------
+  if (meta.assessment || meta.client) {
+    const missions = computeAssessmentMissions(meta.assessment, meta.client);
+    if (missions.length > 0) {
+      const dpw = Math.max(1, Math.min(7, meta.training_days_per_week ?? 3));
+      const distributed = distributeMissionsAcrossDays(missions, dpw);
+      const remaining = missionsRemainingScore(missions);
+      const blockH = Math.min(120, 24 + Math.min(8, distributed.length) * 11);
+      setFill(doc, theme.bgSubtle);
+      doc.rect(M, y, W - M * 2, blockH, "F");
+      setDraw(doc, theme.accent);
+      doc.setLineWidth(1);
+      doc.line(M, y, M, y + blockH);
+      setText(doc, theme.inkMuted);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("MISSÕES PARA 100/100", M + 10, y + 10);
+      setText(doc, theme.ink);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(
+        `${remaining} pts em jogo · 1 missão por dia de treino (${dpw}/sem)`,
+        M + 10,
+        y + 20,
+      );
+      setText(doc, theme.ink);
+      doc.setFontSize(8);
+      let rowY = y + 32;
+      const maxRows = Math.min(8, distributed.length);
+      for (let i = 0; i < maxRows; i++) {
+        const r = distributed[i];
+        const text = `Dia ${r.dayIndex} · +${r.mission.impact}pt — ${r.mission.copy}`;
+        doc.text(fitText(text, W - M * 2 - 24), M + 14, rowY);
+        rowY += 11;
+      }
+      if (distributed.length > maxRows) {
+        setText(doc, theme.inkMuted);
+        doc.setFontSize(7);
+        doc.text(`(+${distributed.length - maxRows} missões adicionais — pede ao teu PT)`, M + 14, rowY);
+      }
+      y += blockH + 12;
+    }
+  }
+
   // ---------- Block evolution (only when block_number > 1) ----------
   const blockN = meta.block_number ?? 1;
   const evoRows = (meta.block_evolution ?? []).filter((r) => r.deltaPct != null);
