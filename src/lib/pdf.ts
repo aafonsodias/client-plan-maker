@@ -1,5 +1,10 @@
 import jsPDF from "jspdf";
 import { weekTagFor } from "@/lib/macro-index";
+import {
+  computeAssessmentMissions,
+  distributeMissionsAcrossDays,
+  missionsRemainingScore,
+} from "@/lib/assessment-missions";
 
 // ---------- Public types (kept compatible with existing callers) ----------
 export type Exercise = {
@@ -101,6 +106,14 @@ export type PdfMeta = {
   week_number?: number | null;
   /** 0–100 — tonal richness chip on cover (R36 carry-over). */
   assessment_completion_pct?: number | null;
+  /**
+   * Round 63 — pass the raw assessment + client rows so the cover can render
+   * "missões para chegar a 100/100" distributed across training days. Optional;
+   * when omitted, the missions section is skipped silently.
+   */
+  assessment?: Record<string, any> | null;
+  client?: Record<string, any> | null;
+  training_days_per_week?: number | null;
 };
 
 // ---------- Asset + luminance helpers ----------
