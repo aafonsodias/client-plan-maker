@@ -190,7 +190,7 @@ function ScheduleWeek() {
           </div>
           <span className="text-xs font-mono text-muted-foreground">{fmtWeekRange(monday, locale)}</span>
           <Button asChild variant="outline" size="sm">
-            <Link to="/schedule/packs">
+            <Link to="/schedule" search={{ tab: "packs" }}>
               <Settings2 className="mr-2 h-4 w-4" />
               {t("manage_packs")}
             </Link>
