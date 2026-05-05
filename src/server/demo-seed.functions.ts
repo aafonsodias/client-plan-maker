@@ -16,9 +16,13 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  * so it does NOT count against the trainer's plan quota and can be wiped
  * with a single delete from the dashboard "Remove demo" action.
  */
-export const ensureDemoClient = createServerFn({ method: "POST" }).
-  middleware([requireSupabaseAuth]).
-  handler(async ({ context }) => {
+export const ensureDemoClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => {
+    const x = (d ?? {}) as { locale?: string };
+    return { locale: typeof x.locale === "string" ? x.locale : undefined };
+  })
+  .handler(async ({ context, data }) => {
     const { userId } = context;
 
     // Already seeded? No-op.
@@ -53,7 +57,7 @@ export const ensureDemoClient = createServerFn({ method: "POST" }).
     // Lazy import keeps the heavy pipeline out of any cold path that just
     // needed to check the seeded flag.
     const { runInstantPipelineForUser } = await import("./demo-oneshot.server");
-    void runInstantPipelineForUser(userId, runId, { durationWeeks: 4 }).catch((e: unknown) => {
+    void runInstantPipelineForUser(userId, runId, { durationWeeks: 4, locale: data.locale }).catch((e: unknown) => {
       console.error("[demo-seed] pipeline error", e);
     });
 
