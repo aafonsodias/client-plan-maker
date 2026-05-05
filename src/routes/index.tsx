@@ -863,8 +863,8 @@ function ComparisonTableSection() {
   );
 }
 
-// ─── Programming tier badges ───────────────────────────────────────────
-function TierBadgesSection() {
+// ─── Inline programming tier chips (under JourneyStrip) ────────────────
+function InlineTierChips() {
   const { t } = useTranslation("plan");
   type TierKey = "remedial" | "conservative" | "advanced";
   const tiers: Array<{ key: TierKey; chip: string; dot: string }> = [
@@ -873,37 +873,24 @@ function TierBadgesSection() {
     { key: "advanced",     chip: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300", dot: "bg-emerald-400" },
   ];
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
-      <div className="mb-8 max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-accent">
-          {t("landing.tier_badges.eyebrow")}
-        </p>
-        <h2 className="mt-2 text-4xl font-light tracking-tight">
-          {t("landing.tier_badges.title")}
-        </h2>
-        <p className="mt-4 text-base font-light text-muted-foreground">
-          {t("landing.tier_badges.subtitle")}
-        </p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-3">
+    <div className="mt-6 rounded-2xl border border-dashed border-border/70 bg-card/40 p-5">
+      <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+        {t("landing.tier_badges.eyebrow")} — {t("landing.tier_badges.subtitle")}
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {tiers.map((tier) => (
-          <div
-            key={tier.key}
-            className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40"
-          >
-            <div
-              className={`mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${tier.chip}`}
+          <div key={tier.key} className="flex items-start gap-2 text-xs text-muted-foreground">
+            <span
+              className={`mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${tier.chip}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
               {t(`landing.tier_badges.items.${tier.key}.name`)}
-            </div>
-            <p className="text-sm font-light text-muted-foreground">
-              {t(`landing.tier_badges.items.${tier.key}.desc`)}
-            </p>
+            </span>
+            <span className="leading-snug">{t(`landing.tier_badges.items.${tier.key}.desc`)}</span>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
