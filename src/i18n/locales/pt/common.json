@@ -167,6 +167,14 @@
       "last_log": "Último log {{when}}",
       "ready_to_build": "Avaliação pronta · monte o plano",
       "intake_pending": "Avaliação por completar"
+    },
+    "cockpit": {
+      "recovery": "Recuperação",
+      "pdf": "PDF",
+      "open_editor": "Abrir editor",
+      "open_logbook": "Logbook",
+      "week_x_of_y": "Sem. {{x}} de {{y}}",
+      "no_title": "Plano sem título"
     }
   },
   "onboarding": {

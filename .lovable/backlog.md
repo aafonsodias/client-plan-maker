@@ -277,3 +277,10 @@ Atualizado: Round 28 (4 Mai 2026)
 
 ## Open after Round 53 (P1)
 - P1 **Public "Train with me" join link** — single, shareable URL (e.g. `/join/{trainerSlug}`) that anyone can open, see a short pitch (in-person or online), and submit a lead form (name + email + goals + modality). Creates a draft client in `pending` status; trainer accepts/declines from dashboard. Replaces the dropped per-client "copy intake link" shortcut. Needs: public route, Zod-validated server fn + rate limit, basic anti-spam, RLS-friendly `pending` client state, dashboard "Pending requests" inbox.
+
+## Closed Round 54 (player card cockpit)
+- `ClientPlayerCard` row no longer navigates — it expands in place into a `ClientCockpit` showing ACSM/Recovery chips, ProtocolRail (read-only), plan title + block/week + PDF, and the existing ComplianceDashboard. Cockpit fetches its own assessment + generation_state on first expand so the dashboard list stays cheap.
+- Detail route `/clients/$clientId` remains the editor/builder. Cockpit links there via "Abrir editor" and to `/clients/$clientId/year` via "Logbook".
+
+## Open after Round 54 (P1)
+- P1 **Trim detail-route header** — the header strip on `/clients/$clientId` (avatar plate + ACSM/Recovery chips + ProtocolRail + ThisWeekHero) now duplicates the cockpit. Demote it to a thin "Voltar à lista" + name + phase pill bar so the route reads as a pure builder. Risk-controlled because the route is ~4.2k lines; do it in its own focused round.
