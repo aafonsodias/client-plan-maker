@@ -48,6 +48,7 @@ import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
+import { HumanReviewBanner } from "@/components/HumanReviewBanner";
 import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
