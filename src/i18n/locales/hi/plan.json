@@ -1,556 +1,557 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Scientifically defensible training plans",
-      "title_line2": "in 90 seconds — with your name on them.",
-      "subtitle": "No Excel. No improvising. No loss of clinical rigour.",
-      "cta_primary_signed_out": "Create your first plan — free",
-      "cta_primary_signed_in": "Open dashboard",
-      "cta_secondary": "See how it works",
-      "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
-      "social_proof": "Built by a coach, for coaches · Private beta",
-      "beta_softcap_chip": "Private beta · limited spots this week",
+      "title_line1": "वैज्ञानिक रूप से सुदृढ़ प्रशिक्षण योजनाएँ",
+      "title_line2": "90 सेकंड में — आपके नाम के साथ।",
+      "subtitle": "कोई एक्सेल नहीं। कोई तात्कालिक सुधार नहीं। नैदानिक ​​कठोरता का कोई नुकसान नहीं।",
+      "cta_primary_signed_out": "अपनी पहली योजना बनाएँ — निःशुल्क",
+      "cta_primary_signed_in": "डैशबोर्ड खोलें",
+      "cta_secondary": "देखें यह कैसे काम करता है",
+      "credibility_caption": "पहले से ही अंदर है: PAR-Q+, ACSM, Prochaska। अगला आ रहा है: Helms, Israetel, Schoenfeld।",
+      "social_proof": "एक कोच द्वारा, कोचों के लिए बनाया गया · निजी बीटा",
+      "beta_softcap_chip": "निजी बीटा · इस सप्ताह सीमित स्थान",
       "bullets": [
-        "Automatic clinical screen (PAR-Q+, ACSM)",
-        "Weekly progression ready (MEV/MAV/MRV)",
-        "PDF branded with your studio"
+        "स्वचालित नैदानिक ​​स्क्रीन (PAR-Q+, ACSM)",
+        "साप्ताहिक प्रगति तैयार (MEV/MAV/MRV)",
+        "आपके स्टूडियो के ब्रांड वाला PDF"
       ],
-      "tagline_eyebrow": "Evidence-based programming infrastructure for personal trainers",
+      "tagline_eyebrow": "व्यक्तिगत प्रशिक्षकों के लिए प्रमाण-आधारित प्रोग्रामिंग बुनियादी ढाँचा",
       "variants": [
         {
-          "line1": "Scientifically defensible training plans",
-          "line2": "in 90 seconds — with your name on them.",
-          "audience": "For personal trainers"
+          "line1": "वैज्ञानिक रूप से सुदृढ़ प्रशिक्षण योजनाएँ",
+          "line2": "90 सेकंड में — आपके नाम के साथ।",
+          "audience": "व्यक्तिगत प्रशिक्षकों के लिए"
         }
       ]
     },
     "benefits": {
-      "eyebrow": "For personal trainers",
+      "eyebrow": "व्यक्तिगत प्रशिक्षकों के लिए",
       "time": {
-        "title": "Less time programming",
-        "desc": "From assessment to PDF in minutes, not hours."
+        "title": "प्रोग्रामिंग में कम समय",
+        "desc": "मूल्यांकन से PDF तक मिनटों में, घंटों में नहीं।"
       },
       "consistency": {
-        "title": "Consistent plans across clients",
-        "desc": "The same logic applied to every client, adapted to their case."
+        "title": "ग्राहकों में सुसंगत योजनाएँ",
+        "desc": "प्रत्येक ग्राहक पर वही तर्क लागू होता है, उनके मामले के अनुरूप।"
       },
       "confidence": {
-        "title": "More confidence in what you send",
-        "desc": "You always see why each exercise is there."
+        "title": "जो आप भेजते हैं उसमें अधिक आत्मविश्वास",
+        "desc": "आप हमेशा देखते हैं कि प्रत्येक अभ्यास क्यों है।"
       },
-      "example_link": "See an example plan (PDF)"
+      "example_link": "एक उदाहरण योजना देखें (PDF)"
     },
     "mockups": {
-      "client_header": "Client · 42y · Mesocycle 5 · Strength Phase",
-      "session_title": "Monday — Lower Body Strength",
-      "session_meta": "Est. 55 min · 6 exercises",
-      "personalized_for": "Personalised from the assessment",
-      "personalized_hint": "Personalised from the assessment",
-      "constraints_chip": "Sensitive lower back · no axial loading · 2×/wk · commercial gym",
-      "microcycle_title": "2-week microcycle",
-      "col_exercise": "Exercise",
-      "day1_label": "Day 1",
-      "day1_focus": "Lower + pull",
-      "day2_label": "Day 2",
-      "day2_focus": "Upper + stability",
-      "ex_bench": "Bench Press",
-      "ex_row": "Seated Row",
-      "ex_face_pull": "Face Pull",
-      "badge_warmup": "WARM-UP",
-      "badge_main": "MAIN",
-      "badge_accessory": "ACCESSORY",
-      "badge_finisher": "FINISHER",
-      "ex_goblet_squat": "Goblet Squat",
-      "ex_back_squat": "Back Squat",
-      "ex_rdl": "Romanian Deadlift",
-      "ex_step_up": "Step-Up",
-      "ex_leg_curl": "Leg Curl",
-      "ex_kb_swing": "KB Swing",
-      "at_light": "@ light",
+      "client_header": "क्लाइंट · 42 वर्ष · Mesocycle 5 · शक्ति चरण",
+      "session_title": "सोमवार — निचले शरीर की शक्ति",
+      "session_meta": "अनुमानित 55 मिनट · 6 अभ्यास",
+      "personalized_for": "मूल्यांकन से वैयक्तिकृत",
+      "personalized_hint": "मूल्यांकन से वैयक्तिकृत",
+      "constraints_chip": "संवेदनशील निचला पीठ · कोई अक्षीय भार नहीं · 2×/सप्ताह · वाणिज्यिक जिम",
+      "microcycle_title": "2-सप्ताह Microcycle",
+      "col_exercise": "अभ्यास",
+      "day1_label": "पहला दिन",
+      "day1_focus": "निचला + खींचना",
+      "day2_label": "दूसरा दिन",
+      "day2_focus": "ऊपरी + स्थिरता",
+      "ex_bench": "बेंच प्रेस",
+      "ex_row": "बैठा हुआ रो",
+      "ex_face_pull": "फेस पुल",
+      "badge_warmup": "वार्म-अप",
+      "badge_main": "मुख्य",
+      "badge_accessory": "सहायक",
+      "badge_finisher": "फिनिशर",
+      "ex_goblet_squat": "गॉबलेट स्क्वाट",
+      "ex_back_squat": "बैक स्क्वाट",
+      "ex_rdl": "रोमानियाई डेडलिफ्ट",
+      "ex_step_up": "स्टेप-अप",
+      "ex_leg_curl": "लेग कर्ल",
+      "ex_kb_swing": "KB स्विंग",
+      "at_light": "@ हल्का",
       "at_rpe7": "@ RPE 7",
-      "back_squat_set_log": "Back Squat · Set log",
-      "today_week": "Today · Week 6",
-      "set_label": "Set {{n}}",
-      "last_week_top": "Last week — top set 80kg × 6",
-      "save_session": "Save session",
-      "back_squat_six_weeks": "Back Squat — 6 weeks of work",
-      "top_set_today": "Top set today:",
-      "pr_vs_week1": "PR vs week 1:",
-      "sessions_logged": "Sessions logged:",
-      "rest_tempo_squat": "Rest 2:30 · tempo 3-1-X",
-      "rest_tempo_rdl": "Rest 2:00 · controlled eccentric",
-      "ex_hip_thrust": "Hip Thrust",
-      "ex_chest_pull": "Chest-Supported Row",
-      "ex_split_squat": "DB Split Squat",
-      "ex_pallof": "Pallof Press",
-      "ex_db_bench": "DB Bench Press",
-      "ex_overhead_press": "DB Overhead Press",
-      "ex_pullup_assist": "Assisted Pull-Up",
-      "ex_farmer_carry": "Farmer Carry",
-      "history_title": "Back squat — 6-week history",
-      "history_subtitle": "Top set per week",
-      "delta_label": "Δ vs W1"
+      "back_squat_set_log": "बैक स्क्वाट · सेट लॉग",
+      "today_week": "आज · सप्ताह 6",
+      "set_label": "सेट {{n}}",
+      "last_week_top": "पिछले सप्ताह — शीर्ष सेट 80kg × 6",
+      "save_session": "सत्र सहेजें",
+      "back_squat_six_weeks": "बैक स्क्वाट — 6 सप्ताह का काम",
+      "top_set_today": "आज शीर्ष सेट:",
+      "pr_vs_week1": "PR बनाम सप्ताह 1:",
+      "sessions_logged": "लॉग किए गए सत्र:",
+      "rest_tempo_squat": "आराम 2:30 · टेम्पो 3-1-X",
+      "rest_tempo_rdl": "आराम 2:00 · नियंत्रित सनकी",
+      "ex_hip_thrust": "हिप थ्रस्ट",
+      "ex_chest_pull": "चेस्ट-सपोर्टेड रो",
+      "ex_split_squat": "डीबी स्प्लिट स्क्वाट",
+      "ex_pallof": "पल्लोफ प्रेस",
+      "ex_db_bench": "डीबी बेंच प्रेस",
+      "ex_overhead_press": "डीबी ओवरहेड प्रेस",
+      "ex_pullup_assist": "सहायक पुल-अप",
+      "ex_farmer_carry": "फार्मर कैरी",
+      "history_title": "बैक स्क्वाट — 6-सप्ताह का इतिहास",
+      "history_subtitle": "प्रति सप्ताह शीर्ष सेट",
+      "delta_label": "Δ बनाम W1"
     },
     "how_it_works": {
-      "eyebrow": "How it works",
-      "title": "From assessment to next mesocycle, in a continuous loop.",
+      "eyebrow": "यह कैसे काम करता है",
+      "title": "मूल्यांकन से अगले Mesocycle तक, एक निरंतर लूप में।",
       "steps": {
         "add_client": {
-          "label": "Clinical briefing",
-          "desc": "History, injuries, wants — at hand every week."
+          "label": "नैदानिक ​​ब्रीफिंग",
+          "desc": "इतिहास, चोटें, इच्छाएँ — हर सप्ताह हाथ में।"
         },
         "assessment": {
-          "label": "Evidence-based programming",
-          "desc": "MEV/MAV/MRV per muscle group, justified progressions."
+          "label": "प्रमाण-आधारित प्रोग्रामिंग",
+          "desc": "प्रति मांसपेशी समूह MEV/MAV/MRV, न्यायोचित प्रगति।"
         },
         "generate": {
-          "label": "Edit and print",
-          "desc": "Editable mesocycle. Branded PDF to take to the gym."
+          "label": "संपादित करें और प्रिंट करें",
+          "desc": "संपादनीय Mesocycle। जिम ले जाने के लिए ब्रांडेड PDF।"
         },
         "export": {
-          "label": "Feedback ↔ adjustment",
-          "desc": "Log by hand, the app reads it, validates, generates next week."
+          "label": "प्रतिक्रिया ↔ समायोजन",
+          "desc": "हाथ से लॉग करें, ऐप इसे पढ़ता है, मान्य करता है, अगले सप्ताह उत्पन्न करता है।"
         }
       }
     },
     "credibility": {
-      "title": "Under continuous development and refinement.",
-      "subtitle": "There are bugs. Things still missing. But because you're the human filter, the output stays defensible — patience pays. The foundations are already in; the rest gets folded in as it earns its place.",
+      "title": "निरंतर विकास और परिष्करण के तहत।",
+      "subtitle": "बग हैं। कुछ चीजें अभी भी गायब हैं। लेकिन क्योंकि आप मानवीय फिल्टर हैं, आउटपुट रक्षात्मक बना रहता है — धैर्य का फल मीठा होता है। नींव पहले से ही मौजूद है; बाकी को धीरे-धीरे जोड़ा जाता है।",
       "cards": {
-        "parq_title": "PAR-Q+ screening",
-        "parq_desc": "Already inside. Pre-participation health screen with cardiovascular, metabolic, and renal risk flags.",
-        "acsm_title": "ACSM risk stratification",
-        "acsm_desc": "Already inside. Low / moderate / high categorization to guide intensity prescription safely from session one.",
-        "prochaska_title": "Prochaska stages of change",
-        "prochaska_desc": "Already inside. Readiness for change mapped to coaching tone and progression speed. Coming: Helms, Israetel, Schoenfeld, RP, NSCA — folded in step by step."
+        "parq_title": "PAR-Q+ स्क्रीनिंग",
+        "parq_desc": "पहले से ही अंदर है। हृदय, चयापचय और गुर्दे के जोखिम वाले झंडे के साथ पूर्व-भागीदारी स्वास्थ्य स्क्रीन।",
+        "acsm_title": "ACSM जोखिम स्तरीकरण",
+        "acsm_desc": "पहले से ही अंदर है। पहले सत्र से ही तीव्रता के नुस्खे को सुरक्षित रूप से निर्देशित करने के लिए निम्न / मध्यम / उच्च वर्गीकरण।",
+        "prochaska_title": "Prochaska परिवर्तन के चरण",
+        "prochaska_desc": "पहले से ही अंदर है। कोचिंग टोन और प्रगति की गति के लिए परिवर्तन की तैयारी का मानचित्रण। आ रहा है: Helms, Israetel, Schoenfeld, RP, NSCA — चरण-दर-चरण जोड़ा गया।"
       }
     },
     "logging": {
-      "title": "The plan doesn't end at the PDF.",
-      "subtitle": "Log every set, track every session. Protocol keeps the history so you and the client see the work pile up."
+      "title": "योजना PDF पर समाप्त नहीं होती है।",
+      "subtitle": "हर सेट को लॉग करें, हर सत्र को ट्रैक करें। Protocol इतिहास रखता है ताकि आप और ग्राहक काम को इकट्ठा होते हुए देख सकें।"
     },
     "journey": {
-      "eyebrow": "Under continuous build",
-      "title": "Five stages today — refined every week.",
-      "subtitle": "This is what you'll see inside the app, right now. The shape and the detail keep evolving as we learn from each plan generated. Long-term goal: fold in all the human knowledge relevant to programming.",
+      "eyebrow": "निरंतर निर्माण के तहत",
+      "title": "आज पांच चरण — हर सप्ताह परिष्कृत।",
+      "subtitle": "यह वही है जो आप अभी ऐप के अंदर देखेंगे। आकार और विवरण लगातार विकसित हो रहे हैं क्योंकि हम प्रत्येक उत्पन्न योजना से सीखते हैं। दीर्घकालिक लक्ष्य: प्रोग्रामिंग से संबंधित सभी मानवीय ज्ञान को शामिल करना।",
       "stages": {
         "intake": {
-          "label": "Intake",
-          "desc": "PAR-Q+, ACSM risk, mobility, goals, equipment."
+          "label": "इंटेंस",
+          "desc": "PAR-Q+, ACSM जोखिम, गतिशीलता, लक्ष्य, उपकरण।"
         },
         "brief": {
           "label": "Brief",
-          "desc": "AI summarises the assessment into a defensible brief you approve."
+          "desc": "AI मूल्यांकन को एक रक्षात्मक Brief में सारांशित करता है जिसे आप अनुमोदित करते हैं।"
         },
         "blueprint": {
           "label": "Blueprint",
-          "desc": "Mesocycle shape, weekly split, movement-pattern volume."
+          "desc": "Mesocycle आकार, साप्ताहिक विभाजन, गति-पैटर्न की मात्रा।"
         },
         "microcycle": {
           "label": "Microcycle",
-          "desc": "Concrete week — sessions, exercises, sets, RPE, rest."
+          "desc": "ठोस सप्ताह — सत्र, अभ्यास, सेट, RPE, आराम।"
         },
         "progressions": {
           "label": "Progressions",
-          "desc": "Week-over-week deltas — load, reps, RPE, deload."
+          "desc": "सप्ताह-दर-सप्ताह डेल्टा — भार, प्रतिनिधि, RPE, डीलोड।"
         }
       }
     },
     "logbook_preview": {
-      "eyebrow": "After the PDF",
-      "title": "Every set logged becomes fuel for next week.",
-      "subtitle": "The PDF is the starting point. Each log — manual today, voice and sensors tomorrow — feeds the next generation. All optional, all toggle: give what you have, get what we can do with it.",
-      "log_caption": "Preview — log a session in seconds.",
-      "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine.",
-      "history_caption": "Week-over-week history — watch load climb without opening the gym.",
-      "signals_title": "What goes in (today and soon)",
-      "signal_load": "Accumulated load per movement pattern",
-      "signal_deltas": "Week-over-week deltas, automatic",
-      "signal_context": "Context kept: sleep, stress, perceived RPE",
-      "signals_soon_title": "Coming next, optional",
-      "signal_voice": "Voice notes → text → adjustment",
-      "signal_devices": "Scale, steps, sleep, heart rate",
-      "signal_uploads": "Bioimpedance, blood pressure — photo, PDF or Excel",
-      "flow": "1. Client logs. 2. AI cross-references volume, RPE and time. 3. You see signals and decide with context."
+      "eyebrow": "PDF के बाद",
+      "title": "हर लॉग किया गया सेट अगले सप्ताह के लिए ईंधन बन जाता है।",
+      "subtitle": "PDF शुरुआती बिंदु है। प्रत्येक लॉग — आज मैनुअल, कल आवाज और सेंसर — अगली पीढ़ी को खिलाता है। सभी वैकल्पिक, सभी टॉगल: आपके पास जो है वह दें, हम उससे जो कर सकते हैं वह प्राप्त करें।",
+      "log_caption": "पूर्वावलोकन — सेकंडों में एक सत्र लॉग करें।",
+      "trend_caption": "ट्रेंड लाइनें और AI संकेत अगले आ रहे हैं — आपके लॉग पहले से ही इंजन को खिलाते हैं।",
+      "history_caption": "सप्ताह-दर-सप्ताह इतिहास — जिम खोले बिना लोड को बढ़ते हुए देखें।",
+      "signals_title": "क्या आता है (आज और जल्द ही)",
+      "signal_load": "प्रति गति पैटर्न संचित भार",
+      "signal_deltas": "सप्ताह-दर-सप्ताह डेल्टा, स्वचालित",
+      "signal_context": "रखा गया संदर्भ: नींद, तनाव, कथित RPE",
+      "signals_soon_title": "अगला आ रहा है, वैकल्पिक",
+      "signal_voice": "आवाज नोट → पाठ → समायोजन",
+      "signal_devices": "पैमाना, कदम, नींद, हृदय गति",
+      "signal_uploads": "बायोइम्पेडेन्स, रक्तचाप — फोटो, PDF या Excel",
+      "flow": "1. क्लाइंट लॉग करता है। 2. AI वॉल्यूम, RPE और समय को क्रॉस-रेफरेंस करता है। 3. आप संकेत देखते हैं और संदर्भ के साथ निर्णय लेते हैं।"
     },
     "roadmap": {
-      "eyebrow": "Coming next",
-      "title": "What we're building, openly.",
-      "subtitle": "Not yet, but coming. We'd rather under-promise here than oversell.",
+      "eyebrow": "अगला आ रहा है",
+      "title": "हम क्या बना रहे हैं, खुले तौर पर।",
+      "subtitle": "अभी नहीं, लेकिन आ रहा है। हम यहाँ कम वादा करना पसंद करेंगे बजाय अधिक बेचने के।",
       "inline_chips": [
-        "Trends & graphs",
-        "Prompt-driven tweaks",
-        "Coach AI advice"
+        "रुझान और ग्राफ",
+        "संकेत-आधारित बदलाव",
+        "कोच AI सलाह"
       ],
       "items": {
         "trends": {
-          "title": "Trends & graphs",
-          "desc": "Auto-detect plateaus and progress per movement pattern from your logged sessions."
+          "title": "रुझान और ग्राफ",
+          "desc": "आपके लॉग किए गए सत्रों से प्रति गति पैटर्न पठारों और प्रगति का स्वतः पता लगाएँ।"
         },
         "prompt": {
-          "title": "Prompt-driven adjustments",
-          "desc": "Describe a tweak in plain language — \"deload week 3\", \"swap squats for split squats\" — and the plan adjusts."
+          "title": "संकेत-आधारित समायोजन",
+          "desc": "एक बदलाव को सामान्य भाषा में वर्णित करें — \"सप्ताह 3 डीलोड\", \"स्प्लिट स्क्वाट के लिए स्क्वाट बदलें\" — और योजना समायोजित हो जाती है।"
         },
         "advice": {
-          "title": "Coach AI advice",
-          "desc": "Weekly nudges from your logs — when to push, when to back off, what to swap."
+          "title": "कोच AI सलाह",
+          "desc": "आपके लॉग से साप्ताहिक संकेत — कब धक्का देना है, कब पीछे हटना है, क्या बदलना है।"
         }
       },
       "footnote": ""
     },
     "features": {
-      "title": "Built for trainers who'd rather coach than copy-paste spreadsheets.",
-      "intake_title": "Structured intake",
-      "intake_desc": "Capture goals, equipment, injuries, and schedule in a single guided form.",
-      "ai_title": "AI-drafted programs",
-      "ai_desc": "Get a periodized weekly plan tailored to the assessment in seconds.",
-      "pdf_title": "Branded PDF export",
-      "pdf_desc": "Add your logo and business name. Send a polished plan instantly."
+      "title": "उन प्रशिक्षकों के लिए बनाया गया है जो स्प्रैडशीट्स को कॉपी-पेस्ट करने के बजाय कोचिंग करना पसंद करते हैं।",
+      "intake_title": "संरचित इनटेक",
+      "intake_desc": "एकल निर्देशित फॉर्म में लक्ष्य, उपकरण, चोटें और समय-सारिणी कैप्चर करें।",
+      "ai_title": "AI-ड्राफ्टेड प्रोग्राम",
+      "ai_desc": "मूल्यांकन के अनुरूप एक आवधिक साप्ताहिक योजना सेकंडों में प्राप्त करें।",
+      "pdf_title": "ब्रांडेड PDF निर्यात",
+      "pdf_desc": "अपना लोगो और व्यवसाय का नाम जोड़ें। तुरंत एक पॉलिश्ड योजना भेजें।"
     },
     "founder": {
-      "title": "Why Protocol?",
-      "img_alt": "André, founder of Protocol",
-      "p1": "In fifteen years as a PT I kept seeing the same thing: plans thrown together in a hurry because programming with care takes too much work.",
-      "p2": "Protocol is here to take that excuse off the table. Human and scientific at the base — you decide, AI handles the repetitive drafting, and the manuals (ACSM, Bompa, NSCA) ground the choices. New evidence is added gradually, always with a verifiable source.",
-      "p3": "We don't want to automate coaching. We want \"I didn't have time\" to stop being the reason behind a weak plan — for PTs, and for people training on their own.",
-      "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
+      "title": "Protocol क्यों?",
+      "img_alt": "आंद्रे, Protocol के संस्थापक",
+      "p1": "एक PT के रूप में पंद्रह वर्षों में मैंने वही बात देखी: योजनाएँ जल्दबाजी में तैयार की गईं क्योंकि सावधानीपूर्वक प्रोग्रामिंग में बहुत अधिक काम लगता है।",
+      "p2": "Protocol उस बहाने को दूर करने के लिए यहां है। आधार पर मानव और वैज्ञानिक — आप निर्णय लेते हैं, AI दोहराव वाला ड्राफ्टिंग संभालता है, और मैनुअल (ACSM, Bompa, NSCA) विकल्पों को आधार प्रदान करते हैं। नए सबूत धीरे-धीरे जोड़े जाते हैं, हमेशा एक सत्यापन योग्य स्रोत के साथ।",
+      "p3": "हम कोचिंग को स्वचालित नहीं करना चाहते हैं। हम चाहते हैं कि \"मेरे पास समय नहीं था\" एक कमजोर योजना के पीछे का कारण न रहे — PTs के लिए, और अपने दम पर प्रशिक्षण लेने वाले लोगों के लिए।",
+      "signature": "— आंद्रे पेरिक्विटो, एमएससी एक्सरसाइज और हेल्थ · एक्सरसाइज फिजियोलॉजिस्ट और पर्सनल ट्रेनर"
     },
     "faq": {
-      "title": "Questions coaches and trainees ask us.",
-      "q1_q": "Is the AI plan good enough to send to clients as-is?",
-      "q1_a": "It's a solid starting point, not a destination. For now, AI is help — you are the filter. As we earn confidence in its outputs, we hand back more autonomy. Until then, edit volume, swap exercises, adapt the language; Protocol does the heavy lifting, you have the final word.",
-      "q2_q": "What if my client has injuries or medical conditions?",
-      "q2_a": "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
-      "q3_q": "Can I use my own branding on the PDF?",
-      "q3_a": "Yes. Upload your logo and business name in Settings. Every PDF export is branded with your studio identity, not Protocol's.",
-      "q4_q": "What happens to my client data?",
-      "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Protocol does not share or sell client data — ever.",
-      "q5_q": "What science is the programming based on?",
-      "q5_a": "Manuals already inside today: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Anything added next will have a verifiable source (PubMed and equivalents) — nothing cited under an author's name without the actual book or paper being inside. You can (and should) verify.",
-      "q6_q": "What if the client regresses mid-block?",
-      "q6_a": "You re-run the assessment, the programming tier adjusts (e.g. advanced → conservative) and the next block regenerates with tighter constraints. The previous block stays archived for history.",
-      "q7_q": "Can I edit the generated plan before export?",
-      "q7_a": "Yes — at all 5 stages (Brief, Blueprint, Microcycle, Progressions, Sessions). Every edit is logged and the PDF only ships after your final approval.",
-      "q8_q": "Does it work offline or on the client's phone?",
-      "q8_a": "The PDF works offline on any device. The set logbook is web (tested on Mobile Safari at 375px) — just share the plan link, no app to install.",
-      "q9_q": "How many plans can I generate on the free tier?",
-      "q9_a": "1 full plan per account. Enough to test the end-to-end flow with a real client. Paid tiers unlock 8 / 30 / 80 plans per month as you scale (client cap = plan cap, no fine print).",
-      "q10_q": "How do I know the AI didn't invent a dangerous exercise?",
-      "q10_a": "Every exercise is validated against the PROTOCOL library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation.",
-      "q11_q": "Do I need experience to use this?",
-      "q11_a": "No. The assessment walks you through, section by section, and the AI assembles the plan. Coaches get speed. Solo trainees get structure.",
-      "q12_q": "Can I use this without a coach?",
-      "q12_a": "Yes. Run the assessment as a trainee, generate your plan and follow it through the logbook. The AI gives weekly feedback based on what you log.",
-      "q13_q": "How is this different from ChatGPT or generic AI?",
-      "q13_a": "ChatGPT generates what you ask. Protocol runs 14 clinical sections (PAR-Q+, ACSM, mobility, history) before prescribing one exercise, with block periodization and a validated exercise library.",
-      "q14_q": "What happens when the trial ends?",
-      "q14_a": "The 7 days are enough to run the assessment, generate the plan, and start training safely. If you want to continue, activate the monthly plan and you keep ongoing generation, the logbook that learns with you, the community and what comes next. If not, you keep the PDF and the support videos — the app pauses until you return. It's a service, and we want it to be worth every cent."
+      "title": "कोच और प्रशिक्षु हमसे जो प्रश्न पूछते हैं।",
+      "q1_q": "क्या AI योजना ग्राहकों को ज्यों का त्यों भेजने के लिए पर्याप्त अच्छी है?",
+      "q1_a": "यह एक ठोस प्रारंभिक बिंदु है, गंतव्य नहीं। अभी के लिए, AI मदद है — आप फ़िल्टर हैं। जैसे-जैसे हम इसके आउटपुट में आत्मविश्वास हासिल करते हैं, हम अधिक स्वायत्तता वापस देते हैं। तब तक, वॉल्यूम संपादित करें, अभ्यास बदलें, भाषा को अनुकूलित करें; Protocol भारी काम करता है, अंतिम शब्द आपका होता है।",
+      "q2_q": "क्या होगा अगर मेरे क्लाइंट को चोटें या चिकित्सा स्थितियां हैं?",
+      "q2_a": "PAR-Q+ झंडे सशर्त तर्क触发 करते हैं। कार्डियक झंडे योजना को कम-तीव्रता पर डिफ़ॉल्ट करते हैं। संयुक्त झंडे उच्च-प्रभाव वाले पैटर्न को बाहर करते हैं। आपके पास हमेशा पीढ़ी से पहले अंतिम अनुमोदन होता है।",
+      "q3_q": "क्या मैं PDF पर अपनी ब्रांडिंग का उपयोग कर सकता हूँ?",
+      "q3_a": "हाँ। सेटिंग्स में अपना लोगो और व्यवसाय का नाम अपलोड करें। प्रत्येक PDF निर्यात आपके स्टूडियो की पहचान के साथ ब्रांडेड होता है, न कि Protocol की।",
+      "q4_q": "मेरे क्लाइंट डेटा का क्या होता है?",
+      "q4_a": "Supabase (EU क्षेत्र) में संग्रहीत। आप किसी भी समय किसी भी क्लाइंट रिकॉर्ड को निर्यात या हटा सकते हैं। Protocol क्लाइंट डेटा साझा या बेचता नहीं है — कभी नहीं।",
+      "q5_q": "प्रोग्रामिंग किस विज्ञान पर आधारित है?",
+      "q5_a": "आज पहले से ही अंदर मैनुअल: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e)। अगला जोड़ा गया कुछ भी एक सत्यापन योग्य स्रोत (PubMed और समकक्ष) होगा — वास्तविक पुस्तक या पेपर के बिना किसी लेखक के नाम के तहत कुछ भी उद्धृत नहीं किया जाएगा। आप सत्यापित कर सकते हैं (और करना चाहिए)।",
+      "q6_q": "क्या होगा अगर क्लाइंट मध्य-ब्लॉक में वापस चला जाता है?",
+      "q6_a": "आप मूल्यांकन को फिर से चलाते हैं, प्रोग्रामिंग टियर समायोजित होता है (उदाहरण के लिए उन्नत → रूढ़िवादी) और अगला ब्लॉक कसने वाले बाधाओं के साथ पुनर्जीवित होता है। पिछला ब्लॉक इतिहास के लिए संग्रहीत रहता है।",
+      "q7_q": "क्या मैं निर्यात से पहले उत्पन्न योजना को संपादित कर सकता हूँ?",
+      "q7_a": "हाँ — सभी 5 चरणों में (Brief, Blueprint, Microcycle, Progressions, Sessions)। प्रत्येक संपादन लॉग किया जाता है और PDF आपके अंतिम अनुमोदन के बाद ही भेजा जाता है।",
+      "q8_q": "क्या यह ऑफ़लाइन या क्लाइंट के फोन पर काम करता है?",
+      "q8_a": "PDF किसी भी डिवाइस पर ऑफ़लाइन काम करता है। सेट लॉगबुक वेब है (375px पर मोबाइल सफारी पर परीक्षण किया गया) — बस योजना लिंक साझा करें, कोई ऐप स्थापित करने की आवश्यकता नहीं है।",
+      "q9_q": "मैं निःशुल्क टियर पर कितनी योजनाएँ उत्पन्न कर सकता हूँ?",
+      "q9_a": "प्रति खाते 1 पूर्ण योजना। एक वास्तविक क्लाइंट के साथ एंड-टू-एंड प्रवाह का परीक्षण करने के लिए पर्याप्त है। भुगतान किए गए टियर प्रति माह 8 / 30 / 80 योजनाएँ अनलॉक करते हैं जैसे ही आप स्केल करते हैं (क्लाइंट कैप = प्लान कैप, कोई बारीक प्रिंट नहीं)।",
+      "q10_q": "मुझे कैसे पता चलेगा कि AI ने कोई खतरनाक अभ्यास नहीं बनाया है?",
+      "q10_a": "प्रत्येक अभ्यास PROTOCOL पुस्तकालय (गति पैटर्न, उपकरण, मतभेद) के खिलाफ मान्य है। पुस्तकालय के बाहर कुछ भी योजना तक नहीं पहुंचता है। PAR-Q+ झंडे पीढ़ी से पहले कठोर बहिष्करण लागू करते हैं।",
+      "q11_q": "क्या मुझे इसका उपयोग करने के लिए अनुभव की आवश्यकता है?",
+      "q11_a": "नहीं। मूल्यांकन आपको खंड-दर-खंड मार्गदर्शन करता है, और AI योजना को असेंबल करता है। कोचों को गति मिलती है। एकल प्रशिक्षुओं को संरचना मिलती है।",
+      "q12_q": "क्या मैं इसका उपयोग बिना कोच के कर सकता हूँ?",
+      "q12_a": "हाँ। एक प्रशिक्षु के रूप में मूल्यांकन चलाएँ, अपनी योजना उत्पन्न करें और लॉगबुक के माध्यम से इसका पालन करें। AI आपके द्वारा लॉग किए गए के आधार पर साप्ताहिक प्रतिक्रिया देता है।",
+      "q13_q": "यह ChatGPT या सामान्य AI से कैसे अलग है?",
+      "q13_a": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं। Protocol 14 नैदानिक ​​खंडों (PAR-Q+, ACSM, गतिशीलता, इतिहास) को एक अभ्यास निर्धारित करने से पहले चलाता है, ब्लॉक आवधिकरण और एक मान्य अभ्यास पुस्तकालय के साथ।",
+      "q14_q": "जब परीक्षण समाप्त होता है तो क्या होता है?",
+      "q14_a": "7 दिन मूल्यांकन चलाने, योजना उत्पन्न करने और सुरक्षित रूप से प्रशिक्षण शुरू करने के लिए पर्याप्त हैं। यदि आप जारी रखना चाहते हैं, तो मासिक योजना को सक्रिय करें और आप चल रही पीढ़ी, लॉगबुक जो आपके साथ सीखती है, समुदाय और आगे आने वाली चीजों को बनाए रखते हैं। यदि नहीं, तो आप PDF और समर्थन वीडियो को रखते हैं — ऐप तब तक रुक जाता है जब तक आप वापस नहीं आते। यह एक सेवा है, और हम चाहते हैं कि यह हर पैसे के लायक हो।",
+      "heading": "सामान्य प्रश्नोत्तर"
     },
-    "mission": "Protocol exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
+    "mission": "Protocol मौजूद है ताकि प्रशिक्षक कम समय फॉर्मेटिंग में और अधिक समय कोचिंग में बिता सकें। प्रशिक्षकों के लिए बेहतर उपकरण का मतलब है हर किसी के लिए सुरक्षित, होशियार प्रशिक्षण।",
     "closing": {
-      "title": "The next plan before the next session.",
-      "subtitle": "7 days free. No card. Cancel in one click.",
-      "cta_signed_in": "Open dashboard",
-      "cta_signed_out": "Create your account"
+      "title": "अगले सत्र से पहले अगली योजना।",
+      "subtitle": "7 दिन निःशुल्क। कोई कार्ड नहीं। एक क्लिक में रद्द करें।",
+      "cta_signed_in": "डैशबोर्ड खोलें",
+      "cta_signed_out": "अपना खाता बनाएँ"
     },
     "footer_copy": "© {{year}} Protocol",
     "pricing": {
-      "eyebrow": "Pricing",
-      "title": "Try 7 days. Keep it if it earns its place.",
-      "beta_badge": "7-day free trial",
-      "beta_title": "7-day trial",
+      "eyebrow": "मूल्य निर्धारण",
+      "title": "7 दिन का प्रयास करें। यदि यह अपनी जगह बनाता है तो इसे रखें।",
+      "beta_badge": "7-दिवसीय निःशुल्क परीक्षण",
+      "beta_title": "7-दिवसीय परीक्षण",
       "beta_price": "€0",
-      "beta_period": "for 7 days · no card",
+      "beta_period": "7 दिनों के लिए · कोई कार्ड नहीं",
       "beta_features": [
-        "Full access to logbook and plan generation",
-        "Clinical assessment + personalised plans",
-        "PDFs with your branding",
-        "No card required to sign up"
+        "लॉगबुक और योजना पीढ़ी तक पूरी पहुंच",
+        "नैदानिक ​​मूल्यांकन + व्यक्तिगत योजनाएँ",
+        "आपकी ब्रांडिंग के साथ PDF",
+        "साइन अप करने के लिए किसी कार्ड की आवश्यकता नहीं"
       ],
-      "beta_cta": "Start 7-day free trial",
-      "pro_badge": "After the trial",
-      "pro_title": "Monthly",
+      "beta_cta": "7-दिवसीय निःशुल्क परीक्षण शुरू करें",
+      "pro_badge": "परीक्षण के बाद",
+      "pro_title": "मासिक",
       "pro_price": "€19",
-      "pro_period": "/ month · cancel anytime",
+      "pro_period": "/ माह · कभी भी रद्द करें",
       "pro_features": [
-        "Everything in the trial — no time limit",
-        "Weekly AI insights from your logged sessions",
-        "PDFs on your own domain",
-        "Priority support"
+        "परीक्षण में सब कुछ — कोई समय सीमा नहीं",
+        "आपके लॉग किए गए सत्रों से साप्ताहिक AI अंतर्दृष्टि",
+        "आपके अपने डोमेन पर PDF",
+        "प्राथमिकता समर्थन"
       ],
-      "pro_cta": "Continue after trial",
-      "nav_link": "Pricing",
-      "trial_note": "No silent auto-renewal: we email you before any charge."
+      "pro_cta": "परीक्षण के बाद जारी रखें",
+      "nav_link": "मूल्य निर्धारण",
+      "trial_note": "कोई मौन स्वतः नवीनीकरण नहीं: हम किसी भी शुल्क से पहले आपको ईमेल करते हैं।"
     },
     "footer": {
-      "tagline": "For people who train others — and for people who train themselves. Substance before appearances.",
-      "product_title": "Product",
-      "product_features": "Features",
-      "product_pricing": "Pricing",
-      "product_how": "How it works",
-      "legal_title": "Legal",
-      "legal_terms": "Terms",
-      "legal_privacy": "Privacy",
-      "legal_contact": "Contact"
+      "tagline": "उन लोगों के लिए जो दूसरों को प्रशिक्षित करते हैं — और उन लोगों के लिए जो खुद को प्रशिक्षित करते हैं। दिखावे से पहले सार।",
+      "product_title": "उत्पाद",
+      "product_features": "विशेषताएँ",
+      "product_pricing": "मूल्य निर्धारण",
+      "product_how": "यह कैसे काम करता है",
+      "legal_title": "कानूनी",
+      "legal_terms": "शर्तें",
+      "legal_privacy": "गोपनीयता",
+      "legal_contact": "संपर्क"
     },
     "workbench": {
-      "eyebrow": "INTELLIGENT WORKBENCH",
-      "title": "Your AI workbench",
-      "subtitle": "Pick a model, pick the credits, get suggestions with full context. Like a chat with a colleague who knows the client."
+      "eyebrow": "बुद्धिमान वर्कबेंच",
+      "title": "आपका AI वर्कबेंच",
+      "subtitle": "एक मॉडल चुनें, क्रेडिट चुनें, पूर्ण संदर्भ के साथ सुझाव प्राप्त करें। एक सहकर्मी के साथ चैट की तरह जो क्लाइंट को जानता है।"
     },
     "logbook_insights": {
-      "eyebrow": "INTELLIGENT LOGBOOK",
-      "title": "Sessions logged. Patterns surfaced.",
-      "subtitle": "The logbook isn't just a record — AI reads your data and returns actionable signals.",
-      "header": "AI insights",
-      "window": "last 21 days",
-      "disclaimer": "Metrics derived from what you log. VO₂max is an estimate, not a clinical measurement.",
+      "eyebrow": "बुद्धिमान लॉगबुक",
+      "title": "सत्र लॉग किए गए। पैटर्न सामने आए।",
+      "subtitle": "लॉगबुक सिर्फ एक रिकॉर्ड नहीं है — AI आपके डेटा को पढ़ता है और कार्रवाई योग्य संकेत देता है।",
+      "header": "AI अंतर्दृष्टि",
+      "window": "पिछले 21 दिन",
+      "disclaimer": "आपके द्वारा लॉग किए गए मेट्रिक्स से प्राप्त। VO₂max एक अनुमान है, नैदानिक ​​माप नहीं।",
       "cards": {
         "sleep": {
-          "title": "Avg sleep · 7h12 (+38min vs last month)",
-          "body": "Recovery trending up. Good window to nudge intensity."
+          "title": "औसत नींद · 7घ12 (+38मिनट बनाम पिछले माह)",
+          "body": "रिकवरी ऊपर की ओर ट्रेंड कर रही है। तीव्रता को बढ़ाने के लिए अच्छा अवसर।"
         },
         "energy": {
-          "title": "Pre-workout energy · 7.4 / 10 — rising",
-          "body": "Sessions are leaving you with more battery than they used to."
+          "title": "प्री-वर्कआउट ऊर्जा · 7.4 / 10 — बढ़ रही है",
+          "body": "सत्रों में अब पहले से अधिक ऊर्जा बची रहती है।"
         },
         "vo2": {
-          "title": "Estimated VO₂max · 42 ml/kg/min (\"Good\" zone)",
-          "body": "Submaximal estimate. Re-test in 6 weeks."
+          "title": "अनुमानित VO₂max · 42 ml/kg/min (\"अच्छा\" क्षेत्र)",
+          "body": "सबमैक्सिमल अनुमान। 6 सप्ताह में फिर से जांच करें।"
         },
         "hang": {
-          "title": "Active dead hang · 38s (+9s in 4 weeks)",
-          "body": "Stronger grip and shoulders — a solid general-health marker."
+          "title": "सक्रिय डेड हैंग · 38सेकंड (4 सप्ताह में +9सेकंड)",
+          "body": "मजबूत पकड़ और कंधे — एक ठोस सामान्य स्वास्थ्य संकेतक।"
         }
       }
     },
     "anti_chatgpt": {
-      "eyebrow": "PROTOCOL vs ChatGPT",
-      "title": "ChatGPT generates what you ASK. PROTOCOL generates what the client NEEDS.",
-      "body": "14 clinical assessment sections before 1 exercise. PAR-Q+ screening, ACSM risk classification, contraindicated-exercise filtering, block periodization with MEV/MAV/MRV volumes — automatic, justified.",
-      "sections_label": "Assessed before generation:",
+      "eyebrow": "PROTOCOL बनाम ChatGPT",
+      "title": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं। PROTOCOL वह उत्पन्न करता है जो क्लाइंट को चाहिए।",
+      "body": "1 अभ्यास से पहले 14 नैदानिक ​​मूल्यांकन खंड। PAR-Q+ स्क्रीनिंग, ACSM जोखिम वर्गीकरण, विरोधाभासी-अभ्यास फ़िल्टरिंग, MEV/MAV/MRV वॉल्यूम के साथ ब्लॉक आवधिकरण — स्वचालित, न्यायोचित।",
+      "sections_label": "उत्पत्ति से पहले मूल्यांकित:",
       "items": [
         "PAR-Q+",
-        "Medical history",
-        "Anthropometry",
-        "Blood pressure",
-        "Joint mobility",
-        "Posture",
-        "Movement patterns",
-        "Vitals",
-        "Recovery",
-        "Training history",
-        "Lifestyle",
-        "Goals",
-        "Availability",
-        "Equipment"
+        "चिकित्सा इतिहास",
+        "मानवमापिकी",
+        "रक्तचाप",
+        "जोड़ों की गतिशीलता",
+        "मुद्रा",
+        "गति पैटर्न",
+        "महत्वपूर्ण अंग",
+        "स्वास्थ्यलाभ",
+        "प्रशिक्षण इतिहास",
+        "जीवन शैली",
+        "लक्ष्य",
+        "उपलब्धता",
+        "उपकरण"
       ],
-      "title_line1": "ChatGPT generates what you ASK.",
-      "title_line2": "PROTOCOL generates what the client NEEDS."
+      "title_line1": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं।",
+      "title_line2": "PROTOCOL वह उत्पन्न करता है जो क्लाइंट को चाहिए।"
     },
     "for_whom": {
-      "eyebrow": "Who it's for",
-      "title": "For any training adult — at any age.",
-      "subtitle": "Coaches, coached clients and solo trainees. From 18 to 80+. The human judgement is yours; the clinical structure is ours.",
+      "eyebrow": "यह किसके लिए है",
+      "title": "किसी भी उम्र के प्रशिक्षण वयस्क के लिए।",
+      "subtitle": "कोच, प्रशिक्षित क्लाइंट और एकल प्रशिक्षु। 18 से 80 साल से अधिक उम्र के लोगों के लिए। मानवीय निर्णय आपका है; नैदानिक ​​संरचना हमारी है।",
       "personas": [
         {
-          "title": "Coaches",
-          "body": "Personal trainers and studios who want to program faster without losing rigour. AI handles repetition; you decide."
+          "title": "कोच",
+          "body": "व्यक्तिगत प्रशिक्षक और स्टूडियो जो कठोरता खोए बिना तेजी से प्रोग्राम करना चाहते हैं। AI दोहराव को संभालता है; आप निर्णय लेते हैं।"
         },
         {
-          "title": "Coached clients",
-          "body": "Your coach uses PROTOCOL for your plan. You log sessions, track progression and receive the PDF with the studio's branding."
+          "title": "प्रशिक्षित क्लाइंट",
+          "body": "आपका कोच आपकी योजना के लिए PROTOCOL का उपयोग करता है। आप सत्र लॉग करते हैं, प्रगति को ट्रैक करते हैं और स्टूडियो की ब्रांडिंग के साथ PDF प्राप्त करते हैं।"
         },
         {
-          "title": "Solo trainees",
-          "body": "Run the assessment as a trainee, generate your own plan and follow it in the logbook. Honest structure, no snake oil."
+          "title": "एकल प्रशिक्षु",
+          "body": "एक प्रशिक्षु के रूप में मूल्यांकन चलाएँ, अपनी योजना उत्पन्न करें और लॉगबुक में इसका पालन करें। ईमानदार संरचना, कोई धोखा नहीं।"
         }
       ],
-      "medical_title": "Have a clinical condition? Still for you — with one rule.",
-      "medical_body": "Heart disease, hypertension, diabetes, injuries or pregnancy: PROTOCOL applies PAR-Q+ and ACSM filters, but your doctor has the final say. Get medical clearance before you start, and read every suggestion critically — you are responsible for the choices you make."
+      "medical_title": "क्या आपको कोई नैदानिक ​​स्थिति है? फिर भी आपके लिए — एक नियम के साथ।",
+      "medical_body": "हृदय रोग, उच्च रक्तचाप, मधुमेह, चोटें या गर्भावस्था: PROTOCOL PAR-Q+ और ACSM फिल्टर लागू करता है, लेकिन आपके डॉक्टर का अंतिम कहना है। शुरू करने से पहले चिकित्सीय मंजूरी प्राप्त करें, और हर सुझाव को आलोचनात्मक रूप से पढ़ें — आप अपने द्वारा किए गए विकल्पों के लिए जिम्मेदार हैं।"
     },
     "comparison": {
-      "eyebrow": "Where PROTOCOL fits",
-      "title": "How PROTOCOL compares to what you already use.",
+      "eyebrow": "PROTOCOL कहाँ फिट बैठता है",
+      "title": "PROTOCOL आपके द्वारा पहले से उपयोग किए जा रहे उपकरणों की तुलना में कैसा है।",
       "headers": [
         "",
         "PROTOCOL",
         "Excel",
         "ChatGPT",
-        "Generic apps"
+        "सामान्य एप्लिकेशन"
       ],
       "rows": [
         [
-          "Block periodization with deload",
-          "yes",
-          "manual",
-          "no",
-          "rare"
+          "डीलॉड के साथ ब्लॉक आवधिकरण",
+          "हाँ",
+          "मैनुअल",
+          "नहीं",
+          "दुर्लभ"
         ],
         [
-          "MEV/MAV/MRV per muscle group",
-          "yes",
-          "no",
-          "no",
-          "no"
+          "प्रति मांसपेशी समूह MEV/MAV/MRV",
+          "हाँ",
+          "नहीं",
+          "नहीं",
+          "नहीं"
         ],
         [
-          "Auto contraindications (PAR-Q+/ACSM)",
-          "yes",
-          "no",
-          "no",
-          "no"
+          "ऑटो विरोधाभास (PAR-Q+/ACSM)",
+          "हाँ",
+          "नहीं",
+          "नहीं",
+          "नहीं"
         ],
         [
-          "Branded bilingual PDF",
-          "yes",
-          "manual",
-          "no",
-          "premium"
+          "ब्रांडेड द्विभाषी PDF",
+          "हाँ",
+          "मैनुअल",
+          "नहीं",
+          "प्रीमियम"
         ],
         [
-          "Consistent voice, reviewed copy",
-          "yes",
+          "सुसंगत आवाज, समीक्षित कॉपी",
+          "हाँ",
           "—",
-          "no",
+          "नहीं",
           "—"
         ],
         [
-          "Time to first plan",
-          "~90s",
-          "hours",
-          "minutes",
-          "hours"
+          "पहली योजना में लगने वाला समय",
+          "~90 सेकंड",
+          "घंटे",
+          "मिनट",
+          "घंटे"
         ]
       ],
-      "footnote": "It's not magic. It's conditional logic over published science — Israetel, Helms, ACSM."
+      "footnote": "यह जादू नहीं है। यह प्रकाशित विज्ञान पर सशर्त तर्क है — Israetel, Helms, ACSM।"
     },
     "tier_badges": {
-      "eyebrow": "Every plan ships with a tier",
-      "title": "3-tier programming system.",
-      "subtitle": "The tier is decided by the client profile — not guesswork. It sets load ceiling, allowed RPE and available exercises.",
+      "eyebrow": "प्रत्येक योजना एक टियर के साथ आती है",
+      "title": "3-टियर प्रोग्रामिंग प्रणाली।",
+      "subtitle": "टियर क्लाइंट प्रोफाइल द्वारा तय किया जाता है — अनुमान द्वारा नहीं। यह लोड सीमा, अनुमत RPE और उपलब्ध अभ्यास निर्धारित करता है।",
       "items": {
         "remedial": {
-          "name": "Remedial",
-          "desc": "Critical deficits or medical clearance. Machines and bands, 2×/week."
+          "name": "उपचारात्मक",
+          "desc": "महत्वपूर्ण कमी या चिकित्सा मंजूरी। मशीनें और बैंड, 2×/सप्ताह।"
         },
         "conservative": {
-          "name": "Conservative",
-          "desc": "2+ red flags or beginner. Safe progressions, 3-4×/week."
+          "name": "रूढ़िवादी",
+          "desc": "2+ लाल झंडे या शुरुआती। सुरक्षित प्रगति, 3-4×/सप्ताह।"
         },
         "advanced": {
-          "name": "Advanced",
-          "desc": "Full competency. Full library, 5-6×/week."
+          "name": "उन्नत",
+          "desc": "पूर्ण क्षमता। पूर्ण पुस्तकालय, 5-6×/सप्ताह।"
         }
       }
     },
     "mid_cta": {
-      "title": "See it with your own data.",
-      "subtitle": "Free account · 1 client · 1 full plan · no card.",
-      "button": "Start now"
+      "title": "अपने स्वयं के डेटा के साथ इसे देखें।",
+      "subtitle": "निशुल्क खाता · 1 क्लाइंट · 1 पूर्ण योजना · कोई कार्ड नहीं।",
+      "button": "अभी शुरू करें"
     }
   },
   "briefRail": {
-    "approved": "Brief approved",
-    "view": "view",
-    "context_caption": "Context always visible while you design this meso.",
-    "loading": "Loading brief…",
-    "unavailable": "Brief unavailable.",
-    "load_error": "Could not load the brief.",
-    "invalid": "Brief invalid or not yet approved.",
-    "open_brief": "Open Brief",
-    "objectives": "Objectives",
-    "primary": "primary",
-    "red_flags": "Red flags",
-    "movement": "Movement competency",
-    "equipment_freq": "Equipment & frequency",
-    "sessions_per_week": "Sessions/week:",
+    "approved": "Brief स्वीकृत",
+    "view": "देखें",
+    "context_caption": "जब आप इस Meso को डिज़ाइन करते हैं तो संदर्भ हमेशा दृश्यमान रहता है।",
+    "loading": "Brief लोड हो रहा है…",
+    "unavailable": "Brief अनुपलब्ध।",
+    "load_error": "Brief लोड नहीं किया जा सका।",
+    "invalid": "Brief अमान्य या अभी तक स्वीकृत नहीं।",
+    "open_brief": "Brief खोलें",
+    "objectives": "उद्देश्य",
+    "primary": "प्राथमिक",
+    "red_flags": "लाल झंडे",
+    "movement": "गति क्षमता",
+    "equipment_freq": "उपकरण और आवृत्ति",
+    "sessions_per_week": "प्रति सप्ताह सत्र:",
     "mesocycle": "Mesocycle:",
-    "weeks": "weeks",
-    "emphasis": "Meso emphasis",
-    "emphasis_upper": "Upper",
-    "emphasis_lower": "Lower",
+    "weeks": "सप्ताह",
+    "emphasis": "Meso पर जोर",
+    "emphasis_upper": "ऊपरी",
+    "emphasis_lower": "निचला",
     "emphasis_cond": "Cond.",
-    "stage_notes": "Notes for this stage",
-    "rail_title": "Brief — context",
-    "capacity_vs_pb": "current capacity vs PB"
+    "stage_notes": "इस चरण के लिए नोट्स",
+    "rail_title": "Brief — संदर्भ",
+    "capacity_vs_pb": "वर्तमान क्षमता बनाम PB"
   },
   "continueCta": {
-    "brief": "Continue to Blueprint",
-    "blueprint": "Continue to Microcycle",
-    "microcycle": "Continue to Progressions",
-    "progressions": "Review progressions",
-    "complete": "Open plan"
+    "brief": "Blueprint पर जारी रखें",
+    "blueprint": "Microcycle पर जारी रखें",
+    "microcycle": "Progressions पर जारी रखें",
+    "progressions": "Progressions की समीक्षा करें",
+    "complete": "योजना खोलें"
   },
   "progressionsGuide": {
-    "title": "How to read these deltas",
-    "open": "How to read",
-    "close": "Close guide",
+    "title": "इन डेल्टा को कैसे पढ़ें",
+    "open": "कैसे पढ़ें",
+    "close": "गाइड बंद करें",
     "items": [
-      "W2/W3/W4 = the change applied that week vs Week 1.",
-      "\"+2.5kg\" = add 2.5kg to the working load.",
-      "\"+1rep\" = aim for one extra rep per set.",
-      "\"+0.5rpe\" = push 0.5 RPE harder (closer to failure).",
-      "Empty = no change that week (hold or deload).",
-      "Conservative > aggressive: when in doubt, lower the delta.",
-      "The trend line shows cumulative change W1 → W4."
+      "W2/W3/W4 = उस सप्ताह में लागू परिवर्तन बनाम सप्ताह 1।",
+      "\"+2.5kg\" = काम के भार में 2.5kg जोड़ें।",
+      "\"+1rep\" = प्रति सेट एक अतिरिक्त प्रतिनिधि का लक्ष्य रखें।",
+      "\"+0.5rpe\" = 0.5 RPE अधिक कठोर धक्का दें (विफलता के करीब)।",
+      "खाली = उस सप्ताह में कोई बदलाव नहीं (पकड़ें या डीलोड करें)।",
+      "रूढ़िवादी > आक्रामक: संदेह होने पर, डेल्टा को कम करें।",
+      "ट्रेंड लाइन W1 → W4 के संचयी परिवर्तन को दर्शाती है।"
     ]
   },
   "actions": {
-    "regenerate": "Regenerate",
-    "approve_brief": "Approve brief",
-    "approve_blueprint": "Approve Master plan →",
-    "approve_microcycle": "Approve microcycle",
-    "approve_microcycle_disabled": "Finish all days to approve",
-    "approve_microcycle_busy": "Approving…",
-    "ask_ai": "Ask AI for changes",
+    "regenerate": "पुनः उत्पन्न करें",
+    "approve_brief": "Brief अनुमोदित करें",
+    "approve_blueprint": "मास्टर योजना अनुमोदित करें →",
+    "approve_microcycle": "Microcycle अनुमोदित करें",
+    "approve_microcycle_disabled": "अनुमोदित करने के लिए सभी दिन पूरे करें",
+    "approve_microcycle_busy": "अनुमोदित हो रहा है…",
+    "ask_ai": "परिवर्तन के लिए AI से पूछें",
     "back_blueprint": "Blueprint",
     "back_brief": "Brief",
-    "back_all_plans": "All plans"
+    "back_all_plans": "सभी योजनाएँ"
   },
   "microcycleProgress": {
-    "generating": "Generating microcycle",
-    "remaining": "~{{seconds}}s remaining",
-    "day_quality_gate": "Generating Day 1 — this is the quality gate."
+    "generating": "Microcycle उत्पन्न हो रहा है",
+    "remaining": "~{{seconds}}s शेष",
+    "day_quality_gate": "दिवस 1 उत्पन्न हो रहा है — यह गुणवत्ता द्वार है।"
   },
   "microcycle": {
-    "ready_to_approve": "All set — you can approve",
-    "stage_hint": "Microcycle = your template week. It defines order, volume and RPE for each day. Approve once all days look good and the AI will propose progressions for the following weeks.",
-    "days_approved": "days approved",
-    "to_review": "to review",
-    "day_label": "Day {{n}}",
-    "review_short": "review",
-    "approve_day": "Approve Day {{n}}",
-    "day_approved": "Day {{n}} approved",
-    "regenerate_short": "regenerate",
-    "resume_hint": "Resuming · {{done}}/{{total}} days done",
-    "retry_remaining": "Continue remaining days"
+    "ready_to_approve": "सब कुछ तैयार है — आप अनुमोदित कर सकते हैं",
+    "stage_hint": "Microcycle = आपकी टेम्पलेट सप्ताह। यह प्रत्येक दिन के लिए क्रम, वॉल्यूम और RPE को परिभाषित करता है। एक बार जब सभी दिन अच्छे दिखें तो अनुमोदित करें और AI अगले सप्ताहों के लिए Progressions का प्रस्ताव करेगा।",
+    "days_approved": "दिन अनुमोदित",
+    "to_review": "समीक्षा करने के लिए",
+    "day_label": "दिवस {{n}}",
+    "review_short": "समीक्षा",
+    "approve_day": "दिवस {{n}} अनुमोदित करें",
+    "day_approved": "दिवस {{n}} अनुमोदित",
+    "regenerate_short": "पुनः उत्पन्न करें",
+    "resume_hint": "फिर से शुरू हो रहा है · {{done}}/{{total}} दिन पूरे",
+    "retry_remaining": "शेष दिन जारी रखें"
   },
   "stage": {
     "label": {
-      "1": "Assessment",
+      "1": "मूल्यांकन",
       "2": "Brief",
-      "3": "Master plan",
-      "4": "Weekly cycle",
+      "3": "मास्टर योजना",
+      "4": "साप्ताहिक चक्र",
       "5": "Progressions"
     }
   },
   "insights": {
-    "header": "Capacity insights",
-    "loading": "Reading measurements…",
-    "cta_record": "Log measurement",
-    "empty_title": "No measurements yet.",
-    "empty_body": "VO₂max, dead/active hang and plank appear here as soon as you log a reassessment.",
-    "empty_cta": "Open reassessment",
-    "no_data": "no data",
-    "delta_window": "Δ vs {{days}} days ago",
-    "first_measurement": "first measurement",
-    "disclaimer": "Derived from logged measurements. Submax VO₂max is an estimate, not a clinical measurement.",
+    "header": "क्षमता अंतर्दृष्टि",
+    "loading": "माप पढ़ रहा है…",
+    "cta_record": "माप लॉग करें",
+    "empty_title": "अभी तक कोई माप नहीं।",
+    "empty_body": "VO₂max, डेड/सक्रिय हैंग और प्लैंक यहाँ तब दिखाई देंगे जब आप एक पुनः-मूल्यांकन लॉग करेंगे।",
+    "empty_cta": "पुनः-मूल्यांकन खोलें",
+    "no_data": "कोई डेटा नहीं",
+    "delta_window": "{{days}} दिन पहले से Δ",
+    "first_measurement": "पहला माप",
+    "disclaimer": "लॉग किए गए मापों से प्राप्त। सबमैक्स VO₂max एक अनुमान है, नैदानिक ​​माप नहीं।",
     "metric": {
       "vo2max": "VO₂max",
-      "dead_hang_s": "Dead hang",
-      "active_hang_s": "Active hang",
-      "plank_s": "Plank"
+      "dead_hang_s": "डेड हैंग",
+      "active_hang_s": "सक्रिय हैंग",
+      "plank_s": "प्लैंक"
     }
   }
 }
