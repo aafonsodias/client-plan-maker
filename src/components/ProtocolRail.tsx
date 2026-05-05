@@ -76,17 +76,17 @@ export function ProtocolRail({
   return (
     <Wrapper aria-label={bare ? undefined : "Protocolo"} className={wrapperCls}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           Protocolo
         </span>
-        <div className="flex flex-1 flex-wrap items-center gap-1.5">
+        <div className="flex flex-1 flex-nowrap items-center gap-1 overflow-x-auto">
           {stages.map((s, i) => {
             const stage1Handler = s.n === 1 ? (onStage1Click ?? (onStageClick ? () => onStageClick(1) : undefined)) : undefined;
             const handler = s.n === 1 ? stage1Handler : (onStageClick ? () => onStageClick(s.n) : undefined);
             const isClickable = !!handler;
             const isActive = (s.n === 1 && (stage1Expanded || activeStage === 1)) || (s.n !== 1 && activeStage === s.n);
             const baseCls = [
-              "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
+              "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] font-medium transition",
               s.done
                 ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
                 : "border-border bg-background text-muted-foreground",
@@ -96,19 +96,19 @@ export function ProtocolRail({
             const inner = (
               <>
                 {s.done ? (
-                  <Check className="h-3 w-3" strokeWidth={2.75} />
+                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
                 ) : (
-                  <Circle className="h-3 w-3" strokeWidth={2} />
+                  <Circle className="h-2.5 w-2.5" strokeWidth={2} />
                 )}
                 <span className="font-bold">{s.n}</span>
-                <span className="hidden sm:inline">{s.label}</span>
+                <span className="hidden md:inline">{s.label}</span>
                 {s.n === 1 && assessmentPct != null && (
-                  <span className="opacity-80">· {assessmentPct}%</span>
+                  <span className="opacity-70">{assessmentPct}%</span>
                 )}
               </>
             );
             return (
-              <div key={s.n} className="flex items-center gap-1.5">
+              <div key={s.n} className="flex shrink-0 items-center gap-1">
                 {isClickable ? (
                   <button
                     type="button"
@@ -126,14 +126,14 @@ export function ProtocolRail({
                   <button
                     type="button"
                     onClick={onShowSynthesis}
-                    className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/[0.05] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
+                    className="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/[0.05] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-300 hover:bg-amber-500/10"
                     title="Ver síntese da avaliação"
                   >
                     <Sparkles className="h-2.5 w-2.5" /> Síntese
                   </button>
                 )}
                 {i < stages.length - 1 && (
-                  <span className="text-muted-foreground/40">·</span>
+                  <span className="text-muted-foreground/40">›</span>
                 )}
               </div>
             );

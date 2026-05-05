@@ -247,25 +247,25 @@ export function ComplianceDashboard({ clientId }: { clientId: string }) {
   const maxBar = Math.max(1, ...stats.weeksList.map((w) => w.count));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">Compliance</h2>
-        <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Compliance</h2>
+        <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-[10px]">
           {(["30d", "90d", "all"] as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
+              className={`rounded-sm px-2 py-0.5 font-medium transition-colors ${
                 range === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {r === "30d" ? "30 days" : r === "90d" ? "90 days" : "All time"}
+              {r === "30d" ? "30d" : r === "90d" ? "90d" : "Tudo"}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {stats.planned > 0 ? (
           <KpiCard
             icon={<TrendingUp className="h-4 w-4" />}
@@ -309,10 +309,10 @@ export function ComplianceDashboard({ clientId }: { clientId: string }) {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            Sessões / semana (últimas 8)
+      <div className="grid gap-2 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            Sessões/semana · últimas 8
           </h3>
           <SparklineWithTrend weeks={stats.weeksList} maxBar={maxBar} />
         </div>
@@ -351,9 +351,9 @@ function KpiCard({
       : verdict.tone === "warn" ? "text-amber-500"
       : "text-red-500";
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {icon}
           {label}
         </div>
@@ -364,11 +364,11 @@ function KpiCard({
           </span>
         )}
       </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums">{value}</p>
+      <p className="mt-1 text-lg font-bold tabular-nums leading-tight">{value}</p>
       {verdict && (
-        <p className={`mt-1 text-[11px] font-semibold ${verdictCls}`}>{verdict.text}</p>
+        <p className={`mt-0.5 text-[10px] font-semibold ${verdictCls}`}>{verdict.text}</p>
       )}
-      {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-0.5 text-[10px] text-muted-foreground truncate">{hint}</p>}
     </div>
   );
 }
@@ -444,8 +444,8 @@ function TopExercisesPanel({
   const byVolume = [...top].sort((a, b) => b.sets - a.sets).slice(0, 5);
   if (top.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-xl border border-border bg-card p-3">
+        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
           Top exercícios
         </h3>
         <p className="text-sm text-muted-foreground">Sem exercícios registados nesta janela.</p>
@@ -453,11 +453,11 @@ function TopExercisesPanel({
     );
   }
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-xl border border-border bg-card p-3">
+      <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
         Top exercícios
       </h3>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <ExList
           title="Por carga (kg)"
           empty="Registe pesos para ver aqui."
