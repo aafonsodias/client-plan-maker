@@ -43,7 +43,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       const [{ data: a }, planRow] = await Promise.all([
         supabase
           .from("assessments")
-          .select("acsm_risk_category, parq_passed, sleep_quality, stress_level, soreness, updated_at, performed_on")
+          .select("acsm_risk_category, parq_passed, sleep_quality, stress_level, updated_at, performed_on")
           .eq("client_id", clientId)
           .order("updated_at", { ascending: false })
           .limit(1)
@@ -79,7 +79,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   // Recovery score (sleep 50%, stress 30%, soreness 20%) — same formula as detail page.
   const sleep = Number(assessment?.sleep_quality);
   const stress = Number(assessment?.stress_level);
-  const sore = Number(assessment?.soreness ?? 0);
+  const sore = 0; // soreness not stored on assessments; recovery falls back to neutral
   const haveSignals = Number.isFinite(sleep) && sleep > 0;
   const sleepPart = haveSignals ? (sleep / 10) * 50 : 25;
   const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
