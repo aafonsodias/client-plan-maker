@@ -117,7 +117,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   const primaryNav = [
     { to: "/dashboard", label: t("nav.dashboard"), icon: Home },
     { to: "/schedule", label: t("nav.schedule"), icon: CalendarRange },
-    { to: "/templates", label: "Templates", icon: Bookmark },
+    { to: "/plans", label: "Plans", icon: Bookmark },
     { to: "/settings", label: t("nav.branding"), icon: Settings },
   ] as const;
 
