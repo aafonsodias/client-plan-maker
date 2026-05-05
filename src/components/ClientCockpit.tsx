@@ -38,6 +38,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   const [downloading, setDownloading] = useState(false);
   const [activeStage, setActiveStage] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [stageOpen, setStageOpen] = useState(false);
+  const [openCompliance, setOpenCompliance] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,7 +174,24 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
     if (activeStage === 4) {
       return (
-        <Stage4Compliance clientId={clientId} planLink={planLink(t("clients.cockpit.stage.4.cta"))} />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setOpenCompliance((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold hover:text-amber-400"
+            >
+              <ChevronDown className={`h-3 w-3 transition-transform ${openCompliance ? "rotate-0" : "-rotate-90"}`} />
+              {t("clients.cockpit.stage.4.title")} · Compliance
+            </button>
+            {planLink(t("clients.cockpit.stage.4.cta"))}
+          </div>
+          {openCompliance && (
+            <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
+              <ComplianceDashboard clientId={clientId} />
+            </Suspense>
+          )}
+        </div>
       );
     }
 
@@ -187,7 +205,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         {planLink(t(`clients.cockpit.stage.${stageKey}.cta` as const))}
       </div>
     );
-  }, [activeStage, plan, coverage, realPct, totalWeeks, t, clientId]);
+  }, [activeStage, plan, coverage, realPct, totalWeeks, t, clientId, openCompliance]);
 
   if (loading) {
     return (
