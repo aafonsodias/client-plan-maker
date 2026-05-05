@@ -768,6 +768,14 @@
     "body_composition": "Composição corporal",
     "show_all_sections": "Mostrar todas as secções",
     "focus_one_section": "Focar uma secção de cada vez",
-    "assessment_sections_aria": "Secções da avaliação"
+    "assessment_sections_aria": "Secções da avaliação",
+    "next_week": {
+      "title": "Programar próxima semana",
+      "subtitle": "Determinístico, sem IA. Lê adesão e RPE da última semana e ajusta cargas conforme a regra de autoregulação.",
+      "cta": "Programar próxima semana",
+      "created": "Semana {{week}} criada — {{flagged}} exercício(s) sinalizado(s).",
+      "low_adherence": "Adesão {{pct}}% ({{logged}}/{{expected}} sessões registadas). Registe pelo menos 80% antes de avançar.",
+      "failed": "Não foi possível programar a próxima semana."
+    }
   }
 }

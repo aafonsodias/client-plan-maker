@@ -44,6 +44,7 @@ import { computeCapacityGain } from "@/lib/capacity-gain";
 import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import { NextBlockCard } from "@/components/NextBlockCard";
+import { NextWeekCard } from "@/components/plan/NextWeekCard";
 import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
@@ -210,6 +211,43 @@ function PlanEditor() {
         .order("session_date", { ascending: false });
       setSessions((list as unknown as SessionRow[]) ?? []);
     } catch { /* ignore */ }
+  };
+
+  // R66: refetch the prescribed-day rows (used after programNextWeek inserts
+  // a new microcycle so the table/cards immediately show Week N+1).
+  const reloadPlanDays = async () => {
+    if (!isPhasedComplete) return;
+    const { data: dayRows } = await supabase
+      .from("workout_plan_days")
+      .select("week_number, day_number, day_label, focus, rationale, content")
+      .eq("plan_id", planId)
+      .order("week_number", { ascending: true })
+      .order("day_number", { ascending: true });
+    const weeksMap = new Map<number, Week>();
+    for (const row of (dayRows ?? []) as any[]) {
+      const wn = row.week_number as number;
+      if (!weeksMap.has(wn)) {
+        weeksMap.set(wn, { week_number: wn, focus: "", days: [] } as Week);
+      }
+      const wk = weeksMap.get(wn)!;
+      const content = row.content ?? {};
+      const exercises = Array.isArray(content.exercises) ? content.exercises : [];
+      wk.days.push({
+        day_label: row.day_label ?? `Day ${row.day_number}`,
+        focus: row.focus ?? "",
+        rationale: row.rationale ?? undefined,
+        exercises,
+        warmup: Array.isArray(content.warmup) ? content.warmup : undefined,
+        activation: Array.isArray(content.activation) ? content.activation : undefined,
+        dynamic_stretches: Array.isArray(content.dynamic_stretches) ? content.dynamic_stretches : undefined,
+        cooldown: Array.isArray(content.cooldown) ? content.cooldown : undefined,
+        finisher: Array.isArray(content.finisher) ? content.finisher : undefined,
+        finisher_enabled: typeof content.finisher_enabled === "boolean" ? content.finisher_enabled : undefined,
+        cardio: Array.isArray(content.cardio) ? content.cardio : undefined,
+      } as Day);
+    }
+    const weeks = Array.from(weeksMap.values()).sort((a, b) => a.week_number - b.week_number);
+    setData({ weeks });
   };
 
   // Auto-land on Resultados once a plan has enough logged sessions to feel
@@ -722,6 +760,11 @@ function PlanEditor() {
             sessions={sessions as any}
             fullyLogged={isPlanFullyLogged(plan, sessions.length)}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
+          />
+          {/* R66: deterministic next-week generator, gated by adherence ≥ 80%. */}
+          <NextWeekCard
+            planId={planId}
+            onCreated={async () => { await reloadPlanDays(); await reloadSessions(); }}
           />
         {(() => {
           const fullyLogged = isPlanFullyLogged(plan, sessions.length);
