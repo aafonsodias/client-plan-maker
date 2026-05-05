@@ -896,6 +896,9 @@ function CoachWorkbenchMockup() {
     { name: "André P.", focus: "Calistenia · B1 W1", state: "Logbook hoje", tone: "amber" as const },
     { name: "Rebeca M.", focus: "Avaliação · 9/14", state: "A preencher", tone: "neutral" as const },
     { name: "João F.", focus: "Força · B3 W4", state: "PDF enviado", tone: "emerald" as const },
+    { name: "Carla D.", focus: "Reabilitação · B1 W2", state: "Recuperação 71%", tone: "amber" as const },
+    { name: "Pedro V.", focus: "Hipertrofia · B2 W1", state: "Plano pronto", tone: "emerald" as const },
+    { name: "Inês L.", focus: "Avaliação · 14/14", state: "Pronta p/ briefing", tone: "amber" as const },
   ];
   const toneRing = (tone: "emerald" | "amber" | "neutral") =>
     tone === "emerald"
