@@ -681,6 +681,39 @@ function AntiChatGPTSection() {
   );
 }
 
+// ─── For whom — inclusivity + medical responsibility ───────────────────
+function ForWhomSection() {
+  const { t } = useTranslation("plan");
+  const personas = (t("landing.for_whom.personas", { returnObjects: true }) as { title: string; body: string }[]) ?? [];
+  return (
+    <section className="mx-auto max-w-6xl px-6 py-20">
+      <div className="mb-8 max-w-2xl">
+        <p className="text-xs uppercase tracking-widest text-accent">
+          {t("landing.for_whom.eyebrow")}
+        </p>
+        <h2 className="mt-2 text-3xl font-light tracking-tight sm:text-4xl">
+          {t("landing.for_whom.title")}
+        </h2>
+        <p className="mt-4 text-base font-light text-muted-foreground">
+          {t("landing.for_whom.subtitle")}
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {personas.map((p, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card p-5">
+            <p className="text-sm font-semibold text-foreground">{p.title}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm leading-relaxed text-foreground/85">
+        <p className="font-semibold text-amber-500">{t("landing.for_whom.medical_title")}</p>
+        <p className="mt-1.5 text-muted-foreground">{t("landing.for_whom.medical_body")}</p>
+      </div>
+    </section>
+  );
+}
+
 // ─── Comparison table ──────────────────────────────────────────────────
 function ComparisonTableSection() {
   const { t } = useTranslation("plan");
