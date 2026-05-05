@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,12 +18,14 @@ import { PriceTag } from "@/components/PriceTag";
 import { ClientAvatar } from "@/components/ClientAvatar";
 
 export const Route = createFileRoute("/schedule/packs")({
-  component: PacksPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/schedule", search: { tab: "packs" } });
+  },
 });
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-function PacksPage() {
+export function PacksPanel() {
   const { t } = useTranslation("schedule");
   const { user } = useAuth();
   const list = useServerFn(listPacks);
