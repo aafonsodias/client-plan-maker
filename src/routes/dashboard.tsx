@@ -84,7 +84,7 @@ function Dashboard() {
     const [{ data: cRows }, { data: r }, { data: allPlans }] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, full_name, email, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
+        .select("id, full_name, email, phone, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
         .order("created_at", { ascending: false }),
       supabase
         .from("workout_plans")
