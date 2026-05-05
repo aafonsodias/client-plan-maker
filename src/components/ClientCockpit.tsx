@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Download, Edit3, ChevronRight, Loader2, AlertTriangle, Activity, ArrowRight } from "lucide-react";
+import { Download, Edit3, ChevronRight, ChevronDown, Loader2, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ProtocolRail } from "@/components/ProtocolRail";
@@ -37,6 +37,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   const [coverage, setCoverage] = useState<{ done: number; total: number } | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [activeStage, setActiveStage] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [stageOpen, setStageOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +100,8 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
     ? Math.round((coverage.done / coverage.total) * 100)
     : null;
 
-  // Pick a sensible default stage when data lands.
+  // Default to stage 1 (assessment), but don't auto-expand the panel —
+  // user opens it by clicking a stage chip.
   useEffect(() => {
     if (loading) return;
     if (planComplete) setActiveStage(4);
@@ -107,29 +109,15 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
     else setActiveStage(1);
   }, [loading, planComplete, plan?.id]);
 
-  // Recovery score
-  const sleep = Number(assessment?.sleep_quality);
-  const stress = Number(assessment?.stress_level);
-  const haveSignals = Number.isFinite(sleep) && sleep > 0;
-  const sleepPart = haveSignals ? (sleep / 10) * 50 : 25;
-  const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
-  const sorePart = 10;
-  const readiness = Math.round(sleepPart + stressPart + sorePart);
-
-  const risk: string = assessment?.acsm_risk_category ?? "low";
-  const riskLabel = risk === "high" ? "Alto" : risk === "moderate" ? "Moderado" : "Baixo";
-  const riskTone =
-    risk === "high"
-      ? "border-red-500/40 bg-red-500/10 text-red-400"
-      : risk === "moderate"
-        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400";
-  const readyTone =
-    readiness >= 75
-      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-      : readiness >= 50
-        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-        : "border-red-500/40 bg-red-500/10 text-red-400";
+  const handleStageClick = (n: number) => {
+    const stage = n as 1 | 2 | 3 | 4 | 5;
+    if (stageOpen && activeStage === stage) {
+      setStageOpen(false);
+    } else {
+      setActiveStage(stage);
+      setStageOpen(true);
+    }
+  };
 
   const handleDownload = async () => {
     if (!plan) return;
@@ -219,7 +207,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
   return (
     <div className="space-y-3 border-t border-border bg-secondary/20 px-4 py-4 sm:px-5">
-      {/* 1. Protocol rail — drives stage selection */}
+      {/* 1. Protocol rail — single compact line */}
       <ProtocolRail
         bare
         assessmentPct={realPct}
@@ -228,16 +216,11 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         blueprintApproved={blueprintApproved}
         microcycleApproved={microcycleApproved}
         progressionsApproved={progressionsApproved}
-        activeStage={activeStage}
-        onStageClick={(n) => setActiveStage(n as 1 | 2 | 3 | 4 | 5)}
+        activeStage={stageOpen ? activeStage : null}
+        onStageClick={handleStageClick}
       />
 
-      {/* 2. Stage panel */}
-      <div className="rounded-xl border border-border bg-card/40 p-3">
-        {stagePanel}
-      </div>
-
-      {/* 3. Plan strip — title is the primary link, PDF/editor are icon buttons */}
+      {/* 2. Plan strip — directly under the protocol */}
       {plan && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card/60 p-2">
           <Link
@@ -274,24 +257,20 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         </div>
       )}
 
-      {/* 4. Signals — separated from the protocol by a divider */}
-      {(assessment || haveSignals) && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            {t("clients.cockpit.signals_label")}
-          </span>
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${riskTone}`}>
-            <AlertTriangle className="h-3 w-3" />
-            <span className="text-[9px] uppercase tracking-widest opacity-70">ACSM</span>
-            {riskLabel}
-          </span>
-          {haveSignals && (
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums ${readyTone}`}>
-              <Activity className="h-3 w-3" />
-              <span className="text-[9px] uppercase tracking-widest opacity-70">{t("clients.cockpit.recovery")}</span>
-              {readiness}/100
-            </span>
-          )}
+      {/* 3. Stage panel — collapsed by default, opens on stage click */}
+      {stageOpen && (
+        <div className="rounded-xl border border-border bg-card/40 p-3">
+          <div className="mb-2 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setStageOpen(false)}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-secondary"
+              aria-label="Fechar"
+            >
+              <ChevronDown className="h-3 w-3" /> Fechar
+            </button>
+          </div>
+          {stagePanel}
         </div>
       )}
     </div>
