@@ -1065,7 +1065,7 @@ function SoloTrainerMockup() {
           Treino de hoje · Wk 2
         </span>
         <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
-          Guiado por IA
+          Copiloto IA · tu decides
         </span>
       </div>
       {/* Week strip */}
