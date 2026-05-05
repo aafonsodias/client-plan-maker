@@ -1,60 +1,92 @@
-## Player Card on the clients list
+## What you're asking
 
-Replace the thin client row on `/dashboard` with a **player card** — one collapsed card per client that shows everything you'd glance at before opening the file. The detail page (`/clients/$id`) stays exactly as the build/edit surface; it doesn't change scope this round.
+Take the header strip from `/clients/$clientId` (avatar · name · phase pill · ACSM/recovery chips · ProtocolRail · plan title/block/week · PDF · compliance · last block summary) and fold it into the dashboard player card so the list itself becomes the cockpit. No mandatory extra page just to read where a client stands.
 
-### What the card shows (collapsed, default)
+## Honest redteam first
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ [avatar]  Joana Pires                              [phase pill]     │
-│           Bloco 2 · Sem. 3 · Hipertrofia                            │
-│           Último log: há 2 dias  ·  4/4 sessões  ·  ✓ no prazo      │
-│                                                  [Abrir →]          │
-└─────────────────────────────────────────────────────────────────────┘
-```
+The detail route is ~4,200 lines. It hosts:
+- Assessment form (PAR-Q, SMART, movement screens, measurements, photos)
+- BriefEditor, BlueprintEditorPanel, MicrocyclePanel, ProgressionsPanel
+- Logbook timeline, ClientDocuments, IntakeLinkPanel, reassessment sheet
+- Block transition + next-block flow
 
-Four lines, no flash:
-1. **Avatar + name + phase pill** (existing `ClientPhasePill` — onboarding / active / idle / ready-for-next).
-2. **Block + week + protocol focus** (`Bloco N · Sem. W · {focus}`) — pulled from the latest non-archived `workout_plans` row (`block_number`, `block_transition_summary`/title for focus, plus week computed from `started_at`).
-3. **Last log + adherence** — most recent `workout_logs` row + this-week sessions logged vs scheduled. Amber dot if behind, neutral if on track, muted if no plan yet.
-4. **Quiet "Abrir →" link** to `/clients/$id`.
+Cramming all of that into a card on `/dashboard` is dishonest — the page would scroll forever and the list stops being scannable. So the plan is **two-tier**:
 
-No CTAs, no "generate next block", no inline builder. The card is a status surface.
+1. **Player card becomes the read-mode cockpit** — everything in your screenshot (protocol rail, plan header, PDF, compliance, reassessment chip) lives inline on the dashboard, expanded on click. No need to leave the list to *check* a client.
+2. **Detail route stays as the build/edit surface** — opened only when actively editing assessment, brief, blueprint, microcycle, progressions, or logging. Linked from the card as "Abrir editor" rather than the default destination.
 
-### States
+That keeps your "1 protocol, 1 page" principle for **viewing**, and avoids pretending we shrunk a 4k-line builder into 200px.
 
-- **No plan yet** → card shows only avatar + name + "Avaliação por completar" or "Pronto a montar plano" + Abrir.
-- **Plan ready, not started** → "Plano pronto · aguarda 1.º log".
-- **Active** → block/week/focus + last log.
-- **Idle (>10 d no log)** → amber muted strip "Sem treino há 12 dias".
-- **Block ended** → golden strip "Bloco terminado · próximo nasce no próximo log" (consistent with the principle that the next block is born when the last session is logged — no button).
+## What ships this round
 
-### Visual law (kept consistent)
+### 1. Expand `ClientPlayerCard` into an accordion item
 
-- Card = `rounded-2xl border border-border bg-card p-4` (same as everything else).
-- Status dots/chips via `src/lib/status-tone.ts` (success/neutral/warn/danger). No `bg-primary`, no gradients.
-- Phase pill stays as-is on the right.
-- Hover: `hover:bg-secondary/40`. Whole card is a link; trash button stays as the discreet right-edge action it is today.
+`src/components/ClientPlayerCard.tsx`:
+- Wrap the existing row in a `<Collapsible>` (shadcn). Click the row to expand instead of navigate. Avatar/name/phase pill/status line stay in the **always-visible header**.
+- Add a chevron on the right (replacing the current `ArrowRight`).
+- When expanded, render a new `<ClientCockpit>` block underneath.
 
-### Filter chips
+### 2. New `src/components/ClientCockpit.tsx` (read-mode mirror)
 
-Keep the existing filter row (`all / onboarding / active / idle / ready`) above the cards — no change.
+Pure presentational. Props: `{ client, phase, plan, latestSession, assessmentPct, lastAssessmentAt, recoveryScore, acsmRisk, briefApproved, blueprintApproved, microcycleApproved, progressionsApproved }`.
 
-### Files touched
+Renders, in order:
+- ACSM + Recovery chips (reuse existing components from detail page — extract if inline)
+- `<ProtocolRail bare />` (already supports `bare` mode — just feed props)
+- Plan header strip: `Bloco N · Semana X de Y · FASE` + PDF download button (reuse `downloadPlanById`)
+- `<ComplianceDashboard planId=… compact />` — add a `compact` prop that hides headings and shrinks padding
+- Last block transition summary (when `block_number > 1`)
+- Action row (right-aligned, quiet): `Abrir editor` (→ `/clients/$clientId`), `Logbook` (→ `/clients/$clientId/year`), `Reavaliar` (opens `<ReassessmentSheet>` inline), `Mais ações` dropdown
 
-- `src/routes/dashboard.tsx` — swap the row markup (lines ~430–480) for the new `<ClientPlayerCard />`. Pass `phases[c.id]`. Fetch latest plan + last log per client in the existing dashboard loader (one extra `workout_plans` select grouped by client_id, one `workout_logs` select for max(performed_at)). Filter cap stays at the existing list size.
-- `src/components/ClientPlayerCard.tsx` — **new**. Pure presentational; takes `{ client, phase, plan, lastLog, weekProgress }`.
-- `src/lib/client-card-data.ts` — **new**, small helpers: `computeBlockFocus(plan)`, `computeWeekProgress(plan, logs)`, `formatLastLog(ts, locale)`. All pure, all i18n-aware.
-- `src/i18n/locales/{pt,en}/clients.json` — add `card.block_week_focus`, `card.last_log_relative`, `card.no_plan`, `card.plan_ready`, `card.idle_days`, `card.block_ended`. Voice: PT "você", neutral.
-- `src/routes/clients_.$clientId.tsx` — **no changes this round.** Detail page is the build surface; standardisation pass already landed last round.
+No editing surfaces. No StageCards. No BriefEditor. Those stay on the detail route.
 
-### What I'm explicitly NOT doing
+### 3. Dashboard loader additions
 
-- Not creating a `/clients/$id/build` route. One route, one source of truth.
-- Not adding "expanded inline" mode for the card. If you want more, you click in. Cards stay scannable.
-- Not adding any new CTAs. The card is read-only on purpose.
-- Not touching the 5-stage builder, BriefEditor, or PDF flow.
+`src/routes/dashboard.tsx`:
+- Already loads `planByClient` and `logsByClient`. Extend the load to also fetch per client:
+  - latest `assessments` row → `assessmentPct` (reuse existing helper) + `lastAssessmentAt`
+  - `recoveryScore` (latest from wherever the detail page reads it — locate via `rg`)
+  - `acsmRisk` (derive from BMI/BP — reuse `src/lib/blood-pressure.ts` + assessment fields)
+  - approval flags: `brief_approved_at`, `blueprint_approved_at`, `microcycle_approved_at`, `progressions_approved_at` from `workout_plans`
+- Pass into `<ClientPlayerCard>` → `<ClientCockpit>`.
+- Cap eager-fetch: only fetch cockpit data for cards that are expanded (lazy on first open) to keep the list snappy. Track expanded state in dashboard component.
 
-### Backlog
+### 4. Detail route: lower its profile
 
-After this lands I'll log in `.lovable/backlog.md`: (a) revisit the detail page header now that the card carries the at-a-glance load, (b) consider a tiny sparkline of last-4-weeks adherence on the card if it earns its space.
+`src/routes/clients_.$clientId.tsx`:
+- Header strip (the part now duplicated on the dashboard card) collapses by default into a thin "Voltar à lista" + name + phase pill bar. The page becomes the **builder/editor**, scrolling straight to the stage that needs work.
+- No content removed — just header chrome trimmed so the route stops competing with the cockpit. Zero risk to existing flows.
+
+### 5. i18n
+
+Add to `src/i18n/locales/{pt,en}/common.json` under `clients.cockpit.*`:
+- `open_editor`, `open_logbook`, `more_actions`, `reassess`, `pdf`, `last_block_summary`
+
+PT in "você" voice, EN neutral.
+
+## Explicit NOTs
+
+- No new route. No `/clients/$id/cockpit`.
+- No moving BriefEditor/Blueprint/Microcycle/Progressions/Assessment into the card. Builders stay on the detail page until they're individually refactored into sheets (separate future round).
+- No removing the detail route. Just demoting it from "default destination" to "editor".
+- No new DB columns.
+
+## Files
+
+Created:
+- `src/components/ClientCockpit.tsx`
+
+Edited:
+- `src/components/ClientPlayerCard.tsx` (accordion + cockpit slot)
+- `src/routes/dashboard.tsx` (loader extensions + expanded-state tracking)
+- `src/routes/clients_.$clientId.tsx` (header trim only)
+- `src/components/ComplianceDashboard.tsx` (add `compact` prop)
+- `src/i18n/locales/pt/common.json`, `src/i18n/locales/en/common.json`
+
+## Acceptance
+
+- `/dashboard` row click → expands in place, shows protocol rail + plan header + PDF + compliance, mirroring the screenshot.
+- Reassessment chip in the rail still works (opens sheet inline from the card).
+- "Abrir editor" link still goes to detail page for actually editing.
+- Mobile 375px: cockpit stacks cleanly, no horizontal scroll.
+- All copy through `t()`.
