@@ -185,14 +185,14 @@ function Landing() {
             )}
           </div>
           <div className="flex min-w-0 flex-col items-center">
-            <div className="relative origin-top scale-[0.95]">
+            <div className="relative w-full max-w-[560px] origin-top scale-[0.95]">
               {/* Protocol glow — replaces the dark drop shadow */}
               <div
                 aria-hidden
                 className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] blur-3xl"
                 style={{ background: "radial-gradient(closest-side, oklch(0.78 0.14 75 / 0.32), transparent 70%)" }}
               />
-              <div className="rounded-2xl ring-1 ring-amber-400/40 shadow-[0_0_40px_-10px_oklch(0.78_0.14_75/0.6)]">
+              <div className="w-full rounded-2xl ring-1 ring-amber-400/40 shadow-[0_0_40px_-10px_oklch(0.78_0.14_75/0.6)]">
                 <HeroVisualRotator />
               </div>
             </div>
