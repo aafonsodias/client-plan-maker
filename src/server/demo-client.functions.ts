@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { FORM_CRITERIA, CAPACITY_FIELDS, PATTERN_IDS, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
 import { pickDemoAvatar } from "@/lib/demo-avatars";
+import { detectRegionFromLocale, generateName } from "@/lib/names/regional-names";
 
 /**
  * Creates a fully-populated demo client + assessment so trainers can preview
@@ -635,11 +636,22 @@ function pickPersona(archetype?: string): Persona {
 
 export const createDemoClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { archetype?: string } | undefined) => input ?? {})
+  .inputValidator((input: { archetype?: string; locale?: string } | undefined) => input ?? {})
   .handler(async ({ context, data }) => {
     const { userId } = context;
     const persona = pickPersona(data?.archetype);
-    const fullName = rand(persona.name_pool);
+    // Region-aware naming: PT trainers keep the PT pool (default behaviour);
+    // anyone else gets a name drawn from the mixture for their locale so the
+    // roster matches the viewer's world.
+    const locale = (data?.locale ?? "").toLowerCase();
+    let fullName: string;
+    if (!locale || locale.startsWith("pt")) {
+      fullName = rand(persona.name_pool);
+    } else {
+      const region = detectRegionFromLocale(locale);
+      const seed = `${persona.archetype_label}::${userId}::${Date.now()}`;
+      fullName = generateName({ region, sex: persona.sex === "female" ? "f" : "m", seed }).full;
+    }
     const age = randInt(persona.age);
     const heightCm = randInt(persona.height_cm);
     const weightKg = randFloat(persona.weight_kg);
