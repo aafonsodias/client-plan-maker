@@ -880,10 +880,12 @@ function HeroVisualRotator() {
   const variants = 3;
   const [idx] = useHeroRotation(variants);
   return (
-    <div key={idx} className="animate-fade-in">
-      {idx === 0 && <HeroPlanMockup />}
-      {idx === 1 && <CoachWorkbenchMockup />}
-      {idx === 2 && <SoloTrainerMockup />}
+    <div className="min-h-[640px] lg:min-h-[760px]">
+      <div key={idx} className="animate-fade-in">
+        {idx === 0 && <HeroPlanMockup />}
+        {idx === 1 && <CoachWorkbenchMockup />}
+        {idx === 2 && <SoloTrainerMockup />}
+      </div>
     </div>
   );
 }
@@ -892,6 +894,7 @@ function HeroVisualRotator() {
 type MockClient = {
   name: string;
   initials: string;
+  photo: string;
   phase: { label: string; cls: string };
   block?: string;
   cvd?: { label: string; tone: "ok" | "warn" | "bad" };
@@ -903,14 +906,16 @@ function CoachWorkbenchMockup() {
   const { t } = useTranslation("plan");
   const clients: MockClient[] = [
     {
-      name: "Rebeca Sá",
-      initials: "RS",
+      name: "Sofia Almeida",
+      initials: "SA",
+      photo: "https://randomuser.me/api/portraits/women/68.jpg",
       phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" },
       status: { text: "Avaliação por concluir", tone: "neutral" },
     },
     {
-      name: "André Periquito",
-      initials: "AP",
+      name: "Marcus Johnson",
+      initials: "MJ",
+      photo: "https://randomuser.me/api/portraits/men/45.jpg",
       phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" },
       block: "Bloco 1 · Sem 1 · Calistenia",
       cvd: { label: "Risco CV baixo", tone: "ok" },
@@ -918,12 +923,32 @@ function CoachWorkbenchMockup() {
       status: { text: "Último log ontem", tone: "ok" },
     },
     {
-      name: "Maria Santos",
-      initials: "MS",
+      name: "Priya Sharma",
+      initials: "PS",
+      photo: "https://randomuser.me/api/portraits/women/65.jpg",
       phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" },
       cvd: { label: "Risco CV baixo", tone: "ok" },
       recovery: { pct: 81, tone: "ok" },
       status: { text: "Plano pronto a enviar", tone: "ok" },
+    },
+    {
+      name: "Kenji Tanaka",
+      initials: "KT",
+      photo: "https://randomuser.me/api/portraits/men/22.jpg",
+      phase: { label: "Active · Block 2", cls: "bg-accent/90 text-accent-foreground" },
+      block: "Bloco 2 · Sem 3 · Hipertrofia",
+      cvd: { label: "Risco CV baixo", tone: "ok" },
+      recovery: { pct: 74, tone: "ok" },
+      status: { text: "3 logs esta semana", tone: "ok" },
+    },
+    {
+      name: "Larissa Souza",
+      initials: "LS",
+      photo: "https://randomuser.me/api/portraits/women/79.jpg",
+      phase: { label: "Reassessment due", cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" },
+      block: "Bloco 1 · Sem 6",
+      recovery: { pct: 58, tone: "warn" },
+      status: { text: "Reavaliação em atraso", tone: "warn" },
     },
   ];
   const chipCls = (tone: "ok" | "warn" | "bad") =>
@@ -953,11 +978,17 @@ function CoachWorkbenchMockup() {
         {clients.map((c, i) => (
           <div
             key={c.name}
-            className={`flex items-start gap-3 px-3 py-3 ${i > 0 ? "border-t border-border/60" : ""}`}
+            className={`flex items-start gap-3 px-3 py-2.5 ${i > 0 ? "border-t border-border/60" : ""}`}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
-              {c.initials}
-            </div>
+            <img
+              src={c.photo}
+              alt={c.name}
+              loading="lazy"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+              className="h-10 w-10 shrink-0 rounded-full object-cover ring-1 ring-accent/30 bg-accent/10"
+            />
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <p className="text-sm font-semibold">{c.name}</p>
@@ -1034,7 +1065,7 @@ function SoloTrainerMockup() {
           Treino de hoje · Wk 2
         </span>
         <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
-          Guiado por IA
+          Copiloto IA · tu decides
         </span>
       </div>
       {/* Week strip */}
