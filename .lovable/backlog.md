@@ -292,3 +292,12 @@ Atualizado: Round 28 (4 Mai 2026)
 - P2 **Warmup library + agility/cognitive double-task module** — CARs (neck/scapular/shoulder/T-spine/hip), dynamic stretches (cossack, 90/90, spiderman, world's greatest), banded activation (monster walks, side-walks, pull-aparts, Y-W-T-L, snowflakes), agility-ladder drills with built-in timer + word-count beep for cognitive double-tasking. Replaces "treadmill warmup" defaults.
 - P2 **Multi-perspective surfaces** — 4 explicit viewer modes already promised in FAQ q12: Solo trainee, Long-distance client, PT-of-record, Client-of-PT. Currently the app leans PT-first; need view toggles + tailored CTAs.
 - P2 **Reference verifiability** — every AI-generated rationale shows the manual page/PubMed link it draws from. No author cited without source inside.
+
+## Audit 2026-05 — open items
+- [x] P0: Hero mockup invisible (HeroVisualRotator collapsed to 0px) — fixed
+- [x] P1: Headline rotator min-h bumped (200/290) to prevent layout jump PT↔EN
+- [ ] P1: Fusion B — `/templates` → `/plans?tab=templates` (own round)
+- [ ] P1: Fusion C — `/schedule/packs` → `/schedule?tab=packs` (own round)
+- [ ] P2: Fusion A — `/me` → `/settings?as=…` (gentle, low value alone)
+- [ ] P2: Verify `/welcome` only fires once per profile (`onboarded_at` flag)
+- [ ] P2: ThisWeekHero hides at 0 clients; DashboardHint persistent dismiss
