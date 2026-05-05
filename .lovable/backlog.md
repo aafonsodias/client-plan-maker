@@ -341,3 +341,14 @@ Atualizado: Round 28 (4 Mai 2026)
 | 77 | P1 | Routes | `/schedule/packs` → `/schedule?tab=packs` (Tabs + redirect, RevenuePanel/manage_packs link migrated) | ✅ |
 | 78 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock) | R61 |
 | 79 | P1 | Client | Trim header `/clients/$id` (4206 LOC, chips em <details>) | R61 |
+
+### Round 60.1 — Mobile hygiene (5 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 80 | P0 | Schedule | Remover botão "Manage packs" duplicado (Tabs já o expõe) | ✅ |
+| 81 | P0 | Schedule | Header colapsado (1 linha) + tirar AppShell back + remover subtitle | ✅ |
+| 82 | P0 | Schedule | DayStrip: `grid-cols-7` em vez de `flex overflow-x-auto` (mata scrollbar feia em mobile) | ✅ |
+| 83 | P1 | Schedule | KPIs colapsam em 1 linha quando semana = 0 sessões/0€ | ✅ |
+| 84 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock) | R61 |
+| 85 | P1 | Client | Trim header `/clients/$id` em <details> | R61 |

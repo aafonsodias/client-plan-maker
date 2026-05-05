@@ -1,92 +1,47 @@
-# Round 60 — Condensar rotas e fechar promessa do trainee
+# Round 60.1 — Higiene mobile (390px)
 
-Princípio: zero novas features grandes. Reduzir 5 rotas top-level → 3, dar ao trainee uma página com sinal real, e tornar `/clients/$id` num builder limpo. Tudo reusa código existente. Sem migrations. Sem novas server fns.
+Capturei screenshots em iPhone (390×844) das 3 rotas principais (`/`, `/dashboard`, `/schedule`). Em vez de avançar para R61 (cockpit `/me` + slim header) — que são features grandes — proponho fechar 5 fricções concretas que vi no ecrã. Tudo pequeno, sem migrations, sem novas server fns, sem novos componentes.
 
-## 1. Fusão `/templates` → `/plans?tab=templates`
+## Problemas observados
 
-`src/routes/plans.index.tsx` ganha um `<Tabs>` no topo:
+1. **`/schedule` — botão "Gerir packs" duplica a aba Packs.**
+   No header tens `[Tabs: Week | Packs]` e logo abaixo um botão `[⚙ Gerir packs]` que navega exactamente para `?tab=packs`. Ruído puro.
 
-```text
-[ Activos · Drafts · Templates ]
-```
+2. **`/schedule` — header em 4 linhas no mobile.**
+   Sequência actual: `← Voltar` → `Tabs` → `título+subtítulo` → `‹ Esta semana › 04/05–10/05` → `[Gerir packs] [+ Nova sessão]`. Antes do utilizador ver UM dia já fez ~520px de scroll. O `← Voltar` é redundante (Tabs já é nav top-level dentro de `/schedule`) e o "subtitle" repete a info do range de datas.
 
-- `validateSearch` aceita `tab: "active" | "drafts" | "templates"` (default `active`).
-- Abas Activos/Drafts particionam a lista actual de planos por `status`.
-- Aba Templates importa o corpo de `TemplatesIndex` (mover para `src/components/plans/TemplatesPanel.tsx`, sem AppShell — o panel só renderiza grid + acções).
-- Sidebar/AppShell deixa de ter entrada "Templates" — passa a ser `Link to="/plans" search={{ tab: "templates" }}`.
+3. **`/schedule` — DayStrip mostra scrollbar horizontal feia.**
+   Os 7 dias cabem se for `grid grid-cols-7` em vez de `flex overflow-x-auto`. A scrollbar nativa do mobile (a barra cinza espessa visível na screenshot) é puro lixo visual.
 
-`src/routes/templates.tsx` reduz para redirect:
+4. **`/schedule` — KPIs "0€ / 0 / 0 / Sem alertas" ocupam 200px a dizer nada.**
+   Numa semana sem bookings, mostrar 4 caixas a 0 é desinformativo. Colapsar em 1 linha fina ("Esta semana · 0 sessões · 0€ esperado") quando `sessionsThisWeek === 0`.
 
-```ts
-export const Route = createFileRoute("/templates")({
-  beforeLoad: () => { throw redirect({ to: "/plans", search: { tab: "templates" } }); },
-});
-```
+5. **`/dashboard` — coluna `TUE 5` (hoje) cresce mais alta que as outras 6.**
+   No `WeekTimetable` a célula activa tem padding extra que faz toda a row crescer. Visualmente desalinha tudo. Fix: `min-h` partilhado em vez de padding condicional.
 
-## 2. Fusão `/schedule/packs` → `/schedule?tab=packs`
+## Mudanças
 
-`src/routes/schedule.tsx` ganha o mesmo padrão (`tab: "week" | "packs"`, default `week`).
-- Aba Week = conteúdo actual da agenda.
-- Aba Packs = corpo de `SchedulePacksIndex` extraído para `src/components/schedule/PacksPanel.tsx`.
-- Botão "Manage packs" do `RevenuePanel` muda para `<Link to="/schedule" search={{ tab: "packs" }}>`.
+### `src/routes/schedule.tsx`
+- Remover o botão `<Button asChild>...{t("manage_packs")}</Button>` (linhas ~192-197). A aba Packs já lá está.
+- Tirar o `back={{ to: "/dashboard" }}` do `AppShell` — Tabs já é a navegação principal.
+- Remover o `<p>{t("subtitle")}</p>` (a info "sessões da semana e receita esperada" é evidente).
+- Header passa a uma linha: título à esquerda, `[‹ semana › range] [+ Nova]` à direita, com `flex-wrap` mantido.
+- KPIs: envolver `<RevenuePanel ...>` em `{sessionsThisWeek > 0 ? <RevenuePanel.../> : <CompactStrip/>}`. O `CompactStrip` é um `<div>` interno de uma linha — não merece ficheiro próprio.
+- `DayStrip` (linhas 414-436): trocar `flex gap-1 overflow-x-auto` por `grid grid-cols-7 gap-1`. Os botões de dia ficam mais compactos (`min-w` removido, `text-[10px]` mantido).
 
-`src/routes/schedule.packs.tsx` vira redirect equivalente. (Manter ambos os redirects 1 round antes de apagar — bookmarks/quick-search ainda resolvem.)
+### `src/components/dashboard/CoachCockpit.tsx` (WeekTimetable)
+- Encontrar o bloco que renderiza os 7 dias da timetable (procurar `WED` ou `weekday` no ficheiro). A célula "hoje" tem provavelmente `border-2` ou padding extra que torna a row mais alta. Substituir por `ring-1 ring-amber-500/60` interior + `min-h-[88px]` em todas as 7 células. Sem mudança de layout, só consistência de altura.
 
-## 3. Trainee `/me` cockpit
+## Fora deste round (ficam em backlog R61)
 
-Hoje `/me` é uma página de boas-vindas + plano actual em texto. Para um trainee que vem treinar, isto é pouco. Reescrita parcial mantendo o fallback "conta não ligada":
-
-```text
-┌── header (foto + nome + treinador) ──┐
-│ Próximo treino · Ter 06:30 · Push    │
-│ Última sessão · há 2d · 3 PRs        │
-├── Mini mesocycle (4 semanas × 7d) ───┤
-│ grid colorido por status, hoje destacado
-├── Próximo bloco ─────────────────────┤
-│ <NextBlockCard/> (deload/normal/push)
-├── Logbook recente (3 últimas) ───────┤
-│ data · foco · Δ% e1RM · PR badge
-└──────────────────────────────────────┘
-```
-
-- `loadMe` server fn estende o que retorna: próxima sessão (`listWeekBookings` filtrado por `clientId`), 3 últimas sessões logadas (`listSessions`), `phases` para o mini-mesocycle (reusa `useClientPhases` no client).
-- Componentes 100% reusados: `MiniWeek` (extrair de `CoachCockpit` para `src/components/MiniWeek.tsx`), `NextBlockCard`, `LogbookTimeline`.
-- `useUserMode()` redirect: se `coach`, navegar para `/dashboard`; se `individual` ou `trainee`, ficar em `/me`.
-
-## 4. Slim header `/clients/$id`
-
-Hoje o topo do client page tem: avatar plate, ACSM/Recovery/Phase chips, ProtocolRail, ThisWeekHero — informação que já vive no `ClientCockpit` da dashboard.
-
-Reduzir para 3 linhas finas:
-```text
-← Todos os clientes  ·  Maria Silva  ·  [Phase pill]  ·  [Mais ▾]
-```
-- Chips clínicos (ACSM/Recovery/idade/equipamento) entram num `<details>` "Contexto clínico", colapsado por defeito.
-- ProtocolRail desce para baixo das StageCards (já estava duplicado).
-- Sem nova lógica — só re-arranjar JSX e envolver em `<details>`.
-
-## Out of scope (R61)
-
-- AI rewriter no `MessageComposerSheet` (ainda hand-written).
-- Field/gym assessment expansion.
-- Public "Train with me" join link (precisa de RLS + rate-limit próprios).
+- Cockpit `/me` para trainees (hero + mini-mesocycle + NextBlock).
+- Slim header `/clients/$id` com `<details>` clínico.
+- AI rewriter no `MessageComposerSheet`.
 
 ## Ficheiros tocados
 
-- `src/routes/plans.index.tsx` — Tabs + validateSearch.
-- `src/components/plans/TemplatesPanel.tsx` — extracção do corpo de templates.
-- `src/routes/templates.tsx` — redirect.
-- `src/routes/schedule.tsx` — Tabs + validateSearch + extracção de packs.
-- `src/components/schedule/PacksPanel.tsx` — extracção do corpo packs.
-- `src/routes/schedule.packs.tsx` — redirect.
-- `src/components/schedule/RevenuePanel.tsx` — link "Manage packs" actualizado.
-- `src/components/AppShell.tsx` — remover entrada "Templates" do menu (se existir).
-- `src/components/MiniWeek.tsx` — extracção a partir de `CoachCockpit.tsx`.
-- `src/components/dashboard/CoachCockpit.tsx` — usar o `MiniWeek` partilhado.
-- `src/server/me.functions.ts` — estender `loadMe` (next session, recent logs, phases).
-- `src/routes/me.tsx` — reescrita parcial com cockpit (mantém branch "not linked").
-- `src/routes/clients_.$clientId.tsx` — header slim + `<details>` contexto clínico + ProtocolRail abaixo.
-- `.lovable/backlog.md` — fechar 76/77/78/79, abrir R61.
-- `mem/index.md` — adicionar Core rule "trainee /me = mini-cockpit, não settings".
+- `src/routes/schedule.tsx` — header colapsado, botão duplicado removido, KPIs condicionais, DayStrip em grid.
+- `src/components/dashboard/CoachCockpit.tsx` — alinhar altura das 7 células da timetable.
+- `.lovable/backlog.md` — marcar 60.1 fechado, manter 80-82 em R61.
 
-Sem migrations. Sem novas server fns além de extensão de `loadMe`. Tudo reusa componentes existentes.
+Sem migrations, sem novos componentes, sem novas server fns. Tudo refactor visual mínimo.

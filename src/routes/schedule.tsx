@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Settings2, Sparkles, Loader2, Trash2, Copy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/schedule")({
     tab: s.tab === "packs" ? "packs" : "week",
   }),
   component: () => (
-    <AppShell back={{ to: "/dashboard" }}>
+    <AppShell>
       <ScheduleShell />
     </AppShell>
   ),
@@ -157,11 +157,8 @@ function ScheduleWeek() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>
-          <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
-        </div>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center rounded-md border border-border">
             <button
@@ -189,12 +186,6 @@ function ScheduleWeek() {
             </button>
           </div>
           <span className="text-xs font-mono text-muted-foreground">{fmtWeekRange(monday, locale)}</span>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/schedule" search={{ tab: "packs" }}>
-              <Settings2 className="mr-2 h-4 w-4" />
-              {t("manage_packs")}
-            </Link>
-          </Button>
           <Button
             size="sm"
             onClick={() => {
@@ -209,12 +200,19 @@ function ScheduleWeek() {
         </div>
       </header>
 
-      <RevenuePanel
-        expectedIncomeEur={expectedIncome}
-        sessionsThisWeek={sessionsThisWeek}
-        sessionsRemaining={sessionsRemaining}
-        packsEndingSoon={packsEndingSoon}
-      />
+      {sessionsThisWeek > 0 || expectedIncome > 0 || packsEndingSoon > 0 ? (
+        <RevenuePanel
+          expectedIncomeEur={expectedIncome}
+          sessionsThisWeek={sessionsThisWeek}
+          sessionsRemaining={sessionsRemaining}
+          packsEndingSoon={packsEndingSoon}
+        />
+      ) : (
+        <div className="rounded-lg border border-border bg-background/40 px-3 py-2 text-[11px] text-muted-foreground">
+          {sessionsThisWeek} {t("panel.sessions_this_week").toLowerCase()} · 0€ {t("panel.expected_income").toLowerCase()}
+          {sessionsRemaining > 0 && <> · {sessionsRemaining} {t("panel.sessions_remaining").toLowerCase()}</>}
+        </div>
+      )}
 
       {/* Desktop weekly grid */}
       <div className="hidden md:block overflow-hidden rounded-xl border border-border">
@@ -413,7 +411,7 @@ function DayStrip({
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   return (
     <div className="space-y-3">
-      <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+      <div className="grid grid-cols-7 gap-1">
         {days.map((d, i) => {
           const isActive = i === active;
           const isToday = d.toDateString() === new Date().toDateString();
@@ -422,7 +420,7 @@ function DayStrip({
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex min-w-[52px] flex-col items-center rounded-lg border px-2 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex flex-col items-center rounded-lg border px-1 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
               <span className="text-[10px] uppercase tracking-widest">
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
