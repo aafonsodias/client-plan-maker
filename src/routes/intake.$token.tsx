@@ -158,6 +158,22 @@ function fromAssessment(a: any | null): FormState {
 }
 
 function toPayload(f: FormState): { fields: Record<string, any>; sections: string[]; identity: { full_name?: string; email?: string; phone?: string; date_of_birth?: string } } {
+  // Loose numeric parser: accepts "10k", "10 000", "10,000", "10.000", "10000".
+  // Returns null when the input is empty or cannot be parsed to a finite number.
+  function parseLooseNumber(raw: string | null | undefined): number | null {
+    if (!raw) return null;
+    const s = String(raw).trim().toLowerCase().replace(/\s+/g, "");
+    if (!s) return null;
+    const km = s.match(/^(\d+(?:[.,]\d+)?)k$/);
+    if (km) {
+      const n = Number(km[1].replace(",", "."));
+      return Number.isFinite(n) ? Math.round(n * 1000) : null;
+    }
+    // Strip thousand separators (commas or periods used as separators).
+    const cleaned = s.replace(/[,.](?=\d{3}\b)/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
   const parqAnswered = Object.values(f.parq).every((v) => v === true || v === false);
   const parqHasYes = Object.values(f.parq).some((v) => v === true);
   return {
@@ -185,8 +201,8 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       med_flags: f.med_flags,
       extended: {
         smart_extra: f.smart_extra || null,
-        ext_hours_seated: f.ext_hours_seated ? Number(f.ext_hours_seated) : null,
-        ext_daily_steps: f.ext_daily_steps ? Number(f.ext_daily_steps) : null,
+        ext_hours_seated: parseLooseNumber(f.ext_hours_seated),
+        ext_daily_steps: parseLooseNumber(f.ext_daily_steps),
         ext_job_type: f.ext_job_type || null,
         ext_meals_per_day: f.ext_meals_per_day ? Number(f.ext_meals_per_day) : null,
         ext_water_l_per_day: f.ext_water_l_per_day ? Number(f.ext_water_l_per_day) : null,
@@ -1507,7 +1523,7 @@ function buildSlides(
         <div className="space-y-2 rounded-lg border border-border bg-card/60 p-4 text-sm">
           <ReviewRow label={t("sections.goal_what")} value={form.smart_specific} />
           <ReviewRow label={t("sections.goal_measure")} value={form.smart_measurable} />
-          <ReviewRow label={t("sections.goal_when")} value={form.smart_deadline} />
+          <ReviewRow label={t("sections.goal_when")} value={formatEuroDate(form.smart_deadline)} />
           <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
           <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
           <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
@@ -1528,6 +1544,13 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function formatEuroDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 /* ─────────────── Photo slot (reference photos) ─────────────── */
 
 function PhotoSlot({ token, slot, label, hint, tutorial }: {
@@ -1543,6 +1566,7 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
   const [done, setDone] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const cameraRef = useRef<HTMLInputElement | null>(null);
 
   // Hydrate: if a photo for this slot was already uploaded, mark done and
   // show the signed URL preview so the user knows it's saved.
@@ -1625,7 +1649,6 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png"
-        capture="environment"
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -1633,16 +1656,38 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
           if (inputRef.current) inputRef.current.value = "";
         }}
       />
-      <Button
-        type="button"
-        size="sm"
-        variant={done ? "outline" : "default"}
-        className="mt-3 w-full"
-        disabled={busy}
-        onClick={() => inputRef.current?.click()}
-      >
-        {busy ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> A enviar…</> : done ? "Tirar outra" : "Tirar foto"}
-      </Button>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void onFile(f);
+          if (cameraRef.current) cameraRef.current.value = "";
+        }}
+      />
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Carregar"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={done ? "outline" : "default"}
+          disabled={busy}
+          onClick={() => cameraRef.current?.click()}
+        >
+          {done ? "Tirar outra" : "Tirar foto"}
+        </Button>
+      </div>
     </div>
   );
 }
