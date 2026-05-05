@@ -173,7 +173,8 @@
       "signals_soon_title": "A seguir, opcional",
       "signal_voice": "Notas de voz → texto → ajuste",
       "signal_devices": "Balança, passos, sono, frequência cardíaca",
-      "signal_uploads": "Bioimpedância, tensão arterial — foto, PDF ou Excel"
+      "signal_uploads": "Bioimpedância, tensão arterial — foto, PDF ou Excel",
+      "flow": "1. O cliente regista. 2. A IA cruza volume, RPE e tempo. 3. Você vê sinais e decide com contexto."
     },
     "roadmap": {
       "eyebrow": "A seguir",

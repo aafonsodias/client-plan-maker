@@ -173,7 +173,8 @@
       "signals_soon_title": "Coming next, optional",
       "signal_voice": "Voice notes → text → adjustment",
       "signal_devices": "Scale, steps, sleep, heart rate",
-      "signal_uploads": "Bioimpedance, blood pressure — photo, PDF or Excel"
+      "signal_uploads": "Bioimpedance, blood pressure — photo, PDF or Excel",
+      "flow": "1. Client logs. 2. AI cross-references volume, RPE and time. 3. You see signals and decide with context."
     },
     "roadmap": {
       "eyebrow": "Coming next",
