@@ -144,15 +144,19 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   };
 
   const stagePanel = useMemo(() => {
-    const baseLink = (label: string, href: string) => (
-      <Link
-        to={href as any}
-        params={{ clientId, planId: plan?.id ?? "" } as any}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-secondary"
-      >
+    const linkCls =
+      "inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-secondary";
+    const clientLink = (label: string) => (
+      <Link to="/clients/$clientId" params={{ clientId }} className={linkCls}>
         {label} <ArrowRight className="h-3 w-3" />
       </Link>
     );
+    const planLink = (label: string) =>
+      plan ? (
+        <Link to="/plans/$planId" params={{ planId: plan.id }} className={linkCls}>
+          {label} <ArrowRight className="h-3 w-3" />
+        </Link>
+      ) : null;
 
     if (activeStage === 1) {
       const summary = coverage
@@ -164,7 +168,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
             <p className="font-semibold text-foreground">{t("clients.cockpit.stage.1.title")}</p>
             <p className="truncate">{summary}</p>
           </div>
-          {baseLink(t("clients.cockpit.stage.1.cta"), "/clients/$clientId")}
+          {clientLink(t("clients.cockpit.stage.1.cta"))}
         </div>
       );
     }
@@ -184,7 +188,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-semibold">{t("clients.cockpit.stage.4.title")}</p>
-            {baseLink(t("clients.cockpit.stage.4.cta"), "/plans/$planId")}
+            {planLink(t("clients.cockpit.stage.4.cta"))}
           </div>
           <Suspense fallback={<div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("actions.loading")}</div>}>
             <ComplianceDashboard clientId={clientId} />
@@ -200,7 +204,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
           <p className="font-semibold text-foreground">{t(`clients.cockpit.stage.${stageKey}.title` as const)}</p>
           <p className="truncate">{summary}</p>
         </div>
-        {baseLink(t(`clients.cockpit.stage.${stageKey}.cta` as const), "/plans/$planId")}
+        {planLink(t(`clients.cockpit.stage.${stageKey}.cta` as const))}
       </div>
     );
   }, [activeStage, plan, coverage, realPct, totalWeeks, t, clientId]);
