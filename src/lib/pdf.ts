@@ -114,6 +114,8 @@ export type PdfMeta = {
   assessment?: Record<string, any> | null;
   client?: Record<string, any> | null;
   training_days_per_week?: number | null;
+  /** UI locale used for session labels ("Sessão N" vs "Session N"). Defaults to PT. */
+  locale?: string | null;
 };
 
 // ---------- Asset + luminance helpers ----------
