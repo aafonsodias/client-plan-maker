@@ -76,6 +76,7 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
+import { RealInsightsCard } from "@/components/RealInsightsCard";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -1722,6 +1723,9 @@ function ClientDetail() {
                 zeroState={zeroState}
                 primaryAction={primaryAction}
               />
+            </div>
+            <div className="mt-3 border-t border-border/60 pt-3">
+              <RealInsightsCard clientId={clientId} onReassessClick={() => setReassessOpen(true)} />
             </div>
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
