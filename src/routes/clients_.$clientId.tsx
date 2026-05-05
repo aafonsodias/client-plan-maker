@@ -1652,10 +1652,15 @@ function ClientDetail() {
         const intakeDone =
           client.intake_status === "submitted" || client.intake_status === "reviewed";
         const briefReadyLocal = !!inlineBrief && !inlineBrief.approved;
-        const blueprintApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("blueprint");
-        const microcycleApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("microcycle");
-        const progressionsApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("progressions");
-        const allApprovedLocal = briefApproved && blueprintApprovedLocal && microcycleApprovedLocal && progressionsApprovedLocal;
+        // Finalized plan (PDF printed → generation_status === "complete") implies
+        // every upstream stage cleared, even if approved_stages wasn't tracked
+        // (legacy plans, manual builds, demo seeds). Treat plan completion as
+        // ground truth so the protocol rail reflects what's actually shipped.
+        const heroPlanComplete = !!heroPlan && (heroPlan as any).generation_status === "complete";
+        const blueprintApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("blueprint") || heroPlanComplete;
+        const microcycleApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("microcycle") || heroPlanComplete;
+        const progressionsApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanComplete;
+        const allApprovedLocal = (briefApproved || heroPlanComplete) && blueprintApprovedLocal && microcycleApprovedLocal && progressionsApprovedLocal;
         const scrollToStages = () => {
           document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
         };
@@ -1697,7 +1702,7 @@ function ClientDetail() {
                   : null
               }
               lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
-              briefApproved={!!inlineBrief?.approved}
+              briefApproved={!!inlineBrief?.approved || heroPlanComplete}
               blueprintApproved={blueprintApprovedLocal}
               microcycleApproved={microcycleApprovedLocal}
               progressionsApproved={progressionsApprovedLocal}
