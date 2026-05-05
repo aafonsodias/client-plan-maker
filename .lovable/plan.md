@@ -1,117 +1,71 @@
 
-# Round 61 — PT-only repositioning, PT-PT cleanup, ES + HI
 
-Quatro frentes nesta ronda. Foco principal: **reposicionar a landing para PTs apenas**. Tudo o resto serve esse foco.
+# Round 62 — Feedback do Gonçalo: triagem em 3 rondas
 
-## Frente A — Limpeza PT (pt-PT, sem brasileirismos)
+São ~40 pontos. Não dá para fazer tudo num turno sem partir coisas. Agrupei por **severidade × esforço**, marquei o que é crítico (bugs) vs preferência (cópia/UI), e proponho 3 sub-rondas. Tudo que diz "AI marketing" ou "human touches" → linguagem mais sóbria por defeito (memória já diz "honest craft tool", reforço).
 
-Revisão completa dos 7 ficheiros em `src/i18n/locales/pt/` (~2466 linhas). Substituições mecânicas + revisão manual de cada string:
+---
 
-| pt-BR (a remover) | pt-PT (a usar) |
-|---|---|
-| "você" / "o seu" mistura | **"tu" consistente** (mais próximo de PTs em PT, e a `mem://core` diz "PT voice = você"; vou ATUALIZAR a memória — feedback do utilizador favorece PT-PT informal próximo) |
-| "tela" | "ecrã" |
-| "time" (no sentido de equipa) | "equipa" |
-| "cadastro/cadastrar" | "registo/registar" |
-| "usuário" | "utilizador" |
-| "aplicativo" | "aplicação" |
-| "celular" | "telemóvel" |
-| "arquivo" | "ficheiro" |
-| "gratuito" como adjetivo BR-style | mantém "grátis" / "plano gratuito" (ambos ok PT-PT) |
-| "estou a usar isto" | ok PT-PT |
-| gerúndios espúrios ("estou fazendo") | "estou a fazer" |
+## P0 — BUGS CRÍTICOS (Round 62a — esta ronda)
 
-**Decisão de voz:** vou perguntar-te 1× no início se queres **"tu"** (informal, conversacional, mais natural para PTs portugueses) ou manter **"você"** (formal). A memória atual diz "você" — se mudares, atualizo `mem://index.md`.
+Tudo isto está partido ou é dishonest. Resolvo agora.
 
-Saída: 7 JSONs revistos + 1 commit de "linguistic pass pt-PT".
+1. **Intake não espelha** — assessment do amigo não aparece no dashboard do trainer. Investigar `intake.functions.ts` submit + `clients.intake_status` trigger. **Crítico.**
+2. **Tirar foto não funciona** — `ClientAvatarUpload` / intake photo step. Trocar para "Carregar foto" + "Tirar foto" lado a lado, fallback se camera API falhar.
+3. **Language switch faz sign-out / muda no login** — verificar se LanguageSwitcher chama algo que invalida sessão; isolar do auth flow.
+4. **`ext_daily_steps` invalid value bug** (10k vs 10 000) — parseInt no slider/input do intake lifestyle.
+5. **EU date format** — `smart_deadline` picker está MM/DD/YYYY, deve ser DD/MM/YYYY (locale-aware).
+6. **"signed in as a coach" no thanks page** quando o trainer testa o próprio link — a mensagem está, mas chega tarde. Detectar mais cedo (welcome step) e bloquear.
+7. **Plano ignora running/climbing** — pediu 5k em 30min + escalada 6B + 4 dias, gerou só ginásio. Stage 3 microcycle não está a respeitar `goals.modality`. Auditar prompt + brief.
+8. **PDF artefactos + nomes de sessões maus** — preciso reproduzir um PDF para ver. Provável: layout overflow + day_label genérico ("Day 1") em vez do focus.
+9. **Bar overflow no /plans (mobile)** — view/edit/log buttons ultrapassam viewport em 375px.
 
-## Frente B — Reposicionamento PT-only (full reescrita da landing)
+## P1 — UX onboarding & intake (Round 62b)
 
-### B.1 — Hero (substitui o atual)
-- **Headline:** "Planos de treino cientificamente válidos em 90 segundos — com o teu nome."
-- **Subheadline:** "Sem Excel, sem improviso, sem perder rigor clínico."
-- **3 bullets** (substituem as duas colunas "Quem/Porquê"):
-  1. ✓ Avaliação clínica automática (PAR-Q+, ACSM)
-  2. ✓ Progressão semanal pronta (MEV/MAV/MRV)
-  3. ✓ PDF com o branding do teu estúdio
-- **CTA primário:** "Criar primeiro plano grátis"
-- **Prova:** mantém o `HeroVisualRotator` (já mostra plano real) + link "Ver exemplo em PDF"
-- **Beta soft-cap chip:** substituir o "social_proof" chip por **"Beta privado · vagas limitadas esta semana"** (sem número exacto — soft cap, como pediste)
+Cópia, sliders, ajudas contextuais. Tudo via i18n (4 línguas).
 
-### B.2 — Esconder/encolher secções que diluem
-A landing atual tem ~10 secções. Para PTs vendemos **dor → solução → prova → preço**. Vou:
-- **Remover** `WhoAndWhySection` (as 3 personas — agora só PTs)
-- **Manter** `JourneyStrip` (5 etapas) — é prova de produto
-- **Manter** `ComparisonTable` (Protocol vs Excel vs ChatGPT vs Apps genéricas) — é a posição
-- **Encolher** `LogbookPreview` para 1 mockup + 1 frase, sem "logbook_insights" duplicado
-- **Encolher FAQ** de 10 para **5 perguntas** (q1, q2, q9 quota, q12 preço, q13 cancelar) — as outras vão para `/faq` se quiseres mais tarde
-- **Manter** secção do fundador (assina o produto)
+10. **"After the PDF" copy sem sentido** — reescrever na landing.
+11. **"Human touches" → mudar** (Gonçalo: "parece pedófilo"). Substituir por "Revisão humana opcional" ou similar.
+12. **Slides do hero rápidos demais** — já reduzido a 1 slide na Round 61, confirmar; aumentar dwell se voltar a múltiplos.
+13. **"See how it works" pouco visível** — promover CTA secundário no hero.
+14. **Preview do que acontece ao clicar "Criar plano grátis"** — adicionar micro-step "3 passos: avaliação → revisão → PDF (90s)".
+15. **Solo → "Add your first client"** — copy errada. Se path = self/solo, primeiro passo é "Cria o teu próprio plano", não cliente.
+16. **"Add manually vs send link"** — explicar a diferença em 1 linha cada.
+17. **"Generate plan draft" sem context** — adicionar 1 frase: "Vamos usar a tua avaliação. Podes editar tudo depois."
+18. **Readiness step — explicar consequências** — tooltip: "Isto ajusta o volume inicial e a curva de progressão."
+19. **Dias por semana — sugerir combinações** — "3 dias = Seg/Qua/Sex" / "4 dias = Seg/Ter/Qui/Sex" como chips.
+20. **Sleep slider granularidade** — passar de 1h para 30min.
+21. **Goal — pace explícito** — quando escolhe "5k em 30 min" mostrar "≈ 6:00/km".
+22. **Goal — múltiplos objetivos** — UI já aceita mas não é claro. Adicionar "+ Adicionar outro objetivo" + chip "AI interpreta múltiplos objetivos".
+23. **Secções "abertas" desnecessárias** (horas sentado, etc) — converter para chips/preset ranges; AI interpreta texto livre só onde compensa.
+24. **Confusão geral pós-intake** ("não sabia o que fazer") — overlay/checklist pós-submit do amigo (cliente): "Espera revisão do treinador" + cópia clara.
 
-### B.3 — Reposicionamento na cópia
-Em todos os textos da landing:
-- "personal trainers e estúdios" / "para quem treina" / "self-coaching" → **só "personal trainers"**
-- Reescrita de `landing.hero.subtitle`, `landing.journey.subtitle`, `landing.closing.subtitle`, `landing.founder.p*` para falarem **só com PTs**
-- Tagline do produto: **"Infraestrutura de programação baseada em evidência para PTs"** (subtítulo do footer ou eyebrow do hero)
+## P2 — Qualidade do plano, logbook, schedule, branding, founder (Round 62c)
 
-### B.4 — Beta soft-cap
-- Chip no hero (ver B.1)
-- Banner discreto na secção pricing: "Beta privado — fechamos novas inscrições esta semana"
-- Sem contador, sem número (soft cap, como aprovado)
+25. **Plano semana 1 = avaliação progressiva + treino relevante** — Stage 3 prompt: week 1 inclui movement screens + treinos easy alinhados ao objetivo principal.
+26. **Logbook desktop mal aproveitado** — redesign 2-col (mobile mantém-se).
+27. **"Planned" debaixo do nome no logbook** em vez de coluna separada.
+28. **Schedule mês view** — colapsar semanas, contagem de treinos por semana.
+29. **Volume MEV/MAV/MRV invisível em dark mode** — fix cores em `VolumeStatusTable` / `WeeklyVolumeBars`.
+30. **DB de exercícios com vídeos** — MVP: tabela `exercise_library` (name, slug, video_url, description, muscle_group), seed inicial ~50 movimentos chave, plan generation mapeia exercícios para esta lib.
+31. **Founder admin: lista de contas registadas** — `/founder` route gated a `aafonsodias@gmail.com`, lista profiles + última atividade.
+32. **Tone adapter** — default sóbrio (já é). Detecção de "user divertido" fica para backlog (não é P0).
+33. **Billing/Branding** — vagos. Preciso screenshots para perceber o que rejeita. **Ponho no backlog até clarificar.**
+34. **Welcome to Protocol "1 passo atrás"** — investigar wizard onboarding indices.
 
-### B.5 — Modo "rápido" (Onboarding) — **fora desta ronda**
-Está mencionado no feedback mas é uma ronda à parte (mexe no fluxo de intake). Vou adicioná-lo ao backlog `.lovable/backlog.md` como P0 da Round 62.
+## NÃO FAÇO agora (decisão consciente)
 
-## Frente C — Espanhol (es) e Hindi (hi)
+- **AI chat dentro do intake (goal helper)** — Gonçalo pediu "cuidado porque gasta dinheiro". Adiar até decidirmos rate-limit por trainer (1 chamada/goal field, cap diário).
+- **Tone adapter inteligente** — backlog.
+- **Branding/billing redesign** — preciso de feedback específico.
 
-### Setup
-1. Atualizar `src/i18n/index.ts`: adicionar `es` e `hi` a `SUPPORTED_LOCALES`, importar bundles, registar `resources`.
-2. Criar `src/i18n/locales/es/` e `src/i18n/locales/hi/` com os 7 ficheiros: `assessment.json`, `common.json`, `intake.json`, `manual.json`, `plan.json`, `review.json`, `schedule.json`.
-3. `LanguageSwitcher` (`src/components/LanguageSwitcher.tsx`): adicionar 🇪🇸 ES e 🇮🇳 HI ao dropdown.
+---
 
-### Tradução (cobertura: tudo, como aprovado)
-- **Pipeline:** script `scripts/translate-locale.ts` (one-off) que usa **Lovable AI Gateway** (`google/gemini-2.5-pro`) para traduzir cada JSON EN→ES e EN→HI, preservando keys, placeholders (`{{var}}`), markdown leve, e o tom (PT/profissional, calmo).
-- Prompt do tradutor inclui glossário fixo: "Protocol" (não traduzir), "PAR-Q+", "ACSM", "MEV/MAV/MRV", "RPE", "RIR", "Brief", "Blueprint", "Microcycle", "Block".
-- Saída: 14 ficheiros novos (7 ES + 7 HI). Honest disclaimer no commit: "ES/HI são tradução-máquina inicial; pedir revisão a falante nativo antes de promover a marketing pesado."
-- Hindi: usar Devanagari (नियम), não transliteração.
-- **Não vou tocar no PT** durante este passo (Frente A já o faz).
+## Perguntas antes de arrancar
 
-### Custo
-4 ficheiros × 2 línguas × ~500 linhas cada = **~14 chamadas LLM** total (1 chamada por ficheiro/língua). Margem confortável.
+1. **Por onde começo?** — opções: (a) **só P0 esta ronda** (9 bugs, ~1 ciclo de chat), (b) **P0 + P1 alta** (bugs + cópia onboarding), (c) **tudo P0+P1+P2 mas sem perfeição** (1 só ronda gigante, risco de quebrar).
+2. **Founder admin agora ou depois?** — precisa migration (RLS por email) e route nova. P0 ou P2?
+3. **DB de exercícios** — começo com ~50 movimentos manuais (gym + running + climbing + bodyweight) ou peço ao Lovable AI para gerar lista validada?
 
-## Frente D — Memória + backlog
+Recomendação: **(a) P0 só** nesta ronda. Bugs primeiro, copy depois, plan quality em terceiro. Cada ronda tem QA separado em 375px + dark mode.
 
-- **Atualizar `mem://index.md`:**
-  - Trocar "Landing page mirrors the 5-stage app journey…" para refletir **PT-only positioning**
-  - Trocar "PT voice = você" se decidires mudar para "tu" (depende da resposta na Frente A)
-  - Adicionar: "Supported locales = en, pt-PT, es, hi. EN é fonte; PT-PT humanamente revisto; ES/HI tradução-máquina pendente de revisão nativa."
-- **`.lovable/backlog.md`:** marcar Round 61 (este) e abrir Round 62:
-  - P0: Modo "rápido" no intake (5 inputs → plano em 60-90s, depois oferece upgrade para completo)
-  - P1: 5 vídeos curtos (TikTok/Reels) — só checklist de copy/storyboard, não produção
-  - P1: Plano anual (cash upfront) e tier "Studio" multi-client → já existe Studio, falta toggle anual com -17%
-  - P2: Métricas de funil (cliques → registos → planos gerados) — analytics events
-
-## Ordem de execução
-
-1. Frente A (PT-PT cleanup) — base limpa antes de traduzir
-2. Frente B (reposicionamento landing PT) — texto novo entra direto em PT-PT já corrigido
-3. Frente C (i18n setup + ES/HI) — traduz a partir do EN actualizado com hero novo (vou actualizar EN primeiro também, espelhando B)
-4. Frente D (memória + backlog)
-5. Smoke 390px + 1280px em PT, EN, ES, HI
-
-## Detalhes técnicos
-
-- **Sem alterações DB.** Tudo client-side (i18n + JSX).
-- **Sem novos pacotes.** Já temos `i18next` + `react-i18next`.
-- **Hindi font:** Tailwind/shadcn já cobre via stack `system-ui`; se Devanagari ficar feio em headings com `font-light`, adiciono `font-feature-settings` ou troco para um Noto Sans Devanagari via `<link>` no `__root.tsx` (decido ao testar).
-- **RTL:** Hindi é LTR, sem trabalho extra. (Árabe ficou de fora — boa decisão.)
-- **`document.documentElement.lang`:** já sincroniza via listener em `src/i18n/index.ts`, sem mudança.
-- **Brand voice em ES/HI:** ES neutro (evitar voseo argentino e tuteo demasiado coloquial). HI formal (आप, não तुम).
-
-## Riscos / não-fazer
-
-- **Não vou** mudar pricing, intake, ou qualquer rota que não seja `/` e i18n.
-- **Não vou** publicar números de beta cap (soft cap só).
-- **Não vou** prometer revisão humana de ES/HI nesta ronda — só tradução-máquina + disclaimer.
-- Se `tu` vs `você` ficar indeciso, mantenho `você` (status quo da memória) e abro task no backlog.
-
-Pronto para arrancar quando aprovares.
