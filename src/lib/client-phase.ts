@@ -104,7 +104,7 @@ function daysSince(iso: string | null): number {
 
 // Pill style classes per phase kind. Tailwind only; uses semantic tokens.
 export function phasePillClasses(kind: PhaseKind): string {
-  const base = "inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap";
+  const base = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest max-w-full break-words";
   switch (kind) {
     case "onboarding":
       return `${base} bg-secondary text-muted-foreground`;

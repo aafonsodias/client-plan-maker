@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus } from "lucide-react";
+import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -889,23 +889,51 @@ function HeroVisualRotator() {
 }
 
 // ─── Coach workbench mockup (variant 2: founder/PT origin) ─────────────
+type MockClient = {
+  name: string;
+  initials: string;
+  phase: { label: string; cls: string };
+  block?: string;
+  cvd?: { label: string; tone: "ok" | "warn" | "bad" };
+  recovery?: { pct: number; tone: "ok" | "warn" | "bad" };
+  status: { text: string; tone: "ok" | "warn" | "neutral" };
+};
+
 function CoachWorkbenchMockup() {
   const { t } = useTranslation("plan");
-  const clients = [
-    { name: "Maria S.", focus: "Hipertrofia · B2 W3", state: "Plano pronto", tone: "emerald" as const },
-    { name: "André P.", focus: "Calistenia · B1 W1", state: "Logbook hoje", tone: "amber" as const },
-    { name: "Rebeca M.", focus: "Avaliação · 9/14", state: "A preencher", tone: "neutral" as const },
-    { name: "João F.", focus: "Força · B3 W4", state: "PDF enviado", tone: "emerald" as const },
-    { name: "Carla D.", focus: "Reabilitação · B1 W2", state: "Recuperação 71%", tone: "amber" as const },
-    { name: "Pedro V.", focus: "Hipertrofia · B2 W1", state: "Plano pronto", tone: "emerald" as const },
-    { name: "Inês L.", focus: "Avaliação · 14/14", state: "Pronta p/ briefing", tone: "amber" as const },
+  const clients: MockClient[] = [
+    {
+      name: "Rebeca Sá",
+      initials: "RS",
+      phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" },
+      status: { text: "Avaliação por concluir", tone: "neutral" },
+    },
+    {
+      name: "André Periquito",
+      initials: "AP",
+      phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" },
+      block: "Bloco 1 · Sem 1 · Calistenia",
+      cvd: { label: "Risco CV baixo", tone: "ok" },
+      recovery: { pct: 63, tone: "warn" },
+      status: { text: "Último log ontem", tone: "ok" },
+    },
+    {
+      name: "Maria Santos",
+      initials: "MS",
+      phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" },
+      cvd: { label: "Risco CV baixo", tone: "ok" },
+      recovery: { pct: 81, tone: "ok" },
+      status: { text: "Plano pronto a enviar", tone: "ok" },
+    },
   ];
-  const toneRing = (tone: "emerald" | "amber" | "neutral") =>
-    tone === "emerald"
-      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
-      : tone === "amber"
-        ? "border-amber-500/30 bg-amber-500/5 text-amber-400"
-        : "border-border bg-background text-muted-foreground";
+  const chipCls = (tone: "ok" | "warn" | "bad") =>
+    tone === "ok"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+      : tone === "warn"
+        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+        : "border-red-500/40 bg-red-500/10 text-red-400";
+  const dotCls = (tone: "ok" | "warn" | "neutral") =>
+    tone === "ok" ? "bg-emerald-500" : tone === "warn" ? "bg-amber-500" : "bg-muted-foreground/60";
   return (
     <FloatCard>
       <div
@@ -921,20 +949,50 @@ function CoachWorkbenchMockup() {
           12 ativos
         </span>
       </div>
-      <ul className="mt-4 space-y-2">
-        {clients.map((c) => (
-          <li key={c.name} className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
-              {c.name.split(" ").map((s) => s[0]).join("")}
+      <div className="mt-4 overflow-hidden rounded-xl border border-border/60 bg-background/40">
+        {clients.map((c, i) => (
+          <div
+            key={c.name}
+            className={`flex items-start gap-3 px-3 py-3 ${i > 0 ? "border-t border-border/60" : ""}`}
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
+              {c.initials}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{c.name}</p>
-              <p className="truncate text-[11px] text-muted-foreground">{c.focus}</p>
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <p className="text-sm font-semibold">{c.name}</p>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest max-w-full break-words ${c.phase.cls}`}>
+                  {c.phase.label}
+                </span>
+              </div>
+              {c.block && (
+                <p className="text-[11px] text-muted-foreground">{c.block}</p>
+              )}
+              {(c.cvd || c.recovery) && (
+                <div className="flex flex-wrap items-center gap-1">
+                  {c.cvd && (
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${chipCls(c.cvd.tone)}`}>
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      {c.cvd.label}
+                    </span>
+                  )}
+                  {c.recovery && (
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${chipCls(c.recovery.tone)}`}>
+                      <Activity className="h-2.5 w-2.5" />
+                      Recuperação {c.recovery.pct}%
+                    </span>
+                  )}
+                </div>
+              )}
+              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotCls(c.status.tone)}`} />
+                {c.status.text}
+              </p>
             </div>
-            <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${toneRing(c.tone)}`}>{c.state}</span>
-          </li>
+            <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/60" />
+          </div>
         ))}
-      </ul>
+      </div>
       <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
         <span>PROTOCOL</span>
         <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent">

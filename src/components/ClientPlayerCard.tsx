@@ -102,9 +102,9 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex flex-1 items-center gap-4 px-4 py-4 text-left sm:px-5"
+        className="flex flex-1 items-center gap-3 px-3 py-3 text-left sm:gap-4 sm:px-5 sm:py-4"
       >
-        <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={44} />
+        <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="break-words text-sm font-semibold sm:text-base">{client.full_name}</p>
@@ -165,7 +165,7 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
             <p className="truncate text-xs text-muted-foreground">{client.email ?? t("clients.no_email")}</p>
           )}
         </div>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`ml-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
