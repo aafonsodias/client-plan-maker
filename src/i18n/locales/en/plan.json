@@ -8,7 +8,24 @@
       "cta_primary_signed_in": "Open dashboard",
       "cta_secondary": "See how it works",
       "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
-      "social_proof": "Built by a coach, for coaches · Private beta"
+      "social_proof": "Built by a coach, for coaches · Private beta",
+      "variants": [
+        {
+          "line1": "Build training plans",
+          "line2": "ready to send in minutes.",
+          "audience": "For coaches"
+        },
+        {
+          "line1": "The app I built for myself as a coach.",
+          "line2": "Now for you.",
+          "audience": "Founder story"
+        },
+        {
+          "line1": "Train smarter on your own,",
+          "line2": "with AI-guided plans.",
+          "audience": "For solo trainees"
+        }
+      ]
     },
     "benefits": {
       "eyebrow": "For personal trainers",
@@ -201,7 +218,7 @@
       "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
     },
     "faq": {
-      "title": "Questions trainers ask before signing up.",
+      "title": "Questions coaches and trainees ask us.",
       "q1_q": "Is the AI plan good enough to send to clients as-is?",
       "q1_a": "It's good enough to be a strong starting point. You'll edit volume, swap exercises, adjust language for your client. Protocol is faster than starting from a blank page — not a replacement for your judgement.",
       "q2_q": "What if my client has injuries or medical conditions?",
@@ -221,7 +238,15 @@
       "q9_q": "How many plans can I generate on the free tier?",
       "q9_a": "1 full plan per account. Enough to test the end-to-end flow with a real client. Paid tiers unlock 8 / 30 / 80 plans per month as you scale (client cap = plan cap, no fine print).",
       "q10_q": "How do I know the AI didn't invent a dangerous exercise?",
-      "q10_a": "Every exercise is validated against the PROTOCOL library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation."
+      "q10_a": "Every exercise is validated against the PROTOCOL library (movement pattern, equipment, contraindications). Nothing outside the library reaches the plan. PAR-Q+ flags apply hard exclusions before generation.",
+      "q11_q": "Do I need experience to use this?",
+      "q11_a": "No. The assessment walks you through, section by section, and the AI assembles the plan. Coaches get speed. Solo trainees get structure.",
+      "q12_q": "Can I use this without a coach?",
+      "q12_a": "Yes. Run the assessment as a trainee, generate your plan and follow it through the logbook. The AI gives weekly feedback based on what you log.",
+      "q13_q": "How is this different from ChatGPT or generic AI?",
+      "q13_a": "ChatGPT generates what you ask. Protocol runs 14 clinical sections (PAR-Q+, ACSM, mobility, history) before prescribing one exercise, with block periodization and a validated exercise library.",
+      "q14_q": "What happens when the trial ends?",
+      "q14_a": "We email you before it ends. If you want to continue, activate the monthly subscription. If not, you lose access to generating new plans — but you keep all PDFs you've already exported."
     },
     "mission": "Protocol exists so trainers can spend less time formatting and more time coaching. Better tools for trainers means safer, smarter training for everyone they reach.",
     "closing": {
@@ -233,30 +258,31 @@
     "footer_copy": "© {{year}} Protocol",
     "pricing": {
       "eyebrow": "Pricing",
-      "title": "Honest, no surprises.",
-      "beta_badge": "Free",
-      "beta_title": "Free to start",
+      "title": "Try 7 days. Keep it if it earns its place.",
+      "beta_badge": "7-day free trial",
+      "beta_title": "7-day trial",
       "beta_price": "€0",
-      "beta_period": "for your first plan",
+      "beta_period": "for 7 days · no card",
       "beta_features": [
-        "1 client · 1 complete plan",
-        "PDF with your branding",
-        "No card, no deadline",
-        "Keep using it as long as it earns its place"
+        "Full access to logbook and plan generation",
+        "Clinical assessment + personalised plans",
+        "PDFs with your branding",
+        "No card required to sign up"
       ],
-      "beta_cta": "Start now",
-      "pro_badge": "Coming soon",
-      "pro_title": "Pro",
+      "beta_cta": "Start 7-day free trial",
+      "pro_badge": "After the trial",
+      "pro_title": "Monthly",
       "pro_price": "€19",
-      "pro_period": "/ month (indicative)",
+      "pro_period": "/ month · cancel anytime",
       "pro_features": [
-        "Unlimited plans, no waiting line",
-        "Weekly AI nudges from your logged sessions",
+        "Everything in the trial — no time limit",
+        "Weekly AI insights from your logged sessions",
         "PDFs on your own domain",
         "Priority support"
       ],
-      "pro_cta": "Notify me",
-      "nav_link": "Pricing"
+      "pro_cta": "Continue after trial",
+      "nav_link": "Pricing",
+      "trial_note": "No silent auto-renewal: we email you before any charge."
     },
     "footer": {
       "tagline": "A training tool for serious PTs.",
@@ -299,7 +325,9 @@
         "Goals",
         "Availability",
         "Equipment"
-      ]
+      ],
+      "title_line1": "ChatGPT generates what you ASK.",
+      "title_line2": "PROTOCOL generates what the client NEEDS."
     },
     "comparison": {
       "eyebrow": "Where PROTOCOL fits",
