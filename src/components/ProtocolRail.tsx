@@ -23,6 +23,8 @@ export function ProtocolRail({
   onShowSynthesis,
   stage1Expanded = false,
   bare = false,
+  activeStage,
+  onStageClick,
 }: {
   assessmentPct: number | null;
   lastAssessmentAt: string | null;
@@ -39,6 +41,10 @@ export function ProtocolRail({
   stage1Expanded?: boolean;
   /** When true, renders without its own card chrome (used when embedded inside another card). */
   bare?: boolean;
+  /** Currently active stage (1-5). Highlighted with amber ring. */
+  activeStage?: number | null;
+  /** When provided, every stage chip becomes a button that calls this. Stage 1 still defers to onStage1Click if set. */
+  onStageClick?: (n: number) => void;
 }) {
   const { t } = useTranslation("plan");
   const stage1Done = (assessmentPct ?? 0) >= 80;
@@ -75,14 +81,17 @@ export function ProtocolRail({
         </span>
         <div className="flex flex-1 flex-wrap items-center gap-1.5">
           {stages.map((s, i) => {
-            const isClickableStage1 = s.n === 1 && !!onStage1Click;
+            const stage1Handler = s.n === 1 ? (onStage1Click ?? (onStageClick ? () => onStageClick(1) : undefined)) : undefined;
+            const handler = s.n === 1 ? stage1Handler : (onStageClick ? () => onStageClick(s.n) : undefined);
+            const isClickable = !!handler;
+            const isActive = (s.n === 1 && (stage1Expanded || activeStage === 1)) || (s.n !== 1 && activeStage === s.n);
             const baseCls = [
               "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium transition",
               s.done
                 ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
                 : "border-border bg-background text-muted-foreground",
-              isClickableStage1 ? "cursor-pointer hover:brightness-110" : "",
-              isClickableStage1 && stage1Expanded ? "ring-1 ring-amber-500/40" : "",
+              isClickable ? "cursor-pointer hover:brightness-110" : "",
+              isActive ? "ring-1 ring-amber-500/40" : "",
             ].join(" ");
             const inner = (
               <>
@@ -100,13 +109,13 @@ export function ProtocolRail({
             );
             return (
               <div key={s.n} className="flex items-center gap-1.5">
-                {isClickableStage1 ? (
+                {isClickable ? (
                   <button
                     type="button"
-                    onClick={onStage1Click}
+                    onClick={handler}
                     className={baseCls}
-                    aria-expanded={stage1Expanded}
-                    title={stage1Expanded ? "Recolher avaliação" : "Abrir avaliação"}
+                    aria-pressed={isActive}
+                    title={s.label}
                   >
                     {inner}
                   </button>
