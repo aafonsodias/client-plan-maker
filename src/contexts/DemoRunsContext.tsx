@@ -225,7 +225,7 @@ export function DemoRunsProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
     },
-    [startFn],
+    [startFn, i18n.language],
   );
 
   const registerRun = useCallback<Ctx["registerRun"]>(({ runId, kind, title, durationWeeks }) => {
