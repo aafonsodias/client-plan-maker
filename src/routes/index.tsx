@@ -203,6 +203,9 @@ function Landing() {
       {/* Anti-ChatGPT — sharp positioning vs the obvious alternative */}
       <AntiChatGPTSection />
 
+      {/* Para quem é — inclusivity + medical responsibility */}
+      <ForWhomSection />
+
       {/* The journey — 5 stages of the in-app generator + tier chips inline */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
