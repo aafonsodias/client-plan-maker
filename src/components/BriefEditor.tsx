@@ -7,6 +7,7 @@ import type {
   RedFlagAccommodation,
 } from "@/server/phased/schemas";
 import { FLAG_STRATEGY_LABELS_PT } from "@/lib/brief-labels";
+import IntensityCockpit from "@/components/plan/IntensityCockpit";
 
 export default function BriefEditor({
   brief,
@@ -246,6 +247,14 @@ export default function BriefEditor({
       </Card>
 
       {programmingVariables && onProgrammingChange && (
+        <IntensityCockpit
+          value={programmingVariables}
+          onChange={onProgrammingChange}
+          disabled={disabled}
+        />
+      )}
+
+      {programmingVariables && onProgrammingChange && (
         <Card title="Configuração de programação">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Divisão de treino">
@@ -263,19 +272,6 @@ export default function BriefEditor({
                 <option value="custom">Personalizada</option>
               </select>
             </Field>
-            <Field label="Frequência de deload">
-              <select
-                value={programmingVariables.deload_frequency}
-                onChange={(e) => setPv("deload_frequency", e.target.value as ProgrammingVariables["deload_frequency"])}
-                className="be-input"
-              >
-                <option value="every_3_weeks">A cada 3 semanas</option>
-                <option value="every_4_weeks">A cada 4 semanas</option>
-                <option value="every_5_weeks">A cada 5 semanas</option>
-                <option value="every_6_weeks">A cada 6 semanas</option>
-                <option value="no_deload">Sem deload</option>
-              </select>
-            </Field>
             <Field label="Estilo de deload">
               <select
                 value={programmingVariables.deload_style}
@@ -288,20 +284,6 @@ export default function BriefEditor({
                 <option value="mixed">Misto (-15% carga e -30% volume)</option>
               </select>
             </Field>
-            <Field label="Tecto de RPE">
-              <input
-                type="number"
-                min={7.5}
-                max={10}
-                step={0.5}
-                value={programmingVariables.rpe_ceiling}
-                onChange={(e) => {
-                  const n = Number(e.target.value);
-                  if (Number.isFinite(n)) setPv("rpe_ceiling", n);
-                }}
-                className="be-input"
-              />
-            </Field>
             <Field label="Tendência de selecção de exercícios">
               <select
                 value={programmingVariables.exercise_bias}
@@ -313,18 +295,6 @@ export default function BriefEditor({
                 <option value="isolation_friendly">Favorável a isolamento</option>
                 <option value="bodyweight_friendly">Favorável a peso corporal</option>
                 <option value="equipment_flexible">Flexível em equipamento</option>
-              </select>
-            </Field>
-            <Field label="Trade-off intensidade / volume">
-              <select
-                value={programmingVariables.intensity_volume_tradeoff}
-                onChange={(e) => setPv("intensity_volume_tradeoff", e.target.value as ProgrammingVariables["intensity_volume_tradeoff"])}
-                className="be-input"
-              >
-                <option value="high_int_low_vol">Alta intensidade / baixo volume</option>
-                <option value="moderate_moderate">Moderado / moderado</option>
-                <option value="moderate_int_high_vol">Intensidade moderada / alto volume</option>
-                <option value="low_int_very_high_vol">Baixa intensidade / volume muito alto</option>
               </select>
             </Field>
           </div>

@@ -62,7 +62,7 @@ export const proposeProgressions = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("trainer_id, brief, blueprint, duration_weeks, generation_meta")
+      .select("trainer_id, brief, blueprint, duration_weeks, generation_meta, programming_variables")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
@@ -106,7 +106,16 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     });
     if (appetite === "agressivo") waveTier = waveTier === "beginner" ? "intermediate" : "advanced";
     if (appetite === "conservador") waveTier = waveTier === "advanced" ? "intermediate" : "beginner";
-    const wave = buildWavePlan(waveTier, weeks);
+    // R64 cockpit knobs — wave model + deload frequency.
+    const pv = (plan as any).programming_variables ?? {};
+    const waveModel = (["linear", "undulating", "block", "conjugate"] as const).includes(pv.wave_model)
+      ? pv.wave_model
+      : "undulating";
+    const deloadEveryN = (() => {
+      const m = String(pv.deload_frequency ?? "every_4_weeks").match(/(\d+)/);
+      return m ? Math.min(6, Math.max(3, parseInt(m[1], 10))) : 4;
+    })();
+    const wave = buildWavePlan(waveTier, weeks, { model: waveModel, deloadEveryN });
 
     // Deterministic build: one row per exercise per week-tag, keyed by category.
     const rows: Array<{
@@ -182,6 +191,14 @@ export const proposeProgressions = createServerFn({ method: "POST" })
             tier: waveTier,
             citation: "Bompa & Buzzichelli 6e §7.3-7.5",
             weeks: wave,
+          },
+          cockpit: {
+            wave_model: waveModel,
+            deload_every_n_weeks: deloadEveryN,
+            rpe_ceiling: pv.rpe_ceiling ?? null,
+            intensity_volume_tradeoff: pv.intensity_volume_tradeoff ?? null,
+            autoreg_strictness: pv.autoreg_strictness ?? "suggested",
+            preset: pv.cockpit_preset ?? "custom",
           },
           progressions_source: "deterministic",
         } as any,

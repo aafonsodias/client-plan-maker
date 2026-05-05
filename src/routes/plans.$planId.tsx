@@ -91,7 +91,7 @@ function PlanEditor() {
   const { planId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { t: tCommon } = useTranslation("common");
+  const { t: tCommon, i18n } = useTranslation("common");
   const [plan, setPlan] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -307,6 +307,7 @@ function PlanEditor() {
         client: client as any,
         training_days_per_week: assessmentRow?.training_days_per_week ?? null,
         assessment_completion_pct: (plan as any).assessment_completion_pct ?? null,
+        locale: i18n?.language ?? "pt",
       },
       data,
       {

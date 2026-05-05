@@ -24,6 +24,9 @@ export function defaultProgrammingVariables(brief: Brief): ProgrammingVariables 
     rpe_ceiling,
     exercise_bias: "compound_first",
     intensity_volume_tradeoff: "moderate_moderate",
+    wave_model: "undulating",
+    autoreg_strictness: "suggested",
+    cockpit_preset: "custom",
   };
 }
 
@@ -134,8 +137,79 @@ export function computeWaveRpe(
   return { week: weekN, rpe_low: anchor + 0.5, rpe_high: anchor + 1.5, volume_multiplier: 1.15, tag: "+intensity" };
 }
 
-export function buildWavePlan(tier: WaveTier, totalWeeks: number): WaveWeek[] {
+export type WaveModel = "linear" | "undulating" | "block" | "conjugate";
+export type WaveOptions = {
+  /** Wave shape — defaults to undulating (legacy behaviour). */
+  model?: WaveModel;
+  /** Inject a deload every N weeks (3..6). Defaults to every 4. */
+  deloadEveryN?: number;
+};
+
+function deloadWeek(tier: WaveTier, weekN: number): WaveWeek {
+  const anchor = WAVE_ANCHOR[tier];
+  return {
+    week: weekN,
+    rpe_low: Math.max(4, anchor - 1.5),
+    rpe_high: Math.max(5, anchor - 1.0),
+    volume_multiplier: 0.6,
+    tag: "deload",
+  };
+}
+
+function shapeWeek(
+  tier: WaveTier,
+  weekN: number,
+  positionInBlock: number,
+  model: WaveModel,
+): WaveWeek {
+  const anchor = WAVE_ANCHOR[tier];
+  const base: WaveWeek = {
+    week: weekN, rpe_low: anchor, rpe_high: anchor + 1, volume_multiplier: 1.0, tag: "base",
+  };
+  if (model === "linear") {
+    // Volume held; intensity climbs +0.25 RPE per week within the block.
+    const bump = Math.min(1.0, positionInBlock * 0.25);
+    return { ...base, rpe_low: anchor + bump, rpe_high: anchor + 1 + bump,
+      tag: positionInBlock === 0 ? "base" : "+intensity" };
+  }
+  if (model === "block") {
+    // First half of block accumulates volume, second half intensifies.
+    if (positionInBlock < 2) {
+      return { ...base, volume_multiplier: 1.0 + 0.075 * positionInBlock, tag: positionInBlock === 0 ? "base" : "+volume" };
+    }
+    return { ...base, rpe_low: anchor + 0.5, rpe_high: anchor + 1.5, volume_multiplier: 1.1, tag: "+intensity" };
+  }
+  // undulating + conjugate (conjugate falls back to undulating until day-tagging lands).
+  const phase = (positionInBlock % 3) as 0 | 1 | 2;
+  if (phase === 0) return base;
+  if (phase === 1) return { ...base, volume_multiplier: 1.15, tag: "+volume" };
+  return { ...base, rpe_low: anchor + 0.5, rpe_high: anchor + 1.5, volume_multiplier: 1.15, tag: "+intensity" };
+}
+
+/**
+ * Build a wave plan honouring the cockpit knobs. Backwards-compatible:
+ * `buildWavePlan(tier, weeks)` still works (defaults to undulating, deload at end).
+ */
+export function buildWavePlan(
+  tier: WaveTier,
+  totalWeeks: number,
+  opts: WaveOptions = {},
+): WaveWeek[] {
+  const model: WaveModel = opts.model ?? "undulating";
+  const deloadEveryN = Math.min(6, Math.max(3, opts.deloadEveryN ?? 4));
   const out: WaveWeek[] = [];
-  for (let w = 1; w <= totalWeeks; w++) out.push(computeWaveRpe(tier, w, totalWeeks));
+  let positionInBlock = 0;
+  for (let w = 1; w <= totalWeeks; w++) {
+    const isDeloadWeek =
+      totalWeeks >= 3 &&
+      (w === totalWeeks || (w > 1 && (w - 1) % deloadEveryN === deloadEveryN - 1 && w !== totalWeeks - 1));
+    if (isDeloadWeek) {
+      out.push(deloadWeek(tier, w));
+      positionInBlock = 0;
+    } else {
+      out.push(shapeWeek(tier, w, positionInBlock, model));
+      positionInBlock++;
+    }
+  }
   return out;
 }
