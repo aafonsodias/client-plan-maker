@@ -284,3 +284,11 @@ Atualizado: Round 28 (4 Mai 2026)
 
 ## Open after Round 54 (P1)
 - P1 **Trim detail-route header** — the header strip on `/clients/$clientId` (avatar plate + ACSM/Recovery chips + ProtocolRail + ThisWeekHero) now duplicates the cockpit. Demote it to a thin "Voltar à lista" + name + phase pill bar so the route reads as a pure builder. Risk-controlled because the route is ~4.2k lines; do it in its own focused round.
+
+## Open after Round 55 (landing tightening)
+- P1 **Field/gym assessment expansion** — VO₂máx submaximal estimate, sit-and-reach, behind-the-back scratch, TUG (Timed Up & Go for 60+), single-leg balance progressions, dead/active hang. Decide which to surface as input vs which to derive. Insights cards on landing already promise sleep, energy, VO₂máx, hang — wire them to real data.
+- P1 **Pre/post-session subjective log** — energy, sleep, stress, soreness BEFORE; mood, RPE, perceived benefit AFTER. Mandatory at the top of each workout day in the logbook. Feeds all "energy/recovery" insights cards.
+- P2 **Client photo privacy** — auto-detect face, crop above the ear OR apply blur (user choice). Show pose template (heel-to-hair, front/side/back, swimwear). Spell out benefits: postural read, muscle harmony, progress comparison, joint feedback for us. Update FAQ q4 once shipped.
+- P2 **Warmup library + agility/cognitive double-task module** — CARs (neck/scapular/shoulder/T-spine/hip), dynamic stretches (cossack, 90/90, spiderman, world's greatest), banded activation (monster walks, side-walks, pull-aparts, Y-W-T-L, snowflakes), agility-ladder drills with built-in timer + word-count beep for cognitive double-tasking. Replaces "treadmill warmup" defaults.
+- P2 **Multi-perspective surfaces** — 4 explicit viewer modes already promised in FAQ q12: Solo trainee, Long-distance client, PT-of-record, Client-of-PT. Currently the app leans PT-first; need view toggles + tailored CTAs.
+- P2 **Reference verifiability** — every AI-generated rationale shows the manual page/PubMed link it draws from. No author cited without source inside.

@@ -1,4 +1,5 @@
-import { Activity, AlertTriangle, Sparkles, TrendingUp } from "lucide-react";
+import { Activity, Sparkles, TrendingUp, Moon, BatteryCharging } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Static landing preview: AI-derived insights surfaced from the logbook.
@@ -6,30 +7,31 @@ import { Activity, AlertTriangle, Sparkles, TrendingUp } from "lucide-react";
  * features that don't exist yet — the insights are framed as suggestions.
  */
 export function LogbookInsightsMockup() {
+  const { t } = useTranslation("plan");
   const insights = [
     {
-      icon: TrendingUp,
+      icon: Moon,
       tone: "emerald",
-      title: "Volume total · +12% em 4 semanas",
-      body: "Progressão consistente nos principais padrões. Sugerido manter carga e juntar 1 série.",
+      title: t("landing.logbook_insights.cards.sleep.title", "Sono médio · 7h12 (+38min vs mês passado)"),
+      body: t("landing.logbook_insights.cards.sleep.body", "Recuperação a melhorar. Janela boa para subir um pouco a intensidade."),
     },
     {
-      icon: TrendingUp,
+      icon: BatteryCharging,
       tone: "emerald",
-      title: "Bench Press · +5kg em 3 sessões",
-      body: "Força a subir no padrão de empurrar. Próxima sessão pronta para novo top set.",
+      title: t("landing.logbook_insights.cards.energy.title", "Energia pré-treino · 7.4 / 10 — em subida"),
+      body: t("landing.logbook_insights.cards.energy.body", "Os treinos estão a deixá-lo com mais bateria do que tinham antes."),
     },
     {
       icon: Activity,
-      tone: "violet",
-      title: "Adesão · 6/6 sessões nas últimas 2 semanas",
-      body: "Consistência alta. Boa janela para introduzir uma semana de intensificação.",
+      tone: "emerald",
+      title: t("landing.logbook_insights.cards.vo2.title", "VO₂máx estimado · 42 ml/kg/min (zona “Bom”)"),
+      body: t("landing.logbook_insights.cards.vo2.body", "Estimativa derivada do submáximo. Reavaliar em 6 semanas."),
     },
     {
-      icon: AlertTriangle,
-      tone: "amber",
-      title: "RPE médio 8.4 (alvo 7.5)",
-      body: "Esforço percebido acima do prescrito. Reduzir 1 série nos acessórios pode ajudar a recuperar.",
+      icon: TrendingUp,
+      tone: "emerald",
+      title: t("landing.logbook_insights.cards.hang.title", "Dead hang ativo · 38s (+9s em 4 semanas)"),
+      body: t("landing.logbook_insights.cards.hang.body", "Pega e ombros mais fortes — bom marcador de saúde geral."),
     },
   ];
   const toneRing: Record<string, string> = {
@@ -42,10 +44,10 @@ export function LogbookInsightsMockup() {
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-accent" />
-          Insights da IA
+          {t("landing.logbook_insights.header", "Insights da IA")}
         </div>
         <span className="rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
-          últimos 21 dias
+          {t("landing.logbook_insights.window", "últimos 21 dias")}
         </span>
       </div>
       <ul className="space-y-2">
@@ -66,6 +68,9 @@ export function LogbookInsightsMockup() {
           </li>
         ))}
       </ul>
+      <p className="mt-3 text-[10px] italic text-muted-foreground/70">
+        {t("landing.logbook_insights.disclaimer", "Métricas derivadas do que regista. VO₂máx é estimativa, não medição clínica.")}
+      </p>
     </div>
   );
 }

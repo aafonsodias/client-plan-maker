@@ -853,14 +853,18 @@ function HeroHeadlineRotator() {
   const v = variants[idx] ?? { line1: "", line2: "", audience: "" };
   return (
     <div>
-      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-2.5 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent/80" />
-        {v.audience}
+      <div className="mb-3 min-h-[24px]">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-2.5 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent/80" />
+          {v.audience}
+        </span>
       </div>
-      <h1 key={idx} className="animate-fade-in text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
-        {v.line1}
-        <span className="block text-accent">{v.line2}</span>
-      </h1>
+      <div className="min-h-[160px] sm:min-h-[220px]">
+        <h1 key={idx} className="animate-fade-in text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
+          {v.line1}
+          <span className="block text-accent">{v.line2}</span>
+        </h1>
+      </div>
       <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
         {variants.map((_, i) => (
           <button
@@ -879,13 +883,18 @@ function HeroHeadlineRotator() {
 function HeroVisualRotator() {
   const variants = 3;
   const [idx] = useHeroRotation(variants);
+  const slides = [<HeroPlanMockup />, <CoachWorkbenchMockup />, <SoloTrainerMockup />];
   return (
-    <div className="min-h-[640px] lg:min-h-[760px]">
-      <div key={idx} className="animate-fade-in">
-        {idx === 0 && <HeroPlanMockup />}
-        {idx === 1 && <CoachWorkbenchMockup />}
-        {idx === 2 && <SoloTrainerMockup />}
-      </div>
+    <div className="relative h-[680px] lg:h-[780px] w-full">
+      {slides.map((slide, i) => (
+        <div
+          key={i}
+          aria-hidden={i !== idx}
+          className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ${i === idx ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        >
+          <div className="h-full overflow-hidden">{slide}</div>
+        </div>
+      ))}
     </div>
   );
 }
