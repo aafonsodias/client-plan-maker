@@ -45,6 +45,8 @@ import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import { NextBlockCard } from "@/components/NextBlockCard";
 import { NextWeekCard } from "@/components/plan/NextWeekCard";
+import IntensityCockpit from "@/components/plan/IntensityCockpit";
+import type { ProgrammingVariables } from "@/server/phased/schemas";
 import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
