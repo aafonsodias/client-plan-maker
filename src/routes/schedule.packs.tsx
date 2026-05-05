@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,12 +18,14 @@ import { PriceTag } from "@/components/PriceTag";
 import { ClientAvatar } from "@/components/ClientAvatar";
 
 export const Route = createFileRoute("/schedule/packs")({
-  component: PacksPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/schedule", search: { tab: "packs" } });
+  },
 });
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-function PacksPage() {
+export function PacksPanel() {
   const { t } = useTranslation("schedule");
   const { user } = useAuth();
   const list = useServerFn(listPacks);
@@ -58,12 +60,7 @@ function PacksPage() {
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Link to="/schedule" className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3.5 w-3.5" /> {t("back_to_schedule")}
-          </Link>
-          <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("pack.title")}</h1>
-        </div>
+        <h2 className="text-xl font-light tracking-wide sm:text-2xl">{t("pack.title")}</h2>
         <Button size="sm" onClick={() => setCreating(true)}>
           <Plus className="mr-2 h-4 w-4" />
           {t("pack.new")}

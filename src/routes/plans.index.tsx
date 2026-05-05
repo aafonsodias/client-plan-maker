@@ -13,8 +13,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 import { planStatusInfo } from "@/lib/plan-status";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { TemplatesPanel } from "./templates";
 
 export const Route = createFileRoute("/plans/")({
+  validateSearch: (s: Record<string, unknown>): { tab?: "all" | "templates" } => ({
+    tab: s.tab === "templates" ? "templates" : "all",
+  }),
   component: () => (
     <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
       <PlansIndex />
@@ -34,6 +39,9 @@ type PlanRow = {
 
 function PlansIndex() {
   const { user } = useAuth();
+  const search = Route.useSearch();
+  const navigateRoot = useNavigate();
+  const tab = (search.tab as "all" | "templates") ?? "all";
   const [list, setList] = useState<PlanRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
@@ -63,7 +71,7 @@ function PlansIndex() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Library</p>
@@ -105,6 +113,17 @@ function PlansIndex() {
         </Dialog>
       </div>
 
+      <Tabs
+        value={tab}
+        onValueChange={(v) =>
+          navigateRoot({ to: "/plans", search: { tab: v === "templates" ? "templates" : "all" } })
+        }
+      >
+        <TabsList>
+          <TabsTrigger value="all">Plans</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="mt-6">
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : list.length === 0 ? (
@@ -167,6 +186,11 @@ function PlansIndex() {
           ))}
         </div>
       )}
+        </TabsContent>
+        <TabsContent value="templates" className="mt-6">
+          <TemplatesPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

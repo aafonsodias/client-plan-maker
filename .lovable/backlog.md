@@ -332,3 +332,12 @@ Atualizado: Round 28 (4 Mai 2026)
 | 77 | P1 | Routes | Fusão `/schedule/packs` → `/schedule?tab=packs` | R60 next |
 | 78 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock + recent logs) com useUserMode | R60 |
 | 79 | P1 | Client | Trim header `/clients/$id` (4206-line file) — chips clínicos em <details> | R60 |
+
+### Round 60 — Route fusion (5 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 76 | P1 | Routes | `/templates` → `/plans?tab=templates` (Tabs + redirect, AppShell entry now "Plans") | ✅ |
+| 77 | P1 | Routes | `/schedule/packs` → `/schedule?tab=packs` (Tabs + redirect, RevenuePanel/manage_packs link migrated) | ✅ |
+| 78 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock) | R61 |
+| 79 | P1 | Client | Trim header `/clients/$id` (4206 LOC, chips em <details>) | R61 |

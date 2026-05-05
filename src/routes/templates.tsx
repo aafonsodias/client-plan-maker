@@ -1,5 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AppShell } from "@/components/AppShell";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { listTemplates, deleteTemplate, applyTemplateToClient } from "@/server/templates.functions";
@@ -18,11 +17,9 @@ import { toast } from "sonner";
 import { PaywallDialog } from "@/components/PaywallDialog";
 
 export const Route = createFileRoute("/templates")({
-  component: () => (
-    <AppShell back={{ to: "/dashboard", label: "Dashboard" }}>
-      <TemplatesIndex />
-    </AppShell>
-  ),
+  beforeLoad: () => {
+    throw redirect({ to: "/plans", search: { tab: "templates" } });
+  },
 });
 
 type Tpl = {
@@ -30,7 +27,7 @@ type Tpl = {
   duration_weeks: number; tags: string[]; use_count: number; updated_at: string;
 };
 
-function TemplatesIndex() {
+export function TemplatesPanel() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const listFn = useServerFn(listTemplates);
