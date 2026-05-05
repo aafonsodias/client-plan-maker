@@ -67,10 +67,16 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   }, [clientId, plan?.id]);
 
   const approvedStages: string[] = Array.isArray(genState?.approved_stages) ? genState.approved_stages : [];
-  const briefApproved = approvedStages.includes("brief");
-  const blueprintApproved = approvedStages.includes("blueprint");
-  const microcycleApproved = approvedStages.includes("microcycle");
-  const progressionsApproved = approvedStages.includes("progressions");
+  // A finalized plan (PDF printed → generation_status === "complete") implies
+  // every upstream stage of the protocol cleared, even if approved_stages was
+  // never populated (legacy plans, manual builds, demo seeds). Treat the plan
+  // existing + complete as ground truth so the rail reflects what the trainer
+  // actually shipped.
+  const planComplete = !!plan && plan.generation_status === "complete";
+  const briefApproved = approvedStages.includes("brief") || planComplete;
+  const blueprintApproved = approvedStages.includes("blueprint") || planComplete;
+  const microcycleApproved = approvedStages.includes("microcycle") || planComplete;
+  const progressionsApproved = approvedStages.includes("progressions") || planComplete;
 
   const week = currentWeek(plan, logs) ?? 1;
   const totalWeeks = plan?.duration_weeks ?? null;
@@ -144,7 +150,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       {/* Protocol rail (read-only — chips reflect approvals, no expand handlers) */}
       <ProtocolRail
         bare
-        assessmentPct={null}
+        assessmentPct={planComplete ? 100 : null}
         lastAssessmentAt={assessment?.performed_on ?? assessment?.updated_at ?? null}
         briefApproved={briefApproved}
         blueprintApproved={blueprintApproved}
