@@ -926,15 +926,15 @@ function CoachWorkbenchMockup() {
   const { t } = useTranslation("plan");
   const clients: MockClient[] = [
     {
-      name: "Sofia Almeida",
-      initials: "SA",
+      name: "Maria Silva",
+      initials: "MS",
       photo: "https://randomuser.me/api/portraits/women/68.jpg",
       phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" },
       status: { text: "Avaliação por concluir", tone: "neutral" },
     },
     {
-      name: "Marcus Johnson",
-      initials: "MJ",
+      name: "João Costa",
+      initials: "JC",
       photo: "https://randomuser.me/api/portraits/men/45.jpg",
       phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" },
       block: "Bloco 1 · Sem 1 · Calistenia",
@@ -943,8 +943,8 @@ function CoachWorkbenchMockup() {
       status: { text: "Último log ontem", tone: "ok" },
     },
     {
-      name: "Priya Sharma",
-      initials: "PS",
+      name: "Marie Dubois",
+      initials: "MD",
       photo: "https://randomuser.me/api/portraits/women/65.jpg",
       phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" },
       cvd: { label: "Risco CV baixo", tone: "ok" },
@@ -952,8 +952,8 @@ function CoachWorkbenchMockup() {
       status: { text: "Plano pronto a enviar", tone: "ok" },
     },
     {
-      name: "Kenji Tanaka",
-      initials: "KT",
+      name: "Antonio Rossi",
+      initials: "AR",
       photo: "https://randomuser.me/api/portraits/men/22.jpg",
       phase: { label: "Active · Block 2", cls: "bg-accent/90 text-accent-foreground" },
       block: "Bloco 2 · Sem 3 · Hipertrofia",
@@ -962,8 +962,8 @@ function CoachWorkbenchMockup() {
       status: { text: "3 logs esta semana", tone: "ok" },
     },
     {
-      name: "Larissa Souza",
-      initials: "LS",
+      name: "Anna Schmidt",
+      initials: "AS",
       photo: "https://randomuser.me/api/portraits/women/79.jpg",
       phase: { label: "Reassessment due", cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" },
       block: "Bloco 1 · Sem 6",
