@@ -24,6 +24,9 @@ export function defaultProgrammingVariables(brief: Brief): ProgrammingVariables 
     rpe_ceiling,
     exercise_bias: "compound_first",
     intensity_volume_tradeoff: "moderate_moderate",
+    wave_model: "undulating",
+    autoreg_strictness: "suggested",
+    cockpit_preset: "custom",
   };
 }
 
