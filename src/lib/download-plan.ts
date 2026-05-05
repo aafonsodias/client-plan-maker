@@ -102,6 +102,7 @@ export async function downloadPlanById(planId: string, weekNumber?: number): Pro
       block_transition_summary: (plan as any).block_transition_summary ?? null,
       block_evolution: null,
       week_number: weekNumber ?? null,
+      locale: typeof window !== "undefined" ? (window.localStorage?.getItem("i18nextLng") ?? "pt") : "pt",
     },
     data,
     {
