@@ -1,8 +1,8 @@
 import { Gauge, Waves, Scale, Repeat, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ProgrammingVariables } from "@/server/phased/schemas";
 import {
   COCKPIT_PRESETS,
-  COCKPIT_PRESET_LABELS,
   matchesPreset,
   type CockpitPreset,
 } from "./CockpitPresets";
@@ -30,6 +30,7 @@ export default function IntensityCockpit({
   disabled?: boolean;
   compact?: boolean;
 }) {
+  const { t } = useTranslation("plan");
   const apply = (patch: Partial<ProgrammingVariables>) => {
     const next = { ...value, ...patch, cockpit_preset: "custom" as CockpitPreset };
     onChange(next);
@@ -61,12 +62,12 @@ export default function IntensityCockpit({
       <header className="mb-3 flex items-center gap-2">
         <Gauge className="h-4 w-4 text-amber-500" aria-hidden />
         <h3 id="cockpit-title" className="text-sm font-bold uppercase tracking-widest text-foreground">
-          Cockpit de intensidade
+          {t("cockpit.title")}
         </h3>
       </header>
 
       <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
-        Cinco controlos que moldam como a Semana 1 se transforma nas semanas seguintes. Comece num preset e ajuste o que importa para este cliente.
+        {t("cockpit.intro")}
       </p>
 
       {/* Presets */}
@@ -86,7 +87,7 @@ export default function IntensityCockpit({
                   : "border-border bg-background text-muted-foreground hover:text-foreground"
               } ${p === "custom" ? "cursor-default" : ""}`}
             >
-              {COCKPIT_PRESET_LABELS[p]}
+              {t(`cockpit.presets.${p}`)}
             </button>
           );
         })}
@@ -95,25 +96,25 @@ export default function IntensityCockpit({
       <div className={`grid gap-3 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
         <Knob
           icon={<Waves className="h-4 w-4" />}
-          label="Modelo de onda"
-          help="Como a carga e o volume oscilam ao longo do bloco."
+          label={t("cockpit.knobs.wave.label")}
+          help={t("cockpit.knobs.wave.help")}
         >
           <select
             value={value.wave_model}
             onChange={(e) => apply({ wave_model: e.target.value as ProgrammingVariables["wave_model"] })}
             className="be-input w-full"
           >
-            <option value="undulating">Ondulante (DUP) — alterna volume/intensidade</option>
-            <option value="linear">Linear — intensidade sobe semana a semana</option>
-            <option value="block">Bloco — acumula volume → intensifica</option>
-            <option value="conjugate" disabled>Conjugado (Westside) — Em breve</option>
+            <option value="undulating">{t("cockpit.knobs.wave.options.undulating")}</option>
+            <option value="linear">{t("cockpit.knobs.wave.options.linear")}</option>
+            <option value="block">{t("cockpit.knobs.wave.options.block")}</option>
+            <option value="conjugate" disabled>{t("cockpit.knobs.wave.options.conjugate")}</option>
           </select>
         </Knob>
 
         <Knob
           icon={<Gauge className="h-4 w-4" />}
-          label={`Tecto de RPE — ${value.rpe_ceiling.toFixed(1)}`}
-          help="Acima deste RPE nenhuma série é prescrita, mesmo no pico do bloco."
+          label={`${t("cockpit.knobs.rpe.label")} — ${value.rpe_ceiling.toFixed(1)}`}
+          help={t("cockpit.knobs.rpe.help")}
         >
           <input
             type="range"
@@ -125,64 +126,66 @@ export default function IntensityCockpit({
             className="w-full accent-amber-500"
           />
           <div className="mt-1 flex justify-between text-[10px] uppercase text-muted-foreground">
-            <span>7.5 leve</span><span>9.0 padrão</span><span>10 limite</span>
+            <span>{t("cockpit.knobs.rpe.marks.low")}</span>
+            <span>{t("cockpit.knobs.rpe.marks.mid")}</span>
+            <span>{t("cockpit.knobs.rpe.marks.high")}</span>
           </div>
         </Knob>
 
         <Knob
           icon={<Scale className="h-4 w-4" />}
-          label="Intensidade vs volume"
-          help="Onde investir mais — carga pesada ou mais séries/reps."
+          label={t("cockpit.knobs.tradeoff.label")}
+          help={t("cockpit.knobs.tradeoff.help")}
         >
           <select
             value={value.intensity_volume_tradeoff}
             onChange={(e) => apply({ intensity_volume_tradeoff: e.target.value as ProgrammingVariables["intensity_volume_tradeoff"] })}
             className="be-input w-full"
           >
-            <option value="high_int_low_vol">Alta intensidade · baixo volume</option>
-            <option value="moderate_moderate">Moderado · moderado</option>
-            <option value="moderate_int_high_vol">Intensidade moderada · alto volume</option>
-            <option value="low_int_very_high_vol">Baixa intensidade · volume muito alto</option>
+            <option value="high_int_low_vol">{t("cockpit.knobs.tradeoff.options.high_int_low_vol")}</option>
+            <option value="moderate_moderate">{t("cockpit.knobs.tradeoff.options.moderate_moderate")}</option>
+            <option value="moderate_int_high_vol">{t("cockpit.knobs.tradeoff.options.moderate_int_high_vol")}</option>
+            <option value="low_int_very_high_vol">{t("cockpit.knobs.tradeoff.options.low_int_very_high_vol")}</option>
           </select>
         </Knob>
 
         <Knob
           icon={<Repeat className="h-4 w-4" />}
-          label="Frequência de deload"
-          help="A cada quantas semanas a carga semanal recua para recuperar."
+          label={t("cockpit.knobs.deload.label")}
+          help={t("cockpit.knobs.deload.help")}
         >
           <select
             value={value.deload_frequency}
             onChange={(e) => apply({ deload_frequency: e.target.value as ProgrammingVariables["deload_frequency"] })}
             className="be-input w-full"
           >
-            <option value="every_3_weeks">A cada 3 semanas</option>
-            <option value="every_4_weeks">A cada 4 semanas</option>
-            <option value="every_5_weeks">A cada 5 semanas</option>
-            <option value="every_6_weeks">A cada 6 semanas</option>
-            <option value="no_deload">Sem deload</option>
+            <option value="every_3_weeks">{t("cockpit.knobs.deload.options.every_3_weeks")}</option>
+            <option value="every_4_weeks">{t("cockpit.knobs.deload.options.every_4_weeks")}</option>
+            <option value="every_5_weeks">{t("cockpit.knobs.deload.options.every_5_weeks")}</option>
+            <option value="every_6_weeks">{t("cockpit.knobs.deload.options.every_6_weeks")}</option>
+            <option value="no_deload">{t("cockpit.knobs.deload.options.no_deload")}</option>
           </select>
         </Knob>
 
         <Knob
           icon={<ShieldCheck className="h-4 w-4" />}
-          label="Autoregulação"
-          help="Quão duro reagir quando o RPE realizado fica acima do prescrito."
+          label={t("cockpit.knobs.autoreg.label")}
+          help={t("cockpit.knobs.autoreg.help")}
         >
           <select
             value={value.autoreg_strictness}
             onChange={(e) => apply({ autoreg_strictness: e.target.value as ProgrammingVariables["autoreg_strictness"] })}
             className="be-input w-full"
           >
-            <option value="strict">Estrito — corta carga 5% se RPE +0.7</option>
-            <option value="suggested">Sugerido — sinaliza, decide o coach</option>
-            <option value="off">Desligado — segue a onda nominal</option>
+            <option value="strict">{t("cockpit.knobs.autoreg.options.strict")}</option>
+            <option value="suggested">{t("cockpit.knobs.autoreg.options.suggested")}</option>
+            <option value="off">{t("cockpit.knobs.autoreg.options.off")}</option>
           </select>
         </Knob>
       </div>
 
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Fontes: Bompa &amp; Buzzichelli 6e §7.3-7.5 (ondas), NSCA Essentials 4e §17.4 (incrementos).
+        {t("cockpit.sources")}
       </p>
     </section>
   );
