@@ -296,8 +296,11 @@ Atualizado: Round 28 (4 Mai 2026)
 ## Audit 2026-05 — open items
 - [x] P0: Hero mockup invisible (HeroVisualRotator collapsed to 0px) — fixed
 - [x] P1: Headline rotator min-h bumped (200/290) to prevent layout jump PT↔EN
+- [x] P0: Hero rotator empty space inside amber ring — active slide drives height (R-curr)
+- [x] P2: `/welcome` already gated by `account_type` (skip redirect if set) — no work needed
+- [x] P2: DashboardHint already persists via `forge.hint.dashboard.dismissed` — no work needed
+- [x] P2: ThisWeekHero is not on dashboard.tsx (lives only on /clients/$id) — non-issue
+- [x] UX: Mock clients on landing CoachWorkbench renamed to classic universal names (Maria Silva, João Costa, Marie Dubois, Antonio Rossi, Anna Schmidt)
 - [ ] P1: Fusion B — `/templates` → `/plans?tab=templates` (own round)
 - [ ] P1: Fusion C — `/schedule/packs` → `/schedule?tab=packs` (own round)
 - [ ] P2: Fusion A — `/me` → `/settings?as=…` (gentle, low value alone)
-- [ ] P2: Verify `/welcome` only fires once per profile (`onboarded_at` flag)
-- [ ] P2: ThisWeekHero hides at 0 clients; DashboardHint persistent dismiss
