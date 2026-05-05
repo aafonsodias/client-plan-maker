@@ -391,3 +391,9 @@ Atualizado: Round 28 (4 Mai 2026)
 - P1 Conteúdo: storyboards de 5 vídeos curtos (TikTok/Reels) — "porque 90% dos planos são lixo", "erro que perde clientes", "ACSM em 2h", antes/depois Excel→Protocol
 - P2 Analytics: funil cliques → registos → planos gerados
 - P2 Tradução ES/HI: revisão por nativo, traduzir restantes ficheiros (intake, manual, schedule, assessment)
+
+## Round 68 — Header trim `/clients/$id` (5 Mai 2026)
+- ✅ #79/#85 (P0): Header colapsado para 1 linha + chip strip. Avatar 48px, nome `text-xl sm:text-2xl md:text-3xl`, email truncado.
+- ✅ Single icon-only `MoreHorizontal` overflow menu (`align="end"`, `ml-auto`) — agrega Download PDF, Ver como cliente, Pedir nova avaliação.
+- ✅ Readiness strip (ACSM + Recovery chips) removida do header — duplicava `ClientCockpit`/`ProtocolRail` 200px abaixo. Single source of truth.
+- ✅ AssessmentDatePicker + ClientDocuments mantidos numa segunda linha discreta abaixo do header.
