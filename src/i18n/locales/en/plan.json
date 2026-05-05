@@ -1,29 +1,26 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Build training plans",
-      "title_line2": "ready to send in minutes.",
-      "subtitle": "Built from your client's real assessment. Adjusted week after week from what they actually do in the gym.",
-      "cta_primary_signed_out": "Generate your first plan — free",
+      "title_line1": "Scientifically defensible training plans",
+      "title_line2": "in 90 seconds — with your name on them.",
+      "subtitle": "No Excel. No improvising. No loss of clinical rigour.",
+      "cta_primary_signed_out": "Create your first plan — free",
       "cta_primary_signed_in": "Open dashboard",
       "cta_secondary": "See how it works",
       "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
       "social_proof": "Built by a coach, for coaches · Private beta",
+      "beta_softcap_chip": "Private beta · limited spots this week",
+      "bullets": [
+        "Automatic clinical screen (PAR-Q+, ACSM)",
+        "Weekly progression ready (MEV/MAV/MRV)",
+        "PDF branded with your studio"
+      ],
+      "tagline_eyebrow": "Evidence-based programming infrastructure for personal trainers",
       "variants": [
         {
-          "line1": "Build training plans",
-          "line2": "ready to send in minutes.",
-          "audience": "For coaches"
-        },
-        {
-          "line1": "The app I built for myself as a coach.",
-          "line2": "Now for you.",
-          "audience": "Founder story"
-        },
-        {
-          "line1": "Train smarter on your own,",
-          "line2": "with AI-guided plans.",
-          "audience": "For solo trainees"
+          "line1": "Scientifically defensible training plans",
+          "line2": "in 90 seconds — with your name on them.",
+          "audience": "For personal trainers"
         }
       ]
     },

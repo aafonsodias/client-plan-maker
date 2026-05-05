@@ -184,11 +184,35 @@
       "pdf_tooltip": "Descarregar PDF",
       "editor_tooltip": "Abrir no editor",
       "stage": {
-        "1": { "title": "Avaliação", "summary": "{{done}}/{{total}} secções · {{pct}}%", "cta": "Continuar avaliação" },
-        "2": { "title": "Briefing", "summary": "Resumo do que a IA vai usar para o plano.", "cta": "Abrir briefing", "empty": "Briefing aparece quando o plano avança da avaliação." },
-        "3": { "title": "Plano-mestre", "summary": "Estrutura do mesociclo · {{weeks}} semanas.", "cta": "Abrir plano-mestre", "empty": "Plano-mestre aparece quando o plano é gerado." },
-        "4": { "title": "Semana-tipo", "summary": "Cumprimento e séries por semana.", "cta": "Abrir semana", "empty": "Semana-tipo aparece quando o plano é gerado." },
-        "5": { "title": "Progressões", "summary": "Como a carga avança ao longo do bloco.", "cta": "Abrir progressões", "empty": "Progressões aparecem quando o plano é gerado." }
+        "1": {
+          "title": "Avaliação",
+          "summary": "{{done}}/{{total}} secções · {{pct}}%",
+          "cta": "Continuar avaliação"
+        },
+        "2": {
+          "title": "Briefing",
+          "summary": "Resumo do que a IA vai usar para o plano.",
+          "cta": "Abrir briefing",
+          "empty": "Briefing aparece quando o plano avança da avaliação."
+        },
+        "3": {
+          "title": "Plano-mestre",
+          "summary": "Estrutura do mesociclo · {{weeks}} semanas.",
+          "cta": "Abrir plano-mestre",
+          "empty": "Plano-mestre aparece quando o plano é gerado."
+        },
+        "4": {
+          "title": "Semana-tipo",
+          "summary": "Cumprimento e séries por semana.",
+          "cta": "Abrir semana",
+          "empty": "Semana-tipo aparece quando o plano é gerado."
+        },
+        "5": {
+          "title": "Progressões",
+          "summary": "Como a carga avança ao longo do bloco.",
+          "cta": "Abrir progressões",
+          "empty": "Progressões aparecem quando o plano é gerado."
+        }
       }
     }
   },
@@ -223,7 +247,9 @@
   "language": {
     "switch_aria": "Mudar idioma",
     "english": "Inglês",
-    "portuguese": "Português"
+    "portuguese": "Português",
+    "spanish": "Espanhol",
+    "hindi": "Hindi"
   },
   "theme": {
     "toggle_aria": "Alternar tema"

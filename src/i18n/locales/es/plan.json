@@ -1,0 +1,556 @@
+{
+  "landing": {
+    "hero": {
+      "title_line1": "Planes de entrenamiento científicamente sólidos",
+      "title_line2": "en 90 segundos — con su nombre.",
+      "subtitle": "Sin Excel. Sin improvisaciones. Sin pérdida de rigor clínico.",
+      "cta_primary_signed_out": "Cree su primer plan — gratis",
+      "cta_primary_signed_in": "Abrir panel de control",
+      "cta_secondary": "Vea cómo funciona",
+      "credibility_caption": "Ya incluido: PAR-Q+, ACSM, Prochaska. Próximamente: Helms, Israetel, Schoenfeld.",
+      "social_proof": "Construido por un entrenador, para entrenadores · Beta privada",
+      "beta_softcap_chip": "Beta privada · plazas limitadas esta semana",
+      "bullets": [
+        "Evaluación clínica automática (PAR-Q+, ACSM)",
+        "Progresión semanal lista (MEV/MAV/MRV)",
+        "PDF con la marca de su estudio"
+      ],
+      "tagline_eyebrow": "Infraestructura de programación basada en la evidencia para entrenadores personales",
+      "variants": [
+        {
+          "line1": "Planes de entrenamiento científicamente sólidos",
+          "line2": "en 90 segundos — con su nombre.",
+          "audience": "Para entrenadores personales"
+        }
+      ]
+    },
+    "benefits": {
+      "eyebrow": "Para entrenadores personales",
+      "time": {
+        "title": "Menos tiempo programando",
+        "desc": "De la evaluación al PDF en minutos, no en horas."
+      },
+      "consistency": {
+        "title": "Planes coherentes entre clientes",
+        "desc": "La misma lógica aplicada a cada cliente, adaptada a su caso."
+      },
+      "confidence": {
+        "title": "Más confianza en lo que envía",
+        "desc": "Siempre verá por qué cada ejercicio está ahí."
+      },
+      "example_link": "Ver un plan de ejemplo (PDF)"
+    },
+    "mockups": {
+      "client_header": "Cliente · 42 años · Mesociclo 5 · Fase de fuerza",
+      "session_title": "Lunes — Fuerza del tren inferior",
+      "session_meta": "Est. 55 min · 6 ejercicios",
+      "personalized_for": "Personalizado a partir de la evaluación",
+      "personalized_hint": "Personalizado a partir de la evaluación",
+      "constraints_chip": "Lumbar sensible · sin carga axial · 2×/sem · gimnasio comercial",
+      "microcycle_title": "Microciclo de 2 semanas",
+      "col_exercise": "Ejercicio",
+      "day1_label": "Día 1",
+      "day1_focus": "Tren inferior + tirón",
+      "day2_label": "Día 2",
+      "day2_focus": "Tren superior + estabilidad",
+      "ex_bench": "Press de banca",
+      "ex_row": "Remo sentado",
+      "ex_face_pull": "Face Pull",
+      "badge_warmup": "CALENTAMIENTO",
+      "badge_main": "PRINCIPAL",
+      "badge_accessory": "ACCESORIO",
+      "badge_finisher": "FINALIZADOR",
+      "ex_goblet_squat": "Sentadilla Goblet",
+      "ex_back_squat": "Sentadilla trasera",
+      "ex_rdl": "Peso muerto rumano",
+      "ex_step_up": "Step-Up",
+      "ex_leg_curl": "Curl de pierna",
+      "ex_kb_swing": "Balanceo con pesa rusa",
+      "at_light": "@ ligero",
+      "at_rpe7": "@ RPE 7",
+      "back_squat_set_log": "Sentadilla trasera · Registro de series",
+      "today_week": "Hoy · Semana 6",
+      "set_label": "Serie {{n}}",
+      "last_week_top": "Semana pasada — serie máxima 80kg × 6",
+      "save_session": "Guardar sesión",
+      "back_squat_six_weeks": "Sentadilla trasera — 6 semanas de trabajo",
+      "top_set_today": "Serie máxima hoy:",
+      "pr_vs_week1": "PR vs semana 1:",
+      "sessions_logged": "Sesiones registradas:",
+      "rest_tempo_squat": "Descanso 2:30 · tempo 3-1-X",
+      "rest_tempo_rdl": "Descanso 2:00 · excéntrica controlada",
+      "ex_hip_thrust": "Empuje de cadera",
+      "ex_chest_pull": "Remo con apoyo en el pecho",
+      "ex_split_squat": "Sentadilla búlgara con mancuernas",
+      "ex_pallof": "Press Pallof",
+      "ex_db_bench": "Press de banca con mancuernas",
+      "ex_overhead_press": "Press de hombros con mancuernas",
+      "ex_pullup_assist": "Dominadas asistidas",
+      "ex_farmer_carry": "Paseo del granjero",
+      "history_title": "Sentadilla trasera — Historial de 6 semanas",
+      "history_subtitle": "Serie máxima por semana",
+      "delta_label": "Δ vs S1"
+    },
+    "how_it_works": {
+      "eyebrow": "Cómo funciona",
+      "title": "Desde la evaluación hasta el siguiente mesociclo, en un bucle continuo.",
+      "steps": {
+        "add_client": {
+          "label": "Informe clínico",
+          "desc": "Historial, lesiones, deseos — a mano cada semana."
+        },
+        "assessment": {
+          "label": "Programación basada en la evidencia",
+          "desc": "MEV/MAV/MRV por grupo muscular, progresiones justificadas."
+        },
+        "generate": {
+          "label": "Editar e imprimir",
+          "desc": "Mesociclo editable. PDF con su marca para llevar al gimnasio."
+        },
+        "export": {
+          "label": "Feedback ↔ ajuste",
+          "desc": "Registre manualmente, la aplicación lo lee, valida y genera la semana siguiente."
+        }
+      }
+    },
+    "credibility": {
+      "title": "En continuo desarrollo y mejora.",
+      "subtitle": "Hay errores. Todavía faltan cosas. Pero debido a que usted es el filtro humano, la salida sigue siendo defendible — la paciencia da sus frutos. Los fundamentos ya están; el resto se incorpora a medida que se gana su lugar.",
+      "cards": {
+        "parq_title": "Detección PAR-Q+",
+        "parq_desc": "Ya dentro. Evaluación de salud previa a la participación con indicadores de riesgo cardiovascular, metabólico y renal.",
+        "acsm_title": "Estratificación de riesgo ACSM",
+        "acsm_desc": "Ya dentro. Categorización bajo / moderado / alto para guiar la prescripción de intensidad de forma segura desde la primera sesión.",
+        "prochaska_title": "Etapas de cambio de Prochaska",
+        "prochaska_desc": "Ya dentro. Disposición al cambio mapeada al tono de entrenamiento y la velocidad de progresión. Próximamente: Helms, Israetel, Schoenfeld, RP, NSCA — incorporados paso a paso."
+      }
+    },
+    "logging": {
+      "title": "El plan no termina en el PDF.",
+      "subtitle": "Registre cada serie, siga cada sesión. Protocol mantiene el historial para que usted y el cliente vean cómo se acumula el trabajo."
+    },
+    "journey": {
+      "eyebrow": "En construcción continua",
+      "title": "Cinco etapas hoy — mejoradas cada semana.",
+      "subtitle": "Esto es lo que verá dentro de la aplicación, ahora mismo. La forma y el detalle continúan evolucionando a medida que aprendemos de cada plan generado. Objetivo a largo plazo: incorporar todo el conocimiento humano relevante para la programación.",
+      "stages": {
+        "intake": {
+          "label": "Recepción",
+          "desc": "PAR-Q+, riesgo ACSM, movilidad, metas, equipo."
+        },
+        "brief": {
+          "label": "Informe",
+          "desc": "La IA resume la evaluación en un informe defendible que usted aprueba."
+        },
+        "blueprint": {
+          "label": "Anteproyecto",
+          "desc": "Forma del mesociclo, división semanal, volumen de patrones de movimiento."
+        },
+        "microcycle": {
+          "label": "Microciclo",
+          "desc": "Semana concreta — sesiones, ejercicios, series, RPE, descanso."
+        },
+        "progressions": {
+          "label": "Progresiones",
+          "desc": "Deltas semana a semana — carga, repeticiones, RPE, descarga."
+        }
+      }
+    },
+    "logbook_preview": {
+      "eyebrow": "Después del PDF",
+      "title": "Cada serie registrada se convierte en combustible para la semana siguiente.",
+      "subtitle": "El PDF es el punto de partida. Cada registro — manual hoy, voz y sensores mañana — alimenta la siguiente generación. Todo opcional, todo conmutable: dé lo que tenga, obtenga lo que podamos hacer con ello.",
+      "log_caption": "Vista previa — registre una sesión en segundos.",
+      "trend_caption": "Las líneas de tendencia y los avisos de IA llegarán pronto — sus registros ya alimentan el motor.",
+      "history_caption": "Historial semana a semana — vea cómo aumenta la carga sin abrir el gimnasio.",
+      "signals_title": "Lo que se incluye (hoy y pronto)",
+      "signal_load": "Carga acumulada por patrón de movimiento",
+      "signal_deltas": "Deltas semana a semana, automáticos",
+      "signal_context": "Contexto mantenido: sueño, estrés, RPE percibido",
+      "signals_soon_title": "Próximamente, opcional",
+      "signal_voice": "Notas de voz → texto → ajuste",
+      "signal_devices": "Báscula, pasos, sueño, frecuencia cardíaca",
+      "signal_uploads": "Bioimpedancia, presión arterial — foto, PDF o Excel",
+      "flow": "1. El cliente registra. 2. La IA coteja el volumen, el RPE y el tiempo. 3. Usted ve las señales y decide con contexto."
+    },
+    "roadmap": {
+      "eyebrow": "Próximamente",
+      "title": "Lo que estamos construyendo, abiertamente.",
+      "subtitle": "Todavía no, pero en camino. Preferimos prometer menos aquí que vender más.",
+      "inline_chips": [
+        "Tendencias y gráficos",
+        "Ajustes por prompt",
+        "Asesoramiento de IA para entrenadores"
+      ],
+      "items": {
+        "trends": {
+          "title": "Tendencias y gráficos",
+          "desc": "Detecte automáticamente los estancamientos y el progreso por patrón de movimiento a partir de sus sesiones registradas."
+        },
+        "prompt": {
+          "title": "Ajustes por prompt",
+          "desc": "Describa un ajuste en lenguaje sencillo — \"semana de descarga 3\", \"cambiar sentadillas por sentadillas búlgaras\" — y el plan se ajustará."
+        },
+        "advice": {
+          "title": "Asesoramiento de IA para entrenadores",
+          "desc": "Sugerencias semanales de sus registros — cuándo esforzarse, cuándo retroceder, qué intercambiar."
+        }
+      },
+      "footnote": ""
+    },
+    "features": {
+      "title": "Construido para entrenadores que prefieren entrenar a copiar y pegar hojas de cálculo.",
+      "intake_title": "Recepción estructurada",
+      "intake_desc": "Capture objetivos, equipo, lesiones y horario en un único formulario guiado.",
+      "ai_title": "Programas diseñados por IA",
+      "ai_desc": "Obtenga un plan semanal periodizado y adaptado a la evaluación en segundos.",
+      "pdf_title": "Exportación a PDF con su marca",
+      "pdf_desc": "Añada su logotipo y el nombre de su negocio. Envíe un plan pulido al instante."
+    },
+    "founder": {
+      "title": "¿Por qué Protocol?",
+      "img_alt": "André, fundador de Protocol",
+      "p1": "En quince años como PT, seguí viendo lo mismo: planes improvisados a toda prisa porque programar con cuidado requiere demasiado trabajo.",
+      "p2": "Protocol está aquí para eliminar esa excusa. Humano y científico en la base — usted decide, la IA se encarga de la elaboración repetitiva, y los manuales (ACSM, Bompa, NSCA) fundamentan las elecciones. La nueva evidencia se agrega gradualmente, siempre con una fuente verificable.",
+      "p3": "No queremos automatizar el entrenamiento. Queremos que \"no tuve tiempo\" deje de ser la razón detrás de un plan deficiente — para los PT y para las personas que entrenan por su cuenta.",
+      "signature": "— André Periquito, MSc Ejercicio y Salud · Fisiólogo del ejercicio y entrenador personal"
+    },
+    "faq": {
+      "title": "Preguntas que nos hacen los/as entrenadores/as y clientes.",
+      "q1_q": "¿El plan de IA es lo suficientemente bueno para enviarlo a los clientes tal cual?",
+      "q1_a": "Es un excelente punto de partida, no un destino. Por ahora, la IA es una ayuda — usted es el filtro. A medida que ganemos confianza en sus resultados, le devolveremos más autonomía. Hasta entonces, edite el volumen, cambie ejercicios, adapte el lenguaje; Protocol hace el trabajo pesado, usted tiene la última palabra.",
+      "q2_q": "¿Qué pasa si mi cliente tiene lesiones o condiciones médicas?",
+      "q2_a": "Las banderas rojas del PAR-Q+ activan la lógica condicional. Las banderas cardíacas predeterminan el plan a baja intensidad. Las banderas articulares excluyen patrones de alto impacto. Usted siempre tiene la aprobación final antes de la generación.",
+      "q3_q": "¿Puedo usar mi propia marca en el PDF?",
+      "q3_a": "Sí. Suba su logotipo y el nombre de su negocio en Configuración. Cada exportación de PDF lleva la marca de su estudio, no la de Protocol.",
+      "q4_q": "¿Qué sucede con los datos de mi cliente?",
+      "q4_a": "Almacenados en Supabase (región UE). Puede exportar o eliminar cualquier registro de cliente en cualquier momento. Protocol no comparte ni vende datos de clientes — nunca.",
+      "q5_q": "¿En qué ciencia se basa la programación?",
+      "q5_a": "Manuales ya incluidos: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Cualquier adición futura tendrá una fuente verificable (PubMed y equivalentes) — nada citado con el nombre de un autor sin que el libro o artículo real esté dentro. Usted puede (y debe) verificar.",
+      "q6_q": "¿Qué pasa si el cliente retrocede a mitad de bloque?",
+      "q6_a": "Usted vuelve a ejecutar la evaluación, el nivel de programación se ajusta (ej. avanzado → conservador) y el siguiente bloque se regenera con restricciones más estrictas. El bloque anterior permanece archivado para el historial.",
+      "q7_q": "¿Puedo editar el plan generado antes de exportarlo?",
+      "q7_a": "Sí — en las 5 etapas (Informe, Anteproyecto, Microciclo, Progresiones, Sesiones). Cada edición se registra y el PDF solo se envía después de su aprobación final.",
+      "q8_q": "¿Funciona sin conexión o en el teléfono del cliente?",
+      "q8_a": "El PDF funciona sin conexión en cualquier dispositivo. El diario de registro es web (probado en Mobile Safari a 375px) — solo comparta el enlace del plan, no es necesario instalar ninguna aplicación.",
+      "q9_q": "¿Cuántos planes puedo generar en la versión gratuita?",
+      "q9_a": "1 plan completo por cuenta. Suficiente para probar el flujo completo con un cliente real. Los niveles de pago desbloquean 8 / 30 / 80 planes por mes a medida que escala (límite de clientes = límite de planes, sin letra pequeña).",
+      "q10_q": "¿Cómo sé que la IA no inventó un ejercicio peligroso?",
+      "q10_a": "Cada ejercicio se valida contra la biblioteca de PROTOCOL (patrón de movimiento, equipo, contraindicaciones). Nada fuera de la biblioteca llega al plan. Las banderas PAR-Q+ aplican exclusiones estrictas antes de la generación.",
+      "q11_q": "¿Necesito experiencia para usar esto?",
+      "q11_a": "No. La evaluación le guía, sección por sección, y la IA ensambla el plan. Los entrenadores ganan velocidad. Los clientes individuales obtienen estructura.",
+      "q12_q": "¿Puedo usar esto sin un entrenador?",
+      "q12_a": "Sí. Ejecute la evaluación como cliente, genere su plan y sígalo a través del diario de registro. La IA le da retroalimentación semanal basada en lo que registra.",
+      "q13_q": "¿En qué se diferencia esto de ChatGPT o de la IA genérica?",
+      "q13_a": "ChatGPT genera lo que usted pide. Protocol ejecuta 14 secciones clínicas (PAR-Q+, ACSM, movilidad, historial) antes de prescribir un ejercicio, con periodización por bloques y una biblioteca de ejercicios validada.",
+      "q14_q": "¿Qué ocurre cuando finaliza la prueba?",
+      "q14_a": "Los 7 días son suficientes para realizar la evaluación, generar el plan y comenzar a entrenar de forma segura. Si desea continuar, active el plan mensual y mantendrá la generación continua, el diario de registro que aprende con usted, la comunidad y lo que vendrá después. Si no, conservará el PDF y los vídeos de soporte — la aplicación se pausará hasta que regrese. Es un servicio, y queremos que valga cada céntimo."
+    },
+    "mission": "Protocol existe para que los entrenadores puedan dedicar menos tiempo a formatear y más tiempo a entrenar. Mejores herramientas para los entrenadores significan un entrenamiento más seguro e inteligente para todos a quienes llegan.",
+    "closing": {
+      "title": "El próximo plan antes de la próxima sesión.",
+      "subtitle": "7 días gratis. Sin tarjeta. Cancele en un clic.",
+      "cta_signed_in": "Abrir panel de control",
+      "cta_signed_out": "Cree su cuenta"
+    },
+    "footer_copy": "© {{year}} Protocol",
+    "pricing": {
+      "eyebrow": "Precios",
+      "title": "Pruebe 7 días. Consérvelo si se gana su lugar.",
+      "beta_badge": "Prueba gratuita de 7 días",
+      "beta_title": "Prueba de 7 días",
+      "beta_price": "€0",
+      "beta_period": "durante 7 días · sin tarjeta",
+      "beta_features": [
+        "Acceso completo al diario de registro y la generación de planes.",
+        "Evaluación clínica + planes personalizados.",
+        "PDFs con su marca.",
+        "No se requiere tarjeta para registrarse."
+      ],
+      "beta_cta": "Comenzar prueba gratuita de 7 días",
+      "pro_badge": "Después de la prueba",
+      "pro_title": "Mensual",
+      "pro_price": "€19",
+      "pro_period": "/ mes · cancele en cualquier momento",
+      "pro_features": [
+        "Todo lo de la prueba — sin límite de tiempo",
+        "Información semanal de IA de sus sesiones registradas",
+        "PDFs en su propio dominio",
+        "Soporte prioritario"
+      ],
+      "pro_cta": "Continuar después de la prueba",
+      "nav_link": "Precios",
+      "trial_note": "Sin renovación automática silenciosa: le enviaremos un correo electrónico antes de cualquier cargo."
+    },
+    "footer": {
+      "tagline": "Para personas que entrenan a otros — y para personas que se entrenan a sí mismas. Sustancia antes que apariencias.",
+      "product_title": "Producto",
+      "product_features": "Características",
+      "product_pricing": "Precios",
+      "product_how": "Cómo funciona",
+      "legal_title": "Legal",
+      "legal_terms": "Términos",
+      "legal_privacy": "Privacidad",
+      "legal_contact": "Contacto"
+    },
+    "workbench": {
+      "eyebrow": "BANCO DE TRABAJO INTELIGENTE",
+      "title": "Su banco de trabajo de IA",
+      "subtitle": "Elija un modelo, elija los créditos, obtenga sugerencias con el contexto completo. Como una conversación con un colega que conoce al cliente."
+    },
+    "logbook_insights": {
+      "eyebrow": "DIARIO DE REGISTRO INTELIGENTE",
+      "title": "Sesiones registradas. Patrones revelados.",
+      "subtitle": "El diario de registro no es solo un registro — la IA lee sus datos y devuelve señales accionables.",
+      "header": "Análisis de IA",
+      "window": "últimos 21 días",
+      "disclaimer": "Métricas derivadas de lo que usted registra. El VO₂máx es una estimación, no una medición clínica.",
+      "cards": {
+        "sleep": {
+          "title": "Sueño promedio · 7h12 (+38min vs mes pasado)",
+          "body": "La recuperación mejora. Buena ventana para aumentar la intensidad."
+        },
+        "energy": {
+          "title": "Energía pre-entrenamiento · 7.4 / 10 — en aumento",
+          "body": "Las sesiones le dejan con más energía de la que solían."
+        },
+        "vo2": {
+          "title": "VO₂máx estimado · 42 ml/kg/min (zona \"Buena\")",
+          "body": "Estimación submáxima. Vuelva a evaluar en 6 semanas."
+        },
+        "hang": {
+          "title": "Aguante isométrico activo · 38s (+9s en 4 semanas)",
+          "body": "Agarre y hombros más fuertes — un buen indicador de salud general."
+        }
+      }
+    },
+    "anti_chatgpt": {
+      "eyebrow": "PROTOCOL vs ChatGPT",
+      "title": "ChatGPT genera lo que usted PIDE. PROTOCOL genera lo que el cliente NECESITA.",
+      "body": "14 secciones de evaluación clínicas antes de un solo ejercicio. Detección PAR-Q+, clasificación de riesgo ACSM, filtrado de ejercicios contraindicados, periodización por bloques con volúmenes MEV/MAV/MRV — automático, justificado.",
+      "sections_label": "Evaluado antes de la generación:",
+      "items": [
+        "PAR-Q+",
+        "Historial médico",
+        "Antropometría",
+        "Presión arterial",
+        "Movilidad articular",
+        "Postura",
+        "Patrones de movimiento",
+        "Constantes vitales",
+        "Recuperación",
+        "Historial de entrenamiento",
+        "Estilo de vida",
+        "Metas",
+        "Disponibilidad",
+        "Equipo"
+      ],
+      "title_line1": "ChatGPT genera lo que usted PIDE.",
+      "title_line2": "PROTOCOL genera lo que el cliente NECESITA."
+    },
+    "for_whom": {
+      "eyebrow": "Para quién es",
+      "title": "Para cualquier adulto que entrene — a cualquier edad.",
+      "subtitle": "Entrenadores, clientes entrenados y clientes individuales. De 18 a más de 80 años. El juicio humano es suyo; la estructura clínica es nuestra.",
+      "personas": [
+        {
+          "title": "Entrenadores",
+          "body": "Entrenadores personales y estudios que desean programar más rápido sin perder rigor. La IA maneja la repetición; usted decide."
+        },
+        {
+          "title": "Clientes entrenados",
+          "body": "Su entrenador usa PROTOCOL para su plan. Usted registra las sesiones, sigue la progresión y recibe el PDF con la marca del estudio."
+        },
+        {
+          "title": "Usuarios individuales",
+          "body": "Realice la evaluación como un usuario individual, genere su propio plan y sígalo en el diario de registro. Estructura honesta, sin charlatanería."
+        }
+      ],
+      "medical_title": "¿Tiene alguna afección clínica? Sigue siendo para usted — con una regla.",
+      "medical_body": "Enfermedades cardíacas, hipertensión, diabetes, lesiones o embarazo: PROTOCOL aplica los filtros PAR-Q+ y ACSM, pero su médico tiene la última palabra. Obtenga autorización médica antes de comenzar, y lea cada sugerencia críticamente — usted es responsable de las elecciones que toma."
+    },
+    "comparison": {
+      "eyebrow": "Dónde encaja PROTOCOL",
+      "title": "Cómo PROTOCOL se compara con lo que ya utilicen.",
+      "headers": [
+        "",
+        "PROTOCOL",
+        "Excel",
+        "ChatGPT",
+        "Aplicaciones genéricas"
+      ],
+      "rows": [
+        [
+          "Periodización por bloques con descarga",
+          "sí",
+          "manual",
+          "no",
+          "raro"
+        ],
+        [
+          "MEV/MAV/MRV por grupo muscular",
+          "sí",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "Contraindicaciones automáticas (PAR-Q+/ACSM)",
+          "sí",
+          "no",
+          "no",
+          "no"
+        ],
+        [
+          "PDF bilingüe con marca",
+          "sí",
+          "manual",
+          "no",
+          "premium"
+        ],
+        [
+          "Voz consistente, texto revisado",
+          "sí",
+          "—",
+          "no",
+          "—"
+        ],
+        [
+          "Tiempo para el primer plan",
+          "~90s",
+          "horas",
+          "minutos",
+          "horas"
+        ]
+      ],
+      "footnote": "No es magia. Es lógica condicional sobre ciencia publicada — Israetel, Helms, ACSM."
+    },
+    "tier_badges": {
+      "eyebrow": "Cada plan se envía con un nivel",
+      "title": "Sistema de programación de 3 niveles.",
+      "subtitle": "El nivel lo decide el perfil del cliente — no las conjeturas. Establece el límite de carga, el RPE permitido y los ejercicios disponibles.",
+      "items": {
+        "remedial": {
+          "name": "Terapéutico",
+          "desc": "Deficiencias críticas o autorización médica. Máquinas y bandas, 2×/semana."
+        },
+        "conservative": {
+          "name": "Conservador",
+          "desc": "2+ banderas rojas o principiante. Progresiones seguras, 3-4×/semana."
+        },
+        "advanced": {
+          "name": "Avanzado",
+          "desc": "Competencia completa. Biblioteca completa, 5-6×/semana."
+        }
+      }
+    },
+    "mid_cta": {
+      "title": "Véalo con sus propios datos.",
+      "subtitle": "Cuenta gratuita · 1 cliente · 1 plan completo · sin tarjeta.",
+      "button": "Comenzar ahora"
+    }
+  },
+  "briefRail": {
+    "approved": "Informe aprobado",
+    "view": "ver",
+    "context_caption": "Contexto siempre visible mientras diseña este meso.",
+    "loading": "Cargando informe…",
+    "unavailable": "Informe no disponible.",
+    "load_error": "No se pudo cargar el informe.",
+    "invalid": "Informe no válido o aún no aprobado.",
+    "open_brief": "Abrir informe",
+    "objectives": "Objetivos",
+    "primary": "principal",
+    "red_flags": "Banderas rojas",
+    "movement": "Competencia de movimiento",
+    "equipment_freq": "Equipo y frecuencia",
+    "sessions_per_week": "Sesiones/semana:",
+    "mesocycle": "Mesociclo:",
+    "weeks": "semanas",
+    "emphasis": "Énfasis del meso",
+    "emphasis_upper": "Superior",
+    "emphasis_lower": "Inferior",
+    "emphasis_cond": "Cond.",
+    "stage_notes": "Notas para esta etapa",
+    "rail_title": "Informe — contexto",
+    "capacity_vs_pb": "capacidad actual vs PB"
+  },
+  "continueCta": {
+    "brief": "Continuar al Anteproyecto",
+    "blueprint": "Continuar al Microciclo",
+    "microcycle": "Continuar a Progresiones",
+    "progressions": "Revisar progresiones",
+    "complete": "Abrir plan"
+  },
+  "progressionsGuide": {
+    "title": "Cómo leer estos deltas",
+    "open": "Como leer",
+    "close": "Cerrar guía",
+    "items": [
+      "S2/S3/S4 = el cambio aplicado esa semana vs Semana 1.",
+      "\"+2.5kg\" = añadir 2.5kg a la carga de trabajo.",
+      "\"+1rep\" = intentar una repetición extra por serie.",
+      "\"+0.5rpe\" = esforzarse 0.5 RPE más (más cerca del fallo).",
+      "Vacío = sin cambios esa semana (mantener o descargar).",
+      "Conservador > agresivo: en caso de duda, reduzca el delta.",
+      "La línea de tendencia muestra el cambio acumulado S1 → S4."
+    ]
+  },
+  "actions": {
+    "regenerate": "Regenerar",
+    "approve_brief": "Aprobar informe",
+    "approve_blueprint": "Aprobar plan maestro →",
+    "approve_microcycle": "Aprobar microciclo",
+    "approve_microcycle_disabled": "Termine todos los días para aprobar",
+    "approve_microcycle_busy": "Aprobando…",
+    "ask_ai": "Pedir cambios a la IA",
+    "back_blueprint": "Anteproyecto",
+    "back_brief": "Informe",
+    "back_all_plans": "Todos los planes"
+  },
+  "microcycleProgress": {
+    "generating": "Generando microciclo",
+    "remaining": "~{{seconds}}s restantes",
+    "day_quality_gate": "Generando Día 1 — esta es la puerta de calidad."
+  },
+  "microcycle": {
+    "ready_to_approve": "Todo listo — puede aprobar",
+    "stage_hint": "Microciclo = su semana plantilla. Define el orden, volumen y RPE para cada día. Apruebe una vez que todos los días se vean bien y la IA propondrá progresiones para las semanas siguientes.",
+    "days_approved": "días aprobados",
+    "to_review": "para revisar",
+    "day_label": "Día {{n}}",
+    "review_short": "revisar",
+    "approve_day": "Aprobar Día {{n}}",
+    "day_approved": "Día {{n}} aprobado",
+    "regenerate_short": "regenerar",
+    "resume_hint": "Reanudando · {{done}}/{{total}} días completados",
+    "retry_remaining": "Continuar días restantes"
+  },
+  "stage": {
+    "label": {
+      "1": "Evaluación",
+      "2": "Informe",
+      "3": "Plan maestro",
+      "4": "Ciclo semanal",
+      "5": "Progresiones"
+    }
+  },
+  "insights": {
+    "header": "Análisis de capacidad",
+    "loading": "Leyendo mediciones…",
+    "cta_record": "Registrar medición",
+    "empty_title": "Aún no hay mediciones.",
+    "empty_body": "El VO₂máx, el aguante isométrico (colgado) pasivo/activo y la plancha aparecen aquí tan pronto como registre una reevaluación.",
+    "empty_cta": "Abrir reevaluación",
+    "no_data": "sin datos",
+    "delta_window": "Δ vs hace {{days}} días",
+    "first_measurement": "primera medición",
+    "disclaimer": "Derivado de mediciones registradas. El VO₂máx submáximo es una estimación, no una medición clínica.",
+    "metric": {
+      "vo2max": "VO₂máx",
+      "dead_hang_s": "Aguante en suspensión pasiva",
+      "active_hang_s": "Aguante en suspensión activa",
+      "plank_s": "Plancha"
+    }
+  }
+}

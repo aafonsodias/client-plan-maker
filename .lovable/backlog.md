@@ -352,3 +352,17 @@ Atualizado: Round 28 (4 Mai 2026)
 | 83 | P1 | Schedule | KPIs colapsam em 1 linha quando semana = 0 sessões/0€ | ✅ |
 | 84 | P1 | Trainee | `/me` cockpit (hero + mini-mesocycle + NextBlock) | R61 |
 | 85 | P1 | Client | Trim header `/clients/$id` em <details> | R61 |
+
+## Round 61 — PT-only repositioning + ES/HI scaffold
+- ✅ Hero reescrito: "Planos cientificamente válidos em 90s — com o teu nome", 3 bullets, chip "Beta privado · vagas limitadas esta semana"
+- ✅ WhoAndWhySection escondida (PT-only), HeroVisualRotator → 1 slide (HeroPlanMockup), HeroHeadlineRotator → 1 variant
+- ✅ Logbook section encolhida (1 mockup), FAQ 10 → 5 perguntas (q1, q2, q9, q13, q14)
+- ✅ ES + HI: 4 ficheiros traduzidos via Lovable AI (plan + common); resto cai em fallback EN
+- ✅ LanguageSwitcher: ES (Español) + HI (हिन्दी) adicionados
+
+## Round 62 — pendente (do feedback do utilizador)
+- P0 Onboarding: modo "rápido" (5 inputs → plano em 60-90s) + upgrade para completo
+- P1 Pricing: toggle anual (-17%) + reforço do tier Studio
+- P1 Conteúdo: storyboards de 5 vídeos curtos (TikTok/Reels) — "porque 90% dos planos são lixo", "erro que perde clientes", "ACSM em 2h", antes/depois Excel→Protocol
+- P2 Analytics: funil cliques → registos → planos gerados
+- P2 Tradução ES/HI: revisão por nativo, traduzir restantes ficheiros (intake, manual, schedule, assessment)

@@ -184,11 +184,35 @@
       "pdf_tooltip": "Download PDF",
       "editor_tooltip": "Open in editor",
       "stage": {
-        "1": { "title": "Assessment", "summary": "{{done}}/{{total}} sections · {{pct}}%", "cta": "Continue assessment" },
-        "2": { "title": "Briefing", "summary": "Summary of what the AI will use for the plan.", "cta": "Open briefing", "empty": "Briefing appears once the plan moves past assessment." },
-        "3": { "title": "Master plan", "summary": "Mesocycle structure · {{weeks}} weeks.", "cta": "Open master plan", "empty": "Master plan appears once the plan is generated." },
-        "4": { "title": "Weekly cycle", "summary": "Compliance and sets per week.", "cta": "Open week", "empty": "Weekly cycle appears once the plan is generated." },
-        "5": { "title": "Progressions", "summary": "How load advances through the block.", "cta": "Open progressions", "empty": "Progressions appear once the plan is generated." }
+        "1": {
+          "title": "Assessment",
+          "summary": "{{done}}/{{total}} sections · {{pct}}%",
+          "cta": "Continue assessment"
+        },
+        "2": {
+          "title": "Briefing",
+          "summary": "Summary of what the AI will use for the plan.",
+          "cta": "Open briefing",
+          "empty": "Briefing appears once the plan moves past assessment."
+        },
+        "3": {
+          "title": "Master plan",
+          "summary": "Mesocycle structure · {{weeks}} weeks.",
+          "cta": "Open master plan",
+          "empty": "Master plan appears once the plan is generated."
+        },
+        "4": {
+          "title": "Weekly cycle",
+          "summary": "Compliance and sets per week.",
+          "cta": "Open week",
+          "empty": "Weekly cycle appears once the plan is generated."
+        },
+        "5": {
+          "title": "Progressions",
+          "summary": "How load advances through the block.",
+          "cta": "Open progressions",
+          "empty": "Progressions appear once the plan is generated."
+        }
       }
     }
   },
@@ -223,7 +247,9 @@
   "language": {
     "switch_aria": "Change language",
     "english": "English",
-    "portuguese": "Português"
+    "portuguese": "Português",
+    "spanish": "Spanish",
+    "hindi": "Hindi"
   },
   "theme": {
     "toggle_aria": "Toggle theme"

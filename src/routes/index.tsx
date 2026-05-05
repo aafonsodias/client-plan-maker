@@ -157,9 +157,18 @@ function Landing() {
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
               {t("plan:landing.hero.subtitle")}
             </p>
+            {/* PT-only positioning: 3 hard bullets */}
+            <ul className="mt-6 space-y-2">
+              {((t("plan:landing.hero.bullets", { returnObjects: true }) as string[]) ?? []).map((b) => (
+                <li key={b} className="flex items-start gap-2 text-sm text-foreground/85">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
             <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90">
               <Sparkles className="h-3 w-3" />
-              {t("plan:landing.hero.social_proof")}
+              {t("plan:landing.hero.beta_softcap_chip")}
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
@@ -202,9 +211,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* Quem (personas) + Porquê (vs ChatGPT) — duas perguntas, uma secção */}
-      <WhoAndWhySection />
-
       {/* The journey — 5 stages of the in-app generator + tier chips inline */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
@@ -226,15 +232,9 @@ function Landing() {
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
           <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logbook_preview.subtitle")}</p>
         </div>
-        <div className="grid items-start gap-8 md:grid-cols-2">
-          <div>
-            <SetLogMockup />
-            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.log_caption")}</p>
-          </div>
-          <div>
-            <LogbookInsightsMockup />
-            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_insights.subtitle")}</p>
-          </div>
+        <div className="mx-auto max-w-md">
+          <SetLogMockup />
+          <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.log_caption")}</p>
         </div>
         <p className="mt-8 text-center text-xs italic text-muted-foreground/70">
           {t("plan:landing.logbook_preview.flow", "1. O cliente regista. 2. A IA cruza volume, RPE e tempo. 3. Você vê sinais e decide com contexto.")}
@@ -330,12 +330,7 @@ function Landing() {
           {[
             { q: t("plan:landing.faq.q1_q"), a: t("plan:landing.faq.q1_a") },
             { q: t("plan:landing.faq.q2_q"), a: t("plan:landing.faq.q2_a") },
-            { q: t("plan:landing.faq.q3_q"), a: t("plan:landing.faq.q3_a") },
-            { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
-            { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
-            { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
-            { q: t("plan:landing.faq.q11_q"), a: t("plan:landing.faq.q11_a") },
-            { q: t("plan:landing.faq.q12_q"), a: t("plan:landing.faq.q12_a") },
+            { q: t("plan:landing.faq.q9_q"), a: t("plan:landing.faq.q9_a") },
             { q: t("plan:landing.faq.q13_q"), a: t("plan:landing.faq.q13_a") },
             { q: t("plan:landing.faq.q14_q"), a: t("plan:landing.faq.q14_a") },
           ].map((item, i) => (
@@ -959,29 +954,29 @@ function HeroHeadlineRotator() {
           <span className="block text-accent">{v.line2}</span>
         </h1>
       </div>
-      <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
-        {variants.map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            aria-label={`Variant ${i + 1}`}
-            onClick={() => setIdx(i)}
-            className={`h-1 rounded-full transition-all ${i === idx ? "w-8 bg-accent" : "w-3 bg-border hover:bg-muted-foreground/40"}`}
-          />
-        ))}
-      </div>
+      {variants.length > 1 && (
+        <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
+          {variants.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Variant ${i + 1}`}
+              onClick={() => setIdx(i)}
+              className={`h-1 rounded-full transition-all ${i === idx ? "w-8 bg-accent" : "w-3 bg-border hover:bg-muted-foreground/40"}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function HeroVisualRotator() {
-  const variants = 3;
-  const [idx] = useHeroRotation(variants);
-  // Order MUST match landing.hero.variants order in plan.json:
-  //  0 = Para PTs           → CoachWorkbench (client list)
-  //  1 = História do criador → HeroPlanMockup (plan built for myself)
-  //  2 = Para quem treina sozinho → SoloTrainer
-  const slides = [<CoachWorkbenchMockup />, <HeroPlanMockup />, <SoloTrainerMockup />];
+  // PT-only positioning (R61): single hero visual = the actual plan output.
+  // CoachWorkbench/SoloTrainer mockups removed from the rotation; kept in
+  // file in case we add a /for-clients page later.
+  const slides = [<HeroPlanMockup />];
+  const idx = 0;
   return (
     // Active slide drives container height (relative); inactive slides stack
     // absolutely on top for the cross-fade. This eliminates the empty space
