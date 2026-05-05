@@ -166,7 +166,11 @@
       "plan_ready": "Plan ready · awaiting 1st log",
       "last_log": "Last log {{when}}",
       "ready_to_build": "Assessment ready · build the plan",
-      "intake_pending": "Assessment incomplete"
+      "intake_pending": "Assessment incomplete",
+      "cvd_low": "Low CVD risk",
+      "cvd_mod": "Moderate CVD risk",
+      "cvd_high": "High CVD risk",
+      "recovery_pct": "Recovery {{n}}%"
     },
     "cockpit": {
       "recovery": "Recovery",
