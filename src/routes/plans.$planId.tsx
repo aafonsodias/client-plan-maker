@@ -310,7 +310,21 @@ function PlanEditor() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+      {/* Plan chrome — collapsed by default so the workout table is the first
+          thing on the page. Trainer expands when they need title, actions,
+          summary, block transition, etc. */}
+      <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
+          <span className="inline-flex items-center gap-2 normal-case tracking-normal">
+            <SettingsIcon className="h-3.5 w-3.5" />
+            <span className="font-semibold uppercase tracking-widest">Detalhes & ações do plano</span>
+            {plan?.title && (
+              <span className="ml-1 truncate text-[11px] font-normal text-muted-foreground/80">— {plan.title}</span>
+            )}
+          </span>
+          <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
+        </summary>
+        <div className="space-y-4 border-t border-border px-3 pb-4 pt-3">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="relative z-0 min-w-0 flex-1">
           {client && (
@@ -776,6 +790,8 @@ function PlanEditor() {
           </Link>
         </div>
       )}
+        </div>
+      </details>
 
       {/* Mode tabs */}
       <div className="flex flex-wrap items-center justify-between gap-2">
