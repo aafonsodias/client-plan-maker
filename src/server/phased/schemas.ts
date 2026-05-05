@@ -132,6 +132,26 @@ export const IntensityVolumeTradeoffEnum = z.enum([
   "low_int_very_high_vol",
 ]);
 
+// R64 — Wave/periodisation model (Bompa & Buzzichelli 6e §7.3-7.5).
+// Conjugate is reserved for a future round (max-effort/dynamic-effort split
+// requires Stage 3 day tagging).
+export const WaveModelEnum = z.enum(["linear", "undulating", "block", "conjugate"]);
+
+// R64 — How hard the auto-regulator should react when realised RPE drifts
+// above prescribed (programNextWeek) — strict cuts load, suggested flags
+// the day, off ignores and follows wave nominal.
+export const AutoregStrictnessEnum = z.enum(["strict", "suggested", "off"]);
+
+// R64 — Cockpit preset. "custom" = coach moved knobs by hand.
+export const CockpitPresetEnum = z.enum([
+  "custom",
+  "hypertrophy_classic",
+  "strength_base",
+  "moderate_recomp",
+  "high_volume",
+  "conservative",
+]);
+
 export const ProgrammingVariablesSchema = z.object({
   training_split: TrainingSplitEnum,
   deload_frequency: DeloadFrequencyEnum,
@@ -139,6 +159,11 @@ export const ProgrammingVariablesSchema = z.object({
   rpe_ceiling: z.number().min(7.5).max(10),
   exercise_bias: ExerciseBiasEnum,
   intensity_volume_tradeoff: IntensityVolumeTradeoffEnum,
+  // R64 Intensity Cockpit knobs — all optional with sane fallbacks so legacy
+  // plans continue to behave the same when these fields are absent.
+  wave_model: WaveModelEnum.default("undulating"),
+  autoreg_strictness: AutoregStrictnessEnum.default("suggested"),
+  cockpit_preset: CockpitPresetEnum.default("custom"),
 });
 export type ProgrammingVariables = z.infer<typeof ProgrammingVariablesSchema>;
 
