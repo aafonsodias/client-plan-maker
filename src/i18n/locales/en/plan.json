@@ -162,6 +162,11 @@
       "eyebrow": "Coming next",
       "title": "What we're building, openly.",
       "subtitle": "Not yet, but coming. We'd rather under-promise here than oversell.",
+      "inline_chips": [
+        "Trends & graphs",
+        "Prompt-driven tweaks",
+        "Coach AI advice"
+      ],
       "items": {
         "trends": {
           "title": "Trends & graphs",

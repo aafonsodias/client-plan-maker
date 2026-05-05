@@ -1,92 +1,49 @@
-## What you're asking
+## What changes
 
-Take the header strip from `/clients/$clientId` (avatar · name · phase pill · ACSM/recovery chips · ProtocolRail · plan title/block/week · PDF · compliance · last block summary) and fold it into the dashboard player card so the list itself becomes the cockpit. No mandatory extra page just to read where a client stands.
+Today's landing has ~14 sections (Hero → Benefits → Anti-ChatGPT → How it works → Comparison → Tier badges → Journey → Mid-CTA → Credibility → Logbook preview → Workbench → Logbook insights → Pricing → Features → Roadmap → Founder → FAQ → Mission → Closing). It's long, repeats itself (Benefits ≈ Features, Logbook preview ≈ Logbook insights, Journey ≈ How it works, Credibility ≈ Tier badges), and dilutes the message.
 
-## Honest redteam first
+The updated Protocol PDF is sharper: one promise, one mockup, one comparison, one journey, one logbook proof, one price, one founder note, FAQ. I'll fuse the page to that shape.
 
-The detail route is ~4,200 lines. It hosts:
-- Assessment form (PAR-Q, SMART, movement screens, measurements, photos)
-- BriefEditor, BlueprintEditorPanel, MicrocyclePanel, ProgressionsPanel
-- Logbook timeline, ClientDocuments, IntakeLinkPanel, reassessment sheet
-- Block transition + next-block flow
+## New structure (8 sections, ~half the length)
 
-Cramming all of that into a card on `/dashboard` is dishonest — the page would scroll forever and the list stops being scannable. So the plan is **two-tier**:
+1. **Hero** — keep current layout (logo lockup + headline + plan mockup on the right). Refresh copy to PDF wording: *"Cria planos de treino prontos a enviar em minutos. Baseados na avaliação real do teu cliente. Ajustam-se semana a semana com o que ele faz no ginásio."* Keep the "Beta privado" chip, the primary CTA, and the "Conta grátis · 1 cliente · 1 plano · sem cartão · ver exemplo PDF" line. **Drop** the separate Benefits strip below — it duplicates this.
 
-1. **Player card becomes the read-mode cockpit** — everything in your screenshot (protocol rail, plan header, PDF, compliance, reassessment chip) lives inline on the dashboard, expanded on click. No need to leave the list to *check* a client.
-2. **Detail route stays as the build/edit surface** — opened only when actively editing assessment, brief, blueprint, microcycle, progressions, or logging. Linked from the card as "Abrir editor" rather than the default destination.
+2. **Anti-ChatGPT** — keep section, tighten copy to PDF line: *"ChatGPT gera o que pedes. Protocol gera o que o cliente precisa."* Keep the 14-section assessment checklist visual.
 
-That keeps your "1 protocol, 1 page" principle for **viewing**, and avoids pretending we shrunk a 4k-line builder into 200px.
+3. **Journey + How it works (fused)** — one section showing the 5 stages (Avaliação → Brief → Blueprint → Microciclo → Progressões) using the existing `JourneyStrip`. Delete the separate `HowItWorksAnimation` section above (its content is the same loop, just animated). Move the tier badges (🟢🟡🔵) into a small sub-row inside this section instead of a standalone block.
 
-## What ships this round
+4. **Comparison table** — keep `ComparisonTableSection` as-is. Strongest objective proof on the page.
 
-### 1. Expand `ClientPlayerCard` into an accordion item
+5. **Depois do PDF — logbook + insights (fused)** — merge the three current logbook sections (preview, workbench, insights) into one. Layout: left = `SetLogMockup` ("o cliente regista"), right = `LogbookInsightsMockup` ("a IA lê e devolve sinais"). Below: a single 3-step "Como funciona" line. Drop the separate Workbench mockup, the history grid and the trend chart from the landing — those live inside the app, not the pitch.
 
-`src/components/ClientPlayerCard.tsx`:
-- Wrap the existing row in a `<Collapsible>` (shadcn). Click the row to expand instead of navigate. Avatar/name/phase pill/status line stay in the **always-visible header**.
-- Add a chevron on the right (replacing the current `ArrowRight`).
-- When expanded, render a new `<ClientCockpit>` block underneath.
+6. **Pricing** — keep both cards (Beta grátis + Pro em breve). No change.
 
-### 2. New `src/components/ClientCockpit.tsx` (read-mode mirror)
+7. **Founder + Roadmap (fused)** — keep the founder note, append a tiny single-line "A seguir, abertamente:" with 3 inline "Em breve" chips (Tendências · Ajustes por prompt · Conselhos IA) instead of the full roadmap card grid. Honest, no-CTA.
 
-Pure presentational. Props: `{ client, phase, plan, latestSession, assessmentPct, lastAssessmentAt, recoveryScore, acsmRisk, briefApproved, blueprintApproved, microcycleApproved, progressionsApproved }`.
+8. **FAQ + Closing CTA + Footer** — trim FAQ from 10 → 6 questions (the ones the PDF foregrounds: plan good enough?, lesions, brand, data, science, free quota). Keep the closing CTA card and the footer untouched.
 
-Renders, in order:
-- ACSM + Recovery chips (reuse existing components from detail page — extract if inline)
-- `<ProtocolRail bare />` (already supports `bare` mode — just feed props)
-- Plan header strip: `Bloco N · Semana X de Y · FASE` + PDF download button (reuse `downloadPlanById`)
-- `<ComplianceDashboard planId=… compact />` — add a `compact` prop that hides headings and shrinks padding
-- Last block transition summary (when `block_number > 1`)
-- Action row (right-aligned, quiet): `Abrir editor` (→ `/clients/$clientId`), `Logbook` (→ `/clients/$clientId/year`), `Reavaliar` (opens `<ReassessmentSheet>` inline), `Mais ações` dropdown
+**Removed sections:** `Benefits` strip, `HowItWorksAnimation`, `MidCtaSection`, `Credibility` cards (PARQ/ACSM/Prochaska — already covered in Anti-ChatGPT checklist), standalone `TierBadgesSection`, standalone `Workbench` section, `LogbookHistory` + `Progression` mockups, `Features` 3-card grid, full `Roadmap` grid, standalone `Mission` line.
 
-No editing surfaces. No StageCards. No BriefEditor. Those stay on the detail route.
+## Visuals
 
-### 3. Dashboard loader additions
+The PDF ships its own illustrations but they're stylistically inconsistent with the current dark/amber product mockups (`HeroPlanMockup`, `SetLogMockup`, `LogbookInsightsMockup`) which already match the in-app UI. **Recommendation: keep the existing in-app-style mockups** (they're truer product proof than decorative graphics) and only refresh **copy** + **structure**. If you want generated illustrations on top, say the word and I'll add 1–2 hero/section images via Lovable AI in a follow-up — but I'd advise against it for a "condensed, high-signal" page.
 
-`src/routes/dashboard.tsx`:
-- Already loads `planByClient` and `logsByClient`. Extend the load to also fetch per client:
-  - latest `assessments` row → `assessmentPct` (reuse existing helper) + `lastAssessmentAt`
-  - `recoveryScore` (latest from wherever the detail page reads it — locate via `rg`)
-  - `acsmRisk` (derive from BMI/BP — reuse `src/lib/blood-pressure.ts` + assessment fields)
-  - approval flags: `brief_approved_at`, `blueprint_approved_at`, `microcycle_approved_at`, `progressions_approved_at` from `workout_plans`
-- Pass into `<ClientPlayerCard>` → `<ClientCockpit>`.
-- Cap eager-fetch: only fetch cockpit data for cards that are expanded (lazy on first open) to keep the list snappy. Track expanded state in dashboard component.
+## Copy work
 
-### 4. Detail route: lower its profile
+All new strings go through i18n (`plan.landing.*` in PT + EN). PT voice = "você" per project memory. I'll:
+- rewrite hero title/subtitle to match the PDF
+- tighten Anti-ChatGPT copy to the PDF's one-liner
+- shorten FAQ list to 6 (delete q7–q10 keys, keep q1–q6 with refreshed answers from the PDF)
+- collapse roadmap into 3 inline chips (drop `roadmap.items.*.title/desc`, add a single `roadmap.inline_chips` array)
 
-`src/routes/clients_.$clientId.tsx`:
-- Header strip (the part now duplicated on the dashboard card) collapses by default into a thin "Voltar à lista" + name + phase pill bar. The page becomes the **builder/editor**, scrolling straight to the stage that needs work.
-- No content removed — just header chrome trimmed so the route stops competing with the cockpit. Zero risk to existing flows.
+## Files touched
 
-### 5. i18n
+- `src/routes/index.tsx` — remove ~6 sections, fuse logbook block, inline tier badges into journey, trim FAQ
+- `src/i18n/locales/pt/plan.json` + `en/plan.json` — refresh hero/anti-chatgpt/founder/closing copy, trim FAQ keys, add inline roadmap chips
+- No new components; existing `JourneyStrip`, `HeroPlanMockup`, `SetLogMockup`, `LogbookInsightsMockup`, `ComparisonTableSection` all reused as-is
 
-Add to `src/i18n/locales/{pt,en}/common.json` under `clients.cockpit.*`:
-- `open_editor`, `open_logbook`, `more_actions`, `reassess`, `pdf`, `last_block_summary`
+## Out of scope (ask before adding)
 
-PT in "você" voice, EN neutral.
-
-## Explicit NOTs
-
-- No new route. No `/clients/$id/cockpit`.
-- No moving BriefEditor/Blueprint/Microcycle/Progressions/Assessment into the card. Builders stay on the detail page until they're individually refactored into sheets (separate future round).
-- No removing the detail route. Just demoting it from "default destination" to "editor".
-- No new DB columns.
-
-## Files
-
-Created:
-- `src/components/ClientCockpit.tsx`
-
-Edited:
-- `src/components/ClientPlayerCard.tsx` (accordion + cockpit slot)
-- `src/routes/dashboard.tsx` (loader extensions + expanded-state tracking)
-- `src/routes/clients_.$clientId.tsx` (header trim only)
-- `src/components/ComplianceDashboard.tsx` (add `compact` prop)
-- `src/i18n/locales/pt/common.json`, `src/i18n/locales/en/common.json`
-
-## Acceptance
-
-- `/dashboard` row click → expands in place, shows protocol rail + plan header + PDF + compliance, mirroring the screenshot.
-- Reassessment chip in the rail still works (opens sheet inline from the card).
-- "Abrir editor" link still goes to detail page for actually editing.
-- Mobile 375px: cockpit stacks cleanly, no horizontal scroll.
-- All copy through `t()`.
+- AI-generated hero/section illustrations
+- New testimonial block (project memory: "no fake social proof")
+- Re-skinning the app mockups

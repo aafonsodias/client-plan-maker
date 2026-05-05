@@ -162,6 +162,11 @@
       "eyebrow": "A seguir",
       "title": "O que estamos a construir, abertamente.",
       "subtitle": "Ainda não, mas vem aí. Preferimos prometer menos aqui do que vender de mais.",
+        "inline_chips": [
+          "Tendências e gráficos",
+          "Ajustes por prompt",
+          "Conselhos do Coach AI"
+        ],
       "items": {
         "trends": {
           "title": "Tendências e gráficos",

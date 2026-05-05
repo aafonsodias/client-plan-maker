@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FileText, Users, Zap, ArrowRight, ClipboardCheck, ShieldCheck, RefreshCw, ArrowUp, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, LineChart, MessageSquare, Brain, MoreVertical, ChevronRight, Mic, Activity, Upload, X, Minus } from "lucide-react";
+import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
-import { WorkbenchMockup } from "@/components/landing/WorkbenchMockup";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/hooks/use-auth";
@@ -203,95 +202,25 @@ function Landing() {
         </div>
       </section>
 
-      {/* Benefits — three plain-language outcomes (PT-first) */}
-      <section className="mx-auto max-w-6xl px-6 pt-4 pb-16">
-        <p className="mb-6 text-xs uppercase tracking-widest text-accent">{t("plan:landing.benefits.eyebrow")}</p>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: Zap, title: t("plan:landing.benefits.time.title"), desc: t("plan:landing.benefits.time.desc") },
-            { icon: LayoutGrid, title: t("plan:landing.benefits.consistency.title"), desc: t("plan:landing.benefits.consistency.desc") },
-            { icon: ShieldCheck, title: t("plan:landing.benefits.confidence.title"), desc: t("plan:landing.benefits.confidence.desc") },
-          ].map((b) => (
-            <div key={b.title} className="rounded-2xl border border-border bg-card/60 p-6">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
-                <b.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mb-2 text-lg font-medium tracking-tight">{b.title}</h3>
-              <p className="text-sm font-light text-muted-foreground">{b.desc}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6">
-          <a
-            href="/example-plan.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
-          >
-            <FileText className="h-4 w-4" />
-            {t("plan:landing.benefits.example_link")}
-          </a>
-        </div>
-      </section>
-
       {/* Anti-ChatGPT — sharp positioning vs the obvious alternative */}
       <AntiChatGPTSection />
 
-      {/* How it works — animated mock */}
+      {/* The journey — 5 stages of the in-app generator + tier chips inline */}
       <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-10 max-w-2xl">
-          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.how_it_works.eyebrow")}</p>
-          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.how_it_works.title")}</h2>
-        </div>
-        <HowItWorksAnimation />
-      </section>
-
-      {/* Comparison table — Protocol vs Excel vs ChatGPT vs Generic apps */}
-      <ComparisonTableSection />
-
-      {/* Programming tier badges — 3-tier methodology shown on landing */}
-      <TierBadgesSection />
-
-      {/* The journey — mirrors the 5 stages of the in-app generator */}
-      <section id="journey" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.journey.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.journey.title")}</h2>
           <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.journey.subtitle")}</p>
         </div>
         <JourneyStrip />
+        <InlineTierChips />
       </section>
 
-      {/* Mid-page repeat CTA — anchors the offer halfway down the page */}
-      <MidCtaSection primaryCtaTo={primaryCtaTo} />
+      {/* Comparison table — Protocol vs Excel vs ChatGPT vs Generic apps */}
+      <ComparisonTableSection />
 
-      {/* Credibility — built on the science */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 max-w-2xl">
-          <h2 className="text-4xl font-light tracking-tight">{t("plan:landing.credibility.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.credibility.subtitle")}</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: ClipboardCheck, title: t("plan:landing.credibility.cards.parq_title"), desc: t("plan:landing.credibility.cards.parq_desc") },
-            { icon: ShieldCheck, title: t("plan:landing.credibility.cards.acsm_title"), desc: t("plan:landing.credibility.cards.acsm_desc") },
-            { icon: RefreshCw, title: t("plan:landing.credibility.cards.prochaska_title"), desc: t("plan:landing.credibility.cards.prochaska_desc") },
-          ].map((c) => (
-            <div key={c.title} className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:shadow-[var(--shadow-elegant)]">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
-                <c.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mb-2 text-lg font-medium tracking-tight">{c.title}</h3>
-              <p className="text-sm font-light text-muted-foreground">{c.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Logbook preview — what comes AFTER the PDF (honest preview, "Soon" chip on graph).
-        * Pairs the live set-log experience with a multi-week history grid so the two
-        * panels feel distinct (no more duplicated mockups). */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
+      {/* Depois do PDF — fused logbook + AI insights */}
+      <section id="logbook" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
@@ -303,58 +232,13 @@ function Landing() {
             <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.log_caption")}</p>
           </div>
           <div>
-            <div className="relative">
-              <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
-                {t("common:currency.soon")}
-              </div>
-              <LogbookHistoryMockup />
-            </div>
-            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.history_caption")}</p>
+            <LogbookInsightsMockup />
+            <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_insights.subtitle")}</p>
           </div>
         </div>
-        {/* Trend chart: the long-arc story below the side-by-side preview */}
-        <div className="mt-10">
-          <div className="relative">
-            <div className="absolute right-3 top-3 z-10 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
-              {t("common:currency.soon")}
-            </div>
-            <ProgressionMockup />
-          </div>
-          <p className="mt-3 text-center text-[11px] italic text-muted-foreground/70">{t("plan:landing.logbook_preview.trend_caption")}</p>
-        </div>
-      </section>
-
-      {/* Workbench — AI coaching assistant with model picker */}
-      <section id="workbench" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-10 max-w-2xl">
-          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.workbench.eyebrow")}</p>
-          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.workbench.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.workbench.subtitle")}</p>
-        </div>
-        <WorkbenchMockup />
-      </section>
-
-      {/* Logbook intelligently read — AI-derived insights */}
-      <section id="logbook-insights" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-10 max-w-2xl">
-          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_insights.eyebrow")}</p>
-          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_insights.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.logbook_insights.subtitle")}</p>
-        </div>
-        <div className="grid items-start gap-8 md:grid-cols-2">
-          <LogbookInsightsMockup />
-          <div className="rounded-2xl border border-dashed border-border bg-card/40 p-6">
-            <p className="text-xs uppercase tracking-widest text-accent">Como funciona</p>
-            <ul className="mt-4 space-y-3 text-sm text-foreground/85">
-              <li>1. O cliente regista séries no logbook (web ou voz).</li>
-              <li>2. A IA cruza volume, RPE e velocidade ao longo do tempo.</li>
-              <li>3. Tu vês sinais accionáveis — e decides com contexto.</li>
-            </ul>
-            <p className="mt-4 text-[11px] italic text-muted-foreground/70">
-              Os sinais são sugestões. A decisão é sempre tua.
-            </p>
-          </div>
-        </div>
+        <p className="mt-8 text-center text-xs italic text-muted-foreground/70">
+          {t("plan:landing.logbook_preview.flow", "1. O cliente regista. 2. A IA cruza volume, RPE e tempo. 3. Você vê sinais e decide com contexto.")}
+        </p>
       </section>
 
       {/* Pricing */}
@@ -411,57 +295,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <h2 className="mb-12 max-w-2xl text-4xl font-light tracking-tight">{t("plan:landing.features.title")}</h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: Users, title: t("plan:landing.features.intake_title"), desc: t("plan:landing.features.intake_desc") },
-            { icon: Zap, title: t("plan:landing.features.ai_title"), desc: t("plan:landing.features.ai_desc") },
-            { icon: FileText, title: t("plan:landing.features.pdf_title"), desc: t("plan:landing.features.pdf_desc") },
-          ].map((f) => (
-            <div key={f.title} className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40 hover:shadow-[var(--shadow-elegant)]">
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
-                <f.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mb-2 text-lg font-medium tracking-tight">{f.title}</h3>
-              <p className="text-sm font-light text-muted-foreground">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Roadmap — honest "coming next" cards, no CTAs */}
-      <section id="roadmap" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-10 max-w-2xl">
-          <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.roadmap.eyebrow")}</p>
-          <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.roadmap.title")}</h2>
-          <p className="mt-4 text-base font-light text-muted-foreground">{t("plan:landing.roadmap.subtitle")}</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            { icon: LineChart, title: t("plan:landing.roadmap.items.trends.title"), desc: t("plan:landing.roadmap.items.trends.desc") },
-            { icon: MessageSquare, title: t("plan:landing.roadmap.items.prompt.title"), desc: t("plan:landing.roadmap.items.prompt.desc") },
-            { icon: Brain, title: t("plan:landing.roadmap.items.advice.title"), desc: t("plan:landing.roadmap.items.advice.desc") },
-          ].map((r) => (
-            <div key={r.title} className="relative rounded-2xl border border-dashed border-border bg-card/40 p-6">
-              <div className="absolute right-4 top-4 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
-                {t("common:currency.soon")}
-              </div>
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-accent">
-                <r.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mb-2 text-lg font-medium tracking-tight">{r.title}</h3>
-              <p className="text-sm font-light text-muted-foreground">{r.desc}</p>
-            </div>
-          ))}
-        </div>
-        {t("plan:landing.roadmap.footnote") ? (
-          <p className="mt-6 text-center text-xs italic text-muted-foreground/70">{t("plan:landing.roadmap.footnote")}</p>
-        ) : null}
-      </section>
-
-      {/* Founder note — text-only, short and direct */}
+      {/* Founder note + inline roadmap chips */}
       <section className="mx-auto max-w-3xl px-6 py-24">
         <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
         <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
@@ -470,6 +304,22 @@ function Landing() {
           <p>{t("plan:landing.founder.p3")}</p>
         </div>
         <p className="mt-6 text-sm italic text-muted-foreground/70">{t("plan:landing.founder.signature")}</p>
+        <div className="mt-10 border-t border-border/60 pt-6">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            {t("plan:landing.roadmap.eyebrow")} — {t("plan:landing.roadmap.subtitle")}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {((t("plan:landing.roadmap.inline_chips", { returnObjects: true }) as string[]) ?? []).map((label) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-xs text-foreground/85"
+              >
+                <Sparkles className="h-3 w-3 text-accent" />
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* FAQ */}
@@ -483,10 +333,6 @@ function Landing() {
             { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
             { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
             { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
-            { q: t("plan:landing.faq.q7_q"), a: t("plan:landing.faq.q7_a") },
-            { q: t("plan:landing.faq.q8_q"), a: t("plan:landing.faq.q8_a") },
-            { q: t("plan:landing.faq.q9_q"), a: t("plan:landing.faq.q9_a") },
-            { q: t("plan:landing.faq.q10_q"), a: t("plan:landing.faq.q10_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
@@ -498,11 +344,6 @@ function Landing() {
             </AccordionItem>
           ))}
         </Accordion>
-      </section>
-
-      {/* Mission line */}
-      <section className="mx-auto max-w-3xl px-6 pb-16">
-        <p className="text-center text-[15px] leading-[1.7] text-muted-foreground">{t("plan:landing.mission")}</p>
       </section>
 
       {/* Closing CTA */}
@@ -557,71 +398,6 @@ function Landing() {
         </div>
       </footer>
       <ScrollToTopButton />
-    </div>
-  );
-}
-
-function HowItWorksAnimation() {
-  // Continuous loop stepper: clinical briefing → evidence-based programming → edit/print → feedback/adjust
-  const { t } = useTranslation("plan");
-  const StepIcons = [ClipboardList, Brain, FileText, RefreshCw];
-  const steps = [
-    { label: t("landing.how_it_works.steps.add_client.label"), desc: t("landing.how_it_works.steps.add_client.desc") },
-    { label: t("landing.how_it_works.steps.assessment.label"), desc: t("landing.how_it_works.steps.assessment.desc") },
-    { label: t("landing.how_it_works.steps.generate.label"), desc: t("landing.how_it_works.steps.generate.desc") },
-    { label: t("landing.how_it_works.steps.export.label"), desc: t("landing.how_it_works.steps.export.desc") },
-  ];
-  return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 sm:p-12">
-      <div
-        className="absolute -right-32 top-0 h-72 w-72 rounded-full opacity-20 blur-3xl"
-        style={{ background: "var(--gradient-accent)" }}
-      />
-      {/* Connecting line — horizontal on sm+, vertical (dashed) on mobile */}
-      <div className="relative">
-        <div className="pointer-events-none absolute left-7 top-12 bottom-12 w-px bg-gradient-to-b from-accent/40 via-accent/20 to-accent/40 sm:hidden" />
-        <div className="pointer-events-none absolute left-[12%] right-[12%] top-7 hidden h-px bg-gradient-to-r from-accent/0 via-accent/40 to-accent/0 sm:block" />
-
-        <div className="relative grid gap-6 sm:grid-cols-4 sm:gap-4">
-          {steps.map((s, i) => {
-            const Icon = StepIcons[i] ?? ClipboardList;
-            return (
-              <div
-                key={s.label}
-                className="group relative flex gap-4 sm:flex-col sm:gap-3"
-                style={{ animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
-              >
-                {/* Chevron between steps (sm+ only) */}
-                {i > 0 && (
-                  <ChevronRight
-                    aria-hidden
-                    className="pointer-events-none absolute -left-3 top-4 hidden h-4 w-4 text-accent/40 sm:block"
-                    strokeWidth={2}
-                  />
-                )}
-                {/* Numbered + iconed circle */}
-                <div className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-gradient-to-br from-amber-400/20 to-amber-600/10 text-accent shadow-[0_4px_14px_-6px_oklch(0.78_0.12_70/0.5)]">
-                  <Icon className="h-5 w-5" strokeWidth={1.5} />
-                  <span className="absolute -right-1 -top-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-accent/60 bg-background text-[10px] font-bold text-accent">
-                    {i + 1}
-                  </span>
-                </div>
-
-                <div className="relative z-10 min-w-0 flex-1 sm:pt-1">
-                  <p className="font-medium leading-tight">{s.label}</p>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground">{s.desc}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Loop indicator — emphasises the continuous nature */}
-      <div className="relative mt-8 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-        <RefreshCw className="h-3 w-3 text-accent" strokeWidth={1.5} />
-        <span>{t("landing.how_it_works.eyebrow")} · ciclo contínuo</span>
-      </div>
     </div>
   );
 }
@@ -816,110 +592,6 @@ function SetLogMockup() {
   );
 }
 
-function ProgressionMockup() {
-  const { t } = useTranslation("plan");
-  // Realistic arc: linear climb, deload at W4, push to PR at W6.
-  const weights = [70, 72.5, 75, 70, 80, 85];
-  const w = 280;
-  const h = 90;
-  const min = Math.min(...weights) - 2;
-  const max = Math.max(...weights) + 2;
-  const points = weights.map((v, i) => {
-    const x = (i / (weights.length - 1)) * w;
-    const y = h - ((v - min) / (max - min)) * h;
-    return { x, y, v };
-  });
-  const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-
-  return (
-    <div className="rounded-2xl border border-border bg-card/80 p-6">
-      <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("landing.mockups.back_squat_six_weeks")}</p>
-      <div className="mt-5">
-        <svg viewBox={`0 0 ${w} ${h + 8}`} className="w-full" preserveAspectRatio="none">
-          <path d={path} fill="none" stroke="var(--accent)" strokeOpacity="0.5" strokeWidth="1.5" />
-          {points.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="3" fill="var(--background)" stroke="var(--accent)" strokeWidth="1.5" />
-          ))}
-        </svg>
-        <div className="mt-1 flex justify-between font-mono text-[10px] text-muted-foreground/60">
-          {weights.map((v, i) => (
-            <span key={i}>W{i + 1}</span>
-          ))}
-        </div>
-      </div>
-      <div className="mt-6 space-y-1.5 font-mono text-[12px] text-muted-foreground">
-        <p>{t("landing.mockups.top_set_today")} <span className="text-foreground/90">85kg × 5</span></p>
-        <p>{t("landing.mockups.pr_vs_week1")} <span className="text-accent">+15kg</span></p>
-        <p>{t("landing.mockups.sessions_logged")} <span className="text-foreground/90">18</span></p>
-      </div>
-    </div>
-  );
-}
-
-/**
- * LogbookHistoryMockup — multi-week history grid for one exercise's top sets.
- * Visually distinct from <SetLogMockup /> (today's session) and from
- * <ProgressionMockup /> (long-arc trend chart).
- */
-function LogbookHistoryMockup() {
-  const { t } = useTranslation("plan");
-  const rows = [
-    { week: "W1", load: "70 kg", reps: "5 / 5 / 5", note: "RPE 6" },
-    { week: "W2", load: "72.5 kg", reps: "5 / 5 / 5", note: "RPE 7" },
-    { week: "W3", load: "75 kg", reps: "5 / 5 / 4", note: "—" },
-    { week: "W4", load: "77.5 kg", reps: "5 / 5 / 5", note: "deload near" },
-    { week: "W5", load: "80 kg", reps: "5 / 4 / 4", note: "RPE 8" },
-    { week: "W6", load: "82.5 kg", reps: "5 / 5 / 4", note: "PR" },
-  ] as const;
-  return (
-    <div className="rounded-2xl border border-border bg-card/80 p-6">
-      <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-widest text-accent">
-          {t("landing.mockups.history_title", "Back squat — 6-week history")}
-        </p>
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-          {t("landing.mockups.history_subtitle", "Top set per week")}
-        </p>
-      </div>
-      <div className="mt-5 overflow-hidden rounded-md border border-border/60">
-        <table className="w-full font-mono text-[12px]">
-          <thead>
-            <tr className="border-b border-border/60 bg-background/40 text-[10px] uppercase tracking-widest text-muted-foreground">
-              <th className="px-3 py-2 text-left font-medium">Wk</th>
-              <th className="px-3 py-2 text-left font-medium">Load</th>
-              <th className="px-3 py-2 text-left font-medium">Reps</th>
-              <th className="px-3 py-2 text-right font-medium">Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr
-                key={r.week}
-                className={
-                  i === rows.length - 1
-                    ? "bg-accent/5 text-foreground"
-                    : "text-foreground/85"
-                }
-              >
-                <td className="px-3 py-2 text-muted-foreground">{r.week}</td>
-                <td className="px-3 py-2">{r.load}</td>
-                <td className="px-3 py-2">{r.reps}</td>
-                <td className="px-3 py-2 text-right text-muted-foreground">{r.note}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-4 flex items-center justify-between font-mono text-[12px]">
-        <span className="text-muted-foreground">{t("landing.mockups.delta_label", "Δ vs W1")}</span>
-        <span className="inline-flex items-center gap-1 text-accent">
-          <ArrowUp className="h-3 w-3" /> +12.5 kg
-        </span>
-      </div>
-    </div>
-  );
-}
-
 function JourneyStrip() {
   const { t } = useTranslation("plan");
   const stages = [
@@ -1087,8 +759,8 @@ function ComparisonTableSection() {
   );
 }
 
-// ─── Programming tier badges ───────────────────────────────────────────
-function TierBadgesSection() {
+// ─── Inline programming tier chips (under JourneyStrip) ────────────────
+function InlineTierChips() {
   const { t } = useTranslation("plan");
   type TierKey = "remedial" | "conservative" | "advanced";
   const tiers: Array<{ key: TierKey; chip: string; dot: string }> = [
@@ -1097,62 +769,25 @@ function TierBadgesSection() {
     { key: "advanced",     chip: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300", dot: "bg-emerald-400" },
   ];
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
-      <div className="mb-8 max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-accent">
-          {t("landing.tier_badges.eyebrow")}
-        </p>
-        <h2 className="mt-2 text-4xl font-light tracking-tight">
-          {t("landing.tier_badges.title")}
-        </h2>
-        <p className="mt-4 text-base font-light text-muted-foreground">
-          {t("landing.tier_badges.subtitle")}
-        </p>
-      </div>
-      <div className="grid gap-6 md:grid-cols-3">
+    <div className="mt-6 rounded-2xl border border-dashed border-border/70 bg-card/40 p-5">
+      <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+        {t("landing.tier_badges.eyebrow")} — {t("landing.tier_badges.subtitle")}
+      </p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {tiers.map((tier) => (
-          <div
-            key={tier.key}
-            className="rounded-2xl border border-border bg-card p-6 transition hover:border-accent/40"
-          >
-            <div
-              className={`mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${tier.chip}`}
+          <div key={tier.key} className="flex items-start gap-2 text-xs text-muted-foreground">
+            <span
+              className={`mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${tier.chip}`}
             >
               <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
               {t(`landing.tier_badges.items.${tier.key}.name`)}
-            </div>
-            <p className="text-sm font-light text-muted-foreground">
-              {t(`landing.tier_badges.items.${tier.key}.desc`)}
-            </p>
+            </span>
+            <span className="leading-snug">{t(`landing.tier_badges.items.${tier.key}.desc`)}</span>
           </div>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
-// ─── Mid-page repeat CTA ───────────────────────────────────────────────
-function MidCtaSection({ primaryCtaTo }: { primaryCtaTo: string }) {
-  const { t } = useTranslation("plan");
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] px-6 py-8 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
-        <div>
-          <h3 className="text-2xl font-light tracking-tight">
-            {t("landing.mid_cta.title")}
-          </h3>
-          <p className="mt-1 text-sm font-light text-muted-foreground">
-            {t("landing.mid_cta.subtitle")}
-          </p>
-        </div>
-        <div className="mt-5 sm:mt-0">
-          <Button asChild size="lg">
-            <Link to={primaryCtaTo}>
-              {t("landing.mid_cta.button")} <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </section>
-  );
-}
+
