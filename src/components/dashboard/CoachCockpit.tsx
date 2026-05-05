@@ -217,7 +217,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         {/* Nudges */}
         <div className="rounded-2xl border border-border bg-card p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span>{lang === "pt" ? "Toques humanos" : "Human touches"}</span>
+            <span>{lang === "pt" ? "Lembretes para clientes" : "Client reminders"}</span>
             <Sparkles className="h-3 w-3 text-amber-500" />
           </div>
           {nudges.length === 0 ? (
