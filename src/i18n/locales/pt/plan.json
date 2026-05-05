@@ -329,6 +329,18 @@
       "title_line1": "ChatGPT gera o que você PEDE.",
       "title_line2": "PROTOCOL gera o que o cliente PRECISA."
     },
+    "for_whom": {
+      "eyebrow": "Para quem é",
+      "title": "Para qualquer adulto que treine — em qualquer idade.",
+      "subtitle": "Treinadores, alunos com treinador e quem treina sozinho. Dos 18 aos 80+. O critério humano é seu; a estrutura clínica é nossa.",
+      "personas": [
+        { "title": "Treinadores", "body": "Personal trainers e estúdios que querem programar mais rápido sem perder rigor. A IA trata da repetição; você decide." },
+        { "title": "Alunos com treinador", "body": "O seu treinador usa o PROTOCOL para o seu plano. Você regista sessões, vê progressão e recebe o PDF com a marca do estúdio." },
+        { "title": "Treina sozinho", "body": "Faz a avaliação como praticante, gera o seu plano e segue-o no logbook. Estrutura honesta, sem charlatanismo." }
+      ],
+      "medical_title": "Tem uma condição clínica? Continua a ser para si — com uma regra.",
+      "medical_body": "Doença cardíaca, hipertensão, diabetes, lesões ou gravidez: o PROTOCOL aplica os filtros do PAR-Q+ e ACSM, mas a decisão final é do seu médico. Peça o aval médico antes de começar e leia cada sugestão com sentido crítico — você é responsável pelas escolhas que faz."
+    },
     "comparison": {
       "eyebrow": "Onde o PROTOCOL encaixa",
       "title": "Como o PROTOCOL se compara ao que já usas.",

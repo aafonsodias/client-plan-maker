@@ -128,9 +128,14 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
                         ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
                         : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
                   }`}
-                  title={`ACSM ${signals.risk}`}
+                  title={`ACSM ${signals.risk} CVD risk`}
                 >
-                  <AlertTriangle className="h-2.5 w-2.5" /> ACSM
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  {signals.risk === "high"
+                    ? t("clients.card.cvd_high", { defaultValue: "High CVD risk" })
+                    : signals.risk === "moderate"
+                      ? t("clients.card.cvd_mod", { defaultValue: "Mod CVD risk" })
+                      : t("clients.card.cvd_low", { defaultValue: "Low CVD risk" })}
                 </span>
               )}
               {signals.readiness != null && (
@@ -144,7 +149,8 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
                   }`}
                   title={t("clients.cockpit.recovery")}
                 >
-                  <Activity className="h-2.5 w-2.5" /> {signals.readiness}
+                  <Activity className="h-2.5 w-2.5" />
+                  {t("clients.card.recovery_pct", { defaultValue: "Recovery {{n}}%", n: signals.readiness })}
                 </span>
               )}
             </div>

@@ -79,7 +79,7 @@ export function ProtocolRail({
         <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           Protocolo
         </span>
-        <div className="flex flex-1 flex-nowrap items-center gap-1 overflow-x-auto">
+        <div className="flex flex-1 flex-wrap items-center gap-1">
           {stages.map((s, i) => {
             const stage1Handler = s.n === 1 ? (onStage1Click ?? (onStageClick ? () => onStageClick(1) : undefined)) : undefined;
             const handler = s.n === 1 ? stage1Handler : (onStageClick ? () => onStageClick(s.n) : undefined);
@@ -101,7 +101,7 @@ export function ProtocolRail({
                   <Circle className="h-2.5 w-2.5" strokeWidth={2} />
                 )}
                 <span className="font-bold">{s.n}</span>
-                <span className="hidden md:inline">{s.label}</span>
+                <span>{s.label}</span>
                 {s.n === 1 && assessmentPct != null && (
                   <span className="opacity-70">{assessmentPct}%</span>
                 )}
