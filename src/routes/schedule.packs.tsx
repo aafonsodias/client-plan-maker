@@ -60,12 +60,7 @@ export function PacksPanel() {
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Link to="/schedule" className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3.5 w-3.5" /> {t("back_to_schedule")}
-          </Link>
-          <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("pack.title")}</h1>
-        </div>
+        <h2 className="text-xl font-light tracking-wide sm:text-2xl">{t("pack.title")}</h2>
         <Button size="sm" onClick={() => setCreating(true)}>
           <Plus className="mr-2 h-4 w-4" />
           {t("pack.new")}
