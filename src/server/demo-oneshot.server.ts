@@ -37,7 +37,7 @@ export async function runInstantPipelineForUser(
 
   try {
     await setStage("client", "running");
-    const created: any = await createDemoClient({ data: { archetype: data.archetype } });
+    const created: any = await createDemoClient({ data: { archetype: data.archetype, locale: data.locale } });
     if (!created?.clientId) {
       await setStage("client", "failed", "Failed to create demo client.");
       return;
