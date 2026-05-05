@@ -1528,11 +1528,6 @@ function ClientDetail() {
                   </SheetContent>
                 </Sheet>
               )}
-              <DropdownMenuItem asChild>
-                <div className="cursor-default" onSelect={(e: any) => e.preventDefault?.()}>
-                  <ClientDocuments clientId={client.id} />
-                </div>
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -1543,6 +1538,7 @@ function ClientDetail() {
             label={t("performed_on_label")}
             placeholder={t("performed_on_placeholder")}
           />
+          <ClientDocuments clientId={client.id} />
         </div>
       </div>
 
