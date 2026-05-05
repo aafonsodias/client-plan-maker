@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus } from "lucide-react";
@@ -150,10 +151,7 @@ function Landing() {
                 {t("common:brand.name")}
               </span>
             </div>
-            <h1 className="text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
-              {t("plan:landing.hero.title_line1")}
-              <span className="block text-accent">{t("plan:landing.hero.title_line2")}</span>
-            </h1>
+            <HeroHeadlineRotator />
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
               {t("plan:landing.hero.subtitle")}
             </p>
@@ -195,7 +193,7 @@ function Landing() {
                 style={{ background: "radial-gradient(closest-side, oklch(0.78 0.14 75 / 0.32), transparent 70%)" }}
               />
               <div className="rounded-2xl ring-1 ring-amber-400/40 shadow-[0_0_40px_-10px_oklch(0.78_0.14_75/0.6)]">
-                <HeroPlanMockup />
+                <HeroVisualRotator />
               </div>
             </div>
           </div>
@@ -269,6 +267,7 @@ function Landing() {
             <Button asChild size="lg" className="mt-8 w-full">
               <Link to={primaryCtaTo}>{t("plan:landing.pricing.beta_cta")}</Link>
             </Button>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">{t("plan:landing.pricing.trial_note")}</p>
           </div>
           {/* Pro card */}
           <div className="relative rounded-2xl border border-border bg-card/60 p-8">
@@ -333,6 +332,10 @@ function Landing() {
             { q: t("plan:landing.faq.q4_q"), a: t("plan:landing.faq.q4_a") },
             { q: t("plan:landing.faq.q5_q"), a: t("plan:landing.faq.q5_a") },
             { q: t("plan:landing.faq.q6_q"), a: t("plan:landing.faq.q6_a") },
+            { q: t("plan:landing.faq.q11_q"), a: t("plan:landing.faq.q11_a") },
+            { q: t("plan:landing.faq.q12_q"), a: t("plan:landing.faq.q12_a") },
+            { q: t("plan:landing.faq.q13_q"), a: t("plan:landing.faq.q13_a") },
+            { q: t("plan:landing.faq.q14_q"), a: t("plan:landing.faq.q14_a") },
           ].map((item, i) => (
             <AccordionItem key={i} value={`faq-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
@@ -650,7 +653,8 @@ function AntiChatGPTSection() {
           {t("landing.anti_chatgpt.eyebrow")}
         </p>
         <h2 className="mt-2 max-w-3xl text-3xl font-light leading-tight tracking-tight sm:text-4xl">
-          {t("landing.anti_chatgpt.title")}
+          <span className="block">{t("landing.anti_chatgpt.title_line1")}</span>
+          <span className="block text-accent">{t("landing.anti_chatgpt.title_line2")}</span>
         </h2>
         <p className="mt-4 max-w-2xl text-base font-light text-muted-foreground">
           {t("landing.anti_chatgpt.body")}
@@ -791,3 +795,159 @@ function InlineTierChips() {
 }
 
 
+
+
+// ─── Hero rotators ────────────────────────────────────────────────────
+const HERO_ROTATE_MS = 6000;
+
+function useHeroRotation(count: number) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setIdx((i) => (i + 1) % count), HERO_ROTATE_MS);
+    return () => window.clearInterval(id);
+  }, [count]);
+  return [idx, setIdx] as const;
+}
+
+function HeroHeadlineRotator() {
+  const { t } = useTranslation("plan");
+  const variants = (t("landing.hero.variants", { returnObjects: true }) as Array<{ line1: string; line2: string; audience: string }>) ?? [];
+  const [idx, setIdx] = useHeroRotation(variants.length || 1);
+  const v = variants[idx] ?? { line1: "", line2: "", audience: "" };
+  return (
+    <div>
+      <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/40 px-2.5 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent/80" />
+        {v.audience}
+      </div>
+      <h1 key={idx} className="animate-fade-in text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
+        {v.line1}
+        <span className="block text-accent">{v.line2}</span>
+      </h1>
+      <div className="mt-4 flex gap-1.5" aria-label="Hero variants">
+        {variants.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Variant ${i + 1}`}
+            onClick={() => setIdx(i)}
+            className={`h-1 rounded-full transition-all ${i === idx ? "w-8 bg-accent" : "w-3 bg-border hover:bg-muted-foreground/40"}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroVisualRotator() {
+  const variants = 3;
+  const [idx] = useHeroRotation(variants);
+  return (
+    <div key={idx} className="animate-fade-in">
+      {idx === 0 && <HeroPlanMockup />}
+      {idx === 1 && <CoachWorkbenchMockup />}
+      {idx === 2 && <SoloTrainerMockup />}
+    </div>
+  );
+}
+
+// ─── Coach workbench mockup (variant 2: founder/PT origin) ─────────────
+function CoachWorkbenchMockup() {
+  const { t } = useTranslation("plan");
+  const clients = [
+    { name: "Maria S.", focus: "Hipertrofia · B2 W3", state: "Plano pronto", tone: "emerald" as const },
+    { name: "André P.", focus: "Calistenia · B1 W1", state: "Logbook hoje", tone: "amber" as const },
+    { name: "Rebeca M.", focus: "Avaliação · 9/14", state: "A preencher", tone: "neutral" as const },
+    { name: "João F.", focus: "Força · B3 W4", state: "PDF enviado", tone: "emerald" as const },
+  ];
+  const toneRing = (tone: "emerald" | "amber" | "neutral") =>
+    tone === "emerald"
+      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+      : tone === "amber"
+        ? "border-amber-500/30 bg-amber-500/5 text-amber-400"
+        : "border-border bg-background text-muted-foreground";
+  return (
+    <FloatCard>
+      <div
+        className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <ClipboardList className="h-3.5 w-3.5 text-accent" />
+          {t("landing.mockups.workbench_title", { defaultValue: "Os meus clientes" })}
+        </span>
+        <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
+          12 ativos
+        </span>
+      </div>
+      <ul className="mt-4 space-y-2">
+        {clients.map((c) => (
+          <li key={c.name} className="flex items-center gap-3 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-[11px] font-semibold text-accent">
+              {c.name.split(" ").map((s) => s[0]).join("")}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{c.name}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{c.focus}</p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${toneRing(c.tone)}`}>{c.state}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span>PROTOCOL</span>
+        <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent">
+          <Sparkles className="h-3 w-3" /> Construído por um coach
+        </span>
+      </div>
+    </FloatCard>
+  );
+}
+
+// ─── Solo trainee mockup (variant 3: AI-guided autonomy) ──────────────
+function SoloTrainerMockup() {
+  const today = [
+    { name: "Goblet Squat", target: "4×8 @ RPE 7", tip: "Peso sugerido: 22kg" },
+    { name: "DB Bench Press", target: "4×8 @ RPE 7", tip: "Sugestão: +2kg vs última" },
+    { name: "Single-Leg RDL", target: "3×10/lado", tip: "Foco: cadência 3-1-1" },
+  ];
+  return (
+    <FloatCard>
+      <div
+        className="absolute -left-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl"
+        style={{ background: "var(--gradient-accent)" }}
+      />
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <CalendarDays className="h-3.5 w-3.5 text-accent" />
+          Treino de hoje · Wk 2
+        </span>
+        <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
+          Guiado por IA
+        </span>
+      </div>
+      <p className="mt-3 text-base font-medium">Lower body · ~52 min</p>
+      <ul className="mt-3 space-y-2">
+        {today.map((e, i) => (
+          <li key={e.name} className="rounded-xl border border-border/60 bg-background/40 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{i + 1}. {e.name}</span>
+              <span className="font-mono text-[11px] text-foreground/85">{e.target}</span>
+            </div>
+            <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-accent">
+              <Sparkles className="h-3 w-3" /> {e.tip}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-[11px] text-emerald-300">
+        <span className="inline-flex items-center gap-1.5 font-semibold">
+          <TrendingUp className="h-3 w-3" /> Próximo bloco
+        </span>
+        <p className="mt-1 text-emerald-200/80">A IA prepara o próximo bloco com base no que registas esta semana.</p>
+      </div>
+    </FloatCard>
+  );
+}

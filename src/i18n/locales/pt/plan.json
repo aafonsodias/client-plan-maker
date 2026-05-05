@@ -8,7 +8,24 @@
       "cta_primary_signed_in": "Abrir dashboard",
       "cta_secondary": "Ver como funciona",
       "credibility_caption": "Bases que já estão dentro: PAR-Q+, ACSM, Prochaska. As próximas: Helms, Israetel, Schoenfeld.",
-      "social_proof": "Feito por um PT, para PTs · Beta privado"
+      "social_proof": "Feito por um PT, para PTs · Beta privado",
+      "variants": [
+        {
+          "line1": "Cria planos de treino",
+          "line2": "prontos a enviar em minutos.",
+          "audience": "Para PTs"
+        },
+        {
+          "line1": "A app que construí para mim como coach.",
+          "line2": "Agora também para si.",
+          "audience": "História do criador"
+        },
+        {
+          "line1": "Treine mais inteligente, por sua conta,",
+          "line2": "com planos guiados por IA.",
+          "audience": "Para quem treina sozinho"
+        }
+      ]
     },
     "benefits": {
       "eyebrow": "Para personal trainers",
@@ -162,11 +179,11 @@
       "eyebrow": "A seguir",
       "title": "O que estamos a construir, abertamente.",
       "subtitle": "Ainda não, mas vem aí. Preferimos prometer menos aqui do que vender de mais.",
-        "inline_chips": [
-          "Tendências e gráficos",
-          "Ajustes por prompt",
-          "Conselhos do Coach AI"
-        ],
+      "inline_chips": [
+        "Tendências e gráficos",
+        "Ajustes por prompt",
+        "Conselhos do Coach AI"
+      ],
       "items": {
         "trends": {
           "title": "Tendências e gráficos",
@@ -201,7 +218,7 @@
       "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
     },
     "faq": {
-      "title": "Perguntas que os treinadores fazem antes de se inscrever.",
+      "title": "Perguntas que treinadores e praticantes nos fazem.",
       "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
       "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Protocol é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
       "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
@@ -221,7 +238,15 @@
       "q9_q": "Quantos planos posso gerar no plano grátis?",
       "q9_a": "1 plano completo por conta. Suficiente para testar o fluxo end-to-end com um cliente real. Os tiers pagos abrem 8 / 30 / 80 planos por mês conforme escala (cap de clientes = cap de planos, sem letras pequenas).",
       "q10_q": "Como sei que a IA não inventou um exercício perigoso?",
-      "q10_a": "Cada exercício é validado contra a biblioteca PROTOCOL (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração."
+      "q10_a": "Cada exercício é validado contra a biblioteca PROTOCOL (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração.",
+      "q11_q": "Preciso de experiência para usar?",
+      "q11_a": "Não. A avaliação guia-o secção a secção e a IA monta o plano. Se for treinador, ganha velocidade. Se treinar sozinho, ganha estrutura.",
+      "q12_q": "Posso usar isto sem ter um treinador?",
+      "q12_a": "Sim. Faz a avaliação como cliente, gera o seu plano e segue-o no logbook. A IA dá feedback semanal a partir do que regista.",
+      "q13_q": "Em que é que isto é diferente do ChatGPT ou de outras IAs genéricas?",
+      "q13_a": "O ChatGPT gera o que pedir. A Protocol passa por 14 secções clínicas (PAR-Q+, ACSM, mobilidade, histórico) antes de prescrever um exercício, com periodização em blocos e biblioteca validada de exercícios.",
+      "q14_q": "O que acontece quando o trial acaba?",
+      "q14_a": "Avisamos por email antes do fim. Se quiser continuar, ativa a subscrição mensal. Se não, perde acesso à geração de planos novos — mas mantém os planos já gerados em PDF."
     },
     "mission": "A Protocol existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
     "closing": {
@@ -233,30 +258,31 @@
     "footer_copy": "© {{year}} Protocol",
     "pricing": {
       "eyebrow": "Preço",
-      "title": "Honesto e sem surpresas.",
-      "beta_badge": "Grátis",
-      "beta_title": "Grátis para começar",
+      "title": "Experimente 7 dias. Continue se valer a pena.",
+      "beta_badge": "7 dias grátis",
+      "beta_title": "Trial de 7 dias",
       "beta_price": "0€",
-      "beta_period": "para o seu primeiro plano",
+      "beta_period": "durante 7 dias · sem cartão",
       "beta_features": [
-        "1 cliente · 1 plano completo",
-        "PDF com a sua marca",
-        "Sem cartão, sem prazo",
-        "Continuas a usar enquanto fizer sentido"
+        "Acesso completo ao logbook e geração de planos",
+        "Avaliação clínica + planos personalizados",
+        "PDFs com a sua marca",
+        "Sem cartão na inscrição"
       ],
-      "beta_cta": "Começar agora",
-      "pro_badge": "Em breve",
-      "pro_title": "Pro",
+      "beta_cta": "Começar 7 dias grátis",
+      "pro_badge": "Após o trial",
+      "pro_title": "Mensal",
       "pro_price": "19€",
-      "pro_period": "/ mês (preço indicativo)",
+      "pro_period": "/ mês · cancela quando quiser",
       "pro_features": [
-        "Planos ilimitados, sem fila de espera",
-        "Sugestões semanais da IA a partir das suas sessões registadas",
+        "Tudo o que está no trial — sem limite de tempo",
+        "Insights semanais da IA a partir das sessões registadas",
         "PDFs no seu domínio próprio",
         "Suporte prioritário"
       ],
-      "pro_cta": "Avisa-me",
-      "nav_link": "Preço"
+      "pro_cta": "Continuar após o trial",
+      "nav_link": "Preço",
+      "trial_note": "Sem renovação automática silenciosa: avisamos antes de cobrar."
     },
     "footer": {
       "tagline": "Ferramenta de treino para PTs sérios.",
@@ -299,7 +325,9 @@
         "Objetivos",
         "Disponibilidade",
         "Equipamento"
-      ]
+      ],
+      "title_line1": "ChatGPT gera o que você PEDE.",
+      "title_line2": "PROTOCOL gera o que o cliente PRECISA."
     },
     "comparison": {
       "eyebrow": "Onde o PROTOCOL encaixa",

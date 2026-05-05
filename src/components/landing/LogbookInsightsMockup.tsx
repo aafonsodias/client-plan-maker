@@ -10,20 +10,26 @@ export function LogbookInsightsMockup() {
     {
       icon: TrendingUp,
       tone: "emerald",
-      title: "Bench Press · +6% volume em 3 semanas",
-      body: "Progressão consistente. Sugerido manter carga e adicionar 1 série na próxima sessão.",
+      title: "Volume total · +12% em 4 semanas",
+      body: "Progressão consistente nos principais padrões. Sugerido manter carga e juntar 1 série.",
     },
     {
-      icon: AlertTriangle,
-      tone: "amber",
-      title: "Velocidade ↓ 8% no Squat",
-      body: "Queda de barra mais lenta nas últimas 3 sessões. Considera deload semana 5.",
+      icon: TrendingUp,
+      tone: "emerald",
+      title: "Bench Press · +5kg em 3 sessões",
+      body: "Força a subir no padrão de empurrar. Próxima sessão pronta para novo top set.",
     },
     {
       icon: Activity,
       tone: "violet",
+      title: "Adesão · 6/6 sessões nas últimas 2 semanas",
+      body: "Consistência alta. Boa janela para introduzir uma semana de intensificação.",
+    },
+    {
+      icon: AlertTriangle,
+      tone: "amber",
       title: "RPE médio 8.4 (alvo 7.5)",
-      body: "Esforço percebido acima do prescrito. Reduzir 1 série nos acessórios pode ajudar.",
+      body: "Esforço percebido acima do prescrito. Reduzir 1 série nos acessórios pode ajudar a recuperar.",
     },
   ];
   const toneRing: Record<string, string> = {
