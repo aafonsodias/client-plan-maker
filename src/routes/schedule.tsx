@@ -411,7 +411,7 @@ function DayStrip({
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   return (
     <div className="space-y-3">
-      <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+      <div className="grid grid-cols-7 gap-1">
         {days.map((d, i) => {
           const isActive = i === active;
           const isToday = d.toDateString() === new Date().toDateString();
@@ -420,7 +420,7 @@ function DayStrip({
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex min-w-[52px] flex-col items-center rounded-lg border px-2 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex flex-col items-center rounded-lg border px-1 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
               <span className="text-[10px] uppercase tracking-widest">
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
