@@ -1,76 +1,34 @@
-# Auditoria visual ponta-a-ponta do Protocol
+# Fix dos 3 mockups do hero rotator
 
-Objectivo: percorrer todas as rotas reais da app, tirar prints (desktop 1366 + mobile 375), listar onde fazem falta melhorias e propor **fusões cirúrgicas** que não partam o caminho que montámos (intake → brief → blueprint → microcycle → progressions → PDF, tudo inline em `/clients/$id`).
+## Bug
 
----
+`HeroVisualRotator` (src/routes/index.tsx:883–904) tem altura fixa `h-[680px] lg:h-[780px]` e cada slide é `absolute inset-0`. Como os 3 cards têm alturas naturais diferentes:
 
-## Fase 1 — Inventário visual (apenas leitura, sem código)
+- CoachWorkbench (variant 0, "Para PTs") — ~520px → grande gap entre última cliente e rodapé `PROTOCOL`
+- HeroPlanMockup (variant 1, "História do criador") — ~760px → quase ok mas pode ficar clipado em ecrãs intermédios
+- SoloTrainer (variant 2, "Para quem treina sozinho") — ~640px → gap visível abaixo do "Próximo bloco"
 
-Percorrer e fotografar (desktop + mobile, modo escuro e claro nos casos críticos):
+→ O anel âmbar fica sempre do mesmo tamanho mas o card lá dentro flutua com vazio em volta. Visual quebrado e inconsistente.
 
-**Públicas / chrome**
-- `/` landing — 1ª dobra, anti-ChatGPT, ForWhom, Journey, Comparison, Founder, FAQ, Closing, Footer
-- `/auth` — signup/login + OAuth
-- `/intake/$token` — fluxo do cliente (modo focado)
-- `/log/$token` — registo de sessão + import por foto
-- `/manual` — Manual / FAQ / Contacto
-- `/privacy`, `/terms`
+## Fix (1 ficheiro)
 
-**App (autenticado)**
-- `/dashboard` — PlansStatusBar, ThisWeekHero, hints, onboarding
-- `/clients/$id` — **a espinha dorsal**: 5 stages inline, BriefContextRail, ClientCockpit
-- `/clients/$id/year` — YearView
-- `/plans` — index
-- `/plans/new`
-- `/plans/$id` — view/edit/log/Resultados/Progresso, Table/Cards, CapacityGainCard, VolumeSection
-- `/plans/$id/blueprint`, `microcycle`, `progressions`, `sessions` (deep-links de back-compat)
-- `/templates`
-- `/schedule`, `/schedule/packs`
-- `/billing`
-- `/settings`, `/me`, `/welcome`
+`src/routes/index.tsx`, função `HeroVisualRotator`:
 
-Para cada rota: print + 3-5 bullets com problemas (alinhamento, densidade, redundância, copy, contraste, mobile, tom de cor segundo `status-tone.ts`).
+1. Remover altura fixa do container.
+2. Posicionar o slide **ativo** em fluxo normal (`relative`) — ele dita a altura.
+3. Os 2 inativos ficam `absolute inset-0 opacity-0 pointer-events-none` (pré-renderizados para crossfade suave).
+4. O wrapper externo passa a `transition-[height] duration-500` para suavizar a mudança quando se rota entre variantes de alturas diferentes (anel âmbar acompanha).
 
----
+```text
+[Container relative]
+ ├─ slide[idx]   → relative, opacity-100  (drives height)
+ └─ slide[!idx]  → absolute inset-0, opacity-0
+```
 
-## Fase 2 — Mapa de fusões candidatas (sem partir o protocolo)
+Sem alterações ao conteúdo dos 3 mocks, à i18n, ou ao anel/glow. Risco mínimo.
 
-Hipóteses iniciais (a confirmar com prints; nenhuma toca o caminho inline aprovado):
+## QA
 
-1. **`/me` + `/settings`** → uma só `/settings` com tabs (Conta, Preferências, Cobrança-link, Marca). `/me` passa a redirect.
-2. **`/welcome` + onboarding do `/dashboard`** → `OnboardingChecklist` no dashboard absorve o welcome; `/welcome` só sobrevive como first-run.
-3. **`/plans` + `/templates`** → tabs dentro de `/plans` (Planos · Templates · Arquivo). Reduz nav lateral.
-4. **`/schedule` + `/schedule/packs`** → tabs (Semana · Packs · Receita). Já partilham layout.
-5. **`/plans/$id/{blueprint,microcycle,progressions,sessions}`** → manter como redirects para `/clients/$id?stage=…` (já está parcialmente assim no `brief.tsx`); confirmar que nenhum link interno aterra nestas rotas.
-6. **`/manual`** → já consolidado (Manual/FAQ/Contacto). Confirmar que o link "Contacto" do footer aponta cá e não duplica.
-7. **`ClientCockpit` no expand de `ClientPlayerCard`** vs **header do `/clients/$id`** → garantir que não estamos a mostrar a mesma coisa duas vezes (ACSM/Recovery chips aparecem em ambos).
-
-**O que NÃO se funde (regra dura):**
-- Os 5 stages do `/clients/$id` ficam inline, um por baixo do outro. Nada de tabs aí.
-- `/log/$token` fica isolado (cliente final, sem chrome da app).
-- `/intake/$token` idem.
-- Landing fica numa só rota — secções não viram páginas.
-
----
-
-## Fase 3 — Entregável
-
-Um único documento em `/mnt/documents/audit-2026-05.md` com:
-- Thumbnail de cada rota (desktop + mobile lado a lado).
-- Tabela "Rota · Problemas · Severidade (P0/P1/P2) · Proposta".
-- Secção "Fusões propostas" com diff de navegação antes/depois.
-- Secção "Quick wins" (≤30 min cada) separada de "Refactors" (precisam de ronda própria).
-- Actualização do `.lovable/backlog.md` com os P0/P1 priorizados.
-
-Sem alterações de código nesta fase. No fim apresento o documento e tu decides quais fusões avanço numa ronda seguinte (uma fusão = uma ronda, para respeitar "1 concern per round").
-
----
-
-## Notas técnicas
-
-- Uso `browser--navigate_to_sandbox` (1366×768 e 375×812) + `browser--screenshot` para cada rota.
-- Para rotas com `$param` (cliente, plano, token), uso o cliente demo já semeado (Demo Lab) ou o primeiro cliente/plano do utilizador autenticado no preview.
-- Cada print é guardado em `/mnt/documents/audit-2026-05/` com naming `route__viewport.png`.
-- QA visual: leio cada print antes de escrever o bullet — sem confiar só no DOM.
-
-Aprovas? Assim que disseres "ok" arranco pela landing e vou rota a rota.
+- 1407px (viewport atual): rodar pelos 3 dots, confirmar zero gap em qualquer variante.
+- 375px (mobile Safari smoke obrigatório por non-negotiables).
+- Confirmar que o crossfade continua suave (700ms) e que o anel âmbar não "salta" feio (a transição de altura suaviza).
