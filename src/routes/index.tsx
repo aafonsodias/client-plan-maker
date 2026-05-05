@@ -883,7 +883,11 @@ function HeroHeadlineRotator() {
 function HeroVisualRotator() {
   const variants = 3;
   const [idx] = useHeroRotation(variants);
-  const slides = [<HeroPlanMockup />, <CoachWorkbenchMockup />, <SoloTrainerMockup />];
+  // Order MUST match landing.hero.variants order in plan.json:
+  //  0 = Para PTs           → CoachWorkbench (client list)
+  //  1 = História do criador → HeroPlanMockup (plan built for myself)
+  //  2 = Para quem treina sozinho → SoloTrainer
+  const slides = [<CoachWorkbenchMockup />, <HeroPlanMockup />, <SoloTrainerMockup />];
   return (
     <div className="relative h-[680px] lg:h-[780px] w-full">
       {slides.map((slide, i) => (
