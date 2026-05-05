@@ -45,6 +45,8 @@ import { CapacityGainCard } from "@/components/CapacityGainCard";
 import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
 import { NextBlockCard } from "@/components/NextBlockCard";
 import { NextWeekCard } from "@/components/plan/NextWeekCard";
+import IntensityCockpit from "@/components/plan/IntensityCockpit";
+import type { ProgrammingVariables } from "@/server/phased/schemas";
 import { NextMealCue } from "@/components/NextMealCue";
 import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
@@ -947,6 +949,20 @@ function PlanEditor() {
               sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
             />
           )}
+          {/* R67: Intensity Cockpit also editable post-finalisation. Saves
+              directly into workout_plans.programming_variables. New microcycles
+              created via NextWeekCard pick this up immediately. */}
+          <IntensityCockpit
+            value={(plan?.programming_variables ?? {}) as ProgrammingVariables}
+            onChange={async (next) => {
+              setPlan({ ...plan, programming_variables: next });
+              const { error } = await supabase
+                .from("workout_plans")
+                .update({ programming_variables: next as any })
+                .eq("id", planId);
+              if (error) toast.error(error.message);
+            }}
+          />
           <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
           <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
             <Button onClick={exportPdf}>

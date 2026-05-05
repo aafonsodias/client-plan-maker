@@ -96,6 +96,14 @@ Atualizado: Round 28 (4 Mai 2026)
 | 80 | P1 | Plan page | Botão "Programar próxima semana" no header — chama programNextWeek e mostra adherence + flagged count | R66 next |
 | 81 | P1 | UX | Surface programNextWeek error "low_adherence" com CTA para abrir logbook da semana actual | R66 |
 
+### Round 66/67 — Plan-page wiring (5 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 80 | P1 | Plan page | `<NextWeekCard/>` no header (programNextWeek + adherence guard) | R66 ✅ |
+| 81 | P1 | UX | Erro "low_adherence" mostrado inline na própria card (sem toast) | R66 ✅ |
+| 75 | P1 | Plan page | `<IntensityCockpit/>` montado no `/plans/$id` modo edit, persist directo em `programming_variables` | R67 ✅ |
+
 ## Meta-prompt sugerido
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."
 
