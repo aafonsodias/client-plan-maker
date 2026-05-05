@@ -355,9 +355,18 @@
       "title": "For any training adult — at any age.",
       "subtitle": "Coaches, coached clients and solo trainees. From 18 to 80+. The human judgement is yours; the clinical structure is ours.",
       "personas": [
-        { "title": "Coaches", "body": "Personal trainers and studios who want to program faster without losing rigour. AI handles repetition; you decide." },
-        { "title": "Coached clients", "body": "Your coach uses PROTOCOL for your plan. You log sessions, track progression and receive the PDF with the studio's branding." },
-        { "title": "Solo trainees", "body": "Run the assessment as a trainee, generate your own plan and follow it in the logbook. Honest structure, no snake oil." }
+        {
+          "title": "Coaches",
+          "body": "Personal trainers and studios who want to program faster without losing rigour. AI handles repetition; you decide."
+        },
+        {
+          "title": "Coached clients",
+          "body": "Your coach uses PROTOCOL for your plan. You log sessions, track progression and receive the PDF with the studio's branding."
+        },
+        {
+          "title": "Solo trainees",
+          "body": "Run the assessment as a trainee, generate your own plan and follow it in the logbook. Honest structure, no snake oil."
+        }
       ],
       "medical_title": "Have a clinical condition? Still for you — with one rule.",
       "medical_body": "Heart disease, hypertension, diabetes, injuries or pregnancy: PROTOCOL applies PAR-Q+ and ACSM filters, but your doctor has the final say. Get medical clearance before you start, and read every suggestion critically — you are responsible for the choices you make."
@@ -526,6 +535,24 @@
       "3": "Master plan",
       "4": "Weekly cycle",
       "5": "Progressions"
+    }
+  },
+  "insights": {
+    "header": "Capacity insights",
+    "loading": "Reading measurements…",
+    "cta_record": "Log measurement",
+    "empty_title": "No measurements yet.",
+    "empty_body": "VO₂max, dead/active hang and plank appear here as soon as you log a reassessment.",
+    "empty_cta": "Open reassessment",
+    "no_data": "no data",
+    "delta_window": "Δ vs {{days}} days ago",
+    "first_measurement": "first measurement",
+    "disclaimer": "Derived from logged measurements. Submax VO₂max is an estimate, not a clinical measurement.",
+    "metric": {
+      "vo2max": "VO₂max",
+      "dead_hang_s": "Dead hang",
+      "active_hang_s": "Active hang",
+      "plank_s": "Plank"
     }
   }
 }

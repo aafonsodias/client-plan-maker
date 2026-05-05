@@ -355,9 +355,18 @@
       "title": "Para qualquer adulto que treine — em qualquer idade.",
       "subtitle": "Treinadores, alunos com treinador e quem treina sozinho. Dos 18 aos 80+. O critério humano é seu; a estrutura clínica é nossa.",
       "personas": [
-        { "title": "Treinadores", "body": "Personal trainers e estúdios que querem programar mais rápido sem perder rigor. A IA trata da repetição; você decide." },
-        { "title": "Alunos com treinador", "body": "O seu treinador usa o PROTOCOL para o seu plano. Você regista sessões, vê progressão e recebe o PDF com a marca do estúdio." },
-        { "title": "Treina sozinho", "body": "Faz a avaliação como praticante, gera o seu plano e segue-o no logbook. Estrutura honesta, sem charlatanismo." }
+        {
+          "title": "Treinadores",
+          "body": "Personal trainers e estúdios que querem programar mais rápido sem perder rigor. A IA trata da repetição; você decide."
+        },
+        {
+          "title": "Alunos com treinador",
+          "body": "O seu treinador usa o PROTOCOL para o seu plano. Você regista sessões, vê progressão e recebe o PDF com a marca do estúdio."
+        },
+        {
+          "title": "Treina sozinho",
+          "body": "Faz a avaliação como praticante, gera o seu plano e segue-o no logbook. Estrutura honesta, sem charlatanismo."
+        }
       ],
       "medical_title": "Tem uma condição clínica? Continua a ser para si — com uma regra.",
       "medical_body": "Doença cardíaca, hipertensão, diabetes, lesões ou gravidez: o PROTOCOL aplica os filtros do PAR-Q+ e ACSM, mas a decisão final é do seu médico. Peça o aval médico antes de começar e leia cada sugestão com sentido crítico — você é responsável pelas escolhas que faz."
@@ -526,6 +535,24 @@
       "3": "Plano-mestre",
       "4": "Semana-tipo",
       "5": "Progressões"
+    }
+  },
+  "insights": {
+    "header": "Insights de capacidade",
+    "loading": "A ler medições…",
+    "cta_record": "Registar medição",
+    "empty_title": "Sem medições ainda.",
+    "empty_body": "VO₂máx, suspensão (dead/active hang) e prancha aparecem aqui assim que registares uma reavaliação.",
+    "empty_cta": "Abrir reavaliação",
+    "no_data": "sem dados",
+    "delta_window": "Δ vs há {{days}} dias",
+    "first_measurement": "primeira medição",
+    "disclaimer": "Derivado das medições registadas. VO₂máx submáximo é estimativa, não medição clínica.",
+    "metric": {
+      "vo2max": "VO₂máx",
+      "dead_hang_s": "Dead hang (passivo)",
+      "active_hang_s": "Active hang",
+      "plank_s": "Prancha"
     }
   }
 }
