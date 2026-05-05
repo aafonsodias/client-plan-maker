@@ -212,25 +212,25 @@
     "founder": {
       "title": "Porquê a Protocol?",
       "img_alt": "André, fundador da Protocol",
-      "p1": "Em quinze anos como PT vi a mesma coisa repetir-se: planos mal montados porque programar com critério dá demasiado trabalho.",
-      "p2": "A Protocol existe para tirar essa desculpa do caminho. Bases sólidas (PAR-Q+, ACSM, Prochaska), você como filtro humano, IA só para o trabalho repetitivo.",
-      "p3": "O objetivo não é automatizar o coaching. É garantir que \"dá demasiado trabalho\" deixa de ser desculpa para um plano fraco.",
+      "p1": "Em quinze anos como PT, vi a mesma cena a repetir-se: planos feitos à pressa porque programar com critério dá demasiado trabalho.",
+      "p2": "O Protocol existe para tirar essa desculpa do caminho. A base é humana e científica — você decide, a IA trata do trabalho repetitivo, e os manuais (ACSM, Bompa, NSCA) sustentam as escolhas. Aos poucos vamos integrando mais evidência, sempre com fonte verificável.",
+      "p3": "Não queremos automatizar o coaching. Queremos que “não tive tempo” deixe de ser o motivo de um plano fraco — para o PT, e para quem treina sozinho.",
       "signature": "— André Periquito, MSc Exercício & Saúde · Fisiologista do Exercício e Personal Trainer"
     },
     "faq": {
       "title": "Perguntas que treinadores e praticantes nos fazem.",
       "q1_q": "O plano da IA é bom o suficiente para enviar aos clientes tal como está?",
-      "q1_a": "É bom o suficiente para ser um forte ponto de partida. Vais ajustar volume, trocar exercícios, adaptar a linguagem para o seu cliente. A Protocol é mais rápida do que começar de uma página em branco — não substitui o seu critério.",
+      "q1_a": "É um ponto de partida sólido, não um destino. Por agora, a IA é ajuda — você é o filtro. À medida que ganharmos confiança nas suas respostas, devolvemos-lhe mais autonomia. Até lá, ajuste volume, troque exercícios e adapte a linguagem ao seu cliente; o Protocol faz o trabalho pesado, você dá a última palavra.",
       "q2_q": "E se o meu cliente tiver lesões ou condições médicas?",
-      "q2_a": "As sinalizações do PAR-Q+ disparam lógica condicional. Sinalizações cardíacas colocam o plano em baixa intensidade por defeito. Sinalizações articulares excluem padrões de alto impacto. Tens sempre aprovação final antes de gerar.",
+      "q2_a": "Sinais cardíacos, metabólicos e articulares (triagem PAR-Q+ por baixo) ativam regras automáticas: cargas e intensidade descem por defeito, padrões de alto impacto saem da lista. Você aprova sempre antes de gerar — e em caso de dúvida séria, pedimos parecer médico antes de continuar.",
       "q3_q": "Posso usar a minha própria marca no PDF?",
-      "q3_a": "Sim. Carrega o seu logótipo e o nome do seu negócio em Definições. Cada exportação de PDF tem a identidade do seu estúdio, não a da Protocol.",
+      "q3_a": "Sim. O PDF é uma ferramenta de campo para o dia a dia — leva o logótipo e o nome do seu estúdio. Não é o nosso grande argumento de venda, mas serve enquanto o logbook digital ainda não substitui o caderno de cargas.",
       "q4_q": "O que acontece aos dados dos meus clientes?",
-      "q4_a": "Guardados no Supabase (região UE). Podes exportar ou apagar qualquer registo de cliente a qualquer momento. A Protocol não partilha nem vende dados de clientes — nunca.",
+      "q4_a": "Guardados na UE. Pode exportar ou apagar a qualquer momento. As fotos de avaliação serão automaticamente cortadas acima da orelha (ou desfocadas) — só precisamos do alinhamento postural, não da cara. Os contactos servem só para falar consigo. Em agregado anónimo (idade, género, performance, saúde) podemos usar para investigação que ajude a melhorar a vida das pessoas. Nunca vendemos dados de clientes.",
       "q5_q": "Em que ciência se baseia a programação?",
-      "q5_a": "Volume landmarks (MEV/MAV/MRV) seguem a investigação de Mike Israetel e Renaissance Periodization. A prescrição de RPE e seleção de exercícios bebe de Greg Nuckols e Eric Helms (3DMJ). Triagem de risco usa as guidelines da ACSM e o PAR-Q+ validado.",
+      "q5_a": "Manuais que estão dentro hoje: ACSM 12e, Bompa-Buzzichelli (6e) e NSCA Essentials (3e). Tudo o que entrar a seguir terá fonte verificável (PubMed e equivalentes) — nada citado no nome de um autor sem o livro ou o paper estar de facto dentro. Você pode (e deve) verificar.",
       "q6_q": "O que acontece se o meu cliente piorar a meio do bloco?",
-      "q6_a": "Re-aplicas a avaliação, o nível programático ajusta-se (ex: avançado → conservativo) e o próximo bloco regenera com restrições mais apertadas. O bloco anterior fica arquivado para histórico.",
+      "q6_a": "A recuperação humana tem altos e baixos — sono, alimentação, stress, vida fora do ginásio. Reavalia, o nível programático ajusta-se (ex: avançado → conservativo) e o próximo bloco arranca com restrições mais apertadas. O bloco anterior fica em histórico. Em quadros sérios, fale com um profissional de confiança — a app ajuda a sustentar, mas o comandante é o ser humano.",
       "q7_q": "Posso editar o plano gerado antes de exportar?",
       "q7_a": "Sim — em todos os 5 estágios (Brief, Blueprint, Microciclo, Progressões, Sessões). Cada edição fica registada e o PDF só é gerado depois da tua aprovação final.",
       "q8_q": "Funciona offline ou no telemóvel do cliente?",
@@ -240,18 +240,18 @@
       "q10_q": "Como sei que a IA não inventou um exercício perigoso?",
       "q10_a": "Cada exercício é validado contra a biblioteca PROTOCOL (padrão de movimento, equipamento, contraindicações). Nada que não esteja na biblioteca chega ao plano. Sinalizações do PAR-Q+ aplicam exclusões duras antes da geração.",
       "q11_q": "Preciso de experiência para usar?",
-      "q11_a": "Não. A avaliação guia-o secção a secção e a IA monta o plano. Se for treinador, ganha velocidade. Se treinar sozinho, ganha estrutura.",
+      "q11_a": "Não. A avaliação guia-o secção a secção e a IA monta o plano. No início vai andar um bocado à toa — é normal, faz parte de qualquer ferramenta nova. Foi feita para ser fácil exatamente para que não precise de ser especialista. Com o tempo ganha-se velocidade (se for PT) ou estrutura (se treinar sozinho).",
       "q12_q": "Posso usar isto sem ter um treinador?",
-      "q12_a": "Sim. Faz a avaliação como cliente, gera o seu plano e segue-o no logbook. A IA dá feedback semanal a partir do que regista.",
+      "q12_a": "Sim — esse é um dos nossos objetivos: que qualquer pessoa consiga mexer o corpo com confiança, segurança e método. O Protocol serve quatro perspetivas: quem treina sozinho, o cliente long-distance, o PT como plataforma, e o cliente de PT que ganha um logbook digital por cima do serviço presencial. Um humano ao lado é sempre uma mais-valia; nós tentamos fortalecer ambos os lados.",
       "q13_q": "Em que é que isto é diferente do ChatGPT ou de outras IAs genéricas?",
-      "q13_a": "O ChatGPT gera o que pedir. A Protocol passa por 14 secções clínicas (PAR-Q+, ACSM, mobilidade, histórico) antes de prescrever um exercício, com periodização em blocos e biblioteca validada de exercícios.",
+      "q13_a": "O ChatGPT gera o que lhe pedirem. O Protocol é um protocolo: triagem desenhada para dar à IA o melhor contexto possível, biblioteca de exercícios validada, periodização em blocos, e validação humana antes de qualquer plano sair. Acumula dados ao longo do tempo, e isso muda tudo — em breve, comunidade, conteúdos e conhecimento aplicado também. Usa IA, mas não é uma IA.",
       "q14_q": "O que acontece quando o trial acaba?",
-      "q14_a": "Avisamos por email antes do fim. Se quiser continuar, ativa a subscrição mensal. Se não, perde acesso à geração de planos novos — mas mantém os planos já gerados em PDF."
+      "q14_a": "Os 7 dias dão para fazer a avaliação, gerar o plano e começar a treinar em segurança. Se quiser continuar, ativa a mensalidade e ganha acesso contínuo à geração, ao logbook que aprende consigo, à comunidade e ao que vier a seguir. Se não, mantém o PDF do plano que criou e os vídeos de apoio — a app fica em pausa até voltar. É um serviço, e queremos que valha cada cêntimo."
     },
     "mission": "A Protocol existe para que os treinadores passem menos tempo a formatar e mais tempo a treinar. Melhores ferramentas para treinadores significa treino mais seguro e mais inteligente para todos a quem eles chegam.",
     "closing": {
-      "title": "O seu próximo plano, antes da sua próxima sessão.",
-      "subtitle": "Grátis durante a fase beta. Sem cartão.",
+      "title": "O próximo plano antes do próximo treino.",
+      "subtitle": "7 dias grátis. Sem cartão. Cancela com 1 clique.",
       "cta_signed_in": "Abrir dashboard",
       "cta_signed_out": "Cria a sua conta"
     },
@@ -285,7 +285,7 @@
       "trial_note": "Sem renovação automática silenciosa: avisamos antes de cobrar."
     },
     "footer": {
-      "tagline": "Ferramenta de treino para PTs sérios.",
+      "tagline": "Para quem treina alguém — e para quem treina sozinho. Substância antes de aparências.",
       "product_title": "Produto",
       "product_features": "Funcionalidades",
       "product_pricing": "Preço",
@@ -395,7 +395,7 @@
           "horas"
         ]
       ],
-      "footnote": "Não é magia. É lógica condicional sobre ciência publicada — Israetel, Helms, ACSM."
+      "footnote": "Lógica condicional sobre os manuais que já estão dentro: ACSM 12e, Bompa-Buzzichelli, NSCA Essentials. Cada referência futura será citada quando for integrada."
     },
     "tier_badges": {
       "eyebrow": "Cada plano nasce com um nível",
