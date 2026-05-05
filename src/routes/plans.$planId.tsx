@@ -307,6 +307,7 @@ function PlanEditor() {
         client: client as any,
         training_days_per_week: assessmentRow?.training_days_per_week ?? null,
         assessment_completion_pct: (plan as any).assessment_completion_pct ?? null,
+        locale: i18n?.language ?? "pt",
       },
       data,
       {
