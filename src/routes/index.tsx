@@ -970,13 +970,11 @@ function HeroHeadlineRotator() {
 }
 
 function HeroVisualRotator() {
-  const variants = 3;
-  const [idx] = useHeroRotation(variants);
-  // Order MUST match landing.hero.variants order in plan.json:
-  //  0 = Para PTs           → CoachWorkbench (client list)
-  //  1 = História do criador → HeroPlanMockup (plan built for myself)
-  //  2 = Para quem treina sozinho → SoloTrainer
-  const slides = [<CoachWorkbenchMockup />, <HeroPlanMockup />, <SoloTrainerMockup />];
+  // PT-only positioning (R61): single hero visual = the actual plan output.
+  // CoachWorkbench/SoloTrainer mockups removed from the rotation; kept in
+  // file in case we add a /for-clients page later.
+  const slides = [<HeroPlanMockup />];
+  const idx = 0;
   return (
     // Active slide drives container height (relative); inactive slides stack
     // absolutely on top for the cross-fade. This eliminates the empty space
