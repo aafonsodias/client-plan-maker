@@ -389,18 +389,41 @@ export async function generatePlanPdf(
   const isWeekJunk = (s: string) => /^\s*(week|semana)\s*\d+\s*$/i.test(s.trim());
   const stripWeekSuffix = (s: string) =>
     s.replace(/\s*[—–-]\s*(week|semana)\s*\d+\s*$/i, "").trim();
+  // Locale-aware session word + focus inference from movement patterns.
+  const isPt = !meta.locale || /^pt/i.test(String(meta.locale));
+  const sessionWord = isPt ? "Sessão" : "Session";
+  const focusFromExercises = (d: Day): string => {
+    const names = (d.exercises ?? []).slice(0, 4).map((e) => String(e.name || "").toLowerCase());
+    const blob = names.join(" ");
+    const has = (...kw: string[]) => kw.some((k) => blob.includes(k));
+    const ptMap: Record<string, string> = {
+      push: "Empurrar", pull: "Puxar", squat: "Agachamento",
+      hinge: "Dobradiça de anca", fullbody: "Corpo inteiro", core: "Core e estabilidade",
+    };
+    const enMap: Record<string, string> = {
+      push: "Push", pull: "Pull", squat: "Squat",
+      hinge: "Hinge", fullbody: "Full body", core: "Core & stability",
+    };
+    const m = isPt ? ptMap : enMap;
+    if (has("squat", "agacha", "lunge", "afundo", "leg press", "prensa")) return m.squat;
+    if (has("deadlift", "rdl", "hinge", "good morning", "hip thrust", "levantamento")) return m.hinge;
+    if (has("bench", "supino", "press", "push up", "flexão", "dip")) return m.push;
+    if (has("row", "remada", "pull", "puxa", "chin", "lat ")) return m.pull;
+    if (has("plank", "prancha", "carry", "ab ", "abdo", "core")) return m.core;
+    return m.fullbody;
+  };
   archetypes.forEach((arc, i) => {
-    let label = stripWeekSuffix(arc.label || "");
-    if (!label || /^session$/i.test(label)) label = `Day ${i + 1}`;
-    // If label doesn't start with Day/Dia, prefix it with the day index.
-    if (!/^(day|dia)\s*\d+/i.test(label)) label = `Day ${i + 1} — ${label}`;
-    arc.label = label;
-    if (isWeekJunk(arc.focus)) {
-      // Try to infer focus from the day's exercises movement pattern; fallback
-      // to a generic "Full body" so the cabeçalho nunca mostra "Week X".
-      const firstNames = (arc.base.exercises ?? []).slice(0, 3).map((e) => e.name).join(", ");
-      arc.focus = firstNames || "Sessão de treino";
+    // Always normalise to "{Sessão|Session} N" — index = order in the week,
+    // not the raw label string. Strips leftover "Day X — " prefixes from AI.
+    arc.label = `${sessionWord} ${i + 1}`;
+    // Focus: drop AI junk ("Week 1"), fallback to inferred movement pattern.
+    let focus = stripWeekSuffix(arc.focus || "");
+    if (!focus || isWeekJunk(focus) || /^session$|^sess(ã|a)o\s*de\s*treino$/i.test(focus)) {
+      focus = focusFromExercises(arc.base);
     }
+    // Trim runaway focuses so the page header keeps breathing room.
+    if (focus.length > 48) focus = focus.slice(0, 45).trimEnd() + "…";
+    arc.focus = focus;
   });
   const totalWeeks = plan.weeks?.length ?? 0;
   const numWeeks = Math.min(totalWeeks, 4); // we render at most W1..W4 columns
