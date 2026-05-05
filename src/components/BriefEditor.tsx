@@ -7,6 +7,7 @@ import type {
   RedFlagAccommodation,
 } from "@/server/phased/schemas";
 import { FLAG_STRATEGY_LABELS_PT } from "@/lib/brief-labels";
+import IntensityCockpit from "@/components/plan/IntensityCockpit";
 
 export default function BriefEditor({
   brief,
