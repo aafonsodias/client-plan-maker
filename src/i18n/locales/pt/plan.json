@@ -1,29 +1,26 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Cria planos de treino",
-      "title_line2": "prontos a enviar em minutos.",
-      "subtitle": "Baseados na avaliação real do seu cliente. Ajustam-se semana a semana com o que ele faz no ginásio.",
-      "cta_primary_signed_out": "Gerar primeiro plano grátis",
+      "title_line1": "Planos de treino cientificamente válidos",
+      "title_line2": "em 90 segundos — com o teu nome.",
+      "subtitle": "Sem Excel, sem improviso, sem perder rigor clínico.",
+      "cta_primary_signed_out": "Criar primeiro plano grátis",
       "cta_primary_signed_in": "Abrir dashboard",
       "cta_secondary": "Ver como funciona",
       "credibility_caption": "Bases que já estão dentro: PAR-Q+, ACSM, Prochaska. As próximas: Helms, Israetel, Schoenfeld.",
       "social_proof": "Feito por um PT, para PTs · Beta privado",
+      "beta_softcap_chip": "Beta privado · vagas limitadas esta semana",
+      "bullets": [
+        "Avaliação clínica automática (PAR-Q+, ACSM)",
+        "Progressão semanal pronta (MEV/MAV/MRV)",
+        "PDF com o branding do teu estúdio"
+      ],
+      "tagline_eyebrow": "Infraestrutura de programação baseada em evidência para personal trainers",
       "variants": [
         {
-          "line1": "Cria planos de treino",
-          "line2": "prontos a enviar em minutos.",
+          "line1": "Planos de treino cientificamente válidos",
+          "line2": "em 90 segundos — com o teu nome.",
           "audience": "Para PTs"
-        },
-        {
-          "line1": "A app que construí para mim como coach.",
-          "line2": "Agora também para si.",
-          "audience": "História do criador"
-        },
-        {
-          "line1": "Treine mais inteligente, por sua conta,",
-          "line2": "com planos guiados por IA.",
-          "audience": "Para quem treina sozinho"
         }
       ]
     },
