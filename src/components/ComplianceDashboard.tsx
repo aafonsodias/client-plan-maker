@@ -444,8 +444,8 @@ function TopExercisesPanel({
   const byVolume = [...top].sort((a, b) => b.sets - a.sets).slice(0, 5);
   if (top.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+      <div className="rounded-xl border border-border bg-card p-3">
+        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
           Top exercícios
         </h3>
         <p className="text-sm text-muted-foreground">Sem exercícios registados nesta janela.</p>
@@ -453,11 +453,11 @@ function TopExercisesPanel({
     );
   }
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-xl border border-border bg-card p-3">
+      <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
         Top exercícios
       </h3>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <ExList
           title="Por carga (kg)"
           empty="Registe pesos para ver aqui."
