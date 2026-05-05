@@ -552,5 +552,69 @@
       "active_hang_s": "Active hang",
       "plank_s": "Prancha"
     }
+  },
+  "cockpit": {
+    "title": "Cockpit de intensidade",
+    "intro": "Cinco controlos que moldam como a Semana 1 se transforma nas semanas seguintes. Comece num preset e ajuste o que importa para este cliente.",
+    "sources": "Fontes: Bompa & Buzzichelli 6e §7.3-7.5 (ondas), NSCA Essentials 4e §17.4 (incrementos).",
+    "presets": {
+      "custom": "Personalizado",
+      "hypertrophy_classic": "Hipertrofia clássica",
+      "strength_base": "Força base",
+      "moderate_recomp": "Recomp moderado",
+      "high_volume": "Volume alto",
+      "conservative": "Conservador"
+    },
+    "knobs": {
+      "wave": {
+        "label": "Modelo de onda",
+        "help": "Como a carga e o volume oscilam ao longo do bloco.",
+        "options": {
+          "undulating": "Ondulante (DUP) — alterna volume/intensidade",
+          "linear": "Linear — intensidade sobe semana a semana",
+          "block": "Bloco — acumula volume → intensifica",
+          "conjugate": "Conjugado (Westside) — Em breve"
+        }
+      },
+      "rpe": {
+        "label": "Tecto de RPE",
+        "help": "Acima deste RPE nenhuma série é prescrita, mesmo no pico do bloco.",
+        "marks": {
+          "low": "7.5 leve",
+          "mid": "9.0 padrão",
+          "high": "10 limite"
+        }
+      },
+      "tradeoff": {
+        "label": "Intensidade vs volume",
+        "help": "Onde investir mais — carga pesada ou mais séries/reps.",
+        "options": {
+          "high_int_low_vol": "Alta intensidade · baixo volume",
+          "moderate_moderate": "Moderado · moderado",
+          "moderate_int_high_vol": "Intensidade moderada · alto volume",
+          "low_int_very_high_vol": "Baixa intensidade · volume muito alto"
+        }
+      },
+      "deload": {
+        "label": "Frequência de deload",
+        "help": "A cada quantas semanas a carga semanal recua para recuperar.",
+        "options": {
+          "every_3_weeks": "A cada 3 semanas",
+          "every_4_weeks": "A cada 4 semanas",
+          "every_5_weeks": "A cada 5 semanas",
+          "every_6_weeks": "A cada 6 semanas",
+          "no_deload": "Sem deload"
+        }
+      },
+      "autoreg": {
+        "label": "Autoregulação",
+        "help": "Quão duro reagir quando o RPE realizado fica acima do prescrito.",
+        "options": {
+          "strict": "Estrito — corta carga 5% se RPE +0.7",
+          "suggested": "Sugerido — sinaliza, decide o coach",
+          "off": "Desligado — segue a onda nominal"
+        }
+      }
+    }
   }
 }
