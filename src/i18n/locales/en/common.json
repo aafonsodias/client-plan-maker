@@ -167,6 +167,14 @@
       "last_log": "Last log {{when}}",
       "ready_to_build": "Assessment ready · build the plan",
       "intake_pending": "Assessment incomplete"
+    },
+    "cockpit": {
+      "recovery": "Recovery",
+      "pdf": "PDF",
+      "open_editor": "Open editor",
+      "open_logbook": "Logbook",
+      "week_x_of_y": "Wk {{x}} of {{y}}",
+      "no_title": "Untitled plan"
     }
   },
   "onboarding": {
