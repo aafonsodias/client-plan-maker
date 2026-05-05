@@ -896,6 +896,9 @@ function CoachWorkbenchMockup() {
     { name: "André P.", focus: "Calistenia · B1 W1", state: "Logbook hoje", tone: "amber" as const },
     { name: "Rebeca M.", focus: "Avaliação · 9/14", state: "A preencher", tone: "neutral" as const },
     { name: "João F.", focus: "Força · B3 W4", state: "PDF enviado", tone: "emerald" as const },
+    { name: "Carla D.", focus: "Reabilitação · B1 W2", state: "Recuperação 71%", tone: "amber" as const },
+    { name: "Pedro V.", focus: "Hipertrofia · B2 W1", state: "Plano pronto", tone: "emerald" as const },
+    { name: "Inês L.", focus: "Avaliação · 14/14", state: "Pronta p/ briefing", tone: "amber" as const },
   ];
   const toneRing = (tone: "emerald" | "amber" | "neutral") =>
     tone === "emerald"
@@ -948,6 +951,18 @@ function SoloTrainerMockup() {
     { name: "Goblet Squat", target: "4×8 @ RPE 7", tip: "Peso sugerido: 22kg" },
     { name: "DB Bench Press", target: "4×8 @ RPE 7", tip: "Sugestão: +2kg vs última" },
     { name: "Single-Leg RDL", target: "3×10/lado", tip: "Foco: cadência 3-1-1" },
+    { name: "Chin-up assistido", target: "3×6 @ RPE 8", tip: "Reduz assistência: -5kg" },
+    { name: "Face Pull", target: "3×12 @ RPE 6", tip: "Pausa 1s no pico" },
+    { name: "Plank", target: "3×45s", tip: "+5s vs semana passada" },
+  ];
+  const week = [
+    { d: "Seg", done: true },
+    { d: "Ter", done: true },
+    { d: "Qua", done: false, today: true },
+    { d: "Qui", done: false },
+    { d: "Sex", done: false },
+    { d: "Sáb", done: false },
+    { d: "Dom", done: false },
   ];
   return (
     <FloatCard>
@@ -963,6 +978,24 @@ function SoloTrainerMockup() {
         <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
           Guiado por IA
         </span>
+      </div>
+      {/* Week strip */}
+      <div className="mt-3 grid grid-cols-7 gap-1">
+        {week.map((w) => (
+          <div
+            key={w.d}
+            className={`flex flex-col items-center rounded-md border px-1 py-1.5 text-[9px] uppercase tracking-wider ${
+              w.today
+                ? "border-accent/50 bg-accent/10 text-accent"
+                : w.done
+                  ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+                  : "border-border/60 bg-background/40 text-muted-foreground"
+            }`}
+          >
+            <span>{w.d}</span>
+            <span className="mt-0.5 text-[10px]">{w.done ? "✓" : w.today ? "•" : "—"}</span>
+          </div>
+        ))}
       </div>
       <p className="mt-3 text-base font-medium">Lower body · ~52 min</p>
       <ul className="mt-3 space-y-2">
