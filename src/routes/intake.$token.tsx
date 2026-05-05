@@ -1523,7 +1523,7 @@ function buildSlides(
         <div className="space-y-2 rounded-lg border border-border bg-card/60 p-4 text-sm">
           <ReviewRow label={t("sections.goal_what")} value={form.smart_specific} />
           <ReviewRow label={t("sections.goal_measure")} value={form.smart_measurable} />
-          <ReviewRow label={t("sections.goal_when")} value={form.smart_deadline} />
+          <ReviewRow label={t("sections.goal_when")} value={formatEuroDate(form.smart_deadline)} />
           <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
           <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
           <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
