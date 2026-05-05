@@ -158,6 +158,22 @@ function fromAssessment(a: any | null): FormState {
 }
 
 function toPayload(f: FormState): { fields: Record<string, any>; sections: string[]; identity: { full_name?: string; email?: string; phone?: string; date_of_birth?: string } } {
+  // Loose numeric parser: accepts "10k", "10 000", "10,000", "10.000", "10000".
+  // Returns null when the input is empty or cannot be parsed to a finite number.
+  function parseLooseNumber(raw: string | null | undefined): number | null {
+    if (!raw) return null;
+    const s = String(raw).trim().toLowerCase().replace(/\s+/g, "");
+    if (!s) return null;
+    const km = s.match(/^(\d+(?:[.,]\d+)?)k$/);
+    if (km) {
+      const n = Number(km[1].replace(",", "."));
+      return Number.isFinite(n) ? Math.round(n * 1000) : null;
+    }
+    // Strip thousand separators (commas or periods used as separators).
+    const cleaned = s.replace(/[,.](?=\d{3}\b)/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
   const parqAnswered = Object.values(f.parq).every((v) => v === true || v === false);
   const parqHasYes = Object.values(f.parq).some((v) => v === true);
   return {
