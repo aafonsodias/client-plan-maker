@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { detectRegionFromLocale, generateRoster, initialsFor } from "@/lib/names/regional-names";
 import { pickDemoAvatar } from "@/lib/demo-avatars";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown } from "lucide-react";
+import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
 import { PricingToggle } from "@/components/landing/PricingToggle";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { t } = useTranslation(["plan", "common"]);
   const { code: currencyCode } = useCurrency();
   const activeSymbol = CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? "€";
@@ -133,6 +133,19 @@ function Landing() {
                   <span className="uppercase tracking-widest">Tema</span>
                   <ThemeToggle />
                 </div>
+                {signedIn && (
+                  <>
+                    <div className="my-1 border-t border-border" />
+                    <button
+                      type="button"
+                      onClick={() => { void signOut(); }}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {t("common:actions.sign_out")}
+                    </button>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
