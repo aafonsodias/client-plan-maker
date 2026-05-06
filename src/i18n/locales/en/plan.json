@@ -89,7 +89,99 @@
       "ex_farmer_carry": "Farmer Carry",
       "history_title": "Back squat — 6-week history",
       "history_subtitle": "Top set per week",
-      "delta_label": "Δ vs W1"
+      "delta_label": "Δ vs W1",
+      "solo": {
+        "header": "Today's session · Wk 2",
+        "copilot_chip": "AI copilot · you decide",
+        "session_title": "Lower body · ~52 min",
+        "next_block_title": "Next block",
+        "next_block_body": "AI prepares the next block from what you log this week.",
+        "days": {
+          "mon": "Mon",
+          "tue": "Tue",
+          "wed": "Wed",
+          "thu": "Thu",
+          "fri": "Fri",
+          "sat": "Sat",
+          "sun": "Sun"
+        },
+        "exercises": {
+          "goblet_squat": {
+            "name": "Goblet Squat",
+            "target": "4×8 @ RPE 7",
+            "tip": "Suggested load: 22kg"
+          },
+          "db_bench": {
+            "name": "DB Bench Press",
+            "target": "4×8 @ RPE 7",
+            "tip": "Suggestion: +2kg vs last"
+          },
+          "sl_rdl": {
+            "name": "Single-Leg RDL",
+            "target": "3×10/side",
+            "tip": "Focus: 3-1-1 tempo"
+          },
+          "chinup_assist": {
+            "name": "Assisted Chin-up",
+            "target": "3×6 @ RPE 8",
+            "tip": "Reduce assist: -5kg"
+          },
+          "face_pull": {
+            "name": "Face Pull",
+            "target": "3×12 @ RPE 6",
+            "tip": "1s pause at peak"
+          },
+          "plank": {
+            "name": "Plank",
+            "target": "3×45s",
+            "tip": "+5s vs last week"
+          }
+        }
+      },
+      "protocol_rail": {
+        "active_count": "12 active",
+        "footer_label": "PROTOCOL",
+        "footer_built_by_coach": "Built by a coach",
+        "recovery_label": "Recovery"
+      },
+      "workbench": {
+        "header": "Workbench · Client #42",
+        "live_chip": "live",
+        "coach_msg": "Client reports mild lower-back discomfort on the squat. Suggest a regression and justify.",
+        "ai_msg_html": "Swap <strong>Back Squat</strong> for <strong>Goblet Squat</strong> 4×8 @RPE 7 for 2 weeks. Reduces axial load while keeping the pattern and stimulus.",
+        "structured_label": "Structured suggestion",
+        "apply": "Apply",
+        "bullet_exercise": "Exercise: Goblet Squat (replaces Back Squat)",
+        "bullet_volume": "Volume: 4×8 @RPE 7 · 2 weeks",
+        "bullet_principle": "Principle: axial offload · ACSM Position Stand 2018",
+        "composer_placeholder": "Ask something about this client…",
+        "model_label": "Pick the model · pay only what you use",
+        "context_title": "Client context",
+        "context_name": "Maria S., 34",
+        "context_meta": "Hypertrophy · Block 2 · Week 4",
+        "rows": {
+          "goal": {
+            "k": "Goal",
+            "v": "Hypertrophy"
+          },
+          "equipment": {
+            "k": "Equipment",
+            "v": "Full gym"
+          },
+          "rpe": {
+            "k": "Last RPE",
+            "v": "7.5"
+          },
+          "restriction": {
+            "k": "Restriction",
+            "v": "Sensitive lower back"
+          },
+          "frequency": {
+            "k": "Sessions/wk",
+            "v": "4"
+          }
+        }
+      }
     },
     "how_it_works": {
       "eyebrow": "How it works",

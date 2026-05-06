@@ -89,7 +89,99 @@
       "ex_farmer_carry": "Farmer Carry",
       "history_title": "Back squat — 6 semanas de histórico",
       "history_subtitle": "Top set por semana",
-      "delta_label": "Δ vs Sem 1"
+      "delta_label": "Δ vs Sem 1",
+      "solo": {
+        "header": "Treino de hoje · Sem 2",
+        "copilot_chip": "Copiloto IA · você decide",
+        "session_title": "Inferiores · ~52 min",
+        "next_block_title": "Próximo bloco",
+        "next_block_body": "A IA prepara o próximo bloco com base no que regista esta semana.",
+        "days": {
+          "mon": "Seg",
+          "tue": "Ter",
+          "wed": "Qua",
+          "thu": "Qui",
+          "fri": "Sex",
+          "sat": "Sáb",
+          "sun": "Dom"
+        },
+        "exercises": {
+          "goblet_squat": {
+            "name": "Agachamento Goblet",
+            "target": "4×8 @ RPE 7",
+            "tip": "Peso sugerido: 22kg"
+          },
+          "db_bench": {
+            "name": "Supino com Halteres",
+            "target": "4×8 @ RPE 7",
+            "tip": "Sugestão: +2kg vs última"
+          },
+          "sl_rdl": {
+            "name": "RDL unilateral",
+            "target": "3×10/lado",
+            "tip": "Foco: cadência 3-1-1"
+          },
+          "chinup_assist": {
+            "name": "Tracção assistida",
+            "target": "3×6 @ RPE 8",
+            "tip": "Reduz assistência: -5kg"
+          },
+          "face_pull": {
+            "name": "Face Pull",
+            "target": "3×12 @ RPE 6",
+            "tip": "Pausa 1s no pico"
+          },
+          "plank": {
+            "name": "Prancha",
+            "target": "3×45s",
+            "tip": "+5s vs semana passada"
+          }
+        }
+      },
+      "protocol_rail": {
+        "active_count": "12 ativos",
+        "footer_label": "PROTOCOL",
+        "footer_built_by_coach": "Construído por um coach",
+        "recovery_label": "Recuperação"
+      },
+      "workbench": {
+        "header": "Workbench · Cliente #42",
+        "live_chip": "ao vivo",
+        "coach_msg": "Cliente queixa-se de dor lombar leve no agachamento. Sugere uma regressão e justifica.",
+        "ai_msg_html": "Substituir <strong>Back Squat</strong> por <strong>Goblet Squat</strong> 4×8 @RPE 7 durante 2 semanas. Reduz carga axial mantendo padrão e estímulo.",
+        "structured_label": "Sugestão estruturada",
+        "apply": "Aplicar",
+        "bullet_exercise": "Exercício: Goblet Squat (substitui Back Squat)",
+        "bullet_volume": "Volume: 4×8 @RPE 7 · 2 semanas",
+        "bullet_principle": "Princípio: descarga axial · ACSM Position Stand 2018",
+        "composer_placeholder": "Pergunte algo sobre este cliente…",
+        "model_label": "Escolha o modelo · paga só o que usar",
+        "context_title": "Contexto do cliente",
+        "context_name": "Maria S., 34",
+        "context_meta": "Hipertrofia · Bloco 2 · Semana 4",
+        "rows": {
+          "goal": {
+            "k": "Objetivo",
+            "v": "Hipertrofia"
+          },
+          "equipment": {
+            "k": "Equipamento",
+            "v": "Ginásio completo"
+          },
+          "rpe": {
+            "k": "Última RPE",
+            "v": "7.5"
+          },
+          "restriction": {
+            "k": "Restrição",
+            "v": "Lombar sensível"
+          },
+          "frequency": {
+            "k": "Sessões/sem",
+            "v": "4"
+          }
+        }
+      }
     },
     "how_it_works": {
       "eyebrow": "Como funciona",
