@@ -30,6 +30,7 @@ import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
+import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
 import { Route as PlansPlanIdProgressionsRouteImport } from './routes/plans.$planId.progressions'
 import { Route as PlansPlanIdMicrocycleRouteImport } from './routes/plans.$planId.microcycle'
@@ -143,6 +144,11 @@ const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   path: '/clients/$clientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSystemRoute = AdminSystemRouteImport.update({
+  id: '/admin/system',
+  path: '/admin/system',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlansPlanIdSessionsRoute = PlansPlanIdSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
+  AdminSystemRoute: typeof AdminSystemRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
@@ -537,6 +550,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientsClientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/system': {
+      id: '/admin/system'
+      path: '/admin/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AdminSystemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plans/$planId/sessions': {
       id: '/plans/$planId/sessions'
       path: '/sessions'
@@ -647,6 +667,7 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
+  AdminSystemRoute: AdminSystemRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
