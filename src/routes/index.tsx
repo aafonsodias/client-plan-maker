@@ -179,6 +179,14 @@ function Landing() {
               <Button asChild size="lg" variant="ghost">
                 <a href="#how-it-works">{t("plan:landing.hero.cta_secondary")}</a>
               </Button>
+              {signedIn && (
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/plans/quick">
+                    <Sparkles className="mr-2 h-4 w-4 text-accent" />
+                    Experimente em 5 cliques
+                  </Link>
+                </Button>
+              )}
             </div>
             {!signedIn && (
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
