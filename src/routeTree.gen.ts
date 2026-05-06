@@ -23,6 +23,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlansIndexRouteImport } from './routes/plans.index'
 import { Route as SchedulePacksRouteImport } from './routes/schedule.packs'
+import { Route as PlansQuickRouteImport } from './routes/plans.quick'
 import { Route as PlansNewRouteImport } from './routes/plans.new'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
@@ -106,6 +107,11 @@ const SchedulePacksRoute = SchedulePacksRouteImport.update({
   path: '/packs',
   getParentRoute: () => ScheduleRoute,
 } as any)
+const PlansQuickRoute = PlansQuickRouteImport.update({
+  id: '/plans/quick',
+  path: '/plans/quick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlansNewRoute = PlansNewRouteImport.update({
   id: '/plans/new',
   path: '/plans/new',
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/plans/quick': typeof PlansQuickRoute
   '/schedule/packs': typeof SchedulePacksRoute
   '/plans/': typeof PlansIndexRoute
   '/clients/$clientId/year': typeof ClientsClientIdYearRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/plans/quick': typeof PlansQuickRoute
   '/schedule/packs': typeof SchedulePacksRoute
   '/plans': typeof PlansIndexRoute
   '/clients/$clientId/year': typeof ClientsClientIdYearRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/log/$token': typeof LogTokenRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
+  '/plans/quick': typeof PlansQuickRoute
   '/schedule/packs': typeof SchedulePacksRoute
   '/plans/': typeof PlansIndexRoute
   '/clients_/$clientId/year': typeof ClientsClientIdYearRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/plans/quick'
     | '/schedule/packs'
     | '/plans/'
     | '/clients/$clientId/year'
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/plans/quick'
     | '/schedule/packs'
     | '/plans'
     | '/clients/$clientId/year'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/log/$token'
     | '/plans/$planId'
     | '/plans/new'
+    | '/plans/quick'
     | '/schedule/packs'
     | '/plans/'
     | '/clients_/$clientId/year'
@@ -358,6 +370,7 @@ export interface RootRouteChildren {
   LogTokenRoute: typeof LogTokenRoute
   PlansPlanIdRoute: typeof PlansPlanIdRouteWithChildren
   PlansNewRoute: typeof PlansNewRoute
+  PlansQuickRoute: typeof PlansQuickRoute
   PlansIndexRoute: typeof PlansIndexRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
 }
@@ -461,6 +474,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/schedule/packs'
       preLoaderRoute: typeof SchedulePacksRouteImport
       parentRoute: typeof ScheduleRoute
+    }
+    '/plans/quick': {
+      id: '/plans/quick'
+      path: '/plans/quick'
+      fullPath: '/plans/quick'
+      preLoaderRoute: typeof PlansQuickRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/plans/new': {
       id: '/plans/new'
@@ -611,6 +631,7 @@ const rootRouteChildren: RootRouteChildren = {
   LogTokenRoute: LogTokenRoute,
   PlansPlanIdRoute: PlansPlanIdRouteWithChildren,
   PlansNewRoute: PlansNewRoute,
+  PlansQuickRoute: PlansQuickRoute,
   PlansIndexRoute: PlansIndexRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
 }
