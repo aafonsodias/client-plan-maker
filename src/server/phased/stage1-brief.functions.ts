@@ -12,6 +12,44 @@ import {
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { checkPlanQuota } from "@/server/quota.server";
 import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
+import type { TrainingModality } from "./schemas";
+
+/**
+ * R72.2 — Infer training modalities from any free text the brief may carry
+ * (goal_text, secondary_goals, notes_for_next_stage). Always keeps "gym" as
+ * a safe default unless an explicit non-gym modality is detected. Multi-tag
+ * (e.g. "5K + boulder" → ["gym","running","climbing"]).
+ */
+export function inferTrainingModalities(
+  brief: any,
+  sectionAnalyses?: Record<string, any>,
+): TrainingModality[] {
+  const haystackParts: string[] = [];
+  if (brief && typeof brief === "object") {
+    haystackParts.push(String(brief.notes_for_next_stage ?? ""));
+    haystackParts.push((brief.secondary_goals ?? []).join(" "));
+  }
+  if (sectionAnalyses) {
+    const goal = (sectionAnalyses as any).goal ?? {};
+    haystackParts.push(JSON.stringify(goal));
+  }
+  const text = haystackParts.join(" ").toLowerCase();
+  const out = new Set<TrainingModality>();
+  // Honor existing modalities (coach edit) when present.
+  const existing = Array.isArray(brief?.training_modalities) ? brief.training_modalities : [];
+  for (const m of existing) out.add(m);
+
+  if (/(\b\d{1,2}\s*k\b|\bmaratona|meia[- ]maratona|trail|corrida|running|run\b|jog\b)/i.test(text)) out.add("running");
+  if (/(boulder|escalad|climb|via\s|grau\s*[5-9][a-c]|6[abc+]|7[abc+]|8[abc+])/i.test(text)) out.add("climbing");
+  if (/(handstand|calisten|street\s*workout|paralelas|barra\s*fixa|lever)/i.test(text)) out.add("calisthenics");
+  if (/(mobilidade|flexibil|yoga|pilates)/i.test(text)) out.add("mobility");
+  if (/(futebol|t[eé]nis|surf|handball|basquete|v[oô]lei|rugby|hokey|skate)/i.test(text)) out.add("sport_skill");
+
+  // Default safety net: keep gym unless caller explicitly stripped it AND we
+  // detected at least one alternative.
+  if (out.size === 0 || existing.length === 0) out.add("gym");
+  return Array.from(out);
+}
 
 const BRIEF_TOOL_SCHEMA = {
   type: "object",
@@ -233,18 +271,24 @@ Output ONLY by calling the record_brief tool.`;
 
     const fallbackRow = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
     const sanitizedBrief = sanitizeMovementCompetencySummary(result.data, fallbackRow);
+    // R72.2 — derive training_modalities from goal/notes text. Coach can
+    // override later via brief edit. Default safety: always includes "gym".
+    const withModalities = {
+      ...sanitizedBrief,
+      training_modalities: inferTrainingModalities(sanitizedBrief, sectionAnalyses as any),
+    };
 
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: sanitizedBrief as any,
+        brief: withModalities as any,
         generation_state: newState as any,
         ...clearDownstream("brief"),
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
 
-    return { ok: true as const, brief: sanitizedBrief };
+    return { ok: true as const, brief: withModalities };
   });
 
 /**

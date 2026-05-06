@@ -411,6 +411,24 @@ If a movement is genuinely "supported" or rehab-style, prefer reducing load and 
 
   const fittVpBlock = fittVpPromptBlock(prescriptionParameters);
 
+  // R72.2 — surface declared training modalities so the model adapts cardio /
+  // skill blocks accordingly (e.g. running intervals expressed inside cardio[]
+  // text, climbing pyramids inside notes). Structured intervals/climb_blocks
+  // schema fields land in R72.2b.
+  const modalities: string[] = Array.isArray(brief?.training_modalities) && brief.training_modalities.length > 0
+    ? brief.training_modalities
+    : ["gym"];
+  const modalityTargets = brief?.modality_targets ?? {};
+  const modalityBlock = modalities.length === 1 && modalities[0] === "gym"
+    ? ""
+    : `\n\nTRAINING MODALITIES (R72.2): ${modalities.join(", ")}.\n` +
+      `Modality targets: ${JSON.stringify(modalityTargets)}.\n` +
+      `For 'running' sessions, populate cardio[] with explicit interval structure inside notes (e.g. "5×800m @ 4:00/km, 90s rest" or "Z2 base 40min @ HR 130-145"). ` +
+      `For 'climbing', use the exercises[] list to express boulder/route blocks (warmup V0-V2 → project at limit → endurance circuits) — sets/reps map to attempts. ` +
+      `For 'calisthenics' and 'sport_skill', exercises[] should include skill drills (handstand against wall 5×30s, single-leg balance) before strength accessories. ` +
+      `For 'mobility', favour activation[]/dynamic_stretches[] over heavy resistance. ` +
+      `Always keep gym strength work honest to the tier and RPE floors above.`;
+
   const system = `You are a senior strength coach generating ONE single training session.
 
 Output ONE day matching the record_day tool. NO weeks, NO multi-day, NO programming notes outside the schema.
@@ -425,7 +443,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}

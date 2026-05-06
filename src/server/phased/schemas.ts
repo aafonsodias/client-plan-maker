@@ -41,6 +41,44 @@ export const SectionAnalysisSchema = z.object({
 export type SectionAnalysis = z.infer<typeof SectionAnalysisSchema>;
 
 // ---- Stage 1 — Training brief ---------------------------------------------
+// R72.2 — Training modality is a list. A single client can mix gym + running
+// + climbing in the same plan. Brief stays backwards-compatible — when absent
+// or empty, downstream stages treat it as `["gym"]`.
+export const TrainingModalityEnum = z.enum([
+  "gym",
+  "running",
+  "climbing",
+  "calisthenics",
+  "mobility",
+  "sport_skill",
+]);
+export type TrainingModality = z.infer<typeof TrainingModalityEnum>;
+
+export const ModalityTargetsSchema = z
+  .object({
+    running: z
+      .object({
+        distance_km: z.number().positive().optional(),
+        target_time_min: z.number().positive().optional(),
+      })
+      .partial()
+      .optional(),
+    climbing: z
+      .object({
+        grade: z.string().max(20).optional(),
+        style: z.enum(["boulder", "sport", "trad"]).optional(),
+      })
+      .partial()
+      .optional(),
+    sport_skill: z
+      .object({ sport: z.string().max(60).optional() })
+      .partial()
+      .optional(),
+  })
+  .partial()
+  .optional();
+export type ModalityTargets = z.infer<typeof ModalityTargetsSchema>;
+
 export const BriefSchema = z.object({
   primary_goal: z.enum([
     "hypertrophy",
@@ -87,6 +125,12 @@ export const BriefSchema = z.object({
   intensity_appetite: z
     .enum(["conservador", "padrao", "agressivo"])
     .default("padrao"),
+  // R72.2 — multi-modality. Optional with default so legacy plans validate.
+  training_modalities: z
+    .array(TrainingModalityEnum)
+    .default(["gym"])
+    .transform((arr) => (arr.length === 0 ? ["gym" as const] : arr)),
+  modality_targets: ModalityTargetsSchema,
 });
 export type Brief = z.infer<typeof BriefSchema>;
 
