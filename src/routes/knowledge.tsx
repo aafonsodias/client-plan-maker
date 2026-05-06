@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -177,7 +177,7 @@ function RuleSummary({
 }: {
   title: string;
   summary: string;
-  editor: React.ReactNode;
+  editor: ReactNode;
 }) {
   return (
     <Card>
