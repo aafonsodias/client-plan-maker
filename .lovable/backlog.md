@@ -403,3 +403,10 @@ Atualizado: Round 28 (4 Mai 2026)
 - ✅ `/me` reescrita: hero plano com gradient amber + chip "X/Y feitos", lista de sessões da semana com check ✅/⭕ por `day_label`, lista de sessões recentes com data + nº exercícios.
 - ✅ Voz PT: "tu" → "você" ("a sua conta", "peça ao seu treinador", "o seu treinador") — alinhada com Core memory.
 - ✅ Sem write paths nesta surface: registo continua via link partilhado `/log/$token` (assinatura com bearer ≠ session). Próximo passo (#86 next) = mensagem do treinador.
+
+## Round 70 — Onboarding rápido (5 Mai 2026)
+- ✅ R62 #1 (P0): Nova rota `/plans/quick` — 5 inputs (nome, idade+sexo, objetivo, experiência, dias+equipamento) → cliente + assessment mínimo + pipeline phased completo, fire-and-forget.
+- ✅ `startQuickPlan` server fn (`src/server/quick-plan.functions.ts`) com `requireSupabaseAuth` + `checkPlanQuota` + Zod. Inserção em `demo_runs` para reusar o `DemoRunsIndicator` global (zero spinners locais).
+- ✅ Pipeline (`src/server/quick-plan.server.ts`): client → assessment (form criteria optimistas, capacity null, screen_not_assessed=true) → pre-stage analyses em batches de 4 → `runDemoPlay` (5 stages) → done.
+- ✅ Honestidade: assessment marcado em `extended.quick_plan` com inputs originais; `notes` do cliente avisa "Plano rápido — sem intake clínico". Quota conta normal (1/1 free).
+- ⏳ Próximos passos: CTAs no dashboard + landing hero (deixei fora desta ronda — rota acessível por URL e não quis tocar dashboard 554-LOC à pressa).
