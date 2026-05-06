@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
+import { PricingToggle } from "@/components/landing/PricingToggle";
+import { PRICING_TIERS, priceFor, monthlyEquivalent, type Billing } from "@/lib/pricing-tiers";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
