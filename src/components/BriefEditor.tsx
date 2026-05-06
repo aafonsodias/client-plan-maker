@@ -357,49 +357,27 @@ export default function BriefEditor({
                 <option value="body_part_split">Divisão por grupo muscular</option>
                 <option value="custom">Personalizada</option>
               </select>
-              {(() => {
-                const systemSplit = inferSplit({
-                  sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
-                  manual: null,
-                });
-                const matches = programmingVariables.training_split === systemSplit.value;
-                const chipInf = matches
-                  ? systemSplit
-                  : inferSplit({ manual: programmingVariables.training_split as any });
-                const labels: Record<string, string> = {
-                  full_body: "Corpo inteiro",
-                  upper_lower: "Superior / Inferior",
-                  ppl: "Empurrar / Puxar / Pernas",
-                  pplc: "Empurrar / Puxar / Pernas / Core",
-                  ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
-                  body_part_split: "Divisão por grupo muscular",
-                  custom: "Personalizada",
-                };
-                // Quick Path: only show the nudge row when the user diverges
-                // from the recommendation. Stay silent otherwise.
-                if (mode === "quick" && matches) return null;
-                return (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <RationaleChip
-                      inference={chipInf}
-                      label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
-                      mode={mode}
-                    />
-                    {!matches ? (
-                      <>
-                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[systemSplit.value] ?? systemSplit.value}</span>
-                        <button
-                          type="button"
-                          onClick={() => setPv("training_split", systemSplit.value as ProgrammingVariables["training_split"])}
-                          className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
-                        >
-                          {t("ux.rationale.labels.recommended_apply")}
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                );
-              })()}
+              {(mode !== "quick" || !splitMatches) && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <RationaleChip
+                    inference={splitChipInf}
+                    label={splitMatches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
+                    mode={mode}
+                  />
+                  {!splitMatches ? (
+                    <>
+                      <span>{t("ux.rationale.labels.recommended_default")}: {splitLabels[splitSystem.value] ?? splitSystem.value}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPv("training_split", splitSystem.value as ProgrammingVariables["training_split"])}
+                        className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                      >
+                        {t("ux.rationale.labels.recommended_apply")}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </Field>
             <Field label="Estilo de deload">
               <select
