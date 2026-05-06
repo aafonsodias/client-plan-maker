@@ -170,20 +170,12 @@ export default function BriefEditor({
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
-          {(() => {
-            const tierInf = inferTier({
-              red_flags: brief.red_flags ?? [],
-              training_age_band: brief.training_age_band,
-              manual: null,
-            });
-            if (mode === "quick" && tierInf.confidence !== "assumed") return null;
-            return (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span>{t("ux.rationale.labels.inferred")}:</span>
-                <RationaleChip inference={tierInf} label={tierInf.value} mode={mode} />
-              </div>
-            );
-          })()}
+          {(mode !== "quick" || tierInference.confidence === "assumed") && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span>{t("ux.rationale.labels.inferred")}:</span>
+              <RationaleChip inference={tierInference} label={tierInference.value} mode={mode} />
+            </div>
+          )}
         </Field>
       </Card>
 
