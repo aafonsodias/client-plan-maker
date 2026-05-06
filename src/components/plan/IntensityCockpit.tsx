@@ -1,5 +1,6 @@
 import { Gauge, Waves, Scale, Repeat, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
 import type { ProgrammingVariables } from "@/server/phased/schemas";
 import {
   COCKPIT_PRESETS,
@@ -54,6 +55,22 @@ export default function IntensityCockpit({
     "custom",
   ];
 
+  const STORAGE_KEY = "pf.cockpit.finetune";
+  const [showKnobs, setShowKnobs] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(STORAGE_KEY) === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, showKnobs ? "1" : "0");
+  }, [showKnobs]);
+
+  const deloadLabel =
+    value.deload_frequency === "no_deload"
+      ? "sem deload"
+      : value.deload_frequency.replace("every_", "deload ").replace("_weeks", "w");
+  const summary = `${t(`cockpit.knobs.wave.options.${value.wave_model}`)} · RPE ${value.rpe_ceiling.toFixed(1)} · ${deloadLabel} · ${t(`cockpit.knobs.autoreg.options.${value.autoreg_strictness}`)}`;
+
   return (
     <section
       aria-labelledby="cockpit-title"
@@ -93,6 +110,18 @@ export default function IntensityCockpit({
         })}
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/40 px-3 py-2">
+        <p className="text-xs text-foreground">{summary}</p>
+        <button
+          type="button"
+          onClick={() => setShowKnobs((s) => !s)}
+          className="text-[11px] font-medium uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-400"
+        >
+          {showKnobs ? "Ocultar detalhes" : "Afinar"}
+        </button>
+      </div>
+
+      {showKnobs && (
       <div className={`grid gap-3 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}>
         <Knob
           icon={<Waves className="h-4 w-4" />}
@@ -183,6 +212,7 @@ export default function IntensityCockpit({
           </select>
         </Knob>
       </div>
+      )}
 
       <p className="mt-3 text-[11px] text-muted-foreground">
         {t("cockpit.sources")}

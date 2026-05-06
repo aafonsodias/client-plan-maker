@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -16,8 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { BookOpen, Loader2, Save } from "lucide-react";
+import { BookOpen, Loader2, Save, Pencil } from "lucide-react";
 import {
   getActiveKnowledgeProfile,
   updateKnowledgeRules,
@@ -121,10 +129,26 @@ function KnowledgePage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <VolumeCard rules={rules} setRules={setRules} />
-        <IntensityCard rules={rules} setRules={setRules} />
-        <RecoveryCard rules={rules} setRules={setRules} />
-        <ProgressionCard rules={rules} setRules={setRules} />
+        <RuleSummary
+          title="Volume — séries por semana"
+          summary={summarizeVolume(rules)}
+          editor={<VolumeCard rules={rules} setRules={setRules} />}
+        />
+        <RuleSummary
+          title="Intensidade"
+          summary={summarizeIntensity(rules)}
+          editor={<IntensityCard rules={rules} setRules={setRules} />}
+        />
+        <RuleSummary
+          title="Recuperação · Deload"
+          summary={summarizeRecovery(rules)}
+          editor={<RecoveryCard rules={rules} setRules={setRules} />}
+        />
+        <RuleSummary
+          title="Progressão"
+          summary={summarizeProgression(rules)}
+          editor={<ProgressionCard rules={rules} setRules={setRules} />}
+        />
       </div>
 
       <div className="sticky bottom-4 mt-6 flex justify-end">
@@ -145,6 +169,100 @@ type CardProps = {
   rules: KnowledgeRules;
   setRules: (r: KnowledgeRules) => void;
 };
+
+function RuleSummary({
+  title,
+  summary,
+  editor,
+}: {
+  title: string;
+  summary: string;
+  editor: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-start justify-between gap-3 p-5">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            {title}
+          </p>
+          <p className="mt-1 text-sm text-foreground">{summary}</p>
+        </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button size="sm" variant="outline" className="shrink-0">
+              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+              Editar
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+            <SheetHeader>
+              <SheetTitle>{title}</SheetTitle>
+              <SheetDescription>
+                Versionado. Cada plano gerado guarda a versão usada.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-4">{editor}</div>
+          </SheetContent>
+        </Sheet>
+      </CardContent>
+    </Card>
+  );
+}
+
+const TRADEOFF_PT: Record<string, string> = {
+  high_int_low_vol: "intensidade alta",
+  moderate_moderate: "equilibrado",
+  moderate_int_high_vol: "volume alto",
+  low_int_very_high_vol: "volume muito alto",
+};
+const DELOAD_FREQ_PT: Record<string, string> = {
+  every_3_weeks: "a cada 3 semanas",
+  every_4_weeks: "a cada 4 semanas",
+  every_5_weeks: "a cada 5 semanas",
+  every_6_weeks: "a cada 6 semanas",
+  no_deload: "sem deload",
+};
+const DELOAD_STYLE_PT: Record<string, string> = {
+  volume_reduction: "redução de volume",
+  intensity_reduction: "redução de intensidade",
+  full_rest_week: "descanso total",
+  mixed: "misto",
+};
+const WAVE_PT: Record<string, string> = {
+  linear: "linear",
+  undulating: "ondulatório",
+  block: "em blocos",
+  conjugate: "conjugado",
+};
+const AUTOREG_PT: Record<string, string> = {
+  strict: "restrita",
+  suggested: "sugerida",
+  off: "desligada",
+};
+
+function summarizeVolume(r: KnowledgeRules): string {
+  const overrides = Object.keys(r.volume.landmarks ?? {}).length;
+  if (!overrides) return "Landmarks balanceados (defaults do sistema)";
+  return `${overrides} grupo(s) com landmarks personalizados`;
+}
+function summarizeIntensity(r: KnowledgeRules): string {
+  const adv = r.intensity.rpe_ceiling_by_tier.advanced.toFixed(1);
+  const tradeoff = TRADEOFF_PT[r.intensity.intensity_volume_tradeoff_default] ?? "—";
+  return `Teto RPE avançado ${adv} · ${tradeoff}`;
+}
+function summarizeRecovery(r: KnowledgeRules): string {
+  const f = DELOAD_FREQ_PT[r.recovery.deload_frequency] ?? r.recovery.deload_frequency;
+  const s = DELOAD_STYLE_PT[r.recovery.deload_style] ?? r.recovery.deload_style;
+  return r.recovery.deload_frequency === "no_deload"
+    ? "Sem deload programado"
+    : `Deload ${f} · ${s}`;
+}
+function summarizeProgression(r: KnowledgeRules): string {
+  const w = WAVE_PT[r.progression.wave_model_default] ?? r.progression.wave_model_default;
+  const a = AUTOREG_PT[r.progression.autoreg_strictness_default] ?? r.progression.autoreg_strictness_default;
+  return `Onda ${w} · auto-regulação ${a}`;
+}
 
 function VolumeCard({ rules, setRules }: CardProps) {
   function update(m: MuscleGroup, key: "mev" | "mav" | "mrv", value: number) {
