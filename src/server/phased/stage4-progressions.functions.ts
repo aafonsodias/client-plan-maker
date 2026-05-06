@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { GenerationStateSchema, ProgressionPlanSchema } from "./schemas";
 import { logGeneration } from "./ai.server";
-import { buildWavePlan, pickWaveTier, type WaveTier } from "./programming-defaults";
+import { buildWavePlan, pickWaveTier, resolveCockpit, type WaveTier } from "./programming-defaults";
+import { resolveRules } from "@/server/knowledge/resolve.server";
 
 /**
  * Round 63: AI is no longer allowed to generate progressions.
@@ -107,14 +108,12 @@ export const proposeProgressions = createServerFn({ method: "POST" })
     if (appetite === "agressivo") waveTier = waveTier === "beginner" ? "intermediate" : "advanced";
     if (appetite === "conservador") waveTier = waveTier === "advanced" ? "intermediate" : "beginner";
     // R64 cockpit knobs — wave model + deload frequency.
+    // R73: fall back to PKL defaults when the cockpit didn't set them.
     const pv = (plan as any).programming_variables ?? {};
-    const waveModel = (["linear", "undulating", "block", "conjugate"] as const).includes(pv.wave_model)
-      ? pv.wave_model
-      : "undulating";
-    const deloadEveryN = (() => {
-      const m = String(pv.deload_frequency ?? "every_4_weeks").match(/(\d+)/);
-      return m ? Math.min(6, Math.max(3, parseInt(m[1], 10))) : 4;
-    })();
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const cockpit = resolveCockpit(pv, pklRules);
+    const waveModel = cockpit.wave_model;
+    const deloadEveryN = cockpit.deload_every_n;
     const wave = buildWavePlan(waveTier, weeks, { model: waveModel, deloadEveryN });
 
     // Deterministic build: one row per exercise per week-tag, keyed by category.
@@ -197,8 +196,9 @@ export const proposeProgressions = createServerFn({ method: "POST" })
             deload_every_n_weeks: deloadEveryN,
             rpe_ceiling: pv.rpe_ceiling ?? null,
             intensity_volume_tradeoff: pv.intensity_volume_tradeoff ?? null,
-            autoreg_strictness: pv.autoreg_strictness ?? "suggested",
+            autoreg_strictness: cockpit.autoreg_strictness,
             preset: pv.cockpit_preset ?? "custom",
+            source: cockpit.source,
           },
           progressions_source: "deterministic",
         } as any,

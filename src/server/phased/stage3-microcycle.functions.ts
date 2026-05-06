@@ -17,6 +17,10 @@ import {
   type RpeFloors,
 } from "./programming-tier.server";
 import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
+import { resolveRules } from "@/server/knowledge/resolve.server";
+import { resolveLandmarks } from "@/server/knowledge/schema";
+import type { MuscleGroup } from "@/lib/volume-landmarks";
+import type { VolumeLandmark } from "@/lib/volume-landmarks";
 import {
   validateDayAgainstFittVp,
   type PrescriptionParameters,
@@ -346,6 +350,7 @@ async function runDay(
   hardBan: string[] = [],
   swapMainLift: boolean = false,
   prescriptionParameters: PrescriptionParameters | null = null,
+  pklLandmarks: Record<MuscleGroup, VolumeLandmark> | null = null,
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -367,11 +372,11 @@ async function runDay(
     4,
     Number(blueprint?.mesocycle_length_weeks) || Number(brief?.mesocycle_length_weeks) || 4,
   );
-  const week1 = prescribeWeek(1, totalWeeks, { priorSummary });
+  const week1 = prescribeWeek(1, totalWeeks, { priorSummary, landmarks: pklLandmarks ?? undefined });
   const week1TargetsLine = week1.rows
     .map((r) => `${r.muscle}=${r.target}(${r.min}..${r.max})`)
     .join(" ");
-  const volumeBlock = `\n\nWEEKLY VOLUME PRESCRIPTION (full mesocycle, hard constraint):\n${prescriptionPromptBlock(totalWeeks, { priorSummary })}\n\nTHIS DAY contributes to WEEK 1 totals: ${week1TargetsLine}.\nPick exercises whose primary/secondary muscles move the day toward those weekly targets without overshooting on any single muscle.`;
+  const volumeBlock = `\n\nWEEKLY VOLUME PRESCRIPTION (full mesocycle, hard constraint):\n${prescriptionPromptBlock(totalWeeks, { priorSummary, landmarks: pklLandmarks ?? undefined })}\n\nTHIS DAY contributes to WEEK 1 totals: ${week1TargetsLine}.\nPick exercises whose primary/secondary muscles move the day toward those weekly targets without overshooting on any single muscle.`;
 
   const tierBlock = guidelines
     ? `
@@ -698,6 +703,8 @@ export const generateDay = createServerFn({ method: "POST" })
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
     await markPending(supabase, userId, data.planId, data.dayIndex);
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const pklLandmarks = resolveLandmarks(pklRules);
     const r = await runDay(
       supabase,
       userId,
@@ -711,6 +718,7 @@ export const generateDay = createServerFn({ method: "POST" })
       [],
       swapMainLift,
       pp,
+      pklLandmarks,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -747,6 +755,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const pklLandmarks = resolveLandmarks(pklRules);
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -780,6 +790,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             [],
             swapMainLift,
             pp,
+            pklLandmarks,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
@@ -841,6 +852,9 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             briefP.data, bpP.data, guidelines, priorBlockSummary,
             priorPool,
             banned,
+            false,
+            pp,
+            pklLandmarks,
           );
           if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
         }

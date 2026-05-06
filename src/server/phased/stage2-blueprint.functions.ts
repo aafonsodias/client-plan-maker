@@ -11,6 +11,8 @@ import {
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
 import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
+import { resolveRules } from "@/server/knowledge/resolve.server";
+import { resolveLandmarks } from "@/server/knowledge/schema";
 import {
   classifyTier,
   tierGuidelines,
@@ -140,7 +142,14 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       brief.primary_goal,
     );
     const tierBlock = tierPromptBlock(guidelines);
-    const volumeBlock = prescriptionPromptBlock(weeks, { priorSummary: priorBlockSummary });
+    // R73 — apply trainer's Programmable Knowledge Layer landmarks (falls
+    // back to system defaults when no profile is set).
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const pklLandmarks = resolveLandmarks(pklRules);
+    const volumeBlock = prescriptionPromptBlock(weeks, {
+      priorSummary: priorBlockSummary,
+      landmarks: pklLandmarks,
+    });
 
     const baseSystem = `You are a senior strength coach designing a MESOCYCLE BLUEPRINT.
 
