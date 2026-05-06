@@ -19,6 +19,18 @@ import { ExerciseSetsCard, type LogEntryV2, type SetLog } from "@/components/log
 import { LogHeader, type SaveState } from "@/components/log/LogHeader";
 import { Confetti } from "@/components/log/Confetti";
 import { ImportFromPhotoButton } from "@/components/log/ImportFromPhotoButton";
+import RationaleChip from "@/components/ux/RationaleChip";
+import { inferLogbookModeFromDayFocus } from "@/lib/auto-infer";
+
+const LOGBOOK_MODE_LABELS_PT: Record<string, string> = {
+  strength: "Força",
+  hypertrophy: "Hipertrofia",
+  cardio: "Cardio",
+  intervals: "Intervalos",
+  mobility: "Mobilidade",
+  skill: "Técnica",
+  mixed: "Misto",
+};
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
@@ -295,6 +307,15 @@ function ClientLogPage() {
           </span>
         </div>
       </div>
+
+      {day?.focus ? (
+        <div className="flex flex-wrap items-center gap-2 px-1">
+          <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {LOGBOOK_MODE_LABELS_PT[inferLogbookModeFromDayFocus(day.focus).value] ?? "Misto"}
+          </span>
+          <RationaleChip inference={inferLogbookModeFromDayFocus(day.focus)} />
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         {entries.length > 0 && (

@@ -954,6 +954,7 @@ function PlanEditor() {
               created via NextWeekCard pick this up immediately. */}
           <IntensityCockpit
             value={(plan?.programming_variables ?? {}) as ProgrammingVariables}
+            primaryGoal={(plan as any)?.training_brief?.primary_goal}
             onChange={async (next) => {
               setPlan({ ...plan, programming_variables: next });
               const { error } = await supabase

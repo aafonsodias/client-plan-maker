@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { BookOpen, Loader2, Save, Pencil } from "lucide-react";
+import RationaleChip from "@/components/ux/RationaleChip";
+import type { Inference } from "@/lib/auto-infer";
 import {
   getActiveKnowledgeProfile,
   updateKnowledgeRules,
@@ -132,21 +134,25 @@ function KnowledgePage() {
         <RuleSummary
           title="Volume — séries por semana"
           summary={summarizeVolume(rules)}
+          rationale={volumeRationale(rules)}
           editor={<VolumeCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Intensidade"
           summary={summarizeIntensity(rules)}
+          rationale={intensityRationale(rules)}
           editor={<IntensityCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Recuperação · Deload"
           summary={summarizeRecovery(rules)}
+          rationale={recoveryRationale(rules)}
           editor={<RecoveryCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Progressão"
           summary={summarizeProgression(rules)}
+          rationale={progressionRationale(rules)}
           editor={<ProgressionCard rules={rules} setRules={setRules} />}
         />
       </div>
@@ -173,10 +179,12 @@ type CardProps = {
 function RuleSummary({
   title,
   summary,
+  rationale,
   editor,
 }: {
   title: string;
   summary: string;
+  rationale?: Inference<unknown> | null;
   editor: ReactNode;
 }) {
   return (
@@ -186,7 +194,10 @@ function RuleSummary({
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {title}
           </p>
-          <p className="mt-1 text-sm text-foreground">{summary}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-sm text-foreground">{summary}</p>
+            {rationale ? <RationaleChip inference={rationale} /> : null}
+          </div>
         </div>
         <Sheet>
           <SheetTrigger asChild>
@@ -262,6 +273,49 @@ function summarizeProgression(r: KnowledgeRules): string {
   const w = WAVE_PT[r.progression.wave_model_default] ?? r.progression.wave_model_default;
   const a = AUTOREG_PT[r.progression.autoreg_strictness_default] ?? r.progression.autoreg_strictness_default;
   return `Onda ${w} · auto-regulação ${a}`;
+}
+
+/* ---------- rationale envelopes for the summary chips ---------- */
+
+function volumeRationale(r: KnowledgeRules): Inference<string> {
+  const overrides = Object.keys(r.volume.landmarks ?? {}).length;
+  return overrides
+    ? {
+        value: "custom",
+        confidence: "manual",
+        source: "user",
+        reason_key: "wave_manual",
+      }
+    : {
+        value: "default",
+        confidence: "confident",
+        source: "default",
+        reason_key: "wave_default",
+      };
+}
+function intensityRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.intensity.intensity_volume_tradeoff_default,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "wave_from_pkl",
+  };
+}
+function recoveryRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.recovery.deload_frequency,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "deload_from_pkl",
+  };
+}
+function progressionRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.progression.wave_model_default,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "wave_from_pkl",
+  };
 }
 
 function VolumeCard({ rules, setRules }: CardProps) {

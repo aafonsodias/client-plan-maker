@@ -777,5 +777,48 @@
       "low_adherence": "Adherence {{pct}}% ({{logged}}/{{expected}} sessions logged). Log at least 80% before advancing.",
       "failed": "Could not program the next week."
     }
+  },
+  "ux": {
+    "rationale": {
+      "title": "Why this?",
+      "aria": "View rationale",
+      "fallback": "Value inferred from available data.",
+      "source_label": "Source",
+      "confidence": {
+        "confident": "high confidence",
+        "assumed": "assumed",
+        "manual": "set by you"
+      },
+      "sources": {
+        "assessment": "client assessment",
+        "pkl": "knowledge profile",
+        "cockpit": "intensity cockpit",
+        "default": "system default",
+        "user": "set by you"
+      },
+      "reasons": {
+        "tier_manual": "Tier set manually.",
+        "tier_remedial_flags": "{{count}} red flags in assessment — starting in remedial protects recovery.",
+        "tier_conservative": "Beginner or 1 red flag — conservative approach first.",
+        "tier_advanced_age": "Assessment indicates advanced — cleared for high RPE ceiling.",
+        "tier_default": "No countersignals — assumes advanced.",
+        "preset_manual": "Preset chosen by you.",
+        "preset_custom": "Knobs tuned by hand — custom preset.",
+        "preset_from_goal": "Inferred from primary goal: {{goal}}.",
+        "preset_default": "No clear goal — assumes moderate recomp.",
+        "split_manual": "Split chosen manually.",
+        "split_from_sessions": "{{n}} sessions/week — split chosen to spread volume without repeating groups.",
+        "wave_manual": "Wave model set in cockpit.",
+        "wave_from_pkl": "Read from your knowledge profile.",
+        "wave_from_goal": "Inferred from primary goal: {{goal}}.",
+        "wave_default": "Undulating default — Bompa & Buzzichelli §7.4.",
+        "deload_manual": "Deload frequency set in cockpit.",
+        "deload_from_pkl": "Read from your knowledge profile.",
+        "deload_from_tier": "{{tier}} tier — more frequent deloads protect adherence.",
+        "deload_default": "Default every 4 weeks — NSCA Essentials 3e §17.",
+        "logbook_mode_from_focus": "Inferred from day focus: {{focus}}.",
+        "logbook_mode_default": "No specific focus — mixed mode."
+      }
+    }
   }
 }
