@@ -1,132 +1,233 @@
-# R72.2 — Motor multi-modalidade (gym + running + climbing + skill + mobility)
+# R73 — Programmable Knowledge Layer (PKL) + System Governance
 
-Vou implementar o motor multi-modalidade que estava previsto no plano R72. O R72.1 (i18n sweep) já fechou; agora ataco o coração: o pipeline phased só sabe gerar treino de ginásio. Este round abre-o para corrida, escalada, calistenia, skill e mobilidade — e adiciona o gate "Aprovar microciclo" antes das progressões.
+Two parallel systems, fully separated surfaces:
+- **`/knowledge`** — PKL (controls training logic)
+- **`/admin/system`** — system_iterations + admin-only telemetry
+- **`/settings`** — stays as-is (lang/theme only; no advanced controls)
 
----
-
-## 1. Schema (`src/server/phased/schemas.ts`)
-
-Adicionar ao `BriefSchema`:
-
-```ts
-training_modalities: z.array(z.enum([
-  "gym","running","climbing","calisthenics","mobility","sport_skill"
-])).default(["gym"]),
-modality_targets: z.object({
-  running: z.object({ distance_km: z.number().optional(), target_time_min: z.number().optional() }).optional(),
-  climbing: z.object({ grade: z.string().optional(), style: z.enum(["boulder","sport","trad"]).optional() }).optional(),
-  sport_skill: z.object({ sport: z.string().optional() }).optional(),
-}).partial().optional(),
-```
-
-Compat retroactivo: brief sem `training_modalities` → `["gym"]`.
-
-Adicionar a `SectionItemZ` campos opcionais:
-- `intervals?: { distance?: string; pace?: string; duration?: string; rest?: string }[]` — para corrida.
-- `climb_blocks?: { grade: string; attempts: number; rest_min?: number }[]` — para escalada.
-- `prep_inhibition?: boolean` — flag para SMR/rolo na fase de inibição.
-
-## 2. Pre-Stage 0 (`src/server/phased/pre-stage.functions.ts`)
-
-Antes do LLM, regex/heurística no `client_overview.goal_text`:
-- /5 ?k|10 ?k|maratona|corrida|trail|run/i → adiciona `running`
-- /boulder|via|escalad|climb|6[abc]|7[abc]/i → adiciona `climbing`
-- /handstand|calisten|street workout|barra/i → adiciona `calisthenics`
-- /mobilidade|flexib|yoga/i → adiciona `mobility`
-- /futebol|ténis|surf|handball|basquete/i → adiciona `sport_skill`
-
-Sempre mantém `gym` se já lá estava ou se nada bater (default seguro). LLM depois confirma/expande no Stage 1.
-
-## 3. Training zones lib (NOVO `src/lib/training-zones.ts`, ~120 LOC)
-
-```ts
-export function runZones(restingHR: number, maxHR: number, vdot?: number): Zone[]
-export function strengthRanges(): { strength, hypertrophy, endurance, power }
-export function vdotPaces(fiveKtimeMin: number): { easy, marathon, threshold, interval, repetition }
-```
-
-Constantes ACSM 12e Tbl 5.7 + Jack Daniels VDOT (paráfrase). Sem cópia verbatim.
-
-## 4. Stage 2 blueprint (`src/server/phased/stage2-blueprint.functions.ts`)
-
-Adicionar arquetípos por modalidade ao prompt + ao schema de saída:
-- `aerobic_base` (Z2 long run)
-- `interval_session` (VO₂max ou threshold)
-- `tempo_run`
-- `climb_project` (limit boulders/routes)
-- `climb_endurance` (4×4, ARC)
-- `skill_practice` (genérico, ex.: handstand drills)
-- `mobility_flow`
-
-`week_to_session_map` passa a aceitar mistura. Ex.: cliente "5K + boulder" com 5 sess/sem → `[strength_focus, interval_session, climb_project, aerobic_base, mixed_session]`.
-
-## 5. Stage 3 microcycle (`src/server/phased/stage3-microcycle.functions.ts`)
-
-Expandir o prompt com secção condicional por modalidade:
-
-> For `running` sessions: emit items in `cardio[]` with `intervals[]` for interval/tempo, or `duration` for Z2 base. Use VDOT paces if `modality_targets.running.target_time_min` is set; else use HR zones (Karvonen).
->
-> For `climbing` sessions: emit `climb_blocks[]` with grade ladder (warmup V0-V2 → project at limit → endurance circuits). Honor `modality_targets.climbing.grade`.
->
-> For `sport_skill` and `calisthenics`: emit `resistance_main[]` + `accessories[]` with skill drills (e.g., handstand against wall 5×30s).
->
-> All resistance work continues to honor strengthRanges() per programming tier.
-
-Adicionar fase `prep_inhibition` (rolo/SMR 5min) antes do warmup quando `programming_variables.include_smr === true` ou cliente tem red flag músculo-esquelético.
-
-## 6. Stage 3.5 — Aprovar microciclo (gate)
-
-`src/routes/plans.$planId.microcycle.tsx`:
-- Adicionar botão "Aprovar microciclo" (PT) / "Approve microcycle" (EN) no header da página.
-- Server fn nova `approveMicrocycle({ planId })` em `src/server/phased/microcycle-edit.functions.ts` que:
-  - Verifica owner.
-  - Faz `update workout_plans set generation_state = jsonb_set(generation_state, '{approved_stages}', generation_state->'approved_stages' || '"microcycle"'::jsonb)`.
-  - Devolve novo state.
-- Stage 4 (`stage4-progressions.functions.ts`) já lê `generation_state.approved_stages`; adicionar guard: se não inclui `"microcycle"`, throw `MICROCYCLE_NOT_APPROVED`.
-- UI Stage 4 em `plans.$planId.progressions.tsx` mostra estado bloqueado + CTA "Aprovar microciclo primeiro" → link para microcycle.
-
-## 7. i18n
-
-Novas chaves em `pt/plan.json` + `en/plan.json`:
-- `microcycle.approve_button`, `microcycle.approved_chip`, `microcycle.approve_hint`
-- `progressions.locked_title`, `progressions.locked_cta`
-- `brief.modalities.{gym,running,climbing,calisthenics,mobility,sport_skill}`
-
-## 8. Backlog + memory
-
-- `.lovable/backlog.md`: marcar R72.2 done; abrir R73 (special-population overlays sobre o motor multi-modalidade).
-- `mem://features/multi-modality.md` (NOVO): regra que `training_modalities` é lista, motor respeita por modalidade, Stage 3.5 é gate obrigatório, VDOT/HR zones vivem em `training-zones.ts`.
-- Update `mem://index.md`.
+This plan ships **Phase 1 + full Governance**. Phases 2–5 sketched at the end.
 
 ---
 
-## Ficheiros tocados
+## A. Schema (single migration)
 
-| Ficheiro | Acção |
+### A.1 `knowledge_profiles`
+```sql
+create table public.knowledge_profiles (
+  id uuid primary key default gen_random_uuid(),
+  trainer_id uuid not null,                    -- owner
+  name text not null,                          -- "Default", "High Volume"
+  description text default '',
+  is_system boolean not null default false,    -- baseline, non-editable
+  is_default boolean not null default false,   -- one per trainer
+  version int not null default 1,              -- bumps on edit (immutable history via knowledge_profile_versions)
+  rules jsonb not null default '{}'::jsonb,    -- see A.3
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index on knowledge_profiles(trainer_id) where is_default;
+```
+
+### A.2 `knowledge_profile_versions` (immutable history)
+```sql
+create table public.knowledge_profile_versions (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references knowledge_profiles(id) on delete cascade,
+  trainer_id uuid not null,
+  version int not null,
+  rules jsonb not null,
+  changed_by uuid,
+  change_summary text default '',
+  created_at timestamptz not null default now(),
+  unique (profile_id, version)
+);
+```
+
+### A.3 `rules` JSONB shape (Zod-validated, Phase 1 scope)
+```ts
+KnowledgeRulesV1 = {
+  schema_version: 1,
+  volume: {
+    landmarks: Partial<Record<MuscleGroup, { mev: 0..30, mav: 0..40, mrv: 0..50 }>>,
+    // overrides VOLUME_LANDMARKS; missing groups fall back to system default
+  },
+  intensity: {
+    rpe_ceiling_by_tier: { advanced: 7..10, conservative: 7..10, remedial: 6..9 },
+    intensity_volume_tradeoff_default: enum,
+  },
+  recovery: {
+    deload_frequency: enum (every_3..every_6 | no_deload),
+    deload_style: enum,
+  },
+  progression: {
+    increments_kg_by_category: {
+      lower_compound: 1..10, upper_compound: 0.5..5,
+      lower_isolation: 0.5..5, upper_isolation: 0.25..2.5,
+    },
+    autoreg_strictness_default: enum,
+    wave_model_default: enum,
+  },
+}
+```
+
+### A.4 Plan stamping
+```sql
+alter table workout_plans
+  add column knowledge_profile_id uuid references knowledge_profiles(id),
+  add column knowledge_profile_version int;
+```
+Stamped at **Stage 1 brief generation**. Reproducibility: regen reads stamped version row from `knowledge_profile_versions`.
+
+### A.5 Governance — `system_iterations`
+```sql
+create table public.system_iterations (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,        -- "R64", "R72.2", "R73"
+  title text not null,
+  summary text not null,
+  affected_modules text[] not null default '{}',
+  shipped_at timestamptz not null default now(),
+  created_by uuid
+);
+```
+
+### A.6 Roles
+```sql
+create type app_role as enum ('admin','coach');
+create table public.user_roles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  role app_role not null,
+  unique(user_id, role)
+);
+create function has_role(_user_id uuid, _role app_role) returns boolean
+  language sql stable security definer set search_path=public as $$
+  select exists(select 1 from user_roles where user_id=_user_id and role=_role)
+$$;
+-- Seed: insert admin role for aafonsodias@gmail.com
+```
+
+### A.7 RLS (essentials)
+- `knowledge_profiles`, `knowledge_profile_versions`: trainer owns rows + read-only access to `is_system=true` rows for all authenticated users.
+- `system_iterations`: select for `has_role(uid,'admin')`, all writes admin-only.
+- `user_roles`: user reads own; only admin inserts/updates.
+
+### A.8 Triggers
+- `bump_knowledge_profile_version`: BEFORE UPDATE on `knowledge_profiles` when `rules` changes → write old row to `knowledge_profile_versions`, increment `version`.
+- Validator trigger: enforce `mev <= mav <= mrv` and ranges (defence in depth; primary validation = Zod in server fn).
+
+---
+
+## B. Server functions (`src/server/knowledge/`)
+
+- `profiles.functions.ts`
+  - `listKnowledgeProfiles()` — owned + system
+  - `getKnowledgeProfile({id})`
+  - `getActiveKnowledgeProfile()` — trainer's `is_default` (or system fallback)
+  - `updateKnowledgeRules({id, rules})` — Zod-validate, server-merge with system defaults, bump version
+  - `duplicateProfile({id, name})` (Phase 4 hook, ship the fn now)
+- `resolve.server.ts`
+  - `resolveRules(trainerId)` → `KnowledgeRulesV1` merged with system baseline (deep-merge, system fills gaps)
+- `system-iterations.functions.ts` (admin-gated middleware `requireAdmin`)
+  - `listIterations`, `createIteration`, `updateIteration`
+
+`requireAdmin` middleware: extends `requireSupabaseAuth`, calls `has_role(uid,'admin')`, throws 403 on miss.
+
+---
+
+## C. Pipeline integration (Phase 1 minimum)
+
+| Touchpoint | File | Change |
+|---|---|---|
+| Stage 1 brief | `stage1-brief.functions.ts` | call `resolveRules(trainerId)`, stamp `knowledge_profile_id/version` on plan, pass rules into prompt as **constraints** (RPE ceiling, deload freq) |
+| Stage 4 progressions | `stage4-progressions.functions.ts` + `programming-defaults.ts` | `buildWavePlan` reads `rules.progression.increments_kg_by_category`, `wave_model_default`, `deload_frequency` |
+| programNextWeek | `program-next-week.functions.ts` | `autoreg_strictness_default` from rules (still overridable by cockpit) |
+| Volume diagnostics | `src/lib/volume-landmarks.ts` consumers (`prescribe-volume.ts`, `volume-compute.ts`) | accept optional `overrides` arg; pages pass resolved rules.volume.landmarks |
+
+Cockpit (R64) **still wins** when explicitly set on a plan — PKL provides defaults, cockpit overrides per-plan. Document in `mem://features/pkl.md`.
+
+---
+
+## D. UI
+
+### D.1 `/knowledge` (route `src/routes/_authenticated/knowledge.tsx`)
+Single page, 4 cards:
+
+```
+┌─ Volume landmarks ────────────────┐  table: muscle | MEV | MAV | MRV (numeric inputs, +/- steppers, status chip)
+├─ Intensity ──────────────────────┤  RPE ceiling sliders × 3 tiers; tradeoff Select
+├─ Recovery & deload ──────────────┤  deload_frequency Select; deload_style Select
+└─ Progression ────────────────────┘  4 increment inputs (kg) + wave_model Select + autoreg Select
+```
+
+Components:
+- `src/components/knowledge/KnowledgePage.tsx`
+- `KnowledgeVolumeCard.tsx`, `KnowledgeIntensityCard.tsx`, `KnowledgeRecoveryCard.tsx`, `KnowledgeProgressionCard.tsx`
+- Sticky footer "Save changes" with diff dialog ("3 fields changed → version 4 → 5"). System profile shown read-only with "Duplicate to edit" CTA.
+- All copy via `i18n` keys under `common.json:knowledge.*` (PT + EN, ES/HI fallback to EN).
+
+Nav entry: AppShell sidebar → "Conhecimento" (PT) / "Knowledge" (EN). Icon: `BookOpen`.
+
+### D.2 `/admin/system` (route `src/routes/_authenticated/admin.system.tsx`)
+- `beforeLoad` calls `requireAdmin` server fn → redirects non-admins to `/`.
+- Chronological list (DESC `shipped_at`): code chip, title, summary (markdown-lite), affected modules as chips, timestamp.
+- "New iteration" dialog (admin-only) → form → `createIteration`.
+- Seed initial rows R64..R72.2 from existing `mem://index.md` knowledge.
+
+### D.3 `/settings` — **no changes** (only language/theme remain)
+
+---
+
+## E. Validation, guardrails, observability (Phase 1 baseline)
+
+- Zod schema in `src/server/knowledge/schema.ts` enforces ranges + `mev<=mav<=mrv`.
+- Server fn rejects invalid configs with friendly error keys; UI surfaces inline.
+- Every Stage 1 / Stage 4 / programNextWeek run writes `generation_log.input_snapshot.knowledge_profile_version`.
+- Phase 5 hook reserved: "impact preview" placeholder card (computes Δ% volume vs system default) — wire interface now, render in P5.
+
+---
+
+## F. Risks & mitigations
+
+| Risk | Mitigation |
 |---|---|
-| `src/server/phased/schemas.ts` | +`training_modalities`, `modality_targets`, intervals, climb_blocks |
-| `src/server/phased/pre-stage.functions.ts` | inferir modalidade do goal_text |
-| `src/server/phased/stage2-blueprint.functions.ts` | arquetípos por modalidade no prompt |
-| `src/server/phased/stage3-microcycle.functions.ts` | prompt expandido + intervals/climbing |
-| `src/server/phased/stage4-progressions.functions.ts` | guard `MICROCYCLE_NOT_APPROVED` |
-| `src/server/phased/microcycle-edit.functions.ts` | +`approveMicrocycle` server fn |
-| `src/lib/training-zones.ts` | NOVO — VDOT, HR zones, strength ranges |
-| `src/routes/plans.$planId.microcycle.tsx` | botão "Aprovar microciclo" |
-| `src/routes/plans.$planId.progressions.tsx` | estado bloqueado se não aprovado |
-| `src/i18n/locales/{pt,en}/plan.json` | novas chaves |
-| `.lovable/backlog.md`, `.lovable/plan.md` | atualizar estado |
-| `mem://features/multi-modality.md`, `mem://index.md` | regra |
+| Pipeline regressions | All consumers fall back to system defaults via `resolveRules` deep-merge; smoke test: legacy plan with no PKL stamp must produce byte-identical output. |
+| Privilege escalation | Admin gate in **server fn middleware**, never UI-only. RLS on `system_iterations`. |
+| Version bloat | Versions only on `rules` change (trigger compares old vs new). |
+| Cockpit vs PKL confusion | PKL = defaults, Cockpit = per-plan override. Documented in tooltip + memory rule. |
+| Extreme configs breaking generation | Hard ranges in Zod + DB trigger; warn chip in UI when value > P95 of normative. |
 
-## O que NÃO faço aqui
+---
 
-- UI nova de edição inline para `intervals[]` / `climb_blocks[]` (Stage 3.5 fica com edição existente; render dos novos campos em modo leitura). Edição rica fica para R72.2b se for preciso.
-- Conversor V-scale ↔ Fontainebleau (string livre por agora).
-- VDOT calibrado por field test (usa só 5K self-report).
-- Special-population overlays (R73).
-- Render no PDF dos novos campos — fica para R72.2c quando decidirmos layout.
+## G. Phase 2–5 (sketched, ship later)
 
-## Risco
+- **P2 Engine binding**: replace remaining hardcoded constants in `programming-defaults.ts`, `block-adaptation.ts`, `prescribe-volume.ts`. Add `system_default_profile` SQL seed (id `00000000-...-system`, `is_system=true`).
+- **P3 AI editing**: `/knowledge` "Descreva a sua filosofia" sheet → Lovable AI (`gemini-2.5-flash`) → returns `Partial<KnowledgeRulesV1>` → diff dialog → apply. Logs to `knowledge_generation_log`.
+- **P4 Profiles & sharing**: list view at `/knowledge` shows multiple profiles; per-client `default_knowledge_profile_id` column on `clients`; plan creation reads client → profile.
+- **P5 Guardrails & observability**: extreme-config warnings; impact preview Δ%; `plan_decision_trace` (which rule keys influenced which exercises).
 
-Toco em 4 stage files do pipeline crítico. Mitigação: cada stage continua a funcionar com brief legacy (`training_modalities = ["gym"]`); novos arquetípos só aparecem se brief os pedir. Smoke obrigatório com (a) brief gym-only legacy → output igual ao actual; (b) brief gym+running → vê interval session no microcycle.
+---
 
-Procedo?
+## H. Files created / touched (Phase 1 + Governance)
+
+**New**
+- `supabase/migrations/<ts>_pkl_phase1_and_governance.sql`
+- `src/server/knowledge/{schema.ts,resolve.server.ts,profiles.functions.ts,system-iterations.functions.ts}`
+- `src/server/auth/require-admin.ts`
+- `src/routes/_authenticated/knowledge.tsx`
+- `src/routes/_authenticated/admin.system.tsx`
+- `src/components/knowledge/{KnowledgePage,KnowledgeVolumeCard,KnowledgeIntensityCard,KnowledgeRecoveryCard,KnowledgeProgressionCard,KnowledgeDiffDialog}.tsx`
+- `mem/features/pkl.md`
+
+**Edited**
+- `src/server/phased/stage1-brief.functions.ts` (resolve + stamp + inject)
+- `src/server/phased/stage4-progressions.functions.ts` + `programming-defaults.ts`
+- `src/server/phased/program-next-week.functions.ts`
+- `src/lib/volume-landmarks.ts` (export `mergeLandmarks(overrides)`)
+- `src/components/AppShell.tsx` (sidebar entry)
+- `src/i18n/locales/{pt,en}/common.json`
+- `.lovable/backlog.md`, `mem/index.md`
+
+---
+
+**Proceed with Phase 1 + Governance as scoped above? Say "go" to implement, or tell me what to trim/expand.**
