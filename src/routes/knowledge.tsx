@@ -203,7 +203,7 @@ function RuleSummary({
           <SheetTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0">
               <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              Editar
+              Sobrepor default
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
