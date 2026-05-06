@@ -816,8 +816,8 @@
         "deload_from_pkl": "Lido do seu perfil de conhecimento.",
         "deload_from_tier": "Nível {{tier}} — deload mais frequente protege adesão.",
         "deload_default": "Default a cada 4 semanas — NSCA Essentials 3e §17.",
-        "logbook_mode_from_focus": "Inferido do foco do dia: {{focus}}.",
-        "logbook_mode_default": "Sem foco específico — modo misto.",
+        "logbook_mode_from_focus": "Inferido do foco da sessão: {{focus}}.",
+        "logbook_mode_default": "Sem foco definido — modo misto.",
         "card_matches_default": "Igual ao default do sistema.",
         "card_pkl_override": "Personalizado no seu perfil de conhecimento.",
         "card_user_override": "{{count}} valor(es) personalizado(s) face ao default.",
@@ -831,7 +831,17 @@
         "customize_rule": "Personalizar regra",
         "manual_control": "Controlo manual",
         "hide_manual_control": "Ocultar controlo manual",
-        "recommended_apply": "Aplicar"
+        "recommended_apply": "Aplicar",
+        "validated": "Validado",
+        "within_range": "Dentro do intervalo",
+        "recovery_compatible": "Compatível com recuperação",
+        "profile_based": "Baseado no perfil",
+        "auto_adjusted": "Auto-ajustado",
+        "manually_adjusted": "Ajustado manualmente",
+        "goal_compatible": "Compatível com o objetivo",
+        "constraints_respected": "Restrições respeitadas",
+        "controlled_progression": "Progressão controlada",
+        "evidence_aligned": "Alinhado com a evidência"
       }
     },
     "mode": {
