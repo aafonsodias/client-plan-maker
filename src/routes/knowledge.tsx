@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { BookOpen, Loader2, Save, Pencil } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import RationaleChip from "@/components/ux/RationaleChip";
 import type { Inference } from "@/lib/auto-infer";
 import {
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/knowledge")({
 });
 
 function KnowledgePage() {
+  const { t } = useTranslation("common");
   const fetchActive = useServerFn(getActiveKnowledgeProfile);
   const saveRules = useServerFn(updateKnowledgeRules);
 
@@ -135,24 +137,28 @@ function KnowledgePage() {
           title="Volume — séries por semana"
           summary={summarizeVolume(rules)}
           rationale={volumeRationale(rules)}
+          editLabel={t("ux.rationale.labels.override_default")}
           editor={<VolumeCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Intensidade"
           summary={summarizeIntensity(rules)}
           rationale={intensityRationale(rules)}
+          editLabel={t("ux.rationale.labels.override_default")}
           editor={<IntensityCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Recuperação · Deload"
           summary={summarizeRecovery(rules)}
           rationale={recoveryRationale(rules)}
+          editLabel={t("ux.rationale.labels.override_default")}
           editor={<RecoveryCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Progressão"
           summary={summarizeProgression(rules)}
           rationale={progressionRationale(rules)}
+          editLabel={t("ux.rationale.labels.override_default")}
           editor={<ProgressionCard rules={rules} setRules={setRules} />}
         />
       </div>
@@ -181,11 +187,13 @@ function RuleSummary({
   summary,
   rationale,
   editor,
+  editLabel,
 }: {
   title: string;
   summary: string;
   rationale?: Inference<unknown> | null;
   editor: ReactNode;
+  editLabel: string;
 }) {
   return (
     <Card>
@@ -203,7 +211,7 @@ function RuleSummary({
           <SheetTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0">
               <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              Sobrepor default
+              {editLabel}
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">

@@ -290,11 +290,14 @@ export default function BriefEditor({
                 <option value="custom">Personalizada</option>
               </select>
               {(() => {
-                const inf = inferSplit({
-                  sessions_per_week: brief.sessions_per_week.recommended,
-                  manual: programmingVariables.training_split as any,
+                const systemSplit = inferSplit({
+                  sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
+                  manual: null,
                 });
-                const matches = programmingVariables.training_split === inf.value;
+                const matches = programmingVariables.training_split === systemSplit.value;
+                const chipInf = matches
+                  ? systemSplit
+                  : inferSplit({ manual: programmingVariables.training_split as any });
                 const labels: Record<string, string> = {
                   full_body: "Corpo inteiro",
                   upper_lower: "Superior / Inferior",
@@ -306,13 +309,16 @@ export default function BriefEditor({
                 };
                 return (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <RationaleChip inference={inf} label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")} />
+                    <RationaleChip
+                      inference={chipInf}
+                      label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
+                    />
                     {!matches ? (
                       <>
-                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[inf.value] ?? inf.value}</span>
+                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[systemSplit.value] ?? systemSplit.value}</span>
                         <button
                           type="button"
-                          onClick={() => setPv("training_split", inf.value as ProgrammingVariables["training_split"])}
+                          onClick={() => setPv("training_split", systemSplit.value as ProgrammingVariables["training_split"])}
                           className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
                         >
                           {t("ux.rationale.labels.recommended_apply")}
