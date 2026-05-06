@@ -291,6 +291,39 @@ export default function BriefEditor({
                 <option value="body_part_split">Divisão por grupo muscular</option>
                 <option value="custom">Personalizada</option>
               </select>
+              {(() => {
+                const inf = inferSplit({
+                  sessions_per_week: brief.sessions_per_week.recommended,
+                  manual: programmingVariables.training_split as any,
+                });
+                const matches = programmingVariables.training_split === inf.value;
+                const labels: Record<string, string> = {
+                  full_body: "Corpo inteiro",
+                  upper_lower: "Superior / Inferior",
+                  ppl: "Empurrar / Puxar / Pernas",
+                  pplc: "Empurrar / Puxar / Pernas / Core",
+                  ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
+                  body_part_split: "Divisão por grupo muscular",
+                  custom: "Personalizada",
+                };
+                return (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <RationaleChip inference={inf} label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")} />
+                    {!matches ? (
+                      <>
+                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[inf.value] ?? inf.value}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPv("training_split", inf.value as ProgrammingVariables["training_split"])}
+                          className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                        >
+                          {t("ux.rationale.labels.recommended_apply")}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </Field>
             <Field label="Estilo de deload">
               <select
