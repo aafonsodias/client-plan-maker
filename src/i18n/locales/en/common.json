@@ -833,6 +833,13 @@
         "hide_manual_control": "Hide manual control",
         "recommended_apply": "Apply"
       }
+    },
+    "mode": {
+      "quick_path": "Quick path",
+      "lab_mode": "Lab mode",
+      "quick_description": "The system recommends safe defaults based on current inputs.",
+      "lab_description": "Shows more controls, rationale, and override options.",
+      "aria_label": "Configuration mode"
     }
   }
 }
