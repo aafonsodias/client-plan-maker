@@ -1,110 +1,128 @@
 
-# Step 4B — Inference Visible, Auditable, Reversible
+# Step 4B Audit — Findings & Targeted Fixes
 
-Strict scope: **display-only**. No DB writes, no schema migrations, no engine changes, no auto-mutation of form state.
+Scope confirmed: audit was read-only. No persistence, schema, engine, prompts, or PDF code is touched by the proposed fixes. Plan mode — no edits applied yet.
 
-## 1. BriefEditor — inference chips (read-only)
+## Audit results
 
-File: `src/components/BriefEditor.tsx`
+### 1. Display-only guarantee — PASS (with one nit)
 
-- Import `inferTier`, `inferSplit`, `inferWaveModel`, `inferDeloadFreq`, `inferCockpitPreset` from `@/lib/auto-infer` and `RationaleChip`.
-- Compute inferences derived from current `brief` + `programmingVariables`:
-  - `tier` ← `{ red_flags: brief.red_flags, training_age_band, manual: null }` (display-only, no stored "tier" field exists in Brief — chip is purely informational beside the experience selector).
-  - `split` ← `{ sessions_per_week: brief.sessions_per_week.recommended, manual: programmingVariables?.training_split }` — chip beside the "Divisão de treino" Field.
-  - `wave_model` ← `{ primary_goal, current: programmingVariables?.wave_model }` — already covered in the cockpit summary; do not duplicate in BriefEditor.
-  - `deload_frequency` ← `{ tier: inferred tier value, current: programmingVariables?.deload_frequency }` — covered in cockpit; no duplicate.
-  - `cockpit_preset` already done in cockpit.
-- Place a `<RationaleChip inference={…} />` beside each summary value the chip refers to. No state writes.
-- "Manually overridden" badge: when an inference returns `confidence === "manual"`, the chip already renders a foreground dot + "definido por si" — that satisfies the distinction. No extra UI required.
+Searched every call site of `inferTier / inferSplit / inferCockpitPreset / inferWaveModel / inferDeloadFreq / inferLogbookModeFromDayFocus`. Inferences are consumed only as:
+- `RationaleChip` props (rendering)
+- A comparator value in BriefEditor's split row (the only "Aplicar" button calls `setPv` — explicit user gesture, not auto-write)
+- A label lookup in `log.$token.tsx` (read-only chip)
 
-## 2. Auto-snap — visual recommendation only
+No `setState`/`save`/payload merge ever receives an inferred value. ✓
 
-In the "Divisão de treino" Field, when `programmingVariables?.training_split` does not match `inferSplit(...).value`, render a small subtle row beneath the select:
+Nit: `inferTier(...)` is called twice in BriefEditor (lines 102 and 107) for the same arguments. Hoist to a const. Pure perf, no correctness impact.
 
-> "Recomendado: {label}  ·  Aplicar"
+### 2. "Recomendado · Aplicar" clarity — PASS
 
-Clicking "Aplicar" calls the existing `setPv("training_split", inferred)` — explicit user action only. No silent writes.
+Only the small amber pill is a `<button>`. The "Recomendado: …" text is a plain `<span>`. No risk of mistaking the recommendation for an applied value. Layout wraps cleanly because the parent uses `flex flex-wrap`.
 
-Same pattern can be added later for other knobs; for 4B do it ONLY for `training_split` to validate the pattern. Acceptance criteria are met because no auto-write occurs.
+### 3. Manual override distinction — **P0 BUG**
 
-## 3. Knowledge cards — compare against `SYSTEM_DEFAULT_RULES`
+In BriefEditor we call:
 
-File: `src/routes/knowledge.tsx`
-
-Replace the four hand-written `*Rationale` helpers with a single comparator that, per card, checks each relevant field against `SYSTEM_DEFAULT_RULES`:
-
-- **Volume**: `Object.keys(rules.volume.landmarks).length === 0` → `source: "default", confidence: "confident", reason_key: "card_matches_default"`. Otherwise → `source: "user", confidence: "manual", reason_key: "card_user_override"` with `count` param.
-- **Intensity**: compare `rpe_ceiling_by_tier` + `intensity_volume_tradeoff_default` to defaults. Match → default. Differs → `source: "pkl", confidence: "confident", reason_key: "card_pkl_override"`.
-- **Recovery**: same logic for `deload_frequency` + `deload_style`.
-- **Progression**: same for `wave_model_default`, `autoreg_strictness_default`, and `increments_kg_by_category`.
-
-Add new reason keys (PT + EN) under `ux.rationale.reasons`:
-- `card_matches_default` → "Igual ao default do sistema." / "Matches the system default."
-- `card_pkl_override` → "Personalizado no seu perfil de conhecimento." / "Customized in your knowledge profile."
-- `card_user_override` → "{{count}} valor(es) personalizado(s)." / "{{count}} custom value(s)."
-
-If the card's data shape can't be safely compared, fall back to `confidence: "assumed"`, `reason_key: "fallback"` (existing key reused via the `fallback` string).
-
-## 4. Replace "Editar"/"Afinar" copy on default-controlling actions
-
-- `IntensityCockpit.tsx`: change the toggle label `"Afinar" / "Ocultar detalhes"` → `"Controlo manual" / "Ocultar controlo manual"` (PT). Stays one-button toggle.
-- `knowledge.tsx` `RuleSummary`: change the `Editar` button label to `Sobrepor default`. Icon stays `Pencil`.
-- Do NOT touch unrelated edit buttons (client identity, plan name, notes, etc.). Confirm by ripgrepping only the two files above.
-
-EN equivalents added under `ux.rationale.override_default` and `ux.rationale.manual_control`, but for now the strings are PT-only inline (project is PT-first; EN strings still added to common.json for future use).
-
-## 5. Confidence dots in cockpit knobs
-
-`IntensityCockpit.tsx` — when the knobs grid is shown, add a tiny `<RationaleChip>` (or just the dot variant) beside each knob's label:
-
-- Wave: `inferWaveModel({ primary_goal: primaryGoal, current: value.wave_model })`
-- Deload: `inferDeloadFreq({ current: value.deload_frequency })` (no tier available here — pass `undefined`).
-- RPE / tradeoff / autoreg: no inference function available; render a static "manual" dot via `RationaleChip` with an envelope `{ confidence: "manual", source: "cockpit", reason_key: "cockpit_manual" }` (new key).
-
-Each dot inherits `aria-label` from `RationaleChip` (`t("ux.rationale.aria")` → "Ver justificação"). No layout jump (`inline-flex`, no width changes). Accessibility preserved.
-
-Add reason key `cockpit_manual` (PT: "Controlado manualmente no cockpit." / EN: "Controlled manually in the cockpit.").
-
-## 6. i18n additions
-
-Append to `ux.rationale.reasons` in both `pt/common.json` and `en/common.json`:
-
-```
-card_matches_default
-card_pkl_override
-card_user_override
-cockpit_manual
+```ts
+inferSplit({
+  sessions_per_week: brief.sessions_per_week.recommended,
+  manual: programmingVariables.training_split as any,
+});
 ```
 
-And add a small sibling block `ux.rationale.labels`:
-```
-inferred / recommended_default / based_on_current_inputs
-manually_overridden / override_default / manual_control
-recommended_apply
-```
+But `inferSplit` short-circuits the moment `manual` is truthy and returns `confidence: "manual"`. Since `programmingVariables.training_split` is always set (form has a default), the inference **always** returns the user's current value with `confidence: manual`. Consequence:
 
-No hardcoded strings in components — use `t()` everywhere new strings appear.
+- `matches` is always `true`
+- The "Recomendado · Aplicar" row never renders
+- The chip permanently says "Sobreposto manualmente" even when the user has not overridden anything
 
-## 7. Non-goals (explicit)
+**Fix**: compute two envelopes — a system pick with `manual: null`, plus the current value — and use the comparison between `systemPick.value` and the actual `programmingVariables.training_split` to drive both the chip label and whether the recommendation row appears.
 
-No changes to: prompts, engine, schema, migrations, PDF, demo flow, blueprints, generation-telemetry. No persistence of inferred values. No logbook persistence. No cockpit redesign.
+### 4. Knowledge card source logic — PASS (with honest-label nit)
 
-## 8. QA after implementation
+All four cards use the same `diffCount`-based comparator against `SYSTEM_DEFAULT_RULES`. Match → `default/confident/card_matches_default`. Differs → `pkl/confident/card_pkl_override`. Volume's `count` reflects landmark overrides via `Object.keys(...).length`, intensity/recovery/progression's `card_pkl_override` doesn't expose a count (acceptable — there's no honest cross-card count).
 
-- `/clients/$id` (workbench) with a complete brief: split chip + recommendation row appear; clicking "Aplicar" updates the select and the chip flips to "manual".
-- `/clients/$id` with `primary_goal` change: cockpit preset chip and summary update visually; no DB writes (verify via Network tab — no POST/PATCH).
-- `/knowledge`: edit one MEV value → save → re-open → Volume card chip flips to `user_override`; reset → flips back to `default`.
-- 375px Mobile Safari: popovers anchored `align="start"` already; verify no horizontal scroll.
-- PT/EN toggle: all new keys translate; `defaultValue` fallback works for missing.
-- Old plans without `brief.primary_goal`: `inferCockpitPreset` falls through to `moderate_recomp` default — no crash.
+Note: calling the source `pkl` is honest because `/knowledge` IS the PKL editor. No "ambiguous source" branch is currently needed; no fake confidence is asserted.
 
-## Files touched
+### 5. Confidence dot accessibility — **P1**
 
-- `src/components/BriefEditor.tsx`
-- `src/components/plan/IntensityCockpit.tsx`
-- `src/routes/knowledge.tsx`
-- `src/components/ux/RationaleChip.tsx` (no API change; only a small `dotOnly` variant if needed)
-- `src/i18n/locales/pt/common.json`
-- `src/i18n/locales/en/common.json`
+- Dot is `aria-hidden` ✓
+- Button has `aria-label="Ver justificação"` ✓
+- Popover content carries text (`confidence.confident` / `assumed` / `manual`), so not color-only ✓
+- **Issue**: tap target is `px-1.5 py-0.5` over 10px text → roughly 18×16px. Below WCAG 2.5.5 24×24 minimum on touch.
 
-No new files. No server-side changes. No migrations.
+**Fix**: bump RationaleChip trigger padding to `px-2 py-1` and add `min-h-[24px]` so click target meets touch guidelines without changing visual weight materially.
+
+### 6. RationaleChip mobile behavior — PASS
+
+Radix Popover with `side="top"`, `align="start"`, `collisionPadding={12}`, `max-w-[calc(100vw-2rem)]`. Verified at 375px no overflow. Outside-click + Escape close handled by Radix. Not modal.
+
+### 7. i18n completeness — PARTIAL
+
+New i18n keys (`ux.rationale.labels.*` and `reasons.card_*`, `cockpit_manual`) are present in PT and EN. ✓
+
+Hardcoded PT strings introduced by 4B (project is PT-first, so these are not breaking but should be tracked):
+- `"Nível inferido:"` (BriefEditor)
+- `"Recomendado:"` is i18n'd, but the split labels (`"Corpo inteiro"`, `"Empurrar / Puxar / Pernas"`, etc.) are still hardcoded inline
+- `"Sobrepor default"` literal in `knowledge.tsx` — should use `t("ux.rationale.labels.override_default")` (the key already exists).
+- `IntensityCockpit` toggle correctly uses `t(...)` with `ns: "common"`.
+
+**Fix**: route the three above through `t()`, reusing existing keys where possible. No new keys required for "Nível inferido" — reuse `ux.rationale.labels.inferred`.
+
+### 8. Old-plan compatibility — PASS (with one defensive guard)
+
+- `inferTier`: red_flags optional → 0 fallback ✓
+- `inferCockpitPreset`: undefined goal → `moderate_recomp` ✓
+- `inferLogbookModeFromDayFocus`: handles `null/undefined` ✓
+- `inferDeloadFreq` / `inferWaveModel`: undefined inputs → defaults ✓
+- `inferSplit` in BriefEditor reads `brief.sessions_per_week.recommended`. If `sessions_per_week` ever lands as `null` on a legacy plan, this throws.
+
+**Fix**: defensive optional chain `brief.sessions_per_week?.recommended ?? 0`.
+
+### 9. Visual hierarchy — PASS
+
+Primary value reads first, chip second, dot third. Cockpit knob chips sit top-right via `ml-auto`. No layout jump. No clutter at 375px.
+
+## Fixes to apply
+
+All localized to four files. No engine/schema/persistence touched.
+
+**`src/components/BriefEditor.tsx`**
+1. Hoist `inferTier({...})` to a single const, use it for both inference and label.
+2. Defensive `brief.sessions_per_week?.recommended ?? 0`.
+3. Replace the broken `inferSplit({manual: programmingVariables.training_split})` with:
+   ```ts
+   const systemSplit = inferSplit({
+     sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
+     manual: null,
+   });
+   const matches = programmingVariables.training_split === systemSplit.value;
+   const chipInf = matches ? systemSplit : inferSplit({ manual: programmingVariables.training_split as any });
+   ```
+   so the chip flips between `inferred` and `manually_overridden` honestly, and the "Recomendado · Aplicar" row only appears when the user's current pick differs from the system's recommendation.
+4. Replace `"Nível inferido:"` literal with `t("ux.rationale.labels.inferred")`.
+
+**`src/components/ux/RationaleChip.tsx`**
+5. Bump trigger to `px-2 py-1 min-h-[24px]` to meet WCAG 2.5.5.
+
+**`src/routes/knowledge.tsx`**
+6. Replace literal `"Sobrepor default"` with `t("ux.rationale.labels.override_default", { ns: "common" })`. Add `useTranslation("common")` import (route doesn't currently use it).
+
+**(Optional, deferred)** Translating the seven Portuguese split labels in BriefEditor is left for the broader i18n audit — they belong to a wider naming domain (`brief-labels`) and are not new strings introduced by 4B.
+
+## Acceptance criteria after fixes
+
+- Recommendation row appears iff `current_split !== systemPick`
+- Chip honestly labels "Inferido" vs "Sobreposto manualmente"
+- WCAG-compliant 24px tap target on every RationaleChip
+- No hardcoded "Sobrepor default" / "Nível inferido" outside i18n
+- Legacy plans missing `sessions_per_week` no longer crash BriefEditor
+- Zero schema, engine, prompt, persistence, or PDF changes
+
+## Explicitly deferred to Step 4C/4D
+
+- Quick Path vs Lab Mode toggle
+- Persisting any inferred value
+- Translating split labels and other pre-existing PT-only strings
+- Adding `inferTier`-driven recommendation rows for tier/wave/deload (only `training_split` gets the "Aplicar" pattern in 4B)
