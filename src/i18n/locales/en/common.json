@@ -839,7 +839,8 @@
       "lab_mode": "Lab mode",
       "quick_description": "The system recommends safe defaults based on current inputs.",
       "lab_description": "Shows more controls, rationale, and override options.",
-      "aria_label": "Configuration mode"
+      "aria_label": "Configuration mode",
+      "saved_locally": "Preference saved on this device."
     }
   }
 }
