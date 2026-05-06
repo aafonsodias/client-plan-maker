@@ -923,6 +923,86 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_profile_versions: {
+        Row: {
+          change_summary: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          profile_id: string
+          rules: Json
+          trainer_id: string
+          version: number
+        }
+        Insert: {
+          change_summary?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          profile_id: string
+          rules: Json
+          trainer_id: string
+          version: number
+        }
+        Update: {
+          change_summary?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          profile_id?: string
+          rules?: Json
+          trainer_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_profile_versions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_profiles: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_default: boolean
+          is_system: boolean
+          name: string
+          rules: Json
+          trainer_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name: string
+          rules?: Json
+          trainer_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_default?: boolean
+          is_system?: boolean
+          name?: string
+          rules?: Json
+          trainer_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       missions: {
         Row: {
           client_id: string
@@ -1189,6 +1269,60 @@ export type Database = {
         }
         Relationships: []
       }
+      system_iterations: {
+        Row: {
+          affected_modules: string[]
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          shipped_at: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          affected_modules?: string[]
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          shipped_at?: string
+          summary: string
+          title: string
+        }
+        Update: {
+          affected_modules?: string[]
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          shipped_at?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       workout_plan_days: {
         Row: {
           approved_at: string | null
@@ -1266,6 +1400,8 @@ export type Database = {
           generation_status: string
           id: string
           is_demo: boolean
+          knowledge_profile_id: string | null
+          knowledge_profile_version: number | null
           plan_data: Json
           plan_data_version: number
           prescription_parameters: Json
@@ -1298,6 +1434,8 @@ export type Database = {
           generation_status?: string
           id?: string
           is_demo?: boolean
+          knowledge_profile_id?: string | null
+          knowledge_profile_version?: number | null
           plan_data?: Json
           plan_data_version?: number
           prescription_parameters?: Json
@@ -1330,6 +1468,8 @@ export type Database = {
           generation_status?: string
           id?: string
           is_demo?: boolean
+          knowledge_profile_id?: string | null
+          knowledge_profile_version?: number | null
           plan_data?: Json
           plan_data_version?: number
           prescription_parameters?: Json
@@ -1358,6 +1498,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_plans_knowledge_profile_id_fkey"
+            columns: ["knowledge_profile_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1448,10 +1595,18 @@ export type Database = {
         }[]
       }
       has_active_access: { Args: { _user_id: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       tier_to_plan_quota: { Args: { _tier: string }; Returns: number }
     }
     Enums: {
       account_type: "coach" | "solo" | "coached_client"
+      app_role: "admin" | "coach"
       intake_status: "not_sent" | "sent" | "opened" | "submitted" | "reviewed"
       mission_kind:
         | "parq"
@@ -1590,6 +1745,7 @@ export const Constants = {
   public: {
     Enums: {
       account_type: ["coach", "solo", "coached_client"],
+      app_role: ["admin", "coach"],
       intake_status: ["not_sent", "sent", "opened", "submitted", "reviewed"],
       mission_kind: [
         "parq",

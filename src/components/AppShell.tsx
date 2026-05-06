@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange } from "lucide-react";
+import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange, BookOpen, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Logo } from "@/components/Logo";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -118,11 +118,13 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
     { to: "/dashboard", label: t("nav.dashboard"), icon: Home },
     { to: "/schedule", label: t("nav.schedule"), icon: CalendarRange },
     { to: "/plans", label: "Plans", icon: Bookmark },
+    { to: "/knowledge", label: "Conhecimento", icon: BookOpen },
     { to: "/settings", label: t("nav.branding"), icon: Settings },
   ] as const;
 
   const secondaryNav = [
     { to: "/billing", label: t("nav.billing"), icon: CreditCard },
+    ...(isFounder ? [{ to: "/admin/system", label: "System · Iterações", icon: ShieldCheck }] : []),
     { to: "/", label: t("nav.landing"), icon: ExternalLink },
   ] as const;
 

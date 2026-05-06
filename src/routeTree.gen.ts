@@ -17,6 +17,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as ManualRouteImport } from './routes/manual'
+import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -29,6 +30,7 @@ import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
+import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
 import { Route as PlansPlanIdProgressionsRouteImport } from './routes/plans.$planId.progressions'
 import { Route as PlansPlanIdMicrocycleRouteImport } from './routes/plans.$planId.microcycle'
@@ -75,6 +77,11 @@ const MeRoute = MeRouteImport.update({
 const ManualRoute = ManualRouteImport.update({
   id: '/manual',
   path: '/manual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeRoute = KnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -137,6 +144,11 @@ const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   path: '/clients/$clientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSystemRoute = AdminSystemRouteImport.update({
+  id: '/admin/system',
+  path: '/admin/system',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlansPlanIdSessionsRoute = PlansPlanIdSessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
@@ -179,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
@@ -187,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -208,6 +222,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
@@ -216,6 +231,7 @@ export interface FileRoutesByTo {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -238,6 +254,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/dashboard': typeof DashboardRoute
+  '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
   '/me': typeof MeRoute
   '/privacy': typeof PrivacyRoute
@@ -246,6 +263,7 @@ export interface FileRoutesById {
   '/templates': typeof TemplatesRoute
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
+  '/admin/system': typeof AdminSystemRoute
   '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -269,6 +287,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/dashboard'
+    | '/knowledge'
     | '/manual'
     | '/me'
     | '/privacy'
@@ -277,6 +296,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -298,6 +318,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/dashboard'
+    | '/knowledge'
     | '/manual'
     | '/me'
     | '/privacy'
@@ -306,6 +327,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -327,6 +349,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/dashboard'
+    | '/knowledge'
     | '/manual'
     | '/me'
     | '/privacy'
@@ -335,6 +358,7 @@ export interface FileRouteTypes {
     | '/templates'
     | '/terms'
     | '/welcome'
+    | '/admin/system'
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -357,6 +381,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   DashboardRoute: typeof DashboardRoute
+  KnowledgeRoute: typeof KnowledgeRoute
   ManualRoute: typeof ManualRoute
   MeRoute: typeof MeRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -365,6 +390,7 @@ export interface RootRouteChildren {
   TemplatesRoute: typeof TemplatesRoute
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
+  AdminSystemRoute: typeof AdminSystemRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
@@ -431,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/manual'
       fullPath: '/manual'
       preLoaderRoute: typeof ManualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge': {
+      id: '/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -515,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/clients/$clientId'
       fullPath: '/clients/$clientId'
       preLoaderRoute: typeof ClientsClientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/system': {
+      id: '/admin/system'
+      path: '/admin/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AdminSystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plans/$planId/sessions': {
@@ -618,6 +658,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   DashboardRoute: DashboardRoute,
+  KnowledgeRoute: KnowledgeRoute,
   ManualRoute: ManualRoute,
   MeRoute: MeRoute,
   PrivacyRoute: PrivacyRoute,
@@ -626,6 +667,7 @@ const rootRouteChildren: RootRouteChildren = {
   TemplatesRoute: TemplatesRoute,
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
+  AdminSystemRoute: AdminSystemRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
