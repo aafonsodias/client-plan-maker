@@ -828,7 +828,7 @@
         "recommended_default": "Recomendado",
         "based_on_current_inputs": "Com base nos dados atuais",
         "manually_overridden": "Sobreposto manualmente",
-        "override_default": "Personalizar regra",
+        "customize_rule": "Personalizar regra",
         "manual_control": "Controlo manual",
         "hide_manual_control": "Ocultar controlo manual",
         "recommended_apply": "Aplicar"

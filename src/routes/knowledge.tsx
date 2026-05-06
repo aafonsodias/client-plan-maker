@@ -137,28 +137,28 @@ function KnowledgePage() {
           title="Volume — séries por semana"
           summary={summarizeVolume(rules)}
           rationale={volumeRationale(rules)}
-          editLabel={t("ux.rationale.labels.override_default")}
+          editLabel={t("ux.rationale.labels.customize_rule")}
           editor={<VolumeCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Intensidade"
           summary={summarizeIntensity(rules)}
           rationale={intensityRationale(rules)}
-          editLabel={t("ux.rationale.labels.override_default")}
+          editLabel={t("ux.rationale.labels.customize_rule")}
           editor={<IntensityCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Recuperação · Deload"
           summary={summarizeRecovery(rules)}
           rationale={recoveryRationale(rules)}
-          editLabel={t("ux.rationale.labels.override_default")}
+          editLabel={t("ux.rationale.labels.customize_rule")}
           editor={<RecoveryCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Progressão"
           summary={summarizeProgression(rules)}
           rationale={progressionRationale(rules)}
-          editLabel={t("ux.rationale.labels.override_default")}
+          editLabel={t("ux.rationale.labels.customize_rule")}
           editor={<ProgressionCard rules={rules} setRules={setRules} />}
         />
       </div>

@@ -144,7 +144,7 @@ export default function BriefEditor({
           </select>
           {(() => {
             const tierInf = inferTier({
-              red_flags: brief.red_flags,
+              red_flags: brief.red_flags ?? [],
               training_age_band: brief.training_age_band,
               manual: null,
             });
