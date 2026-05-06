@@ -271,18 +271,24 @@ Output ONLY by calling the record_brief tool.`;
 
     const fallbackRow = await loadAssessmentForFallback(supabase, (plan as any).assessment_id);
     const sanitizedBrief = sanitizeMovementCompetencySummary(result.data, fallbackRow);
+    // R72.2 — derive training_modalities from goal/notes text. Coach can
+    // override later via brief edit. Default safety: always includes "gym".
+    const withModalities = {
+      ...sanitizedBrief,
+      training_modalities: inferTrainingModalities(sanitizedBrief, sectionAnalyses as any),
+    };
 
     const { error: updErr } = await supabase
       .from("workout_plans")
       .update({
-        brief: sanitizedBrief as any,
+        brief: withModalities as any,
         generation_state: newState as any,
         ...clearDownstream("brief"),
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
 
-    return { ok: true as const, brief: sanitizedBrief };
+    return { ok: true as const, brief: withModalities };
   });
 
 /**
