@@ -1,100 +1,85 @@
-# Step 4C — Quick Path vs Lab Mode (UX-only)
+# Step 4C Audit — Findings & Proposed Fixes
 
-Introduce a local mode distinction that controls **how much rationale/control is shown**, without touching schema, persistence, or generation.
+## Verdict
+Step 4C is honest: `mode` is purely local UI state, no payload/schema/engine touchpoints. Two minor a11y issues and one cosmetic risk. Safe to proceed to **Step 4D after the fixes below are applied**.
 
-## Scope
+## Confirmed clean
 
-- `src/components/BriefEditor.tsx` — own the mode state, render the segmented control, pass `mode` down.
-- `src/components/plan/IntensityCockpit.tsx` — accept `mode` prop, change default visibility of knobs and chips.
-- `src/components/ux/RationaleChip.tsx` — accept optional `mode` prop to suppress confident/manual chips in Quick Path (keep `assumed` always visible).
-- `src/i18n/locales/{pt,en}/common.json` — add `ux.mode.*` keys.
-- No changes to `auto-infer.ts` logic; no other files.
+- **Local-only state**: `useState<"quick" | "lab">("quick")` lives only in `BriefEditor`. Not read by any `setPv`, `set`, `onChange`, `onProgrammingChange`, `onAccommodationsChange`. No reference to `mode` reaches `src/server/*`, `supabase`, mutation payloads, or `programming_variables`.
+- **No engine drift**: `IntensityCockpit` uses `mode` only to gate the "Controlo manual" toggle visibility and chip rendering. `apply()`/`applyPreset()`/`onChange` are not called from the mode branch.
+- **Quick default**: initial render = `"quick"`. Defensive optional chaining (`brief.sessions_per_week?.recommended ?? 0`, optional `programmingVariables`) already guards old plans.
+- **Aplicar still explicit**: the recommendation row and its "Aplicar" button render only when `programmingVariables.training_split !== systemSplit.value`, and the click handler is the only mutation path. Toggling mode never auto-applies.
+- **i18n**: only matches for "quick"/"lab"/"Caminho rápido"/"Modo laboratório" outside locale files are the new code paths in `BriefEditor`, `IntensityCockpit`, `RationaleChip`, all routed through `t("ux.mode.*")`. No hardcoded visible strings.
 
-## 1. Local state (BriefEditor)
+## Issues found (ordered by severity)
 
-```ts
-const [mode, setMode] = useState<"quick" | "lab">("quick");
+### P1 · A11y · Wrong ARIA role pattern on segmented control
+`BriefEditor.tsx` lines 52–80 use `role="tablist"` + `role="tab"` + `aria-pressed`. WAI-ARIA tabs require:
+- `aria-selected` (not `aria-pressed`) on each `role="tab"`
+- a `role="tabpanel"` referenced by `aria-controls` / `id`
+- arrow-key navigation between tabs
+
+Since this control toggles **density only** (no panel swap), the cleaner fix is to drop the tab pattern and use a **toggle group**: `role="group"` on the wrapper, plain `<button aria-pressed>` children. Screen readers announce "pressed/not pressed" correctly and keyboard Tab/Enter just works.
+
+### P2 · A11y · No visible focus ring on segmented buttons
+The buttons rely on browser default focus only. Add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40` to match the rest of the app's amber focus convention (matches `RationaleChip`).
+
+### P3 · Cosmetic · Empty `aria-label` reference
+`aria-label={t("ux.mode.aria_label")}` becomes meaningless once the wrapper is no longer a `tablist`. After the role change, keep `aria-label` so the group is announced as "Modo de configuração, dois botões".
+
+### Non-issues verified
+- Hiding `confident`/`manual` chips in Quick Path does not hide safety-critical content. Tier "remedial" / "conservative" rows surface as `confidence: "assumed"` with `tier_remedial_flags` / `tier_conservative` reasons → still visible in Quick Path. Confirmed in `src/lib/auto-infer.ts`.
+- `RationaleChip` returns `null` cleanly (no empty wrapper) when suppressed; surrounding flex containers only render their other children, no orphan gaps observed.
+- `IntensityCockpit` knob values are untouched by `mode`. `showKnobs = mode === "lab" && showKnobsPref` is read-only; `showKnobsPref` localStorage write is only triggered by the manual button click (which itself is hidden in Quick Path → no accidental writes).
+- Switching Quick → Lab → Quick re-renders with the same `brief` and `programmingVariables` references; no setter is called from the mode branch.
+
+## Proposed fix (single small patch)
+
+`src/components/BriefEditor.tsx` lines 52–80:
+
+```tsx
+<div
+  role="group"
+  aria-label={t("ux.mode.aria_label")}
+  className="rounded-2xl border border-border bg-card p-2 shadow-sm"
+>
+  <div className="grid grid-cols-2 gap-1">
+    {(["quick", "lab"] as const).map((m) => {
+      const active = mode === m;
+      return (
+        <button
+          key={m}
+          type="button"
+          aria-pressed={active}
+          onClick={() => setMode(m)}
+          className={`rounded-xl px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 ${
+            active
+              ? "border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+              : "border border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t(m === "quick" ? "ux.mode.quick_path" : "ux.mode.lab_mode")}
+        </button>
+      );
+    })}
+  </div>
+  <p className="mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
+    {t(mode === "quick" ? "ux.mode.quick_description" : "ux.mode.lab_description")}
+  </p>
+</div>
 ```
 
-- Not persisted. Not in URL. Not in form state. Not sent to server.
-- Lives only in `BriefEditor`'s render tree; passed as prop where needed.
+Diff vs current:
+- `role="tablist"` → `role="group"`
+- removed `role="tab"` from each button
+- added `focus-visible:ring-*` classes
+- everything else unchanged
 
-## 2. Segmented control
+## Files that would change
+- `src/components/BriefEditor.tsx` (one block, ~6 lines effective)
 
-Rendered at the very top of `BriefEditor` (above the Objetivo card), full-width on 375px:
+## What stays untouched (confirmed)
+No schema, no migration, no `programming_variables` field, no Stage 1–5 prompt, no `generation_meta`, no PDF export, no logbook, no edge function, no persistence, no onboarding modal.
 
-```text
-[ Caminho rápido ] [ Modo laboratório ]
-<microcopy line under the active option>
-```
-
-- Two buttons, `role="tablist"`, `aria-pressed` toggles.
-- Active = amber outline + filled background, matching existing pill style in BriefEditor.
-- Microcopy line below shows `ux.mode.quick_description` or `ux.mode.lab_description`.
-
-## 3. Quick Path behavior (default)
-
-- Tier inferred row: keep value, **hide** the rationale chip (it's confident).
-- Training Split row:
-  - If matches system recommendation → no chip (silent confident state).
-  - If user diverges → keep "Recomendado · Aplicar" row visible (this is the only useful nudge).
-- IntensityCockpit:
-  - Presets row visible.
-  - Summary line visible **without** the inline preset RationaleChip.
-  - `showKnobs` forced to `false`; "Controlo manual" toggle hidden.
-
-## 4. Lab Mode behavior
-
-- All rationale chips render (tier, split match/manual, cockpit preset, wave, deload, manual envelopes).
-- "Sobrepor default" / "Controlo manual" toggle reappears in the cockpit.
-- `showKnobs` honors the existing localStorage preference (current behavior).
-- "Recomendado · Aplicar" row continues to require explicit click — never auto-applied.
-
-## 5. Rationale density rule (RationaleChip)
-
-Add an optional prop:
-```ts
-mode?: "quick" | "lab"; // default "lab" (preserves current behavior at all other call sites)
-```
-
-When `mode === "quick"`:
-- Render `null` for `confident` and `manual` confidences (low-signal chips).
-- Always render for `assumed` (these explain non-obvious choices).
-
-This lets the cockpit/brief pass `mode={mode}` once and get the right density for free.
-
-## 6. No hidden mutations
-
-- Toggling mode never calls `onChange`, `setPv`, `apply`, or any setter that mutates `brief` / `programmingVariables`.
-- "Aplicar" button still requires an explicit click in both modes.
-- Form values, plan object, and generation payload are byte-identical between modes.
-
-## 7. i18n keys (add under existing `ux` namespace)
-
-```json
-"ux": {
-  "mode": {
-    "quick_path": "Caminho rápido",
-    "lab_mode": "Modo laboratório",
-    "quick_description": "O sistema recomenda defaults seguros com base nos dados atuais.",
-    "lab_description": "Mostra mais controlos, rationale e opções de sobreposição.",
-    "aria_label": "Modo de configuração"
-  }
-}
-```
-
-EN mirror with the requested copy. No hardcoded strings in components.
-
-## 8. Acceptance
-
-- Default mode = Quick Path on every render of BriefEditor.
-- Toggling to Lab reveals chips + manual control toggle without changing any field.
-- Toggling back hides them; form values unchanged (verify via re-render with same brief object identity).
-- No `psql`/network writes occur on toggle (visual smoke).
-- Old plans without `cockpit_preset` or partial `programming_variables` don't crash (defensive optional chaining already in place).
-- 375px: segmented control fits on one row; microcopy wraps cleanly.
-- PT and EN both render the new strings.
-
-## Non-goals
-
-No schema, no `generation_meta` fields, no `programming_variables.mode`, no PDF, no logbook, no onboarding modal, no Quick-Path-specific generation prompt, no auto-snap of recommendations.
+## Recommendation
+Apply the segmented-control a11y fix above, then **Step 4D can proceed**. Persistence of mode preference should land as a `profiles.ui_mode` column (or `localStorage` key only — debate in 4D), not on plans/clients.

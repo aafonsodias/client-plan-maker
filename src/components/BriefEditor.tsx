@@ -50,7 +50,7 @@ export default function BriefEditor({
   return (
     <div className={`space-y-3 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
       <div
-        role="tablist"
+        role="group"
         aria-label={t("ux.mode.aria_label")}
         className="rounded-2xl border border-border bg-card p-2 shadow-sm"
       >
@@ -61,10 +61,9 @@ export default function BriefEditor({
               <button
                 key={m}
                 type="button"
-                role="tab"
                 aria-pressed={active}
                 onClick={() => setMode(m)}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 ${
                   active
                     ? "border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                     : "border border-transparent text-muted-foreground hover:text-foreground"
