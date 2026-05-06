@@ -59,6 +59,34 @@ export default function BriefEditor({
     );
   };
 
+  // R/Phase 4C — top-level computed inferences (no hooks; pure derivations).
+  // Extracted from JSX IIFEs so render paths stay flat and predictable on
+  // legacy plans where parts of the brief / programming_variables may be missing.
+  const tierInference = inferTier({
+    red_flags: brief.red_flags ?? [],
+    training_age_band: brief.training_age_band,
+    manual: null,
+  });
+  const splitSystem = inferSplit({
+    sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
+    manual: null,
+  });
+  const splitMatches =
+    !!programmingVariables &&
+    programmingVariables.training_split === splitSystem.value;
+  const splitChipInf = splitMatches
+    ? splitSystem
+    : inferSplit({ manual: (programmingVariables?.training_split ?? null) as any });
+  const splitLabels: Record<string, string> = {
+    full_body: "Corpo inteiro",
+    upper_lower: "Superior / Inferior",
+    ppl: "Empurrar / Puxar / Pernas",
+    pplc: "Empurrar / Puxar / Pernas / Core",
+    ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
+    body_part_split: "Divisão por grupo muscular",
+    custom: "Personalizada",
+  };
+
   return (
     <div className={`space-y-3 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
       <div
@@ -142,20 +170,12 @@ export default function BriefEditor({
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
-          {(() => {
-            const tierInf = inferTier({
-              red_flags: brief.red_flags ?? [],
-              training_age_band: brief.training_age_band,
-              manual: null,
-            });
-            if (mode === "quick" && tierInf.confidence !== "assumed") return null;
-            return (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <span>{t("ux.rationale.labels.inferred")}:</span>
-                <RationaleChip inference={tierInf} label={tierInf.value} mode={mode} />
-              </div>
-            );
-          })()}
+          {(mode !== "quick" || tierInference.confidence === "assumed") && (
+            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span>{t("ux.rationale.labels.inferred")}:</span>
+              <RationaleChip inference={tierInference} label={tierInference.value} mode={mode} />
+            </div>
+          )}
         </Field>
       </Card>
 
@@ -176,26 +196,26 @@ export default function BriefEditor({
         <div className="grid grid-cols-3 gap-3">
           <Field label="Sessões/sem (rec.)">
             <NumInput
-              value={brief.sessions_per_week.recommended}
+              value={brief.sessions_per_week?.recommended ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, recommended: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), recommended: n })}
             />
           </Field>
           <Field label="Mín.">
             <NumInput
-              value={brief.sessions_per_week.min}
+              value={brief.sessions_per_week?.min ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, min: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), min: n })}
             />
           </Field>
           <Field label="Máx.">
             <NumInput
-              value={brief.sessions_per_week.max}
+              value={brief.sessions_per_week?.max ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, max: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), max: n })}
             />
           </Field>
         </div>
@@ -254,7 +274,7 @@ export default function BriefEditor({
       <Card title="Segurança e equipamento" conclusion={buildSafetyConclusion(brief)}>
         <Field label="Sinais de alerta (um por linha)">
           <AutoTextarea
-            value={brief.red_flags.join("\n")}
+            value={(brief.red_flags ?? []).join("\n")}
             onChange={(e) =>
               set(
                 "red_flags",
@@ -337,49 +357,27 @@ export default function BriefEditor({
                 <option value="body_part_split">Divisão por grupo muscular</option>
                 <option value="custom">Personalizada</option>
               </select>
-              {(() => {
-                const systemSplit = inferSplit({
-                  sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
-                  manual: null,
-                });
-                const matches = programmingVariables.training_split === systemSplit.value;
-                const chipInf = matches
-                  ? systemSplit
-                  : inferSplit({ manual: programmingVariables.training_split as any });
-                const labels: Record<string, string> = {
-                  full_body: "Corpo inteiro",
-                  upper_lower: "Superior / Inferior",
-                  ppl: "Empurrar / Puxar / Pernas",
-                  pplc: "Empurrar / Puxar / Pernas / Core",
-                  ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
-                  body_part_split: "Divisão por grupo muscular",
-                  custom: "Personalizada",
-                };
-                // Quick Path: only show the nudge row when the user diverges
-                // from the recommendation. Stay silent otherwise.
-                if (mode === "quick" && matches) return null;
-                return (
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <RationaleChip
-                      inference={chipInf}
-                      label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
-                      mode={mode}
-                    />
-                    {!matches ? (
-                      <>
-                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[systemSplit.value] ?? systemSplit.value}</span>
-                        <button
-                          type="button"
-                          onClick={() => setPv("training_split", systemSplit.value as ProgrammingVariables["training_split"])}
-                          className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
-                        >
-                          {t("ux.rationale.labels.recommended_apply")}
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                );
-              })()}
+              {(mode !== "quick" || !splitMatches) && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <RationaleChip
+                    inference={splitChipInf}
+                    label={splitMatches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
+                    mode={mode}
+                  />
+                  {!splitMatches ? (
+                    <>
+                      <span>{t("ux.rationale.labels.recommended_default")}: {splitLabels[splitSystem.value] ?? splitSystem.value}</span>
+                      <button
+                        type="button"
+                        onClick={() => setPv("training_split", splitSystem.value as ProgrammingVariables["training_split"])}
+                        className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                      >
+                        {t("ux.rationale.labels.recommended_apply")}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              )}
             </Field>
             <Field label="Estilo de deload">
               <select
