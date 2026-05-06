@@ -48,6 +48,7 @@ function Landing() {
   const closingCtaLabel = signedIn
     ? t("plan:landing.closing.cta_signed_in")
     : t("plan:landing.closing.cta_signed_out");
+  const [billing, setBilling] = useState<Billing>("annual");
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
