@@ -1,5 +1,6 @@
 import type { Brief } from "./schemas";
 import type { ProgrammingVariables, RedFlagAccommodation } from "./schemas";
+import type { KnowledgeRules } from "@/server/knowledge/schema";
 
 /**
  * Smart defaults for the coach-facing PROGRAMMING SETUP card.
@@ -144,6 +145,68 @@ export type WaveOptions = {
   /** Inject a deload every N weeks (3..6). Defaults to every 4. */
   deloadEveryN?: number;
 };
+
+/**
+ * R73 — Resolve effective cockpit knobs from a plan's
+ * `programming_variables` (coach overrides) with the trainer's
+ * Knowledge Profile defaults as fallback, and the system defaults as
+ * the final safety net. Used by Stage 4 + program-next-week so neither
+ * stage has to know about PKL plumbing directly.
+ */
+export type ResolvedCockpit = {
+  wave_model: WaveModel;
+  deload_every_n: number;
+  autoreg_strictness: "strict" | "suggested" | "off";
+  rpe_ceiling: number | null;
+  intensity_volume_tradeoff: ProgrammingVariables["intensity_volume_tradeoff"] | null;
+  preset: ProgrammingVariables["cockpit_preset"];
+  source: { wave_model: "cockpit" | "pkl"; deload: "cockpit" | "pkl"; autoreg: "cockpit" | "pkl" };
+};
+
+function deloadEveryNFromString(freq?: string | null): number | null {
+  if (!freq) return null;
+  if (freq === "no_deload") return 999;
+  const m = String(freq).match(/(\d+)/);
+  if (!m) return null;
+  return Math.min(6, Math.max(3, parseInt(m[1], 10)));
+}
+
+export function resolveCockpit(
+  pv: Partial<ProgrammingVariables> | null | undefined,
+  rules: KnowledgeRules | null | undefined,
+): ResolvedCockpit {
+  const pvWave = (["linear", "undulating", "block", "conjugate"] as const).includes(
+    pv?.wave_model as any,
+  )
+    ? (pv!.wave_model as WaveModel)
+    : null;
+  const pvDeload = deloadEveryNFromString(pv?.deload_frequency as any);
+  const pvAutoreg =
+    pv?.autoreg_strictness === "strict" || pv?.autoreg_strictness === "suggested" || pv?.autoreg_strictness === "off"
+      ? (pv.autoreg_strictness as "strict" | "suggested" | "off")
+      : null;
+
+  const pklWave = (rules?.progression?.wave_model_default ?? "undulating") as WaveModel;
+  const pklDeload = deloadEveryNFromString(rules?.recovery?.deload_frequency ?? "every_4_weeks") ?? 4;
+  const pklAutoreg = (rules?.progression?.autoreg_strictness_default ?? "suggested") as
+    | "strict"
+    | "suggested"
+    | "off";
+
+  return {
+    wave_model: pvWave ?? pklWave,
+    deload_every_n: pvDeload ?? pklDeload,
+    autoreg_strictness: pvAutoreg ?? pklAutoreg,
+    rpe_ceiling: typeof pv?.rpe_ceiling === "number" ? pv.rpe_ceiling : null,
+    intensity_volume_tradeoff: (pv?.intensity_volume_tradeoff as any) ?? null,
+    preset: (pv?.cockpit_preset as any) ?? "custom",
+    source: {
+      wave_model: pvWave ? "cockpit" : "pkl",
+      deload: pvDeload != null ? "cockpit" : "pkl",
+      autoreg: pvAutoreg ? "cockpit" : "pkl",
+    },
+  };
+}
 
 function deloadWeek(tier: WaveTier, weekN: number): WaveWeek {
   const anchor = WAVE_ANCHOR[tier];
