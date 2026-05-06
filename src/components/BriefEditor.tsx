@@ -8,6 +8,9 @@ import type {
 } from "@/server/phased/schemas";
 import { FLAG_STRATEGY_LABELS_PT } from "@/lib/brief-labels";
 import IntensityCockpit from "@/components/plan/IntensityCockpit";
+import RationaleChip from "@/components/ux/RationaleChip";
+import { inferTier, inferSplit } from "@/lib/auto-infer";
+import { useTranslation } from "react-i18next";
 
 export default function BriefEditor({
   brief,
@@ -26,6 +29,7 @@ export default function BriefEditor({
   accommodations?: RedFlagAccommodation[];
   onAccommodationsChange?: (a: RedFlagAccommodation[]) => void;
 }) {
+  const { t } = useTranslation("common");
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => onChange({ ...brief, [k]: v });
   const setPv = <K extends keyof ProgrammingVariables>(
     k: K,
