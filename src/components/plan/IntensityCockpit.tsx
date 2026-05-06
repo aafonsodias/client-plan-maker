@@ -8,7 +8,7 @@ import {
   type CockpitPreset,
 } from "./CockpitPresets";
 import RationaleChip from "@/components/ux/RationaleChip";
-import { inferCockpitPreset } from "@/lib/auto-infer";
+import { inferCockpitPreset, inferWaveModel, inferDeloadFreq } from "@/lib/auto-infer";
 
 /**
  * R64 — Intensity Cockpit. Five knobs + six presets, the only surface where a
@@ -79,6 +79,17 @@ export default function IntensityCockpit({
     primary_goal: primaryGoal as any,
     current: value.cockpit_preset as CockpitPreset | undefined,
   });
+  const waveInference = inferWaveModel({
+    primary_goal: primaryGoal as any,
+    current: value.wave_model,
+  });
+  const deloadInference = inferDeloadFreq({ current: value.deload_frequency });
+  const manualEnvelope = {
+    value: "manual" as const,
+    confidence: "manual" as const,
+    source: "cockpit" as const,
+    reason_key: "cockpit_manual",
+  };
 
   return (
     <section
@@ -129,7 +140,7 @@ export default function IntensityCockpit({
           onClick={() => setShowKnobs((s) => !s)}
           className="text-[11px] font-medium uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-400"
         >
-          {showKnobs ? "Ocultar detalhes" : "Afinar"}
+          {showKnobs ? t("ux.rationale.labels.hide_manual_control", { ns: "common", defaultValue: "Ocultar controlo manual" }) : t("ux.rationale.labels.manual_control", { ns: "common", defaultValue: "Controlo manual" })}
         </button>
       </div>
 
@@ -139,6 +150,7 @@ export default function IntensityCockpit({
           icon={<Waves className="h-4 w-4" />}
           label={t("cockpit.knobs.wave.label")}
           help={t("cockpit.knobs.wave.help")}
+          chip={<RationaleChip inference={waveInference} />}
         >
           <select
             value={value.wave_model}
@@ -156,6 +168,7 @@ export default function IntensityCockpit({
           icon={<Gauge className="h-4 w-4" />}
           label={`${t("cockpit.knobs.rpe.label")} — ${value.rpe_ceiling.toFixed(1)}`}
           help={t("cockpit.knobs.rpe.help")}
+          chip={<RationaleChip inference={manualEnvelope as any} />}
         >
           <input
             type="range"
@@ -177,6 +190,7 @@ export default function IntensityCockpit({
           icon={<Scale className="h-4 w-4" />}
           label={t("cockpit.knobs.tradeoff.label")}
           help={t("cockpit.knobs.tradeoff.help")}
+          chip={<RationaleChip inference={manualEnvelope as any} />}
         >
           <select
             value={value.intensity_volume_tradeoff}
@@ -194,6 +208,7 @@ export default function IntensityCockpit({
           icon={<Repeat className="h-4 w-4" />}
           label={t("cockpit.knobs.deload.label")}
           help={t("cockpit.knobs.deload.help")}
+          chip={<RationaleChip inference={deloadInference} />}
         >
           <select
             value={value.deload_frequency}
@@ -212,6 +227,7 @@ export default function IntensityCockpit({
           icon={<ShieldCheck className="h-4 w-4" />}
           label={t("cockpit.knobs.autoreg.label")}
           help={t("cockpit.knobs.autoreg.help")}
+          chip={<RationaleChip inference={manualEnvelope as any} />}
         >
           <select
             value={value.autoreg_strictness}
@@ -234,13 +250,14 @@ export default function IntensityCockpit({
 }
 
 function Knob({
-  icon, label, help, children,
-}: { icon: React.ReactNode; label: string; help: string; children: React.ReactNode }) {
+  icon, label, help, children, chip,
+}: { icon: React.ReactNode; label: string; help: string; children: React.ReactNode; chip?: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-border bg-background/50 p-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
         <span className="text-amber-500">{icon}</span>
-        {label}
+        <span>{label}</span>
+        {chip ? <span className="ml-auto">{chip}</span> : null}
       </div>
       {children}
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{help}</p>

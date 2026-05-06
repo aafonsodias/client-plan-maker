@@ -203,7 +203,7 @@ function RuleSummary({
           <SheetTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0">
               <Pencil className="mr-1.5 h-3.5 w-3.5" />
-              Editar
+              Sobrepor default
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
@@ -279,43 +279,54 @@ function summarizeProgression(r: KnowledgeRules): string {
 
 function volumeRationale(r: KnowledgeRules): Inference<string> {
   const overrides = Object.keys(r.volume.landmarks ?? {}).length;
-  return overrides
-    ? {
-        value: "custom",
-        confidence: "manual",
-        source: "user",
-        reason_key: "wave_manual",
-      }
-    : {
-        value: "default",
-        confidence: "confident",
-        source: "default",
-        reason_key: "wave_default",
-      };
+  if (!overrides) {
+    return { value: "default", confidence: "confident", source: "default", reason_key: "card_matches_default" };
+  }
+  return {
+    value: "user",
+    confidence: "manual",
+    source: "user",
+    reason_key: "card_user_override",
+    reason_params: { count: overrides },
+  };
+}
+function diffCount(a: unknown, b: unknown): number {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b) ? 0 : 1;
+  } catch {
+    return 0;
+  }
 }
 function intensityRationale(r: KnowledgeRules): Inference<string> {
-  return {
-    value: r.intensity.intensity_volume_tradeoff_default,
-    confidence: "confident",
-    source: "pkl",
-    reason_key: "wave_from_pkl",
-  };
+  const d = SYSTEM_DEFAULT_RULES.intensity;
+  const diffs =
+    diffCount(r.intensity.rpe_ceiling_by_tier, d.rpe_ceiling_by_tier) +
+    diffCount(r.intensity.intensity_volume_tradeoff_default, d.intensity_volume_tradeoff_default);
+  if (!diffs) {
+    return { value: "default", confidence: "confident", source: "default", reason_key: "card_matches_default" };
+  }
+  return { value: "pkl", confidence: "confident", source: "pkl", reason_key: "card_pkl_override" };
 }
 function recoveryRationale(r: KnowledgeRules): Inference<string> {
-  return {
-    value: r.recovery.deload_frequency,
-    confidence: "confident",
-    source: "pkl",
-    reason_key: "deload_from_pkl",
-  };
+  const d = SYSTEM_DEFAULT_RULES.recovery;
+  const diffs =
+    diffCount(r.recovery.deload_frequency, d.deload_frequency) +
+    diffCount(r.recovery.deload_style, d.deload_style);
+  if (!diffs) {
+    return { value: "default", confidence: "confident", source: "default", reason_key: "card_matches_default" };
+  }
+  return { value: "pkl", confidence: "confident", source: "pkl", reason_key: "card_pkl_override" };
 }
 function progressionRationale(r: KnowledgeRules): Inference<string> {
-  return {
-    value: r.progression.wave_model_default,
-    confidence: "confident",
-    source: "pkl",
-    reason_key: "wave_from_pkl",
-  };
+  const d = SYSTEM_DEFAULT_RULES.progression;
+  const diffs =
+    diffCount(r.progression.wave_model_default, d.wave_model_default) +
+    diffCount(r.progression.autoreg_strictness_default, d.autoreg_strictness_default) +
+    diffCount(r.progression.increments_kg_by_category, d.increments_kg_by_category);
+  if (!diffs) {
+    return { value: "default", confidence: "confident", source: "default", reason_key: "card_matches_default" };
+  }
+  return { value: "pkl", confidence: "confident", source: "pkl", reason_key: "card_pkl_override" };
 }
 
 function VolumeCard({ rules, setRules }: CardProps) {

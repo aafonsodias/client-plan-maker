@@ -8,6 +8,9 @@ import type {
 } from "@/server/phased/schemas";
 import { FLAG_STRATEGY_LABELS_PT } from "@/lib/brief-labels";
 import IntensityCockpit from "@/components/plan/IntensityCockpit";
+import RationaleChip from "@/components/ux/RationaleChip";
+import { inferTier, inferSplit } from "@/lib/auto-infer";
+import { useTranslation } from "react-i18next";
 
 export default function BriefEditor({
   brief,
@@ -26,6 +29,7 @@ export default function BriefEditor({
   accommodations?: RedFlagAccommodation[];
   onAccommodationsChange?: (a: RedFlagAccommodation[]) => void;
 }) {
+  const { t } = useTranslation("common");
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => onChange({ ...brief, [k]: v });
   const setPv = <K extends keyof ProgrammingVariables>(
     k: K,
@@ -92,6 +96,21 @@ export default function BriefEditor({
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
+          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>Nível inferido:</span>
+            <RationaleChip
+              inference={inferTier({
+                red_flags: brief.red_flags,
+                training_age_band: brief.training_age_band,
+                manual: null,
+              })}
+              label={inferTier({
+                red_flags: brief.red_flags,
+                training_age_band: brief.training_age_band,
+                manual: null,
+              }).value}
+            />
+          </div>
         </Field>
       </Card>
 
@@ -272,6 +291,39 @@ export default function BriefEditor({
                 <option value="body_part_split">Divisão por grupo muscular</option>
                 <option value="custom">Personalizada</option>
               </select>
+              {(() => {
+                const inf = inferSplit({
+                  sessions_per_week: brief.sessions_per_week.recommended,
+                  manual: programmingVariables.training_split as any,
+                });
+                const matches = programmingVariables.training_split === inf.value;
+                const labels: Record<string, string> = {
+                  full_body: "Corpo inteiro",
+                  upper_lower: "Superior / Inferior",
+                  ppl: "Empurrar / Puxar / Pernas",
+                  pplc: "Empurrar / Puxar / Pernas / Core",
+                  ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
+                  body_part_split: "Divisão por grupo muscular",
+                  custom: "Personalizada",
+                };
+                return (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <RationaleChip inference={inf} label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")} />
+                    {!matches ? (
+                      <>
+                        <span>{t("ux.rationale.labels.recommended_default")}: {labels[inf.value] ?? inf.value}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPv("training_split", inf.value as ProgrammingVariables["training_split"])}
+                          className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-medium text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                        >
+                          {t("ux.rationale.labels.recommended_apply")}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                );
+              })()}
             </Field>
             <Field label="Estilo de deload">
               <select

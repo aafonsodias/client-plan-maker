@@ -817,7 +817,21 @@
         "deload_from_tier": "{{tier}} tier — more frequent deloads protect adherence.",
         "deload_default": "Default every 4 weeks — NSCA Essentials 3e §17.",
         "logbook_mode_from_focus": "Inferred from day focus: {{focus}}.",
-        "logbook_mode_default": "No specific focus — mixed mode."
+        "logbook_mode_default": "No specific focus — mixed mode.",
+        "card_matches_default": "Matches the system default.",
+        "card_pkl_override": "Customized in your knowledge profile.",
+        "card_user_override": "{{count}} value(s) customized vs default.",
+        "cockpit_manual": "Controlled manually in the cockpit."
+      },
+      "labels": {
+        "inferred": "Inferred",
+        "recommended_default": "Recommended",
+        "based_on_current_inputs": "Based on current inputs",
+        "manually_overridden": "Manually overridden",
+        "override_default": "Override default",
+        "manual_control": "Manual control",
+        "hide_manual_control": "Hide manual control",
+        "recommended_apply": "Apply"
       }
     }
   }
