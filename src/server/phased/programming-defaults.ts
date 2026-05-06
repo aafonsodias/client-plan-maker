@@ -142,8 +142,11 @@ export type WaveModel = "linear" | "undulating" | "block" | "conjugate";
 export type WaveOptions = {
   /** Wave shape — defaults to undulating (legacy behaviour). */
   model?: WaveModel;
-  /** Inject a deload every N weeks (3..6). Defaults to every 4. */
-  deloadEveryN?: number;
+  /**
+   * Inject a deload every N weeks (3..6). Defaults to every 4.
+   * Pass `null` to disable deload entirely (also skips the final-week deload).
+   */
+  deloadEveryN?: number | null;
 };
 
 /**
@@ -155,7 +158,8 @@ export type WaveOptions = {
  */
 export type ResolvedCockpit = {
   wave_model: WaveModel;
-  deload_every_n: number;
+  /** `null` means "no deload programmed" (user picked `no_deload`). */
+  deload_every_n: number | null;
   autoreg_strictness: "strict" | "suggested" | "off";
   rpe_ceiling: number | null;
   intensity_volume_tradeoff: ProgrammingVariables["intensity_volume_tradeoff"] | null;
@@ -163,11 +167,17 @@ export type ResolvedCockpit = {
   source: { wave_model: "cockpit" | "pkl"; deload: "cockpit" | "pkl"; autoreg: "cockpit" | "pkl" };
 };
 
-function deloadEveryNFromString(freq?: string | null): number | null {
-  if (!freq) return null;
-  if (freq === "no_deload") return 999;
+/**
+ * Returns:
+ * - `undefined` when the input is empty/unrecognised (caller falls through to PKL/system default)
+ * - `null` when the user explicitly chose `no_deload` (disables deload)
+ * - a number in [3..6] otherwise
+ */
+function deloadEveryNFromString(freq?: string | null): number | null | undefined {
+  if (!freq) return undefined;
+  if (freq === "no_deload") return null;
   const m = String(freq).match(/(\d+)/);
-  if (!m) return null;
+  if (!m) return undefined;
   return Math.min(6, Math.max(3, parseInt(m[1], 10)));
 }
 
@@ -187,22 +197,25 @@ export function resolveCockpit(
       : null;
 
   const pklWave = (rules?.progression?.wave_model_default ?? "undulating") as WaveModel;
-  const pklDeload = deloadEveryNFromString(rules?.recovery?.deload_frequency ?? "every_4_weeks") ?? 4;
+  const pklDeloadResolved = deloadEveryNFromString(rules?.recovery?.deload_frequency ?? "every_4_weeks");
+  // PKL fallback: undefined → 4 (system default); null kept as explicit "no deload".
+  const pklDeload: number | null = pklDeloadResolved === undefined ? 4 : pklDeloadResolved;
   const pklAutoreg = (rules?.progression?.autoreg_strictness_default ?? "suggested") as
     | "strict"
     | "suggested"
     | "off";
 
+  const cockpitDeloadProvided = pvDeload !== undefined;
   return {
     wave_model: pvWave ?? pklWave,
-    deload_every_n: pvDeload ?? pklDeload,
+    deload_every_n: cockpitDeloadProvided ? (pvDeload as number | null) : pklDeload,
     autoreg_strictness: pvAutoreg ?? pklAutoreg,
     rpe_ceiling: typeof pv?.rpe_ceiling === "number" ? pv.rpe_ceiling : null,
     intensity_volume_tradeoff: (pv?.intensity_volume_tradeoff as any) ?? null,
     preset: (pv?.cockpit_preset as any) ?? "custom",
     source: {
       wave_model: pvWave ? "cockpit" : "pkl",
-      deload: pvDeload != null ? "cockpit" : "pkl",
+      deload: cockpitDeloadProvided ? "cockpit" : "pkl",
       autoreg: pvAutoreg ? "cockpit" : "pkl",
     },
   };
@@ -259,11 +272,13 @@ export function buildWavePlan(
   opts: WaveOptions = {},
 ): WaveWeek[] {
   const model: WaveModel = opts.model ?? "undulating";
-  const deloadEveryN = Math.min(6, Math.max(3, opts.deloadEveryN ?? 4));
+  const noDeload = opts.deloadEveryN === null;
+  const deloadEveryN = noDeload ? 0 : Math.min(6, Math.max(3, opts.deloadEveryN ?? 4));
   const out: WaveWeek[] = [];
   let positionInBlock = 0;
   for (let w = 1; w <= totalWeeks; w++) {
     const isDeloadWeek =
+      !noDeload &&
       totalWeeks >= 3 &&
       (w === totalWeeks || (w > 1 && (w - 1) % deloadEveryN === deloadEveryN - 1 && w !== totalWeeks - 1));
     if (isDeloadWeek) {
