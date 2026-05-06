@@ -703,6 +703,8 @@ export const generateDay = createServerFn({ method: "POST" })
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
     await markPending(supabase, userId, data.planId, data.dayIndex);
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const pklLandmarks = resolveLandmarks(pklRules);
     const r = await runDay(
       supabase,
       userId,
@@ -716,6 +718,7 @@ export const generateDay = createServerFn({ method: "POST" })
       [],
       swapMainLift,
       pp,
+      pklLandmarks,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -752,6 +755,8 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const pklLandmarks = resolveLandmarks(pklRules);
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -785,6 +790,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             [],
             swapMainLift,
             pp,
+            pklLandmarks,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
@@ -846,6 +852,9 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             briefP.data, bpP.data, guidelines, priorBlockSummary,
             priorPool,
             banned,
+            false,
+            pp,
+            pklLandmarks,
           );
           if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
         }
