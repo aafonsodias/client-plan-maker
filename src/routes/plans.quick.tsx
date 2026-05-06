@@ -20,7 +20,7 @@ export const Route = createFileRoute("/plans/quick")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
-      throw redirect({ to: "/auth", search: { redirect: "/plans/quick" } });
+      throw redirect({ to: "/auth" });
     }
   },
   component: () => (
