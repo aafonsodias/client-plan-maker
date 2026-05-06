@@ -1,85 +1,79 @@
-# Step 4C Audit — Findings & Proposed Fixes
+## Step 4D — Persist Quick Path vs Lab Mode (localStorage only)
 
-## Verdict
-Step 4C is honest: `mode` is purely local UI state, no payload/schema/engine touchpoints. Two minor a11y issues and one cosmetic risk. Safe to proceed to **Step 4D after the fixes below are applied**.
+Goal: Remember the user's preferred interface density across sessions on the current device only. No DB, no schema, no generation changes.
 
-## Confirmed clean
+### 1. New helper: `src/lib/interface-mode.ts`
 
-- **Local-only state**: `useState<"quick" | "lab">("quick")` lives only in `BriefEditor`. Not read by any `setPv`, `set`, `onChange`, `onProgrammingChange`, `onAccommodationsChange`. No reference to `mode` reaches `src/server/*`, `supabase`, mutation payloads, or `programming_variables`.
-- **No engine drift**: `IntensityCockpit` uses `mode` only to gate the "Controlo manual" toggle visibility and chip rendering. `apply()`/`applyPreset()`/`onChange` are not called from the mode branch.
-- **Quick default**: initial render = `"quick"`. Defensive optional chaining (`brief.sessions_per_week?.recommended ?? 0`, optional `programmingVariables`) already guards old plans.
-- **Aplicar still explicit**: the recommendation row and its "Aplicar" button render only when `programmingVariables.training_split !== systemSplit.value`, and the click handler is the only mutation path. Toggling mode never auto-applies.
-- **i18n**: only matches for "quick"/"lab"/"Caminho rápido"/"Modo laboratório" outside locale files are the new code paths in `BriefEditor`, `IntensityCockpit`, `RationaleChip`, all routed through `t("ux.mode.*")`. No hardcoded visible strings.
+Pure, dependency-free, SSR-safe utility. Single source of localStorage logic.
 
-## Issues found (ordered by severity)
+```ts
+export type InterfaceMode = "quick" | "lab";
+const KEY = "forge.interface_mode";
 
-### P1 · A11y · Wrong ARIA role pattern on segmented control
-`BriefEditor.tsx` lines 52–80 use `role="tablist"` + `role="tab"` + `aria-pressed`. WAI-ARIA tabs require:
-- `aria-selected` (not `aria-pressed`) on each `role="tab"`
-- a `role="tabpanel"` referenced by `aria-controls` / `id`
-- arrow-key navigation between tabs
+export function isInterfaceMode(v: unknown): v is InterfaceMode {
+  return v === "quick" || v === "lab";
+}
 
-Since this control toggles **density only** (no panel swap), the cleaner fix is to drop the tab pattern and use a **toggle group**: `role="group"` on the wrapper, plain `<button aria-pressed>` children. Screen readers announce "pressed/not pressed" correctly and keyboard Tab/Enter just works.
+export function getStoredInterfaceMode(): InterfaceMode {
+  if (typeof window === "undefined") return "quick";
+  try {
+    const v = window.localStorage.getItem(KEY);
+    return isInterfaceMode(v) ? v : "quick";
+  } catch {
+    return "quick";
+  }
+}
 
-### P2 · A11y · No visible focus ring on segmented buttons
-The buttons rely on browser default focus only. Add `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40` to match the rest of the app's amber focus convention (matches `RationaleChip`).
-
-### P3 · Cosmetic · Empty `aria-label` reference
-`aria-label={t("ux.mode.aria_label")}` becomes meaningless once the wrapper is no longer a `tablist`. After the role change, keep `aria-label` so the group is announced as "Modo de configuração, dois botões".
-
-### Non-issues verified
-- Hiding `confident`/`manual` chips in Quick Path does not hide safety-critical content. Tier "remedial" / "conservative" rows surface as `confidence: "assumed"` with `tier_remedial_flags` / `tier_conservative` reasons → still visible in Quick Path. Confirmed in `src/lib/auto-infer.ts`.
-- `RationaleChip` returns `null` cleanly (no empty wrapper) when suppressed; surrounding flex containers only render their other children, no orphan gaps observed.
-- `IntensityCockpit` knob values are untouched by `mode`. `showKnobs = mode === "lab" && showKnobsPref` is read-only; `showKnobsPref` localStorage write is only triggered by the manual button click (which itself is hidden in Quick Path → no accidental writes).
-- Switching Quick → Lab → Quick re-renders with the same `brief` and `programmingVariables` references; no setter is called from the mode branch.
-
-## Proposed fix (single small patch)
-
-`src/components/BriefEditor.tsx` lines 52–80:
-
-```tsx
-<div
-  role="group"
-  aria-label={t("ux.mode.aria_label")}
-  className="rounded-2xl border border-border bg-card p-2 shadow-sm"
->
-  <div className="grid grid-cols-2 gap-1">
-    {(["quick", "lab"] as const).map((m) => {
-      const active = mode === m;
-      return (
-        <button
-          key={m}
-          type="button"
-          aria-pressed={active}
-          onClick={() => setMode(m)}
-          className={`rounded-xl px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 ${
-            active
-              ? "border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-              : "border border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {t(m === "quick" ? "ux.mode.quick_path" : "ux.mode.lab_mode")}
-        </button>
-      );
-    })}
-  </div>
-  <p className="mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
-    {t(mode === "quick" ? "ux.mode.quick_description" : "ux.mode.lab_description")}
-  </p>
-</div>
+export function setStoredInterfaceMode(mode: InterfaceMode): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(KEY, mode);
+  } catch {
+    /* private mode / quota → silent */
+  }
+}
 ```
 
-Diff vs current:
-- `role="tablist"` → `role="group"`
-- removed `role="tab"` from each button
-- added `focus-visible:ring-*` classes
-- everything else unchanged
+### 2. `src/components/BriefEditor.tsx` — owner of mode
 
-## Files that would change
-- `src/components/BriefEditor.tsx` (one block, ~6 lines effective)
+Replace the current `useState<"quick"|"lab">("quick")` with a hydration-safe pattern:
 
-## What stays untouched (confirmed)
-No schema, no migration, no `programming_variables` field, no Stage 1–5 prompt, no `generation_meta`, no PDF export, no logbook, no edge function, no persistence, no onboarding modal.
+- Initial state: `"quick"` (matches SSR output → no hydration mismatch).
+- `useEffect(() => { setMode(getStoredInterfaceMode()); }, [])` — apply persisted value after mount.
+- Toggle handler writes via `setStoredInterfaceMode(next)` then `setMode(next)`.
 
-## Recommendation
-Apply the segmented-control a11y fix above, then **Step 4D can proceed**. Persistence of mode preference should land as a `profiles.ui_mode` column (or `localStorage` key only — debate in 4D), not on plans/clients.
+Mode is already passed to `<IntensityCockpit mode={mode} />` and `<RationaleChip mode={mode} />`. Keep that — BriefEditor remains the single owner. No new prop drilling needed; IntensityCockpit stays a controlled child and does NOT read localStorage itself.
+
+### 3. `src/components/plan/IntensityCockpit.tsx`
+
+No changes to mode logic — it already accepts `mode` as a prop and defaults to `"lab"` for back-compat with any non-BriefEditor caller. The internal `pf.cockpit.finetune` localStorage key (manual-knob preference) is unrelated and stays as-is.
+
+### 4. i18n strings
+
+Add under `ux.mode`:
+- PT (`src/i18n/locales/pt/common.json`): `"saved_locally": "Preferência guardada neste dispositivo."`
+- EN (`src/i18n/locales/en/common.json`): `"saved_locally": "Preference saved on this device."`
+
+Render as a small muted helper line directly under the segmented control in BriefEditor (replaces nothing; sits beside the existing description). Wrapped in `text-[10px] text-muted-foreground`.
+
+### 5. Behavior contract (unchanged from 4C)
+
+- Quick Path: assumed chips only, no manual-control toggle, no auto-apply.
+- Lab Mode: all confidence chips, manual-control toggle visible.
+- "Aplicar" still requires explicit click. Mode never mutates `programmingVariables`, `brief`, or any payload.
+
+### 6. Verification checklist
+
+- First visit (no key) → Quick Path.
+- Switch to Lab → reload → Lab persists.
+- Switch back to Quick → reload → Quick persists.
+- Manually set `localStorage["forge.interface_mode"] = "garbage"` → falls back to Quick.
+- Incognito / blocked storage → no throw, defaults to Quick.
+- `rg "forge.interface_mode"` returns only `interface-mode.ts` (single source).
+- `rg "interface_mode|interfaceMode"` in `src/server/`, `supabase/`, payload builders → zero hits.
+- 375px viewport: control + helper line still fit.
+- PT/EN switch updates helper line.
+
+### 7. Non-goals (explicit)
+
+No schema migration, no Supabase write, no field on plans/clients/profiles, no change to Stage 1–5 prompts, no PDF change, no logbook change, no onboarding modal, no redesign.
