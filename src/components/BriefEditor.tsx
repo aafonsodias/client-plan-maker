@@ -96,6 +96,21 @@ export default function BriefEditor({
               <option key={v} value={v}>{l}</option>
             ))}
           </select>
+          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>Nível inferido:</span>
+            <RationaleChip
+              inference={inferTier({
+                red_flags: brief.red_flags,
+                training_age_band: brief.training_age_band,
+                manual: null,
+              })}
+              label={inferTier({
+                red_flags: brief.red_flags,
+                training_age_band: brief.training_age_band,
+                manual: null,
+              }).value}
+            />
+          </div>
         </Field>
       </Card>
 
