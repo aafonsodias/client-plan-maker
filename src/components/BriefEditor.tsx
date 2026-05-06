@@ -196,26 +196,26 @@ export default function BriefEditor({
         <div className="grid grid-cols-3 gap-3">
           <Field label="Sessões/sem (rec.)">
             <NumInput
-              value={brief.sessions_per_week.recommended}
+              value={brief.sessions_per_week?.recommended ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, recommended: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), recommended: n })}
             />
           </Field>
           <Field label="Mín.">
             <NumInput
-              value={brief.sessions_per_week.min}
+              value={brief.sessions_per_week?.min ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, min: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), min: n })}
             />
           </Field>
           <Field label="Máx.">
             <NumInput
-              value={brief.sessions_per_week.max}
+              value={brief.sessions_per_week?.max ?? 0}
               min={1}
               max={7}
-              onChange={(n) => set("sessions_per_week", { ...brief.sessions_per_week, max: n })}
+              onChange={(n) => set("sessions_per_week", { ...(brief.sessions_per_week ?? { recommended: 0, min: 0, max: 0 }), max: n })}
             />
           </Field>
         </div>
