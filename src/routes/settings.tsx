@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Upload, Save, ArrowLeft, LayoutDashboard, Users } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Link } from "@tanstack/react-router";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const Route = createFileRoute("/settings")({
   component: () => (
@@ -99,10 +100,31 @@ function Settings() {
       <div>
         <div className="flex items-center gap-3">
           <BrandMark size="sm" />
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">Settings</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">Definições</p>
         </div>
-        <h1 className="mt-2 text-4xl font-light tracking-tight">PDF branding</h1>
-        <p className="mt-2 text-muted-foreground">Appears on every workout plan PDF you export.</p>
+        <h1 className="mt-2 text-4xl font-light tracking-tight">Preferências</h1>
+        <p className="mt-2 text-muted-foreground">Idioma, tema e marca para os teus PDFs.</p>
+      </div>
+
+      <section className="grid gap-4 rounded-2xl border border-border bg-card p-6 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label>Idioma</Label>
+          <div><LanguageSwitcher /></div>
+          <p className="text-xs text-muted-foreground">Detetado do sistema; podes mudar a qualquer momento.</p>
+        </div>
+        <div className="space-y-1.5">
+          <Label>Tema</Label>
+          <div className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
+            <span className="h-3 w-3 rounded-full bg-foreground/80" />
+            Slate (default)
+          </div>
+          <p className="text-xs text-muted-foreground">Mais temas em breve.</p>
+        </div>
+      </section>
+
+      <div>
+        <h2 className="text-lg font-semibold">Marca (PDF)</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Aparece em cada plano que exportas.</p>
       </div>
 
       <section className="rounded-2xl border border-border bg-card p-6">
