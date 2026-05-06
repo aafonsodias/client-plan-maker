@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { BookOpen, Loader2, Save, Pencil } from "lucide-react";
+import RationaleChip from "@/components/ux/RationaleChip";
+import type { Inference } from "@/lib/auto-infer";
 import {
   getActiveKnowledgeProfile,
   updateKnowledgeRules,
@@ -132,21 +134,25 @@ function KnowledgePage() {
         <RuleSummary
           title="Volume — séries por semana"
           summary={summarizeVolume(rules)}
+          rationale={volumeRationale(rules)}
           editor={<VolumeCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Intensidade"
           summary={summarizeIntensity(rules)}
+          rationale={intensityRationale(rules)}
           editor={<IntensityCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Recuperação · Deload"
           summary={summarizeRecovery(rules)}
+          rationale={recoveryRationale(rules)}
           editor={<RecoveryCard rules={rules} setRules={setRules} />}
         />
         <RuleSummary
           title="Progressão"
           summary={summarizeProgression(rules)}
+          rationale={progressionRationale(rules)}
           editor={<ProgressionCard rules={rules} setRules={setRules} />}
         />
       </div>
@@ -173,10 +179,12 @@ type CardProps = {
 function RuleSummary({
   title,
   summary,
+  rationale,
   editor,
 }: {
   title: string;
   summary: string;
+  rationale?: Inference<unknown> | null;
   editor: ReactNode;
 }) {
   return (
@@ -186,7 +194,10 @@ function RuleSummary({
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {title}
           </p>
-          <p className="mt-1 text-sm text-foreground">{summary}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-sm text-foreground">{summary}</p>
+            {rationale ? <RationaleChip inference={rationale} /> : null}
+          </div>
         </div>
         <Sheet>
           <SheetTrigger asChild>
