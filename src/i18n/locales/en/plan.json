@@ -280,7 +280,55 @@
       ],
       "pro_cta": "Continue after trial",
       "nav_link": "Pricing",
-      "trial_note": "No silent auto-renewal: we email you before any charge."
+      "trial_note": "No silent auto-renewal: we email you before any charge.",
+      "subtitle": "1 client = 1 full plan free. No card required.",
+      "popular_badge": "Most popular",
+      "per_month": "mo",
+      "per_year": "yr",
+      "monthly_eq": "≈ €{{price}}/mo",
+      "quota": "{{clients}} clients · {{plans}} plans/mo",
+      "beta_strip_title": "Private beta",
+      "beta_strip_body": "1 client · 1 full plan free · no card.",
+      "toggle": {
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "save_badge": "−{{pct}}% · 2 months free",
+        "aria": "Billing period"
+      },
+      "tiers": {
+        "starter": {
+          "tagline": "For trainers getting started.",
+          "cta": "Start free",
+          "features": [
+            "8 active clients",
+            "8 full plans per month",
+            "Logbook + AI insights",
+            "PDFs with your brand"
+          ]
+        },
+        "pro": {
+          "tagline": "For full-time PTs.",
+          "cta": "Start free",
+          "features": [
+            "25 active clients",
+            "30 full plans per month",
+            "Everything in Starter",
+            "Public plan sharing",
+            "Weekly email digest"
+          ]
+        },
+        "studio": {
+          "tagline": "Studios and small teams.",
+          "cta": "Talk to the author",
+          "features": [
+            "60 active clients",
+            "80 full plans per month",
+            "Everything in Pro",
+            "Seats for collaborators",
+            "Priority support"
+          ]
+        }
+      }
     },
     "footer": {
       "tagline": "For people who train others — and for people who train themselves. Substance before appearances.",

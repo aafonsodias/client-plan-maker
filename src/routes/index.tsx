@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
+import { PricingToggle } from "@/components/landing/PricingToggle";
+import { PRICING_TIERS, priceFor, monthlyEquivalent, type Billing } from "@/lib/pricing-tiers";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useAuth } from "@/hooks/use-auth";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -46,6 +48,7 @@ function Landing() {
   const closingCtaLabel = signedIn
     ? t("plan:landing.closing.cta_signed_in")
     : t("plan:landing.closing.cta_signed_out");
+  const [billing, setBilling] = useState<Billing>("annual");
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -251,57 +254,106 @@ function Landing() {
 
       {/* Pricing */}
       <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 max-w-2xl">
+        <div className="mb-8 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.pricing.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.pricing.title")}</h2>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t("plan:landing.pricing.subtitle", "1 cliente = 1 plano completo grátis. Sem cartão.")}
+          </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Beta card */}
-          <div className="relative rounded-2xl border border-accent/40 bg-card p-8 shadow-[var(--shadow-elegant)]">
-            <div className="absolute right-6 top-6 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent">
-              {t("plan:landing.pricing.beta_badge")}
-            </div>
-            <h3 className="text-xl font-medium">{t("plan:landing.pricing.beta_title")}</h3>
-            <div className="mt-4 flex items-baseline gap-1">
-              <PriceTag eur={0} className="text-4xl font-light tracking-tight" />
-              <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.beta_period")}</span>
-            </div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {(t("plan:landing.pricing.beta_features", { returnObjects: true }) as string[]).map((f, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                  <span className="text-foreground/85">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Button asChild size="lg" className="mt-8 w-full">
-              <Link to={primaryCtaTo}>{t("plan:landing.pricing.beta_cta")}</Link>
-            </Button>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">{t("plan:landing.pricing.trial_note")}</p>
+
+        {/* Beta strip — full-width, low-noise so paid tiers are the focus */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="h-4 w-4 text-accent" />
+            <span className="font-medium">{t("plan:landing.pricing.beta_strip_title", "Beta privado")}</span>
+            <span className="text-muted-foreground">{t("plan:landing.pricing.beta_strip_body", "1 cliente · 1 plano completo grátis · sem cartão.")}</span>
           </div>
-          {/* Pro card */}
-          <div className="relative rounded-2xl border border-border bg-card/60 p-8">
-            <div className="absolute right-6 top-6 rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {t("plan:landing.pricing.pro_badge")}
-            </div>
-            <h3 className="text-xl font-medium text-muted-foreground">{t("plan:landing.pricing.pro_title")}</h3>
-            <div className="mt-4 flex items-baseline gap-1">
-              <PriceTag eur={19} className="text-4xl font-light tracking-tight text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">{t("plan:landing.pricing.pro_period")}</span>
-            </div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {(t("plan:landing.pricing.pro_features", { returnObjects: true }) as string[]).map((f, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/70" />
-                  <span className="text-muted-foreground">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Button asChild size="lg" variant="outline" className="mt-8 w-full">
-              <a href="mailto:hello@forge.app?subject=Forge%20Pro%20-%20notify%20me">{t("plan:landing.pricing.pro_cta")}</a>
-            </Button>
-          </div>
+          <Button asChild size="sm" variant="default">
+            <Link to={primaryCtaTo}>{t("plan:landing.pricing.beta_cta")}</Link>
+          </Button>
         </div>
+
+        <div className="mb-8 flex justify-center">
+          <PricingToggle billing={billing} onChange={setBilling} />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {PRICING_TIERS.map((tier) => {
+            const price = priceFor(tier, billing);
+            const monthlyEq = monthlyEquivalent(tier, billing);
+            const popular = !!tier.popular;
+            const features = (t(`plan:landing.pricing.tiers.${tier.id}.features`, {
+              returnObjects: true,
+              defaultValue: [],
+            }) as string[]) ?? [];
+            const ctaLabel = t(`plan:landing.pricing.tiers.${tier.id}.cta`,
+              tier.id === "studio" ? "Falar com o autor" : "Começar grátis");
+            const isStudio = tier.id === "studio";
+            return (
+              <div
+                key={tier.id}
+                className={`relative flex flex-col rounded-2xl border bg-card p-8 ${
+                  popular
+                    ? "border-accent/60 shadow-[var(--shadow-elegant)]"
+                    : "border-border"
+                }`}
+              >
+                {popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-accent/60 bg-accent px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-accent-foreground">
+                    {t("plan:landing.pricing.popular_badge", "Mais popular")}
+                  </div>
+                )}
+                <h3 className="text-xl font-medium">{tier.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t(`plan:landing.pricing.tiers.${tier.id}.tagline`, "")}
+                </p>
+                <div className="mt-5 flex items-baseline gap-1.5">
+                  <PriceTag eur={price} className="text-4xl font-light tracking-tight" />
+                  <span className="text-sm text-muted-foreground">
+                    /{billing === "annual"
+                      ? t("plan:landing.pricing.per_year", "ano")
+                      : t("plan:landing.pricing.per_month", "mês")}
+                  </span>
+                </div>
+                {billing === "annual" && (
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {t("plan:landing.pricing.monthly_eq", "≈ €{{price}}/mês", { price: monthlyEq })}
+                  </p>
+                )}
+                <p className="mt-4 text-xs font-medium text-foreground/80">
+                  {t("plan:landing.pricing.quota", "{{clients}} clientes · {{plans}} planos/mês", {
+                    clients: tier.clients,
+                    plans: tier.plansPerMonth,
+                  })}
+                </p>
+                <ul className="mt-5 flex-1 space-y-3 text-sm">
+                  {features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                      <span className="text-foreground/85">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  asChild
+                  size="lg"
+                  variant={popular ? "default" : "outline"}
+                  className="mt-8 w-full"
+                >
+                  {isStudio ? (
+                    <a href="mailto:hello@forge.app?subject=Forge%20Studio">{ctaLabel}</a>
+                  ) : (
+                    <Link to={primaryCtaTo}>{ctaLabel}</Link>
+                  )}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-6 text-center text-[11px] text-muted-foreground">
+          {t("plan:landing.pricing.trial_note")}
+        </p>
       </section>
 
       {/* Founder note + inline roadmap chips */}
