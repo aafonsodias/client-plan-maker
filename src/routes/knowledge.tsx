@@ -275,6 +275,49 @@ function summarizeProgression(r: KnowledgeRules): string {
   return `Onda ${w} · auto-regulação ${a}`;
 }
 
+/* ---------- rationale envelopes for the summary chips ---------- */
+
+function volumeRationale(r: KnowledgeRules): Inference<string> {
+  const overrides = Object.keys(r.volume.landmarks ?? {}).length;
+  return overrides
+    ? {
+        value: "custom",
+        confidence: "manual",
+        source: "user",
+        reason_key: "wave_manual",
+      }
+    : {
+        value: "default",
+        confidence: "confident",
+        source: "default",
+        reason_key: "wave_default",
+      };
+}
+function intensityRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.intensity.intensity_volume_tradeoff_default,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "wave_from_pkl",
+  };
+}
+function recoveryRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.recovery.deload_frequency,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "deload_from_pkl",
+  };
+}
+function progressionRationale(r: KnowledgeRules): Inference<string> {
+  return {
+    value: r.progression.wave_model_default,
+    confidence: "confident",
+    source: "pkl",
+    reason_key: "wave_from_pkl",
+  };
+}
+
 function VolumeCard({ rules, setRules }: CardProps) {
   function update(m: MuscleGroup, key: "mev" | "mav" | "mrv", value: number) {
     const cur = rules.volume.landmarks[m] ?? VOLUME_LANDMARKS[m];
