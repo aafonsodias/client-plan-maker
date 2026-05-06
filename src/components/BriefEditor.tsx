@@ -59,6 +59,34 @@ export default function BriefEditor({
     );
   };
 
+  // R/Phase 4C — top-level computed inferences (no hooks; pure derivations).
+  // Extracted from JSX IIFEs so render paths stay flat and predictable on
+  // legacy plans where parts of the brief / programming_variables may be missing.
+  const tierInference = inferTier({
+    red_flags: brief.red_flags ?? [],
+    training_age_band: brief.training_age_band,
+    manual: null,
+  });
+  const splitSystem = inferSplit({
+    sessions_per_week: brief.sessions_per_week?.recommended ?? 0,
+    manual: null,
+  });
+  const splitMatches =
+    !!programmingVariables &&
+    programmingVariables.training_split === splitSystem.value;
+  const splitChipInf = splitMatches
+    ? splitSystem
+    : inferSplit({ manual: (programmingVariables?.training_split ?? null) as any });
+  const splitLabels: Record<string, string> = {
+    full_body: "Corpo inteiro",
+    upper_lower: "Superior / Inferior",
+    ppl: "Empurrar / Puxar / Pernas",
+    pplc: "Empurrar / Puxar / Pernas / Core",
+    ppl_x2: "Empurrar / Puxar / Pernas (×2/sem)",
+    body_part_split: "Divisão por grupo muscular",
+    custom: "Personalizada",
+  };
+
   return (
     <div className={`space-y-3 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
       <div
