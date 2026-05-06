@@ -1086,18 +1086,20 @@ type MockClient = {
 
 function CoachWorkbenchMockup() {
   const { t, i18n } = useTranslation("plan");
+  const pr = (k: string, fb: string) => t(`landing.mockups.protocol_rail.${k}`, { defaultValue: fb }) as string;
   // Region-aware roster: pick a probability-weighted name pool for the
   // viewer's locale so a Brazilian/Indian/Nigerian visitor doesn't see five
   // Portuguese strangers. See `src/lib/names/regional-names.ts`.
   const slots = useMemo(() => {
     const region = detectRegionFromLocale(i18n.language);
     const roster = generateRoster({ region, count: 5, seed: `landing::${region}` });
+    const cvdLow = t("landing.mockups.protocol_rail.cvd_low", { defaultValue: "Risco CV baixo" }) as string;
     const phases = [
-      { phase: { label: "Intake sent — awaiting client", cls: "bg-accent/10 text-accent/90 border border-accent/30" }, status: { text: "Avaliação por concluir", tone: "neutral" as const } },
-      { phase: { label: "Active · Block 1", cls: "bg-accent/90 text-accent-foreground" }, block: "Bloco 1 · Sem 1 · Calistenia", cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 63, tone: "warn" as const }, status: { text: "Último log ontem", tone: "ok" as const } },
-      { phase: { label: "Ready for plan", cls: "bg-accent text-accent-foreground" }, cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 81, tone: "ok" as const }, status: { text: "Plano pronto a enviar", tone: "ok" as const } },
-      { phase: { label: "Active · Block 2", cls: "bg-accent/90 text-accent-foreground" }, block: "Bloco 2 · Sem 3 · Hipertrofia", cvd: { label: "Risco CV baixo", tone: "ok" as const }, recovery: { pct: 74, tone: "ok" as const }, status: { text: "3 logs esta semana", tone: "ok" as const } },
-      { phase: { label: "Reassessment due", cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" }, block: "Bloco 1 · Sem 6", recovery: { pct: 58, tone: "warn" as const }, status: { text: "Reavaliação em atraso", tone: "warn" as const } },
+      { phase: { label: t("landing.mockups.protocol_rail.phase.intake", { defaultValue: "Intake enviado — a aguardar cliente" }) as string, cls: "bg-accent/10 text-accent/90 border border-accent/30" }, status: { text: t("landing.mockups.protocol_rail.status.assessment_pending", { defaultValue: "Avaliação por concluir" }) as string, tone: "neutral" as const } },
+      { phase: { label: t("landing.mockups.protocol_rail.phase.active_block", { defaultValue: "Ativo · Bloco {{n}}", n: 1 }) as string, cls: "bg-accent/90 text-accent-foreground" }, block: t("landing.mockups.protocol_rail.block_label", { defaultValue: "Bloco {{n}} · Sem {{w}} · {{focus}}", n: 1, w: 1, focus: t("landing.mockups.protocol_rail.focus.calisthenics", { defaultValue: "Calistenia" }) }) as string, cvd: { label: cvdLow, tone: "ok" as const }, recovery: { pct: 63, tone: "warn" as const }, status: { text: t("landing.mockups.protocol_rail.status.last_log_yesterday", { defaultValue: "Último log ontem" }) as string, tone: "ok" as const } },
+      { phase: { label: t("landing.mockups.protocol_rail.phase.ready_for_plan", { defaultValue: "Pronto para plano" }) as string, cls: "bg-accent text-accent-foreground" }, cvd: { label: cvdLow, tone: "ok" as const }, recovery: { pct: 81, tone: "ok" as const }, status: { text: t("landing.mockups.protocol_rail.status.plan_ready_to_send", { defaultValue: "Plano pronto a enviar" }) as string, tone: "ok" as const } },
+      { phase: { label: t("landing.mockups.protocol_rail.phase.active_block", { defaultValue: "Ativo · Bloco {{n}}", n: 2 }) as string, cls: "bg-accent/90 text-accent-foreground" }, block: t("landing.mockups.protocol_rail.block_label", { defaultValue: "Bloco {{n}} · Sem {{w}} · {{focus}}", n: 2, w: 3, focus: t("landing.mockups.protocol_rail.focus.hypertrophy", { defaultValue: "Hipertrofia" }) }) as string, cvd: { label: cvdLow, tone: "ok" as const }, recovery: { pct: 74, tone: "ok" as const }, status: { text: t("landing.mockups.protocol_rail.status.logs_this_week", { defaultValue: "{{n}} logs esta semana", n: 3 }) as string, tone: "ok" as const } },
+      { phase: { label: t("landing.mockups.protocol_rail.phase.reassessment_due", { defaultValue: "Reavaliação devida" }) as string, cls: "bg-amber-500/15 text-amber-300 border border-amber-500/30" }, block: t("landing.mockups.protocol_rail.block_label_short", { defaultValue: "Bloco {{n}} · Sem {{w}}", n: 1, w: 6 }) as string, recovery: { pct: 58, tone: "warn" as const }, status: { text: t("landing.mockups.protocol_rail.status.reassessment_overdue", { defaultValue: "Reavaliação em atraso" }) as string, tone: "warn" as const } },
     ];
     return roster.map((n, i) => ({
       name: n.full,
@@ -1127,7 +1129,7 @@ function CoachWorkbenchMockup() {
           {t("landing.mockups.workbench_title", { defaultValue: "Os meus clientes" })}
         </span>
         <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
-          12 ativos
+          {pr("active_count", "12 ativos")}
         </span>
       </div>
       <p className="mt-2 text-[10px] italic text-muted-foreground/70">
@@ -1169,7 +1171,7 @@ function CoachWorkbenchMockup() {
                   {c.recovery && (
                     <span className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${chipCls(c.recovery.tone)}`}>
                       <Activity className="h-2.5 w-2.5" />
-                      Recuperação {c.recovery.pct}%
+                      {pr("recovery_label", "Recuperação")} {c.recovery.pct}%
                     </span>
                   )}
                 </div>
@@ -1184,9 +1186,9 @@ function CoachWorkbenchMockup() {
         ))}
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-        <span>PROTOCOL</span>
+        <span>{pr("footer_label", "PROTOCOL")}</span>
         <span className="inline-flex items-center gap-1 normal-case tracking-normal text-accent">
-          <Sparkles className="h-3 w-3" /> Construído por um coach
+          <Sparkles className="h-3 w-3" /> {pr("footer_built_by_coach", "Construído por um coach")}
         </span>
       </div>
     </FloatCard>
