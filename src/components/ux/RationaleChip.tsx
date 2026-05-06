@@ -55,10 +55,10 @@ export default function RationaleChip<T>({
         <button
           type="button"
           aria-label={t("ux.rationale.aria")}
-          className="inline-flex min-h-[24px] items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+          className="inline-flex min-h-[24px] max-w-full items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
         >
           <span className={`h-1.5 w-1.5 rounded-full ${toneClass}`} aria-hidden />
-          {label ? <span>{label}</span> : null}
+          {label ? <span className="max-w-[160px] truncate">{label}</span> : null}
           <Info className="h-3 w-3" aria-hidden />
         </button>
       </PopoverTrigger>
