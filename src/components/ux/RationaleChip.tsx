@@ -47,7 +47,7 @@ export default function RationaleChip<T>({
         <button
           type="button"
           aria-label={t("ux.rationale.aria")}
-          className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground transition hover:text-foreground"
+          className="inline-flex min-h-[24px] items-center gap-1 rounded-full border border-border/60 bg-background/40 px-2 py-1 text-[10px] font-medium text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/40"
         >
           <span className={`h-1.5 w-1.5 rounded-full ${toneClass}`} aria-hidden />
           {label ? <span>{label}</span> : null}
