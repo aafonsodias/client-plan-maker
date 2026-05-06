@@ -11,6 +11,11 @@ import IntensityCockpit from "@/components/plan/IntensityCockpit";
 import RationaleChip from "@/components/ux/RationaleChip";
 import { inferTier, inferSplit } from "@/lib/auto-infer";
 import { useTranslation } from "react-i18next";
+import {
+  getStoredInterfaceMode,
+  setStoredInterfaceMode,
+  type InterfaceMode,
+} from "@/lib/interface-mode";
 
 export default function BriefEditor({
   brief,
@@ -30,7 +35,14 @@ export default function BriefEditor({
   onAccommodationsChange?: (a: RedFlagAccommodation[]) => void;
 }) {
   const { t } = useTranslation("common");
-  const [mode, setMode] = useState<"quick" | "lab">("quick");
+  const [mode, setModeState] = useState<InterfaceMode>("quick");
+  useEffect(() => {
+    setModeState(getStoredInterfaceMode());
+  }, []);
+  const setMode = (next: InterfaceMode) => {
+    setStoredInterfaceMode(next);
+    setModeState(next);
+  };
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => onChange({ ...brief, [k]: v });
   const setPv = <K extends keyof ProgrammingVariables>(
     k: K,
@@ -76,6 +88,9 @@ export default function BriefEditor({
         </div>
         <p className="mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
           {t(mode === "quick" ? "ux.mode.quick_description" : "ux.mode.lab_description")}
+        </p>
+        <p className="mt-1 px-1 text-[10px] leading-snug text-muted-foreground/80">
+          {t("ux.mode.saved_locally")}
         </p>
       </div>
 
