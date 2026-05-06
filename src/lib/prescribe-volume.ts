@@ -85,6 +85,13 @@ type PrescribeOpts = {
   isDeload?: boolean;
   blockNumber?: number;
   priorSummary?: BlockSummary | null;
+  /**
+   * R73 — Programmable Knowledge Layer override. When the caller has resolved
+   * a trainer's effective landmarks (system defaults merged with PKL volume
+   * overrides), pass the full per-muscle map here. Falls back to the system
+   * VOLUME_LANDMARKS when omitted so legacy callers keep working.
+   */
+  landmarks?: Record<MuscleGroup, VolumeLandmark>;
 };
 
 function verdictFor(opts: PrescribeOpts, muscle: MuscleGroup): MuscleVerdict {
@@ -98,8 +105,9 @@ export function prescribeWeek(
   opts: PrescribeOpts = {},
 ): WeekPrescription {
   const isDeload = opts.isDeload ?? week === totalWeeks;
+  const lmMap = opts.landmarks ?? VOLUME_LANDMARKS;
   const rows: PrescriptionRow[] = MUSCLE_GROUP_ORDER.map((muscle) => {
-    const lm = VOLUME_LANDMARKS[muscle];
+    const lm = lmMap[muscle] ?? VOLUME_LANDMARKS[muscle];
     const t = targetForWeek(lm, week, totalWeeks, isDeload, verdictFor(opts, muscle));
     return { muscle, ...t, landmark: lm };
   });
