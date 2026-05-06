@@ -274,7 +274,7 @@ export default function BriefEditor({
       <Card title="Segurança e equipamento" conclusion={buildSafetyConclusion(brief)}>
         <Field label="Sinais de alerta (um por linha)">
           <AutoTextarea
-            value={brief.red_flags.join("\n")}
+            value={(brief.red_flags ?? []).join("\n")}
             onChange={(e) =>
               set(
                 "red_flags",
