@@ -839,7 +839,8 @@
       "lab_mode": "Modo laboratório",
       "quick_description": "O sistema recomenda defaults seguros com base nos dados atuais.",
       "lab_description": "Mostra mais controlos, rationale e opções de sobreposição.",
-      "aria_label": "Modo de configuração"
+      "aria_label": "Modo de configuração",
+      "saved_locally": "Preferência guardada neste dispositivo."
     }
   }
 }
