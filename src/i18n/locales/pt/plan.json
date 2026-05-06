@@ -280,7 +280,55 @@
       ],
       "pro_cta": "Continuar após o trial",
       "nav_link": "Preço",
-      "trial_note": "Sem renovação automática silenciosa: avisamos antes de cobrar."
+      "trial_note": "Sem renovação automática silenciosa: avisamos antes de cobrar.",
+      "subtitle": "1 cliente = 1 plano completo grátis. Sem cartão.",
+      "popular_badge": "Mais popular",
+      "per_month": "mês",
+      "per_year": "ano",
+      "monthly_eq": "≈ €{{price}}/mês",
+      "quota": "{{clients}} clientes · {{plans}} planos/mês",
+      "beta_strip_title": "Beta privado",
+      "beta_strip_body": "1 cliente · 1 plano completo grátis · sem cartão.",
+      "toggle": {
+        "monthly": "Mensal",
+        "annual": "Anual",
+        "save_badge": "−{{pct}}% · 2 meses grátis",
+        "aria": "Período de pagamento"
+      },
+      "tiers": {
+        "starter": {
+          "tagline": "Para quem está a começar a digitalizar.",
+          "cta": "Começar grátis",
+          "features": [
+            "8 clientes activos",
+            "8 planos completos por mês",
+            "Logbook + insights da IA",
+            "PDFs com a sua marca"
+          ]
+        },
+        "pro": {
+          "tagline": "Para PTs a tempo inteiro.",
+          "cta": "Começar grátis",
+          "features": [
+            "25 clientes activos",
+            "30 planos completos por mês",
+            "Tudo do Starter",
+            "Partilha pública do plano",
+            "Resumo semanal por email"
+          ]
+        },
+        "studio": {
+          "tagline": "Estúdios e equipas pequenas.",
+          "cta": "Falar com o autor",
+          "features": [
+            "60 clientes activos",
+            "80 planos completos por mês",
+            "Tudo do Pro",
+            "Lugares para colaboradores",
+            "Suporte prioritário"
+          ]
+        }
+      }
     },
     "footer": {
       "tagline": "Para quem treina alguém — e para quem treina sozinho. Substância antes de aparências.",
