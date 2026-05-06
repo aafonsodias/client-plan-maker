@@ -410,3 +410,15 @@ Atualizado: Round 28 (4 Mai 2026)
 - ✅ Pipeline (`src/server/quick-plan.server.ts`): client → assessment (form criteria optimistas, capacity null, screen_not_assessed=true) → pre-stage analyses em batches de 4 → `runDemoPlay` (5 stages) → done.
 - ✅ Honestidade: assessment marcado em `extended.quick_plan` com inputs originais; `notes` do cliente avisa "Plano rápido — sem intake clínico". Quota conta normal (1/1 free).
 - ⏳ Próximos passos: CTAs no dashboard + landing hero (deixei fora desta ronda — rota acessível por URL e não quis tocar dashboard 554-LOC à pressa).
+
+## Round 70.1 — Quick-plan CTAs (5 Mai 2026)
+- ✅ CoachCockpit: botão âmbar "Plano rápido" → `/plans/quick` ao lado de "Abrir agenda".
+- ✅ Landing hero: CTA "Experimente em 5 cliques" (visível só para signed-in para não confundir signup primário).
+
+## Round 71 — Pricing toggle anual + tier Studio (5 Mai 2026)
+- ✅ R62 #2 (P1): nova source-of-truth `src/lib/pricing-tiers.ts` (Starter €19/€190 · Pro €45/€450 · Studio €119/€1190 — espelha `billing.tsx`). `priceFor` + `monthlyEquivalent` helpers.
+- ✅ `<PricingToggle/>` segmented Mensal/Anual com chip "−17% · 2 meses grátis" no lado anual (acessível, `role=radiogroup`).
+- ✅ Landing pricing reescrito: 3 cards (md:grid-cols-3) com "Mais popular" no Pro, quota inline ("8 clientes · 8 planos/mês"), beta como faixa fina acima (não compete com tiers pagos).
+- ✅ Studio CTA = mailto até Stripe estar wired para tier — sem chip "Em breve" (enfraquece a venda), só o canal honesto.
+- ✅ i18n PT+EN: novo bloco `landing.pricing.{subtitle, popular_badge, per_month, per_year, monthly_eq, quota, beta_strip_*, toggle.*, tiers.{starter,pro,studio}.{tagline,cta,features}}`. Chaves antigas mantidas (não quebram billing.tsx).
+- ⏭ R72 next: Stripe price IDs anual + storyboards 5 vídeos curtos + funnel analytics (R62 #3/#4).
