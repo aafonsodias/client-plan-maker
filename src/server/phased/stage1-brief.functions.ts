@@ -13,6 +13,7 @@ import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.serve
 import { checkPlanQuota } from "@/server/quota.server";
 import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
 import type { TrainingModality } from "./schemas";
+import { resolveRules } from "@/server/knowledge/resolve.server";
 
 /**
  * R72.2 — Infer training modalities from any free text the brief may carry
@@ -287,6 +288,22 @@ Output ONLY by calling the record_brief tool.`;
       })
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
+
+    // R73 — stamp the active knowledge profile so the plan is reproducible.
+    try {
+      const { profileId, version } = await resolveRules(supabase, userId);
+      if (profileId) {
+        await supabase
+          .from("workout_plans")
+          .update({
+            knowledge_profile_id: profileId,
+            knowledge_profile_version: version,
+          } as any)
+          .eq("id", data.planId);
+      }
+    } catch {
+      // Non-fatal — plan generation works without a stamped profile.
+    }
 
     return { ok: true as const, brief: withModalities };
   });
