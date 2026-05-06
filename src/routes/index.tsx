@@ -1197,23 +1197,22 @@ function CoachWorkbenchMockup() {
 
 // ─── Solo trainee mockup (variant 3: AI-guided autonomy) ──────────────
 function SoloTrainerMockup() {
-  const today = [
-    { name: "Goblet Squat", target: "4×8 @ RPE 7", tip: "Peso sugerido: 22kg" },
-    { name: "DB Bench Press", target: "4×8 @ RPE 7", tip: "Sugestão: +2kg vs última" },
-    { name: "Single-Leg RDL", target: "3×10/lado", tip: "Foco: cadência 3-1-1" },
-    { name: "Chin-up assistido", target: "3×6 @ RPE 8", tip: "Reduz assistência: -5kg" },
-    { name: "Face Pull", target: "3×12 @ RPE 6", tip: "Pausa 1s no pico" },
-    { name: "Plank", target: "3×45s", tip: "+5s vs semana passada" },
-  ];
-  const week = [
-    { d: "Seg", done: true },
-    { d: "Ter", done: true },
-    { d: "Qua", done: false, today: true },
-    { d: "Qui", done: false },
-    { d: "Sex", done: false },
-    { d: "Sáb", done: false },
-    { d: "Dom", done: false },
-  ];
+  const { t } = useTranslation("plan");
+  const s = (k: string, fb: string, opts?: Record<string, unknown>) =>
+    t(`landing.mockups.solo.${k}`, { defaultValue: fb, ...(opts || {}) }) as string;
+  const exKeys = ["goblet_squat", "db_bench", "sl_rdl", "chinup_assist", "face_pull", "plank"] as const;
+  const today = exKeys.map((k) => ({
+    name: s(`exercises.${k}.name`, k),
+    target: s(`exercises.${k}.target`, ""),
+    tip: s(`exercises.${k}.tip`, ""),
+  }));
+  const dayKeys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+  const dayDone = [true, true, false, false, false, false, false];
+  const week = dayKeys.map((dk, i) => ({
+    d: s(`days.${dk}`, dk),
+    done: dayDone[i] && i !== 2,
+    today: i === 2,
+  }));
   return (
     <FloatCard>
       <div
@@ -1223,10 +1222,10 @@ function SoloTrainerMockup() {
       <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
         <span className="inline-flex items-center gap-2">
           <CalendarDays className="h-3.5 w-3.5 text-accent" />
-          Treino de hoje · Wk 2
+          {s("header", "Treino de hoje · Sem 2")}
         </span>
         <span className="rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[10px] tracking-widest text-accent">
-          Copiloto IA · tu decides
+          {s("copilot_chip", "Copiloto IA · você decide")}
         </span>
       </div>
       {/* Week strip */}
@@ -1247,7 +1246,7 @@ function SoloTrainerMockup() {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-base font-medium">Lower body · ~52 min</p>
+      <p className="mt-3 text-base font-medium">{s("session_title", "Inferiores · ~52 min")}</p>
       <ul className="mt-3 space-y-2">
         {today.map((e, i) => (
           <li key={e.name} className="rounded-xl border border-border/60 bg-background/40 p-3">
@@ -1263,9 +1262,9 @@ function SoloTrainerMockup() {
       </ul>
       <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-[11px] text-emerald-300">
         <span className="inline-flex items-center gap-1.5 font-semibold">
-          <TrendingUp className="h-3 w-3" /> Próximo bloco
+          <TrendingUp className="h-3 w-3" /> {s("next_block_title", "Próximo bloco")}
         </span>
-        <p className="mt-1 text-emerald-200/80">A IA prepara o próximo bloco com base no que registas esta semana.</p>
+        <p className="mt-1 text-emerald-200/80">{s("next_block_body", "A IA prepara o próximo bloco com base no que regista esta semana.")}</p>
       </div>
     </FloatCard>
   );
