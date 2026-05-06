@@ -30,6 +30,7 @@ export default function BriefEditor({
   onAccommodationsChange?: (a: RedFlagAccommodation[]) => void;
 }) {
   const { t } = useTranslation("common");
+  const [mode, setMode] = useState<"quick" | "lab">("quick");
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => onChange({ ...brief, [k]: v });
   const setPv = <K extends keyof ProgrammingVariables>(
     k: K,
@@ -48,6 +49,37 @@ export default function BriefEditor({
 
   return (
     <div className={`space-y-3 ${disabled ? "pointer-events-none opacity-70" : ""}`}>
+      <div
+        role="tablist"
+        aria-label={t("ux.mode.aria_label")}
+        className="rounded-2xl border border-border bg-card p-2 shadow-sm"
+      >
+        <div className="grid grid-cols-2 gap-1">
+          {(["quick", "lab"] as const).map((m) => {
+            const active = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-pressed={active}
+                onClick={() => setMode(m)}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                  active
+                    ? "border border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                    : "border border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t(m === "quick" ? "ux.mode.quick_path" : "ux.mode.lab_mode")}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
+          {t(mode === "quick" ? "ux.mode.quick_description" : "ux.mode.lab_description")}
+        </p>
+      </div>
+
       <Card
         title="Objetivo"
         conclusion={buildObjectiveConclusion(brief)}
@@ -102,10 +134,11 @@ export default function BriefEditor({
               training_age_band: brief.training_age_band,
               manual: null,
             });
+            if (mode === "quick" && tierInf.confidence !== "assumed") return null;
             return (
               <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span>{t("ux.rationale.labels.inferred")}:</span>
-                <RationaleChip inference={tierInf} label={tierInf.value} />
+                <RationaleChip inference={tierInf} label={tierInf.value} mode={mode} />
               </div>
             );
           })()}
@@ -269,6 +302,7 @@ export default function BriefEditor({
           onChange={onProgrammingChange}
           disabled={disabled}
           primaryGoal={brief.primary_goal}
+          mode={mode}
         />
       )}
 
@@ -307,11 +341,15 @@ export default function BriefEditor({
                   body_part_split: "Divisão por grupo muscular",
                   custom: "Personalizada",
                 };
+                // Quick Path: only show the nudge row when the user diverges
+                // from the recommendation. Stay silent otherwise.
+                if (mode === "quick" && matches) return null;
                 return (
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                     <RationaleChip
                       inference={chipInf}
                       label={matches ? t("ux.rationale.labels.inferred") : t("ux.rationale.labels.manually_overridden")}
+                      mode={mode}
                     />
                     {!matches ? (
                       <>

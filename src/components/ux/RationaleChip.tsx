@@ -16,13 +16,21 @@ import type { Inference } from "@/lib/auto-infer";
 export default function RationaleChip<T>({
   inference,
   label,
+  mode = "lab",
 }: {
   inference: Inference<T> | null | undefined;
   /** Optional short label rendered before the icon (e.g. "Auto"). */
   label?: string;
+  /**
+   * Density mode. In "quick" mode, low-signal chips (confident/manual) are
+   * suppressed so the user only sees explanations for non-obvious assumptions.
+   * Defaults to "lab" to preserve existing call sites.
+   */
+  mode?: "quick" | "lab";
 }) {
   const { t } = useTranslation("common");
   if (!inference) return null;
+  if (mode === "quick" && inference.confidence !== "assumed") return null;
 
   const toneClass =
     inference.confidence === "confident"
