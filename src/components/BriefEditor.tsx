@@ -251,6 +251,7 @@ export default function BriefEditor({
           value={programmingVariables}
           onChange={onProgrammingChange}
           disabled={disabled}
+          primaryGoal={brief.primary_goal}
         />
       )}
 
