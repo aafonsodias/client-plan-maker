@@ -1,156 +1,132 @@
+# R72.2 — Motor multi-modalidade (gym + running + climbing + skill + mobility)
 
-# R72 — Mockups bilingues, motor multi-modalidade, Hub de Conhecimento
-
-Pediu três coisas distintas. Vou tratá-las como **três sub-rondas** (R72.1, R72.2, R72.3) para cada uma poder fechar isolada e ser revertida sem afundar as outras. Foco PT (a app é PT-only no marketing, mas a UI tem EN/PT/ES/HI).
-
----
-
-## R72.1 — i18n sweep nos mockups da landing (≤ 1h, P0)
-
-**Problema observado:** Em mobile, a landing em PT mostra exercícios e copy hardcoded em PT que ficam em PT mesmo quando o utilizador troca para EN — e vice-versa. Mockups afetados:
-
-- `src/routes/index.tsx` `SoloTrainerMockup` (linhas 1196-1265): "Goblet Squat", "DB Bench Press", "Single-Leg RDL", "Chin-up assistido", "Face Pull", "Plank", "Treino de hoje", "Copiloto IA · tu decides", "Lower body · ~52 min", dias da semana "Seg/Ter/Qua…".
-- `src/routes/index.tsx` `ProtocolRail`/restantes mockups: "Construído por um coach", labels hardcoded.
-- `src/components/landing/WorkbenchMockup.tsx`: "Cliente queixa-se de dor lombar", "Substituir Back Squat por Goblet Squat", "Sugestão estruturada", "ao vivo", side-rail rows ("Objectivo/Equipamento/Última RPE/…").
-
-**Plano:**
-1. Mover todas as strings desses mockups para `src/i18n/locales/{pt,en}/plan.json` debaixo de `landing.mockups.*` (já existe namespace `landing.*`).
-2. Os nomes de exercício ficam **na mesma língua da UI** — o "Goblet Squat" em EN e "Agachamento goblet" em PT (decisão: traduzir nomes nos mockups, porque são decorativos; **não** traduzir nomes em planos reais).
-3. Substituir literais por `t("landing.mockups.solo.exercises.goblet_squat.name")` etc.
-4. ES e HI fallback automático para EN (já é a política existente).
-5. Smoke 375px Mobile Safari PT→EN→PT em todos os 3 mockups.
-
-**Sai:** Tradução das partes funcionais da app (já estão cobertas em rondas anteriores). Só toco em landing.
+Vou implementar o motor multi-modalidade que estava previsto no plano R72. O R72.1 (i18n sweep) já fechou; agora ataco o coração: o pipeline phased só sabe gerar treino de ginásio. Este round abre-o para corrida, escalada, calistenia, skill e mobilidade — e adiciona o gate "Aprovar microciclo" antes das progressões.
 
 ---
 
-## R72.2 — Motor multi-modalidade (P0, ~3-4h)
+## 1. Schema (`src/server/phased/schemas.ts`)
 
-**Problema:** Hoje o motor só faz programas de ginásio (resistance + warm-up + cardio acessório). Quando o utilizador pede "5K sub-30min" ou "boulder 6B", o Stage 3 produz lixo porque o blueprint só sabe arquetípos `strength_focus / hypertrophy_focus / mixed_session`.
+Adicionar ao `BriefSchema`:
 
-**Decisão de arquitectura:** introduzir **`training_modality`** no `Brief` como **lista**, não single-select. Um plano pode misturar `gym` + `running`. ACSM 12e §6 (cardiorespiratory) e Bompa 6e §11 (energy systems) cobrem-no.
-
-```text
-Brief.training_modalities: ["gym","running","climbing","calisthenics","sport_skill","mobility"]
-                                      ↓
-Stage 1.5 — Modality blueprint                 (novo: scaffolds Stage 2)
-Stage 2 — Mesocycle blueprint                  (atual: agora gera arquetípos por modalidade)
-Stage 3 — Microcycle                           (atual: prompt expandido por modalidade)
-Stage 3.5 — Microcycle review/edit (NOVO)      (microciclo aprovado antes de progressões)
-Stage 4 — Progressions (atual, intacto)
+```ts
+training_modalities: z.array(z.enum([
+  "gym","running","climbing","calisthenics","mobility","sport_skill"
+])).default(["gym"]),
+modality_targets: z.object({
+  running: z.object({ distance_km: z.number().optional(), target_time_min: z.number().optional() }).optional(),
+  climbing: z.object({ grade: z.string().optional(), style: z.enum(["boulder","sport","trad"]).optional() }).optional(),
+  sport_skill: z.object({ sport: z.string().optional() }).optional(),
+}).partial().optional(),
 ```
 
-**Mudanças concretas:**
+Compat retroactivo: brief sem `training_modalities` → `["gym"]`.
 
-1. **Schema** (`src/server/phased/schemas.ts`):
-   - `BriefSchema.training_modalities`: array de enum `["gym","running","climbing","calisthenics","mobility","sport_skill"]`, default `["gym"]` (compat retroactivo).
-   - `BriefSchema.modality_targets`: opcional, ex.: `{ running: { distance_km: 5, target_time_min: 30 }, climbing: { grade: "6B", style: "boulder" } }`.
+Adicionar a `SectionItemZ` campos opcionais:
+- `intervals?: { distance?: string; pace?: string; duration?: string; rest?: string }[]` — para corrida.
+- `climb_blocks?: { grade: string; attempts: number; rest_min?: number }[]` — para escalada.
+- `prep_inhibition?: boolean` — flag para SMR/rolo na fase de inibição.
 
-2. **Pre-Stage 0** (`section-map.ts` + `pre-stage.functions.ts`): inferir modalidade a partir de `client_overview.goal_text` ("correr 5K", "trepar 6B", "handstand") com regex + heurística simples antes de chamar o LLM, e o LLM confirma/expande.
+## 2. Pre-Stage 0 (`src/server/phased/pre-stage.functions.ts`)
 
-3. **Stage 2 blueprint** (`stage2-blueprint.functions.ts`): adicionar arquetípos por modalidade. Hoje só tem `strength_focus`, `hypertrophy_focus`, `mixed_session`. Novos: `aerobic_base`, `interval_session` (Z2 vs VO₂max), `tempo_run`, `climb_project`, `climb_endurance`, `skill_practice`, `mobility_flow`. O `week_to_session_map` mistura modalidades (ex.: 3× gym + 2× run).
+Antes do LLM, regex/heurística no `client_overview.goal_text`:
+- /5 ?k|10 ?k|maratona|corrida|trail|run/i → adiciona `running`
+- /boulder|via|escalad|climb|6[abc]|7[abc]/i → adiciona `climbing`
+- /handstand|calisten|street workout|barra/i → adiciona `calisthenics`
+- /mobilidade|flexib|yoga/i → adiciona `mobility`
+- /futebol|ténis|surf|handball|basquete/i → adiciona `sport_skill`
 
-4. **Stage 3 microcycle** (`stage3-microcycle.functions.ts`):
-   - Schema de exercício já tem `cardio: SectionItemZ[]`; usar para sessões de corrida com **estrutura de intervalos** (warmup easy → main set → cooldown).
-   - Prompt: para `running`, gerar `intervals` em vez de `sets/reps` (ex.: "5×800m @ 4:00/km, 90s rest"). Para `climbing`, gerar `boulder_problems` ou `route_pyramids` com grade e tentativas.
-   - Adicionar `SectionItemZ` extra `prep_inhibition` (rolo/SMR) para a fase **inibição** que pediu (Cap. NSCA).
+Sempre mantém `gym` se já lá estava ou se nada bater (default seguro). LLM depois confirma/expande no Stage 1.
 
-5. **Stage 3.5 — Aprovar microciclo (NOVO)**: rota `plans.$planId.microcycle.tsx` já existe; adicionar **botão "Aprovar microciclo"** que carimba `generation_state.approved_stages += "microcycle"`. Stage 4 (progressões) só corre depois desse carimbo. Drag-and-drop de exercícios + edição inline já existe (`MicrocyclePanel`/`DayCardEditable`); falta o gate.
+## 3. Training zones lib (NOVO `src/lib/training-zones.ts`, ~120 LOC)
 
-6. **Pacing / intervalos científicos** — `src/lib/training-zones.ts` (NOVO ~120 LOC):
-   - `runZones(restingHR, maxHR, vdot?)` → Z1-Z5 (HR + pace via Jack Daniels VDOT se 5K time conhecido).
-   - `strengthRanges()` → strength 85-100% 1-5 reps, hypertrophy 67-85% 6-12, endurance ≤67% ≥13 (ACSM 12e Tbl 5.7).
-   - `powerRanges()` → 30-60% 1-5 reps, rest ≥3min (NSCA 3e Cap. 17).
-   - Stage 3 prompt importa estes ranges como verdade prescritiva.
-
-7. **Stage 3 prompt — modalidades**: adicionar secções no prompt — "For `running` sessions, output items in `cardio[]` with `name = 'Z2 base run'` e `duration = '40min @ Z2 (HR 130-145)'`. For `climbing`, output 3 blocks: warmup boulders V0-V2, project attempts at limit grade, endurance circuits."
-
-**Output:** O mesmo cliente que pediu 5K sub-30 + boulder 6B passa a receber 5 sessões/sem: Ter/Qui run (intervals + Z2), Sáb climb session, Seg/Sex gym (strength compounds + grip + antagonist work).
-
----
-
-## R72.3 — Hub de Conhecimento (Manual de Prescrição + Estudos + Calculadoras) (P0, ~2-3h)
-
-**Onde vive:** já tens `/manual` com 6 secções (start/intake/plan/logs/feedback/billing). Vou adicionar uma 7ª aba **"Conhecimento"** dentro de `/manual` em vez de criar rota nova — mantém um único hub de aprendizagem.
-
-**Estrutura proposta:**
-
-```text
-/manual
- ├─ Tutorial (atual)
- ├─ FAQ (atual)
- ├─ Contacto (atual)
- └─ Conhecimento (NOVO) ─┬─ Manual de Prescrição (denso, golden, < 4000 palavras)
-                        ├─ Calculadoras (1RM, VDOT, FFMI, BMR, target HR zones)
-                        └─ Estudos (feed StudiesFeed que já existe)
+```ts
+export function runZones(restingHR: number, maxHR: number, vdot?: number): Zone[]
+export function strengthRanges(): { strength, hypertrophy, endurance, power }
+export function vdotPaces(fiveKtimeMin: number): { easy, marathon, threshold, interval, repetition }
 ```
 
-### Manual de Prescrição
+Constantes ACSM 12e Tbl 5.7 + Jack Daniels VDOT (paráfrase). Sem cópia verbatim.
 
-Documento markdown denso em `src/content/prescription-manual.{pt,en}.md` (parsed em build via `import.meta.glob` ou raw-loader). Estrutura **fixa** que cobre tudo o que precisas decidir:
+## 4. Stage 2 blueprint (`src/server/phased/stage2-blueprint.functions.ts`)
 
-1. **Screening** (ACSM 12e Cap. 2-3): PAR-Q+, 9 sinais cardinais, factores risco CVD, tier (advanced/conservative/remedial).
-2. **FITT-VP** (ACSM 12e Cap. 5): F/I/T/T/V/P por modalidade.
-3. **Variáveis de treino** (NSCA 3e Cap. 14): séries, reps, intensidade %1RM, descanso, tempo, ROM, frequência.
-4. **Continuum força** (NSCA Tbl 17.2): força máx / força-velocidade / potência / hipertrofia / resistência — % 1RM, reps, descanso, RPE.
-5. **Periodização** (Bompa 6e §6-7): linear, ondulatório, bloco, conjugado — quando usar cada.
-6. **Habilidades biomotoras** (Bompa 6e §3): força, velocidade, resistência, coordenação, flexibilidade — interferência e ordem.
-7. **Cardio** (ACSM 12e §6): Z1-Z5 HR/RPE/pace, VO₂max protocols, prescrição por objectivo.
-8. **Populações especiais** (ACSM 12e Cap. 7-10): índice rápido para idosos/grávidas/HTA/T2D/LBP — links para as overlays do R3 quando existirem.
-9. **Red flags & quando parar**: BP test stop ≥250/115, sintomas cardinais, plateau RPE.
+Adicionar arquetípos por modalidade ao prompt + ao schema de saída:
+- `aerobic_base` (Z2 long run)
+- `interval_session` (VO₂max ou threshold)
+- `tempo_run`
+- `climb_project` (limit boulders/routes)
+- `climb_endurance` (4×4, ARC)
+- `skill_practice` (genérico, ex.: handstand drills)
+- `mobility_flow`
 
-**IP rule:** zero cópia verbatim dos livros. Tudo paráfrase + citação `ACSM 12e §X.Y` etc., respeitando `mem://acsm-12e-source.txt`.
+`week_to_session_map` passa a aceitar mistura. Ex.: cliente "5K + boulder" com 5 sess/sem → `[strength_focus, interval_session, climb_project, aerobic_base, mixed_session]`.
 
-### Calculadoras (componentes reutilizáveis)
+## 5. Stage 3 microcycle (`src/server/phased/stage3-microcycle.functions.ts`)
 
-Já existe `OneRepMaxCalculator.tsx`. Adicionar:
-- `VdotCalculator.tsx` — input 5K time → tabela paces Z1-Z5.
-- `TargetHrCalculator.tsx` — Karvonen (HRR%).
-- `BmrTdeeCalculator.tsx` — Mifflin-St Jeor.
+Expandir o prompt com secção condicional por modalidade:
 
-Cada calculadora num `<Card>` colapsável dentro da aba Conhecimento.
+> For `running` sessions: emit items in `cardio[]` with `intervals[]` for interval/tempo, or `duration` for Z2 base. Use VDOT paces if `modality_targets.running.target_time_min` is set; else use HR zones (Karvonen).
+>
+> For `climbing` sessions: emit `climb_blocks[]` with grade ladder (warmup V0-V2 → project at limit → endurance circuits). Honor `modality_targets.climbing.grade`.
+>
+> For `sport_skill` and `calisthenics`: emit `resistance_main[]` + `accessories[]` with skill drills (e.g., handstand against wall 5×30s).
+>
+> All resistance work continues to honor strengthRanges() per programming tier.
 
-### Estudos
+Adicionar fase `prep_inhibition` (rolo/SMR 5min) antes do warmup quando `programming_variables.include_smr === true` ou cliente tem red flag músculo-esquelético.
 
-`src/components/StudiesFeed.tsx` já existe. Confirmar que tem (i) lista de papers, (ii) clique abre detalhe com summary + "porque importa" + link DOI, (iii) tag por tópico (hipertrofia, cardio, recovery). Se faltar, completar.
+## 6. Stage 3.5 — Aprovar microciclo (gate)
 
----
+`src/routes/plans.$planId.microcycle.tsx`:
+- Adicionar botão "Aprovar microciclo" (PT) / "Approve microcycle" (EN) no header da página.
+- Server fn nova `approveMicrocycle({ planId })` em `src/server/phased/microcycle-edit.functions.ts` que:
+  - Verifica owner.
+  - Faz `update workout_plans set generation_state = jsonb_set(generation_state, '{approved_stages}', generation_state->'approved_stages' || '"microcycle"'::jsonb)`.
+  - Devolve novo state.
+- Stage 4 (`stage4-progressions.functions.ts`) já lê `generation_state.approved_stages`; adicionar guard: se não inclui `"microcycle"`, throw `MICROCYCLE_NOT_APPROVED`.
+- UI Stage 4 em `plans.$planId.progressions.tsx` mostra estado bloqueado + CTA "Aprovar microciclo primeiro" → link para microcycle.
 
-## Ficheiros tocados (resumo)
+## 7. i18n
 
-| Ronda | Ficheiro | Acção |
-|---|---|---|
-| R72.1 | `src/routes/index.tsx` | Substituir literais por `t()` em SoloTrainerMockup, ProtocolRail |
-| R72.1 | `src/components/landing/WorkbenchMockup.tsx` | i18n sweep |
-| R72.1 | `src/components/landing/LogbookInsightsMockup.tsx` | já está OK, verificar fallbacks EN |
-| R72.1 | `src/i18n/locales/pt/plan.json`, `en/plan.json` | Adicionar `landing.mockups.*` |
-| R72.2 | `src/server/phased/schemas.ts` | `training_modalities`, `modality_targets` |
-| R72.2 | `src/server/phased/pre-stage.functions.ts` | Inferir modalidade do goal_text |
-| R72.2 | `src/server/phased/stage2-blueprint.functions.ts` | Arquetípos por modalidade |
-| R72.2 | `src/server/phased/stage3-microcycle.functions.ts` | Prompt + intervals + climbing |
-| R72.2 | `src/lib/training-zones.ts` | NOVO — VDOT, HR zones, strength ranges |
-| R72.2 | `src/routes/plans.$planId.microcycle.tsx` | Gate "Aprovar microciclo" |
-| R72.3 | `src/routes/manual.tsx` | Nova aba "Conhecimento" |
-| R72.3 | `src/content/prescription-manual.pt.md`, `.en.md` | NOVO — manual denso |
-| R72.3 | `src/components/calculators/{Vdot,TargetHr,BmrTdee}Calculator.tsx` | NOVO |
-| R72.3 | `src/components/StudiesFeed.tsx` | Confirmar/completar |
-| Doc | `.lovable/backlog.md` | Marcar R72.1/2/3 + abrir R73 (special-population overlays sobre o motor multi-modalidade) |
-| Memory | `mem://features/multi-modality.md` | NOVO — regra: `training_modalities` é lista, motor tem que respeitar; Stage 3.5 microcycle approval é gate obrigatório |
+Novas chaves em `pt/plan.json` + `en/plan.json`:
+- `microcycle.approve_button`, `microcycle.approved_chip`, `microcycle.approve_hint`
+- `progressions.locked_title`, `progressions.locked_cta`
+- `brief.modalities.{gym,running,climbing,calisthenics,mobility,sport_skill}`
 
----
+## 8. Backlog + memory
 
-## O que **não** faço nesta ronda (parked para R73+)
-
-- **Bouldering grading inteligente por sistema** (V-scale vs Fontainebleau): por agora aceito ambos como string, sem conversor.
-- **Pacing por VDOT calibrado individualmente**: a calculadora existe; o motor usa VDOT só se o brief o tiver, senão Z2 = "easy conversational".
-- **Special-population overlays (R73)**: gravidez, idosos, HTA, T2D — depende deste motor multi-modalidade existir.
-- **AI conversacional sobre o manual** (RAG): o manual é estático nesta ronda. RAG fica P3 futuro.
-- **Sport-specific templates** (handball, ténis, etc.): o `sport_skill` é genérico; templates por modalidade ficam P2.
+- `.lovable/backlog.md`: marcar R72.2 done; abrir R73 (special-population overlays sobre o motor multi-modalidade).
+- `mem://features/multi-modality.md` (NOVO): regra que `training_modalities` é lista, motor respeita por modalidade, Stage 3.5 é gate obrigatório, VDOT/HR zones vivem em `training-zones.ts`.
+- Update `mem://index.md`.
 
 ---
 
-## Pergunta antes de avançar
+## Ficheiros tocados
 
-**Quer que eu execute as 3 sub-rondas seguidas no mesmo turno**, ou prefere que pare entre cada (R72.1 → revê → R72.2 → revê → R72.3)?
+| Ficheiro | Acção |
+|---|---|
+| `src/server/phased/schemas.ts` | +`training_modalities`, `modality_targets`, intervals, climb_blocks |
+| `src/server/phased/pre-stage.functions.ts` | inferir modalidade do goal_text |
+| `src/server/phased/stage2-blueprint.functions.ts` | arquetípos por modalidade no prompt |
+| `src/server/phased/stage3-microcycle.functions.ts` | prompt expandido + intervals/climbing |
+| `src/server/phased/stage4-progressions.functions.ts` | guard `MICROCYCLE_NOT_APPROVED` |
+| `src/server/phased/microcycle-edit.functions.ts` | +`approveMicrocycle` server fn |
+| `src/lib/training-zones.ts` | NOVO — VDOT, HR zones, strength ranges |
+| `src/routes/plans.$planId.microcycle.tsx` | botão "Aprovar microciclo" |
+| `src/routes/plans.$planId.progressions.tsx` | estado bloqueado se não aprovado |
+| `src/i18n/locales/{pt,en}/plan.json` | novas chaves |
+| `.lovable/backlog.md`, `.lovable/plan.md` | atualizar estado |
+| `mem://features/multi-modality.md`, `mem://index.md` | regra |
 
-Recomendação minha: **fazer R72.1 sozinha** (i18n sweep, zero risco, fecha em 30min) **+ R72.2 num turno separado** (motor é o coração da app, melhor focar) **+ R72.3 num terceiro turno** (manual é estático, baixa pressa). Mas se quiser tudo num só turno, faço — só fica ~6h de trabalho de IA num só commit, mais difícil de reverter.
+## O que NÃO faço aqui
+
+- UI nova de edição inline para `intervals[]` / `climb_blocks[]` (Stage 3.5 fica com edição existente; render dos novos campos em modo leitura). Edição rica fica para R72.2b se for preciso.
+- Conversor V-scale ↔ Fontainebleau (string livre por agora).
+- VDOT calibrado por field test (usa só 5K self-report).
+- Special-population overlays (R73).
+- Render no PDF dos novos campos — fica para R72.2c quando decidirmos layout.
+
+## Risco
+
+Toco em 4 stage files do pipeline crítico. Mitigação: cada stage continua a funcionar com brief legacy (`training_modalities = ["gym"]`); novos arquetípos só aparecem se brief os pedir. Smoke obrigatório com (a) brief gym-only legacy → output igual ao actual; (b) brief gym+running → vê interval session no microcycle.
+
+Procedo?
