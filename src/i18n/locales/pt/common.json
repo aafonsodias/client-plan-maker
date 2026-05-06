@@ -777,5 +777,48 @@
       "low_adherence": "Adesão {{pct}}% ({{logged}}/{{expected}} sessões registadas). Registe pelo menos 80% antes de avançar.",
       "failed": "Não foi possível programar a próxima semana."
     }
+  },
+  "ux": {
+    "rationale": {
+      "title": "Porque isto?",
+      "aria": "Ver justificação",
+      "fallback": "Valor inferido a partir dos dados disponíveis.",
+      "source_label": "Fonte",
+      "confidence": {
+        "confident": "alta confiança",
+        "assumed": "assumido",
+        "manual": "definido por si"
+      },
+      "sources": {
+        "assessment": "avaliação do cliente",
+        "pkl": "perfil de conhecimento",
+        "cockpit": "cockpit de intensidade",
+        "default": "default do sistema",
+        "user": "definido por si"
+      },
+      "reasons": {
+        "tier_manual": "Nível ajustado manualmente.",
+        "tier_remedial_flags": "{{count}} red flags na avaliação — começar em remedial protege a recuperação.",
+        "tier_conservative": "Iniciante ou 1 red flag — abordagem conservadora primeiro.",
+        "tier_advanced_age": "Avaliação indica nível avançado — autorizado a teto RPE alto.",
+        "tier_default": "Sem sinais contrários — assume nível avançado.",
+        "preset_manual": "Preset selecionado por si.",
+        "preset_custom": "Knobs ajustados manualmente — preset personalizado.",
+        "preset_from_goal": "Inferido do objetivo principal: {{goal}}.",
+        "preset_default": "Sem objetivo claro — assume recomp moderado.",
+        "split_manual": "Split definido manualmente.",
+        "split_from_sessions": "{{n}} sessões/semana — split escolhido para distribuir volume sem repetir grupos.",
+        "wave_manual": "Modelo de onda definido no cockpit.",
+        "wave_from_pkl": "Lido do seu perfil de conhecimento.",
+        "wave_from_goal": "Inferido do objetivo principal: {{goal}}.",
+        "wave_default": "Default ondulatório — Bompa & Buzzichelli §7.4.",
+        "deload_manual": "Frequência de deload definida no cockpit.",
+        "deload_from_pkl": "Lido do seu perfil de conhecimento.",
+        "deload_from_tier": "Nível {{tier}} — deload mais frequente protege adesão.",
+        "deload_default": "Default a cada 4 semanas — NSCA Essentials 3e §17.",
+        "logbook_mode_from_focus": "Inferido do foco do dia: {{focus}}.",
+        "logbook_mode_default": "Sem foco específico — modo misto."
+      }
+    }
   }
 }
