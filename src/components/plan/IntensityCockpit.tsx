@@ -7,6 +7,8 @@ import {
   matchesPreset,
   type CockpitPreset,
 } from "./CockpitPresets";
+import RationaleChip from "@/components/ux/RationaleChip";
+import { inferCockpitPreset } from "@/lib/auto-infer";
 
 /**
  * R64 — Intensity Cockpit. Five knobs + six presets, the only surface where a
@@ -25,11 +27,13 @@ export default function IntensityCockpit({
   onChange,
   disabled = false,
   compact = false,
+  primaryGoal,
 }: {
   value: ProgrammingVariables;
   onChange: (next: ProgrammingVariables) => void;
   disabled?: boolean;
   compact?: boolean;
+  primaryGoal?: string;
 }) {
   const { t } = useTranslation("plan");
   const apply = (patch: Partial<ProgrammingVariables>) => {
@@ -71,6 +75,11 @@ export default function IntensityCockpit({
       : value.deload_frequency.replace("every_", "deload ").replace("_weeks", "w");
   const summary = `${t(`cockpit.knobs.wave.options.${value.wave_model}`)} · RPE ${value.rpe_ceiling.toFixed(1)} · ${deloadLabel} · ${t(`cockpit.knobs.autoreg.options.${value.autoreg_strictness}`)}`;
 
+  const presetInference = inferCockpitPreset({
+    primary_goal: primaryGoal as any,
+    current: value.cockpit_preset as CockpitPreset | undefined,
+  });
+
   return (
     <section
       aria-labelledby="cockpit-title"
@@ -111,7 +120,10 @@ export default function IntensityCockpit({
       </div>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/40 px-3 py-2">
-        <p className="text-xs text-foreground">{summary}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-foreground">{summary}</p>
+          <RationaleChip inference={presetInference} />
+        </div>
         <button
           type="button"
           onClick={() => setShowKnobs((s) => !s)}
