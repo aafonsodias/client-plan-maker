@@ -817,7 +817,21 @@
         "deload_from_tier": "Nível {{tier}} — deload mais frequente protege adesão.",
         "deload_default": "Default a cada 4 semanas — NSCA Essentials 3e §17.",
         "logbook_mode_from_focus": "Inferido do foco do dia: {{focus}}.",
-        "logbook_mode_default": "Sem foco específico — modo misto."
+        "logbook_mode_default": "Sem foco específico — modo misto.",
+        "card_matches_default": "Igual ao default do sistema.",
+        "card_pkl_override": "Personalizado no seu perfil de conhecimento.",
+        "card_user_override": "{{count}} valor(es) personalizado(s) face ao default.",
+        "cockpit_manual": "Controlado manualmente no cockpit."
+      },
+      "labels": {
+        "inferred": "Inferido",
+        "recommended_default": "Recomendado",
+        "based_on_current_inputs": "Com base nos dados atuais",
+        "manually_overridden": "Sobreposto manualmente",
+        "override_default": "Sobrepor default",
+        "manual_control": "Controlo manual",
+        "hide_manual_control": "Ocultar controlo manual",
+        "recommended_apply": "Aplicar"
       }
     }
   }
