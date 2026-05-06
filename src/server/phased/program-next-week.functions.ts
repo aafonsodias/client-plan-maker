@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { logGeneration } from "./ai.server";
+import { resolveCockpit } from "./programming-defaults";
+import { resolveRules } from "@/server/knowledge/resolve.server";
 
 /**
  * R65 — Deterministic next-week generator.
@@ -118,10 +120,9 @@ export const programNextWeek = createServerFn({ method: "POST" })
     }
 
     const pv = (plan as any).programming_variables ?? {};
-    const strictness: "strict" | "suggested" | "off" =
-      pv.autoreg_strictness === "strict" || pv.autoreg_strictness === "off"
-        ? pv.autoreg_strictness
-        : "suggested";
+    // R73 — PKL fallback for autoreg strictness when the cockpit is silent.
+    const { rules: pklRules } = await resolveRules(supabase, userId);
+    const strictness = resolveCockpit(pv, pklRules).autoreg_strictness;
 
     // Wipe any pre-existing rows for nextWeek so this stays idempotent.
     await supabase
