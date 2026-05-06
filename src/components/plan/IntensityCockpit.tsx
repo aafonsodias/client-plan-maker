@@ -28,12 +28,14 @@ export default function IntensityCockpit({
   disabled = false,
   compact = false,
   primaryGoal,
+  mode = "lab",
 }: {
   value: ProgrammingVariables;
   onChange: (next: ProgrammingVariables) => void;
   disabled?: boolean;
   compact?: boolean;
   primaryGoal?: string;
+  mode?: "quick" | "lab";
 }) {
   const { t } = useTranslation("plan");
   const apply = (patch: Partial<ProgrammingVariables>) => {
@@ -60,14 +62,16 @@ export default function IntensityCockpit({
   ];
 
   const STORAGE_KEY = "pf.cockpit.finetune";
-  const [showKnobs, setShowKnobs] = useState<boolean>(() => {
+  const [showKnobsPref, setShowKnobsPref] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(STORAGE_KEY) === "1";
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, showKnobs ? "1" : "0");
-  }, [showKnobs]);
+    window.localStorage.setItem(STORAGE_KEY, showKnobsPref ? "1" : "0");
+  }, [showKnobsPref]);
+  // Quick Path forces knobs hidden; Lab Mode honors the saved preference.
+  const showKnobs = mode === "lab" && showKnobsPref;
 
   const deloadLabel =
     value.deload_frequency === "no_deload"
@@ -133,15 +137,17 @@ export default function IntensityCockpit({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/40 px-3 py-2">
         <div className="flex items-center gap-2">
           <p className="text-xs text-foreground">{summary}</p>
-          <RationaleChip inference={presetInference} />
+          <RationaleChip inference={presetInference} mode={mode} />
         </div>
+        {mode === "lab" && (
         <button
           type="button"
-          onClick={() => setShowKnobs((s) => !s)}
+          onClick={() => setShowKnobsPref((s) => !s)}
           className="text-[11px] font-medium uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-400"
         >
           {showKnobs ? t("ux.rationale.labels.hide_manual_control", { ns: "common", defaultValue: "Ocultar controlo manual" }) : t("ux.rationale.labels.manual_control", { ns: "common", defaultValue: "Controlo manual" })}
         </button>
+        )}
       </div>
 
       {showKnobs && (
@@ -150,7 +156,7 @@ export default function IntensityCockpit({
           icon={<Waves className="h-4 w-4" />}
           label={t("cockpit.knobs.wave.label")}
           help={t("cockpit.knobs.wave.help")}
-          chip={<RationaleChip inference={waveInference} />}
+          chip={<RationaleChip inference={waveInference} mode={mode} />}
         >
           <select
             value={value.wave_model}
@@ -168,7 +174,7 @@ export default function IntensityCockpit({
           icon={<Gauge className="h-4 w-4" />}
           label={`${t("cockpit.knobs.rpe.label")} — ${value.rpe_ceiling.toFixed(1)}`}
           help={t("cockpit.knobs.rpe.help")}
-          chip={<RationaleChip inference={manualEnvelope as any} />}
+          chip={<RationaleChip inference={manualEnvelope as any} mode={mode} />}
         >
           <input
             type="range"
@@ -190,7 +196,7 @@ export default function IntensityCockpit({
           icon={<Scale className="h-4 w-4" />}
           label={t("cockpit.knobs.tradeoff.label")}
           help={t("cockpit.knobs.tradeoff.help")}
-          chip={<RationaleChip inference={manualEnvelope as any} />}
+          chip={<RationaleChip inference={manualEnvelope as any} mode={mode} />}
         >
           <select
             value={value.intensity_volume_tradeoff}
@@ -208,7 +214,7 @@ export default function IntensityCockpit({
           icon={<Repeat className="h-4 w-4" />}
           label={t("cockpit.knobs.deload.label")}
           help={t("cockpit.knobs.deload.help")}
-          chip={<RationaleChip inference={deloadInference} />}
+          chip={<RationaleChip inference={deloadInference} mode={mode} />}
         >
           <select
             value={value.deload_frequency}
@@ -227,7 +233,7 @@ export default function IntensityCockpit({
           icon={<ShieldCheck className="h-4 w-4" />}
           label={t("cockpit.knobs.autoreg.label")}
           help={t("cockpit.knobs.autoreg.help")}
-          chip={<RationaleChip inference={manualEnvelope as any} />}
+          chip={<RationaleChip inference={manualEnvelope as any} mode={mode} />}
         >
           <select
             value={value.autoreg_strictness}
