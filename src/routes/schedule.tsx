@@ -543,6 +543,7 @@ function BookingDialog({
 
   const save = async () => {
     if (!clientId) return toast.error(t("form.select_client"));
+    if (overFrequency && !override) return;
     setBusy(true);
     const iso = new Date(`${date}T${time}:00`).toISOString();
     const r: any = editing
