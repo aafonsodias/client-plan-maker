@@ -83,7 +83,11 @@
     "sessions_used_label": "Sessions already used",
     "sessions_used_hint": "Use this for clients who started the pack before being added here.",
     "sessions_used_invalid": "Used cannot exceed total sessions.",
-    "remaining_short": "{{remaining}}/{{total}} remaining"
+    "remaining_short": "{{remaining}}/{{total}} remaining",
+    "remaining_label": "{{remaining}}/{{total}} remaining",
+    "used_before_protocol": "{{count}} used before Protocol",
+    "completed_in_protocol": "{{count}} completed in Protocol",
+    "upcoming_scheduled": "{{count}} scheduled"
   },
   "out_of_hours": {
     "heading": "Sessions outside visible hours"
