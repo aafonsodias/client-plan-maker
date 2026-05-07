@@ -547,6 +547,9 @@ function RowHour({
   clientById,
   onSlotClick,
   onBookingClick,
+  onCopy,
+  onDragCommit,
+  clipboardActive,
 }: {
   hour: number;
   days: Date[];
@@ -555,6 +558,9 @@ function RowHour({
   clientById: Map<string, ClientLite>;
   onSlotClick: (iso: string) => void;
   onBookingClick: (b: Booking) => void;
+  onCopy: (b: Booking) => void;
+  onDragCommit: (id: string, newIso: string) => void;
+  clipboardActive: boolean;
 }) {
   return (
     <>
@@ -573,7 +579,7 @@ function RowHour({
         return (
           <div
             key={i}
-            className="relative h-14 border-b border-l border-border hover:bg-secondary/40"
+            className={`relative h-14 border-b border-l border-border ${clipboardActive ? "hover:bg-secondary/70 cursor-copy" : "hover:bg-secondary/40"}`}
           >
             <button
               type="button"
@@ -586,26 +592,113 @@ function RowHour({
               const c = clientById.get(b.client_id);
               const cls = packBlockClasses(pack?.color ?? "emerald");
               return (
-                <button
+                <BookingBlock
                   key={b.id}
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBookingClick(b);
-                  }}
-                  className={`absolute left-1 right-1 top-1 bottom-1 rounded-md ring-1 px-2 py-1 text-left text-[11px] ${cls.bg} ${cls.ring} ${cls.text} ${b.status === "cancelled" ? "opacity-40 line-through" : ""}`}
-                >
-                  <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
-                  <div className="truncate font-mono text-[10px] opacity-80">
-                    {new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} · {b.duration_min}′
-                  </div>
-                </button>
+                  booking={b}
+                  clientName={c?.full_name ?? "—"}
+                  cls={cls}
+                  onClick={() => onBookingClick(b)}
+                  onCopy={() => onCopy(b)}
+                  onDragCommit={onDragCommit}
+                />
               );
             })}
           </div>
         );
       })}
     </>
+  );
+}
+
+function BookingBlock({
+  booking,
+  clientName,
+  cls,
+  onClick,
+  onCopy,
+  onDragCommit,
+}: {
+  booking: Booking;
+  clientName: string;
+  cls: { bg: string; ring: string; text: string; dot: string };
+  onClick: () => void;
+  onCopy: () => void;
+  onDragCommit: (id: string, newIso: string) => void;
+}) {
+  const [dragOffset, setDragOffset] = useState(0); // minutes
+  const [dragging, setDragging] = useState(false);
+  const PX_PER_MIN = 56 / 60;
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("[data-copy-btn]")) return;
+    e.preventDefault();
+    const startY = e.clientY;
+    let started = false;
+    let lastDelta = 0;
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    const onMove = (ev: PointerEvent) => {
+      const dy = ev.clientY - startY;
+      if (!started && Math.abs(dy) < 4) return;
+      started = true;
+      setDragging(true);
+      const minutes = Math.round(dy / PX_PER_MIN / 15) * 15;
+      lastDelta = minutes;
+      setDragOffset(minutes);
+    };
+    const onUp = () => {
+      target.releasePointerCapture(e.pointerId);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      if (!started) {
+        onClick();
+      } else if (lastDelta !== 0) {
+        const next = new Date(booking.starts_at);
+        next.setMinutes(next.getMinutes() + lastDelta);
+        onDragCommit(booking.id, next.toISOString());
+      }
+      setDragOffset(0);
+      setDragging(false);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const previewTime = (() => {
+    const t = new Date(booking.starts_at);
+    if (dragOffset) t.setMinutes(t.getMinutes() + dragOffset);
+    return t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  })();
+
+  return (
+    <div
+      onPointerDown={onPointerDown}
+      style={{ transform: dragOffset ? `translateY(${dragOffset * PX_PER_MIN}px)` : undefined }}
+      className={`group absolute left-1 right-1 top-1 bottom-1 rounded-md ring-1 px-2 py-1 text-left text-[11px] select-none touch-none ${cls.bg} ${cls.ring} ${cls.text} ${booking.status === "cancelled" ? "opacity-40 line-through" : ""} ${dragging ? "cursor-ns-resize ring-2 ring-foreground/40 z-10" : "cursor-grab"}`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-medium">{clientName}</div>
+          <div className="truncate font-mono text-[10px] opacity-80">
+            {previewTime} · {booking.duration_min}′
+          </div>
+        </div>
+        <button
+          type="button"
+          data-copy-btn
+          onClick={(e) => {
+            e.stopPropagation();
+            onCopy();
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          aria-label="copy"
+          title="Copiar"
+          className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
+        >
+          <Copy className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -616,6 +709,8 @@ function DayStrip({
   clientById,
   onSlotClick,
   onBookingClick,
+  onCopy,
+  clipboardActive,
   locale,
 }: {
   days: Date[];
@@ -624,6 +719,8 @@ function DayStrip({
   clientById: Map<string, ClientLite>;
   onSlotClick: (iso: string) => void;
   onBookingClick: (b: Booking) => void;
+  onCopy: (b: Booking) => void;
+  clipboardActive: boolean;
   locale: string;
 }) {
   const [active, setActive] = useState(0);
@@ -686,24 +783,53 @@ function DayStrip({
             const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
             const typeLabel = b.session_type === "online" ? ts("form.online") : ts("form.in_person");
             return (
-              <button
+              <div
                 key={b.id}
-                type="button"
-                onClick={() => onBookingClick(b)}
                 className={`flex w-full items-center gap-2 rounded-md ring-1 px-3 py-2 text-left text-sm ${cls.bg} ${cls.ring} ${cls.text}`}
               >
-                <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
-                  <div className="truncate text-[11px] opacity-80">
-                    <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
+                <button
+                  type="button"
+                  onClick={() => onBookingClick(b)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
+                    <div className="truncate text-[11px] opacity-80">
+                      <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopy(b);
+                  }}
+                  aria-label="copy"
+                  title="Copiar"
+                  className="rounded p-1 opacity-70 hover:opacity-100 hover:bg-foreground/10"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
             );
           })
         )}
       </div>
+      {clipboardActive && (
+        <button
+          type="button"
+          onClick={() => {
+            const t = new Date(day);
+            t.setHours(9, 0, 0, 0);
+            onSlotClick(t.toISOString());
+          }}
+          className="w-full rounded-md border border-dashed border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300"
+        >
+          Colar neste dia às 09:00
+        </button>
+      )}
     </div>
   );
 }
