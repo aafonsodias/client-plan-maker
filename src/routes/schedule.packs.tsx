@@ -364,7 +364,7 @@ export function PackFormDialog({
         <div className="space-y-3">
           <div>
             <Label>{t("form.client")}</Label>
-            <Select value={clientId} onValueChange={setClientId} disabled={!!editing}>
+            <Select value={clientId} onValueChange={setClientId} disabled={!!editing || !!lockClient}>
               <SelectTrigger><SelectValue placeholder={t("form.select_client")} /></SelectTrigger>
               <SelectContent>
                 {clients.map((c) => (
