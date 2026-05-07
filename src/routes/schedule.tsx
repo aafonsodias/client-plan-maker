@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -37,8 +37,13 @@ import {
 } from "@/lib/schedule";
 
 export const Route = createFileRoute("/schedule")({
-  validateSearch: (s: Record<string, unknown>): { tab?: "week" | "packs" } => ({
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { tab?: "week" | "packs"; newBooking?: 1; clientId?: string; packId?: string } => ({
     tab: s.tab === "packs" ? "packs" : "week",
+    newBooking: s.newBooking === 1 || s.newBooking === "1" ? 1 : undefined,
+    clientId: typeof s.clientId === "string" ? s.clientId : undefined,
+    packId: typeof s.packId === "string" ? s.packId : undefined,
   }),
   component: () => (
     <AppShell>
@@ -62,10 +67,7 @@ function ScheduleShell() {
         navigate({ to: "/schedule", search: { tab: v === "packs" ? "packs" : "week" } })
       }
     >
-      <TabsList>
-        <TabsTrigger value="week">Week</TabsTrigger>
-        <TabsTrigger value="packs">Packs</TabsTrigger>
-      </TabsList>
+      <ScheduleTabs />
       <TabsContent value="week" className="mt-4">
         <ScheduleWeek />
       </TabsContent>
@@ -76,7 +78,35 @@ function ScheduleShell() {
   );
 }
 
+function ScheduleTabs() {
+  const { t } = useTranslation("schedule");
+  return (
+    <TabsList>
+      <TabsTrigger value="week">{t("tab.week")}</TabsTrigger>
+      <TabsTrigger value="packs">{t("tab.packs")}</TabsTrigger>
+    </TabsList>
+  );
+}
+
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
+
+/** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
+ *  otherwise next weekday at 09:00. */
+function nextCoachableSlot(): Date {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun, 6=Sat
+  if (dow >= 1 && dow <= 5 && now.getHours() < 19) {
+    const d = new Date(now);
+    d.setHours(now.getHours() + 1, 0, 0, 0);
+    return d;
+  }
+  const d = new Date(now);
+  do {
+    d.setDate(d.getDate() + 1);
+  } while (d.getDay() === 0 || d.getDay() === 6);
+  d.setHours(9, 0, 0, 0);
+  return d;
+}
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
@@ -86,6 +116,8 @@ function ScheduleWeek() {
   const { user } = useAuth();
   const list = useServerFn(listWeekBookings);
   const seed = useServerFn(seedScheduleDemo);
+  const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const [monday, setMonday] = useState<Date>(() => startOfIsoWeek(new Date()));
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -93,7 +125,7 @@ function ScheduleWeek() {
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Booking | null>(null);
-  const [creating, setCreating] = useState<{ startsAt: string } | null>(null);
+  const [creating, setCreating] = useState<{ startsAt: string; clientId?: string; packId?: string } | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -122,6 +154,19 @@ function ScheduleWeek() {
       .order("full_name")
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
+
+  // Search-param-driven prefill: /schedule?tab=week&newBooking=1&clientId=…&packId=…
+  useEffect(() => {
+    if (!user) return;
+    if (search.newBooking !== 1) return;
+    const d = nextCoachableSlot();
+    setCreating({ startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId });
+    navigate({
+      to: "/schedule",
+      search: { tab: "week" },
+      replace: true,
+    });
+  }, [user, search.newBooking, search.clientId, search.packId]);
 
   const packById = useMemo(() => {
     const m = new Map<string, Pack>();
@@ -188,11 +233,7 @@ function ScheduleWeek() {
           <span className="text-xs font-mono text-muted-foreground">{fmtWeekRange(monday, locale)}</span>
           <Button
             size="sm"
-            onClick={() => {
-              const d = new Date(monday);
-              d.setHours(9, 0, 0, 0);
-              setCreating({ startsAt: d.toISOString() });
-            }}
+            onClick={() => setCreating({ startsAt: nextCoachableSlot().toISOString() })}
           >
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
@@ -257,28 +298,61 @@ function ScheduleWeek() {
       </div>
 
       {loading ? null : bookings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-secondary/20 p-6 text-center text-sm text-muted-foreground">
-          {t("empty_week")}
-          <div className="mt-3 flex justify-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                const r: any = await seed({});
-                if (r?.ok) {
-                  toast.success(t("pack.demo_seeded", { count: r.count }));
-                  await refresh();
-                  await refreshPacks();
-                } else if (r?.error === "no_clients") {
-                  toast.error(tc("nav.clients") + " · 0");
-                } else {
-                  toast.error(r?.error ?? "error");
-                }
-              }}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {t("pack.demo_seed")}
-            </Button>
+        <div className="flex justify-center">
+          <div className="w-full max-w-[320px] rounded-xl border border-dashed border-border bg-secondary/20 p-5 text-center">
+            <p className="text-sm text-foreground">{t("empty.headline")}</p>
+            <ol className="mt-4 flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">1</span>
+                {t("empty.step1")}
+              </li>
+              <span aria-hidden>·</span>
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">2</span>
+                {t("empty.step2")}
+              </li>
+              <span aria-hidden>·</span>
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">3</span>
+                {t("empty.step3")}
+              </li>
+            </ol>
+            <div className="mt-5 flex flex-col items-center gap-2">
+              <Button
+                size="sm"
+                className="min-h-10 w-full"
+                onClick={() => setCreating({ startsAt: nextCoachableSlot().toISOString() })}
+              >
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                {t("empty.cta_new")}
+              </Button>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                onClick={() => navigate({ to: "/schedule", search: { tab: "packs" } })}
+              >
+                {t("empty.cta_packs")}
+              </button>
+              <button
+                type="button"
+                className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 hover:text-muted-foreground"
+                onClick={async () => {
+                  const r: any = await seed({});
+                  if (r?.ok) {
+                    toast.success(t("pack.demo_seeded", { count: r.count }));
+                    await refresh();
+                    await refreshPacks();
+                  } else if (r?.error === "no_clients") {
+                    toast.error(tc("nav.clients") + " · 0");
+                  } else {
+                    toast.error(r?.error ?? "error");
+                  }
+                }}
+              >
+                <Sparkles className="h-3 w-3" />
+                {t("pack.demo_seed")}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -287,7 +361,7 @@ function ScheduleWeek() {
       <BookingDialog
         open={!!creating}
         onOpenChange={(v) => !v && setCreating(null)}
-        initial={creating ? { startsAt: creating.startsAt } : undefined}
+        initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
         weekBookings={bookings}
@@ -487,7 +561,7 @@ function BookingDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  initial?: { startsAt: string };
+  initial?: { startsAt: string; clientId?: string; packId?: string };
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
@@ -502,8 +576,8 @@ function BookingDialog({
   const dup = useServerFn(duplicateBookingNextWeek);
 
   const startsAt = editing?.starts_at ?? initial?.startsAt ?? new Date().toISOString();
-  const [clientId, setClientId] = useState(editing?.client_id ?? "");
-  const [packId, setPackId] = useState<string>(editing?.pack_id ?? "");
+  const [clientId, setClientId] = useState(editing?.client_id ?? initial?.clientId ?? "");
+  const [packId, setPackId] = useState<string>(editing?.pack_id ?? initial?.packId ?? "");
   const [date, setDate] = useState(startsAt.slice(0, 10));
   const [time, setTime] = useState(startsAt.slice(11, 16));
   const [duration, setDuration] = useState(editing?.duration_min ?? 60);
@@ -515,8 +589,8 @@ function BookingDialog({
   useEffect(() => {
     if (!open) return;
     const ts = editing?.starts_at ?? initial?.startsAt ?? new Date().toISOString();
-    setClientId(editing?.client_id ?? "");
-    setPackId(editing?.pack_id ?? "");
+    setClientId(editing?.client_id ?? initial?.clientId ?? "");
+    setPackId(editing?.pack_id ?? initial?.packId ?? "");
     setDate(ts.slice(0, 10));
     setTime(ts.slice(11, 16));
     setDuration(editing?.duration_min ?? 60);

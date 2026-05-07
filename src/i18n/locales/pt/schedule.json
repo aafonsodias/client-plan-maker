@@ -5,20 +5,32 @@
   "previous": "Anterior",
   "next": "Seguinte",
   "new_booking": "Nova sessão",
-  "manage_packs": "Gerir packs",
+  "manage_packs": "Gerir pacotes",
   "back_to_schedule": "Voltar à agenda",
-  "empty_week": "Sem sessões marcadas. Toca num espaço para marcar.",
+  "empty_week": "Sem sessões marcadas esta semana.",
+  "tab": {
+    "week": "Semana",
+    "packs": "Pacotes"
+  },
+  "empty": {
+    "headline": "Sem sessões marcadas esta semana.",
+    "step1": "Cliente",
+    "step2": "Pacote",
+    "step3": "Hora",
+    "cta_new": "Nova sessão",
+    "cta_packs": "Ver pacotes ativos"
+  },
   "panel": {
     "expected_income": "Receita esperada",
     "sessions_this_week": "Sessões esta semana",
     "sessions_remaining": "Sessões restantes",
-    "ending_soon": "Packs a terminar",
+    "ending_soon": "Pacotes a terminar",
     "no_alerts": "Sem alertas"
   },
   "form": {
     "client": "Cliente",
-    "pack": "Pack",
-    "no_pack": "Sem pack (avulso)",
+    "pack": "Pacote",
+    "no_pack": "Sem pacote (avulso)",
     "date": "Data",
     "time": "Hora",
     "duration": "Duração (min)",
@@ -35,8 +47,16 @@
     "select_client": "Selecionar cliente"
   },
   "pack": {
-    "title": "Packs",
-    "new": "Novo pack",
+    "title": "Pacotes",
+    "new": "Novo pacote",
+    "default_label": "Pacote 10",
+    "manage": "Gerir",
+    "book_session": "Marcar sessão",
+    "scheduled_this_week": "{{count}} marcadas",
+    "per_session_short": "€{{price}}/sessão",
+    "per_week_short": "{{count}}×/sem",
+    "sessions_short": "{{used}}/{{total}} sessões",
+    "more_actions": "Mais ações",
     "label": "Etiqueta",
     "session_type": "Tipo de sessão",
     "price": "Preço por sessão (€)",
@@ -50,7 +70,7 @@
     "sessions_left": "{{left}}/{{total}} restantes",
     "archive": "Arquivar",
     "unarchive": "Desarquivar",
-    "empty": "Sem packs ainda. Cria um pack para acompanhar receita e renovações.",
+    "empty": "Sem pacotes ainda. Cria um pacote para acompanhar sessões e receita.",
     "demo_seed": "Semente demo",
     "demo_seeded": "{{count}} sessões criadas esta semana"
   }
