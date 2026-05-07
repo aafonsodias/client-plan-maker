@@ -25,6 +25,7 @@ In-app AI = <AskForgeDock /> (replaces GuideDock). Tabs: Navegar (askConcierge) 
 Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Bloco 13 é gerado pela IA real; Blocos 1–12 são clones SQL com mutações leves + logbook back-dated. Botão "Rodar +1 ano" empurra session_date +365d (cap em today). Ver mem/features/demo-year.md.
 Demo + landing names = src/lib/names/regional-names.ts (region-weighted mixture model). Never hardcode display names. Ver mem/features/regional-names.md.
 Dashboard = role-aware cockpit. Coach=hero(semana·sessões·€)+mini-week+nudges (aniversários, pack ending) com MessageComposerSheet (templates PT/EN editáveis, WhatsApp deeplink, sem AI). Lista de clientes vive abaixo.
+No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Trainerize/RP/generic apps. No "vs", "melhor que", "sem viver no Excel". Show workflow + benefit + control; let user connect dots. See [non-adversarial](mem://positioning/non-adversarial.md).
 
 - [Intake recurrence](mem://principles/intake-recurrence.md) — intake = on-demand re-assessment; continuous data (sleep/HR/wearables) lives on client dashboard
 - [No stage redirects](mem://principles/no-stage-redirects.md) — all 5 stages render inline on /clients/$id, /plans/* are thin back-compat wrappers

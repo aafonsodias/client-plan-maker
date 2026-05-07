@@ -2,7 +2,7 @@
   "landing": {
     "hero": {
       "title_line1": "क्लिनिकल स्क्रीनिंग → ठोस प्रोटोकॉल → साप्ताहिक अनुकूलन।",
-      "title_line2": "गंभीर प्रोग्रामिंग, बिना Excel में अटके।",
+      "title_line2": "From assessment to plan, with visible logic.",
       "subtitle": "आप मूल्यांकन करते हैं। Protocol प्रोटोकॉल बनाता है। हर लॉग किया गया सेट अगले सप्ताह को आकार देता है।",
       "cta_primary_signed_out": "अपनी पहली योजना बनाएँ — निःशुल्क",
       "cta_primary_signed_in": "डैशबोर्ड खोलें",
@@ -19,7 +19,7 @@
       "variants": [
         {
           "line1": "क्लिनिकल स्क्रीनिंग → ठोस प्रोटोकॉल → साप्ताहिक अनुकूलन।",
-          "line2": "गंभीर प्रोग्रामिंग, बिना Excel में अटके।",
+          "line2": "From assessment to plan, with visible logic.",
           "audience": "व्यक्तिगत प्रशिक्षकों के लिए"
         }
       ]
@@ -241,8 +241,8 @@
       "q11_a": "नहीं। मूल्यांकन आपको खंड-दर-खंड मार्गदर्शन करता है, और AI योजना को असेंबल करता है। कोचों को गति मिलती है। एकल प्रशिक्षुओं को संरचना मिलती है।",
       "q12_q": "क्या मैं इसका उपयोग बिना कोच के कर सकता हूँ?",
       "q12_a": "हाँ। एक प्रशिक्षु के रूप में मूल्यांकन चलाएँ, अपनी योजना उत्पन्न करें और लॉगबुक के माध्यम से इसका पालन करें। AI आपके द्वारा लॉग किए गए के आधार पर साप्ताहिक प्रतिक्रिया देता है।",
-      "q13_q": "यह ChatGPT या सामान्य AI से कैसे अलग है?",
-      "q13_a": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं। Protocol 14 नैदानिक ​​खंडों (PAR-Q+, ACSM, गतिशीलता, इतिहास) को एक अभ्यास निर्धारित करने से पहले चलाता है, ब्लॉक आवधिकरण और एक मान्य अभ्यास पुस्तकालय के साथ।",
+      "q13_q": "What makes Protocol distinct?",
+      "q13_a": "It is a protocol, not a single answer: structured screening, a validated exercise library, block periodization, and human review before any plan ships. Client data accumulates over time, and that changes everything. It uses AI, but judgment stays human.",
       "q14_q": "जब परीक्षण समाप्त होता है तो क्या होता है?",
       "q14_a": "7 दिन मूल्यांकन चलाने, योजना उत्पन्न करने और सुरक्षित रूप से प्रशिक्षण शुरू करने के लिए पर्याप्त हैं। यदि आप जारी रखना चाहते हैं, तो मासिक योजना को सक्रिय करें और आप चल रही पीढ़ी, लॉगबुक जो आपके साथ सीखती है, समुदाय और आगे आने वाली चीजों को बनाए रखते हैं। यदि नहीं, तो आप PDF और समर्थन वीडियो को रखते हैं — ऐप तब तक रुक जाता है जब तक आप वापस नहीं आते। यह एक सेवा है, और हम चाहते हैं कि यह हर पैसे के लायक हो।",
       "heading": "सामान्य प्रश्नोत्तर"
@@ -328,28 +328,28 @@
       }
     },
     "anti_chatgpt": {
-      "eyebrow": "PROTOCOL बनाम ChatGPT",
-      "title": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं। PROTOCOL वह उत्पन्न करता है जो क्लाइंट को चाहिए।",
-      "body": "1 अभ्यास से पहले 14 नैदानिक ​​मूल्यांकन खंड। PAR-Q+ स्क्रीनिंग, ACSM जोखिम वर्गीकरण, विरोधाभासी-अभ्यास फ़िल्टरिंग, MEV/MAV/MRV वॉल्यूम के साथ ब्लॉक आवधिकरण — स्वचालित, न्यायोचित।",
-      "sections_label": "उत्पत्ति से पहले मूल्यांकित:",
+      "eyebrow": "The value is in the sequence",
+      "title": "Assess, structure, execute, log, and adapt.",
+      "title_line1": "The value is not a single answer.",
+      "title_line2": "It is the full sequence.",
+      "body": "Assessment, plan, execution, logbook, and adaptation as a single workflow. Each step informs the next, with human judgment at every decision.",
+      "sections_label": "What goes into the assessment:",
       "items": [
         "PAR-Q+",
-        "चिकित्सा इतिहास",
-        "मानवमापिकी",
-        "रक्तचाप",
-        "जोड़ों की गतिशीलता",
-        "मुद्रा",
-        "गति पैटर्न",
-        "महत्वपूर्ण अंग",
-        "स्वास्थ्यलाभ",
-        "प्रशिक्षण इतिहास",
-        "जीवन शैली",
-        "लक्ष्य",
-        "उपलब्धता",
-        "उपकरण"
-      ],
-      "title_line1": "ChatGPT वह उत्पन्न करता है जो आप पूछते हैं।",
-      "title_line2": "PROTOCOL वह उत्पन्न करता है जो क्लाइंट को चाहिए।"
+        "Medical history",
+        "Anthropometry",
+        "Blood pressure",
+        "Joint mobility",
+        "Posture",
+        "Movement patterns",
+        "Vital signs",
+        "Recovery",
+        "Training history",
+        "Habits",
+        "Goals",
+        "Availability",
+        "Equipment"
+      ]
     },
     "for_whom": {
       "eyebrow": "यह किसके लिए है",
@@ -373,60 +373,35 @@
       "medical_body": "हृदय रोग, उच्च रक्तचाप, मधुमेह, चोटें या गर्भावस्था: PROTOCOL PAR-Q+ और ACSM फिल्टर लागू करता है, लेकिन आपके डॉक्टर का अंतिम कहना है। शुरू करने से पहले चिकित्सीय मंजूरी प्राप्त करें, और हर सुझाव को आलोचनात्मक रूप से पढ़ें — आप अपने द्वारा किए गए विकल्पों के लिए जिम्मेदार हैं।"
     },
     "comparison": {
-      "eyebrow": "PROTOCOL कहाँ फिट बैठता है",
-      "title": "PROTOCOL आपके द्वारा पहले से उपयोग किए जा रहे उपकरणों की तुलना में कैसा है।",
-      "headers": [
-        "",
-        "PROTOCOL",
-        "Excel",
-        "ChatGPT",
-        "सामान्य एप्लिकेशन"
+      "eyebrow": "The workflow, in one place",
+      "title": "Connect what usually stays separate.",
+      "items": [
+        {
+          "title": "Assessment",
+          "body": "Client inputs before the plan: goal, availability, equipment, limitations, and history."
+        },
+        {
+          "title": "Plan",
+          "body": "Editable 5-stage structure for the coach to review, adjust, and approve."
+        },
+        {
+          "title": "Sessions",
+          "body": "Schedule connected to real coaching work, without parallel tools."
+        },
+        {
+          "title": "Logbook",
+          "body": "What was done, not only what was prescribed — adherence, RPE, load drift."
+        },
+        {
+          "title": "Adaptation",
+          "body": "The next week responds to execution, with visible logic."
+        },
+        {
+          "title": "Progress",
+          "body": "Trends, consistency, and visible outcomes across blocks."
+        }
       ],
-      "rows": [
-        [
-          "डीलॉड के साथ ब्लॉक आवधिकरण",
-          "हाँ",
-          "मैनुअल",
-          "नहीं",
-          "दुर्लभ"
-        ],
-        [
-          "प्रति मांसपेशी समूह MEV/MAV/MRV",
-          "हाँ",
-          "नहीं",
-          "नहीं",
-          "नहीं"
-        ],
-        [
-          "क्लिनिकल स्क्रीनिंग (PAR-Q+ / ACSM)",
-          "हाँ",
-          "मैनुअल",
-          "प्रॉम्प्ट पर निर्भर",
-          "सामान्य"
-        ],
-        [
-          "ब्रांडेड द्विभाषी PDF",
-          "हाँ",
-          "मैनुअल",
-          "नहीं",
-          "प्रीमियम"
-        ],
-        [
-          "सुसंगत आवाज, समीक्षित कॉपी",
-          "हाँ",
-          "—",
-          "नहीं",
-          "—"
-        ],
-        [
-          "सप्ताह-दर-सप्ताह अनुकूलन",
-          "डिटरमिनिस्टिक + लॉग",
-          "no",
-          "no",
-          "दुर्लभ"
-        ]
-      ],
-      "footnote": "यह जादू नहीं है। यह प्रकाशित विज्ञान पर सशर्त तर्क है — Israetel, Helms, ACSM।"
+      "footnote": "Each piece supports the next. Coach judgment always stays with the coach."
     },
     "tier_badges": {
       "eyebrow": "प्रत्येक योजना एक टियर के साथ आती है",

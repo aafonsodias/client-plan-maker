@@ -1,89 +1,457 @@
-# R69 — Landing Copy & Positioning Pass (PT-only, no redesign)
+```text
+R70 — Non-Adversarial Landing Copy Pass
 
-Scope: copy and label edits only. No new sections, components, routes, animations, or layout changes. All edits land in i18n files (`src/i18n/locales/pt/plan.json`, plus EN/ES/HI fallback parity for the same keys) and, where copy is currently hardcoded in `src/routes/index.tsx`, in that file.
+Objective:
+Make Protocol’s public positioning calmer, more premium, and non-adversarial.
 
-## What's wrong with the current copy
+Protocol should sell by showing what the trainer gains, not by diminishing Excel, ChatGPT, Trainerize, RP Strength, generic apps, or any other tool.
 
-1. **Hero**: "Planos cientificamente válidos em 90s" leads with speed. Speed is what every generic AI tool promises. Our edge is the *assessment → defensible protocol → adaptation* loop, not seconds-to-PDF.
-2. **3 hero bullets**: list features (PAR-Q+, MEV/MAV/MRV, branded PDF) instead of the loop. MEV/MAV/MRV jargon turns away non-hypertrophy PTs.
-3. **Journey strip**: 5 stage labels (Avaliação → Brief → Blueprint → Microciclo → Progressões) describe internal pipeline names, not the trainer's mental model. Missing the *adaptation* beat (block N → block N+1 from logbook).
-4. **Logbook section**: title "Cada série registada vira combustível para a próxima semana" is good, but body talks about "voz e sensores amanhã" — soft promise of unbuilt features. Should say what the logbook *closes the loop on* today.
-5. **FAQ**: q1 ("É um ponto de partida sólido, não um destino") undersells. Better framing: "Você é o último filtro, sempre — e a IA nunca gera mais de uma semana de cada vez." Matches the actual programNextWeek architecture (per project memory).
-6. **Beta chip / pricing strip**: "vagas limitadas esta semana" reads as fake scarcity unless we genuinely cap. Soften unless we have a real cap.
-7. **Comparison table**: keep structure, audit row labels for honesty (e.g. "Adaptação semana-a-semana" must reflect that AI only generates W1; W2+ is deterministic + log-driven).
-8. **Roadmap / "a seguir"**: 3 chips are fine but should explicitly say *not yet shipped* via existing "Em breve" pattern.
+The user should connect the dots naturally.
 
-## Edits (copy only — no layout, no new keys structure)
+This is a copy/positioning pass, not a redesign and not a feature round.
 
-### Hero (`landing.hero.*`)
-- `title_line1` / `title_line2` → lead with the *loop*, not speed:
-  - line1: "Avaliação clínica → protocolo defensável → adaptação semanal."
-  - line2: "Programação séria, sem viver no Excel."
-- `subtitle` → "Você faz a avaliação. A Protocol monta o protocolo. Cada série registada alimenta a semana seguinte."
-- `bullets` (3, no jargon):
-  1. "Triagem clínica antes de qualquer prescrição (PAR-Q+, ACSM)."
-  2. "Protocolo editável em 5 fases — você aprova cada uma."
-  3. "Próxima semana ajustada ao que o cliente realmente fez."
-- `cta_primary_signed_out` → keep "Criar primeiro plano grátis".
-- `beta_softcap_chip` → soften: "Beta privado · feedback direto com o autor" (drop fake scarcity unless a real cap exists).
+======================================================================
+CORE POSITIONING RULE
+======================================================================
 
-### Journey strip (`landing.journey.*`)
-- `eyebrow` → "O ciclo, não o atalho"
-- `title` → "Avaliação. Protocolo. Adaptação. Em loop."
-- `subtitle` → "Cinco fases dentro da app, e a sexta é a próxima semana — montada a partir do que foi registado."
-- Stage labels stay (intake / brief / blueprint / microcycle / progressions) but `progressions.desc` rewritten to make the adaptation explicit:
-  - "Semana N+1 sai do logbook: adesão, RPE real, drift de carga. A IA só gera a Semana 1; o resto é determinístico."
+Adopt this rule:
 
-### Comparison table (`landing.comparison.*` if keyed; else inline strings in `index.tsx` `ComparisonTableSection`)
-Audit each row for honesty. Two specific fixes:
-- Row "Adaptação semana-a-semana": Protocol cell → "Sim · determinístico + log-driven" (not "IA gera tudo").
-- Row "Triagem clínica": Protocol cell stays "PAR-Q+ + ACSM dentro"; ChatGPT cell → "Depende do prompt"; Excel → "Manual"; Generic apps → "Genérica ou nenhuma".
+No adversarial visible positioning.
 
-### Logbook section (`landing.logbook_preview.*`)
-- `title` → "O logbook não é um diário. É o input da próxima semana."
-- `subtitle` → "Cada série registada — manualmente, hoje — entra no cálculo da Semana N+1: carga, RPE, adesão. Voz e sensores virão; o motor já lê o que existe."
-- `flow` → "1. O cliente regista. 2. A app lê adesão, RPE e drift. 3. A próxima semana sai com cargas ajustadas."
+Never sell Protocol by attacking or diminishing other tools in user-facing copy.
 
-### FAQ (`landing.faq.*`)
-- `q1_a` → reframe around real architecture: "A IA nunca gera mais do que uma semana. As semanas seguintes saem de uma progressão determinística (Bompa wave + incrementos NSCA por categoria) ajustada pelo que foi registado. Você aprova cada fase. O resultado é defensável porque o método é defensável — não porque a IA é infalível."
-- `q5_a` → keep, but add one sentence: "Cada bloco de programação tem fonte rastreável dentro da app (`generation_log`)."
+Avoid visible copy such as:
+- “sem viver no Excel”
+- “melhor que ChatGPT”
+- “mais controlável que ChatGPT”
+- “Excel guarda dados, Protocol liga”
+- “apps genéricas fazem X, Protocol faz Y”
+- “vs Trainerize”
+- “vs ChatGPT”
+- “vs Excel”
+- “vs RP Strength”
 
-### Founder (`landing.founder.*`)
-- Tighten `p2`: "A base é humana. A IA trata da repetição. Os manuais sustentam as escolhas. Você é sempre o último filtro." Drop the "aos poucos vamos integrando mais evidência" hedge — it weakens the pitch.
+The tone should be:
+- calm
+- premium
+- self-contained
+- confident
+- professional
+- non-combative
 
-### Roadmap chips (`landing.roadmap.inline_chips`)
-- Add a "Em breve · " prefix to each chip so the chip itself signals not-shipped (matches the project rule "never advertise unbuilt features without a Soon chip").
+Sell:
+- workflow
+- clarity
+- structure
+- continuity
+- professional delivery
+- coach control
+- operational usefulness
 
-### Pricing
-- `subtitle` → "1 cliente = 1 plano completo grátis. Sem cartão. Sem letras pequenas."
-- `beta_strip_body` → "1 cliente · 1 plano completo grátis · feedback direto com o autor."
+Do not sell by creating enemies.
 
-### Locales
-- PT (`pt/plan.json`) is the source.
-- EN/ES/HI: update the same keys with literal translations of the new strings (existing fallback rules apply; landing remains PT-marketed but other locales must not regress).
+======================================================================
+WHY THIS MATTERS
+======================================================================
 
-## Out of scope (explicit)
+A premium product does not need to attack other tools.
 
-- No new sections, components, animations, routes, or assets.
-- No layout / Tailwind class changes.
-- No mockup component edits except text inside existing `t()` calls.
-- No new dependencies.
-- No schema, server function, payment, recurrence, or engine changes.
-- WhoAndWhySection / AntiChatGPTSection / ForWhomSection: leave hidden/visible state as-is.
+Protocol should make the trainer think:
 
-## Verification
+“This connects the pieces of my work.”
 
-- `tsc --noEmit` clean.
-- 375 / 390px hero smoke (no overflow with new strings).
-- Hard refresh `/` no hook crash regression.
-- Visual scan that no key resolves to a missing-translation fallback.
+Not:
 
-## Files touched
+“This brand is trying to win by insulting what I already use.”
 
-- `src/i18n/locales/pt/plan.json` (primary)
-- `src/i18n/locales/en/plan.json`
-- `src/i18n/locales/es/plan.json`
-- `src/i18n/locales/hi/plan.json`
-- `src/routes/index.tsx` only if a string is currently hardcoded (e.g. comparison table cells, signed-in "Experimente em 5 cliques" button) — in that case, move to i18n in the same edit.
+We want the user to infer the value.
 
-If during implementation any of the proposed copy exceeds the existing slot's visual budget at 375px, I'll shorten the string rather than touch layout, and note the trim in the report.
+Do not force the comparison.
+
+======================================================================
+SAVE POSITIONING RULE
+======================================================================
+
+Create or update positioning docs.
+
+Preferred:
+1. Create/update:
+`mem/positioning/non-adversarial.md`
+
+Include:
+- rule summary
+- forbidden visible phrasing
+- preferred PT examples
+- preferred EN examples
+- comparison-section reframing rule
+
+2. Update:
+`mem/positioning/sharp.md`
+
+Remove or soften matrix language built around:
+- vs Trainerize
+- vs ChatGPT
+- vs Excel
+- vs RP Strength
+- generic app takedowns
+
+Keep only positive, self-contained positioning.
+
+Do not delete useful product truth.
+Just remove adversarial framing.
+
+Avoid touching `mem/index.md` unless this project already requires positioning rules to be indexed there. If an index update is needed, add only a one-line pointer to `mem/positioning/non-adversarial.md`.
+
+======================================================================
+AUDIT CURRENT LANDING COPY
+======================================================================
+
+Before editing, audit user-facing copy for adversarial framing.
+
+Search these surfaces:
+
+- `src/i18n/locales/{pt,en,es,hi}/plan.json`
+- landing-related keys in other locale files if landing copy lives elsewhere
+- `src/routes/index.tsx`
+- `src/components/landing/*`
+- any currently rendered landing section
+
+Flag every visible/user-facing line that:
+- names a competitor/tool
+- implies “we are better because they are worse”
+- uses negative contrast to create value
+- frames Excel, ChatGPT, Trainerize, RP Strength, or generic apps as the enemy
+- uses “sem viver no Excel”
+- uses “melhor que”
+- uses “vs”
+- uses “guarda dados” as a contrast line
+
+Create audit file before editing:
+`.lovable/r70-copy-audit.md`
+
+Audit table format:
+- file
+- key/line
+- current copy
+- issue
+- proposed replacement
+- implement now / proposal only
+
+Important:
+Do not count internal component names as copy if they are not visible to the user.
+
+Example:
+If `AntiChatGPTSection` remains as an internal component name but no visible copy says “ChatGPT”, that is acceptable for this round.
+
+Do not rename internal components unless trivial and low-risk.
+
+It is acceptable for adversarial terms to appear inside:
+- audit documents
+- positioning docs explaining what to avoid
+- internal notes
+- non-rendered comments
+
+It is not acceptable for adversarial framing to appear in rendered landing copy.
+
+======================================================================
+COPY REPLACEMENT RULES
+======================================================================
+
+Replace flagged visible copy with positive, self-contained copy.
+
+Do not say:
+“Protocol is better than X.”
+
+Say:
+“Protocol helps the trainer connect Y.”
+
+Preferred PT examples:
+- “Da avaliação ao plano, com lógica visível.”
+- “Avaliação estruturada, protocolo editável, adaptação baseada no log.”
+- “Menos dispersão. Mais continuidade entre avaliação, plano e execução.”
+- “Organize clientes, sessões, planos e progresso num só fluxo.”
+- “O treinador mantém o controlo: revê, ajusta e aprova.”
+- “Cada plano nasce de dados concretos: objetivo, disponibilidade, equipamento, limitações e histórico.”
+- “Ligue avaliação, plano, sessões, logbook, adaptação e progresso.”
+- “Estruture o acompanhamento sem espalhar decisões por ferramentas soltas.”
+
+Preferred EN examples:
+- “From assessment to plan, with visible logic.”
+- “Structured assessment, editable protocol, log-based adaptation.”
+- “Less fragmentation. More continuity between assessment, plan, and execution.”
+- “Organize clients, sessions, plans, and progress in one workflow.”
+- “The coach stays in control: review, adjust, and approve.”
+- “Each plan starts from concrete inputs: goal, availability, equipment, limitations, and history.”
+- “Connect assessment, plan, sessions, logbook, adaptation, and progress.”
+- “Structure coaching without scattering decisions across disconnected tools.”
+
+Use these as voice reference.
+Do not paste blindly if the surrounding layout needs shorter copy.
+
+======================================================================
+SPECIFIC REQUIRED REPLACEMENT
+======================================================================
+
+Flag this current line:
+
+PT:
+“Programação séria, sem viver no Excel.”
+
+Replace with a positive line.
+
+Preferred PT:
+“Da avaliação ao plano, com lógica visível.”
+
+Preferred EN:
+“From assessment to plan, with visible logic.”
+
+If the hero already has assessment/protocol/adaptation language and this becomes repetitive, use:
+
+PT:
+“Menos dispersão. Mais decisões estruturadas.”
+
+EN:
+“Less fragmentation. More structured decisions.”
+
+======================================================================
+COMPARISON SECTION REFRAME
+======================================================================
+
+Problem:
+A classic comparison table with competitor columns is structurally adversarial and difficult to read on mobile.
+
+Do not frame the section as:
+“Protocol vs Excel vs ChatGPT vs apps.”
+
+Reframe it as:
+
+PT title:
+“Ligue o que normalmente fica separado”
+
+EN title:
+“Connect what usually stays separate”
+
+Use the same existing section slot.
+Do not add a new route.
+Do not add a new major section.
+Do not redesign the whole landing.
+
+Replace competitor-column logic with a workflow connector.
+
+Suggested PT items:
+1. Avaliação
+“Dados do cliente antes do plano.”
+
+2. Plano
+“Estrutura editável para o treinador rever.”
+
+3. Sessões
+“Agenda ligada ao acompanhamento real.”
+
+4. Logbook
+“O que foi feito, não apenas o que foi prescrito.”
+
+5. Adaptação
+“A semana seguinte responde à execução.”
+
+6. Progresso
+“Tendências, consistência e resultados visíveis.”
+
+Suggested EN items:
+1. Assessment
+“Client inputs before the plan.”
+
+2. Plan
+“Editable structure for the coach to review.”
+
+3. Sessions
+“Schedule connected to real coaching work.”
+
+4. Logbook
+“What was done, not only what was prescribed.”
+
+5. Adaptation
+“The next week responds to execution.”
+
+6. Progress
+“Trends, consistency, and visible outcomes.”
+
+Use cards/chips/grid only if it fits the existing layout cleanly.
+
+If the existing comparison component cannot support this without layout risk:
+- return a proposal instead of implementing a heavy refactor.
+
+======================================================================
+ANTI-COMPETITOR SECTION
+======================================================================
+
+If there is a rendered section such as `AntiChatGPTSection`, do not keep visible anti-ChatGPT positioning.
+
+Options, in priority order:
+
+1. Replace visible copy with neutral workflow-continuity framing.
+
+Preferred PT:
+“O valor não está numa resposta isolada. Está na sequência: avaliar, estruturar, executar, registar e adaptar.”
+
+Preferred EN:
+“The value is not a single answer. It is the sequence: assess, structure, execute, log, and adapt.”
+
+2. If replacement is risky, hide the section using an existing visibility flag.
+
+3. If hiding/removing risks layout regressions, leave the internal component but remove adversarial visible copy.
+
+Do not delete files in this round unless trivial.
+
+======================================================================
+LOCALES
+======================================================================
+
+Do not change the project’s global source-of-truth architecture.
+
+For this round:
+- PT and EN must be human-authored.
+- ES and HI may mirror EN if that is the current project convention.
+- Do not invent new ES/HI translations unless that is already the project’s pattern.
+
+All user-facing copy must go through i18n.
+
+No hardcoded user-facing strings.
+
+======================================================================
+OUT OF SCOPE
+======================================================================
+
+Do not implement:
+- truth/clinical terminology cleanup
+- revenue privacy mode
+- full-app QA
+- MVP-loop audit
+- new landing sections
+- new components unless tiny and already consistent
+- new routes
+- animations
+- new dependencies
+- pricing logic changes
+- auth changes
+- billing changes
+- schedule changes
+- schema changes
+- server functions
+- engine/generation/PKL changes
+
+The clinical/diagnostic cleanup and revenue privacy mode are separate rounds.
+
+Do not mix them into this one.
+
+======================================================================
+VERIFICATION
+======================================================================
+
+Run:
+- `tsc --noEmit`
+
+Smoke:
+- landing desktop
+- landing mobile 375px
+- landing mobile 390px
+- hard refresh `/`
+- no hook crash
+- no horizontal overflow
+- comparison/connector section readable on mobile
+
+Search after changes.
+
+Important:
+The goal is not zero mentions of competitor/tool names across the entire codebase.
+
+The goal is zero visible adversarial landing copy.
+
+Run a search for likely visible copy references in landing/locales:
+
+`rg -i "excel|chatgpt|trainerize|rp strength|generic app|apps genéricas|melhor que|sem viver|guarda dados|vs " src/i18n/locales src/routes/index.tsx src/components/landing`
+
+Classify remaining hits:
+- rendered adversarial copy → must fix
+- internal component/function name → acceptable if not visible
+- audit/positioning doc explaining what to avoid → acceptable
+- comments/non-rendered notes → acceptable, mention in report if relevant
+
+No rendered landing copy should attack another tool.
+
+======================================================================
+EXPECTED FILES
+======================================================================
+
+Likely files:
+- `mem/positioning/non-adversarial.md`
+- `mem/positioning/sharp.md`
+- `.lovable/r70-copy-audit.md`
+- `src/i18n/locales/{pt,en,es,hi}/plan.json`
+- `src/routes/index.tsx`
+- `src/components/landing/*` if rendered copy exists there
+
+Optional:
+- `mem/index.md`, only if an index pointer is required by project convention
+
+Do not touch unrelated app surfaces.
+
+======================================================================
+IMPLEMENTATION ORDER
+======================================================================
+
+1. Create/update positioning docs.
+2. Audit visible landing copy and write `.lovable/r70-copy-audit.md`.
+3. Replace flagged hero/section copy.
+4. Reframe comparison table into workflow connector if low-risk.
+5. Neutralize or hide any rendered anti-competitor section.
+6. Update locales.
+7. Run typecheck and mobile smoke.
+8. Report remaining internal-only references separately.
+
+======================================================================
+ACCEPTANCE CRITERIA
+======================================================================
+
+1. No visible landing copy attacks Excel, ChatGPT, Trainerize, RP Strength, or generic apps.
+2. “Programação séria, sem viver no Excel” is replaced.
+3. Comparison section no longer works as a competitor attack table.
+4. The new section communicates workflow/value positively.
+5. PT copy sounds premium, calm, and natural.
+6. EN copy is complete.
+7. ES/HI mirrored according to project convention.
+8. Mobile 375px and 390px remain readable.
+9. No new sections unless reusing an existing slot safely.
+10. No new routes.
+11. No new dependencies.
+12. No pricing/auth/billing/schedule/schema/server/engine changes.
+13. `tsc --noEmit` clean.
+
+======================================================================
+FINAL REPORT
+======================================================================
+
+Report:
+- positioning docs created/updated
+- audit file created
+- visible adversarial lines found
+- lines replaced
+- comparison section change
+- anti-competitor section handling
+- files changed
+- i18n keys changed
+- search results summary
+- remaining competitor/tool references, classified by visible/internal/docs
+- mobile 375/390 result
+- confirmation:
+  - no schema changes
+  - no server changes
+  - no pricing/auth/billing changes
+  - no schedule changes
+  - no new routes
+  - no new dependencies
+  - no engine/generation/PKL changes
+
+```
+
+&nbsp;
