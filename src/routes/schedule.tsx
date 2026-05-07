@@ -54,11 +54,12 @@ export const Route = createFileRoute("/schedule")({
 
 function ScheduleShell() {
   const location = useLocation();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const [bookingTick, setBookingTick] = useState(0);
   if (location.pathname.startsWith("/schedule/")) {
     return <Outlet />;
   }
-  const search = Route.useSearch();
-  const navigate = useNavigate();
   const tab = (search.tab as "week" | "packs") ?? "week";
   return (
     <Tabs
@@ -69,10 +70,10 @@ function ScheduleShell() {
     >
       <ScheduleTabs />
       <TabsContent value="week" className="mt-4">
-        <ScheduleWeek />
+        <ScheduleWeek bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
       <TabsContent value="packs" className="mt-4">
-        <PacksPanel />
+        <PacksPanel bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
     </Tabs>
   );
@@ -110,7 +111,7 @@ function nextCoachableSlot(): Date {
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-function ScheduleWeek() {
+function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number; onBookingsMutated: () => void }) {
   const { t, i18n } = useTranslation("schedule");
   const { t: tc } = useTranslation("common");
   const { user } = useAuth();
@@ -143,7 +144,7 @@ function ScheduleWeek() {
   useEffect(() => {
     if (!user) return;
     void refresh();
-  }, [user, monday]);
+  }, [user, monday, bookingTick]);
 
   useEffect(() => {
     if (!user) return;
@@ -159,14 +160,13 @@ function ScheduleWeek() {
   useEffect(() => {
     if (!user) return;
     if (search.newBooking !== 1) return;
+    if (creating) return;
     const d = nextCoachableSlot();
-    setCreating({ startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId });
-    navigate({
-      to: "/schedule",
-      search: { tab: "week" },
-      replace: true,
-    });
-  }, [user, search.newBooking, search.clientId, search.packId]);
+    const next = { startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId };
+    // Clear the search params first so the dialog can't re-trigger from stale URL state.
+    navigate({ to: "/schedule", search: { tab: "week" }, replace: true });
+    setCreating(next);
+  }, [user, search.newBooking, search.clientId, search.packId, creating]);
 
   const packById = useMemo(() => {
     const m = new Map<string, Pack>();
@@ -360,7 +360,9 @@ function ScheduleWeek() {
       {/* New booking dialog */}
       <BookingDialog
         open={!!creating}
-        onOpenChange={(v) => !v && setCreating(null)}
+        onOpenChange={(v) => {
+          if (!v) setCreating(null);
+        }}
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
@@ -369,6 +371,7 @@ function ScheduleWeek() {
           setCreating(null);
           await refresh();
           await refreshPacks();
+          onBookingsMutated();
         }}
       />
 
@@ -384,6 +387,7 @@ function ScheduleWeek() {
           setEditing(null);
           await refresh();
           await refreshPacks();
+          onBookingsMutated();
         }}
       />
     </div>
