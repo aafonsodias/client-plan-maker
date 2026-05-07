@@ -50,7 +50,13 @@
       "ready_for_protocol": "{{name}} · pronto para protocolo",
       "plan_awaiting": "{{name}} · plano por aprovar",
       "no_sessions_week": "0 sessões marcadas esta semana",
-      "pack_ending": "{{name}} · pack a terminar"
+      "pack_ending": "{{name}} · pack a terminar",
+      "status": {
+        "assessment_incomplete": "avaliação por completar",
+        "ready_for_protocol": "pronto para protocolo",
+        "plan_awaiting": "plano por aprovar",
+        "pack_ending": "pack a terminar"
+      }
     },
     "revenue_caption": "baseada nas sessões marcadas desta semana",
     "schedule": {
