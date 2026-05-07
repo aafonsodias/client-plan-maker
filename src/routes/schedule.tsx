@@ -209,6 +209,18 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     }
   };
 
+  const handleToggleDone = async (b: Booking) => {
+    const next = b.status === "done" ? "scheduled" : "done";
+    setBookings((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: next } : x)));
+    const r: any = await updateFn({ data: { id: b.id, status: next } });
+    if (!r?.ok) {
+      toast.error(r?.error ?? "Erro");
+      await refresh();
+    } else {
+      onBookingsMutated();
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     const r: any = await list({ data: { weekStart: monday.toISOString() } });
@@ -434,6 +446,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               onBookingClick={(b) => setEditing(b)}
               onCopy={(b) => setClipboard(b)}
               onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
               clipboardActive={!!clipboard}
             />
           ))}
@@ -446,6 +459,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           clientById={clientById}
           locale={locale}
           onBookingClick={(b) => setEditing(b)}
+          onToggleDone={handleToggleDone}
           onDayClick={(d) => (clipboard ? handleDayPaste(d) : setCreating({ startsAt: (() => { const t = new Date(d); t.setHours(9,0,0,0); return t.toISOString(); })() }))}
         />
       )}
