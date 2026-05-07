@@ -200,6 +200,32 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const locale = i18n.language?.startsWith("pt") ? "pt-PT" : "en-GB";
 
+  // Out-of-hours: any non-cancelled booking whose hour is outside HOURS.
+  const HOUR_MIN = HOURS[0];
+  const HOUR_MAX = HOURS[HOURS.length - 1];
+  const outOfHoursBookings = bookings
+    .filter((b) => {
+      const h = new Date(b.starts_at).getHours();
+      return h < HOUR_MIN || h > HOUR_MAX;
+    })
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+
+  const onSavedJumpToWeek = async (savedIso?: string) => {
+    if (savedIso) {
+      const w = startOfIsoWeek(new Date(savedIso));
+      if (w.getTime() !== monday.getTime()) {
+        setMonday(w);
+        // refresh will re-trigger via the [monday] effect below
+        await refreshPacks();
+        onBookingsMutated();
+        return;
+      }
+    }
+    await refresh();
+    await refreshPacks();
+    onBookingsMutated();
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -297,6 +323,46 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         />
       </div>
 
+      {outOfHoursBookings.length > 0 && (
+        <section
+          aria-labelledby="oof-heading"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3"
+        >
+          <h3
+            id="oof-heading"
+            className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400"
+          >
+            {t("out_of_hours.heading")}
+          </h3>
+          <ul className="mt-2 space-y-1.5">
+            {outOfHoursBookings.map((b) => {
+              const c = clientById.get(b.client_id);
+              const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
+              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const dt = new Date(b.starts_at);
+              const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+              const wd = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(dt);
+              const typeLabel = b.session_type === "online" ? t("form.online") : t("form.in_person");
+              return (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(b)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                  >
+                    <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
+                    <span className="min-w-0 flex-1 truncate font-medium">{c?.full_name ?? "—"}</span>
+                    <span className="font-mono opacity-80">
+                      {wd} · {time} · {typeLabel} · {b.duration_min}′
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {loading ? null : bookings.length === 0 ? (
         <div className="flex justify-center">
           <div className="w-full max-w-[320px] rounded-xl border border-dashed border-border bg-secondary/20 p-5 text-center">
@@ -366,12 +432,9 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
-        weekBookings={bookings}
-        onSaved={async () => {
+        onSaved={async (savedIso) => {
           setCreating(null);
-          await refresh();
-          await refreshPacks();
-          onBookingsMutated();
+          await onSavedJumpToWeek(savedIso);
         }}
       />
 
@@ -382,12 +445,9 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         editing={editing ?? undefined}
         clients={clients}
         packs={packs}
-        weekBookings={bookings}
-        onSaved={async () => {
+        onSaved={async (savedIso) => {
           setEditing(null);
-          await refresh();
-          await refreshPacks();
-          onBookingsMutated();
+          await onSavedJumpToWeek(savedIso);
         }}
       />
     </div>
