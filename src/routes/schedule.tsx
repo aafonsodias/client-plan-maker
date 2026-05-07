@@ -188,6 +188,15 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     setCreating({ startsAt: iso });
   };
 
+  // Day-level paste: keep original HH:mm, just swap the date.
+  const handleDayPaste = async (day: Date) => {
+    if (!clipboard) return;
+    const src = new Date(clipboard.starts_at);
+    const target = new Date(day);
+    target.setHours(src.getHours(), src.getMinutes(), 0, 0);
+    await handleSlotClick(target.toISOString());
+  };
+
   const handleDragMove = async (id: string, newIso: string) => {
     // optimistic
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, starts_at: newIso } : b)));
@@ -271,6 +280,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const locale = i18n.language?.startsWith("pt") ? "pt-PT" : "en-GB";
+  const [view, setView] = useState<"week" | "month">("week");
 
   // Out-of-hours: any non-cancelled booking whose hour is outside HOURS.
   const HOUR_MIN = HOURS[0];
