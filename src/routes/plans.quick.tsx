@@ -70,7 +70,15 @@ function QuickPlanPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!valid || busy) return;
+    if (busy) return;
+    const missing: string[] = [];
+    if (!fullName.trim()) missing.push("nome");
+    if (!Number.isFinite(ageNum) || ageNum < 14 || ageNum > 90) missing.push("idade (14–90)");
+    if (equipment.length === 0) missing.push("equipamento");
+    if (missing.length > 0) {
+      toast.error(`Preencha: ${missing.join(", ")}.`);
+      return;
+    }
     setBusy(true);
     try {
       const res: any = await startFn({
@@ -280,7 +288,7 @@ function QuickPlanPage() {
           <Button asChild type="button" variant="ghost" size="sm">
             <Link to="/dashboard">Cancelar</Link>
           </Button>
-          <Button type="submit" size="sm" disabled={!valid || busy}>
+          <Button type="submit" size="sm" disabled={busy}>
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             Gerar plano agora
           </Button>
