@@ -251,7 +251,7 @@ function Landing() {
         <InlineTierChips />
       </section>
 
-      {/* Comparison table — Protocol vs Excel vs ChatGPT vs Generic apps */}
+      {/* Workflow connector — what Protocol helps you connect (R70) */}
       <ComparisonTableSection />
 
       {/* Depois do PDF — fused logbook + AI insights */}
@@ -847,34 +847,10 @@ function WhoAndWhySection() {
   );
 }
 
-// ─── Comparison table ──────────────────────────────────────────────────
+// ─── Workflow connector (R70) — replaces former competitor matrix ──────
 function ComparisonTableSection() {
   const { t } = useTranslation("plan");
-  const headers = (t("landing.comparison.headers", { returnObjects: true }) as string[]) ?? [];
-  const rows = (t("landing.comparison.rows", { returnObjects: true }) as string[][]) ?? [];
-
-  function renderCell(value: string, colIdx: number) {
-    if (colIdx === 0) return <span className="text-foreground/85">{value}</span>;
-    if (value === "yes")
-      return (
-        <span className="inline-flex items-center justify-center text-emerald-400">
-          <Check className="h-4 w-4" aria-label="yes" />
-        </span>
-      );
-    if (value === "no")
-      return (
-        <span className="inline-flex items-center justify-center text-red-400/80">
-          <X className="h-4 w-4" aria-label="no" />
-        </span>
-      );
-    if (value === "—")
-      return (
-        <span className="inline-flex items-center justify-center text-muted-foreground/60">
-          <Minus className="h-4 w-4" aria-label="n/a" />
-        </span>
-      );
-    return <span className="text-xs text-muted-foreground">{value}</span>;
-  }
+  const items = (t("landing.comparison.items", { returnObjects: true }) as { title: string; body: string }[]) ?? [];
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-20">
@@ -886,80 +862,23 @@ function ComparisonTableSection() {
           {t("landing.comparison.title")}
         </h2>
       </div>
-      {/* Mobile: stacked cards (no horizontal scroll) */}
-      <div className="space-y-3 md:hidden">
-        {rows.map((row, ri) => {
-          const label = row[0];
-          const protocolValue = row[1];
-          const others = headers.slice(2).map((h, i) => ({ h, v: row[2 + i] }));
-          return (
-            <div key={ri} className="rounded-xl border border-border bg-card p-4">
-              <p className="text-sm font-medium text-foreground/90">{label}</p>
-              <div className="mt-3 flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-3 py-2">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-accent">
-                  {headers[1]}
-                </span>
-                <span>{renderCell(protocolValue, 1)}</span>
-              </div>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {others.map(({ h, v }, i) => (
-                  <div
-                    key={i}
-                    className="rounded-md border border-border/60 bg-background/40 px-2 py-1.5 text-center"
-                  >
-                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground/70 leading-tight break-words">
-                      {h}
-                    </div>
-                    <div className="mt-0.5 flex justify-center">{renderCell(v, i + 2)}</div>
-                  </div>
-                ))}
-              </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((it, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-accent/40"
+          >
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent/30 bg-accent/10 text-[11px] font-semibold text-accent">
+                {i + 1}
+              </span>
+              <p className="text-sm font-semibold text-foreground">{it.title}</p>
             </div>
-          );
-        })}
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{it.body}</p>
+          </div>
+        ))}
       </div>
-
-      {/* Desktop: original table */}
-      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card md:block">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              {headers.map((h, i) => (
-                <th
-                  key={i}
-                  className={`px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-widest ${
-                    i === 1 ? "text-accent" : "text-muted-foreground"
-                  }`}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, ri) => (
-              <tr
-                key={ri}
-                className={`border-b border-border/60 last:border-0 ${
-                  ri % 2 === 1 ? "bg-background/40" : ""
-                }`}
-              >
-                {row.map((cell, ci) => (
-                  <td
-                    key={ci}
-                    className={`px-4 py-3 ${ci === 1 ? "bg-accent/[0.04]" : ""} ${
-                      ci === 0 ? "" : "text-center"
-                    }`}
-                  >
-                    {renderCell(cell, ci)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-4 text-center text-xs italic text-muted-foreground/70">
+      <p className="mt-6 text-center text-xs italic text-muted-foreground/70">
         {t("landing.comparison.footnote")}
       </p>
     </section>
