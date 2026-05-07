@@ -90,6 +90,24 @@ function ScheduleTabs() {
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
 
+/** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
+ *  otherwise next weekday at 09:00. */
+function nextCoachableSlot(): Date {
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun, 6=Sat
+  if (dow >= 1 && dow <= 5 && now.getHours() < 19) {
+    const d = new Date(now);
+    d.setHours(now.getHours() + 1, 0, 0, 0);
+    return d;
+  }
+  const d = new Date(now);
+  do {
+    d.setDate(d.getDate() + 1);
+  } while (d.getDay() === 0 || d.getDay() === 6);
+  d.setHours(9, 0, 0, 0);
+  return d;
+}
+
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
 function ScheduleWeek() {
