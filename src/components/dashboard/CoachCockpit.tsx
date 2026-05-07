@@ -9,7 +9,7 @@ import { startOfIsoWeek, addDays, fmtWeekRange, packBlockClasses, type Pack, typ
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PriceTag } from "@/components/PriceTag";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
-import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap } from "lucide-react";
+import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap, ArrowRight } from "lucide-react";
 import { MessageComposerSheet, type ComposerKind, type ComposerCtx } from "./MessageComposerSheet";
 
 /**
@@ -51,6 +51,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [packs, setPacks] = useState<Pack[]>([]);
+  const [latestPlanByClient, setLatestPlanByClient] = useState<Record<string, { id: string; status: string }>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +64,24 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       setPacks(((pk as any)?.rows ?? []) as Pack[]);
     })();
   }, [user, mondayIso, listWeek, listPacksFn]);
+
+  // Pull latest plan per client (status only) — used for "Today" signals
+  useEffect(() => {
+    if (!user || clients.length === 0) return;
+    void (async () => {
+      const ids = clients.map((c) => c.id);
+      const { data } = await supabase
+        .from("workout_plans")
+        .select("id, client_id, status, updated_at")
+        .in("client_id", ids)
+        .order("updated_at", { ascending: false });
+      const out: Record<string, { id: string; status: string }> = {};
+      for (const r of (data ?? []) as Array<{ id: string; client_id: string; status: string }>) {
+        if (!out[r.client_id]) out[r.client_id] = { id: r.id, status: r.status };
+      }
+      setLatestPlanByClient(out);
+    })();
+  }, [user, clients]);
 
   // Aggregate revenue: sum priced bookings (use pack price when linked)
   const expectedIncome = useMemo(() => {
