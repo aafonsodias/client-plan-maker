@@ -472,6 +472,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           bookings={bookings}
           packById={packById}
           clientById={clientById}
+          onToggleDone={handleToggleDone}
           onSlotClick={handleSlotClick}
           onDayPaste={handleDayPaste}
           onBookingClick={(b) => setEditing(b)}
