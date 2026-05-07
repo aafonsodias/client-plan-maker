@@ -475,7 +475,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
             {outOfHoursBookings.map((b) => {
               const c = clientById.get(b.client_id);
               const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
-              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const cls = packBlockClasses(clientColor(c, pack?.color));
               const dt = new Date(b.starts_at);
               const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
               const wd = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(dt);
@@ -644,7 +644,7 @@ function RowHour({
             {here.map((b) => {
               const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
               const c = clientById.get(b.client_id);
-              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const cls = packBlockClasses(clientColor(c, pack?.color));
               return (
                 <BookingBlock
                   key={b.id}
@@ -835,7 +835,7 @@ function DayStrip({
           list.map((b) => {
             const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
             const c = clientById.get(b.client_id);
-            const cls = packBlockClasses(pack?.color ?? "emerald");
+            const cls = packBlockClasses(clientColor(c, pack?.color));
             const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
             const typeLabel = b.session_type === "online" ? ts("form.online") : ts("form.in_person");
             return (
