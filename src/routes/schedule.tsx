@@ -561,7 +561,7 @@ function BookingDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  initial?: { startsAt: string };
+  initial?: { startsAt: string; clientId?: string; packId?: string };
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
@@ -576,8 +576,8 @@ function BookingDialog({
   const dup = useServerFn(duplicateBookingNextWeek);
 
   const startsAt = editing?.starts_at ?? initial?.startsAt ?? new Date().toISOString();
-  const [clientId, setClientId] = useState(editing?.client_id ?? "");
-  const [packId, setPackId] = useState<string>(editing?.pack_id ?? "");
+  const [clientId, setClientId] = useState(editing?.client_id ?? initial?.clientId ?? "");
+  const [packId, setPackId] = useState<string>(editing?.pack_id ?? initial?.packId ?? "");
   const [date, setDate] = useState(startsAt.slice(0, 10));
   const [time, setTime] = useState(startsAt.slice(11, 16));
   const [duration, setDuration] = useState(editing?.duration_min ?? 60);
@@ -589,8 +589,8 @@ function BookingDialog({
   useEffect(() => {
     if (!open) return;
     const ts = editing?.starts_at ?? initial?.startsAt ?? new Date().toISOString();
-    setClientId(editing?.client_id ?? "");
-    setPackId(editing?.pack_id ?? "");
+    setClientId(editing?.client_id ?? initial?.clientId ?? "");
+    setPackId(editing?.pack_id ?? initial?.packId ?? "");
     setDate(ts.slice(0, 10));
     setTime(ts.slice(11, 16));
     setDuration(editing?.duration_min ?? 60);
