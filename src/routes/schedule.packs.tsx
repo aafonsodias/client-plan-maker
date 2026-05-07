@@ -134,7 +134,11 @@ export function PacksPanel({
                   <span aria-hidden>·</span>
                   <span className="font-mono">{t("pack.sessions_short", { used: p.sessions_used, total: p.pack_size })}</span>
                   <span aria-hidden>·</span>
-                  <span>{t("pack.per_session_short", { price: Number(p.price_per_session_eur) })}</span>
+                  <span>
+                    {Number(p.price_per_session_eur) > 0
+                      ? t("pack.per_session_short", { price: Number(p.price_per_session_eur) })
+                      : t("pack.price_unset")}
+                  </span>
                   {p.weekly_frequency > 0 && (
                     <>
                       <span aria-hidden>·</span>
