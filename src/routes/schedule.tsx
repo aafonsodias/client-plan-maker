@@ -938,6 +938,7 @@ function ScheduleMonth({
   locale,
   onBookingClick,
   onDayClick,
+  onToggleDone,
 }: {
   monday: Date;
   packById: Map<string, Pack>;
@@ -945,6 +946,7 @@ function ScheduleMonth({
   locale: string;
   onBookingClick: (b: Booking) => void;
   onDayClick: (d: Date) => void;
+  onToggleDone: (b: Booking) => void;
 }) {
   const { t } = useTranslation("schedule");
   const monthFn = useServerFn(listMonthBookings);
@@ -1009,16 +1011,31 @@ function ScheduleMonth({
                   const cls = packBlockClasses(col);
                   const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
                   return (
-                    <button
+                    <div
                       key={b.id}
-                      type="button"
-                      onClick={() => onBookingClick(b)}
-                      className={`flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                      className={`group flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
                     >
-                      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
-                      <span className="font-mono">{time}</span>
-                      <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleDone(b);
+                        }}
+                        aria-label={b.status === "done" ? "mark scheduled" : "mark done"}
+                        title={b.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+                        className={`shrink-0 rounded p-0.5 hover:bg-foreground/10 ${b.status === "done" ? "text-emerald-600 dark:text-emerald-400" : "opacity-50 group-hover:opacity-100"}`}
+                      >
+                        <Check className="h-2.5 w-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onBookingClick(b)}
+                        className={`flex min-w-0 flex-1 items-center gap-1 truncate text-left ${b.status === "done" ? "line-through opacity-70" : ""}`}
+                      >
+                        <span className="font-mono">{time}</span>
+                        <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
+                      </button>
+                    </div>
                   );
                 })}
                 {more > 0 && (
