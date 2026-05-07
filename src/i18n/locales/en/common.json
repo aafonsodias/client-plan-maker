@@ -775,7 +775,18 @@
       "cta": "Program next week",
       "created": "Week {{week}} created — {{flagged}} exercise(s) flagged.",
       "low_adherence": "Adherence {{pct}}% ({{logged}}/{{expected}} sessions logged). Log at least 80% before advancing.",
-      "failed": "Could not program the next week."
+      "failed": "Could not program the next week.",
+      "rationale": {
+        "title": "Week {{week}} · adapted from week {{from}}",
+        "strict_adjusted": "Load reduced 5% on {{count}} exercise(s) — actual RPE consistently above prescribed.",
+        "suggested_flag": "{{count}} exercise(s) flagged for review — RPE above prescribed. Load decision is yours.",
+        "no_flags": "Adherence on target and RPE coherent with prescription. Linear progression maintained.",
+        "copied": "Week copied from previous, no automatic adjustments.",
+        "adherence": "Adherence {{pct}}%",
+        "mode_strict": "autoregulation: strict",
+        "mode_suggested": "autoregulation: suggested",
+        "mode_off": "autoregulation: off"
+      }
     }
   },
   "ux": {
