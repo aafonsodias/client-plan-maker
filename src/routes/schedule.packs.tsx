@@ -250,6 +250,7 @@ function PackFormDialog({
   const [start, setStart] = useState<string>(editing?.start_date ?? new Date().toISOString().slice(0, 10));
   const [color, setColor] = useState<string>(editing?.color ?? "emerald");
   const [busy, setBusy] = useState(false);
+  const [sessionsUsed, setSessionsUsed] = useState<number>(editing?.sessions_used ?? 0);
   const priceRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -262,6 +263,7 @@ function PackFormDialog({
     setFreq(editing?.weekly_frequency ?? 2);
     setStart(editing?.start_date ?? new Date().toISOString().slice(0, 10));
     setColor(editing?.color ?? "emerald");
+    setSessionsUsed(editing?.sessions_used ?? 0);
   }, [open, editing]);
 
   const submit = async () => {
@@ -270,6 +272,10 @@ function PackFormDialog({
     if (!priceNum || priceNum <= 0) {
       toast.error(t("pack.price_required"));
       priceRef.current?.focus();
+      return;
+    }
+    if (sessionsUsed > size) {
+      toast.error(t("pack.sessions_used_invalid"));
       return;
     }
     setBusy(true);
@@ -284,6 +290,7 @@ function PackFormDialog({
         weeklyFrequency: freq,
         startDate: start,
         color: color as any,
+        sessionsUsed,
       },
     });
     setBusy(false);
@@ -295,7 +302,7 @@ function PackFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editing ? t("form.save") : t("pack.new")}</DialogTitle>
+          <DialogTitle>{editing ? t("pack.manage") : t("pack.new")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -340,6 +347,19 @@ function PackFormDialog({
             <div>
               <Label>{t("pack.size")}</Label>
               <Input type="number" min={1} max={500} value={size} onChange={(e) => setSize(parseInt(e.target.value) || 1)} />
+            </div>
+            <div>
+              <Label>{t("pack.sessions_used_label")}</Label>
+              <Input
+                type="number"
+                min={0}
+                max={size}
+                value={sessionsUsed}
+                onChange={(e) => setSessionsUsed(Math.max(0, Math.min(size, parseInt(e.target.value) || 0)))}
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {t("pack.remaining_short", { remaining: Math.max(0, size - sessionsUsed), total: size })} · {t("pack.sessions_used_hint")}
+              </p>
             </div>
             <div>
               <Label>{t("pack.weekly_frequency")}</Label>

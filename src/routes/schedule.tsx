@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -53,14 +53,14 @@ export const Route = createFileRoute("/schedule")({
 });
 
 function ScheduleShell() {
-  const location = useLocation();
+  // Single stable tree on every render. /schedule/packs is a redirect-only
+  // route (see src/routes/schedule.packs.tsx) — there is no nested Outlet
+  // to swap into, so we always render the tabbed shell. This kills the
+  // remaining hook-order mismatch where ScheduleShell rendered two trees.
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [bookingTick, setBookingTick] = useState(0);
-  if (location.pathname.startsWith("/schedule/")) {
-    return <Outlet />;
-  }
-  const tab = (search.tab as "week" | "packs") ?? "week";
+  const tab = search.tab === "packs" ? "packs" : "week";
   return (
     <Tabs
       value={tab}
@@ -200,6 +200,32 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const locale = i18n.language?.startsWith("pt") ? "pt-PT" : "en-GB";
 
+  // Out-of-hours: any non-cancelled booking whose hour is outside HOURS.
+  const HOUR_MIN = HOURS[0];
+  const HOUR_MAX = HOURS[HOURS.length - 1];
+  const outOfHoursBookings = bookings
+    .filter((b) => {
+      const h = new Date(b.starts_at).getHours();
+      return h < HOUR_MIN || h > HOUR_MAX;
+    })
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+
+  const onSavedJumpToWeek = async (savedIso?: string) => {
+    if (savedIso) {
+      const w = startOfIsoWeek(new Date(savedIso));
+      if (w.getTime() !== monday.getTime()) {
+        setMonday(w);
+        // refresh will re-trigger via the [monday] effect below
+        await refreshPacks();
+        onBookingsMutated();
+        return;
+      }
+    }
+    await refresh();
+    await refreshPacks();
+    onBookingsMutated();
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -297,6 +323,46 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         />
       </div>
 
+      {outOfHoursBookings.length > 0 && (
+        <section
+          aria-labelledby="oof-heading"
+          className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3"
+        >
+          <h3
+            id="oof-heading"
+            className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 dark:text-amber-400"
+          >
+            {t("out_of_hours.heading")}
+          </h3>
+          <ul className="mt-2 space-y-1.5">
+            {outOfHoursBookings.map((b) => {
+              const c = clientById.get(b.client_id);
+              const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
+              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const dt = new Date(b.starts_at);
+              const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+              const wd = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(dt);
+              const typeLabel = b.session_type === "online" ? t("form.online") : t("form.in_person");
+              return (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(b)}
+                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                  >
+                    <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
+                    <span className="min-w-0 flex-1 truncate font-medium">{c?.full_name ?? "—"}</span>
+                    <span className="font-mono opacity-80">
+                      {wd} · {time} · {typeLabel} · {b.duration_min}′
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {loading ? null : bookings.length === 0 ? (
         <div className="flex justify-center">
           <div className="w-full max-w-[320px] rounded-xl border border-dashed border-border bg-secondary/20 p-5 text-center">
@@ -366,12 +432,9 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
-        weekBookings={bookings}
-        onSaved={async () => {
+        onSaved={async (savedIso) => {
           setCreating(null);
-          await refresh();
-          await refreshPacks();
-          onBookingsMutated();
+          await onSavedJumpToWeek(savedIso);
         }}
       />
 
@@ -382,12 +445,9 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         editing={editing ?? undefined}
         clients={clients}
         packs={packs}
-        weekBookings={bookings}
-        onSaved={async () => {
+        onSaved={async (savedIso) => {
           setEditing(null);
-          await refresh();
-          await refreshPacks();
-          onBookingsMutated();
+          await onSavedJumpToWeek(savedIso);
         }}
       />
     </div>
@@ -568,7 +628,6 @@ function BookingDialog({
   editing,
   clients,
   packs,
-  weekBookings,
   onSaved,
 }: {
   open: boolean;
@@ -577,8 +636,7 @@ function BookingDialog({
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
-  weekBookings: Booking[];
-  onSaved: () => void | Promise<void>;
+  onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
   const { t: tc } = useTranslation("common");
@@ -597,6 +655,7 @@ function BookingDialog({
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [busy, setBusy] = useState(false);
   const [override, setOverride] = useState(false);
+  const [candidateWeekCount, setCandidateWeekCount] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -613,18 +672,41 @@ function BookingDialog({
 
   const clientPacks = packs.filter((p) => p.client_id === clientId && !p.archived);
 
-  // Weekly frequency guard: agreed = pack.weekly_frequency for the selected pack
-  // (best existing source). Count this week's non-cancelled bookings for the
-  // selected client, excluding the booking being edited.
+  // Weekly frequency guard against the candidate booking date's ISO week,
+  // not the displayed week. Re-counts client+pack bookings whenever the
+  // user changes client/pack/date in the dialog.
   const agreedFreq = packId ? (packs.find((p) => p.id === packId)?.weekly_frequency ?? 0) : 0;
-  const usedThisWeek = clientId
-    ? weekBookings.filter(
-        (b) =>
-          b.client_id === clientId &&
-          b.status !== "cancelled" &&
-          (!editing || b.id !== editing.id),
-      ).length
-    : 0;
+  useEffect(() => {
+    if (!open || !clientId) {
+      setCandidateWeekCount(0);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const candidate = new Date(`${date}T${time || "09:00"}:00`);
+      if (Number.isNaN(candidate.getTime())) return;
+      const wkStart = startOfIsoWeek(candidate);
+      const wkEnd = addDays(wkStart, 7);
+      let q = supabase
+        .from("client_bookings")
+        .select("id, status, pack_id")
+        .eq("client_id", clientId)
+        .gte("starts_at", wkStart.toISOString())
+        .lt("starts_at", wkEnd.toISOString());
+      if (packId) q = q.eq("pack_id", packId);
+      const { data } = await q;
+      if (cancelled) return;
+      const rows = (data as any[]) ?? [];
+      const count = rows.filter(
+        (r) => r.status !== "cancelled" && (!editing || r.id !== editing.id),
+      ).length;
+      setCandidateWeekCount(count);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, clientId, packId, date, time, editing]);
+  const usedThisWeek = candidateWeekCount;
   const overFrequency = agreedFreq > 0 && usedThisWeek >= agreedFreq;
 
   const save = async () => {
@@ -655,7 +737,7 @@ function BookingDialog({
         });
     setBusy(false);
     if (r?.ok) {
-      await onSaved();
+      await onSaved(iso);
     } else {
       toast.error(r?.error ?? "error");
     }
@@ -665,7 +747,7 @@ function BookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editing ? t("form.save") : t("new_booking")}</DialogTitle>
+          <DialogTitle>{editing ? t("form.edit_session") : t("form.new_session")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -744,7 +826,7 @@ function BookingDialog({
                 variant="outline"
                 onClick={async () => {
                   const r: any = await upd({ data: { id: editing.id, status: editing.status === "done" ? "scheduled" : "done" } });
-                  if (r?.ok) await onSaved();
+                  if (r?.ok) await onSaved(editing.starts_at);
                 }}
               >
                 <Check className="mr-2 h-4 w-4" />
@@ -757,7 +839,9 @@ function BookingDialog({
                   const r: any = await dup({ data: { id: editing.id } });
                   if (r?.ok) {
                     toast.success("✓");
-                    await onSaved();
+                    const next = new Date(editing.starts_at);
+                    next.setDate(next.getDate() + 7);
+                    await onSaved(next.toISOString());
                   }
                 }}
               >
@@ -770,7 +854,7 @@ function BookingDialog({
                 className="text-destructive hover:text-destructive"
                 onClick={async () => {
                   const r: any = await del({ data: { id: editing.id } });
-                  if (r?.ok) await onSaved();
+                  if (r?.ok) await onSaved(editing.starts_at);
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />

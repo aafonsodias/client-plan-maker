@@ -45,7 +45,9 @@
     "duplicate_next_week": "Duplicate to next week",
     "mark_done": "Mark done",
     "mark_scheduled": "Mark scheduled",
-    "select_client": "Select client"
+    "select_client": "Select client",
+    "new_session": "New session",
+    "edit_session": "Edit session"
   },
   "pack": {
     "title": "Packs",
@@ -76,7 +78,15 @@
     "demo_seeded": "Created {{count}} sessions this week",
     "price_required": "Set the price per session.",
     "price_required_hint": "How much do you charge this client per session?",
-    "price_unset": "Price not set"
+    "price_unset": "Price not set",
+    "manage": "Manage pack",
+    "sessions_used_label": "Sessions already used",
+    "sessions_used_hint": "Use this for clients who started the pack before being added here.",
+    "sessions_used_invalid": "Used cannot exceed total sessions.",
+    "remaining_short": "{{remaining}}/{{total}} remaining"
+  },
+  "out_of_hours": {
+    "heading": "Sessions outside visible hours"
   },
   "day": {
     "list_header_one": "{{count}} session scheduled",

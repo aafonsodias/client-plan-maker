@@ -54,7 +54,7 @@
     },
     "revenue_caption": "based on sessions scheduled this week",
     "schedule": {
-      "frequency_warn": "This client already has {{used}}/{{agreed}} sessions scheduled this week.",
+      "frequency_warn": "This client already has {{used}}/{{agreed}} sessions scheduled for this week.",
       "extra_session": "Schedule extra session"
     },
     "new_client": "New client",
