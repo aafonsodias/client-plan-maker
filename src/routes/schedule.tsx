@@ -695,7 +695,7 @@ function BookingDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("form.cancel")}</Button>
-          <Button onClick={save} disabled={busy}>
+          <Button onClick={save} disabled={busy || (overFrequency && !override)}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t("form.save")}
           </Button>
         </DialogFooter>
