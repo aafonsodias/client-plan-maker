@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -53,14 +53,14 @@ export const Route = createFileRoute("/schedule")({
 });
 
 function ScheduleShell() {
-  const location = useLocation();
+  // Single stable tree on every render. /schedule/packs is a redirect-only
+  // route (see src/routes/schedule.packs.tsx) — there is no nested Outlet
+  // to swap into, so we always render the tabbed shell. This kills the
+  // remaining hook-order mismatch where ScheduleShell rendered two trees.
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [bookingTick, setBookingTick] = useState(0);
-  if (location.pathname.startsWith("/schedule/")) {
-    return <Outlet />;
-  }
-  const tab = (search.tab as "week" | "packs") ?? "week";
+  const tab = search.tab === "packs" ? "packs" : "week";
   return (
     <Tabs
       value={tab}
