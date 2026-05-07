@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { detectRegionFromLocale, generateRoster, initialsFor } from "@/lib/names/regional-names";
 import { pickDemoAvatar } from "@/lib/demo-avatars";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, X, Minus, AlertTriangle, Activity, ChevronDown, LogOut } from "lucide-react";
+import { FileText, ArrowRight, ArrowUp, ClipboardCheck, Check, Sparkles, ClipboardList, FileSignature, LayoutGrid, CalendarDays, TrendingUp, MoreVertical, Mic, AlertTriangle, Activity, ChevronDown, LogOut } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { LogbookInsightsMockup } from "@/components/landing/LogbookInsightsMockup";
 import { PricingToggle } from "@/components/landing/PricingToggle";
