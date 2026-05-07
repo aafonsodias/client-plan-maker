@@ -46,6 +46,8 @@ export function PacksPanel({
   const [editing, setEditing] = useState<Pack | null>(null);
   const [creating, setCreating] = useState(false);
   const [scheduledByPack, setScheduledByPack] = useState<Record<string, number>>({});
+  const [completedByPack, setCompletedByPack] = useState<Record<string, number>>({});
+  const [upcomingByPack, setUpcomingByPack] = useState<Record<string, number>>({});
 
   const refresh = async () => {
     const r: any = await list({ data: { activeOnly: false } });
@@ -62,7 +64,8 @@ export function PacksPanel({
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
 
-  // One scoped read of this week's non-cancelled bookings → count per pack.
+  // One scoped read of this week's non-cancelled bookings → count per pack
+  // (used for the "X marcadas esta semana" chip).
   useEffect(() => {
     if (!user) return;
     if (packs.length === 0) {
@@ -86,6 +89,38 @@ export function PacksPanel({
           counts[row.pack_id] = (counts[row.pack_id] ?? 0) + 1;
         }
         setScheduledByPack(counts);
+      });
+  }, [user, packs, bookingTick]);
+
+  // Honest pack accounting: split all non-cancelled bookings linked to each
+  // pack into past-completed (session end < now) and upcoming (starts >= now).
+  // Past sessions reduce remaining; future sessions are only "scheduled".
+  useEffect(() => {
+    if (!user) return;
+    if (packs.length === 0) {
+      setCompletedByPack({});
+      setUpcomingByPack({});
+      return;
+    }
+    const packIds = packs.map((p) => p.id);
+    void supabase
+      .from("client_bookings")
+      .select("pack_id, status, starts_at, duration_min")
+      .in("pack_id", packIds)
+      .then(({ data }) => {
+        const completed: Record<string, number> = {};
+        const upcoming: Record<string, number> = {};
+        const now = Date.now();
+        for (const row of (data as any[]) ?? []) {
+          if (!row.pack_id) continue;
+          if (row.status === "cancelled") continue;
+          const start = new Date(row.starts_at).getTime();
+          const end = start + Number(row.duration_min ?? 60) * 60 * 1000;
+          if (end < now) completed[row.pack_id] = (completed[row.pack_id] ?? 0) + 1;
+          else upcoming[row.pack_id] = (upcoming[row.pack_id] ?? 0) + 1;
+        }
+        setCompletedByPack(completed);
+        setUpcomingByPack(upcoming);
       });
   }, [user, packs, bookingTick]);
 
@@ -113,10 +148,20 @@ export function PacksPanel({
         <ul className="space-y-2.5">
           {packs.map((p) => {
             const c = clientById.get(p.client_id);
-            const st = packStatus(p);
-            const left = Math.max(0, p.pack_size - p.sessions_used);
             const cls = packBlockClasses(p.color);
             const scheduled = scheduledByPack[p.id] ?? 0;
+            const completed = completedByPack[p.id] ?? 0;
+            const upcoming = upcomingByPack[p.id] ?? 0;
+            const usedBefore = p.sessions_used;
+            const effectiveUsed = usedBefore + completed;
+            const remaining = Math.max(0, p.pack_size - effectiveUsed);
+            // Status reflects effective remaining (used-before + completed),
+            // not just the raw mid-pack offset.
+            const st = remaining <= 0
+              ? { tone: "danger" as const, key: "expired" as const }
+              : remaining <= 2
+                ? { tone: "warn" as const, key: "ending_soon" as const }
+                : { tone: "success" as const, key: "active" as const };
             return (
               <li key={p.id} className="rounded-xl border border-border p-3">
                 {/* Row 1: avatar · name · status */}
@@ -132,7 +177,7 @@ export function PacksPanel({
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 pl-[calc(0.625rem+32px+0.625rem)] text-[11px] text-muted-foreground">
                   <span className="truncate">{p.label}</span>
                   <span aria-hidden>·</span>
-                  <span className="font-mono">{t("pack.sessions_short", { used: p.sessions_used, total: p.pack_size })}</span>
+                  <span className="font-mono">{t("pack.remaining_label", { remaining, total: p.pack_size })}</span>
                   <span aria-hidden>·</span>
                   <span>
                     {Number(p.price_per_session_eur) > 0
@@ -150,6 +195,14 @@ export function PacksPanel({
                   <span aria-hidden>·</span>
                   <span>{p.session_type === "in_person" ? t("form.in_person") : t("form.online")}</span>
                   {p.archived && <span className="ml-1 italic">· {t("pack.archive")}</span>}
+                </div>
+                {/* Row 3: honest accounting breakdown */}
+                <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-[calc(0.625rem+32px+0.625rem)] text-[10px] text-muted-foreground/80">
+                  <span>{t("pack.used_before_protocol", { count: usedBefore })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.completed_in_protocol", { count: completed })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.upcoming_scheduled", { count: upcoming })}</span>
                 </div>
                 {/* Action row */}
                 <div className="mt-3 flex flex-wrap items-center justify-end gap-2">

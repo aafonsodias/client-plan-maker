@@ -68,7 +68,10 @@ function ScheduleShell() {
         navigate({ to: "/schedule", search: { tab: v === "packs" ? "packs" : "week" } })
       }
     >
-      <ScheduleTabs />
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <ScheduleHeading />
+        <ScheduleTabs />
+      </div>
       <TabsContent value="week" className="mt-4">
         <ScheduleWeek bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
@@ -77,6 +80,11 @@ function ScheduleShell() {
       </TabsContent>
     </Tabs>
   );
+}
+
+function ScheduleHeading() {
+  const { t } = useTranslation("schedule");
+  return <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>;
 }
 
 function ScheduleTabs() {
@@ -229,7 +237,6 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center rounded-md border border-border">
             <button
@@ -556,16 +563,18 @@ function DayStrip({
         {days.map((d, i) => {
           const isActive = i === active;
           const isToday = d.toDateString() === new Date().toDateString();
+          // Some locales (PT) return "seg.", "qua." etc. Strip punctuation
+          // and clip to 3 chars so every pill stays the same width.
+          const wdRaw = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d);
+          const wd = wdRaw.replace(/[.\s]/g, "").slice(0, 3).toUpperCase();
           return (
             <button
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex min-h-12 flex-col items-center rounded-lg border px-1 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex min-h-12 flex-col items-center justify-center rounded-lg border px-0.5 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
-              <span className="text-[10px] uppercase tracking-widest">
-                {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
-              </span>
+              <span className="text-[10px] font-medium uppercase tracking-wider">{wd}</span>
               <span className={`mt-0.5 text-sm font-medium ${isToday ? "underline underline-offset-4" : ""}`}>
                 {new Intl.DateTimeFormat(locale, { day: "2-digit" }).format(d)}
               </span>
