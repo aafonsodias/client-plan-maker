@@ -53,6 +53,23 @@ export function packBlockClasses(color: string) {
   return PACK_BLOCK[color] ?? PACK_BLOCK.emerald;
 }
 
+/** Stable color picked from PACK_COLORS for a given client id (when no explicit color set). */
+export function colorFromId(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return PACK_COLORS[Math.abs(h) % PACK_COLORS.length];
+}
+
+/** Resolve the display color for a client. The client's stored `color` wins;
+ *  fallback is a stable hash-derived pick so the same client always renders
+ *  in the same colour even before a migration backfill runs. */
+export function clientColor(client?: { id: string; color?: string | null } | null, fallbackPack?: string | null): string {
+  if (client?.color) return client.color;
+  if (fallbackPack) return fallbackPack;
+  if (client?.id) return colorFromId(client.id);
+  return "emerald";
+}
+
 /** Returns Monday at 00:00 of the week containing `d`. */
 export function startOfIsoWeek(d: Date): Date {
   const out = new Date(d);
