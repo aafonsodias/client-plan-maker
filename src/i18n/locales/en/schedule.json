@@ -95,5 +95,10 @@
   "day": {
     "list_header_one": "{{count}} session scheduled",
     "list_header_other": "{{count}} sessions scheduled"
+  },
+  "clipboard": {
+    "copying": "Copying session from {{name}} ({{time}}, {{duration}}′) — click an empty slot to paste · Esc cancels",
+    "cancel": "Cancel",
+    "toast_pasted": "Session copied"
   }
 }
