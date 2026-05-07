@@ -1,40 +1,51 @@
-## Problema
-No diálogo "Nova sessão", quando o cliente ainda não tem pacote, o único caminho para criar um é fechar o diálogo, ir ao tab Pacotes, criar, voltar e refazer a sessão. O botão extra que adicionei no header da semana resolveu o caso errado.
+## Objectivo
+No grelha semanal, cada sessão tem um pequeno botão **Copiar** (ícone Copy). Carregar entra em "modo cola": o cursor muda, o cabeçalho mostra um chip "A copiar sessão de X — clica num slot ou Esc para cancelar". O próximo clique num slot vazio cria uma sessão idêntica nessa data/hora. Em paralelo, qualquer sessão existente pode ser **arrastada verticalmente** para mudar a hora (mesma data, snap a 15 min).
 
-## Solução (mesma UX em mobile e desktop)
-Inline, dentro do próprio dropdown Pacote do `BookingDialog`:
+## UX
 
-1. Adicionar uma última opção persistente no `Select` de pacote: **"+ Novo pacote"** (ícone Plus, estilo discreto).
-2. Ao escolher essa opção:
-   - Não fecha o `BookingDialog` (mantém o estado: cliente, data, hora, duração, notas).
-   - Abre o `PackFormDialog` já existente (`src/routes/schedule.packs.tsx`) por cima, com `clientId` pré-preenchido e bloqueado.
-3. Ao guardar o pacote:
-   - Refresca a lista de pacotes do cliente no `BookingDialog`.
-   - Selecciona automaticamente o novo `pack_id` no select.
-   - Fecha só o `PackFormDialog`; o utilizador continua na sessão e carrega Guardar.
-4. Reverter a alteração do round anterior: remover o botão "Novo pacote" que adicionei no header da `ScheduleWeek` e o param `?newPack=1` no `validateSearch` + efeito em `PacksPanel`.
+### 1. Botão Copiar no bloco da sessão (desktop + mobile)
+- Pequeno ícone `<Copy className="h-3 w-3" />` no canto superior direito do bloco, opacity 0 → 100 no hover/focus do bloco; em mobile fica sempre visível mas a 60%.
+- Click no ícone: `e.stopPropagation()`, entra em modo cola. NÃO abre o editor.
+- Estado: `clipboard: { booking: Booking } | null` em `ScheduleWeek`.
 
-## Porquê este sítio (e não um botão "+" ao lado)
-- Mobile (375px): botão extra ao lado do Select rouba largura e parte o grid. Uma opção dentro do dropdown não.
-- Desktop: mesmo gesto, zero fricção (clic → escolhe → guarda → volta à sessão).
-- Mantém o princípio "1 fluxo por contexto": se estás a marcar sessão e descobres que falta pacote, resolves sem mudar de página.
+### 2. Modo cola
+- Quando `clipboard != null`:
+  - Mostra um banner fininho por cima da grelha: "A copiar sessão de **{nome}** ({HH:mm}, {duração}′) — clica num slot para colar · `Esc` cancela". Botão "Cancelar" no banner.
+  - O cursor sobre slots vazios fica `cursor-copy`.
+  - Próximo `onSlotClick(iso)` chama `createBooking` directamente com os campos do clipboard (client_id, pack_id, duration_min, session_type, notes) e o novo `starts_at`. Não abre dialog — feedback é a sessão a aparecer com toast "Sessão copiada".
+  - Após colar: limpa o clipboard (uma cola por cópia; mais explícito e evita acidentes). Tecla Esc também limpa.
+  - Click numa sessão existente em modo cola = também cancela cola e abre o editor (comportamento normal).
 
-## Ficheiros tocados
+### 3. Arrastar para mudar hora (só desktop, na grelha semanal)
+- Pointerdown no bloco (não no botão Copiar) inicia drag vertical:
+  - Calcula offset Y inicial; durante o move, transforma `translateY` no bloco (preview optimista).
+  - On pointerup: snap ao múltiplo de 15 min mais próximo. Se mudou ≥15 min, chama `updateBooking({ id, starts_at: novoIso })` mantendo a mesma data; refresh.
+  - Threshold de 4 px antes de iniciar drag para não competir com o click (que abre o editor).
+  - `cursor: ns-resize` durante drag; `cursor-grab` no hover.
+- Mobile: NÃO implementar drag (rouba scroll vertical da página). Só copy/paste.
+
+### 4. Estados visuais
+- Bloco a ser arrastado: `opacity-80 ring-2 ring-foreground/40`.
+- Tooltip pequeno junto ao cursor durante drag: nova hora "10:30 → **10:45**".
+- Slots vazios em modo cola: `bg-secondary/60` ao hover (mais óbvio do que o actual).
+
+## Ficheiros tocados (1 só)
 - `src/routes/schedule.tsx`
-  - Reverter o botão "Novo pacote" no header de `ScheduleWeek` e a entrada `newPack` em `validateSearch`.
-  - No `BookingDialog`: adicionar `SelectItem` "+ Novo pacote" no fim das opções; estado `inlinePackOpen`; renderizar `PackFormDialog` (importado de `./schedule.packs`).
-  - Após `onSaved` do `PackFormDialog`: re-correr a query de `clientPacks` (`supabase.from("client_packs")…`) e fazer `setPackId(novoId)`.
-- `src/routes/schedule.packs.tsx`
-  - Exportar `PackFormDialog` (já existe, só precisa de export nomeado).
-  - Aceitar prop opcional `lockClient?: boolean` para desactivar o select de cliente quando vem do `BookingDialog`.
-  - Reverter o `useEffect` do `?newPack=1` (não é mais necessário).
-- i18n (`src/i18n/locales/{en,pt}/schedule.json`)
-  - Adicionar `form.create_new_pack` ("+ Novo pacote" / "+ New pack").
+  - `ScheduleWeek`: adicionar `clipboard` state, banner, handler `Escape` (effect), wrapper de `onSlotClick` que intercepta cola → `createBooking`.
+  - `RowHour`: adicionar prop `clipboardActive`, `onCopy(b)`, `onDragMove(id, deltaMinutes)`. Renderizar botão Copy. Implementar pointer drag no bloco (handlers locais + state de drag).
+  - i18n: `src/i18n/locales/{pt,en}/schedule.json` → `clipboard.copying`, `clipboard.cancel`, `clipboard.toast_pasted`, `action.copy`.
 
 ## Fora de âmbito
-- Não mexer em quotas, server functions de pacote, RLS, ou no fluxo de pagamento.
-- Não tocar no Stage 3/4/5.
-- Sem migrations.
+- Drag horizontal entre dias (pode vir num próximo round se fizer falta — agora seria mais fricção que valor).
+- Drag em mobile.
+- Resize vertical para mudar duração.
+- Multi-paste (uma cópia → várias colas).
+- Quotas, server functions novas, RLS.
+
+## Notas técnicas
+- Snap: `Math.round(deltaPx / pxPorMinuto / 15) * 15` onde `pxPorMinuto = 56/60` (cada hora = h-14 = 56px).
+- `createBooking` já existe e devolve a row criada; reutilizar `refresh()`.
+- `Esc` via `useEffect` + `window.addEventListener("keydown")` quando `clipboard != null`.
 
 ## Estimativa
-~1 crédito.
+~2 créditos.

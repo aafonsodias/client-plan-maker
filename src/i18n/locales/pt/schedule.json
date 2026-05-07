@@ -89,5 +89,10 @@
   "day": {
     "list_header_one": "{{count}} sessão marcada",
     "list_header_other": "{{count}} sessões marcadas"
+  },
+  "clipboard": {
+    "copying": "A copiar sessão de {{name}} ({{time}}, {{duration}}′) — clica num slot vazio para colar · Esc cancela",
+    "cancel": "Cancelar",
+    "toast_pasted": "Sessão copiada"
   }
 }
