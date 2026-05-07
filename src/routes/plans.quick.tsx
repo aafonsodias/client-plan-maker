@@ -47,7 +47,7 @@ function QuickPlanPage() {
 
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState<string>("");
-  const [sex, setSex] = useState<"male" | "female" | "other">("male");
+  const [sex, setSex] = useState<"male" | "female">("male");
   const [goal, setGoal] = useState<"hypertrophy" | "strength" | "recomp" | "general_health" | "performance">(
     "hypertrophy",
   );
@@ -162,7 +162,7 @@ function QuickPlanPage() {
           <div className="space-y-1.5">
             <Label>Sexo biológico</Label>
             <div className="flex gap-1.5">
-              {(["male", "female", "other"] as const).map((s) => (
+              {(["male", "female"] as const).map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -173,7 +173,7 @@ function QuickPlanPage() {
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {s === "male" ? "M" : s === "female" ? "F" : "Outro"}
+                  {s === "male" ? "M" : "F"}
                 </button>
               ))}
             </div>
