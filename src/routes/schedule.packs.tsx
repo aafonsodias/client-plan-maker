@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,15 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Archive, RotateCcw, Loader2 } from "lucide-react";
+import { Plus, Archive, RotateCcw, Loader2, MoreVertical, CalendarPlus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { listPacks, upsertPack, archivePack } from "@/server/schedule.functions";
 import { type Pack, PACK_COLORS, packStatus, packBlockClasses } from "@/lib/schedule";
 import { toneChip } from "@/lib/status-tone";
-import { PriceTag } from "@/components/PriceTag";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { startOfIsoWeek, addDays } from "@/lib/schedule";
 
 export const Route = createFileRoute("/schedule/packs")({
   beforeLoad: () => {
@@ -30,11 +36,13 @@ export function PacksPanel() {
   const { user } = useAuth();
   const list = useServerFn(listPacks);
   const arch = useServerFn(archivePack);
+  const navigate = useNavigate();
 
   const [packs, setPacks] = useState<Pack[]>([]);
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [editing, setEditing] = useState<Pack | null>(null);
   const [creating, setCreating] = useState(false);
+  const [scheduledByPack, setScheduledByPack] = useState<Record<string, number>>({});
 
   const refresh = async () => {
     const r: any = await list({ data: { activeOnly: false } });
@@ -50,6 +58,33 @@ export function PacksPanel() {
       .order("full_name")
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
+
+  // One scoped read of this week's non-cancelled bookings → count per pack.
+  useEffect(() => {
+    if (!user) return;
+    if (packs.length === 0) {
+      setScheduledByPack({});
+      return;
+    }
+    const monday = startOfIsoWeek(new Date());
+    const sunday = addDays(monday, 7);
+    const packIds = packs.map((p) => p.id);
+    void supabase
+      .from("client_bookings")
+      .select("pack_id, status, starts_at")
+      .gte("starts_at", monday.toISOString())
+      .lt("starts_at", sunday.toISOString())
+      .in("pack_id", packIds)
+      .then(({ data }) => {
+        const counts: Record<string, number> = {};
+        for (const row of (data as any[]) ?? []) {
+          if (!row.pack_id) continue;
+          if (row.status === "cancelled") continue;
+          counts[row.pack_id] = (counts[row.pack_id] ?? 0) + 1;
+        }
+        setScheduledByPack(counts);
+      });
+  }, [user, packs]);
 
   const clientById = useMemo(() => {
     const m = new Map<string, ClientLite>();
@@ -72,47 +107,91 @@ export function PacksPanel() {
           {t("pack.empty")}
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {packs.map((p) => {
             const c = clientById.get(p.client_id);
             const st = packStatus(p);
             const left = Math.max(0, p.pack_size - p.sessions_used);
             const cls = packBlockClasses(p.color);
+            const scheduled = scheduledByPack[p.id] ?? 0;
             return (
-              <li key={p.id} className="flex items-center gap-3 rounded-xl border border-border p-3">
-                <span className={`inline-block h-3 w-3 rounded-full ${cls.dot}`} />
-                <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={32} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{c?.full_name ?? "—"}</span>
-                    <span className="truncate text-xs text-muted-foreground">{p.label}</span>
-                  </div>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                    <span className="font-mono">{t("pack.sessions_left", { left, total: p.pack_size })}</span>
-                    <span>·</span>
-                    <PriceTag eur={Number(p.price_per_session_eur)} interactive={false} />
-                    <span>·</span>
-                    <span>{p.session_type === "in_person" ? t("form.in_person") : t("form.online")}</span>
-                    {p.archived && <span className="ml-2 italic">{t("pack.archive")}</span>}
-                  </div>
+              <li key={p.id} className="rounded-xl border border-border p-3">
+                {/* Row 1: avatar · name · status */}
+                <div className="flex items-center gap-2.5">
+                  <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
+                  <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={32} />
+                  <span className="min-w-0 flex-1 truncate font-medium">{c?.full_name ?? "—"}</span>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${toneChip(st.tone)}`}>
+                    {t(`pack.status_${st.key}`)}
+                  </span>
                 </div>
-                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${toneChip(st.tone)}`}>
-                  {t(`pack.status_${st.key}`)}
-                </span>
-                <Button variant="ghost" size="sm" onClick={() => setEditing(p)}>
-                  Edit
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title={p.archived ? t("pack.unarchive") : t("pack.archive")}
-                  onClick={async () => {
-                    const r: any = await arch({ data: { id: p.id, archived: !p.archived } });
-                    if (r?.ok) await refresh();
-                  }}
-                >
-                  {p.archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                </Button>
+                {/* Row 2: operational meta */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 pl-[calc(0.625rem+32px+0.625rem)] text-[11px] text-muted-foreground">
+                  <span className="truncate">{p.label}</span>
+                  <span aria-hidden>·</span>
+                  <span className="font-mono">{t("pack.sessions_short", { used: p.sessions_used, total: p.pack_size })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.per_session_short", { price: Number(p.price_per_session_eur) })}</span>
+                  {p.weekly_frequency > 0 && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span>{t("pack.per_week_short", { count: p.weekly_frequency })}</span>
+                    </>
+                  )}
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.scheduled_this_week", { count: scheduled })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{p.session_type === "in_person" ? t("form.in_person") : t("form.online")}</span>
+                  {p.archived && <span className="ml-1 italic">· {t("pack.archive")}</span>}
+                </div>
+                {/* Action row */}
+                <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                  {!p.archived && (
+                    <Button
+                      size="sm"
+                      className="min-h-9"
+                      onClick={() =>
+                        navigate({
+                          to: "/schedule",
+                          search: { tab: "week", newBooking: 1, clientId: p.client_id, packId: p.id },
+                        })
+                      }
+                    >
+                      <CalendarPlus className="mr-1.5 h-4 w-4" />
+                      {t("pack.book_session")}
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="min-h-9" onClick={() => setEditing(p)}>
+                    {t("pack.manage")}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-9 w-9" aria-label={t("pack.more_actions")}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={async () => {
+                          const r: any = await arch({ data: { id: p.id, archived: !p.archived } });
+                          if (r?.ok) await refresh();
+                        }}
+                      >
+                        {p.archived ? (
+                          <>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            {t("pack.unarchive")}
+                          </>
+                        ) : (
+                          <>
+                            <Archive className="mr-2 h-4 w-4" />
+                            {t("pack.archive")}
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </li>
             );
           })}
