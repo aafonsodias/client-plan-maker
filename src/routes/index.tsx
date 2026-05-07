@@ -216,7 +216,7 @@ function Landing() {
               </div>
             )}
           </div>
-          <div className="flex min-w-0 flex-col items-center">
+          <div className="flex min-w-0 flex-col items-center md:pt-8">
             <div className="relative w-full max-w-[560px] origin-top scale-[0.95]">
               {/* Protocol glow — replaces the dark drop shadow */}
               <div
