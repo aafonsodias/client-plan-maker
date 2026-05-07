@@ -203,6 +203,7 @@ export const upsertPack = createServerFn({ method: "POST" })
         weeklyFrequency: z.number().int().min(0).max(14),
         startDate: z.string(),
         color: PackColor,
+        sessionsUsed: z.number().int().min(0).max(500).optional(),
       })
       .parse(d),
   )
@@ -219,6 +220,10 @@ export const upsertPack = createServerFn({ method: "POST" })
       start_date: data.startDate,
       color: data.color,
     };
+    if (data.sessionsUsed !== undefined) {
+      // Clamp to [0, packSize] so we never end up with negative remaining.
+      payload.sessions_used = Math.max(0, Math.min(data.sessionsUsed, data.packSize));
+    }
     if (data.id) {
       const { error } = await sb
         .from("client_packs")
