@@ -498,7 +498,7 @@ function MiniWeek({
               </span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1">
-              {dayBookings.slice(0, 3).map((b) => {
+              {dayBookings.slice(0, 4).map((b) => {
                 const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
                 const cls = packBlockClasses(color);
                 const time = new Date(b.starts_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", {
@@ -515,8 +515,8 @@ function MiniWeek({
                   />
                 );
               })}
-              {dayBookings.length > 3 && (
-                <span className="text-[10px] text-muted-foreground">+{dayBookings.length - 3}</span>
+              {dayBookings.length > 4 && (
+                <span className="text-[10px] text-muted-foreground">+{dayBookings.length - 4}</span>
               )}
             </div>
           </div>
