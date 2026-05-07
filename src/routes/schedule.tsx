@@ -345,6 +345,22 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
           </Button>
+          <div className="ml-2 inline-flex items-center rounded-md border border-border text-[11px]">
+            <button
+              type="button"
+              onClick={() => setView("week")}
+              className={`px-2.5 py-1.5 ${view === "week" ? "bg-secondary font-medium" : "text-muted-foreground"}`}
+            >
+              {t("view.week")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("month")}
+              className={`px-2.5 py-1.5 ${view === "month" ? "bg-secondary font-medium" : "text-muted-foreground"}`}
+            >
+              {t("view.month")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -384,6 +400,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
       )}
 
       {/* Desktop weekly grid */}
+      {view === "week" ? (
       <div className={`hidden md:block overflow-hidden rounded-xl border border-border ${clipboard ? "cursor-copy" : ""}`}>
         <div className="grid" style={{ gridTemplateColumns: "60px repeat(7, minmax(0,1fr))" }}>
           <div className="border-b border-border bg-secondary/30" />
@@ -414,8 +431,19 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
         </div>
       </div>
+      ) : (
+        <ScheduleMonth
+          monday={monday}
+          packById={packById}
+          clientById={clientById}
+          locale={locale}
+          onBookingClick={(b) => setEditing(b)}
+          onDayClick={(d) => (clipboard ? handleDayPaste(d) : setCreating({ startsAt: (() => { const t = new Date(d); t.setHours(9,0,0,0); return t.toISOString(); })() }))}
+        />
+      )}
 
       {/* Mobile day-strip */}
+      {view === "week" && (
       <div className="md:hidden">
         <DayStrip
           days={days}
@@ -423,12 +451,14 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           packById={packById}
           clientById={clientById}
           onSlotClick={handleSlotClick}
+          onDayPaste={handleDayPaste}
           onBookingClick={(b) => setEditing(b)}
           onCopy={(b) => setClipboard(b)}
           clipboardActive={!!clipboard}
           locale={locale}
         />
       </div>
+      )}
 
       {outOfHoursBookings.length > 0 && (
         <section
