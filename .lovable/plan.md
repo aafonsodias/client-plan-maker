@@ -1,41 +1,61 @@
-# R72 — Exercise Intelligence, Media & Play Library Spec
+# R73 — Light follow-up pass (no engine, no schema, no library code)
 
-**Spec-only round.** No schema, no migrations, no routes, no UI, no server functions, no dependencies, no engine/PKL/PDF changes. All output lives in `mem/` and `.lovable/` markdown.
+Eight small, isolated touch-ups before Slice 1 (`src/lib/exercise-taxonomy.ts`) is even considered. No DB work, no AI calls, no new routes, no dependencies, no engine/PKL changes.
 
-## Audit (already sampled)
+## 1. Landing duplicate brand block
 
-Current exercise representation is **string-keyed and unstructured**:
+`src/routes/index.tsx` shows the BrandMark twice in close vertical proximity: once in the sticky nav (lines 63–65, mark + wordmark) and again as the first element of the hero (lines 171–176, large mark + wordmark in 0.3em tracking). On a 1338px viewport both are visible at once → the brand reads twice in 200px.
 
-- `ExerciseZ` (`src/server/phased/schemas.ts:276`) → `name: string`, `primary_muscles: string[]`, `secondary_muscles: string[]`, `equipment: string[]`, plus free-text `cue`/`rationale`/`technique_cues`/`tempo`. **No exercise_id, no movement_pattern field, no canonical reference.**
-- Volume math (`src/lib/volume-compute.ts`, `volume-actual.ts`) joins log entries to plan exercises by **lowercased name string match**. Any rename breaks volume.
-- Logbook + PDF (`src/lib/pdf.ts`, `download-plan.ts`) carry the same name string forward.
-- Rotation/anti-repeat (`src/lib/rotation-audit.ts`, `prior_exercise_pool` in `generation_meta`) keys on names too.
-- Demo helper `src/lib/exercise-demo.ts` builds a **YouTube search URL** — there is no media table.
-- No exercises table, no overrides table, no progression/regression edges, no contraindications, no aliases.
+Fix: drop the hero lockup. Keep nav lockup as the only brand surface above the headline. `HeroHeadlineRotator` becomes the first hero element. Also audit lines 440–460 (footer BrandMark) — keep that one, it closes the page.
 
-**Biggest risks**: name drift across AI generations (same exercise spelled three ways → triple-counted in pool, missed in volume); muscle arrays are AI-authored prose, not normalized; no way to fork/customise without forking the whole plan.
+## 2. Mock / display rotation audit
 
-## Documents to author
+Goal: confirm every mock surface (landing `WorkbenchMockup`, `LogbookInsightsMockup`, `HeroPlanMockup`, demo lab previews, PDF examples, `landing.hero.bullets`) doesn't lock onto one fictional client/plan/exercise. Produce `.lovable/r73-mock-audit.md` listing each mock surface, the hardcoded names/numbers, and a flag per surface: `OK / needs-rotation / needs-realism-pass`. No code edits this round — audit only.
 
-1. **`mem/features/exercise-intelligence-layer.md`** *(rewrite the existing stub)* — full product direction: canonical DB + trainer overrides + suggestion queue, why it matters, dependency on volume/substitution/PDF/cues.
-2. **`mem/specs/exercise-library-taxonomy.md`** — umbrellas (Strength · Mobility · Cardio · Balance · Power · Skill · Recovery · Play), 17 movement-pattern subcategories, full filter list, search-bar tokens (name/alias/muscle/equipment/pattern/cue keyword), exercise detail page sections.
-3. **`mem/specs/exercise-data-model.md`** *(new)* — proposed flat field list (exercise_id, canonical_exercise_id, trainer_id, is_protocol_default, is_trainer_override, names/aliases pt+en, pattern, umbrella/subcategory, primary/secondary muscles, joint_actions, equipment, setup, execution, breathing, tempo, ROM, cues, mistakes, regressions[], progressions[], substitutions[], level, contraindications, risk_notes, volume_counting_notes, measurable_metric, media refs, source, evidence, review_status, version, timestamps). Notes which fields normalise into `exercise_muscles`, `exercise_equipment`, `exercise_media`, `exercise_progressions`, `trainer_exercise_overrides`, `exercise_suggestions`, `exercise_tags` later.
-4. **`mem/specs/exercise-media-quality.md`** — eight media statuses (reference_demo, verified_technique, needs_reshoot, angle_limited, founder_demo, external_model, stickfigure_overlay, ai_assisted_visual), per-asset notes vocabulary, **principle: technical truth lives in cues + review_status, not in the video**. First-10 + first-30 filming priority list with rules (real movement first, frontal+lateral, 6–12s, 3 normal + 1 slow rep, no audio).
-5. **`mem/features/traditional-games-play-library.md`** *(new)* — Play umbrella taxonomy, full game/activity field list, 13 categories, cultural-respect rules ("record origin, do not romanticise, no medical claims without evidence"), seed list to investigate (jogo da malha, lenço, sacos, tração à corda, macaca, apanhada, rope/ball/balance/reaction games).
-6. **`.lovable/r72-exercise-system-audit.md`** — the audit findings above expanded: where names come from per surface, what breaks on rename, name→ID migration risks, volume-math implications, rotation-pool implications, smallest-future-slice analysis.
-7. **`mem/audits/exercise-library-priority.md`** *(new)* — Now / Next / Later / Parked ranking of the 10 candidate slices, with cost vs MVP impact vs dependency notes.
+## 3. Warm-up / cool-down / cardio mock variants
 
-## Default vs Trainer-Custom version model (summary)
+Today the visible plan mocks (HeroPlanMockup, example PDF, demo seeder output) emphasise the strength block. Audit which mocks render warm-up / activation / cool-down / cardio sections at all, and note in the same `.lovable/r73-mock-audit.md` which need at least one variant that opens with mobility or finishes with conditioning so the product doesn't read as "strength-only". No engine changes — only marking which mock JSON or rotator slide needs new copy in a later round.
 
-Three layers, never auto-merged:
-- **Protocol canonical** — versioned, stable, our source of truth.
-- **Trainer override** — per-trainer fork referencing `canonical_exercise_id`; only the diffed fields persist; invisible to other trainers.
-- **Suggestion** — trainer proposal into `under_review` queue; review states: draft · trainer_custom · suggested · under_review · accepted · rejected · deprecated · needs_evidence · needs_media. Acceptance bumps canonical version; everyone else's overrides keep working.
+## 4. Exercise media production notes
 
-## Recommended next slice (will be argued in priority doc)
+Add `mem/specs/exercise-media-production.md`: a short, practical note on filming (phone height, two angles, 6–12s, neutral background, clothing contrast, no music, slate at start with exercise key + date + version). References `mem://specs/exercise-media-quality.md` for status taxonomy. Pure documentation; no media table, no upload UI.
 
-**Slice 1 — Static taxonomy file only** (`src/lib/exercise-taxonomy.ts` constant: umbrellas, patterns, filter enums, normalised muscle keys reusing `volume-landmarks.ts`). Zero schema, unblocks every later slice (search filters, override forms, AI prompt hints), and lets us start naming things consistently before any DB work. Slice 2 would be the canonical exercises table seeded with the first 30 priority entries.
+## 5. Founder demo limitations
 
-## Final report shape
+Add `mem/features/founder-demo-limitations.md`: explicit list of what the founder Demo Lab + R71 simulator do NOT prove (no real adherence variance, no real RPE drift psychology, no injury events, no schedule conflicts, no payment churn, deterministic adherence ≈85%). Purpose: when judging the product through demo data, remember it's a structural smoke test, not validation of UX-under-stress.
 
-The closing report will list: files written, audit findings, risks, model summaries (data / override / media / games / review), recommended next slice, explicit "not implemented" list, and a confirmation block (no schema · no migrations · no routes · no UI · no server fns · no deps · no engine/PKL changes).
+## 6. Traditional games / play source discipline
+
+Update `mem/features/traditional-games-play-library.md` with a "Source discipline" subsection: every play entry must cite a named region/community + at least one verifiable source (book, ethnographic record, named informant). No invented "ancient" provenance. Forbid LLM-generated origin stories. Include rejection criteria.
+
+## 7. Client education PDF note
+
+Add `mem/features/client-education-pdf.md`: short note that the future client-facing PDF should ship a one-page glossary appendix (RPE, tempo notation, %1RM, deload, MEV/MAV/MRV in plain language). Spec only — no `pdf.ts` changes. References `mem://features/client-education-layer.md`.
+
+## 8. Trainer study / evidence source ethics
+
+Add `mem/principles/evidence-source-ethics.md`: rules for citing studies inside the app (StudiesFeed, plan rationale, knowledge route). Required: full citation, year, sample size, effect size if known, conflict-of-interest flag. Forbidden: paraphrased "studies show…" without a real reference, vendor-funded studies cited as independent, n<10 pilot work cited as evidence. References existing `StudiesFeed.tsx` as the surface this binds.
+
+## Deliverables
+
+- 1 code edit: `src/routes/index.tsx` removes the hero brand lockup (item 1)
+- 5 new memory/spec files: items 4, 5, 6, 7, 8
+- 1 new audit file: `.lovable/r73-mock-audit.md` (items 2 + 3)
+- `mem/index.md` updated with the new memory references
+- `.lovable/plan.md` appended with R73 entry
+
+## Confirmation
+
+- no schema changes
+- no migrations
+- no new routes
+- no new dependencies
+- no AI/model calls
+- no real clients touched
+- no billing/payment changes
+- no engine/generation/PKL changes
+- no exercise-library code (Slice 1 deferred)
+
+## Smallest next improvement after this
+
+Slice 1: `src/lib/exercise-taxonomy.ts` — static enums (umbrella, movement_pattern, equipment, level, contraindication_flags, media_quality_status) + alias map reusing `volume-landmarks.ts`. No schema, no UI, no AI prompt changes yet.
