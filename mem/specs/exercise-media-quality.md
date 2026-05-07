@@ -42,3 +42,39 @@ Bodyweight Squat · Goblet Squat · Hip Hinge Drill · Dumbbell Romanian Deadlif
 ## Expanded first 30
 
 Bodyweight Squat · Goblet Squat · Box Squat · Hip Hinge Drill · DB Romanian Deadlift · Glute Bridge · Hip Thrust · Reverse Lunge · Split Squat · Step-Up · Incline Push-Up · Push-Up · DB Bench Press · DB Shoulder Press · Band Row · Cable Row · One-Arm DB Row · Lat Pulldown · Band Face Pull · Dead Bug · Plank · Side Plank · Pallof Press · Bird Dog · Calf Raise · Band Lateral Walk · Clamshell · Hamstring Curl Slider · Wall Sit · Farmer Carry
+
+## Canonical vocabulary location
+
+The status enum lives in code as `MediaQualityStatus` / `MEDIA_QUALITY_STATUSES` in `src/lib/exercise-taxonomy.ts` (R74). This document is the human-readable companion. Do **not** introduce a parallel enum in any future schema — reuse the R74 type.
+
+## Founder demo honesty model
+
+Founder videos are allowed as first reference media, but they are **not** automatically gold-standard.
+
+Principles:
+- Useful is not the same as verified.
+- A founder demo can be honest reference media; tag it `founder_demo` (and optionally combine with `reference_demo` or `angle_limited`).
+- Technical truth lives in the structured cues + `review_status` + future verified media — not in any single clip.
+- If founder ROM, angle, mobility, or execution is limited, **record it** in `limitations` / `technical_notes`. Do not hide it.
+- Do not use AI to fake better technique on a founder clip.
+- Replace with a verified-model demo when one exists; bump `version`, mark old `deprecated`.
+
+Internal labels (free-text notes that complement the enum):
+- "Founder reference demo"
+- "Usable but not final"
+- "Needs lateral reshoot"
+- "Needs frontal reshoot"
+- "ROM limitation visible"
+- "Angle limited"
+- "Verified technique demo"
+
+This lets Protocol start with real media without pretending perfection.
+
+## Cross-refs
+
+- Hosting layers: [hosting architecture](mem://specs/exercise-media-hosting-architecture.md)
+- Future data shape: [data model](mem://specs/exercise-media-data-model.md)
+- Files on disk: [file organisation](mem://specs/exercise-media-file-organisation.md)
+- Production: [production notes](mem://specs/exercise-media-production.md) + [workflow](mem://specs/exercise-media-production-workflow.md)
+- AI/avatar limits: [AI visual pipeline](mem://specs/exercise-ai-visual-pipeline.md)
+- Phasing: [implementation plan](mem://audits/exercise-media-implementation-plan.md)
