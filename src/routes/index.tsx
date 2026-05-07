@@ -164,7 +164,7 @@ function Landing() {
           className="absolute -right-32 top-20 -z-10 h-96 w-96 rounded-full opacity-30 blur-3xl"
           style={{ background: "var(--gradient-accent)" }}
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 text-foreground sm:py-32 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pt-10 pb-24 text-foreground sm:pt-16 sm:pb-32 md:grid-cols-2">
           <div className="min-w-0">
             <HeroHeadlineRotator />
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
