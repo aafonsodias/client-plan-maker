@@ -98,6 +98,8 @@ function ScheduleWeek() {
   const { user } = useAuth();
   const list = useServerFn(listWeekBookings);
   const seed = useServerFn(seedScheduleDemo);
+  const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const [monday, setMonday] = useState<Date>(() => startOfIsoWeek(new Date()));
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -105,7 +107,7 @@ function ScheduleWeek() {
   const [clients, setClients] = useState<ClientLite[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Booking | null>(null);
-  const [creating, setCreating] = useState<{ startsAt: string } | null>(null);
+  const [creating, setCreating] = useState<{ startsAt: string; clientId?: string; packId?: string } | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -134,6 +136,19 @@ function ScheduleWeek() {
       .order("full_name")
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
+
+  // Search-param-driven prefill: /schedule?tab=week&newBooking=1&clientId=…&packId=…
+  useEffect(() => {
+    if (!user) return;
+    if (search.newBooking !== 1) return;
+    const d = nextCoachableSlot();
+    setCreating({ startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId });
+    navigate({
+      to: "/schedule",
+      search: { tab: "week" },
+      replace: true,
+    });
+  }, [user, search.newBooking, search.clientId, search.packId]);
 
   const packById = useMemo(() => {
     const m = new Map<string, Pack>();
@@ -200,11 +215,7 @@ function ScheduleWeek() {
           <span className="text-xs font-mono text-muted-foreground">{fmtWeekRange(monday, locale)}</span>
           <Button
             size="sm"
-            onClick={() => {
-              const d = new Date(monday);
-              d.setHours(9, 0, 0, 0);
-              setCreating({ startsAt: d.toISOString() });
-            }}
+            onClick={() => setCreating({ startsAt: nextCoachableSlot().toISOString() })}
           >
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
