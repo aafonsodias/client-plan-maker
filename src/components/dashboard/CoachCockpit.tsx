@@ -182,6 +182,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   type TodayRow = {
     key: string;
     text: string;
+    name?: string;
+    status?: string;
     to: string;
     params?: Record<string, string>;
     tone: "amber" | "emerald" | "rose" | "muted";
@@ -195,6 +197,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         rows.push({
           key: `plan-${c.id}`,
           text: t("dashboard.today.plan_awaiting", { name: c.full_name }),
+          name: c.full_name,
+          status: t("dashboard.today.status.plan_awaiting"),
           to: "/plans/$planId",
           params: { planId: plan.id },
           tone: "amber",
@@ -206,6 +210,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         rows.push({
           key: `ready-${c.id}`,
           text: t("dashboard.today.ready_for_protocol", { name: c.full_name }),
+          name: c.full_name,
+          status: t("dashboard.today.status.ready_for_protocol"),
           to: "/clients/$clientId",
           params: { clientId: c.id },
           tone: "emerald",
@@ -217,6 +223,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         rows.push({
           key: `assess-${c.id}`,
           text: t("dashboard.today.assessment_incomplete", { name: c.full_name }),
+          name: c.full_name,
+          status: t("dashboard.today.status.assessment_incomplete"),
           to: "/clients/$clientId",
           params: { clientId: c.id },
           tone: "muted",
@@ -243,6 +251,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         rows.push({
           key: `pack-${ending.p.id}`,
           text: t("dashboard.today.pack_ending", { name: c.full_name }),
+          name: c.full_name,
+          status: t("dashboard.today.status.pack_ending"),
           to: "/clients/$clientId",
           params: { clientId: c.id },
           tone: "rose",
@@ -272,6 +282,11 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
                 : r.tone === "emerald" ? "bg-emerald-500"
                 : r.tone === "rose" ? "bg-rose-500"
                 : "bg-muted-foreground/40";
+              const statusText =
+                r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
+                : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
+                : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+                : "text-muted-foreground";
               return (
                 <li key={r.key}>
                   <Link
@@ -280,7 +295,17 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
                     className="group flex items-center gap-3 py-2 transition hover:text-foreground"
                   >
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-                    <span className="min-w-0 flex-1 truncate text-sm">{r.text}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {r.name && r.status ? (
+                        <>
+                          <span className="font-medium text-foreground">{r.name}</span>
+                          <span className="text-muted-foreground/60"> · </span>
+                          <span className={statusText}>{r.status}</span>
+                        </>
+                      ) : (
+                        <span className={statusText}>{r.text}</span>
+                      )}
+                    </span>
                     <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
                   </Link>
                 </li>
