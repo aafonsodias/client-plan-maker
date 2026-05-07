@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -37,8 +37,13 @@ import {
 } from "@/lib/schedule";
 
 export const Route = createFileRoute("/schedule")({
-  validateSearch: (s: Record<string, unknown>): { tab?: "week" | "packs" } => ({
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): { tab?: "week" | "packs"; newBooking?: 1; clientId?: string; packId?: string } => ({
     tab: s.tab === "packs" ? "packs" : "week",
+    newBooking: s.newBooking === 1 || s.newBooking === "1" ? 1 : undefined,
+    clientId: typeof s.clientId === "string" ? s.clientId : undefined,
+    packId: typeof s.packId === "string" ? s.packId : undefined,
   }),
   component: () => (
     <AppShell>
@@ -62,10 +67,7 @@ function ScheduleShell() {
         navigate({ to: "/schedule", search: { tab: v === "packs" ? "packs" : "week" } })
       }
     >
-      <TabsList>
-        <TabsTrigger value="week">Week</TabsTrigger>
-        <TabsTrigger value="packs">Packs</TabsTrigger>
-      </TabsList>
+      <ScheduleTabs />
       <TabsContent value="week" className="mt-4">
         <ScheduleWeek />
       </TabsContent>
@@ -73,6 +75,16 @@ function ScheduleShell() {
         <PacksPanel />
       </TabsContent>
     </Tabs>
+  );
+}
+
+function ScheduleTabs() {
+  const { t } = useTranslation("schedule");
+  return (
+    <TabsList>
+      <TabsTrigger value="week">{t("tab.week")}</TabsTrigger>
+      <TabsTrigger value="packs">{t("tab.packs")}</TabsTrigger>
+    </TabsList>
   );
 }
 
