@@ -25,7 +25,8 @@
     "sessions_this_week": "Sessions this week",
     "sessions_remaining": "Sessions remaining",
     "ending_soon": "Packs ending soon",
-    "no_alerts": "No alerts"
+    "no_alerts": "No alerts",
+    "expected_income_unavailable": "Expected revenue unavailable — price per session missing"
   },
   "form": {
     "client": "Client",
@@ -72,6 +73,13 @@
     "unarchive": "Unarchive",
     "empty": "No packs yet. Create a pack to track sessions and revenue.",
     "demo_seed": "Demo seed",
-    "demo_seeded": "Created {{count}} sessions this week"
+    "demo_seeded": "Created {{count}} sessions this week",
+    "price_required": "Set the price per session.",
+    "price_required_hint": "How much do you charge this client per session?",
+    "price_unset": "Price not set"
+  },
+  "day": {
+    "list_header_one": "{{count}} session scheduled",
+    "list_header_other": "{{count}} sessions scheduled"
   }
 }
