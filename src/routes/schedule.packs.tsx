@@ -235,7 +235,7 @@ function PackFormDialog({
   const save = useServerFn(upsertPack);
 
   const [clientId, setClientId] = useState(editing?.client_id ?? "");
-  const [label, setLabel] = useState(editing?.label ?? "Pack 10");
+  const [label, setLabel] = useState(editing?.label ?? t("pack.default_label"));
   const [sessionType, setSessionType] = useState<"in_person" | "online">(editing?.session_type ?? "in_person");
   const [price, setPrice] = useState<number>(Number(editing?.price_per_session_eur ?? 30));
   const [size, setSize] = useState<number>(editing?.pack_size ?? 10);
@@ -247,7 +247,7 @@ function PackFormDialog({
   useEffect(() => {
     if (!open) return;
     setClientId(editing?.client_id ?? "");
-    setLabel(editing?.label ?? "Pack 10");
+    setLabel(editing?.label ?? t("pack.default_label"));
     setSessionType(editing?.session_type ?? "in_person");
     setPrice(Number(editing?.price_per_session_eur ?? 30));
     setSize(editing?.pack_size ?? 10);
