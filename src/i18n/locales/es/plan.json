@@ -1,25 +1,25 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Planes de entrenamiento científicamente sólidos",
-      "title_line2": "en 90 segundos — con su nombre.",
-      "subtitle": "Sin Excel. Sin improvisaciones. Sin pérdida de rigor clínico.",
+      "title_line1": "Evaluación clínica → protocolo defendible → adaptación semanal.",
+      "title_line2": "Programación seria, sin vivir en Excel.",
+      "subtitle": "Usted hace la evaluación. Protocol arma el protocolo. Cada serie registrada alimenta la semana siguiente.",
       "cta_primary_signed_out": "Cree su primer plan — gratis",
       "cta_primary_signed_in": "Abrir panel de control",
       "cta_secondary": "Vea cómo funciona",
       "credibility_caption": "Ya incluido: PAR-Q+, ACSM, Prochaska. Próximamente: Helms, Israetel, Schoenfeld.",
       "social_proof": "Construido por un entrenador, para entrenadores · Beta privada",
-      "beta_softcap_chip": "Beta privada · plazas limitadas esta semana",
+      "beta_softcap_chip": "Beta privada · feedback directo con el autor",
       "bullets": [
-        "Evaluación clínica automática (PAR-Q+, ACSM)",
-        "Progresión semanal lista (MEV/MAV/MRV)",
-        "PDF con la marca de su estudio"
+        "Cribado clínico antes de cualquier prescripción (PAR-Q+, ACSM).",
+        "Protocolo editable en 5 fases — usted aprueba cada una.",
+        "La próxima semana se ajusta a lo que el cliente realmente hizo."
       ],
       "tagline_eyebrow": "Infraestructura de programación basada en la evidencia para entrenadores personales",
       "variants": [
         {
-          "line1": "Planes de entrenamiento científicamente sólidos",
-          "line2": "en 90 segundos — con su nombre.",
+          "line1": "Evaluación clínica → protocolo defendible → adaptación semanal.",
+          "line2": "Programación seria, sin vivir en Excel.",
           "audience": "Para entrenadores personales"
         }
       ]
@@ -130,9 +130,9 @@
       "subtitle": "Registre cada serie, siga cada sesión. Protocol mantiene el historial para que usted y el cliente vean cómo se acumula el trabajo."
     },
     "journey": {
-      "eyebrow": "En construcción continua",
-      "title": "Cinco etapas hoy — mejoradas cada semana.",
-      "subtitle": "Esto es lo que verá dentro de la aplicación, ahora mismo. La forma y el detalle continúan evolucionando a medida que aprendemos de cada plan generado. Objetivo a largo plazo: incorporar todo el conocimiento humano relevante para la programación.",
+      "eyebrow": "El ciclo, no el atajo",
+      "title": "Evaluar. Programar. Adaptar. En bucle.",
+      "subtitle": "Cinco fases dentro de la app, y la sexta es la próxima semana — construida con lo que se registró.",
       "stages": {
         "intake": {
           "label": "Recepción",
@@ -152,14 +152,14 @@
         },
         "progressions": {
           "label": "Progresiones",
-          "desc": "Deltas semana a semana — carga, repeticiones, RPE, descarga."
+          "desc": "La Semana N+1 sale del logbook: adherencia, RPE real, drift de carga. La IA solo genera la Semana 1; el resto es determinista."
         }
       }
     },
     "logbook_preview": {
       "eyebrow": "Después del PDF",
-      "title": "Cada serie registrada se convierte en combustible para la semana siguiente.",
-      "subtitle": "El PDF es el punto de partida. Cada registro — manual hoy, voz y sensores mañana — alimenta la siguiente generación. Todo opcional, todo conmutable: dé lo que tenga, obtenga lo que podamos hacer con ello.",
+      "title": "El logbook no es un diario. Es el input de la próxima semana.",
+      "subtitle": "Cada serie registrada — manualmente, hoy — entra en el cálculo de la Semana N+1: carga, RPE, adherencia. Voz y sensores vendrán; el motor ya lee lo que hay.",
       "log_caption": "Vista previa — registre una sesión en segundos.",
       "trend_caption": "Las líneas de tendencia y los avisos de IA llegarán pronto — sus registros ya alimentan el motor.",
       "history_caption": "Historial semana a semana — vea cómo aumenta la carga sin abrir el gimnasio.",
@@ -171,16 +171,16 @@
       "signal_voice": "Notas de voz → texto → ajuste",
       "signal_devices": "Báscula, pasos, sueño, frecuencia cardíaca",
       "signal_uploads": "Bioimpedancia, presión arterial — foto, PDF o Excel",
-      "flow": "1. El cliente registra. 2. La IA coteja el volumen, el RPE y el tiempo. 3. Usted ve las señales y decide con contexto."
+      "flow": "1. El cliente registra. 2. La app lee adherencia, RPE y drift. 3. La próxima semana sale con cargas ajustadas."
     },
     "roadmap": {
       "eyebrow": "Próximamente",
       "title": "Lo que estamos construyendo, abiertamente.",
       "subtitle": "Todavía no, pero en camino. Preferimos prometer menos aquí que vender más.",
       "inline_chips": [
-        "Tendencias y gráficos",
-        "Ajustes por prompt",
-        "Asesoramiento de IA para entrenadores"
+        "Pronto · Tendencias y gráficos",
+        "Pronto · Ajustes por prompt",
+        "Pronto · Consejos del Coach AI"
       ],
       "items": {
         "trends": {
@@ -211,14 +211,14 @@
       "title": "¿Por qué Protocol?",
       "img_alt": "André, fundador de Protocol",
       "p1": "En quince años como PT, seguí viendo lo mismo: planes improvisados a toda prisa porque programar con cuidado requiere demasiado trabajo.",
-      "p2": "Protocol está aquí para eliminar esa excusa. Humano y científico en la base — usted decide, la IA se encarga de la elaboración repetitiva, y los manuales (ACSM, Bompa, NSCA) fundamentan las elecciones. La nueva evidencia se agrega gradualmente, siempre con una fuente verificable.",
+      "p2": "La base es humana. La IA hace la repetición. Los manuales (ACSM, Bompa, NSCA) sustentan las decisiones. Usted es siempre el último filtro.",
       "p3": "No queremos automatizar el entrenamiento. Queremos que \"no tuve tiempo\" deje de ser la razón detrás de un plan deficiente — para los PT y para las personas que entrenan por su cuenta.",
       "signature": "— André Periquito, MSc Ejercicio y Salud · Fisiólogo del ejercicio y entrenador personal"
     },
     "faq": {
       "title": "Preguntas que nos hacen los/as entrenadores/as y clientes.",
       "q1_q": "¿El plan de IA es lo suficientemente bueno para enviarlo a los clientes tal cual?",
-      "q1_a": "Es un excelente punto de partida, no un destino. Por ahora, la IA es una ayuda — usted es el filtro. A medida que ganemos confianza en sus resultados, le devolveremos más autonomía. Hasta entonces, edite el volumen, cambie ejercicios, adapte el lenguaje; Protocol hace el trabajo pesado, usted tiene la última palabra.",
+      "q1_a": "La IA nunca genera más de una semana. Las semanas siguientes salen de una progresión determinista (Bompa wave + incrementos NSCA por categoría) ajustada por lo registrado. Usted aprueba cada fase. El resultado es defendible porque el método lo es — no porque la IA sea infalible.",
       "q2_q": "¿Qué pasa si mi cliente tiene lesiones o condiciones médicas?",
       "q2_a": "Las banderas rojas del PAR-Q+ activan la lógica condicional. Las banderas cardíacas predeterminan el plan a baja intensidad. Las banderas articulares excluyen patrones de alto impacto. Usted siempre tiene la aprobación final antes de la generación.",
       "q3_q": "¿Puedo usar mi propia marca en el PDF?",
@@ -226,7 +226,7 @@
       "q4_q": "¿Qué sucede con los datos de mi cliente?",
       "q4_a": "Almacenados en Supabase (región UE). Puede exportar o eliminar cualquier registro de cliente en cualquier momento. Protocol no comparte ni vende datos de clientes — nunca.",
       "q5_q": "¿En qué ciencia se basa la programación?",
-      "q5_a": "Manuales ya incluidos: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Cualquier adición futura tendrá una fuente verificable (PubMed y equivalentes) — nada citado con el nombre de un autor sin que el libro o artículo real esté dentro. Usted puede (y debe) verificar.",
+      "q5_a": "Manuales ya incluidos: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Cualquier adición futura tendrá una fuente verificable (PubMed y equivalentes) — nada citado con el nombre de un autor sin que el libro o artículo real esté dentro. Usted puede (y debe) verificar. Cada bloque de programación tiene fuente rastreable dentro de la app (generation_log).",
       "q6_q": "¿Qué pasa si el cliente retrocede a mitad de bloque?",
       "q6_a": "Usted vuelve a ejecutar la evaluación, el nivel de programación se ajusta (ej. avanzado → conservador) y el siguiente bloque se regenera con restricciones más estrictas. El bloque anterior permanece archivado para el historial.",
       "q7_q": "¿Puedo editar el plan generado antes de exportarlo?",
@@ -280,7 +280,9 @@
       ],
       "pro_cta": "Continuar después de la prueba",
       "nav_link": "Precios",
-      "trial_note": "Sin renovación automática silenciosa: le enviaremos un correo electrónico antes de cualquier cargo."
+      "trial_note": "Sin renovación automática silenciosa: le enviaremos un correo electrónico antes de cualquier cargo.",
+      "subtitle": "1 cliente = 1 plan completo gratis. Sin tarjeta. Sin letra pequeña.",
+      "beta_strip_body": "1 cliente · 1 plan completo gratis · feedback directo con el autor."
     },
     "footer": {
       "tagline": "Para personas que entrenan a otros — y para personas que se entrenan a sí mismas. Sustancia antes que apariencias.",
@@ -395,11 +397,11 @@
           "no"
         ],
         [
-          "Contraindicaciones automáticas (PAR-Q+/ACSM)",
+          "Cribado clínico (PAR-Q+ / ACSM)",
           "sí",
-          "no",
-          "no",
-          "no"
+          "manual",
+          "depende del prompt",
+          "genérico"
         ],
         [
           "PDF bilingüe con marca",
@@ -416,11 +418,11 @@
           "—"
         ],
         [
-          "Tiempo para el primer plan",
-          "~90s",
-          "horas",
-          "minutos",
-          "horas"
+          "Adaptación semana a semana",
+          "determinista + log",
+          "no",
+          "no",
+          "rara"
         ]
       ],
       "footnote": "No es magia. Es lógica condicional sobre ciencia publicada — Israetel, Helms, ACSM."

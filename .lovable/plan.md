@@ -1,135 +1,89 @@
+# R69 — Landing Copy & Positioning Pass (PT-only, no redesign)
 
-## Diagnóstico do crash que ainda aparece
+Scope: copy and label edits only. No new sections, components, routes, animations, or layout changes. All edits land in i18n files (`src/i18n/locales/pt/plan.json`, plus EN/ES/HI fallback parity for the same keys) and, where copy is currently hardcoded in `src/routes/index.tsx`, in that file.
 
-O stack trace dos console logs aponta literalmente para `Landing` em `src/routes/index.tsx:52` — não para Schedule. O componente faz:
+## What's wrong with the current copy
 
-```
-useAuth · useTranslation · useCurrency · ...  ← 15 hooks
-if (authLoading) return <Splash/>
-const [billing, setBilling] = useState("annual")  ← 16º hook
-```
+1. **Hero**: "Planos cientificamente válidos em 90s" leads with speed. Speed is what every generic AI tool promises. Our edge is the *assessment → defensible protocol → adaptation* loop, not seconds-to-PDF.
+2. **3 hero bullets**: list features (PAR-Q+, MEV/MAV/MRV, branded PDF) instead of the loop. MEV/MAV/MRV jargon turns away non-hypertrophy PTs.
+3. **Journey strip**: 5 stage labels (Avaliação → Brief → Blueprint → Microciclo → Progressões) describe internal pipeline names, not the trainer's mental model. Missing the *adaptation* beat (block N → block N+1 from logbook).
+4. **Logbook section**: title "Cada série registada vira combustível para a próxima semana" is good, but body talks about "voz e sensores amanhã" — soft promise of unbuilt features. Should say what the logbook *closes the loop on* today.
+5. **FAQ**: q1 ("É um ponto de partida sólido, não um destino") undersells. Better framing: "Você é o último filtro, sempre — e a IA nunca gera mais de uma semana de cada vez." Matches the actual programNextWeek architecture (per project memory).
+6. **Beta chip / pricing strip**: "vagas limitadas esta semana" reads as fake scarcity unless we genuinely cap. Soften unless we have a real cap.
+7. **Comparison table**: keep structure, audit row labels for honesty (e.g. "Adaptação semana-a-semana" must reflect that AI only generates W1; W2+ is deterministic + log-driven).
+8. **Roadmap / "a seguir"**: 3 chips are fine but should explicitly say *not yet shipped* via existing "Em breve" pattern.
 
-Quando `authLoading` passa de `true` → `false` (hidratação do Supabase em hard refresh), o React vê 15 hooks no render anterior e 16 no seguinte → "Rendered more hooks than during the previous render". O `<CatchBoundary>` do TanStack Router engole o erro e mostra o fallback genérico, que o utilizador interpreta como "schedule still crashes" porque acontece em hard-refresh de qualquer rota (`/` é montado pelo router antes de redirecionar).
+## Edits (copy only — no layout, no new keys structure)
 
-Os hotfixes anteriores ao `ScheduleShell` estavam corretos mas não tocavam neste ficheiro. O `ScheduleShell` em si já está estável (single-tree).
+### Hero (`landing.hero.*`)
+- `title_line1` / `title_line2` → lead with the *loop*, not speed:
+  - line1: "Avaliação clínica → protocolo defensável → adaptação semanal."
+  - line2: "Programação séria, sem viver no Excel."
+- `subtitle` → "Você faz a avaliação. A Protocol monta o protocolo. Cada série registada alimenta a semana seguinte."
+- `bullets` (3, no jargon):
+  1. "Triagem clínica antes de qualquer prescrição (PAR-Q+, ACSM)."
+  2. "Protocolo editável em 5 fases — você aprova cada uma."
+  3. "Próxima semana ajustada ao que o cliente realmente fez."
+- `cta_primary_signed_out` → keep "Criar primeiro plano grátis".
+- `beta_softcap_chip` → soften: "Beta privado · feedback direto com o autor" (drop fake scarcity unless a real cap exists).
 
-## P0 — Fix landing hook crash (CAUSA REAL)
+### Journey strip (`landing.journey.*`)
+- `eyebrow` → "O ciclo, não o atalho"
+- `title` → "Avaliação. Protocolo. Adaptação. Em loop."
+- `subtitle` → "Cinco fases dentro da app, e a sexta é a próxima semana — montada a partir do que foi registado."
+- Stage labels stay (intake / brief / blueprint / microcycle / progressions) but `progressions.desc` rewritten to make the adaptation explicit:
+  - "Semana N+1 sai do logbook: adesão, RPE real, drift de carga. A IA só gera a Semana 1; o resto é determinístico."
 
-**Ficheiro:** `src/routes/index.tsx`
+### Comparison table (`landing.comparison.*` if keyed; else inline strings in `index.tsx` `ComparisonTableSection`)
+Audit each row for honesty. Two specific fixes:
+- Row "Adaptação semana-a-semana": Protocol cell → "Sim · determinístico + log-driven" (not "IA gera tudo").
+- Row "Triagem clínica": Protocol cell stays "PAR-Q+ + ACSM dentro"; ChatGPT cell → "Depende do prompt"; Excel → "Manual"; Generic apps → "Genérica ou nenhuma".
 
-Mover **TODOS** os hooks (`useState`, `useMemo`, etc.) para antes de qualquer early return. O splash de `authLoading` passa a ser apenas o JSX condicional no return.
+### Logbook section (`landing.logbook_preview.*`)
+- `title` → "O logbook não é um diário. É o input da próxima semana."
+- `subtitle` → "Cada série registada — manualmente, hoje — entra no cálculo da Semana N+1: carga, RPE, adesão. Voz e sensores virão; o motor já lê o que existe."
+- `flow` → "1. O cliente regista. 2. A app lê adesão, RPE e drift. 3. A próxima semana sai com cargas ajustadas."
 
-```tsx
-function Landing() {
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { t } = useTranslation([...]);
-  const { code: currencyCode } = useCurrency();
-  const [billing, setBilling] = useState<Billing>("annual");  // ← subir
-  const signedIn = !!user;
-  // ... derivados
-  if (authLoading) return <Splash/>;
-  return (...);
-}
-```
+### FAQ (`landing.faq.*`)
+- `q1_a` → reframe around real architecture: "A IA nunca gera mais do que uma semana. As semanas seguintes saem de uma progressão determinística (Bompa wave + incrementos NSCA por categoria) ajustada pelo que foi registado. Você aprova cada fase. O resultado é defensável porque o método é defensável — não porque a IA é infalível."
+- `q5_a` → keep, but add one sentence: "Cada bloco de programação tem fonte rastreável dentro da app (`generation_log`)."
 
-Validar também que `useHeroRotation` e outros sub-componentes não têm o mesmo padrão.
+### Founder (`landing.founder.*`)
+- Tighten `p2`: "A base é humana. A IA trata da repetição. Os manuais sustentam as escolhas. Você é sempre o último filtro." Drop the "aos poucos vamos integrando mais evidência" hedge — it weakens the pitch.
 
-## P1 — Out-of-hours bookings visíveis
+### Roadmap chips (`landing.roadmap.inline_chips`)
+- Add a "Em breve · " prefix to each chip so the chip itself signals not-shipped (matches the project rule "never advertise unbuilt features without a Soon chip").
 
-**Ficheiro:** `src/routes/schedule.tsx` (`ScheduleWeek`)
+### Pricing
+- `subtitle` → "1 cliente = 1 plano completo grátis. Sem cartão. Sem letras pequenas."
+- `beta_strip_body` → "1 cliente · 1 plano completo grátis · feedback direto com o autor."
 
-Já existe lógica parcial (R68.2). Confirmar que:
-- bookings com `hour < 6 || hour >= 22` são listados num bloco "Sessões fora do horário visível" / "Sessions outside visible hours"
-- cada linha clicável abre `BookingDialog` em modo edição
-- chave i18n: `schedule.out_of_hours.heading`
+### Locales
+- PT (`pt/plan.json`) is the source.
+- EN/ES/HI: update the same keys with literal translations of the new strings (existing fallback rules apply; landing remains PT-marketed but other locales must not regress).
 
-## P2 — Frequency guard usa semana do candidato
+## Out of scope (explicit)
 
-**Ficheiro:** `src/routes/schedule.tsx` (`BookingDialog`)
+- No new sections, components, animations, routes, or assets.
+- No layout / Tailwind class changes.
+- No mockup component edits except text inside existing `t()` calls.
+- No new dependencies.
+- No schema, server function, payment, recurrence, or engine changes.
+- WhoAndWhySection / AntiChatGPTSection / ForWhomSection: leave hidden/visible state as-is.
 
-Já implementado em R68.2 via fetch direto Supabase pela ISO week do `starts_at` candidato. Auditar e garantir:
-- exclui o próprio booking quando edita (`neq("id", editingId)`)
-- exclui `status = cancelled`
-- string i18n já correta
+## Verification
 
-## P3 — Save/refetch reliability
+- `tsc --noEmit` clean.
+- 375 / 390px hero smoke (no overflow with new strings).
+- Hard refresh `/` no hook crash regression.
+- Visual scan that no key resolves to a missing-translation fallback.
 
-**Ficheiros:** `src/routes/schedule.tsx`, `src/routes/schedule.packs.tsx`
+## Files touched
 
-- `bookingTick` já propaga para `ScheduleWeek` e `PacksPanel` (R68.2). Confirmar que `RevenuePanel` também recebe / refetcha após mutação.
-- `onSavedJumpToWeek` já existe — verificar que limpa search params (`newBooking/clientId/packId`) com `replace: true` para evitar re-abrir o dialog em StrictMode.
+- `src/i18n/locales/pt/plan.json` (primary)
+- `src/i18n/locales/en/plan.json`
+- `src/i18n/locales/es/plan.json`
+- `src/i18n/locales/hi/plan.json`
+- `src/routes/index.tsx` only if a string is currently hardcoded (e.g. comparison table cells, signed-in "Experimente em 5 cliques" button) — in that case, move to i18n in the same edit.
 
-## P4 — Pack accounting honesto
-
-**Ficheiros:** `src/routes/schedule.packs.tsx`, `src/i18n/locales/{pt,en}/schedule.json`
-
-Derivado client-side (sem schema, sem novo server fn):
-
-```
-usedBeforeProtocol  = client_packs.sessions_used
-completedInProtocol = bookings.filter(pack_id == p.id && status != 'cancelled' && (starts_at + duration) < now).length
-upcomingScheduled   = bookings.filter(pack_id == p.id && status != 'cancelled' && starts_at >= now).length
-effectiveUsed       = usedBeforeProtocol + completedInProtocol
-remaining           = max(0, pack_size - effectiveUsed)
-```
-
-Card compacto mostra `remaining/total` + chip "X agendadas". Detalhe completo (4 linhas) dentro do `PackFormDialog` (modo manage).
-
-`sessions_used` já está exposto no `PackFormDialog` e já passa pelo `upsertPack` (R68.2) — apenas adicionar validação `0 <= sessions_used <= pack_size`.
-
-Estender query existente em `PacksPanel` (`select("pack_id, status, starts_at, duration_min")`) — já é uma read scoped, sem nova função.
-
-## P5 — Mobile polish
-
-**Ficheiro:** `src/routes/schedule.tsx` (DayStrip + header)
-
-- Weekday pills: stack vertical (`flex-col`), label abreviada PT `SEG/TER/QUA/QUI/SEX/SÁB/DOM` (já existem), data em baixo, `min-w-[2.75rem]`, `px-1.5 py-1`, `text-[10px]` label.
-- Header: `flex items-center justify-between` numa só linha — título à esquerda, `Tabs` à direita. Em ≤375px envolve graciosamente.
-
-## P6 — Long-horizon insight
-
-**Deferido.** Só ship se P0–P5 limparem em <2h. Caso contrário, fica para R69.
-
-## P7 — Landing assessment-first
-
-**Proposal-only nesta ronda.** Resultado fica documentado em `mem/features/landing-assessment-first.md` (rascunho de copy + secções) sem tocar em `src/routes/index.tsx` além do P0.
-
-## i18n
-
-PT/EN obrigatórios. ES/HI espelham EN.
-
-Novas keys em `schedule.json`:
-- `out_of_hours.heading`
-- `pack.used_before_protocol`
-- `pack.completed_in_protocol`
-- `pack.upcoming_scheduled`
-- `pack.remaining_label`
-- `pack.sessions_used_invalid`
-
-## Scope guard — confirmação
-
-- ❌ schema changes
-- ❌ migrations
-- ❌ novas server functions
-- ❌ novas rotas
-- ❌ novas dependências
-- ❌ recurrence / payments / direct debit
-- ❌ engine / generation / PKL
-- ✅ apenas bugfixes, derivados client-side, copy, i18n
-
-## Verificação
-
-- Hard-refresh `/`, `/schedule`, `/schedule?tab=packs`, `/schedule?tab=week&newBooking=1&clientId=...&packId=...` × 5
-- Tab switch repetido
-- Booking 02:00 visível e editável
-- Frequency guard semana futura
-- Pack 10 total, 4 used → mostra 6 remaining
-- 375px / 390px sem overflow
-- `tsc --noEmit` clean
-
-## Final report incluirá
-
-- Causa exata: early return antes de `useState` em `Landing`
-- Porque os fixes anteriores falharam: olhámos só para `ScheduleShell`
-- Ficheiros tocados
-- Scope confirmado intacto
+If during implementation any of the proposed copy exceeds the existing slot's visual budget at 375px, I'll shorten the string rather than touch layout, and note the trim in the report.
