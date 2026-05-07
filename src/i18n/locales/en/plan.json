@@ -1,25 +1,25 @@
 {
   "landing": {
     "hero": {
-      "title_line1": "Scientifically defensible training plans",
-      "title_line2": "in 90 seconds — with your name on them.",
-      "subtitle": "No Excel. No improvising. No loss of clinical rigour.",
+      "title_line1": "Clinical screening → defensible protocol → weekly adaptation.",
+      "title_line2": "Serious programming, without living in Excel.",
+      "subtitle": "You run the assessment. Protocol builds the program. Every logged set feeds next week.",
       "cta_primary_signed_out": "Create your first plan — free",
       "cta_primary_signed_in": "Open dashboard",
       "cta_secondary": "See how it works",
       "credibility_caption": "Already inside: PAR-Q+, ACSM, Prochaska. Coming next: Helms, Israetel, Schoenfeld.",
       "social_proof": "Built by a coach, for coaches · Private beta",
-      "beta_softcap_chip": "Private beta · limited spots this week",
+      "beta_softcap_chip": "Private beta · direct feedback with the author",
       "bullets": [
-        "Automatic clinical screen (PAR-Q+, ACSM)",
-        "Weekly progression ready (MEV/MAV/MRV)",
-        "PDF branded with your studio"
+        "Clinical screening before any prescription (PAR-Q+, ACSM).",
+        "Editable protocol across 5 stages — you approve each one.",
+        "Next week tuned to what the client actually did."
       ],
       "tagline_eyebrow": "Evidence-based programming infrastructure for personal trainers",
       "variants": [
         {
-          "line1": "Scientifically defensible training plans",
-          "line2": "in 90 seconds — with your name on them.",
+          "line1": "Clinical screening → defensible protocol → weekly adaptation.",
+          "line2": "Serious programming, without living in Excel.",
           "audience": "For personal trainers"
         }
       ]
@@ -222,9 +222,9 @@
       "subtitle": "Log every set, track every session. Protocol keeps the history so you and the client see the work pile up."
     },
     "journey": {
-      "eyebrow": "Under continuous build",
-      "title": "Five stages today — refined every week.",
-      "subtitle": "This is what you'll see inside the app, right now. The shape and the detail keep evolving as we learn from each plan generated. Long-term goal: fold in all the human knowledge relevant to programming.",
+      "eyebrow": "The loop, not the shortcut",
+      "title": "Assess. Program. Adapt. On loop.",
+      "subtitle": "Five stages inside the app — and the sixth is next week, built from what was logged.",
       "stages": {
         "intake": {
           "label": "Intake",
@@ -244,14 +244,14 @@
         },
         "progressions": {
           "label": "Progressions",
-          "desc": "Week-over-week deltas — load, reps, RPE, deload."
+          "desc": "Week N+1 comes from the logbook: adherence, real RPE, load drift. AI only generates Week 1; the rest is deterministic."
         }
       }
     },
     "logbook_preview": {
       "eyebrow": "After the PDF",
-      "title": "Every set logged becomes fuel for next week.",
-      "subtitle": "The PDF is the starting point. Each log — manual today, voice and sensors tomorrow — feeds the next generation. All optional, all toggle: give what you have, get what we can do with it.",
+      "title": "The logbook isn't a diary. It's the input for next week.",
+      "subtitle": "Every set logged — manually, today — feeds Week N+1: load, RPE, adherence. Voice and sensors are coming; the engine already reads what exists.",
       "log_caption": "Preview — log a session in seconds.",
       "trend_caption": "Trend lines and AI nudges are coming next — your logs already feed the engine.",
       "history_caption": "Week-over-week history — watch load climb without opening the gym.",
@@ -263,16 +263,16 @@
       "signal_voice": "Voice notes → text → adjustment",
       "signal_devices": "Scale, steps, sleep, heart rate",
       "signal_uploads": "Bioimpedance, blood pressure — photo, PDF or Excel",
-      "flow": "1. Client logs. 2. AI cross-references volume, RPE and time. 3. You see signals and decide with context."
+      "flow": "1. The client logs. 2. The app reads adherence, RPE, drift. 3. Next week ships with adjusted loads."
     },
     "roadmap": {
       "eyebrow": "Coming next",
       "title": "What we're building, openly.",
       "subtitle": "Not yet, but coming. We'd rather under-promise here than oversell.",
       "inline_chips": [
-        "Trends & graphs",
-        "Prompt-driven tweaks",
-        "Coach AI advice"
+        "Soon · Trends & charts",
+        "Soon · Prompt adjustments",
+        "Soon · Coach AI advice"
       ],
       "items": {
         "trends": {
@@ -303,14 +303,14 @@
       "title": "Why Protocol?",
       "img_alt": "André, founder of Protocol",
       "p1": "In fifteen years as a PT I kept seeing the same thing: plans thrown together in a hurry because programming with care takes too much work.",
-      "p2": "Protocol is here to take that excuse off the table. Human and scientific at the base — you decide, AI handles the repetitive drafting, and the manuals (ACSM, Bompa, NSCA) ground the choices. New evidence is added gradually, always with a verifiable source.",
+      "p2": "The foundation is human. AI handles repetition. The manuals (ACSM, Bompa, NSCA) back the choices. You are always the last filter.",
       "p3": "We don't want to automate coaching. We want \"I didn't have time\" to stop being the reason behind a weak plan — for PTs, and for people training on their own.",
       "signature": "— André Periquito, MSc Exercise & Health · Exercise Physiologist & Personal Trainer"
     },
     "faq": {
       "title": "Questions coaches and trainees ask us.",
       "q1_q": "Is the AI plan good enough to send to clients as-is?",
-      "q1_a": "It's a solid starting point, not a destination. For now, AI is help — you are the filter. As we earn confidence in its outputs, we hand back more autonomy. Until then, edit volume, swap exercises, adapt the language; Protocol does the heavy lifting, you have the final word.",
+      "q1_a": "AI never generates more than a single week. The following weeks come from deterministic progression (Bompa wave + NSCA increments per category) adjusted by what was logged. You approve every stage. The output is defensible because the method is — not because AI is infallible.",
       "q2_q": "What if my client has injuries or medical conditions?",
       "q2_a": "PAR-Q+ flags trigger conditional logic. Cardiac flags default the plan to low-intensity. Joint flags exclude high-impact patterns. You always have final approval before generation.",
       "q3_q": "Can I use my own branding on the PDF?",
@@ -318,7 +318,7 @@
       "q4_q": "What happens to my client data?",
       "q4_a": "Stored in Supabase (EU region). You can export or delete any client record at any time. Protocol does not share or sell client data — ever.",
       "q5_q": "What science is the programming based on?",
-      "q5_a": "Manuals already inside today: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Anything added next will have a verifiable source (PubMed and equivalents) — nothing cited under an author's name without the actual book or paper being inside. You can (and should) verify.",
+      "q5_a": "Manuals already inside today: ACSM 12e, Bompa-Buzzichelli (6e), NSCA Essentials (3e). Anything added next will have a verifiable source (PubMed and equivalents) — nothing cited under an author's name without the actual book or paper being inside. You can (and should) verify. Every programming block has a traceable source inside the app (generation_log).",
       "q6_q": "What if the client regresses mid-block?",
       "q6_a": "You re-run the assessment, the programming tier adjusts (e.g. advanced → conservative) and the next block regenerates with tighter constraints. The previous block stays archived for history.",
       "q7_q": "Can I edit the generated plan before export?",
@@ -373,14 +373,14 @@
       "pro_cta": "Continue after trial",
       "nav_link": "Pricing",
       "trial_note": "No silent auto-renewal: we email you before any charge.",
-      "subtitle": "1 client = 1 full plan free. No card required.",
+      "subtitle": "1 client = 1 complete plan free. No card. No fine print.",
       "popular_badge": "Most popular",
       "per_month": "mo",
       "per_year": "yr",
       "monthly_eq": "≈ €{{price}}/mo",
       "quota": "{{clients}} clients · {{plans}} plans/mo",
       "beta_strip_title": "Private beta",
-      "beta_strip_body": "1 client · 1 full plan free · no card.",
+      "beta_strip_body": "1 client · 1 complete plan free · direct feedback with the author.",
       "toggle": {
         "monthly": "Monthly",
         "annual": "Annual",
@@ -535,11 +535,11 @@
           "no"
         ],
         [
-          "Auto contraindications (PAR-Q+/ACSM)",
+          "Clinical screening (PAR-Q+ / ACSM)",
           "yes",
-          "no",
-          "no",
-          "no"
+          "manual",
+          "depends on prompt",
+          "generic"
         ],
         [
           "Branded bilingual PDF",
@@ -556,11 +556,11 @@
           "—"
         ],
         [
-          "Time to first plan",
-          "~90s",
-          "hours",
-          "minutes",
-          "hours"
+          "Week-to-week adaptation",
+          "deterministic + log",
+          "no",
+          "no",
+          "rare"
         ]
       ],
       "footnote": "It's not magic. It's conditional logic over published science — Israetel, Helms, ACSM."
