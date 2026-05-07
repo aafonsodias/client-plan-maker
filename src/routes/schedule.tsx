@@ -921,7 +921,9 @@ function ScheduleMonth({
   }, [monday]);
   useEffect(() => {
     void (async () => {
-      const r: any = await monthFn({ data: { monthStart: monthAnchor.toISOString() } });
+      const r: any = await monthFn({
+        data: { year: monthAnchor.getFullYear(), month: monthAnchor.getMonth() },
+      });
       setRows(r?.ok ? r.rows : []);
     })();
   }, [monthAnchor]);
