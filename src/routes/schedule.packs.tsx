@@ -64,18 +64,6 @@ export function PacksPanel({
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
 
-  // Auto-open create dialog when arriving with ?newPack=1
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("newPack") === "1") {
-      setCreating(true);
-      params.delete("newPack");
-      const qs = params.toString();
-      navigate({ to: "/schedule", search: { tab: "packs" }, replace: true });
-    }
-  }, [navigate]);
-
   // One scoped read of this week's non-cancelled bookings → count per pack
   // (used for the "X marcadas esta semana" chip).
   useEffect(() => {
@@ -290,23 +278,27 @@ export function PacksPanel({
   );
 }
 
-function PackFormDialog({
+export function PackFormDialog({
   open,
   onOpenChange,
   editing,
   clients,
+  initialClientId,
+  lockClient,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing?: Pack;
   clients: ClientLite[];
-  onSaved: () => void | Promise<void>;
+  initialClientId?: string;
+  lockClient?: boolean;
+  onSaved: (savedId?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
   const save = useServerFn(upsertPack);
 
-  const [clientId, setClientId] = useState(editing?.client_id ?? "");
+  const [clientId, setClientId] = useState(editing?.client_id ?? initialClientId ?? "");
   const [label, setLabel] = useState(editing?.label ?? t("pack.default_label"));
   const [sessionType, setSessionType] = useState<"in_person" | "online">(editing?.session_type ?? "in_person");
   const [price, setPrice] = useState<number | "">(editing ? Number(editing.price_per_session_eur ?? 0) : "");
@@ -320,7 +312,7 @@ function PackFormDialog({
 
   useEffect(() => {
     if (!open) return;
-    setClientId(editing?.client_id ?? "");
+    setClientId(editing?.client_id ?? initialClientId ?? "");
     setLabel(editing?.label ?? t("pack.default_label"));
     setSessionType(editing?.session_type ?? "in_person");
     setPrice(editing ? Number(editing.price_per_session_eur ?? 0) : "");
@@ -329,7 +321,7 @@ function PackFormDialog({
     setStart(editing?.start_date ?? new Date().toISOString().slice(0, 10));
     setColor(editing?.color ?? "emerald");
     setSessionsUsed(editing?.sessions_used ?? 0);
-  }, [open, editing]);
+  }, [open, editing, initialClientId]);
 
   const submit = async () => {
     if (!clientId) return toast.error(t("form.select_client"));
@@ -359,7 +351,7 @@ function PackFormDialog({
       },
     });
     setBusy(false);
-    if (r?.ok) await onSaved();
+    if (r?.ok) await onSaved(r.id as string | undefined);
     else toast.error(r?.error ?? "error");
   };
 
@@ -372,7 +364,7 @@ function PackFormDialog({
         <div className="space-y-3">
           <div>
             <Label>{t("form.client")}</Label>
-            <Select value={clientId} onValueChange={setClientId} disabled={!!editing}>
+            <Select value={clientId} onValueChange={setClientId} disabled={!!editing || !!lockClient}>
               <SelectTrigger><SelectValue placeholder={t("form.select_client")} /></SelectTrigger>
               <SelectContent>
                 {clients.map((c) => (

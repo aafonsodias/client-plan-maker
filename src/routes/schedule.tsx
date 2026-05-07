@@ -25,7 +25,7 @@ import {
 import { RevenuePanel } from "@/components/schedule/RevenuePanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PacksPanel } from "./schedule.packs";
+import { PacksPanel, PackFormDialog } from "./schedule.packs";
 import {
   type Booking,
   type Pack,
@@ -39,10 +39,9 @@ import {
 export const Route = createFileRoute("/schedule")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { tab?: "week" | "packs"; newBooking?: 1; newPack?: 1; clientId?: string; packId?: string } => ({
+  ): { tab?: "week" | "packs"; newBooking?: 1; clientId?: string; packId?: string } => ({
     tab: s.tab === "packs" ? "packs" : "week",
     newBooking: s.newBooking === 1 || s.newBooking === "1" ? 1 : undefined,
-    newPack: s.newPack === 1 || s.newPack === "1" ? 1 : undefined,
     clientId: typeof s.clientId === "string" ? s.clientId : undefined,
     packId: typeof s.packId === "string" ? s.packId : undefined,
   }),
@@ -272,14 +271,6 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate({ to: "/schedule", search: { tab: "packs", newPack: 1 } })}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t("pack.new")}
-          </Button>
         </div>
       </header>
 
@@ -448,6 +439,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
+        onPacksRefresh={refreshPacks}
         onSaved={async (savedIso) => {
           setCreating(null);
           await onSavedJumpToWeek(savedIso);
@@ -461,6 +453,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         editing={editing ?? undefined}
         clients={clients}
         packs={packs}
+        onPacksRefresh={refreshPacks}
         onSaved={async (savedIso) => {
           setEditing(null);
           await onSavedJumpToWeek(savedIso);
@@ -646,6 +639,7 @@ function BookingDialog({
   editing,
   clients,
   packs,
+  onPacksRefresh,
   onSaved,
 }: {
   open: boolean;
@@ -654,6 +648,7 @@ function BookingDialog({
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
+  onPacksRefresh?: () => void | Promise<void>;
   onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
@@ -674,6 +669,7 @@ function BookingDialog({
   const [busy, setBusy] = useState(false);
   const [override, setOverride] = useState(false);
   const [candidateWeekCount, setCandidateWeekCount] = useState(0);
+  const [inlinePackOpen, setInlinePackOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -782,7 +778,16 @@ function BookingDialog({
           {clientId && (
             <div>
               <Label>{t("form.pack")}</Label>
-              <Select value={packId || "__none__"} onValueChange={(v) => setPackId(v === "__none__" ? "" : v)}>
+              <Select
+                value={packId || "__none__"}
+                onValueChange={(v) => {
+                  if (v === "__new__") {
+                    setInlinePackOpen(true);
+                    return;
+                  }
+                  setPackId(v === "__none__" ? "" : v);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">{t("form.no_pack")}</SelectItem>
@@ -791,6 +796,9 @@ function BookingDialog({
                       {p.label} · {Math.max(0, p.pack_size - p.sessions_used)}/{p.pack_size}
                     </SelectItem>
                   ))}
+                  <SelectItem value="__new__">
+                    + {t("pack.new")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -888,6 +896,18 @@ function BookingDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <PackFormDialog
+        open={inlinePackOpen}
+        onOpenChange={setInlinePackOpen}
+        clients={clients}
+        initialClientId={clientId}
+        lockClient
+        onSaved={async (newId) => {
+          setInlinePackOpen(false);
+          await onPacksRefresh?.();
+          if (newId) setPackId(newId);
+        }}
+      />
     </Dialog>
   );
 }
