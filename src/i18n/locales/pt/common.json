@@ -43,6 +43,20 @@
   "dashboard": {
     "eyebrow": "A tua lista",
     "title": "Clientes",
+    "today": {
+      "title": "Hoje",
+      "empty": "Nada urgente. Boa semana.",
+      "assessment_incomplete": "{{name}} · avaliação por completar",
+      "ready_for_protocol": "{{name}} · pronto para protocolo",
+      "plan_awaiting": "{{name}} · plano por aprovar",
+      "no_sessions_week": "0 sessões marcadas esta semana",
+      "pack_ending": "{{name}} · pack a terminar"
+    },
+    "revenue_caption": "baseada nas sessões marcadas desta semana",
+    "schedule": {
+      "frequency_warn": "Esta cliente já tem {{used}}/{{agreed}} sessões marcadas esta semana.",
+      "extra_session": "Marcar sessão extra"
+    },
     "new_client": "Novo cliente",
     "mode_invite": "Enviar link de avaliação",
     "mode_manual": "Adicionar manualmente",
