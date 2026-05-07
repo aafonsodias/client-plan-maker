@@ -20,3 +20,13 @@ Sources of truth already available:
 - `client_packs.weekly_frequency` — agreed cadence per pack
 - `client_packs.price_per_session_eur` × non-cancelled `client_bookings` — revenue
 - `clients.intake_status`, `workout_plans.status` — operational signals for Today strip
+
+## R68.1 additions (still deferred)
+- Monthly view (occupancy + revenue)
+- Yearly view (lifecycle, seasonality)
+- Recurring weekly slots (auto-generate bookings from pack frequency)
+- Holidays / vacations blocking the loop
+- Direct-debit / monthly subscription tracking
+- Trial-session lifecycle
+- Revenue projection (extrapolate from recurring slots)
+- Annual client lifecycle dashboard

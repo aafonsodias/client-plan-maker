@@ -54,11 +54,12 @@ export const Route = createFileRoute("/schedule")({
 
 function ScheduleShell() {
   const location = useLocation();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const [bookingTick, setBookingTick] = useState(0);
   if (location.pathname.startsWith("/schedule/")) {
     return <Outlet />;
   }
-  const search = Route.useSearch();
-  const navigate = useNavigate();
   const tab = (search.tab as "week" | "packs") ?? "week";
   return (
     <Tabs
@@ -69,10 +70,10 @@ function ScheduleShell() {
     >
       <ScheduleTabs />
       <TabsContent value="week" className="mt-4">
-        <ScheduleWeek />
+        <ScheduleWeek bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
       <TabsContent value="packs" className="mt-4">
-        <PacksPanel />
+        <PacksPanel bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
     </Tabs>
   );
@@ -110,7 +111,7 @@ function nextCoachableSlot(): Date {
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-function ScheduleWeek() {
+function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number; onBookingsMutated: () => void }) {
   const { t, i18n } = useTranslation("schedule");
   const { t: tc } = useTranslation("common");
   const { user } = useAuth();
@@ -143,7 +144,7 @@ function ScheduleWeek() {
   useEffect(() => {
     if (!user) return;
     void refresh();
-  }, [user, monday]);
+  }, [user, monday, bookingTick]);
 
   useEffect(() => {
     if (!user) return;
@@ -159,14 +160,13 @@ function ScheduleWeek() {
   useEffect(() => {
     if (!user) return;
     if (search.newBooking !== 1) return;
+    if (creating) return;
     const d = nextCoachableSlot();
-    setCreating({ startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId });
-    navigate({
-      to: "/schedule",
-      search: { tab: "week" },
-      replace: true,
-    });
-  }, [user, search.newBooking, search.clientId, search.packId]);
+    const next = { startsAt: d.toISOString(), clientId: search.clientId, packId: search.packId };
+    // Clear the search params first so the dialog can't re-trigger from stale URL state.
+    navigate({ to: "/schedule", search: { tab: "week" }, replace: true });
+    setCreating(next);
+  }, [user, search.newBooking, search.clientId, search.packId, creating]);
 
   const packById = useMemo(() => {
     const m = new Map<string, Pack>();
@@ -360,7 +360,9 @@ function ScheduleWeek() {
       {/* New booking dialog */}
       <BookingDialog
         open={!!creating}
-        onOpenChange={(v) => !v && setCreating(null)}
+        onOpenChange={(v) => {
+          if (!v) setCreating(null);
+        }}
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
@@ -369,6 +371,7 @@ function ScheduleWeek() {
           setCreating(null);
           await refresh();
           await refreshPacks();
+          onBookingsMutated();
         }}
       />
 
@@ -384,6 +387,7 @@ function ScheduleWeek() {
           setEditing(null);
           await refresh();
           await refreshPacks();
+          onBookingsMutated();
         }}
       />
     </div>
@@ -485,6 +489,7 @@ function DayStrip({
       return t.toDateString() === day.toDateString();
     })
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const { t: ts } = useTranslation("schedule");
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-7 gap-1">
@@ -496,18 +501,23 @@ function DayStrip({
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex flex-col items-center rounded-lg border px-1 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex min-h-12 flex-col items-center rounded-lg border px-1 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
               <span className="text-[10px] uppercase tracking-widest">
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
               </span>
-              <span className={`text-sm font-medium ${isToday ? "underline" : ""}`}>
+              <span className={`mt-0.5 text-sm font-medium ${isToday ? "underline underline-offset-4" : ""}`}>
                 {new Intl.DateTimeFormat(locale, { day: "2-digit" }).format(d)}
               </span>
             </button>
           );
         })}
       </div>
+      {list.length > 0 && (
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {ts("day.list_header", { count: list.length })}
+        </p>
+      )}
       <div className="space-y-2">
         {list.length === 0 ? (
           <button
@@ -526,6 +536,8 @@ function DayStrip({
             const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
             const c = clientById.get(b.client_id);
             const cls = packBlockClasses(pack?.color ?? "emerald");
+            const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+            const typeLabel = b.session_type === "online" ? ts("form.online") : ts("form.in_person");
             return (
               <button
                 key={b.id}
@@ -536,8 +548,8 @@ function DayStrip({
                 <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
-                  <div className="truncate font-mono text-[11px] opacity-80">
-                    {new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} · {b.duration_min}′
+                  <div className="truncate text-[11px] opacity-80">
+                    <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
                   </div>
                 </div>
               </button>

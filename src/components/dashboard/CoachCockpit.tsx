@@ -291,7 +291,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
 
       {/* Hero strip */}
-      <div className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {lang === "pt" ? "Esta semana" : "This week"}
@@ -303,12 +303,12 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="text-left sm:text-right">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {lang === "pt" ? "Receita esperada" : "Expected income"}
             </p>
-            <div className="mt-0.5 flex items-center justify-end gap-1.5 font-mono text-base">
+            <div className="mt-0.5 flex items-center gap-1.5 font-mono text-base sm:justify-end">
               <Coins className="h-3.5 w-3.5 text-amber-500" />
               <PriceTag eur={expectedIncome} interactive={false} />
             </div>
@@ -342,7 +342,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         >
           <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <span>{lang === "pt" ? "Calendário da semana" : "Week timetable"}</span>
-            <span className="opacity-0 transition group-hover:opacity-100">→</span>
+            <span className="opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">→</span>
           </div>
           <MiniWeek
             monday={monday}
@@ -434,21 +434,20 @@ function MiniWeek({
         return (
           <div
             key={dow}
-            className={`flex min-h-[110px] flex-col rounded-lg border bg-background/40 p-1.5 ${
+            className={`flex min-h-[96px] flex-col rounded-lg border bg-background/40 p-1.5 ${
               isToday ? "border-amber-500/50 ring-1 ring-amber-500/20" : "border-border"
             }`}
           >
-            <div className="mb-1 flex items-baseline justify-between">
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground"}`}>
+            <div className="mb-1 flex flex-col items-start leading-tight">
+              <span className={`text-[9px] font-bold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground"}`}>
                 {dayLabels[dow]}
               </span>
-              <span className={`font-mono text-[10px] ${isToday ? "text-foreground" : "text-muted-foreground"}`}>
-                {date.getDate()}
+              <span className={`font-mono text-[11px] ${isToday ? "text-foreground" : "text-muted-foreground"}`}>
+                {String(date.getDate()).padStart(2, "0")}
               </span>
             </div>
-            <div className="flex flex-col gap-1">
-              {dayBookings.slice(0, 4).map((b) => {
-                const c = clientById.get(b.client_id);
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {dayBookings.slice(0, 3).map((b) => {
                 const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
                 const cls = packBlockClasses(color);
                 const time = new Date(b.starts_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", {
@@ -456,19 +455,17 @@ function MiniWeek({
                   minute: "2-digit",
                   hour12: false,
                 });
+                const c = clientById.get(b.client_id);
                 return (
-                  <div
+                  <span
                     key={b.id}
-                    className={`flex items-center gap-1 rounded px-1 py-0.5 ${cls.bg} ${cls.text}`}
+                    className={`inline-block h-2 w-2 rounded-full ${cls.dot}`}
                     title={`${time} · ${c?.full_name ?? ""}`}
-                  >
-                    {c && <ClientAvatar name={c.full_name} photoUrl={c.photo_url} size={14} />}
-                    <span className="truncate text-[10px] font-medium">{time}</span>
-                  </div>
+                  />
                 );
               })}
-              {dayBookings.length > 4 && (
-                <span className="px-1 text-[10px] text-muted-foreground">+{dayBookings.length - 4}</span>
+              {dayBookings.length > 3 && (
+                <span className="text-[10px] text-muted-foreground">+{dayBookings.length - 3}</span>
               )}
             </div>
           </div>

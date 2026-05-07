@@ -30,3 +30,5 @@ Dashboard = role-aware cockpit. Coach=hero(semana·sessões·€)+mini-week+nudg
 - [No stage redirects](mem://principles/no-stage-redirects.md) — all 5 stages render inline on /clients/$id, /plans/* are thin back-compat wrappers
 - [Inline-only journey](mem://principles/inline-only-journey.md) — Plans-list rows expand inline (no nav), standalone stage routes are redirects
 - [Schedule & revenue future scope](mem://features/schedule-revenue-future.md) — what R67 deferred; design as one coherent system later
+- [Exercise intelligence layer](mem://features/exercise-intelligence-layer.md) — deferred structured exercise DB / muscle map / McGill overlay
+- [Exercise media layer](mem://features/exercise-media-layer.md) — deferred technique video library

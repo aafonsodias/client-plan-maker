@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,10 @@ export const Route = createFileRoute("/schedule/packs")({
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-export function PacksPanel() {
+export function PacksPanel({
+  bookingTick = 0,
+  onBookingsMutated,
+}: { bookingTick?: number; onBookingsMutated?: () => void } = {}) {
   const { t } = useTranslation("schedule");
   const { user } = useAuth();
   const list = useServerFn(listPacks);
@@ -84,7 +87,7 @@ export function PacksPanel() {
         }
         setScheduledByPack(counts);
       });
-  }, [user, packs]);
+  }, [user, packs, bookingTick]);
 
   const clientById = useMemo(() => {
     const m = new Map<string, ClientLite>();
@@ -131,7 +134,11 @@ export function PacksPanel() {
                   <span aria-hidden>·</span>
                   <span className="font-mono">{t("pack.sessions_short", { used: p.sessions_used, total: p.pack_size })}</span>
                   <span aria-hidden>·</span>
-                  <span>{t("pack.per_session_short", { price: Number(p.price_per_session_eur) })}</span>
+                  <span>
+                    {Number(p.price_per_session_eur) > 0
+                      ? t("pack.per_session_short", { price: Number(p.price_per_session_eur) })
+                      : t("pack.price_unset")}
+                  </span>
                   {p.weekly_frequency > 0 && (
                     <>
                       <span aria-hidden>·</span>
@@ -237,19 +244,20 @@ function PackFormDialog({
   const [clientId, setClientId] = useState(editing?.client_id ?? "");
   const [label, setLabel] = useState(editing?.label ?? t("pack.default_label"));
   const [sessionType, setSessionType] = useState<"in_person" | "online">(editing?.session_type ?? "in_person");
-  const [price, setPrice] = useState<number>(Number(editing?.price_per_session_eur ?? 30));
+  const [price, setPrice] = useState<number | "">(editing ? Number(editing.price_per_session_eur ?? 0) : "");
   const [size, setSize] = useState<number>(editing?.pack_size ?? 10);
   const [freq, setFreq] = useState<number>(editing?.weekly_frequency ?? 2);
   const [start, setStart] = useState<string>(editing?.start_date ?? new Date().toISOString().slice(0, 10));
   const [color, setColor] = useState<string>(editing?.color ?? "emerald");
   const [busy, setBusy] = useState(false);
+  const priceRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setClientId(editing?.client_id ?? "");
     setLabel(editing?.label ?? t("pack.default_label"));
     setSessionType(editing?.session_type ?? "in_person");
-    setPrice(Number(editing?.price_per_session_eur ?? 30));
+    setPrice(editing ? Number(editing.price_per_session_eur ?? 0) : "");
     setSize(editing?.pack_size ?? 10);
     setFreq(editing?.weekly_frequency ?? 2);
     setStart(editing?.start_date ?? new Date().toISOString().slice(0, 10));
@@ -258,6 +266,12 @@ function PackFormDialog({
 
   const submit = async () => {
     if (!clientId) return toast.error(t("form.select_client"));
+    const priceNum = typeof price === "number" ? price : parseFloat(String(price)) || 0;
+    if (!priceNum || priceNum <= 0) {
+      toast.error(t("pack.price_required"));
+      priceRef.current?.focus();
+      return;
+    }
     setBusy(true);
     const r: any = await save({
       data: {
@@ -265,7 +279,7 @@ function PackFormDialog({
         clientId,
         label,
         sessionType,
-        pricePerSessionEur: price,
+        pricePerSessionEur: priceNum,
         packSize: size,
         weeklyFrequency: freq,
         startDate: start,
@@ -312,7 +326,16 @@ function PackFormDialog({
             </div>
             <div>
               <Label>{t("pack.price")}</Label>
-              <Input type="number" min={0} step="0.5" value={price} onChange={(e) => setPrice(parseFloat(e.target.value) || 0)} />
+              <Input
+                ref={priceRef}
+                type="number"
+                min={0}
+                step="0.5"
+                value={price}
+                placeholder="—"
+                onChange={(e) => setPrice(e.target.value === "" ? "" : parseFloat(e.target.value) || 0)}
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">{t("pack.price_required_hint")}</p>
             </div>
             <div>
               <Label>{t("pack.size")}</Label>

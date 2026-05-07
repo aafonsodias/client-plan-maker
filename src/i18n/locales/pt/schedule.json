@@ -25,7 +25,8 @@
     "sessions_this_week": "Sessões esta semana",
     "sessions_remaining": "Sessões restantes",
     "ending_soon": "Pacotes a terminar",
-    "no_alerts": "Sem alertas"
+    "no_alerts": "Sem alertas",
+    "expected_income_unavailable": "Receita esperada indisponível — falta preço por sessão"
   },
   "form": {
     "client": "Cliente",
@@ -72,6 +73,13 @@
     "unarchive": "Desarquivar",
     "empty": "Sem pacotes ainda. Cria um pacote para acompanhar sessões e receita.",
     "demo_seed": "Semente demo",
-    "demo_seeded": "{{count}} sessões criadas esta semana"
+    "demo_seeded": "{{count}} sessões criadas esta semana",
+    "price_required": "Define o preço por sessão.",
+    "price_required_hint": "Quanto cobra a este cliente por sessão?",
+    "price_unset": "Preço por definir"
+  },
+  "day": {
+    "list_header_one": "{{count}} sessão marcada",
+    "list_header_other": "{{count}} sessões marcadas"
   }
 }
