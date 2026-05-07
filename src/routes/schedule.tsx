@@ -68,7 +68,10 @@ function ScheduleShell() {
         navigate({ to: "/schedule", search: { tab: v === "packs" ? "packs" : "week" } })
       }
     >
-      <ScheduleTabs />
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <ScheduleHeading />
+        <ScheduleTabs />
+      </div>
       <TabsContent value="week" className="mt-4">
         <ScheduleWeek bookingTick={bookingTick} onBookingsMutated={() => setBookingTick((n) => n + 1)} />
       </TabsContent>
@@ -77,6 +80,11 @@ function ScheduleShell() {
       </TabsContent>
     </Tabs>
   );
+}
+
+function ScheduleHeading() {
+  const { t } = useTranslation("schedule");
+  return <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>;
 }
 
 function ScheduleTabs() {
