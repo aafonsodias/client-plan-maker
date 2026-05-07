@@ -25,7 +25,7 @@ import {
 import { RevenuePanel } from "@/components/schedule/RevenuePanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PacksPanel } from "./schedule.packs";
+import { PacksPanel, PackFormDialog } from "./schedule.packs";
 import {
   type Booking,
   type Pack,
@@ -439,6 +439,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
+        onPacksRefresh={refreshPacks}
         onSaved={async (savedIso) => {
           setCreating(null);
           await onSavedJumpToWeek(savedIso);
@@ -452,6 +453,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         editing={editing ?? undefined}
         clients={clients}
         packs={packs}
+        onPacksRefresh={refreshPacks}
         onSaved={async (savedIso) => {
           setEditing(null);
           await onSavedJumpToWeek(savedIso);
