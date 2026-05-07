@@ -876,16 +876,112 @@ function DayStrip({
       {clipboardActive && (
         <button
           type="button"
-          onClick={() => {
-            const t = new Date(day);
-            t.setHours(9, 0, 0, 0);
-            onSlotClick(t.toISOString());
-          }}
+          onClick={() => onDayPaste?.(day)}
           className="w-full rounded-md border border-dashed border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300"
         >
-          Colar neste dia às 09:00
+          {ts("clipboard.paste_same_day", { time: "" }).replace("()", "").trim()}
         </button>
       )}
+    </div>
+  );
+}
+
+function ScheduleMonth({
+  monday,
+  packById,
+  clientById,
+  locale,
+  onBookingClick,
+  onDayClick,
+}: {
+  monday: Date;
+  packById: Map<string, Pack>;
+  clientById: Map<string, ClientLite>;
+  locale: string;
+  onBookingClick: (b: Booking) => void;
+  onDayClick: (d: Date) => void;
+}) {
+  const { t } = useTranslation("schedule");
+  const monthFn = useServerFn(listMonthBookings);
+  const [rows, setRows] = useState<Booking[]>([]);
+  const monthAnchor = useMemo(() => {
+    const d = new Date(monday);
+    d.setDate(1);
+    return d;
+  }, [monday]);
+  useEffect(() => {
+    void (async () => {
+      const r: any = await monthFn({ data: { monthStart: monthAnchor.toISOString() } });
+      setRows(r?.ok ? r.rows : []);
+    })();
+  }, [monthAnchor]);
+
+  // Build 6×7 grid starting on Monday of week containing day 1
+  const gridStart = startOfIsoWeek(monthAnchor);
+  const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  const byDay = new Map<string, Booking[]>();
+  for (const b of rows) {
+    const k = new Date(b.starts_at).toDateString();
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k)!.push(b);
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <div className="grid grid-cols-7 bg-secondary/30 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+        {Array.from({ length: 7 }, (_, i) => addDays(gridStart, i)).map((d, i) => (
+          <div key={i} className="border-l border-border first:border-l-0 py-1.5">
+            {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((d, i) => {
+          const inMonth = d.getMonth() === monthAnchor.getMonth();
+          const isToday = d.toDateString() === new Date().toDateString();
+          const list = (byDay.get(d.toDateString()) ?? []).filter((b) => b.status !== "cancelled");
+          const visible = list.slice(0, 3);
+          const more = list.length - visible.length;
+          return (
+            <div
+              key={i}
+              className={`min-h-24 border-l border-t border-border p-1.5 text-left ${inMonth ? "" : "bg-secondary/20 text-muted-foreground/60"}`}
+            >
+              <button
+                type="button"
+                onClick={() => onDayClick(d)}
+                className={`mb-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] ${isToday ? "bg-foreground text-background font-medium" : "text-muted-foreground hover:bg-secondary"}`}
+              >
+                {d.getDate()}
+              </button>
+              <div className="space-y-0.5">
+                {visible.map((b) => {
+                  const c = clientById.get(b.client_id);
+                  const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
+                  const col = clientColor(c, pack?.color);
+                  const cls = packBlockClasses(col);
+                  const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => onBookingClick(b)}
+                      className={`flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                    >
+                      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
+                      <span className="font-mono">{time}</span>
+                      <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
+                    </button>
+                  );
+                })}
+                {more > 0 && (
+                  <div className="px-1 text-[10px] text-muted-foreground">{t("view.more", { count: more })}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
