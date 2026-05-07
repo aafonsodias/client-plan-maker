@@ -38,3 +38,7 @@ No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Train
 - [Exercise media quality spec](mem://specs/exercise-media-quality.md) — R72 8 statuses + first-30 filming priority
 - [Play / Games library](mem://features/traditional-games-play-library.md) — R72 traditional games taxonomy + cultural respect rules
 - [Exercise library priority](mem://audits/exercise-library-priority.md) — R72 Now/Next/Later/Parked slice ranking
+- [Exercise media production](mem://specs/exercise-media-production.md) — R73 filming standards (angles, length, slate, no music)
+- [Founder demo limitations](mem://features/founder-demo-limitations.md) — R73 what Demo Lab + R71 simulator do NOT prove
+- [Client education PDF appendix](mem://features/client-education-pdf.md) — R73 required glossary page for client-facing PDF
+- [Evidence source ethics](mem://principles/evidence-source-ethics.md) — R73 required fields + forbidden patterns for citing studies
