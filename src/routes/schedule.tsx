@@ -1024,6 +1024,10 @@ function BookingDialog({
   const [override, setOverride] = useState(false);
   const [candidateWeekCount, setCandidateWeekCount] = useState(0);
   const [inlinePackOpen, setInlinePackOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const setColor = useServerFn(setClientColor);
+  const currentClient = clients.find((c) => c.id === clientId);
+  const currentColor = clientColor(currentClient);
 
   useEffect(() => {
     if (!open) return;
