@@ -9,7 +9,7 @@ import { startOfIsoWeek, addDays, fmtWeekRange, packBlockClasses, type Pack, typ
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PriceTag } from "@/components/PriceTag";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
-import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap, ArrowRight } from "lucide-react";
+import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { MessageComposerSheet, type ComposerKind, type ComposerCtx } from "./MessageComposerSheet";
 
 /**
