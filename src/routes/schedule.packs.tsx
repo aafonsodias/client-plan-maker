@@ -31,7 +31,10 @@ export const Route = createFileRoute("/schedule/packs")({
 
 type ClientLite = { id: string; full_name: string; photo_url: string | null };
 
-export function PacksPanel() {
+export function PacksPanel({
+  bookingTick = 0,
+  onBookingsMutated,
+}: { bookingTick?: number; onBookingsMutated?: () => void } = {}) {
   const { t } = useTranslation("schedule");
   const { user } = useAuth();
   const list = useServerFn(listPacks);
@@ -84,7 +87,7 @@ export function PacksPanel() {
         }
         setScheduledByPack(counts);
       });
-  }, [user, packs]);
+  }, [user, packs, bookingTick]);
 
   const clientById = useMemo(() => {
     const m = new Map<string, ClientLite>();
