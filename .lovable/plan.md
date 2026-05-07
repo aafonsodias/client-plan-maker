@@ -1,78 +1,41 @@
-## R71 — Demo Mesocycle Simulator (audit + minimal safe build)
+# R72 — Exercise Intelligence, Media & Play Library Spec
 
-### Audit results
+**Spec-only round.** No schema, no migrations, no routes, no UI, no server functions, no dependencies, no engine/PKL/PDF changes. All output lives in `mem/` and `.lovable/` markdown.
 
-| # | Question | Finding |
-|---|---|---|
-| 1 | Demo client seed system? | Yes — `src/server/demo-client.functions.ts` + `demo-oneshot.server.ts` |
-| 2 | `clients.is_demo`? | Yes (boolean default false) |
-| 3 | `workout_plans.is_demo`? | Yes |
-| 4 | `demo_runs` table? | Yes (with stage/status/cancelled) |
-| 5 | Demo-year seeding? | Yes — `seedDemoYearForPlan` (13 archived blocks) |
-| 6 | Rotate +1 year? | Yes — `rotateDemoYear` |
-| 7 | Demo Lab surface? | Yes — `DemoLabPanel` (founder-only, gated to `aafonsodias@gmail.com`) |
-| 8 | Global progress indicator? | Yes — `DemoRunsContext` + `DemoRunsIndicator` |
-| 9 | Safe tables | `workout_sessions`, `client_bookings`, `client_measurements`, `client_packs` (via trigger) |
-| 10 | Sessions seeded? | Yes — `seedDemoSessions` (capped at `plan.duration_weeks`, all `done`, persona-aware) |
-| 11 | Measurements seeded? | **No** — gap |
-| 12 | Feedback seeded? | Yes — `client_feedback` JSON via `maybePersonaFeedback` inside session rows |
-| 13 | Bookings seeded? | **No** — gap (schedule/packs stay empty for demo clients) |
-| 14 | 8-12 weeks possible without schema change? | Yes |
-| 15 | Cleanup/reset? | Yes — `wipeDemoContent` (founder dashboard) |
+## Audit (already sampled)
 
-**Chosen path: A** — extend existing demo seeders. The demo infra is mature; the only missing pieces are `client_bookings` and `client_measurements` plus a way to spread sessions over more weeks with realistic missed/no-show entries.
+Current exercise representation is **string-keyed and unstructured**:
 
-### Scope (deterministic, founder-gated, no AI)
+- `ExerciseZ` (`src/server/phased/schemas.ts:276`) → `name: string`, `primary_muscles: string[]`, `secondary_muscles: string[]`, `equipment: string[]`, plus free-text `cue`/`rationale`/`technique_cues`/`tempo`. **No exercise_id, no movement_pattern field, no canonical reference.**
+- Volume math (`src/lib/volume-compute.ts`, `volume-actual.ts`) joins log entries to plan exercises by **lowercased name string match**. Any rename breaks volume.
+- Logbook + PDF (`src/lib/pdf.ts`, `download-plan.ts`) carry the same name string forward.
+- Rotation/anti-repeat (`src/lib/rotation-audit.ts`, `prior_exercise_pool` in `generation_meta`) keys on names too.
+- Demo helper `src/lib/exercise-demo.ts` builds a **YouTube search URL** — there is no media table.
+- No exercises table, no overrides table, no progression/regression edges, no contraindications, no aliases.
 
-Add **one** demo-only server fn `simulateDemoMesocycle({ clientId, weeks })` in the existing `src/server/demo-sessions.functions.ts` (extends an established demo-only pattern; no new file needed beyond i18n). The handler:
+**Biggest risks**: name drift across AI generations (same exercise spelled three ways → triple-counted in pool, missed in volume); muscle arrays are AI-authored prose, not normalized; no way to fork/customise without forking the whole plan.
 
-1. Refuses unless `clients.is_demo = true` AND `clients.trainer_id = userId` (returns `not_demo` error).
-2. Picks the client's most recent ready plan (any block).
-3. Generates **bookings** spanning the past `weeks` (default 12, range 4-12), at the pack's `weekly_frequency` (or 3/week fallback). Status mix per week, deterministic from `(clientId, weekIdx)` hash:
-   - ~85% `done`
-   - ~10% `no_show`
-   - ~5% `cancelled`
-   - skip 1 random week (low-adherence pocket)
-   - never seed future bookings
-4. For every `done` booking, also writes a matching `workout_sessions` row using the existing `fabricateEntry` + persona profile + `loadForWeek` (with mild week-over-week drift; week `Math.floor(weeks/2)` flagged as "harder", last week as "deload" if weeks ≥ 6).
-5. Inserts `client_measurements` rows (weekly): `weight_kg` with small downward drift + noise, `waist_cm` slight reduction. Only if a prior measurement schema fits — uses `values` JSONB + `cadence='weekly'` (existing columns).
-6. Pack accounting flows through the existing `bump_pack_sessions_used` trigger (no manual maintenance).
-7. Returns `{ inserted: { bookings, sessions, measurements }, weeks, adherencePct }` for a real-counts toast.
+## Documents to author
 
-### UI (extends DemoLabPanel only)
+1. **`mem/features/exercise-intelligence-layer.md`** *(rewrite the existing stub)* — full product direction: canonical DB + trainer overrides + suggestion queue, why it matters, dependency on volume/substitution/PDF/cues.
+2. **`mem/specs/exercise-library-taxonomy.md`** — umbrellas (Strength · Mobility · Cardio · Balance · Power · Skill · Recovery · Play), 17 movement-pattern subcategories, full filter list, search-bar tokens (name/alias/muscle/equipment/pattern/cue keyword), exercise detail page sections.
+3. **`mem/specs/exercise-data-model.md`** *(new)* — proposed flat field list (exercise_id, canonical_exercise_id, trainer_id, is_protocol_default, is_trainer_override, names/aliases pt+en, pattern, umbrella/subcategory, primary/secondary muscles, joint_actions, equipment, setup, execution, breathing, tempo, ROM, cues, mistakes, regressions[], progressions[], substitutions[], level, contraindications, risk_notes, volume_counting_notes, measurable_metric, media refs, source, evidence, review_status, version, timestamps). Notes which fields normalise into `exercise_muscles`, `exercise_equipment`, `exercise_media`, `exercise_progressions`, `trainer_exercise_overrides`, `exercise_suggestions`, `exercise_tags` later.
+4. **`mem/specs/exercise-media-quality.md`** — eight media statuses (reference_demo, verified_technique, needs_reshoot, angle_limited, founder_demo, external_model, stickfigure_overlay, ai_assisted_visual), per-asset notes vocabulary, **principle: technical truth lives in cues + review_status, not in the video**. First-10 + first-30 filming priority list with rules (real movement first, frontal+lateral, 6–12s, 3 normal + 1 slow rep, no audio).
+5. **`mem/features/traditional-games-play-library.md`** *(new)* — Play umbrella taxonomy, full game/activity field list, 13 categories, cultural-respect rules ("record origin, do not romanticise, no medical claims without evidence"), seed list to investigate (jogo da malha, lenço, sacos, tração à corda, macaca, apanhada, rope/ball/balance/reaction games).
+6. **`.lovable/r72-exercise-system-audit.md`** — the audit findings above expanded: where names come from per surface, what breaks on rename, name→ID migration risks, volume-math implications, rotation-pool implications, smallest-future-slice analysis.
+7. **`mem/audits/exercise-library-priority.md`** *(new)* — Now / Next / Later / Parked ranking of the 10 candidate slices, with cost vs MVP impact vs dependency notes.
 
-Add a third action row in `src/components/DemoLabPanel.tsx`:
-- Segmented `4 / 8 / 12` weeks selector
-- Button **"Simular 12 semanas"** / **"Simulate 12 weeks"**
-- Client picker = most recent demo client (auto-pick; no UI list)
-- Confirm dialog if the demo client already has bookings: PT "Isto vai adicionar histórico demo. Continuar?"
-- After completion: toast with real counts: *"12 semanas · 34 sessões · 3 falhas · 4 medições · adesão 87%"*
-- Permanent demo-data warning chip already present in panel header; reinforce in the toast description: *"Dados demo. Não usar em clientes reais."*
+## Default vs Trainer-Custom version model (summary)
 
-No new route. No new dependency. No AI call. No schema change.
+Three layers, never auto-merged:
+- **Protocol canonical** — versioned, stable, our source of truth.
+- **Trainer override** — per-trainer fork referencing `canonical_exercise_id`; only the diffed fields persist; invisible to other trainers.
+- **Suggestion** — trainer proposal into `under_review` queue; review states: draft · trainer_custom · suggested · under_review · accepted · rejected · deprecated · needs_evidence · needs_media. Acceptance bumps canonical version; everyone else's overrides keep working.
 
-### i18n (PT/EN; ES/HI mirror EN)
+## Recommended next slice (will be argued in priority doc)
 
-New `common.json` keys under `demo.sim.*`: `cta`, `running`, `weeks_label`, `confirm_replace`, `summary`, `summary_partial`, `warning`, `no_demo_client`, `error_not_demo`.
+**Slice 1 — Static taxonomy file only** (`src/lib/exercise-taxonomy.ts` constant: umbrellas, patterns, filter enums, normalised muscle keys reusing `volume-landmarks.ts`). Zero schema, unblocks every later slice (search filters, override forms, AI prompt hints), and lets us start naming things consistently before any DB work. Slice 2 would be the canonical exercises table seeded with the first 30 priority entries.
 
-### Files touched
+## Final report shape
 
-- `src/server/demo-sessions.functions.ts` — append `simulateDemoMesocycle` (~120 lines)
-- `src/components/DemoLabPanel.tsx` — add weeks selector + button + confirm + summary toast
-- `src/i18n/locales/{pt,en,es,hi}/common.json` — `demo.sim.*` keys
-- `mem/features/demo-year.md` — append note about the new simulator
-- `.lovable/r71-simulator.md` — short audit + run notes
-
-### Verification
-
-- `tsc --noEmit` clean
-- Run on a demo client → check `/schedule` shows past bookings with mix; `/clients/$id` shows measurements; pack `sessions_used` matches `done` count via trigger
-- Refuse on a non-demo client (manual smoke)
-- 375px Demo Lab layout intact
-
-### Out of scope (deferred)
-
-- New insights/analytics
-- Reset of just-this-client demo history (use existing `wipeDemoContent` for full reset)
-- Adapting `programNextWeek` to the synthetic logbook
-- Recurrence/cron
+The closing report will list: files written, audit findings, risks, model summaries (data / override / media / games / review), recommended next slice, explicit "not implemented" list, and a confirmation block (no schema · no migrations · no routes · no UI · no server fns · no deps · no engine/PKL changes).

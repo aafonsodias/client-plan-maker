@@ -33,3 +33,8 @@ No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Train
 - [Schedule & revenue future scope](mem://features/schedule-revenue-future.md) — what R67 deferred; design as one coherent system later
 - [Exercise intelligence layer](mem://features/exercise-intelligence-layer.md) — deferred structured exercise DB / muscle map / McGill overlay
 - [Exercise media layer](mem://features/exercise-media-layer.md) — deferred technique video library
+- [Exercise taxonomy spec](mem://specs/exercise-library-taxonomy.md) — R72 umbrellas, patterns, filters, search tokens
+- [Exercise data model spec](mem://specs/exercise-data-model.md) — R72 proposed canonical + override + suggestion fields
+- [Exercise media quality spec](mem://specs/exercise-media-quality.md) — R72 8 statuses + first-30 filming priority
+- [Play / Games library](mem://features/traditional-games-play-library.md) — R72 traditional games taxonomy + cultural respect rules
+- [Exercise library priority](mem://audits/exercise-library-priority.md) — R72 Now/Next/Later/Parked slice ranking
