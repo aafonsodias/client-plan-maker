@@ -1203,6 +1203,32 @@ function BookingDialog({
             <Label>{t("form.notes")}</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
+          {clientId && (
+            <div>
+              <Label>{t("form.client_color")}</Label>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {PACK_COLORS.map((col) => {
+                  const cls = packBlockClasses(col);
+                  const active = currentColor === col;
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={async () => {
+                        const r: any = await setColor({ data: { clientId, color: col as any } });
+                        if (r?.ok) {
+                          // mutate local client list reference indirectly: trigger save reload
+                          await onSaved(undefined);
+                        }
+                      }}
+                      className={`h-5 w-5 rounded-full ${cls.dot} ${active ? "ring-2 ring-offset-2 ring-foreground ring-offset-background" : ""}`}
+                      aria-label={col}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {editing && (
             <div className="flex flex-wrap gap-2 border-t border-border pt-3">
               <Button
@@ -1236,10 +1262,7 @@ function BookingDialog({
                 size="sm"
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
-                onClick={async () => {
-                  const r: any = await del({ data: { id: editing.id } });
-                  if (r?.ok) await onSaved(editing.starts_at);
-                }}
+                onClick={() => setConfirmDelete(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {t("form.delete")}
@@ -1266,6 +1289,28 @@ function BookingDialog({
           if (newId) setPackId(newId);
         }}
       />
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("form.delete_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("form.delete_confirm_body")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("form.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!editing) return;
+                const r: any = await del({ data: { id: editing.id } });
+                setConfirmDelete(false);
+                if (r?.ok) await onSaved(editing.starts_at);
+              }}
+            >
+              {t("form.delete_confirm_yes")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
