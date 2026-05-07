@@ -627,6 +627,7 @@ function RowHour({
   onBookingClick,
   onCopy,
   onDragCommit,
+  onToggleDone,
   clipboardActive,
 }: {
   hour: number;
@@ -638,6 +639,7 @@ function RowHour({
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
   onDragCommit: (id: string, newIso: string) => void;
+  onToggleDone: (b: Booking) => void;
   clipboardActive: boolean;
 }) {
   return (
@@ -678,6 +680,7 @@ function RowHour({
                   onClick={() => onBookingClick(b)}
                   onCopy={() => onCopy(b)}
                   onDragCommit={onDragCommit}
+                  onToggleDone={() => onToggleDone(b)}
                 />
               );
             })}
