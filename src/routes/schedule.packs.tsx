@@ -148,10 +148,20 @@ export function PacksPanel({
         <ul className="space-y-2.5">
           {packs.map((p) => {
             const c = clientById.get(p.client_id);
-            const st = packStatus(p);
-            const left = Math.max(0, p.pack_size - p.sessions_used);
             const cls = packBlockClasses(p.color);
             const scheduled = scheduledByPack[p.id] ?? 0;
+            const completed = completedByPack[p.id] ?? 0;
+            const upcoming = upcomingByPack[p.id] ?? 0;
+            const usedBefore = p.sessions_used;
+            const effectiveUsed = usedBefore + completed;
+            const remaining = Math.max(0, p.pack_size - effectiveUsed);
+            // Status reflects effective remaining (used-before + completed),
+            // not just the raw mid-pack offset.
+            const st = remaining <= 0
+              ? { tone: "danger" as const, key: "expired" as const }
+              : remaining <= 2
+                ? { tone: "warn" as const, key: "ending_soon" as const }
+                : { tone: "success" as const, key: "active" as const };
             return (
               <li key={p.id} className="rounded-xl border border-border p-3">
                 {/* Row 1: avatar · name · status */}
@@ -167,7 +177,7 @@ export function PacksPanel({
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 pl-[calc(0.625rem+32px+0.625rem)] text-[11px] text-muted-foreground">
                   <span className="truncate">{p.label}</span>
                   <span aria-hidden>·</span>
-                  <span className="font-mono">{t("pack.sessions_short", { used: p.sessions_used, total: p.pack_size })}</span>
+                  <span className="font-mono">{t("pack.remaining_label", { remaining, total: p.pack_size })}</span>
                   <span aria-hidden>·</span>
                   <span>
                     {Number(p.price_per_session_eur) > 0
@@ -185,6 +195,14 @@ export function PacksPanel({
                   <span aria-hidden>·</span>
                   <span>{p.session_type === "in_person" ? t("form.in_person") : t("form.online")}</span>
                   {p.archived && <span className="ml-1 italic">· {t("pack.archive")}</span>}
+                </div>
+                {/* Row 3: honest accounting breakdown */}
+                <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-[calc(0.625rem+32px+0.625rem)] text-[10px] text-muted-foreground/80">
+                  <span>{t("pack.used_before_protocol", { count: usedBefore })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.completed_in_protocol", { count: completed })}</span>
+                  <span aria-hidden>·</span>
+                  <span>{t("pack.upcoming_scheduled", { count: upcoming })}</span>
                 </div>
                 {/* Action row */}
                 <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
