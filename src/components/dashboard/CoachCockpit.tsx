@@ -341,12 +341,27 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         </div>
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-left sm:text-right">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {lang === "pt" ? "Receita esperada" : "Expected income"}
-            </p>
+            <div className="flex items-center gap-1.5 sm:justify-end">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {lang === "pt" ? "Receita esperada" : "Expected income"}
+              </p>
+              <button
+                type="button"
+                onClick={toggleRevenue}
+                aria-label={revealRevenue ? (lang === "pt" ? "Ocultar valores" : "Hide amounts") : (lang === "pt" ? "Mostrar valores" : "Show amounts")}
+                title={revealRevenue ? (lang === "pt" ? "Ocultar valores" : "Hide amounts") : (lang === "pt" ? "Mostrar valores" : "Show amounts")}
+                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                {revealRevenue ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              </button>
+            </div>
             <div className="mt-0.5 flex items-center gap-1.5 font-mono text-base sm:justify-end">
               <Coins className="h-3.5 w-3.5 text-amber-500" />
-              <PriceTag eur={expectedIncome} interactive={false} />
+              {revealRevenue ? (
+                <PriceTag eur={expectedIncome} interactive={false} />
+              ) : (
+                <span className="tracking-widest text-muted-foreground">•••€</span>
+              )}
             </div>
             <p className="mt-0.5 text-[10px] text-muted-foreground">
               · {t("dashboard.revenue_caption")}
