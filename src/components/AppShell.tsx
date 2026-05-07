@@ -181,6 +181,77 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenuContent>
           </DropdownMenu>
           <span className="lg:hidden"><ThemeToggle /></span>
+          {/* Mobile hamburger lives in the same right-edge cluster so it stays in the top-right corner */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex w-[85vw] max-w-sm flex-col gap-1 p-4">
+              <div className="mb-2 flex items-center gap-2 border-b border-border pb-3 font-light tracking-[0.2em] uppercase text-xs">
+                <Logo className="h-7 w-7" />
+                <span>{t("brand.name")}</span>
+              </div>
+              {[...primaryNav, ...secondaryNav].map((n) => {
+                const active = isActive(n.to);
+                return (
+                  <SheetClose asChild key={n.to}>
+                    <Link
+                      to={n.to}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition",
+                        active
+                          ? "bg-secondary text-secondary-foreground"
+                          : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                      )}
+                    >
+                      <n.icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{n.label}</span>
+                    </Link>
+                  </SheetClose>
+                );
+              })}
+              <div className="mt-2 border-t border-border pt-2">
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  {t("language.switch_aria")}
+                </p>
+                {SUPPORTED_LOCALES.map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => {
+                      changeLocale(code);
+                      setMobileOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition",
+                      currentLocale === code
+                        ? "bg-secondary text-secondary-foreground"
+                        : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                    )}
+                  >
+                    <Globe className="h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {code === "pt" ? t("language.portuguese") : t("language.english")}
+                    </span>
+                    {currentLocale === code && <Check className="ml-auto h-4 w-4" />}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleSignOut();
+                }}
+                className="mt-2 flex items-center gap-3 rounded-md border-t border-border px-3 py-3 pt-4 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t("actions.sign_out")}</span>
+              </button>
+            </SheetContent>
+          </Sheet>
           </div>
 
           {/* Desktop nav (≥ lg) — icon-only, tooltip labels. Never truncates. */}
@@ -268,77 +339,6 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenu>
           </div>
 
-          {/* Mobile hamburger (< lg) */}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="flex w-[85vw] max-w-sm flex-col gap-1 p-4">
-              <div className="mb-2 flex items-center gap-2 border-b border-border pb-3 font-light tracking-[0.2em] uppercase text-xs">
-                <Logo className="h-7 w-7" />
-                <span>{t("brand.name")}</span>
-              </div>
-              {[...primaryNav, ...secondaryNav].map((n) => {
-                const active = isActive(n.to);
-                return (
-                  <SheetClose asChild key={n.to}>
-                    <Link
-                      to={n.to}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-3 text-sm font-medium transition",
-                        active
-                          ? "bg-secondary text-secondary-foreground"
-                          : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                      )}
-                    >
-                      <n.icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{n.label}</span>
-                    </Link>
-                  </SheetClose>
-                );
-              })}
-              <div className="mt-2 border-t border-border pt-2">
-                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {t("language.switch_aria")}
-                </p>
-                {SUPPORTED_LOCALES.map((code) => (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => {
-                      changeLocale(code);
-                      setMobileOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition",
-                      currentLocale === code
-                        ? "bg-secondary text-secondary-foreground"
-                        : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                    )}
-                  >
-                    <Globe className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {code === "pt" ? t("language.portuguese") : t("language.english")}
-                    </span>
-                    {currentLocale === code && <Check className="ml-auto h-4 w-4" />}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false);
-                  handleSignOut();
-                }}
-                className="mt-2 flex items-center gap-3 rounded-md border-t border-border px-3 py-3 pt-4 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                <span className="truncate">{t("actions.sign_out")}</span>
-              </button>
-            </SheetContent>
-          </Sheet>
         </div>
       </header>
       {!isFounder && access && !access.subscribed && (access.trialActive || !access.hasAccess) && (
