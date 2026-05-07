@@ -111,11 +111,13 @@ export function computeCapacityGain(
         buckets.set(p, b);
 
         const id = exerciseIdentityKey(name);
-        const slot = liftLoads.get(id) ?? {
+        const slot: { displayName: string; data: Lift } = liftLoads.get(id) ?? {
           displayName: name,
           data: {
-            prior: [], current: [],
-            priorRepsAtBest: new Map(), currentRepsAtBest: new Map(),
+            prior: [] as number[],
+            current: [] as number[],
+            priorRepsAtBest: new Map<number, number>(),
+            currentRepsAtBest: new Map<number, number>(),
           },
         };
         const lift = slot.data;
