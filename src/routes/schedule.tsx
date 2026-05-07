@@ -222,6 +222,14 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     setPacks(r?.ok ? r.rows : []);
   };
 
+  const refreshClients = async () => {
+    const { data } = await supabase
+      .from("clients")
+      .select("id, full_name, photo_url, color")
+      .order("full_name");
+    setClients((data as any) ?? []);
+  };
+
   useEffect(() => {
     if (!user) return;
     void refresh();
@@ -570,6 +578,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         clients={clients}
         packs={packs}
         onPacksRefresh={refreshPacks}
+        onClientsRefresh={refreshClients}
         onSaved={async (savedIso) => {
           setCreating(null);
           await onSavedJumpToWeek(savedIso);
@@ -584,6 +593,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         clients={clients}
         packs={packs}
         onPacksRefresh={refreshPacks}
+        onClientsRefresh={refreshClients}
         onSaved={async (savedIso) => {
           setEditing(null);
           await onSavedJumpToWeek(savedIso);
@@ -994,6 +1004,7 @@ function BookingDialog({
   clients,
   packs,
   onPacksRefresh,
+  onClientsRefresh,
   onSaved,
 }: {
   open: boolean;
@@ -1003,6 +1014,7 @@ function BookingDialog({
   clients: ClientLite[];
   packs: Pack[];
   onPacksRefresh?: () => void | Promise<void>;
+  onClientsRefresh?: () => void | Promise<void>;
   onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
@@ -1217,8 +1229,7 @@ function BookingDialog({
                       onClick={async () => {
                         const r: any = await setColor({ data: { clientId, color: col as any } });
                         if (r?.ok) {
-                          // mutate local client list reference indirectly: trigger save reload
-                          await onSaved(undefined);
+                          await onClientsRefresh?.();
                         }
                       }}
                       className={`h-5 w-5 rounded-full ${cls.dot} ${active ? "ring-2 ring-offset-2 ring-foreground ring-offset-background" : ""}`}
