@@ -15,20 +15,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
   listWeekBookings,
+  listMonthBookings,
   createBooking,
   updateBooking,
   deleteBooking,
   duplicateBookingNextWeek,
   listPacks,
   seedScheduleDemo,
+  setClientColor,
 } from "@/server/schedule.functions";
 import { RevenuePanel } from "@/components/schedule/RevenuePanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PacksPanel, PackFormDialog } from "./schedule.packs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   type Booking,
   type Pack,
+  PACK_COLORS,
+  clientColor,
   addDays,
   fmtWeekRange,
   packBlockClasses,
