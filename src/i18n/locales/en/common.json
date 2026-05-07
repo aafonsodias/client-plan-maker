@@ -50,7 +50,13 @@
       "ready_for_protocol": "{{name}} · ready for protocol",
       "plan_awaiting": "{{name}} · plan awaiting approval",
       "no_sessions_week": "0 sessions scheduled this week",
-      "pack_ending": "{{name}} · pack ending"
+      "pack_ending": "{{name}} · pack ending",
+      "status": {
+        "assessment_incomplete": "assessment incomplete",
+        "ready_for_protocol": "ready for protocol",
+        "plan_awaiting": "plan awaiting approval",
+        "pack_ending": "pack ending"
+      }
     },
     "revenue_caption": "based on sessions scheduled this week",
     "schedule": {
