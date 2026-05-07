@@ -17,7 +17,16 @@ MVP impact · implementation cost · dependency order · risk · value for plan 
 - Safe wiring: `volume-actual.ts` and `capacity-gain.ts` now key joins by `exerciseIdentityKey()`.
 - Unknown names fall back to `unknown:<normalized>` (no silent merging).
 
+## R75 — Exercise media architecture (docs only) ✅ shipped
+
+Documentation round. No schema, UI, upload, player, or provider integration.
+New specs: hosting architecture, data model, file organisation, production workflow, AI visual pipeline, implementation plan.
+`MediaQualityStatus` from R74 is reused; no parallel vocabulary introduced.
+**Does NOT replace Slice 2.**
+
 ## Slice 2 — Wire canonical keys into remaining critical paths
+
+**Still the next technical MVP slice.** Media implementation (Phase 3+ of the [media plan](mem://audits/exercise-media-implementation-plan.md)) depends on this landing first.
 
 - `longitudinal.ts` exercise grouping → `exerciseIdentityKey`.
 - Logbook continuity matching across sessions/blocks.
