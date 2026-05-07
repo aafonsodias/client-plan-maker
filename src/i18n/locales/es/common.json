@@ -302,6 +302,18 @@
     "lab_nothing_toast": "Nada que avanzar.",
     "lab_navigate_hint": "Puede navegar a otras páginas — el progreso se muestra en la esquina inferior derecha y recibirá una notificación cuando finalice.",
     "lab_footer": "Crea un cliente ficticio realista, genera el plan completo (Brief → Blueprint → Microcycle → Progressions) y rellena el cuaderno de registro hasta el final de la duración elegida. No cuenta para su cuota.",
+    "sim": {
+      "eyebrow": "Mesocycle simulator",
+      "weeks_label": "Weeks of history",
+      "cta": "Simulate {{count}} weeks",
+      "running": "Generating history…",
+      "warning": "Demo data. Do not use on real clients.",
+      "no_demo_client": "No demo client found. Run an Instant simulation first.",
+      "error_not_demo": "Refused: target is not a demo client.",
+      "confirm_replace": "This will add demo history to this client. Continue?",
+      "summary": "{{weeks}} wks · {{sessions}} sessions · {{missed}} missed · {{measurements}} measurements · {{adherence}}% adherence",
+      "summary_partial": "Partial simulation complete"
+    },
     "tour": {
       "step_banner": "Este es su cliente de demostración con 1 año de datos reales. Úselo para explorar todas las pantallas de forma segura.",
       "step_open_client": "Abra la página del cliente para ver la evaluación, la foto y el historial.",
