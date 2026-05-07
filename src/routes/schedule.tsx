@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -135,6 +135,56 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [creating, setCreating] = useState<{ startsAt: string; clientId?: string; packId?: string } | null>(null);
+  const [clipboard, setClipboard] = useState<Booking | null>(null);
+  const createFn = useServerFn(createBooking);
+  const updateFn = useServerFn(updateBooking);
+
+  // Esc cancels paste mode
+  useEffect(() => {
+    if (!clipboard) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setClipboard(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [clipboard]);
+
+  const handleSlotClick = async (iso: string) => {
+    if (clipboard) {
+      const r: any = await createFn({
+        data: {
+          clientId: clipboard.client_id,
+          packId: clipboard.pack_id ?? undefined,
+          startsAt: iso,
+          durationMin: clipboard.duration_min,
+          sessionType: clipboard.session_type,
+          notes: clipboard.notes ?? undefined,
+        },
+      });
+      if (r?.ok) {
+        toast.success(t("clipboard.toast_pasted"));
+        setClipboard(null);
+        await refresh();
+        onBookingsMutated();
+      } else {
+        toast.error(r?.error ?? "Erro");
+      }
+      return;
+    }
+    setCreating({ startsAt: iso });
+  };
+
+  const handleDragMove = async (id: string, newIso: string) => {
+    // optimistic
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, starts_at: newIso } : b)));
+    const r: any = await updateFn({ data: { id, startsAt: newIso } });
+    if (!r?.ok) {
+      toast.error(r?.error ?? "Erro");
+      await refresh();
+    } else {
+      onBookingsMutated();
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -274,6 +324,27 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         </div>
       </header>
 
+      {clipboard ? (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          <Copy className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 truncate">
+            {t("clipboard.copying", {
+              name: clientById.get(clipboard.client_id)?.full_name ?? "—",
+              time: new Date(clipboard.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }),
+              duration: clipboard.duration_min,
+            })}
+          </span>
+          <button
+            type="button"
+            onClick={() => setClipboard(null)}
+            className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 px-2 py-0.5 hover:bg-amber-500/20"
+          >
+            <X className="h-3 w-3" />
+            {t("clipboard.cancel")}
+          </button>
+        </div>
+      ) : null}
+
       {sessionsThisWeek > 0 || expectedIncome > 0 || packsEndingSoon > 0 ? (
         <RevenuePanel
           expectedIncomeEur={expectedIncome}
@@ -289,7 +360,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
       )}
 
       {/* Desktop weekly grid */}
-      <div className="hidden md:block overflow-hidden rounded-xl border border-border">
+      <div className={`hidden md:block overflow-hidden rounded-xl border border-border ${clipboard ? "cursor-copy" : ""}`}>
         <div className="grid" style={{ gridTemplateColumns: "60px repeat(7, minmax(0,1fr))" }}>
           <div className="border-b border-border bg-secondary/30" />
           {days.map((d, i) => (
@@ -310,8 +381,11 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               bookings={bookings}
               packById={packById}
               clientById={clientById}
-              onSlotClick={(iso) => setCreating({ startsAt: iso })}
+              onSlotClick={handleSlotClick}
               onBookingClick={(b) => setEditing(b)}
+              onCopy={(b) => setClipboard(b)}
+              onDragCommit={handleDragMove}
+              clipboardActive={!!clipboard}
             />
           ))}
         </div>
@@ -324,8 +398,10 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           bookings={bookings}
           packById={packById}
           clientById={clientById}
-          onSlotClick={(iso) => setCreating({ startsAt: iso })}
+          onSlotClick={handleSlotClick}
           onBookingClick={(b) => setEditing(b)}
+          onCopy={(b) => setClipboard(b)}
+          clipboardActive={!!clipboard}
           locale={locale}
         />
       </div>
