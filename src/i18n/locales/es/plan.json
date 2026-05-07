@@ -2,7 +2,7 @@
   "landing": {
     "hero": {
       "title_line1": "Evaluación clínica → protocolo defendible → adaptación semanal.",
-      "title_line2": "Programación seria, sin vivir en Excel.",
+      "title_line2": "De la evaluación al plan, con lógica visible.",
       "subtitle": "Usted hace la evaluación. Protocol arma el protocolo. Cada serie registrada alimenta la semana siguiente.",
       "cta_primary_signed_out": "Cree su primer plan — gratis",
       "cta_primary_signed_in": "Abrir panel de control",
@@ -19,7 +19,7 @@
       "variants": [
         {
           "line1": "Evaluación clínica → protocolo defendible → adaptación semanal.",
-          "line2": "Programación seria, sin vivir en Excel.",
+          "line2": "De la evaluación al plan, con lógica visible.",
           "audience": "Para entrenadores personales"
         }
       ]
@@ -241,8 +241,8 @@
       "q11_a": "No. La evaluación le guía, sección por sección, y la IA ensambla el plan. Los entrenadores ganan velocidad. Los clientes individuales obtienen estructura.",
       "q12_q": "¿Puedo usar esto sin un entrenador?",
       "q12_a": "Sí. Ejecute la evaluación como cliente, genere su plan y sígalo a través del diario de registro. La IA le da retroalimentación semanal basada en lo que registra.",
-      "q13_q": "¿En qué se diferencia esto de ChatGPT o de la IA genérica?",
-      "q13_a": "ChatGPT genera lo que usted pide. Protocol ejecuta 14 secciones clínicas (PAR-Q+, ACSM, movilidad, historial) antes de prescribir un ejercicio, con periodización por bloques y una biblioteca de ejercicios validada.",
+      "q13_q": "¿Qué hace distinto a Protocol?",
+      "q13_a": "Es un protocolo, no una respuesta aislada: triage estructurado, biblioteca de ejercicios validada, periodización en bloques y revisión humana antes de que cualquier plan salga. Acumula datos del cliente con el tiempo, y eso lo cambia todo. Usa IA, pero el criterio es humano.",
       "q14_q": "¿Qué ocurre cuando finaliza la prueba?",
       "q14_a": "Los 7 días son suficientes para realizar la evaluación, generar el plan y comenzar a entrenar de forma segura. Si desea continuar, active el plan mensual y mantendrá la generación continua, el diario de registro que aprende con usted, la comunidad y lo que vendrá después. Si no, conservará el PDF y los vídeos de soporte — la aplicación se pausará hasta que regrese. Es un servicio, y queremos que valga cada céntimo."
     },
@@ -327,28 +327,28 @@
       }
     },
     "anti_chatgpt": {
-      "eyebrow": "PROTOCOL vs ChatGPT",
-      "title": "ChatGPT genera lo que usted PIDE. PROTOCOL genera lo que el cliente NECESITA.",
-      "body": "14 secciones de evaluación clínicas antes de un solo ejercicio. Detección PAR-Q+, clasificación de riesgo ACSM, filtrado de ejercicios contraindicados, periodización por bloques con volúmenes MEV/MAV/MRV — automático, justificado.",
-      "sections_label": "Evaluado antes de la generación:",
+      "eyebrow": "El valor está en la secuencia",
+      "title": "Evaluar, estructurar, ejecutar, registrar y adaptar.",
+      "title_line1": "El valor no es una respuesta aislada.",
+      "title_line2": "Es la secuencia completa.",
+      "body": "Evaluación, plan, ejecución, logbook y adaptación como un único flujo. Cada paso informa al siguiente, con criterio humano en cada decisión.",
+      "sections_label": "Qué entra en la evaluación:",
       "items": [
         "PAR-Q+",
-        "Historial médico",
+        "Historia médica",
         "Antropometría",
         "Presión arterial",
         "Movilidad articular",
         "Postura",
         "Patrones de movimiento",
-        "Constantes vitales",
+        "Signos vitales",
         "Recuperación",
         "Historial de entrenamiento",
-        "Estilo de vida",
-        "Metas",
+        "Hábitos",
+        "Objetivos",
         "Disponibilidad",
-        "Equipo"
-      ],
-      "title_line1": "ChatGPT genera lo que usted PIDE.",
-      "title_line2": "PROTOCOL genera lo que el cliente NECESITA."
+        "Equipamiento"
+      ]
     },
     "for_whom": {
       "eyebrow": "Para quién es",
@@ -372,60 +372,35 @@
       "medical_body": "Enfermedades cardíacas, hipertensión, diabetes, lesiones o embarazo: PROTOCOL aplica los filtros PAR-Q+ y ACSM, pero su médico tiene la última palabra. Obtenga autorización médica antes de comenzar, y lea cada sugerencia críticamente — usted es responsable de las elecciones que toma."
     },
     "comparison": {
-      "eyebrow": "Dónde encaja PROTOCOL",
-      "title": "Cómo PROTOCOL se compara con lo que ya utilicen.",
-      "headers": [
-        "",
-        "PROTOCOL",
-        "Excel",
-        "ChatGPT",
-        "Aplicaciones genéricas"
+      "eyebrow": "El flujo, en un solo lugar",
+      "title": "Conecte lo que normalmente queda separado.",
+      "items": [
+        {
+          "title": "Evaluación",
+          "body": "Datos del cliente antes del plan: objetivo, disponibilidad, equipamiento, limitaciones e historial."
+        },
+        {
+          "title": "Plan",
+          "body": "Estructura editable en 5 fases para que el entrenador revise, ajuste y apruebe."
+        },
+        {
+          "title": "Sesiones",
+          "body": "Agenda conectada al seguimiento real, sin herramientas paralelas."
+        },
+        {
+          "title": "Logbook",
+          "body": "Lo que se hizo, no solo lo prescrito — adherencia, RPE, deriva de carga."
+        },
+        {
+          "title": "Adaptación",
+          "body": "La semana siguiente responde a la ejecución, con lógica visible."
+        },
+        {
+          "title": "Progreso",
+          "body": "Tendencias, consistencia y resultados visibles a lo largo de los bloques."
+        }
       ],
-      "rows": [
-        [
-          "Periodización por bloques con descarga",
-          "sí",
-          "manual",
-          "no",
-          "raro"
-        ],
-        [
-          "MEV/MAV/MRV por grupo muscular",
-          "sí",
-          "no",
-          "no",
-          "no"
-        ],
-        [
-          "Cribado clínico (PAR-Q+ / ACSM)",
-          "sí",
-          "manual",
-          "depende del prompt",
-          "genérico"
-        ],
-        [
-          "PDF bilingüe con marca",
-          "sí",
-          "manual",
-          "no",
-          "premium"
-        ],
-        [
-          "Voz consistente, texto revisado",
-          "sí",
-          "—",
-          "no",
-          "—"
-        ],
-        [
-          "Adaptación semana a semana",
-          "determinista + log",
-          "no",
-          "no",
-          "rara"
-        ]
-      ],
-      "footnote": "No es magia. Es lógica condicional sobre ciencia publicada — Israetel, Helms, ACSM."
+      "footnote": "Cada pieza sostiene la siguiente. El criterio humano siempre queda con el entrenador."
     },
     "tier_badges": {
       "eyebrow": "Cada plan se envía con un nivel",

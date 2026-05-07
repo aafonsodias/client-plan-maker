@@ -2,7 +2,7 @@
   "landing": {
     "hero": {
       "title_line1": "Clinical screening → defensible protocol → weekly adaptation.",
-      "title_line2": "Serious programming, without living in Excel.",
+      "title_line2": "From assessment to plan, with visible logic.",
       "subtitle": "You run the assessment. Protocol builds the program. Every logged set feeds next week.",
       "cta_primary_signed_out": "Create your first plan — free",
       "cta_primary_signed_in": "Open dashboard",
@@ -19,7 +19,7 @@
       "variants": [
         {
           "line1": "Clinical screening → defensible protocol → weekly adaptation.",
-          "line2": "Serious programming, without living in Excel.",
+          "line2": "From assessment to plan, with visible logic.",
           "audience": "For personal trainers"
         }
       ]
@@ -333,8 +333,8 @@
       "q11_a": "No. The assessment walks you through, section by section, and the AI assembles the plan. Coaches get speed. Solo trainees get structure.",
       "q12_q": "Can I use this without a coach?",
       "q12_a": "Yes. Run the assessment as a trainee, generate your plan and follow it through the logbook. The AI gives weekly feedback based on what you log.",
-      "q13_q": "How is this different from ChatGPT or generic AI?",
-      "q13_a": "ChatGPT generates what you ask. Protocol runs 14 clinical sections (PAR-Q+, ACSM, mobility, history) before prescribing one exercise, with block periodization and a validated exercise library.",
+      "q13_q": "What makes Protocol distinct?",
+      "q13_a": "It is a protocol, not a single answer: structured screening, a validated exercise library, block periodization, and human review before any plan ships. Client data accumulates over time, and that changes everything. It uses AI, but judgment stays human.",
       "q14_q": "What happens when the trial ends?",
       "q14_a": "The 7 days are enough to run the assessment, generate the plan, and start training safely. If you want to continue, activate the monthly plan and you keep ongoing generation, the logbook that learns with you, the community and what comes next. If not, you keep the PDF and the support videos — the app pauses until you return. It's a service, and we want it to be worth every cent."
     },
@@ -465,10 +465,12 @@
       }
     },
     "anti_chatgpt": {
-      "eyebrow": "PROTOCOL vs ChatGPT",
-      "title": "ChatGPT generates what you ASK. PROTOCOL generates what the client NEEDS.",
-      "body": "14 clinical assessment sections before 1 exercise. PAR-Q+ screening, ACSM risk classification, contraindicated-exercise filtering, block periodization with MEV/MAV/MRV volumes — automatic, justified.",
-      "sections_label": "Assessed before generation:",
+      "eyebrow": "The value is in the sequence",
+      "title": "Assess, structure, execute, log, and adapt.",
+      "title_line1": "The value is not a single answer.",
+      "title_line2": "It is the full sequence.",
+      "body": "Assessment, plan, execution, logbook, and adaptation as a single workflow. Each step informs the next, with human judgment at every decision.",
+      "sections_label": "What goes into the assessment:",
       "items": [
         "PAR-Q+",
         "Medical history",
@@ -477,16 +479,14 @@
         "Joint mobility",
         "Posture",
         "Movement patterns",
-        "Vitals",
+        "Vital signs",
         "Recovery",
         "Training history",
-        "Lifestyle",
+        "Habits",
         "Goals",
         "Availability",
         "Equipment"
-      ],
-      "title_line1": "ChatGPT generates what you ASK.",
-      "title_line2": "PROTOCOL generates what the client NEEDS."
+      ]
     },
     "for_whom": {
       "eyebrow": "Who it's for",
@@ -510,60 +510,35 @@
       "medical_body": "Heart disease, hypertension, diabetes, injuries or pregnancy: PROTOCOL applies PAR-Q+ and ACSM filters, but your doctor has the final say. Get medical clearance before you start, and read every suggestion critically — you are responsible for the choices you make."
     },
     "comparison": {
-      "eyebrow": "Where PROTOCOL fits",
-      "title": "How PROTOCOL compares to what you already use.",
-      "headers": [
-        "",
-        "PROTOCOL",
-        "Excel",
-        "ChatGPT",
-        "Generic apps"
+      "eyebrow": "The workflow, in one place",
+      "title": "Connect what usually stays separate.",
+      "items": [
+        {
+          "title": "Assessment",
+          "body": "Client inputs before the plan: goal, availability, equipment, limitations, and history."
+        },
+        {
+          "title": "Plan",
+          "body": "Editable 5-stage structure for the coach to review, adjust, and approve."
+        },
+        {
+          "title": "Sessions",
+          "body": "Schedule connected to real coaching work, without parallel tools."
+        },
+        {
+          "title": "Logbook",
+          "body": "What was done, not only what was prescribed — adherence, RPE, load drift."
+        },
+        {
+          "title": "Adaptation",
+          "body": "The next week responds to execution, with visible logic."
+        },
+        {
+          "title": "Progress",
+          "body": "Trends, consistency, and visible outcomes across blocks."
+        }
       ],
-      "rows": [
-        [
-          "Block periodization with deload",
-          "yes",
-          "manual",
-          "no",
-          "rare"
-        ],
-        [
-          "MEV/MAV/MRV per muscle group",
-          "yes",
-          "no",
-          "no",
-          "no"
-        ],
-        [
-          "Clinical screening (PAR-Q+ / ACSM)",
-          "yes",
-          "manual",
-          "depends on prompt",
-          "generic"
-        ],
-        [
-          "Branded bilingual PDF",
-          "yes",
-          "manual",
-          "no",
-          "premium"
-        ],
-        [
-          "Consistent voice, reviewed copy",
-          "yes",
-          "—",
-          "no",
-          "—"
-        ],
-        [
-          "Week-to-week adaptation",
-          "deterministic + log",
-          "no",
-          "no",
-          "rare"
-        ]
-      ],
-      "footnote": "It's not magic. It's conditional logic over published science — Israetel, Helms, ACSM."
+      "footnote": "Each piece supports the next. Coach judgment always stays with the coach."
     },
     "tier_badges": {
       "eyebrow": "Every plan ships with a tier",
