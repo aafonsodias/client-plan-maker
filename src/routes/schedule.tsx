@@ -131,7 +131,7 @@ function nextCoachableSlot(): Date {
   return d;
 }
 
-type ClientLite = { id: string; full_name: string; photo_url: string | null };
+type ClientLite = { id: string; full_name: string; photo_url: string | null; color?: string | null };
 
 function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number; onBookingsMutated: () => void }) {
   const { t, i18n } = useTranslation("schedule");
@@ -232,7 +232,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     void refreshPacks();
     void supabase
       .from("clients")
-      .select("id, full_name, photo_url")
+      .select("id, full_name, photo_url, color")
       .order("full_name")
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
