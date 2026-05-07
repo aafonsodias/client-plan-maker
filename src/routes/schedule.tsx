@@ -222,6 +222,14 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     setPacks(r?.ok ? r.rows : []);
   };
 
+  const refreshClients = async () => {
+    const { data } = await supabase
+      .from("clients")
+      .select("id, full_name, photo_url, color")
+      .order("full_name");
+    setClients((data as any) ?? []);
+  };
+
   useEffect(() => {
     if (!user) return;
     void refresh();
@@ -570,6 +578,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         clients={clients}
         packs={packs}
         onPacksRefresh={refreshPacks}
+        onClientsRefresh={refreshClients}
         onSaved={async (savedIso) => {
           setCreating(null);
           await onSavedJumpToWeek(savedIso);
@@ -584,6 +593,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
         clients={clients}
         packs={packs}
         onPacksRefresh={refreshPacks}
+        onClientsRefresh={refreshClients}
         onSaved={async (savedIso) => {
           setEditing(null);
           await onSavedJumpToWeek(savedIso);
