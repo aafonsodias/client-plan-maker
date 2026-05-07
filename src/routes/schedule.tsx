@@ -879,7 +879,7 @@ function DayStrip({
           onClick={() => onDayPaste?.(day)}
           className="w-full rounded-md border border-dashed border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300"
         >
-          {ts("clipboard.paste_same_day", { time: "" }).replace("()", "").trim()}
+          {ts("clipboard.paste_same_day", { time: "" }).replace(/\s*\(\s*\)\s*/g, "")}
         </button>
       )}
     </div>
