@@ -811,6 +811,7 @@ function DayStrip({
   onDayPaste,
   onBookingClick,
   onCopy,
+  onToggleDone,
   clipboardActive,
   locale,
 }: {
@@ -822,6 +823,7 @@ function DayStrip({
   onDayPaste?: (day: Date) => void;
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
+  onToggleDone: (b: Booking) => void;
   clipboardActive: boolean;
   locale: string;
 }) {
@@ -896,11 +898,23 @@ function DayStrip({
                 >
                   <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
+                    <div className={`truncate font-medium ${b.status === "done" ? "line-through opacity-70" : ""}`}>{c?.full_name ?? "—"}</div>
                     <div className="truncate text-[11px] opacity-80">
                       <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
                     </div>
                   </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleDone(b);
+                  }}
+                  aria-label={b.status === "done" ? "mark scheduled" : "mark done"}
+                  title={b.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+                  className={`rounded p-1 hover:bg-foreground/10 ${b.status === "done" ? "text-emerald-600 dark:text-emerald-400" : "opacity-70 hover:opacity-100"}`}
+                >
+                  <Check className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
