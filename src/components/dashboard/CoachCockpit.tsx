@@ -291,7 +291,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
 
       {/* Hero strip */}
-      <div className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {lang === "pt" ? "Esta semana" : "This week"}
@@ -303,12 +303,12 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="text-left sm:text-right">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {lang === "pt" ? "Receita esperada" : "Expected income"}
             </p>
-            <div className="mt-0.5 flex items-center justify-end gap-1.5 font-mono text-base">
+            <div className="mt-0.5 flex items-center gap-1.5 font-mono text-base sm:justify-end">
               <Coins className="h-3.5 w-3.5 text-amber-500" />
               <PriceTag eur={expectedIncome} interactive={false} />
             </div>
@@ -342,7 +342,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         >
           <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <span>{lang === "pt" ? "Calendário da semana" : "Week timetable"}</span>
-            <span className="opacity-0 transition group-hover:opacity-100">→</span>
+            <span className="opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">→</span>
           </div>
           <MiniWeek
             monday={monday}
