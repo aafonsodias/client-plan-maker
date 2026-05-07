@@ -43,6 +43,15 @@ function monthRange(monthStartIso: string) {
   return { startIso: start.toISOString(), endIso: end.toISOString() };
 }
 
+function monthRangeFromYM(year: number, month: number) {
+  // month is 0-indexed. Pad ±1 day so timezone-shifted starts_at still match.
+  const start = new Date(Date.UTC(year, month, 1));
+  start.setUTCDate(start.getUTCDate() - 1);
+  const end = new Date(Date.UTC(year, month + 1, 1));
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+}
+
 const PALETTE = ["emerald","amber","blue","violet","rose","cyan","orange","lime"] as const;
 
 export const setClientColor = createServerFn({ method: "POST" })
@@ -83,10 +92,19 @@ export const listWeekBookings = createServerFn({ method: "GET" })
 
 export const listMonthBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ monthStart: z.string() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({
+      monthStart: z.string().optional(),
+      year: z.number().int().optional(),
+      month: z.number().int().min(0).max(11).optional(),
+    }).parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context; const sb = supabase as any;
-    const { startIso, endIso } = monthRange(data.monthStart);
+    const { startIso, endIso } =
+      typeof data.year === "number" && typeof data.month === "number"
+        ? monthRangeFromYM(data.year, data.month)
+        : monthRange(data.monthStart ?? new Date().toISOString());
     const { data: rows, error } = await sb
       .from("client_bookings")
       .select("id, client_id, pack_id, starts_at, duration_min, session_type, status, notes")
