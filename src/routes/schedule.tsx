@@ -1004,6 +1004,7 @@ function BookingDialog({
   clients,
   packs,
   onPacksRefresh,
+  onClientsRefresh,
   onSaved,
 }: {
   open: boolean;
@@ -1013,6 +1014,7 @@ function BookingDialog({
   clients: ClientLite[];
   packs: Pack[];
   onPacksRefresh?: () => void | Promise<void>;
+  onClientsRefresh?: () => void | Promise<void>;
   onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
@@ -1227,8 +1229,7 @@ function BookingDialog({
                       onClick={async () => {
                         const r: any = await setColor({ data: { clientId, color: col as any } });
                         if (r?.ok) {
-                          // mutate local client list reference indirectly: trigger save reload
-                          await onSaved(undefined);
+                          await onClientsRefresh?.();
                         }
                       }}
                       className={`h-5 w-5 rounded-full ${cls.dot} ${active ? "ring-2 ring-offset-2 ring-foreground ring-offset-background" : ""}`}
