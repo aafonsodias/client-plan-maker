@@ -698,6 +698,7 @@ function BookingBlock({
   onClick,
   onCopy,
   onDragCommit,
+  onToggleDone,
 }: {
   booking: Booking;
   clientName: string;
@@ -705,6 +706,7 @@ function BookingBlock({
   onClick: () => void;
   onCopy: () => void;
   onDragCommit: (id: string, newIso: string) => void;
+  onToggleDone: () => void;
 }) {
   const [dragOffset, setDragOffset] = useState(0); // minutes
   const [dragging, setDragging] = useState(false);
@@ -759,25 +761,41 @@ function BookingBlock({
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
-          <div className="truncate font-medium">{clientName}</div>
+          <div className={`truncate font-medium ${booking.status === "done" ? "line-through opacity-70" : ""}`}>{clientName}</div>
           <div className="truncate font-mono text-[10px] opacity-80">
             {previewTime} · {booking.duration_min}′
           </div>
         </div>
-        <button
-          type="button"
-          data-copy-btn
-          onClick={(e) => {
-            e.stopPropagation();
-            onCopy();
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-label="copy"
-          title="Copiar"
-          className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
-        >
-          <Copy className="h-3 w-3" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            data-copy-btn
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleDone();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={booking.status === "done" ? "mark scheduled" : "mark done"}
+            title={booking.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+            className={`rounded p-0.5 transition-opacity hover:bg-foreground/10 ${booking.status === "done" ? "opacity-100 text-emerald-600 dark:text-emerald-400" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+          >
+            <Check className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            data-copy-btn
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopy();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="copy"
+            title="Copiar"
+            className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+        </div>
       </div>
     </div>
   );
