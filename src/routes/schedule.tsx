@@ -639,6 +639,7 @@ function BookingDialog({
   editing,
   clients,
   packs,
+  onPacksRefresh,
   onSaved,
 }: {
   open: boolean;
@@ -647,6 +648,7 @@ function BookingDialog({
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
+  onPacksRefresh?: () => void | Promise<void>;
   onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
@@ -667,6 +669,7 @@ function BookingDialog({
   const [busy, setBusy] = useState(false);
   const [override, setOverride] = useState(false);
   const [candidateWeekCount, setCandidateWeekCount] = useState(0);
+  const [inlinePackOpen, setInlinePackOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
