@@ -39,10 +39,9 @@ import {
 export const Route = createFileRoute("/schedule")({
   validateSearch: (
     s: Record<string, unknown>,
-  ): { tab?: "week" | "packs"; newBooking?: 1; newPack?: 1; clientId?: string; packId?: string } => ({
+  ): { tab?: "week" | "packs"; newBooking?: 1; clientId?: string; packId?: string } => ({
     tab: s.tab === "packs" ? "packs" : "week",
     newBooking: s.newBooking === 1 || s.newBooking === "1" ? 1 : undefined,
-    newPack: s.newPack === 1 || s.newPack === "1" ? 1 : undefined,
     clientId: typeof s.clientId === "string" ? s.clientId : undefined,
     packId: typeof s.packId === "string" ? s.packId : undefined,
   }),
@@ -271,14 +270,6 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           >
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate({ to: "/schedule", search: { tab: "packs", newPack: 1 } })}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t("pack.new")}
           </Button>
         </div>
       </header>
