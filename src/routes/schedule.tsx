@@ -290,6 +290,7 @@ function ScheduleWeek() {
         initial={creating ? { startsAt: creating.startsAt } : undefined}
         clients={clients}
         packs={packs}
+        weekBookings={bookings}
         onSaved={async () => {
           setCreating(null);
           await refresh();
@@ -304,6 +305,7 @@ function ScheduleWeek() {
         editing={editing ?? undefined}
         clients={clients}
         packs={packs}
+        weekBookings={bookings}
         onSaved={async () => {
           setEditing(null);
           await refresh();
@@ -480,6 +482,7 @@ function BookingDialog({
   editing,
   clients,
   packs,
+  weekBookings,
   onSaved,
 }: {
   open: boolean;
@@ -488,9 +491,11 @@ function BookingDialog({
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
+  weekBookings: Booking[];
   onSaved: () => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
+  const { t: tc } = useTranslation("common");
   const create = useServerFn(createBooking);
   const upd = useServerFn(updateBooking);
   const del = useServerFn(deleteBooking);
@@ -505,6 +510,7 @@ function BookingDialog({
   const [sessionType, setSessionType] = useState<"in_person" | "online">(editing?.session_type ?? "in_person");
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [busy, setBusy] = useState(false);
+  const [override, setOverride] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -516,9 +522,24 @@ function BookingDialog({
     setDuration(editing?.duration_min ?? 60);
     setSessionType(editing?.session_type ?? "in_person");
     setNotes(editing?.notes ?? "");
+    setOverride(false);
   }, [open, editing, initial]);
 
   const clientPacks = packs.filter((p) => p.client_id === clientId && !p.archived);
+
+  // Weekly frequency guard: agreed = pack.weekly_frequency for the selected pack
+  // (best existing source). Count this week's non-cancelled bookings for the
+  // selected client, excluding the booking being edited.
+  const agreedFreq = packId ? (packs.find((p) => p.id === packId)?.weekly_frequency ?? 0) : 0;
+  const usedThisWeek = clientId
+    ? weekBookings.filter(
+        (b) =>
+          b.client_id === clientId &&
+          b.status !== "cancelled" &&
+          (!editing || b.id !== editing.id),
+      ).length
+    : 0;
+  const overFrequency = agreedFreq > 0 && usedThisWeek >= agreedFreq;
 
   const save = async () => {
     if (!clientId) return toast.error(t("form.select_client"));
