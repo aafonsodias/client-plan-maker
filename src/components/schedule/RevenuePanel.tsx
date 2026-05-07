@@ -24,10 +24,18 @@ export function RevenuePanel({
         label={t("panel.expected_income")}
         value={
           <div>
-            <PriceTag eur={expectedIncomeEur} interactive={false} />
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
-              {tc("dashboard.revenue_caption")}
-            </p>
+            {expectedIncomeEur > 0 || sessionsThisWeek === 0 ? (
+              <>
+                <PriceTag eur={expectedIncomeEur} interactive={false} />
+                <p className="mt-0.5 text-[10px] text-muted-foreground">
+                  {tc("dashboard.revenue_caption")}
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                {t("panel.expected_income_unavailable")}
+              </p>
+            )}
           </div>
         }
       />
