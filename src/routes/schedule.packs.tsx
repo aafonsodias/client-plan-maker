@@ -46,6 +46,8 @@ export function PacksPanel({
   const [editing, setEditing] = useState<Pack | null>(null);
   const [creating, setCreating] = useState(false);
   const [scheduledByPack, setScheduledByPack] = useState<Record<string, number>>({});
+  const [completedByPack, setCompletedByPack] = useState<Record<string, number>>({});
+  const [upcomingByPack, setUpcomingByPack] = useState<Record<string, number>>({});
 
   const refresh = async () => {
     const r: any = await list({ data: { activeOnly: false } });
@@ -62,7 +64,8 @@ export function PacksPanel({
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
 
-  // One scoped read of this week's non-cancelled bookings → count per pack.
+  // One scoped read of this week's non-cancelled bookings → count per pack
+  // (used for the "X marcadas esta semana" chip).
   useEffect(() => {
     if (!user) return;
     if (packs.length === 0) {
@@ -86,6 +89,38 @@ export function PacksPanel({
           counts[row.pack_id] = (counts[row.pack_id] ?? 0) + 1;
         }
         setScheduledByPack(counts);
+      });
+  }, [user, packs, bookingTick]);
+
+  // Honest pack accounting: split all non-cancelled bookings linked to each
+  // pack into past-completed (session end < now) and upcoming (starts >= now).
+  // Past sessions reduce remaining; future sessions are only "scheduled".
+  useEffect(() => {
+    if (!user) return;
+    if (packs.length === 0) {
+      setCompletedByPack({});
+      setUpcomingByPack({});
+      return;
+    }
+    const packIds = packs.map((p) => p.id);
+    void supabase
+      .from("client_bookings")
+      .select("pack_id, status, starts_at, duration_min")
+      .in("pack_id", packIds)
+      .then(({ data }) => {
+        const completed: Record<string, number> = {};
+        const upcoming: Record<string, number> = {};
+        const now = Date.now();
+        for (const row of (data as any[]) ?? []) {
+          if (!row.pack_id) continue;
+          if (row.status === "cancelled") continue;
+          const start = new Date(row.starts_at).getTime();
+          const end = start + Number(row.duration_min ?? 60) * 60 * 1000;
+          if (end < now) completed[row.pack_id] = (completed[row.pack_id] ?? 0) + 1;
+          else upcoming[row.pack_id] = (upcoming[row.pack_id] ?? 0) + 1;
+        }
+        setCompletedByPack(completed);
+        setUpcomingByPack(upcoming);
       });
   }, [user, packs, bookingTick]);
 
