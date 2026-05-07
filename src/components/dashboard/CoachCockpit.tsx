@@ -254,6 +254,42 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   return (
     <section className="space-y-4">
+      {/* Today / Needs attention */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>{t("dashboard.today.title")}</span>
+          <Sparkles className="h-3 w-3 text-amber-500" />
+        </div>
+        {todayRows.length === 0 ? (
+          <p className="px-1 py-3 text-xs text-muted-foreground">
+            {t("dashboard.today.empty")}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {todayRows.map((r) => {
+              const dot =
+                r.tone === "amber" ? "bg-amber-500"
+                : r.tone === "emerald" ? "bg-emerald-500"
+                : r.tone === "rose" ? "bg-rose-500"
+                : "bg-muted-foreground/40";
+              return (
+                <li key={r.key}>
+                  <Link
+                    to={r.to as any}
+                    params={r.params as any}
+                    className="group flex items-center gap-3 py-2 transition hover:text-foreground"
+                  >
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{r.text}</span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       {/* Hero strip */}
       <div className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
         <div className="min-w-0">
@@ -276,6 +312,9 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               <Coins className="h-3.5 w-3.5 text-amber-500" />
               <PriceTag eur={expectedIncome} interactive={false} />
             </div>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              · {t("dashboard.revenue_caption")}
+            </p>
           </div>
           <Link
             to="/plans/quick"
