@@ -69,3 +69,14 @@ New: `src/lib/exercise-taxonomy.ts`, `src/lib/session-taxonomy.ts`, `mem/specs/s
 Edited (docs): `mem/audits/exercise-library-priority.md`, `mem/index.md`, `.lovable/plan.md`.
 
 Edited (code, only if trivially safe): `src/lib/volume-actual.ts`, `src/lib/capacity-gain.ts`, optionally `src/lib/rotation-audit.ts`.
+
+---
+
+## R74 — Shipped
+
+- `src/lib/exercise-taxonomy.ts` — version 1, 6 enum sets, 30 seeded canonical exercises, helpers (`normalizeExerciseName`, `exerciseKeyFromName`, `exerciseIdentityKey`, `getExerciseTaxonomyEntry`, `isKnownExercise`, `getExerciseAliases`, `getExercisePattern`, `getExerciseCautionFlags`, `collectUnknownExerciseNames`).
+- `src/lib/session-taxonomy.ts` — 17 session block types + PT/EN labels.
+- `mem/specs/session-structure-principles.md`, `.lovable/r74-exercise-session-taxonomy-audit.md`, `.lovable/r74-session-mock-note.md`.
+- Safe wiring (2 sites): `volume-actual.ts` + `capacity-gain.ts` now key joins by `exerciseIdentityKey()`. Visible names unchanged.
+- Deferred: `longitudinal.ts` grouping, AI prompt rewrites, schema `exercise_key`, structured session blocks in generation.
+- No schema, no migrations, no routes, no server fns, no deps, no UI, no PDF redesign, no PKL/generation changes, no historical data rewrite.
