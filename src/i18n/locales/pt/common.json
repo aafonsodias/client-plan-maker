@@ -775,7 +775,18 @@
       "cta": "Programar próxima semana",
       "created": "Semana {{week}} criada — {{flagged}} exercício(s) sinalizado(s).",
       "low_adherence": "Adesão {{pct}}% ({{logged}}/{{expected}} sessões registadas). Registe pelo menos 80% antes de avançar.",
-      "failed": "Não foi possível programar a próxima semana."
+      "failed": "Não foi possível programar a próxima semana.",
+      "rationale": {
+        "title": "Semana {{week}} · adaptada da semana {{from}}",
+        "strict_adjusted": "Carga reduzida 5% em {{count}} exercício(s) — RPE realizado consistentemente acima do prescrito.",
+        "suggested_flag": "{{count}} exercício(s) sinalizado(s) para revisão — RPE acima do prescrito. Decisão de carga fica consigo.",
+        "no_flags": "Adesão dentro do alvo e RPE coerente com o prescrito. Mantida a progressão linear.",
+        "copied": "Semana copiada da anterior, sem ajustes automáticos.",
+        "adherence": "Adesão {{pct}}%",
+        "mode_strict": "modo autoregulação: estrito",
+        "mode_suggested": "modo autoregulação: sugerido",
+        "mode_off": "modo autoregulação: desligado"
+      }
     }
   },
   "ux": {
