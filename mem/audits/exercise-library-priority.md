@@ -10,29 +10,43 @@ type: feature
 
 MVP impact · implementation cost · dependency order · risk · value for plan generation · value for client app · value for media
 
-## Now (Slice 1)
+## Slice 1 — Static exercise + session taxonomy foundation ✅ shipped R74
 
-**Static taxonomy file** — `src/lib/exercise-taxonomy.ts`
-- enums for umbrella, movement_pattern, equipment, level, contraindication_flags, media_quality_status
-- alias mapping reusing `volume-landmarks.ts` muscle keys
-- zero schema, zero UI, zero AI changes
-- unblocks: AI prompt vocab, future filter UI, future override forms, naming consistency
+- `src/lib/exercise-taxonomy.ts` — enums + 30 seeded canonical exercises + helpers (`normalizeExerciseName`, `exerciseKeyFromName`, `exerciseIdentityKey`, …).
+- `src/lib/session-taxonomy.ts` — 17 session block types + PT/EN labels.
+- Safe wiring: `volume-actual.ts` and `capacity-gain.ts` now key joins by `exerciseIdentityKey()`.
+- Unknown names fall back to `unknown:<normalized>` (no silent merging).
 
-## Next (Slice 2)
+## Slice 2 — Wire canonical keys into remaining critical paths
 
-**Canonical `exercises` table seeded with the first 30 priority entries** + readonly admin viewer page (founder-only)
-- enables stable IDs we can later reference from plan JSON
-- proves the override layer concept on a small surface
-- still no plan-editor swap; volume math still name-keyed
+- `longitudinal.ts` exercise grouping → `exerciseIdentityKey`.
+- Logbook continuity matching across sessions/blocks.
+- `prior_exercise_pool` dedupe (still string-based).
+- Goal: remove the last lowercased-name joins from analytics paths.
 
-## Later
+## Slice 3 — Add `exercise_key` to plan validation metadata
 
-3. Trainer override / fork system (`trainer_exercise_overrides` table + minimal UI)
-4. Exercise media fields + private bucket for video assets (no upload UI yet)
-5. Exercise search page (`/exercises`) using taxonomy + canonical table
-6. Exercise detail page with cues + media + provenance
-7. Volume calculation refactor: name-keyed → id-keyed (gates accurate weekly volume)
-8. Plan editor swap using library (substitution by pattern + equipment + contraindication)
+- Annotate plan/day/exercise rows with resolved canonical key (or `unknown:`) at parse-time, without changing AI output shape.
+- Persist as derived metadata; no schema migration needed if attached in `generation_meta`.
+
+## Slice 4 — Structured session blocks in generation output
+
+- Allow Stage 3 to emit blocks tagged with `SessionBlockType` so warm-up / mobility / activation / strength / conditioning / cooldown stop being hidden in `notes`.
+- AI prompt change required.
+
+## Slice 5 — Schema-backed canonical `exercises` table
+
+- Migrate static seed → table + readonly founder viewer.
+- Plan rows reference `exercise_id`.
+
+## Slice 6 — Trainer overrides (`trainer_exercise_overrides`)
+
+- Custom names, cues, equipment swaps without corrupting Protocol defaults.
+
+## Slice 7 — Exercise media fields + private bucket
+
+- `video_real_front_url`, `video_real_side_url`, `media_quality_status` columns.
+- Founder uploads first; reference/verified later.
 
 ## Parked
 
