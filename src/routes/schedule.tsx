@@ -15,20 +15,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import {
   listWeekBookings,
+  listMonthBookings,
   createBooking,
   updateBooking,
   deleteBooking,
   duplicateBookingNextWeek,
   listPacks,
   seedScheduleDemo,
+  setClientColor,
 } from "@/server/schedule.functions";
 import { RevenuePanel } from "@/components/schedule/RevenuePanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PacksPanel, PackFormDialog } from "./schedule.packs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   type Booking,
   type Pack,
+  PACK_COLORS,
+  clientColor,
   addDays,
   fmtWeekRange,
   packBlockClasses,
@@ -117,7 +131,7 @@ function nextCoachableSlot(): Date {
   return d;
 }
 
-type ClientLite = { id: string; full_name: string; photo_url: string | null };
+type ClientLite = { id: string; full_name: string; photo_url: string | null; color?: string | null };
 
 function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number; onBookingsMutated: () => void }) {
   const { t, i18n } = useTranslation("schedule");
@@ -174,6 +188,15 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     setCreating({ startsAt: iso });
   };
 
+  // Day-level paste: keep original HH:mm, just swap the date.
+  const handleDayPaste = async (day: Date) => {
+    if (!clipboard) return;
+    const src = new Date(clipboard.starts_at);
+    const target = new Date(day);
+    target.setHours(src.getHours(), src.getMinutes(), 0, 0);
+    await handleSlotClick(target.toISOString());
+  };
+
   const handleDragMove = async (id: string, newIso: string) => {
     // optimistic
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, starts_at: newIso } : b)));
@@ -209,7 +232,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     void refreshPacks();
     void supabase
       .from("clients")
-      .select("id, full_name, photo_url")
+      .select("id, full_name, photo_url, color")
       .order("full_name")
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
@@ -257,6 +280,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const locale = i18n.language?.startsWith("pt") ? "pt-PT" : "en-GB";
+  const [view, setView] = useState<"week" | "month">("week");
 
   // Out-of-hours: any non-cancelled booking whose hour is outside HOURS.
   const HOUR_MIN = HOURS[0];
@@ -321,6 +345,22 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
             <Plus className="mr-2 h-4 w-4" />
             {t("new_booking")}
           </Button>
+          <div className="ml-2 inline-flex items-center rounded-md border border-border text-[11px]">
+            <button
+              type="button"
+              onClick={() => setView("week")}
+              className={`px-2.5 py-1.5 ${view === "week" ? "bg-secondary font-medium" : "text-muted-foreground"}`}
+            >
+              {t("view.week")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("month")}
+              className={`px-2.5 py-1.5 ${view === "month" ? "bg-secondary font-medium" : "text-muted-foreground"}`}
+            >
+              {t("view.month")}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -360,6 +400,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
       )}
 
       {/* Desktop weekly grid */}
+      {view === "week" ? (
       <div className={`hidden md:block overflow-hidden rounded-xl border border-border ${clipboard ? "cursor-copy" : ""}`}>
         <div className="grid" style={{ gridTemplateColumns: "60px repeat(7, minmax(0,1fr))" }}>
           <div className="border-b border-border bg-secondary/30" />
@@ -390,8 +431,19 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
         </div>
       </div>
+      ) : (
+        <ScheduleMonth
+          monday={monday}
+          packById={packById}
+          clientById={clientById}
+          locale={locale}
+          onBookingClick={(b) => setEditing(b)}
+          onDayClick={(d) => (clipboard ? handleDayPaste(d) : setCreating({ startsAt: (() => { const t = new Date(d); t.setHours(9,0,0,0); return t.toISOString(); })() }))}
+        />
+      )}
 
       {/* Mobile day-strip */}
+      {view === "week" && (
       <div className="md:hidden">
         <DayStrip
           days={days}
@@ -399,12 +451,14 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           packById={packById}
           clientById={clientById}
           onSlotClick={handleSlotClick}
+          onDayPaste={handleDayPaste}
           onBookingClick={(b) => setEditing(b)}
           onCopy={(b) => setClipboard(b)}
           clipboardActive={!!clipboard}
           locale={locale}
         />
       </div>
+      )}
 
       {outOfHoursBookings.length > 0 && (
         <section
@@ -421,7 +475,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
             {outOfHoursBookings.map((b) => {
               const c = clientById.get(b.client_id);
               const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
-              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const cls = packBlockClasses(clientColor(c, pack?.color));
               const dt = new Date(b.starts_at);
               const time = dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
               const wd = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(dt);
@@ -590,7 +644,7 @@ function RowHour({
             {here.map((b) => {
               const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
               const c = clientById.get(b.client_id);
-              const cls = packBlockClasses(pack?.color ?? "emerald");
+              const cls = packBlockClasses(clientColor(c, pack?.color));
               return (
                 <BookingBlock
                   key={b.id}
@@ -708,6 +762,7 @@ function DayStrip({
   packById,
   clientById,
   onSlotClick,
+  onDayPaste,
   onBookingClick,
   onCopy,
   clipboardActive,
@@ -718,6 +773,7 @@ function DayStrip({
   packById: Map<string, Pack>;
   clientById: Map<string, ClientLite>;
   onSlotClick: (iso: string) => void;
+  onDayPaste?: (day: Date) => void;
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
   clipboardActive: boolean;
@@ -779,7 +835,7 @@ function DayStrip({
           list.map((b) => {
             const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
             const c = clientById.get(b.client_id);
-            const cls = packBlockClasses(pack?.color ?? "emerald");
+            const cls = packBlockClasses(clientColor(c, pack?.color));
             const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
             const typeLabel = b.session_type === "online" ? ts("form.online") : ts("form.in_person");
             return (
@@ -820,16 +876,112 @@ function DayStrip({
       {clipboardActive && (
         <button
           type="button"
-          onClick={() => {
-            const t = new Date(day);
-            t.setHours(9, 0, 0, 0);
-            onSlotClick(t.toISOString());
-          }}
+          onClick={() => onDayPaste?.(day)}
           className="w-full rounded-md border border-dashed border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300"
         >
-          Colar neste dia às 09:00
+          {ts("clipboard.paste_same_day", { time: "" }).replace(/\s*\(\s*\)\s*/g, "")}
         </button>
       )}
+    </div>
+  );
+}
+
+function ScheduleMonth({
+  monday,
+  packById,
+  clientById,
+  locale,
+  onBookingClick,
+  onDayClick,
+}: {
+  monday: Date;
+  packById: Map<string, Pack>;
+  clientById: Map<string, ClientLite>;
+  locale: string;
+  onBookingClick: (b: Booking) => void;
+  onDayClick: (d: Date) => void;
+}) {
+  const { t } = useTranslation("schedule");
+  const monthFn = useServerFn(listMonthBookings);
+  const [rows, setRows] = useState<Booking[]>([]);
+  const monthAnchor = useMemo(() => {
+    const d = new Date(monday);
+    d.setDate(1);
+    return d;
+  }, [monday]);
+  useEffect(() => {
+    void (async () => {
+      const r: any = await monthFn({ data: { monthStart: monthAnchor.toISOString() } });
+      setRows(r?.ok ? r.rows : []);
+    })();
+  }, [monthAnchor]);
+
+  // Build 6×7 grid starting on Monday of week containing day 1
+  const gridStart = startOfIsoWeek(monthAnchor);
+  const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  const byDay = new Map<string, Booking[]>();
+  for (const b of rows) {
+    const k = new Date(b.starts_at).toDateString();
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k)!.push(b);
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border">
+      <div className="grid grid-cols-7 bg-secondary/30 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
+        {Array.from({ length: 7 }, (_, i) => addDays(gridStart, i)).map((d, i) => (
+          <div key={i} className="border-l border-border first:border-l-0 py-1.5">
+            {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7">
+        {cells.map((d, i) => {
+          const inMonth = d.getMonth() === monthAnchor.getMonth();
+          const isToday = d.toDateString() === new Date().toDateString();
+          const list = (byDay.get(d.toDateString()) ?? []).filter((b) => b.status !== "cancelled");
+          const visible = list.slice(0, 3);
+          const more = list.length - visible.length;
+          return (
+            <div
+              key={i}
+              className={`min-h-24 border-l border-t border-border p-1.5 text-left ${inMonth ? "" : "bg-secondary/20 text-muted-foreground/60"}`}
+            >
+              <button
+                type="button"
+                onClick={() => onDayClick(d)}
+                className={`mb-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] ${isToday ? "bg-foreground text-background font-medium" : "text-muted-foreground hover:bg-secondary"}`}
+              >
+                {d.getDate()}
+              </button>
+              <div className="space-y-0.5">
+                {visible.map((b) => {
+                  const c = clientById.get(b.client_id);
+                  const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
+                  const col = clientColor(c, pack?.color);
+                  const cls = packBlockClasses(col);
+                  const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => onBookingClick(b)}
+                      className={`flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                    >
+                      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
+                      <span className="font-mono">{time}</span>
+                      <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
+                    </button>
+                  );
+                })}
+                {more > 0 && (
+                  <div className="px-1 text-[10px] text-muted-foreground">{t("view.more", { count: more })}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -872,6 +1024,10 @@ function BookingDialog({
   const [override, setOverride] = useState(false);
   const [candidateWeekCount, setCandidateWeekCount] = useState(0);
   const [inlinePackOpen, setInlinePackOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const setColor = useServerFn(setClientColor);
+  const currentClient = clients.find((c) => c.id === clientId);
+  const currentColor = clientColor(currentClient);
 
   useEffect(() => {
     if (!open) return;
@@ -1047,6 +1203,32 @@ function BookingDialog({
             <Label>{t("form.notes")}</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
+          {clientId && (
+            <div>
+              <Label>{t("form.client_color")}</Label>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {PACK_COLORS.map((col) => {
+                  const cls = packBlockClasses(col);
+                  const active = currentColor === col;
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={async () => {
+                        const r: any = await setColor({ data: { clientId, color: col as any } });
+                        if (r?.ok) {
+                          // mutate local client list reference indirectly: trigger save reload
+                          await onSaved(undefined);
+                        }
+                      }}
+                      className={`h-5 w-5 rounded-full ${cls.dot} ${active ? "ring-2 ring-offset-2 ring-foreground ring-offset-background" : ""}`}
+                      aria-label={col}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {editing && (
             <div className="flex flex-wrap gap-2 border-t border-border pt-3">
               <Button
@@ -1080,10 +1262,7 @@ function BookingDialog({
                 size="sm"
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
-                onClick={async () => {
-                  const r: any = await del({ data: { id: editing.id } });
-                  if (r?.ok) await onSaved(editing.starts_at);
-                }}
+                onClick={() => setConfirmDelete(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 {t("form.delete")}
@@ -1110,6 +1289,28 @@ function BookingDialog({
           if (newId) setPackId(newId);
         }}
       />
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("form.delete_confirm_title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("form.delete_confirm_body")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("form.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!editing) return;
+                const r: any = await del({ data: { id: editing.id } });
+                setConfirmDelete(false);
+                if (r?.ok) await onSaved(editing.starts_at);
+              }}
+            >
+              {t("form.delete_confirm_yes")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

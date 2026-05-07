@@ -83,7 +83,6 @@
     "price_required": "Set the price per session.",
     "price_required_hint": "How much do you charge this client per session?",
     "price_unset": "Price not set",
-    "manage": "Manage pack",
     "sessions_used_label": "Sessions already used",
     "sessions_used_hint": "Use this for clients who started the pack before being added here.",
     "sessions_used_invalid": "Used cannot exceed total sessions.",
