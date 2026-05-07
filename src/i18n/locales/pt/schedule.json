@@ -45,7 +45,13 @@
     "duplicate_next_week": "Duplicar para a próxima semana",
     "mark_done": "Marcar como feita",
     "mark_scheduled": "Marcar como marcada",
-    "select_client": "Selecionar cliente"
+    "select_client": "Selecionar cliente",
+    "edit_session": "Editar sessão",
+    "new_session": "Nova sessão",
+    "client_color": "Cor do cliente",
+    "delete_confirm_title": "Apagar esta sessão?",
+    "delete_confirm_body": "Esta ação não pode ser desfeita.",
+    "delete_confirm_yes": "Apagar"
   },
   "pack": {
     "title": "Pacotes",
@@ -84,15 +90,43 @@
     "sessions_used_label": "Sessões já usadas",
     "sessions_used_hint": "Use isto para clientes que começaram o pacote antes de entrar aqui.",
     "sessions_used_invalid": "Já usadas não pode exceder o total de sessões.",
-    "remaining_short": "{{remaining}}/{{total}} restantes"
+    "remaining_short": "{{remaining}}/{{total}} restantes",
+    "shared": {
+      "add": "+ Adicionar cliente partilhado",
+      "title": "Pacote partilhado",
+      "payer": "Paga",
+      "make_payer": "Tornar pagador",
+      "remove": "Remover",
+      "hint": "Sessões descontam todas do mesmo saldo."
+    },
+    "autoschedule": {
+      "title": "Agendar sessões automaticamente",
+      "toggle": "Pré-agendar todas as sessões deste pacote",
+      "days": "Dias da semana",
+      "same_time": "Mesma hora todos os dias",
+      "different_times": "Horários diferentes por dia",
+      "duration": "Duração (min)",
+      "result_ok": "{{created}} sessões criadas",
+      "result_conflicts": "{{conflicts}} já existiam"
+    }
   },
   "day": {
     "list_header_one": "{{count}} sessão marcada",
     "list_header_other": "{{count}} sessões marcadas"
   },
   "clipboard": {
-    "copying": "A copiar sessão de {{name}} ({{time}}, {{duration}}′) — clica num slot vazio para colar · Esc cancela",
+    "copying": "A copiar sessão de {{name}} ({{time}}, {{duration}}′) — clica num dia para colar à mesma hora, num slot para escolher hora · Esc cancela",
     "cancel": "Cancelar",
-    "toast_pasted": "Sessão copiada"
+    "toast_pasted": "Sessão copiada",
+    "paste_same_day": "Colar neste dia ({{time}})"
+  },
+  "view": {
+    "week": "Semana",
+    "month": "Mês",
+    "more": "+{{count}} mais"
+  },
+  "revenue": {
+    "show": "Mostrar valores",
+    "hide": "Ocultar valores"
   }
 }

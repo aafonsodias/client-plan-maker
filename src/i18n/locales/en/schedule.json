@@ -47,7 +47,11 @@
     "mark_scheduled": "Mark scheduled",
     "select_client": "Select client",
     "new_session": "New session",
-    "edit_session": "Edit session"
+    "edit_session": "Edit session",
+    "client_color": "Client color",
+    "delete_confirm_title": "Delete this session?",
+    "delete_confirm_body": "This action cannot be undone.",
+    "delete_confirm_yes": "Delete"
   },
   "pack": {
     "title": "Packs",
@@ -87,7 +91,25 @@
     "remaining_label": "{{remaining}}/{{total}} remaining",
     "used_before_protocol": "{{count}} used before Protocol",
     "completed_in_protocol": "{{count}} completed in Protocol",
-    "upcoming_scheduled": "{{count}} scheduled"
+    "upcoming_scheduled": "{{count}} scheduled",
+    "shared": {
+      "add": "+ Add shared client",
+      "title": "Shared pack",
+      "payer": "Pays",
+      "make_payer": "Make payer",
+      "remove": "Remove",
+      "hint": "All sessions deduct from the same balance."
+    },
+    "autoschedule": {
+      "title": "Auto-schedule sessions",
+      "toggle": "Pre-schedule all sessions in this pack",
+      "days": "Weekdays",
+      "same_time": "Same time every day",
+      "different_times": "Different times per day",
+      "duration": "Duration (min)",
+      "result_ok": "{{created}} sessions created",
+      "result_conflicts": "{{conflicts}} already existed"
+    }
   },
   "out_of_hours": {
     "heading": "Sessions outside visible hours"
@@ -97,8 +119,18 @@
     "list_header_other": "{{count}} sessions scheduled"
   },
   "clipboard": {
-    "copying": "Copying session from {{name}} ({{time}}, {{duration}}′) — click an empty slot to paste · Esc cancels",
+    "copying": "Copying session from {{name}} ({{time}}, {{duration}}′) — click a day to paste at the same time, a slot to pick time · Esc cancels",
     "cancel": "Cancel",
-    "toast_pasted": "Session copied"
+    "toast_pasted": "Session copied",
+    "paste_same_day": "Paste in this day ({{time}})"
+  },
+  "view": {
+    "week": "Week",
+    "month": "Month",
+    "more": "+{{count}} more"
+  },
+  "revenue": {
+    "show": "Show amounts",
+    "hide": "Hide amounts"
   }
 }

@@ -705,6 +705,7 @@ export type Database = {
         Row: {
           age: number | null
           assessment_completion: number
+          color: string | null
           created_at: string
           date_of_birth: string | null
           email: string | null
@@ -730,6 +731,7 @@ export type Database = {
         Insert: {
           age?: number | null
           assessment_completion?: number
+          color?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -755,6 +757,7 @@ export type Database = {
         Update: {
           age?: number | null
           assessment_completion?: number
+          color?: string | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
@@ -1049,6 +1052,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pack_members: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          pack_id: string
+          position: number
+          primary_payer: boolean
+          trainer_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          pack_id: string
+          position?: number
+          primary_payer?: boolean
+          trainer_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          pack_id?: string
+          position?: number
+          primary_payer?: boolean
+          trainer_id?: string
+        }
+        Relationships: []
       }
       plan_feedback: {
         Row: {
