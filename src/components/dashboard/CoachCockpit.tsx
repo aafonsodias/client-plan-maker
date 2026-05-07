@@ -178,6 +178,80 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
     return items.slice(0, 6);
   }, [clients, packs, clientById, lang]);
 
+  // ---- Today / Needs attention (ranked operational signals) ----
+  type TodayRow = {
+    key: string;
+    text: string;
+    to: string;
+    params?: Record<string, string>;
+    tone: "amber" | "emerald" | "rose" | "muted";
+  };
+  const todayRows = useMemo<TodayRow[]>(() => {
+    const rows: TodayRow[] = [];
+    for (const c of clients) {
+      const plan = latestPlanByClient[c.id];
+      // 1. Plan awaiting approval (highest priority — coach action ready)
+      if (plan?.status === "ready") {
+        rows.push({
+          key: `plan-${c.id}`,
+          text: t("dashboard.today.plan_awaiting", { name: c.full_name }),
+          to: "/plans/$planId",
+          params: { planId: plan.id },
+          tone: "amber",
+        });
+        continue;
+      }
+      // 2. Ready for protocol (intake submitted, no plan yet)
+      if (c.intake_status === "submitted" && !plan) {
+        rows.push({
+          key: `ready-${c.id}`,
+          text: t("dashboard.today.ready_for_protocol", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "emerald",
+        });
+        continue;
+      }
+      // 3. Assessment in progress
+      if (c.intake_status === "in_progress" || c.intake_status === "sent") {
+        rows.push({
+          key: `assess-${c.id}`,
+          text: t("dashboard.today.assessment_incomplete", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "muted",
+        });
+      }
+    }
+    // 4. No sessions scheduled this week
+    if (clients.length > 0 && bookings.length === 0) {
+      rows.push({
+        key: "no-sessions",
+        text: t("dashboard.today.no_sessions_week"),
+        to: "/schedule",
+        tone: "amber",
+      });
+    }
+    // 5. One pack ending (top by fewest left)
+    const ending = packs
+      .map((p) => ({ p, left: Math.max(0, p.pack_size - p.sessions_used) }))
+      .filter((x) => x.left > 0 && x.left <= 2)
+      .sort((a, b) => a.left - b.left)[0];
+    if (ending) {
+      const c = clientById.get(ending.p.client_id);
+      if (c) {
+        rows.push({
+          key: `pack-${ending.p.id}`,
+          text: t("dashboard.today.pack_ending", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "rose",
+        });
+      }
+    }
+    return rows.slice(0, 5);
+  }, [clients, latestPlanByClient, bookings, packs, clientById, t]);
+
   return (
     <section className="space-y-4">
       {/* Hero strip */}
