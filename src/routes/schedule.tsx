@@ -609,6 +609,20 @@ function BookingDialog({
               </Select>
             </div>
           )}
+          {overFrequency && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+              <p>{tc("dashboard.schedule.frequency_warn", { used: usedThisWeek, agreed: agreedFreq })}</p>
+              <label className="mt-1.5 flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                <input
+                  type="checkbox"
+                  checked={override}
+                  onChange={(e) => setOverride(e.target.checked)}
+                  className="h-3.5 w-3.5"
+                />
+                {tc("dashboard.schedule.extra_session")}
+              </label>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>{t("form.date")}</Label>
