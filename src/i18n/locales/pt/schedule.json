@@ -76,7 +76,15 @@
     "demo_seeded": "{{count}} sessões criadas esta semana",
     "price_required": "Define o preço por sessão.",
     "price_required_hint": "Quanto cobra a este cliente por sessão?",
-    "price_unset": "Preço por definir"
+    "price_unset": "Preço por definir",
+    "remaining_label": "{{remaining}}/{{total}} restantes",
+    "used_before_protocol": "{{count}} usadas antes do Protocol",
+    "completed_in_protocol": "{{count}} concluídas no Protocol",
+    "upcoming_scheduled": "{{count}} agendadas",
+    "sessions_used_label": "Sessões já usadas",
+    "sessions_used_hint": "Use isto para clientes que começaram o pacote antes de entrar aqui.",
+    "sessions_used_invalid": "Já usadas não pode exceder o total de sessões.",
+    "remaining_short": "{{remaining}}/{{total}} restantes"
   },
   "day": {
     "list_header_one": "{{count}} sessão marcada",
