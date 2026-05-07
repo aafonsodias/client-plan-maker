@@ -5,6 +5,7 @@ import {
   type VolumeByMuscle,
 } from "./volume-compute";
 import { MUSCLE_GROUP_ORDER, type MuscleGroup } from "./volume-landmarks";
+import { exerciseIdentityKey } from "./exercise-taxonomy";
 
 /**
  * Volume realizado — conta apenas séries efectivamente logadas em workout_sessions.
@@ -48,9 +49,10 @@ function indexPlanExercises(plan: PlanLike): Map<string, ExerciseLike> {
   for (const w of plan.weeks ?? []) {
     for (const d of w.days ?? []) {
       for (const ex of d.exercises ?? []) {
-        const name = String((ex as any).exercise_name ?? (ex as any).name ?? "").trim().toLowerCase();
-        if (!name) continue;
-        if (!map.has(name)) map.set(name, ex);
+        const raw = String((ex as any).exercise_name ?? (ex as any).name ?? "").trim();
+        if (!raw) continue;
+        const id = exerciseIdentityKey(raw);
+        if (!map.has(id)) map.set(id, ex);
       }
     }
   }
@@ -70,8 +72,8 @@ export function computeWeeklyActualVolume(
     for (const e of s.entries ?? []) {
       const sets = actualSetCount(e);
       if (sets <= 0) continue;
-      const name = String(e.exercise_name ?? "").trim().toLowerCase();
-      const ref = name ? exIndex.get(name) : undefined;
+      const name = String(e.exercise_name ?? "").trim();
+      const ref = name ? exIndex.get(exerciseIdentityKey(name)) : undefined;
       exercises.push({
         sets,
         primary_muscles: ref?.primary_muscles ?? null,
