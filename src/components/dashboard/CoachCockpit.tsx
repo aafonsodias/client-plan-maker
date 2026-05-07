@@ -52,6 +52,17 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [packs, setPacks] = useState<Pack[]>([]);
   const [latestPlanByClient, setLatestPlanByClient] = useState<Record<string, { id: string; status: string }>>({});
+  const [revealRevenue, setRevealRevenue] = useState<boolean>(false);
+  useEffect(() => {
+    try { setRevealRevenue(localStorage.getItem("schedule:revealRevenue") === "1"); } catch {}
+  }, []);
+  const toggleRevenue = () => {
+    setRevealRevenue((v) => {
+      const n = !v;
+      try { localStorage.setItem("schedule:revealRevenue", n ? "1" : "0"); } catch {}
+      return n;
+    });
+  };
 
   useEffect(() => {
     if (!user) return;
