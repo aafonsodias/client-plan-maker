@@ -107,7 +107,20 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   }, [user]);
 
   if (loading || !user) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">{t("actions.loading")}</div>;
+    // Locale-neutral fallback so SSR HTML and the first client paint match
+    // even when the persisted locale differs from the SSR fallback ("en").
+    // Without this, a PT-persisted user hard-refreshing a route renders
+    // "Loading…" on the server and "A carregar…" on the client, triggering
+    // a hydration mismatch that cascades into hook-order errors downstream.
+    return (
+      <div
+        suppressHydrationWarning
+        className="flex min-h-screen items-center justify-center text-muted-foreground"
+      >
+        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-muted-foreground/60" aria-hidden />
+        <span className="sr-only">{t("actions.loading")}</span>
+      </div>
+    );
   }
 
   const handleSignOut = () => {
