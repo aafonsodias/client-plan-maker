@@ -1,4 +1,5 @@
 import { parseRpe } from "@/lib/rpe-tone";
+import { exerciseIdentityKey } from "@/lib/exercise-taxonomy";
 
 /**
  * Capacity-gain analytics across two consecutive blocks.
@@ -93,7 +94,9 @@ export function computeCapacityGain(
     currentRepsAtBest: Map<number, number>;
   };
   const buckets = new Map<CapacityRow["pattern"], Bucket>();
-  const liftLoads = new Map<string, Lift>();
+  // Keyed by stable exercise identity (canonical key or `unknown:<normalized>`)
+  // so "Goblet Squat" and "agachamento goblet" don't split into two lifts.
+  const liftLoads = new Map<string, { displayName: string; data: Lift }>();
 
   function ingest(rows: typeof prior, side: "prior" | "current") {
     for (const s of rows) {
@@ -107,17 +110,24 @@ export function computeCapacityGain(
         b[side].push(load);
         buckets.set(p, b);
 
-        const lift: Lift = liftLoads.get(name) ?? {
-          prior: [], current: [],
-          priorRepsAtBest: new Map(), currentRepsAtBest: new Map(),
+        const id = exerciseIdentityKey(name);
+        const slot: { displayName: string; data: Lift } = liftLoads.get(id) ?? {
+          displayName: name,
+          data: {
+            prior: [] as number[],
+            current: [] as number[],
+            priorRepsAtBest: new Map<number, number>(),
+            currentRepsAtBest: new Map<number, number>(),
+          },
         };
+        const lift = slot.data;
         lift[side].push(load);
         const r = reps(e);
         if (r) {
           const map = side === "prior" ? lift.priorRepsAtBest : lift.currentRepsAtBest;
           if (!map.has(load) || (map.get(load) ?? 0) < r) map.set(load, r);
         }
-        liftLoads.set(name, lift);
+        liftLoads.set(id, slot);
       }
     }
   }
@@ -143,17 +153,18 @@ export function computeCapacityGain(
 
   // Top lifts: pick the 3 lifts with most data on BOTH sides.
   const topLifts: TopLiftDelta[] = [...liftLoads.entries()]
-    .filter(([, v]) => v.prior.length > 0 && v.current.length > 0)
-    .sort(([, a], [, b]) => (b.prior.length + b.current.length) - (a.prior.length + a.current.length))
+    .filter(([, v]) => v.data.prior.length > 0 && v.data.current.length > 0)
+    .sort(([, a], [, b]) => (b.data.prior.length + b.data.current.length) - (a.data.prior.length + a.data.current.length))
     .slice(0, 3)
-    .map(([name, v]) => {
+    .map(([, slot]) => {
+      const v = slot.data;
       const pBest = v.prior.length ? Math.max(...v.prior) : null;
       const cBest = v.current.length ? Math.max(...v.current) : null;
       const pE1 = pBest != null ? e1rm(pBest, v.priorRepsAtBest.get(pBest) ?? 5) : null;
       const cE1 = cBest != null ? e1rm(cBest, v.currentRepsAtBest.get(cBest) ?? 5) : null;
       const delta = pE1 && cE1 ? ((cE1 - pE1) / pE1) * 100 : pBest && cBest ? ((cBest - pBest) / pBest) * 100 : null;
       return {
-        name,
+        name: slot.displayName,
         priorBest: pBest,
         currentBest: cBest,
         priorE1rm: pE1 != null ? Number(pE1.toFixed(1)) : null,

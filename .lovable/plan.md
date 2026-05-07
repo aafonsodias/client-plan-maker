@@ -1,76 +1,82 @@
-# R73 — Light follow-up pass (no engine, no schema, no library code)
+# R74 — Exercise + Session Taxonomy Foundation
 
-Eight small, isolated touch-ups before Slice 1 (`src/lib/exercise-taxonomy.ts`) is even considered. No DB work, no AI calls, no new routes, no dependencies, no engine/PKL changes.
+Pure-TypeScript foundation round. No schema, no UI, no generation changes, no schema/PKL/PDF changes. Visible exercise names unchanged.
 
-## 1. Landing duplicate brand block
+## Scope
 
-`src/routes/index.tsx` shows the BrandMark twice in close vertical proximity: once in the sticky nav (lines 63–65, mark + wordmark) and again as the first element of the hero (lines 171–176, large mark + wordmark in 0.3em tracking). On a 1338px viewport both are visible at once → the brand reads twice in 200px.
+### 1. Audit (`.lovable/r74-exercise-session-taxonomy-audit.md`)
 
-Fix: drop the hero lockup. Keep nav lockup as the only brand surface above the headline. `HeroHeadlineRotator` becomes the first hero element. Also audit lines 440–460 (footer BrandMark) — keep that one, it closes the page.
+Document, with file:line references:
+- Where exercise names enter (`ExerciseZ` in `src/server/phased/schemas.ts`, AI Stage 3/4/5 outputs).
+- Where they're displayed (PDF in `src/lib/pdf.ts`, plan editor cards, logbook).
+- Where they're used as identity keys (lowercased joins in `volume-actual.ts:54`, `capacity-gain.ts:49`, longitudinal/rotation audit).
+- Where muscle strings are normalized (`volume-landmarks.ts` → `normaliseMuscle` + `MUSCLE_ALIASES`).
+- Where unknown exercises/muscles drop silently (volume-actual returns no muscles when name not in plan index; capacity-gain key collision).
+- Whether warm-up/cooldown/session blocks exist structurally today (answer: no — `ExerciseZ` is flat list; `notes`/`focus` are free text).
+- Safe-to-wire call sites (3 candidates: `volume-actual.ts` plan index key, `capacity-gain.ts` name key, `rotation-audit.ts` dedupe key).
+- Risky/deferred sites (AI prompt, PDF render, plan editor, schemas, DB columns).
 
-## 2. Mock / display rotation audit
+### 2. `src/lib/exercise-taxonomy.ts` (new, pure)
 
-Goal: confirm every mock surface (landing `WorkbenchMockup`, `LogbookInsightsMockup`, `HeroPlanMockup`, demo lab previews, PDF examples, `landing.hero.bullets`) doesn't lock onto one fictional client/plan/exercise. Produce `.lovable/r73-mock-audit.md` listing each mock surface, the hardcoded names/numbers, and a flag per surface: `OK / needs-rotation / needs-realism-pass`. No code edits this round — audit only.
+- `EXERCISE_TAXONOMY_VERSION = 1`
+- String-literal union types + `as const` arrays for: umbrella categories (8), movement patterns (25), equipment (22), level (5), caution flags (16), media quality statuses (9). Keys exactly per spec.
+- `EXERCISES` readonly map of the 30 specified keys with `{ key, name_pt, name_en, aliases_pt, aliases_en, umbrella, movement_pattern, equipment[], level, primary_muscles[], secondary_muscles[], caution_flags[], media_quality_default }`. Muscles use canonical `MuscleGroup` keys from `volume-landmarks.ts`.
+- Helpers (pure, no I/O):
+  - `normalizeExerciseName(input)` — lowercase, NFD strip diacritics, collapse whitespace, normalize `-/_` to space, trim punctuation.
+  - `exerciseKeyFromName(input)` — alias+canonical lookup, returns `ExerciseKey | null`.
+  - `exerciseIdentityKey(input)` — returns canonical key or `unknown:<normalized>` (never empty/null).
+  - `getExerciseTaxonomyEntry`, `isKnownExercise`, `getExerciseAliases`, `getExercisePattern`, `getExerciseCautionFlags`, `collectUnknownExerciseNames`.
 
-## 3. Warm-up / cool-down / cardio mock variants
+### 3. `src/lib/session-taxonomy.ts` (new, pure)
 
-Today the visible plan mocks (HeroPlanMockup, example PDF, demo seeder output) emphasise the strength block. Audit which mocks render warm-up / activation / cool-down / cardio sections at all, and note in the same `.lovable/r73-mock-audit.md` which need at least one variant that opens with mobility or finishes with conditioning so the product doesn't read as "strength-only". No engine changes — only marking which mock JSON or rotator slide needs new copy in a later round.
+- `SESSION_TAXONOMY_VERSION = 1`
+- `SESSION_BLOCK_TYPES` literal union (17 entries per spec).
+- `SESSION_BLOCK_LABELS_PT` and `SESSION_BLOCK_LABELS_EN` maps (verbatim from spec).
+- No generation hookup. No UI import.
 
-## 4. Exercise media production notes
+### 4. `mem/specs/session-structure-principles.md` (new)
 
-Add `mem/specs/exercise-media-production.md`: a short, practical note on filming (phone height, two angles, 6–12s, neutral background, clothing contrast, no music, slate at start with exercise key + date + version). References `mem://specs/exercise-media-quality.md` for status taxonomy. Pure documentation; no media table, no upload UI.
+Principle: a complete session may include warm-up → mobility → activation → coordination/balance → cognitive dual-task → main strength/skill → conditioning → cooldown → breathing → mobility → education note. Not all blocks every session. Tagline: "Diretrizes orientam. O treinador simplifica e aplica." / "Guidelines inform. The coach simplifies and applies."
 
-## 5. Founder demo limitations
+### 5. Safe wiring (conservative)
 
-Add `mem/features/founder-demo-limitations.md`: explicit list of what the founder Demo Lab + R71 simulator do NOT prove (no real adherence variance, no real RPE drift psychology, no injury events, no schedule conflicts, no payment churn, deterministic adherence ≈85%). Purpose: when judging the product through demo data, remember it's a structural smoke test, not validation of UX-under-stress.
+Only if mechanical and behaviour-preserving, replace lowercased-name keys with `exerciseIdentityKey(...)` in up to 3 sites:
+- `src/lib/volume-actual.ts` `indexPlanExercises` map key + lookup.
+- `src/lib/capacity-gain.ts` `n = name.toLowerCase()` key.
+- `src/lib/rotation-audit.ts` dedupe key (only if obvious).
 
-## 6. Traditional games / play source discipline
+Visible names, AI shape, DB payloads, PDFs unchanged. If any site is non-trivial, defer and document.
 
-Update `mem/features/traditional-games-play-library.md` with a "Source discipline" subsection: every play entry must cite a named region/community + at least one verifiable source (book, ethnographic record, named informant). No invented "ancient" provenance. Forbid LLM-generated origin stories. Include rejection criteria.
+### 6. Doc updates
 
-## 7. Client education PDF note
+- `mem/audits/exercise-library-priority.md` — mark Slice 1 shipped; redefine Slices 2–7 per spec.
+- `.lovable/r74-session-mock-note.md` — note that current strength mock is incomplete as session representation; future variants needed.
+- `mem/index.md` — add taxonomy + session-structure references.
+- `.lovable/plan.md` — append R74 summary.
 
-Add `mem/features/client-education-pdf.md`: short note that the future client-facing PDF should ship a one-page glossary appendix (RPE, tempo notation, %1RM, deload, MEV/MAV/MRV in plain language). Spec only — no `pdf.ts` changes. References `mem://features/client-education-layer.md`.
+### 7. Verification
 
-## 8. Trainer study / evidence source ethics
+`tsc --noEmit` clean. Verify alias mappings: "Goblet Squat", "Agachamento Goblet" → `goblet_squat`; "Peso morto romeno com halteres" → `dumbbell_romanian_deadlift`; "Prancha"/"Plank" → `plank`; unknown → `unknown:<normalized>`.
 
-Add `mem/principles/evidence-source-ethics.md`: rules for citing studies inside the app (StudiesFeed, plan rationale, knowledge route). Required: full citation, year, sample size, effect size if known, conflict-of-interest flag. Forbidden: paraphrased "studies show…" without a real reference, vendor-funded studies cited as independent, n<10 pilot work cited as evidence. References existing `StudiesFeed.tsx` as the surface this binds.
+## Out of scope (hard non-goals)
 
-## Deliverables
+Schema, migrations, new routes, new server functions, new deps, exercise library UI, trainer overrides, suggestion queue, media upload, video player, stickfigure pipeline, games DB, education PDF, AI study assistant, plan editor rebuild, exercise swap flow, AI prompt rewrite, PKL changes, PDF redesign, billing/auth/schedule changes, historical data rewrite, visible exercise name changes.
 
-- 1 code edit: `src/routes/index.tsx` removes the hero brand lockup (item 1)
-- 5 new memory/spec files: items 4, 5, 6, 7, 8
-- 1 new audit file: `.lovable/r73-mock-audit.md` (items 2 + 3)
-- `mem/index.md` updated with the new memory references
-- `.lovable/plan.md` appended with R73 entry
+## Files touched
 
-## Confirmation
+New: `src/lib/exercise-taxonomy.ts`, `src/lib/session-taxonomy.ts`, `mem/specs/session-structure-principles.md`, `.lovable/r74-exercise-session-taxonomy-audit.md`, `.lovable/r74-session-mock-note.md`.
 
-- no schema changes
-- no migrations
-- no new routes
-- no new dependencies
-- no AI/model calls
-- no real clients touched
-- no billing/payment changes
-- no engine/generation/PKL changes
-- no exercise-library code (Slice 1 deferred)
+Edited (docs): `mem/audits/exercise-library-priority.md`, `mem/index.md`, `.lovable/plan.md`.
 
-## Smallest next improvement after this
-
-Slice 1: `src/lib/exercise-taxonomy.ts` — static enums (umbrella, movement_pattern, equipment, level, contraindication_flags, media_quality_status) + alias map reusing `volume-landmarks.ts`. No schema, no UI, no AI prompt changes yet.
+Edited (code, only if trivially safe): `src/lib/volume-actual.ts`, `src/lib/capacity-gain.ts`, optionally `src/lib/rotation-audit.ts`.
 
 ---
 
-## R73 — shipped
+## R74 — Shipped
 
-- Removed duplicate hero brand lockup in `src/routes/index.tsx` (nav lockup is the only brand surface above the headline; footer mark kept)
-- Added `.lovable/r73-mock-audit.md` (mock rotation + warm-up/cool-down/cardio coverage gap; audit-only, no code)
-- Added `mem/specs/exercise-media-production.md` (filming standard: 2 angles, 6–12s, slate, no music, contrast)
-- Added `mem/features/founder-demo-limitations.md` (what Demo Lab + R71 simulator do NOT prove)
-- Updated `mem/features/traditional-games-play-library.md` with "Source discipline" subsection (named region + verifiable source required; LLM origin stories forbidden)
-- Added `mem/features/client-education-pdf.md` (required client-facing glossary appendix)
-- Added `mem/principles/evidence-source-ethics.md` (required fields + forbidden patterns for citing studies)
-- Updated `mem/index.md` with 4 new memory references
-
-Confirmed: no schema, no migrations, no new routes, no dependencies, no AI calls, no real clients touched, no billing changes, no engine/PKL changes, no exercise-library code (Slice 1 still deferred).
+- `src/lib/exercise-taxonomy.ts` — version 1, 6 enum sets, 30 seeded canonical exercises, helpers (`normalizeExerciseName`, `exerciseKeyFromName`, `exerciseIdentityKey`, `getExerciseTaxonomyEntry`, `isKnownExercise`, `getExerciseAliases`, `getExercisePattern`, `getExerciseCautionFlags`, `collectUnknownExerciseNames`).
+- `src/lib/session-taxonomy.ts` — 17 session block types + PT/EN labels.
+- `mem/specs/session-structure-principles.md`, `.lovable/r74-exercise-session-taxonomy-audit.md`, `.lovable/r74-session-mock-note.md`.
+- Safe wiring (2 sites): `volume-actual.ts` + `capacity-gain.ts` now key joins by `exerciseIdentityKey()`. Visible names unchanged.
+- Deferred: `longitudinal.ts` grouping, AI prompt rewrites, schema `exercise_key`, structured session blocks in generation.
+- No schema, no migrations, no routes, no server fns, no deps, no UI, no PDF redesign, no PKL/generation changes, no historical data rewrite.
