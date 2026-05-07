@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,6 +36,7 @@ import {
   addDays,
   fmtWeekRange,
   packBlockClasses,
+  clientColor,
   packStatus,
   startOfIsoWeek,
 } from "@/lib/schedule";
