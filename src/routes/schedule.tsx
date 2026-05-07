@@ -628,7 +628,6 @@ function BookingDialog({
   editing,
   clients,
   packs,
-  weekBookings,
   onSaved,
 }: {
   open: boolean;
@@ -637,8 +636,7 @@ function BookingDialog({
   editing?: Booking;
   clients: ClientLite[];
   packs: Pack[];
-  weekBookings: Booking[];
-  onSaved: () => void | Promise<void>;
+  onSaved: (savedIso?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
   const { t: tc } = useTranslation("common");
@@ -657,6 +655,7 @@ function BookingDialog({
   const [notes, setNotes] = useState(editing?.notes ?? "");
   const [busy, setBusy] = useState(false);
   const [override, setOverride] = useState(false);
+  const [candidateWeekCount, setCandidateWeekCount] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -673,18 +672,41 @@ function BookingDialog({
 
   const clientPacks = packs.filter((p) => p.client_id === clientId && !p.archived);
 
-  // Weekly frequency guard: agreed = pack.weekly_frequency for the selected pack
-  // (best existing source). Count this week's non-cancelled bookings for the
-  // selected client, excluding the booking being edited.
+  // Weekly frequency guard against the candidate booking date's ISO week,
+  // not the displayed week. Re-counts client+pack bookings whenever the
+  // user changes client/pack/date in the dialog.
   const agreedFreq = packId ? (packs.find((p) => p.id === packId)?.weekly_frequency ?? 0) : 0;
-  const usedThisWeek = clientId
-    ? weekBookings.filter(
-        (b) =>
-          b.client_id === clientId &&
-          b.status !== "cancelled" &&
-          (!editing || b.id !== editing.id),
-      ).length
-    : 0;
+  useEffect(() => {
+    if (!open || !clientId) {
+      setCandidateWeekCount(0);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const candidate = new Date(`${date}T${time || "09:00"}:00`);
+      if (Number.isNaN(candidate.getTime())) return;
+      const wkStart = startOfIsoWeek(candidate);
+      const wkEnd = addDays(wkStart, 7);
+      let q = supabase
+        .from("client_bookings")
+        .select("id, status, pack_id")
+        .eq("client_id", clientId)
+        .gte("starts_at", wkStart.toISOString())
+        .lt("starts_at", wkEnd.toISOString());
+      if (packId) q = q.eq("pack_id", packId);
+      const { data } = await q;
+      if (cancelled) return;
+      const rows = (data as any[]) ?? [];
+      const count = rows.filter(
+        (r) => r.status !== "cancelled" && (!editing || r.id !== editing.id),
+      ).length;
+      setCandidateWeekCount(count);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, clientId, packId, date, time, editing]);
+  const usedThisWeek = candidateWeekCount;
   const overFrequency = agreedFreq > 0 && usedThisWeek >= agreedFreq;
 
   const save = async () => {
@@ -715,7 +737,7 @@ function BookingDialog({
         });
     setBusy(false);
     if (r?.ok) {
-      await onSaved();
+      await onSaved(iso);
     } else {
       toast.error(r?.error ?? "error");
     }
@@ -725,7 +747,7 @@ function BookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editing ? t("form.save") : t("new_booking")}</DialogTitle>
+          <DialogTitle>{editing ? t("form.edit_session") : t("form.new_session")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -804,7 +826,7 @@ function BookingDialog({
                 variant="outline"
                 onClick={async () => {
                   const r: any = await upd({ data: { id: editing.id, status: editing.status === "done" ? "scheduled" : "done" } });
-                  if (r?.ok) await onSaved();
+                  if (r?.ok) await onSaved(editing.starts_at);
                 }}
               >
                 <Check className="mr-2 h-4 w-4" />
@@ -817,7 +839,9 @@ function BookingDialog({
                   const r: any = await dup({ data: { id: editing.id } });
                   if (r?.ok) {
                     toast.success("✓");
-                    await onSaved();
+                    const next = new Date(editing.starts_at);
+                    next.setDate(next.getDate() + 7);
+                    await onSaved(next.toISOString());
                   }
                 }}
               >
@@ -830,7 +854,7 @@ function BookingDialog({
                 className="text-destructive hover:text-destructive"
                 onClick={async () => {
                   const r: any = await del({ data: { id: editing.id } });
-                  if (r?.ok) await onSaved();
+                  if (r?.ok) await onSaved(editing.starts_at);
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
