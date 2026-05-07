@@ -762,6 +762,7 @@ function DayStrip({
   packById,
   clientById,
   onSlotClick,
+  onDayPaste,
   onBookingClick,
   onCopy,
   clipboardActive,
@@ -772,6 +773,7 @@ function DayStrip({
   packById: Map<string, Pack>;
   clientById: Map<string, ClientLite>;
   onSlotClick: (iso: string) => void;
+  onDayPaste?: (day: Date) => void;
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
   clipboardActive: boolean;
