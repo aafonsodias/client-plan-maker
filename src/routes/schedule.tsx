@@ -237,7 +237,6 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-light tracking-wide sm:text-2xl">{t("title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex items-center rounded-md border border-border">
             <button
