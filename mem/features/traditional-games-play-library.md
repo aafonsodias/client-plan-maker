@@ -45,3 +45,30 @@ Jogo da malha · jogo do lenço · corrida de sacos · tração à corda · jogo
 ## Out of scope for R72
 
 No table, no UI, no seeding. This file is the spec only; integration plan lives in [priority audit](mem://audits/exercise-library-priority.md).
+
+## Source discipline (R73)
+
+Every play entry must cite a **named region or community** plus at least one **verifiable source**. Acceptable sources:
+
+- Published book or ethnography with author + year + page
+- Museum / cultural-archive record with reference number
+- Named living informant (with consent recorded) — name, region, year of conversation
+- Peer-reviewed article on traditional games / motor culture
+
+### Forbidden
+
+- LLM-generated origin stories ("dating back centuries…", "ancient tradition of…") with no named source
+- Vague provenance ("popular in southern Europe") without a specific community
+- Wikipedia as the *only* source (acceptable as a pointer, never as the citation)
+- Vendor / brand pages selling equipment as a cultural source
+
+### Rejection criteria
+
+An entry is rejected from canonical Play library if:
+
+1. `cultural_origin_notes` contains unsourced romantic claims
+2. No `source_notes` entry exists
+3. The only "source" is the prompt that generated it
+4. Origin is invented to fill a gap ("we needed a Brazilian game so we made one up")
+
+When origin is genuinely unclear: `cultural_origin_notes: "unknown — needs research"` and `review_status: needs_evidence`. Better honest gap than fabricated heritage.
