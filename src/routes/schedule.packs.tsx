@@ -64,6 +64,18 @@ export function PacksPanel({
       .then(({ data }) => setClients((data as any) ?? []));
   }, [user]);
 
+  // Auto-open create dialog when arriving with ?newPack=1
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("newPack") === "1") {
+      setCreating(true);
+      params.delete("newPack");
+      const qs = params.toString();
+      navigate({ to: "/schedule", search: { tab: "packs" }, replace: true });
+    }
+  }, [navigate]);
+
   // One scoped read of this week's non-cancelled bookings → count per pack
   // (used for the "X marcadas esta semana" chip).
   useEffect(() => {
