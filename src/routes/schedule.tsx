@@ -896,6 +896,18 @@ function BookingDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <PackFormDialog
+        open={inlinePackOpen}
+        onOpenChange={setInlinePackOpen}
+        clients={clients}
+        initialClientId={clientId}
+        lockClient
+        onSaved={async (newId) => {
+          setInlinePackOpen(false);
+          await onPacksRefresh?.();
+          if (newId) setPackId(newId);
+        }}
+      />
     </Dialog>
   );
 }
