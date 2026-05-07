@@ -489,6 +489,7 @@ function DayStrip({
       return t.toDateString() === day.toDateString();
     })
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const { t: ts } = useTranslation("schedule");
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-7 gap-1">
@@ -500,18 +501,23 @@ function DayStrip({
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex flex-col items-center rounded-lg border px-1 py-1.5 text-center ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex min-h-12 flex-col items-center rounded-lg border px-1 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
               <span className="text-[10px] uppercase tracking-widest">
                 {new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d)}
               </span>
-              <span className={`text-sm font-medium ${isToday ? "underline" : ""}`}>
+              <span className={`mt-0.5 text-sm font-medium ${isToday ? "underline underline-offset-4" : ""}`}>
                 {new Intl.DateTimeFormat(locale, { day: "2-digit" }).format(d)}
               </span>
             </button>
           );
         })}
       </div>
+      {list.length > 0 && (
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          {ts("day.list_header", { count: list.length })}
+        </p>
+      )}
       <div className="space-y-2">
         {list.length === 0 ? (
           <button
@@ -530,6 +536,8 @@ function DayStrip({
             const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
             const c = clientById.get(b.client_id);
             const cls = packBlockClasses(pack?.color ?? "emerald");
+            const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+            const typeLabel = b.session_type === "online" ? ts("form.online") : ts("form.in_person");
             return (
               <button
                 key={b.id}
@@ -540,8 +548,8 @@ function DayStrip({
                 <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
-                  <div className="truncate font-mono text-[11px] opacity-80">
-                    {new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} · {b.duration_min}′
+                  <div className="truncate text-[11px] opacity-80">
+                    <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
                   </div>
                 </div>
               </button>
