@@ -59,3 +59,18 @@ Add `mem/principles/evidence-source-ethics.md`: rules for citing studies inside 
 ## Smallest next improvement after this
 
 Slice 1: `src/lib/exercise-taxonomy.ts` — static enums (umbrella, movement_pattern, equipment, level, contraindication_flags, media_quality_status) + alias map reusing `volume-landmarks.ts`. No schema, no UI, no AI prompt changes yet.
+
+---
+
+## R73 — shipped
+
+- Removed duplicate hero brand lockup in `src/routes/index.tsx` (nav lockup is the only brand surface above the headline; footer mark kept)
+- Added `.lovable/r73-mock-audit.md` (mock rotation + warm-up/cool-down/cardio coverage gap; audit-only, no code)
+- Added `mem/specs/exercise-media-production.md` (filming standard: 2 angles, 6–12s, slate, no music, contrast)
+- Added `mem/features/founder-demo-limitations.md` (what Demo Lab + R71 simulator do NOT prove)
+- Updated `mem/features/traditional-games-play-library.md` with "Source discipline" subsection (named region + verifiable source required; LLM origin stories forbidden)
+- Added `mem/features/client-education-pdf.md` (required client-facing glossary appendix)
+- Added `mem/principles/evidence-source-ethics.md` (required fields + forbidden patterns for citing studies)
+- Updated `mem/index.md` with 4 new memory references
+
+Confirmed: no schema, no migrations, no new routes, no dependencies, no AI calls, no real clients touched, no billing changes, no engine/PKL changes, no exercise-library code (Slice 1 still deferred).
