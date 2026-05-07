@@ -209,6 +209,18 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     }
   };
 
+  const handleToggleDone = async (b: Booking) => {
+    const next = b.status === "done" ? "scheduled" : "done";
+    setBookings((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: next } : x)));
+    const r: any = await updateFn({ data: { id: b.id, status: next } });
+    if (!r?.ok) {
+      toast.error(r?.error ?? "Erro");
+      await refresh();
+    } else {
+      onBookingsMutated();
+    }
+  };
+
   const refresh = async () => {
     setLoading(true);
     const r: any = await list({ data: { weekStart: monday.toISOString() } });
@@ -434,6 +446,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               onBookingClick={(b) => setEditing(b)}
               onCopy={(b) => setClipboard(b)}
               onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
               clipboardActive={!!clipboard}
             />
           ))}
@@ -446,6 +459,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           clientById={clientById}
           locale={locale}
           onBookingClick={(b) => setEditing(b)}
+          onToggleDone={handleToggleDone}
           onDayClick={(d) => (clipboard ? handleDayPaste(d) : setCreating({ startsAt: (() => { const t = new Date(d); t.setHours(9,0,0,0); return t.toISOString(); })() }))}
         />
       )}
@@ -458,6 +472,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           bookings={bookings}
           packById={packById}
           clientById={clientById}
+          onToggleDone={handleToggleDone}
           onSlotClick={handleSlotClick}
           onDayPaste={handleDayPaste}
           onBookingClick={(b) => setEditing(b)}
@@ -613,6 +628,7 @@ function RowHour({
   onBookingClick,
   onCopy,
   onDragCommit,
+  onToggleDone,
   clipboardActive,
 }: {
   hour: number;
@@ -624,6 +640,7 @@ function RowHour({
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
   onDragCommit: (id: string, newIso: string) => void;
+  onToggleDone: (b: Booking) => void;
   clipboardActive: boolean;
 }) {
   return (
@@ -664,6 +681,7 @@ function RowHour({
                   onClick={() => onBookingClick(b)}
                   onCopy={() => onCopy(b)}
                   onDragCommit={onDragCommit}
+                  onToggleDone={() => onToggleDone(b)}
                 />
               );
             })}
@@ -681,6 +699,7 @@ function BookingBlock({
   onClick,
   onCopy,
   onDragCommit,
+  onToggleDone,
 }: {
   booking: Booking;
   clientName: string;
@@ -688,6 +707,7 @@ function BookingBlock({
   onClick: () => void;
   onCopy: () => void;
   onDragCommit: (id: string, newIso: string) => void;
+  onToggleDone: () => void;
 }) {
   const [dragOffset, setDragOffset] = useState(0); // minutes
   const [dragging, setDragging] = useState(false);
@@ -742,25 +762,41 @@ function BookingBlock({
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
-          <div className="truncate font-medium">{clientName}</div>
+          <div className={`truncate font-medium ${booking.status === "done" ? "line-through opacity-70" : ""}`}>{clientName}</div>
           <div className="truncate font-mono text-[10px] opacity-80">
             {previewTime} · {booking.duration_min}′
           </div>
         </div>
-        <button
-          type="button"
-          data-copy-btn
-          onClick={(e) => {
-            e.stopPropagation();
-            onCopy();
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-label="copy"
-          title="Copiar"
-          className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
-        >
-          <Copy className="h-3 w-3" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            data-copy-btn
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleDone();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={booking.status === "done" ? "mark scheduled" : "mark done"}
+            title={booking.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+            className={`rounded p-0.5 transition-opacity hover:bg-foreground/10 ${booking.status === "done" ? "opacity-100 text-emerald-600 dark:text-emerald-400" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+          >
+            <Check className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            data-copy-btn
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopy();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="copy"
+            title="Copiar"
+            className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
+          >
+            <Copy className="h-3 w-3" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -775,6 +811,7 @@ function DayStrip({
   onDayPaste,
   onBookingClick,
   onCopy,
+  onToggleDone,
   clipboardActive,
   locale,
 }: {
@@ -786,6 +823,7 @@ function DayStrip({
   onDayPaste?: (day: Date) => void;
   onBookingClick: (b: Booking) => void;
   onCopy: (b: Booking) => void;
+  onToggleDone: (b: Booking) => void;
   clipboardActive: boolean;
   locale: string;
 }) {
@@ -860,11 +898,23 @@ function DayStrip({
                 >
                   <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{c?.full_name ?? "—"}</div>
+                    <div className={`truncate font-medium ${b.status === "done" ? "line-through opacity-70" : ""}`}>{c?.full_name ?? "—"}</div>
                     <div className="truncate text-[11px] opacity-80">
                       <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
                     </div>
                   </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleDone(b);
+                  }}
+                  aria-label={b.status === "done" ? "mark scheduled" : "mark done"}
+                  title={b.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+                  className={`rounded p-1 hover:bg-foreground/10 ${b.status === "done" ? "text-emerald-600 dark:text-emerald-400" : "opacity-70 hover:opacity-100"}`}
+                >
+                  <Check className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
@@ -903,6 +953,7 @@ function ScheduleMonth({
   locale,
   onBookingClick,
   onDayClick,
+  onToggleDone,
 }: {
   monday: Date;
   packById: Map<string, Pack>;
@@ -910,6 +961,7 @@ function ScheduleMonth({
   locale: string;
   onBookingClick: (b: Booking) => void;
   onDayClick: (d: Date) => void;
+  onToggleDone: (b: Booking) => void;
 }) {
   const { t } = useTranslation("schedule");
   const monthFn = useServerFn(listMonthBookings);
@@ -974,16 +1026,31 @@ function ScheduleMonth({
                   const cls = packBlockClasses(col);
                   const time = new Date(b.starts_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
                   return (
-                    <button
+                    <div
                       key={b.id}
-                      type="button"
-                      onClick={() => onBookingClick(b)}
-                      className={`flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                      className={`group flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
                     >
-                      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
-                      <span className="font-mono">{time}</span>
-                      <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleDone(b);
+                        }}
+                        aria-label={b.status === "done" ? "mark scheduled" : "mark done"}
+                        title={b.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
+                        className={`shrink-0 rounded p-0.5 hover:bg-foreground/10 ${b.status === "done" ? "text-emerald-600 dark:text-emerald-400" : "opacity-50 group-hover:opacity-100"}`}
+                      >
+                        <Check className="h-2.5 w-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onBookingClick(b)}
+                        className={`flex min-w-0 flex-1 items-center gap-1 truncate text-left ${b.status === "done" ? "line-through opacity-70" : ""}`}
+                      >
+                        <span className="font-mono">{time}</span>
+                        <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
+                      </button>
+                    </div>
                   );
                 })}
                 {more > 0 && (
