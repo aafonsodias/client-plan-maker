@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Beaker, Zap, Activity, Loader2, Check, X, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { advanceSimulation } from "@/server/demo-sessions.functions";
+import { advanceSimulation, simulateDemoMesocycle } from "@/server/demo-sessions.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useDemoRuns, DEMO_RUN_STAGES } from "@/contexts/DemoRunsContext";
 
@@ -21,8 +22,11 @@ export function DemoLabPanel() {
   const { t } = useTranslation("common");
   const { runs, startRun, cancelRun } = useDemoRuns();
   const tickFn = useServerFn(advanceSimulation);
+  const simFn = useServerFn(simulateDemoMesocycle);
   const [busy, setBusy] = useState<"tick" | null>(null);
   const [durationWeeks, setDurationWeeks] = useState<4 | 6 | 8>(4);
+  const [simWeeks, setSimWeeks] = useState<4 | 8 | 12>(12);
+  const [simBusy, setSimBusy] = useState(false);
 
   if (!user || user.email !== "aafonsodias@gmail.com") return null;
 
@@ -60,6 +64,45 @@ export function DemoLabPanel() {
       toast.error(e?.message ?? "Erro inesperado.");
     } finally {
       setBusy(null);
+    }
+  };
+
+  const runSim = async () => {
+    if (simBusy) return;
+    // Find latest demo client of this trainer.
+    const { data: client } = await supabase
+      .from("clients")
+      .select("id, full_name")
+      .eq("is_demo", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!client) {
+      toast.error(t("demo.sim.no_demo_client"));
+      return;
+    }
+    if (!window.confirm(t("demo.sim.confirm_replace"))) return;
+    setSimBusy(true);
+    try {
+      const res: any = await simFn({ data: { clientId: (client as any).id, weeks: simWeeks } });
+      if (!res?.ok) {
+        toast.error(res?.error === "not_demo" ? t("demo.sim.error_not_demo") : "Erro");
+        return;
+      }
+      toast.success(
+        t("demo.sim.summary", {
+          weeks: res.weeks,
+          sessions: res.inserted.sessions,
+          missed: res.missed,
+          measurements: res.inserted.measurements,
+          adherence: res.adherencePct,
+        }),
+        { description: t("demo.sim.warning") },
+      );
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro inesperado.");
+    } finally {
+      setSimBusy(false);
     }
   };
 
@@ -134,6 +177,30 @@ export function DemoLabPanel() {
           {busy === "tick" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
           {t("demo.lab_advance")}
         </Button>
+      </div>
+      <div className="mt-4 rounded-xl border border-amber-500/20 bg-background/40 p-3">
+        <p className="mb-2 text-[11px] uppercase tracking-widest text-amber-500/90">
+          {t("demo.sim.eyebrow")}
+        </p>
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            {t("demo.sim.weeks_label")}
+          </span>
+          <SegBtn value={4} current={simWeeks} onClick={(v) => setSimWeeks(v as 4 | 8 | 12)}>4</SegBtn>
+          <SegBtn value={8} current={simWeeks} onClick={(v) => setSimWeeks(v as 4 | 8 | 12)}>8</SegBtn>
+          <SegBtn value={12} current={simWeeks} onClick={(v) => setSimWeeks(v as 4 | 8 | 12)}>12</SegBtn>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void runSim()}
+          disabled={simBusy || isRunning}
+          className="border-amber-500/40"
+        >
+          {simBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Activity className="mr-2 h-4 w-4" />}
+          {t("demo.sim.cta", { count: simWeeks })}
+        </Button>
+        <p className="mt-2 text-[11px] text-muted-foreground">{t("demo.sim.warning")}</p>
       </div>
       {trackedRun ? (
         <div className="mt-3 rounded-xl border border-amber-500/20 bg-background/40 p-3">

@@ -316,6 +316,18 @@
     "lab_nothing_toast": "Nada para avançar.",
     "lab_navigate_hint": "Pode navegar para outras páginas — verá o progresso no canto inferior direito e receberá um aviso quando terminar.",
     "lab_footer": "Cria um cliente fictício realista, gera o plano completo (brief → blueprint → microciclo → progressões) e enche o logbook até ao fim da duração escolhida. Não conta para a sua quota.",
+    "sim": {
+      "eyebrow": "Simulador de mesociclo",
+      "weeks_label": "Semanas de histórico",
+      "cta": "Simular {{count}} semanas",
+      "running": "A gerar histórico…",
+      "warning": "Dados demo. Não usar em clientes reais.",
+      "no_demo_client": "Nenhum cliente demo encontrado. Corra primeiro o instantâneo.",
+      "error_not_demo": "Recusado: o alvo não é um cliente demo.",
+      "confirm_replace": "Isto vai adicionar histórico demo a este cliente. Continuar?",
+      "summary": "{{weeks}} sem · {{sessions}} sessões · {{missed}} falhas · {{measurements}} medições · adesão {{adherence}}%",
+      "summary_partial": "Simulação parcial concluída"
+    },
     "tour": {
       "step_banner": "Este é o seu cliente demo com 1 ano de dados reais. Use-o para explorar todos os ecrãs em segurança.",
       "step_open_client": "Abra a página do cliente para ver a avaliação, foto e histórico.",

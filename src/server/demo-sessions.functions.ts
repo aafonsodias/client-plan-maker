@@ -283,3 +283,233 @@ export const advanceSimulation = createServerFn({ method: "POST" })
 
     return { ok: true as const, ticked };
   });
+
+/**
+ * simulateDemoMesocycle — founder demo-only history seeder.
+ *
+ * For a demo client (clients.is_demo = true owned by the caller), generates
+ * `weeks` of plausible past history into client_bookings + workout_sessions
+ * + client_measurements, deterministically (stable per (clientId, weekIdx)).
+ *
+ * Hard refusal if the client is NOT flagged is_demo. No schema change.
+ * No AI. Existing bump_pack_sessions_used trigger keeps pack accounting
+ * coherent automatically. Idempotency: appends history; does not delete
+ * prior rows. Caller (UI) confirms before re-running.
+ */
+function hash32(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function rand01(seed: number): number {
+  // Mulberry32 single step
+  let t = (seed + 0x6d2b79f5) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+export const simulateDemoMesocycle = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      clientId: z.string().uuid(),
+      weeks: z.number().int().min(4).max(12).default(12),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    // 1. Safety: must be a demo client owned by the caller.
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id, is_demo, full_name")
+      .eq("id", data.clientId)
+      .maybeSingle();
+    if (!client || (client as any).trainer_id !== userId || !(client as any).is_demo) {
+      return { ok: false as const, error: "not_demo", inserted: { bookings: 0, sessions: 0, measurements: 0 } };
+    }
+
+    // 2. Find latest ready plan (any block) for this demo client.
+    const { data: planRow } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, duration_weeks")
+      .eq("client_id", data.clientId)
+      .eq("trainer_id", userId)
+      .eq("status", "ready")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const plan = planRow as any | null;
+
+    // 3. Pull plan days for fabricating session entries (cycle through them).
+    const { data: days } = plan
+      ? await supabaseAdmin
+          .from("workout_plan_days")
+          .select("week_number, day_number, day_label, content")
+          .eq("plan_id", plan.id)
+          .order("week_number", { ascending: true })
+          .order("day_number", { ascending: true })
+      : { data: [] as any[] };
+    const dayPool = (days ?? []).filter(
+      (d: any) => Array.isArray(d.content?.exercises) && d.content.exercises.length > 0,
+    );
+
+    // 4. Persona profile (RPE/load curves) from assessment.
+    const archetype = await getPersonaArchetype(data.clientId);
+    const profile = getRpeProfile(archetype);
+
+    // 5. Optional pack link (first non-archived). Trigger handles sessions_used.
+    const { data: packRow } = await supabaseAdmin
+      .from("client_packs")
+      .select("id, weekly_frequency")
+      .eq("client_id", data.clientId)
+      .eq("trainer_id", userId)
+      .eq("archived", false)
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const pack = packRow as any | null;
+    const perWeek = Math.max(1, Math.min(7, pack?.weekly_frequency ?? 3));
+
+    // 6. Build deterministic week timeline ending last Sunday.
+    const today = new Date();
+    today.setHours(9, 0, 0, 0);
+    const skipWeek = hash32(data.clientId) % data.weeks; // 1 low-adherence pocket
+    const harderWeek = Math.max(1, Math.floor(data.weeks / 2));
+    const deloadWeek = data.weeks >= 6 ? data.weeks - 1 : -1;
+
+    const bookings: any[] = [];
+    const sessions: any[] = [];
+    let dayIdx = 0;
+
+    for (let w = 0; w < data.weeks; w++) {
+      // weekStart Monday of the week, `weeks - w - 1` weeks back from this week
+      const weeksBack = data.weeks - w - 1;
+      const weekStart = new Date(today);
+      const dow = (weekStart.getDay() + 6) % 7; // Monday=0
+      weekStart.setDate(weekStart.getDate() - dow - weeksBack * 7);
+
+      const isSkipWeek = w === skipWeek;
+      const isDeload = w === deloadWeek;
+      const isHarder = w === harderWeek;
+      const planWeek = plan ? ((w % (plan.duration_weeks ?? 4)) + 1) : 1;
+
+      // Spread `perWeek` sessions Mon/Wed/Fri-style.
+      const slots = [1, 3, 5, 2, 4, 0, 6].slice(0, perWeek);
+      for (let s = 0; s < slots.length; s++) {
+        const seed = hash32(`${data.clientId}:${w}:${s}`);
+        const r = rand01(seed);
+        const date = new Date(weekStart);
+        date.setDate(date.getDate() + slots[s]);
+        if (date > today) continue; // never future
+
+        // Status mix
+        let status: "done" | "no_show" | "cancelled" = "done";
+        if (isSkipWeek) {
+          status = r < 0.5 ? "cancelled" : "no_show";
+        } else if (r < 0.05) status = "cancelled";
+        else if (r < 0.15) status = "no_show";
+
+        const startsAt = new Date(date);
+        startsAt.setHours(8 + (s * 2) % 10, 0, 0, 0);
+
+        bookings.push({
+          trainer_id: userId,
+          client_id: data.clientId,
+          pack_id: pack?.id ?? null,
+          starts_at: startsAt.toISOString(),
+          duration_min: 60,
+          session_type: "in_person",
+          status,
+          notes: "[demo]",
+        });
+
+        if (status === "done" && plan && dayPool.length > 0) {
+          const d = dayPool[dayIdx % dayPool.length];
+          dayIdx++;
+          const exercises: ExerciseLike[] = d.content.exercises;
+          const entries = exercises.map((ex) =>
+            fabricateEntry(ex, isHarder ? planWeek + 1 : planWeek, profile, isDeload),
+          );
+          sessions.push({
+            plan_id: plan.id,
+            trainer_id: userId,
+            week_number: planWeek,
+            day_label: d.day_label ?? `Day ${d.day_number}`,
+            session_date: startsAt.toISOString().slice(0, 10),
+            session_notes: isDeload
+              ? "[demo] Deload — cargas e RPE recuados."
+              : isHarder
+                ? "[demo] Semana mais dura — pico de bloco."
+                : "[demo] Sessão concluída.",
+            entries,
+            logged_by: "trainer",
+            status: "done" as const,
+            client_feedback: maybePersonaFeedback(archetype, seed, 3) ?? null,
+          });
+        }
+      }
+    }
+
+    // 7. Weekly measurements (weight + waist) with mild downward drift.
+    const measurements: any[] = [];
+    const baseWeight = 78 + (hash32(data.clientId) % 12);
+    const baseWaist = 88 + (hash32(data.clientId + "w") % 8);
+    for (let w = 0; w < data.weeks; w++) {
+      const weeksBack = data.weeks - w - 1;
+      const day = new Date(today);
+      const dow = (day.getDay() + 6) % 7;
+      day.setDate(day.getDate() - dow - weeksBack * 7);
+      const noise = (rand01(hash32(`${data.clientId}:m:${w}`)) - 0.5) * 0.6;
+      measurements.push({
+        trainer_id: userId,
+        client_id: data.clientId,
+        measured_on: day.toISOString().slice(0, 10),
+        cadence: "weekly",
+        values: {
+          weight_kg: +(baseWeight - w * 0.18 + noise).toFixed(1),
+          waist_cm: +(baseWaist - w * 0.12 + noise * 0.5).toFixed(1),
+        },
+        notes: "[demo]",
+      });
+    }
+
+    // 8. Insert.
+    let insBookings = 0, insSessions = 0, insMeasurements = 0;
+    if (bookings.length) {
+      const { error, count } = await supabaseAdmin
+        .from("client_bookings")
+        .insert(bookings, { count: "exact" });
+      if (!error) insBookings = count ?? bookings.length;
+    }
+    if (sessions.length) {
+      const { error, count } = await supabaseAdmin
+        .from("workout_sessions")
+        .insert(sessions, { count: "exact" });
+      if (!error) insSessions = count ?? sessions.length;
+    }
+    if (measurements.length) {
+      const { error, count } = await supabaseAdmin
+        .from("client_measurements")
+        .insert(measurements, { count: "exact" });
+      if (!error) insMeasurements = count ?? measurements.length;
+    }
+
+    const doneCount = bookings.filter((b) => b.status === "done").length;
+    const missedCount = bookings.filter((b) => b.status !== "done").length;
+    const adherencePct = bookings.length
+      ? Math.round((doneCount / bookings.length) * 100)
+      : 0;
+
+    return {
+      ok: true as const,
+      weeks: data.weeks,
+      adherencePct,
+      missed: missedCount,
+      inserted: { bookings: insBookings, sessions: insSessions, measurements: insMeasurements },
+    };
+  });
