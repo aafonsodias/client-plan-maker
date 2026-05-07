@@ -7,7 +7,19 @@
   "new_booking": "New session",
   "manage_packs": "Manage packs",
   "back_to_schedule": "Back to schedule",
-  "empty_week": "No sessions booked. Tap a slot to add one.",
+  "empty_week": "No sessions scheduled this week.",
+  "tab": {
+    "week": "Week",
+    "packs": "Packs"
+  },
+  "empty": {
+    "headline": "No sessions scheduled this week.",
+    "step1": "Client",
+    "step2": "Pack",
+    "step3": "Time",
+    "cta_new": "New session",
+    "cta_packs": "See active packs"
+  },
   "panel": {
     "expected_income": "Expected income",
     "sessions_this_week": "Sessions this week",
@@ -37,6 +49,14 @@
   "pack": {
     "title": "Packs",
     "new": "New pack",
+    "default_label": "Pack 10",
+    "manage": "Manage",
+    "book_session": "Book session",
+    "scheduled_this_week": "{{count}} scheduled",
+    "per_session_short": "€{{price}}/session",
+    "per_week_short": "{{count}}×/wk",
+    "sessions_short": "{{used}}/{{total}} sessions",
+    "more_actions": "More actions",
     "label": "Label",
     "session_type": "Session type",
     "price": "Price per session (€)",
@@ -50,7 +70,7 @@
     "sessions_left": "{{left}}/{{total}} left",
     "archive": "Archive",
     "unarchive": "Unarchive",
-    "empty": "No packs yet. Create a pack to track revenue and renewals.",
+    "empty": "No packs yet. Create a pack to track sessions and revenue.",
     "demo_seed": "Demo seed",
     "demo_seeded": "Created {{count}} sessions this week"
   }
