@@ -1,637 +1,135 @@
-Approved. Execute R68.2 exactly within this constrained bugfix scope.
 
-This is a bugfix/stabilization round, not a product expansion round.
+## Diagnóstico do crash que ainda aparece
 
-Do not start any new feature work.
+O stack trace dos console logs aponta literalmente para `Landing` em `src/routes/index.tsx:52` — não para Schedule. O componente faz:
 
-======================================================================
+```
+useAuth · useTranslation · useCurrency · ...  ← 15 hooks
+if (authLoading) return <Splash/>
+const [billing, setBilling] = useState("annual")  ← 16º hook
+```
 
-R68.2 — FINAL APPROVED EXECUTION SCOPE
+Quando `authLoading` passa de `true` → `false` (hidratação do Supabase em hard refresh), o React vê 15 hooks no render anterior e 16 no seguinte → "Rendered more hooks than during the previous render". O `<CatchBoundary>` do TanStack Router engole o erro e mostra o fallback genérico, que o utilizador interpreta como "schedule still crashes" porque acontece em hard-refresh de qualquer rota (`/` é montado pelo router antes de redirecionar).
 
-======================================================================
+Os hotfixes anteriores ao `ScheduleShell` estavam corretos mas não tocavam neste ficheiro. O `ScheduleShell` em si já está estável (single-tree).
 
-Proceed with the proposed plan, with the following constraints and clarifications.
+## P0 — Fix landing hook crash (CAUSA REAL)
 
-Primary goal:
+**Ficheiro:** `src/routes/index.tsx`
 
-Make Schedule/Packs reliable and usable before any new product work.
+Mover **TODOS** os hooks (`useState`, `useMemo`, etc.) para antes de qualquer early return. O splash de `authLoading` passa a ser apenas o JSX condicional no return.
 
-This round is accepted only if it fixes:
+```tsx
+function Landing() {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { t } = useTranslation([...]);
+  const { code: currencyCode } = useCurrency();
+  const [billing, setBilling] = useState<Billing>("annual");  // ← subir
+  const signedIn = !!user;
+  // ... derivados
+  if (authLoading) return <Splash/>;
+  return (...);
+}
+```
 
-1. the remaining hook crash
+Validar também que `useHeroRotation` e outros sub-componentes não têm o mesmo padrão.
 
-2. invisible out-of-hours bookings
+## P1 — Out-of-hours bookings visíveis
 
-3. frequency guard using the wrong week
+**Ficheiro:** `src/routes/schedule.tsx` (`ScheduleWeek`)
 
-4. booking save/refetch reliability
+Já existe lógica parcial (R68.2). Confirmar que:
+- bookings com `hour < 6 || hour >= 22` são listados num bloco "Sessões fora do horário visível" / "Sessions outside visible hours"
+- cada linha clicável abre `BookingDialog` em modo edição
+- chave i18n: `schedule.out_of_hours.heading`
 
-5. mid-pack representation only if already safely supported
+## P2 — Frequency guard usa semana do candidato
 
-6. minor clarity fixes only after P0-P4 pass
+**Ficheiro:** `src/routes/schedule.tsx` (`BookingDialog`)
 
-======================================================================
+Já implementado em R68.2 via fetch direto Supabase pela ISO week do `starts_at` candidato. Auditar e garantir:
+- exclui o próprio booking quando edita (`neq("id", editingId)`)
+- exclui `status = cancelled`
+- string i18n já correta
 
-STRICT SCOPE GUARD
+## P3 — Save/refetch reliability
 
-======================================================================
+**Ficheiros:** `src/routes/schedule.tsx`, `src/routes/schedule.packs.tsx`
 
-Allowed:
+- `bookingTick` já propaga para `ScheduleWeek` e `PacksPanel` (R68.2). Confirmar que `RevenuePanel` também recebe / refetcha após mutação.
+- `onSavedJumpToWeek` já existe — verificar que limpa search params (`newBooking/clientId/packId`) com `replace: true` para evitar re-abrir o dialog em StrictMode.
 
-- bugfixes
+## P4 — Pack accounting honesto
 
-- small UI clarity fixes
+**Ficheiros:** `src/routes/schedule.packs.tsx`, `src/i18n/locales/{pt,en}/schedule.json`
 
-- i18n strings required by the bugfixes
+Derivado client-side (sem schema, sem novo server fn):
 
-- existing-field support for `sessions_used` if safe
+```
+usedBeforeProtocol  = client_packs.sessions_used
+completedInProtocol = bookings.filter(pack_id == p.id && status != 'cancelled' && (starts_at + duration) < now).length
+upcomingScheduled   = bookings.filter(pack_id == p.id && status != 'cancelled' && starts_at >= now).length
+effectiveUsed       = usedBeforeProtocol + completedInProtocol
+remaining           = max(0, pack_size - effectiveUsed)
+```
 
-- existing function payload extension only if minimal and safe
+Card compacto mostra `remaining/total` + chip "X agendadas". Detalhe completo (4 linhas) dentro do `PackFormDialog` (modo manage).
 
-Forbidden:
+`sessions_used` já está exposto no `PackFormDialog` e já passa pelo `upsertPack` (R68.2) — apenas adicionar validação `0 <= sessions_used <= pack_size`.
 
-- schema changes
+Estender query existente em `PacksPanel` (`select("pack_id, status, starts_at, duration_min")`) — já é uma read scoped, sem nova função.
 
-- migrations
+## P5 — Mobile polish
 
-- new server functions
+**Ficheiro:** `src/routes/schedule.tsx` (DayStrip + header)
 
-- recurrence
+- Weekday pills: stack vertical (`flex-col`), label abreviada PT `SEG/TER/QUA/QUI/SEX/SÁB/DOM` (já existem), data em baixo, `min-w-[2.75rem]`, `px-1.5 py-1`, `text-[10px]` label.
+- Header: `flex items-center justify-between` numa só linha — título à esquerda, `Tabs` à direita. Em ≤375px envolve graciosamente.
 
-- payments
+## P6 — Long-horizon insight
 
-- direct debit
+**Deferido.** Só ship se P0–P5 limparem em <2h. Caso contrário, fica para R69.
 
-- monthly/yearly views
+## P7 — Landing assessment-first
 
-- new routes
+**Proposal-only nesta ronda.** Resultado fica documentado em `mem/features/landing-assessment-first.md` (rascunho de copy + secções) sem tocar em `src/routes/index.tsx` além do P0.
 
-- new dependencies
+## i18n
 
-- PDF changes
+PT/EN obrigatórios. ES/HI espelham EN.
 
-- engine changes
-
-- generation changes
-
-- PKL changes
-
-- AI scheduling
-
-- drag/drop
-
-- right-click menus
-
-- exercise library
-
-- videos
-
-- education ebook
-
-- batch session creation
-
-- add-client-in-dialog
-
-If any item requires schema or a new server function:
-
-STOP and report.
-
-Do not hack around missing schema with notes, labels, fake bookings, hidden assumptions, or misleading counters.
-
-======================================================================
-
-P0 — HOOK CRASH FIX
-
-======================================================================
-
-Proceed with removing the unstable route-level early-return branch in `ScheduleShell` that renders `<Outlet />` for `/schedule/*`.
-
-Reason:
-
-`/schedule/packs` already redirects in `src/routes/schedule.packs.tsx`, so the parent route does not need to conditionally swap between child outlet mode and tab mode.
-
-The same `ScheduleShell` must not render different hook/tree paths depending on redirect/tab state.
-
-Required:
-
-- keep `ScheduleShell` as one stable tab shell on every render
-
-- all hooks at top level
-
-- no hooks after early returns
-
-- no hooks inside conditional branches
-
-- no hooks only called for one tab
-
-- no hooks only called when data/search params exist
-
-- nested components/hooks audited:
-
-  - `ScheduleTabs`
-
-  - `ScheduleWeek`
-
-  - `DayStrip`
-
-  - `BookingDialog`
-
-  - `PacksPanel`
-
-  - `PackFormDialog`
-
-Also fix the hard-refresh hydration mismatch only if minimal:
-
-- server rendered “Loading…”
-
-- client immediately rendered “A carregar…” after persisted locale applied
-
-Make AppShell auth-loading fallback locale-stable if that is directly contributing to hard-refresh instability.
-
-Do not broadly refactor AppShell or i18n.
-
-Acceptance:
-
-- hard refresh `/schedule`
-
-- hard refresh `/schedule?tab=packs`
-
-- hard refresh `/schedule?tab=week`
-
-- switch tabs repeatedly
-
-- no hook mismatch warning
-
-- no runtime crash
-
-======================================================================
-
-P1 — OUT-OF-HOURS BOOKINGS
-
-======================================================================
-
-Proceed with keeping the existing 06:00-22:00 grid.
-
-Compute bookings outside visible hours in `ScheduleWeek`.
-
-Render an out-of-hours section:
-
-- below the desktop grid
-
-- above or near the mobile list
-
-PT:
-
-“Sessões fora do horário visível”
-
-EN:
-
-“Sessions outside visible hours”
-
-Each row must show:
-
-- client name
-
-- time
-
-- type
-
-- duration
-
-- clickable/editable booking
-
-Example PT:
-
-“Elsa Tavares · 02:00 · Presencial · 60′”
-
-Example EN:
-
-“Elsa Tavares · 02:00 · In person · 60′”
-
-Acceptance:
-
-- a 02:00 booking is visible
-
-- it can be opened/edited
-
-- no booking is hidden just because it is outside the grid range
-
-Do not build a 24h calendar redesign.
-
-======================================================================
-
-P2 — FREQUENCY GUARD WEEK CONTEXT
-
-======================================================================
-
-Proceed with replacing the current `usedThisWeek` logic in `BookingDialog`.
-
-The guard must count the week of the candidate booking date, not the displayed/current week.
-
-Required:
-
-- use candidate booking date/time
-
-- compute ISO week start/end from that candidate date
-
-- count non-cancelled bookings
-
-- same client
-
-- same selected pack
-
-- inside candidate week
-
-- exclude the edited booking ID
-
-- client-side only
-
-- no new server function
-
-Copy:
-
-PT:
-
-“Esta cliente já tem {{used}}/{{agreed}} sessões marcadas nesta semana.”
-
-EN:
-
-“This client already has {{used}}/{{agreed}} sessions scheduled for this week.”
-
-Acceptance:
-
-- current week counts current week
-
-- future week counts future week
-
-- cancelled bookings excluded
-
-- editing existing booking does not count itself as extra
-
-======================================================================
-
-P3 — MID-PACK SUPPORT
-
-======================================================================
-
-Proceed only if safe with existing schema and existing function.
-
-Known fields:
-
-- `client_packs.pack_size` exists
-
-- `client_packs.sessions_used` exists
-
-- no separate `sessions_remaining`
-
-- remaining is derived as `pack_size - sessions_used`
-
-- bookings do not currently auto-drive `sessions_used`
-
-Allowed controlled exception:
-
-You may expose `sessions_used` in `PackFormDialog` and pass it through the existing `upsertPack` function only if:
-
-- `sessions_used` already exists in `client_packs`
-
-- `upsertPack` already owns pack create/update
-
-- change is limited to extending existing input/payload
-
-- no migration
-
-- no new server function
-
-- no new accounting model
-
-- no automatic booking-to-sessions_used sync in this round
-
-Fields:
-
-PT:
-
-- “Total de sessões”
-
-- “Sessões já usadas”
-
-- “Sessões restantes”
-
-EN:
-
-- “Total sessions”
-
-- “Sessions already used”
-
-- “Sessions remaining”
-
-Validation:
-
-- `sessions_used >= 0`
-
-- `sessions_used <= pack_size`
-
-- remaining = `pack_size - sessions_used`
-
-- do not allow negative remaining
-
-- do not allow used > total
-
-Copy must be precise.
-
-If displaying used:
-
-PT:
-
-“{{used}}/{{total}} sessões usadas”
-
-EN:
-
-“{{used}}/{{total}} sessions used”
-
-If displaying remaining:
-
-PT:
-
-“{{remaining}}/{{total}} sessões restantes”
-
-EN:
-
-“{{remaining}}/{{total}} sessions remaining”
-
-Do not mix used and remaining in the same label.
-
-Acceptance:
-
-- PT can represent an existing client who is mid-pack
-
-- example: pack_size=10, sessions_used=4 → 6 remaining
-
-- pack card must not falsely show 10/10 remaining
-
-- no fake bookings
-
-- no notes hacks
-
-- no schema changes
-
-- no new server function
-
-If this becomes more than a small safe extension:
-
-defer and report the minimal future requirement.
-
-======================================================================
-
-P4 — BOOKING SAVE / REFRESH RELIABILITY
-
-======================================================================
-
-Proceed with the proposed refresh order after booking save/update/delete/duplicate:
-
-1. bookings for the displayed week
-
-2. packs
-
-3. parent `bookingTick`
-
-If a newly saved booking belongs to a different week than the currently displayed one:
-
-move the schedule’s `monday` state to that booking’s week before/while refreshing so the user sees it immediately.
-
-Keep:
-
-- Packs scheduled-count refetch tied to `bookingTick`
-
-- pack list changes as dependency
-
-- search-param prefill cleanup before opening dialog
-
-- no stale re-triggering
-
-Acceptance:
-
-- Pack → Marcar sessão → Save → Semana shows booking immediately
-
-- future-week booking moves view to that week or is immediately visible
-
-- revenue updates
-
-- scheduled count updates
-
-- Pack scheduled count updates when returning to Pacotes
-
-- no hard refresh required
-
-======================================================================
-
-P5 — SMALL CLARITY FIXES ONLY AFTER P0-P4
-
-======================================================================
-
-Only after P0-P4 are fixed and verified.
-
-Dialog titles:
-
-PT:
-
-- “Nova sessão”
-
-- “Editar sessão”
-
-- “Novo pacote”
-
-- “Gerir pacote”
-
-EN:
-
-- “New session”
-
-- “Edit session”
-
-- “New pack”
-
-- “Manage pack”
-
-Pack color picker:
-
-- on create, choose first unused active pack/client color when palette supports it
-
-- keep manual picker visible
-
-- do not repeat colors unless palette is exhausted
-
-If no safe color field exists:
-
-defer.
-
-Do not implement:
-
-- batch creation
-
-- recurring slots
-
-- copy/paste patterns
-
-- add-client-in-dialog
-
-- monthly/yearly views
-
-- exercise intelligence
-
-- media/videos
-
-======================================================================
-
-I18N
-
-======================================================================
-
-Add only required keys for this bugfix round.
-
-PT-PT and EN required.
-
-ES/HI may mirror EN if that is current project convention.
-
-Required likely keys:
-
-- out-of-hours heading
-
-- frequency guard copy
-
-- mid-pack fields, if shipped
-
-- used/remaining labels
-
-- dialog titles
-
-- selected-day/out-of-hours details if touched
-
-No hardcoded user-facing strings.
-
-======================================================================
-
-VERIFICATION
-
-======================================================================
-
-Use browser at 390px/375px where possible.
-
-Must verify:
-
-- hard refresh `/schedule`
-
-- hard refresh `/schedule?tab=packs`
-
-- hard refresh `/schedule?tab=week`
-
-- hard refresh `/schedule?tab=week&newBooking=1&clientId=X&packId=Y`
-
-- switch tabs repeatedly
-
-- create/edit a 02:00 booking and confirm visible/editable
-
-- current-week frequency guard
-
-- future-week frequency guard
-
-- Pack → Marcar sessão → Save → Semana updates immediately
-
-- revenue updates without hard refresh
-
-- scheduled counts update without hard refresh
-
-- no hook mismatch warning
-
-- no runtime crash
-
-Run the allowed project test/typecheck path through the harness expectations.
-
-Do not add unnecessary build/test commands outside the project’s existing workflow.
-
-======================================================================
-
-FINAL ACCEPTANCE
-
-======================================================================
-
-R68.2 is accepted only if:
-
-1. `/schedule` hard refresh no longer crashes.
-
-2. `/schedule?tab=packs` hard refresh no longer crashes.
-
-3. `/schedule?tab=week` hard refresh no longer crashes.
-
-4. `/schedule?tab=week&newBooking=1&clientId=...&packId=...` hard refresh no longer crashes.
-
-5. No hook mismatch warning remains.
-
-6. 02:00 booking is visible and editable.
-
-7. Frequency guard counts the week of the booking date.
-
-8. Future-week booking is visible immediately after save.
-
-9. Pack → Marcar sessão → Save → Semana shows booking immediately.
-
-10. Pack scheduled count updates without hard refresh.
-
-11. Mid-pack entry is safely supported or explicitly deferred.
-
-12. No hidden revenue assumptions.
-
-13. Dialog titles are clear if touched.
-
-14. `tsc --noEmit` clean, if this is the project’s accepted typecheck.
-
-15. No forbidden scope added.
-
-======================================================================
-
-FINAL REPORT REQUIRED
-
-======================================================================
-
-Report:
-
-- exact hook crash cause
-
-- why R68.1 was insufficient
-
-- files changed
-
-- out-of-hours booking solution
-
-- frequency guard fix
-
-- booking refetch result
-
-- search-param cleanup behaviour
-
-- mid-pack audit/result
-
-- whether `sessions_used` shipped or was deferred
-
-- if `sessions_used` shipped, confirm no migration and no new server function
-
-- clarity fixes shipped
-
-- deferred items
-
-- 375px/390px smoke result
-
-- confirmation:
-
-  - no schema changes
-
-  - no new server functions
-
-  - no recurrence
-
-  - no payments
-
-  - no new routes
-
-  - no engine/generation/PKL changes
-
-  - no new dependencies
+Novas keys em `schedule.json`:
+- `out_of_hours.heading`
+- `pack.used_before_protocol`
+- `pack.completed_in_protocol`
+- `pack.upcoming_scheduled`
+- `pack.remaining_label`
+- `pack.sessions_used_invalid`
+
+## Scope guard — confirmação
+
+- ❌ schema changes
+- ❌ migrations
+- ❌ novas server functions
+- ❌ novas rotas
+- ❌ novas dependências
+- ❌ recurrence / payments / direct debit
+- ❌ engine / generation / PKL
+- ✅ apenas bugfixes, derivados client-side, copy, i18n
+
+## Verificação
+
+- Hard-refresh `/`, `/schedule`, `/schedule?tab=packs`, `/schedule?tab=week&newBooking=1&clientId=...&packId=...` × 5
+- Tab switch repetido
+- Booking 02:00 visível e editável
+- Frequency guard semana futura
+- Pack 10 total, 4 used → mostra 6 remaining
+- 375px / 390px sem overflow
+- `tsc --noEmit` clean
+
+## Final report incluirá
+
+- Causa exata: early return antes de `useState` em `Landing`
+- Porque os fixes anteriores falharam: olhámos só para `ScheduleShell`
+- Ficheiros tocados
+- Scope confirmado intacto

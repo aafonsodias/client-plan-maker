@@ -30,6 +30,12 @@ function Landing() {
   const { code: currencyCode } = useCurrency();
   const activeSymbol = CURRENCIES.find((c) => c.code === currencyCode)?.symbol ?? "€";
   const signedIn = !!user;
+  // CRITICAL: ALL hooks must run before any early return. Previously
+  // `useState(billing)` lived after the `if (authLoading) return ...`
+  // branch, so the hook count grew from 15 → 16 the moment Supabase
+  // hydrated the session on a hard refresh, throwing
+  // "Rendered more hooks than during the previous render."
+  const [billing, setBilling] = useState<Billing>("annual");
   // While Supabase rehydrates the persisted session on a hard refresh, the
   // user briefly looks "logged out" and we'd flash the marketing landing
   // before the AppShell guard kicks in. Show a neutral splash until the
@@ -48,7 +54,6 @@ function Landing() {
   const closingCtaLabel = signedIn
     ? t("plan:landing.closing.cta_signed_in")
     : t("plan:landing.closing.cta_signed_out");
-  const [billing, setBilling] = useState<Billing>("annual");
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
