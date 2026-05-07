@@ -298,28 +298,61 @@ function ScheduleWeek() {
       </div>
 
       {loading ? null : bookings.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-secondary/20 p-6 text-center text-sm text-muted-foreground">
-          {t("empty_week")}
-          <div className="mt-3 flex justify-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                const r: any = await seed({});
-                if (r?.ok) {
-                  toast.success(t("pack.demo_seeded", { count: r.count }));
-                  await refresh();
-                  await refreshPacks();
-                } else if (r?.error === "no_clients") {
-                  toast.error(tc("nav.clients") + " · 0");
-                } else {
-                  toast.error(r?.error ?? "error");
-                }
-              }}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              {t("pack.demo_seed")}
-            </Button>
+        <div className="flex justify-center">
+          <div className="w-full max-w-[320px] rounded-xl border border-dashed border-border bg-secondary/20 p-5 text-center">
+            <p className="text-sm text-foreground">{t("empty.headline")}</p>
+            <ol className="mt-4 flex items-center justify-center gap-2 text-[11px] uppercase tracking-widest text-muted-foreground">
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">1</span>
+                {t("empty.step1")}
+              </li>
+              <span aria-hidden>·</span>
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">2</span>
+                {t("empty.step2")}
+              </li>
+              <span aria-hidden>·</span>
+              <li className="flex items-center gap-1">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px]">3</span>
+                {t("empty.step3")}
+              </li>
+            </ol>
+            <div className="mt-5 flex flex-col items-center gap-2">
+              <Button
+                size="sm"
+                className="min-h-10 w-full"
+                onClick={() => setCreating({ startsAt: nextCoachableSlot().toISOString() })}
+              >
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                {t("empty.cta_new")}
+              </Button>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                onClick={() => navigate({ to: "/schedule", search: { tab: "packs" } })}
+              >
+                {t("empty.cta_packs")}
+              </button>
+              <button
+                type="button"
+                className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground/80 hover:text-muted-foreground"
+                onClick={async () => {
+                  const r: any = await seed({});
+                  if (r?.ok) {
+                    toast.success(t("pack.demo_seeded", { count: r.count }));
+                    await refresh();
+                    await refreshPacks();
+                  } else if (r?.error === "no_clients") {
+                    toast.error(tc("nav.clients") + " · 0");
+                  } else {
+                    toast.error(r?.error ?? "error");
+                  }
+                }}
+              >
+                <Sparkles className="h-3 w-3" />
+                {t("pack.demo_seed")}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -328,7 +361,7 @@ function ScheduleWeek() {
       <BookingDialog
         open={!!creating}
         onOpenChange={(v) => !v && setCreating(null)}
-        initial={creating ? { startsAt: creating.startsAt } : undefined}
+        initial={creating ? { startsAt: creating.startsAt, clientId: creating.clientId, packId: creating.packId } : undefined}
         clients={clients}
         packs={packs}
         weekBookings={bookings}
