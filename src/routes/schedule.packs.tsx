@@ -278,23 +278,27 @@ export function PacksPanel({
   );
 }
 
-function PackFormDialog({
+export function PackFormDialog({
   open,
   onOpenChange,
   editing,
   clients,
+  initialClientId,
+  lockClient,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing?: Pack;
   clients: ClientLite[];
-  onSaved: () => void | Promise<void>;
+  initialClientId?: string;
+  lockClient?: boolean;
+  onSaved: (savedId?: string) => void | Promise<void>;
 }) {
   const { t } = useTranslation("schedule");
   const save = useServerFn(upsertPack);
 
-  const [clientId, setClientId] = useState(editing?.client_id ?? "");
+  const [clientId, setClientId] = useState(editing?.client_id ?? initialClientId ?? "");
   const [label, setLabel] = useState(editing?.label ?? t("pack.default_label"));
   const [sessionType, setSessionType] = useState<"in_person" | "online">(editing?.session_type ?? "in_person");
   const [price, setPrice] = useState<number | "">(editing ? Number(editing.price_per_session_eur ?? 0) : "");
@@ -308,7 +312,7 @@ function PackFormDialog({
 
   useEffect(() => {
     if (!open) return;
-    setClientId(editing?.client_id ?? "");
+    setClientId(editing?.client_id ?? initialClientId ?? "");
     setLabel(editing?.label ?? t("pack.default_label"));
     setSessionType(editing?.session_type ?? "in_person");
     setPrice(editing ? Number(editing.price_per_session_eur ?? 0) : "");
@@ -317,7 +321,7 @@ function PackFormDialog({
     setStart(editing?.start_date ?? new Date().toISOString().slice(0, 10));
     setColor(editing?.color ?? "emerald");
     setSessionsUsed(editing?.sessions_used ?? 0);
-  }, [open, editing]);
+  }, [open, editing, initialClientId]);
 
   const submit = async () => {
     if (!clientId) return toast.error(t("form.select_client"));
@@ -347,7 +351,7 @@ function PackFormDialog({
       },
     });
     setBusy(false);
-    if (r?.ok) await onSaved();
+    if (r?.ok) await onSaved(r.id as string | undefined);
     else toast.error(r?.error ?? "error");
   };
 
