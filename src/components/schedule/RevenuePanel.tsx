@@ -16,12 +16,20 @@ export function RevenuePanel({
   packsEndingSoon,
 }: Props) {
   const { t } = useTranslation("schedule");
+  const { t: tc } = useTranslation("common");
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Stat
         icon={<Coins className="h-4 w-4" />}
         label={t("panel.expected_income")}
-        value={<PriceTag eur={expectedIncomeEur} interactive={false} />}
+        value={
+          <div>
+            <PriceTag eur={expectedIncomeEur} interactive={false} />
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              {tc("dashboard.revenue_caption")}
+            </p>
+          </div>
+        }
       />
       <Stat
         icon={<CalendarCheck className="h-4 w-4" />}

@@ -43,6 +43,20 @@
   "dashboard": {
     "eyebrow": "Welcome back",
     "title": "Clients",
+    "today": {
+      "title": "Today",
+      "empty": "Nothing urgent. Good week.",
+      "assessment_incomplete": "{{name}} · assessment incomplete",
+      "ready_for_protocol": "{{name}} · ready for protocol",
+      "plan_awaiting": "{{name}} · plan awaiting approval",
+      "no_sessions_week": "0 sessions scheduled this week",
+      "pack_ending": "{{name}} · pack ending"
+    },
+    "revenue_caption": "based on sessions scheduled this week",
+    "schedule": {
+      "frequency_warn": "This client already has {{used}}/{{agreed}} sessions scheduled this week.",
+      "extra_session": "Schedule extra session"
+    },
     "new_client": "New client",
     "mode_invite": "Send assessment link",
     "mode_manual": "Add manually",

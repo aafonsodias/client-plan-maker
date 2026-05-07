@@ -9,7 +9,7 @@ import { startOfIsoWeek, addDays, fmtWeekRange, packBlockClasses, type Pack, typ
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PriceTag } from "@/components/PriceTag";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
-import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap } from "lucide-react";
+import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap, ArrowRight } from "lucide-react";
 import { MessageComposerSheet, type ComposerKind, type ComposerCtx } from "./MessageComposerSheet";
 
 /**
@@ -51,6 +51,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [packs, setPacks] = useState<Pack[]>([]);
+  const [latestPlanByClient, setLatestPlanByClient] = useState<Record<string, { id: string; status: string }>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +64,24 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       setPacks(((pk as any)?.rows ?? []) as Pack[]);
     })();
   }, [user, mondayIso, listWeek, listPacksFn]);
+
+  // Pull latest plan per client (status only) — used for "Today" signals
+  useEffect(() => {
+    if (!user || clients.length === 0) return;
+    void (async () => {
+      const ids = clients.map((c) => c.id);
+      const { data } = await supabase
+        .from("workout_plans")
+        .select("id, client_id, status, updated_at")
+        .in("client_id", ids)
+        .order("updated_at", { ascending: false });
+      const out: Record<string, { id: string; status: string }> = {};
+      for (const r of (data ?? []) as Array<{ id: string; client_id: string; status: string }>) {
+        if (!out[r.client_id]) out[r.client_id] = { id: r.id, status: r.status };
+      }
+      setLatestPlanByClient(out);
+    })();
+  }, [user, clients]);
 
   // Aggregate revenue: sum priced bookings (use pack price when linked)
   const expectedIncome = useMemo(() => {
@@ -159,8 +178,118 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
     return items.slice(0, 6);
   }, [clients, packs, clientById, lang]);
 
+  // ---- Today / Needs attention (ranked operational signals) ----
+  type TodayRow = {
+    key: string;
+    text: string;
+    to: string;
+    params?: Record<string, string>;
+    tone: "amber" | "emerald" | "rose" | "muted";
+  };
+  const todayRows = useMemo<TodayRow[]>(() => {
+    const rows: TodayRow[] = [];
+    for (const c of clients) {
+      const plan = latestPlanByClient[c.id];
+      // 1. Plan awaiting approval (highest priority — coach action ready)
+      if (plan?.status === "ready") {
+        rows.push({
+          key: `plan-${c.id}`,
+          text: t("dashboard.today.plan_awaiting", { name: c.full_name }),
+          to: "/plans/$planId",
+          params: { planId: plan.id },
+          tone: "amber",
+        });
+        continue;
+      }
+      // 2. Ready for protocol (intake submitted, no plan yet)
+      if (c.intake_status === "submitted" && !plan) {
+        rows.push({
+          key: `ready-${c.id}`,
+          text: t("dashboard.today.ready_for_protocol", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "emerald",
+        });
+        continue;
+      }
+      // 3. Assessment in progress
+      if (c.intake_status === "in_progress" || c.intake_status === "sent") {
+        rows.push({
+          key: `assess-${c.id}`,
+          text: t("dashboard.today.assessment_incomplete", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "muted",
+        });
+      }
+    }
+    // 4. No sessions scheduled this week
+    if (clients.length > 0 && bookings.length === 0) {
+      rows.push({
+        key: "no-sessions",
+        text: t("dashboard.today.no_sessions_week"),
+        to: "/schedule",
+        tone: "amber",
+      });
+    }
+    // 5. One pack ending (top by fewest left)
+    const ending = packs
+      .map((p) => ({ p, left: Math.max(0, p.pack_size - p.sessions_used) }))
+      .filter((x) => x.left > 0 && x.left <= 2)
+      .sort((a, b) => a.left - b.left)[0];
+    if (ending) {
+      const c = clientById.get(ending.p.client_id);
+      if (c) {
+        rows.push({
+          key: `pack-${ending.p.id}`,
+          text: t("dashboard.today.pack_ending", { name: c.full_name }),
+          to: "/clients/$clientId",
+          params: { clientId: c.id },
+          tone: "rose",
+        });
+      }
+    }
+    return rows.slice(0, 5);
+  }, [clients, latestPlanByClient, bookings, packs, clientById, t]);
+
   return (
     <section className="space-y-4">
+      {/* Today / Needs attention */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>{t("dashboard.today.title")}</span>
+          <Sparkles className="h-3 w-3 text-amber-500" />
+        </div>
+        {todayRows.length === 0 ? (
+          <p className="px-1 py-3 text-xs text-muted-foreground">
+            {t("dashboard.today.empty")}
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {todayRows.map((r) => {
+              const dot =
+                r.tone === "amber" ? "bg-amber-500"
+                : r.tone === "emerald" ? "bg-emerald-500"
+                : r.tone === "rose" ? "bg-rose-500"
+                : "bg-muted-foreground/40";
+              return (
+                <li key={r.key}>
+                  <Link
+                    to={r.to as any}
+                    params={r.params as any}
+                    className="group flex items-center gap-3 py-2 transition hover:text-foreground"
+                  >
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{r.text}</span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       {/* Hero strip */}
       <div className="flex flex-wrap items-baseline justify-between gap-3 rounded-2xl border border-border bg-card px-5 py-4">
         <div className="min-w-0">
@@ -183,6 +312,9 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               <Coins className="h-3.5 w-3.5 text-amber-500" />
               <PriceTag eur={expectedIncome} interactive={false} />
             </div>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              · {t("dashboard.revenue_caption")}
+            </p>
           </div>
           <Link
             to="/plans/quick"
