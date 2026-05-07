@@ -778,7 +778,16 @@ function BookingDialog({
           {clientId && (
             <div>
               <Label>{t("form.pack")}</Label>
-              <Select value={packId || "__none__"} onValueChange={(v) => setPackId(v === "__none__" ? "" : v)}>
+              <Select
+                value={packId || "__none__"}
+                onValueChange={(v) => {
+                  if (v === "__new__") {
+                    setInlinePackOpen(true);
+                    return;
+                  }
+                  setPackId(v === "__none__" ? "" : v);
+                }}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">{t("form.no_pack")}</SelectItem>
@@ -787,6 +796,9 @@ function BookingDialog({
                       {p.label} · {Math.max(0, p.pack_size - p.sessions_used)}/{p.pack_size}
                     </SelectItem>
                   ))}
+                  <SelectItem value="__new__">
+                    + {t("pack.new")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
