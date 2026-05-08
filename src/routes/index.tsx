@@ -158,13 +158,13 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden flex min-h-[100svh] flex-col justify-center md:block md:min-h-0">
         <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-hero)" }} />
         <div
           className="absolute -right-32 top-20 -z-10 h-96 w-96 rounded-full opacity-30 blur-3xl"
           style={{ background: "var(--gradient-accent)" }}
         />
-        <div className="mx-auto grid max-w-6xl items-start gap-12 px-6 pt-10 pb-24 text-foreground sm:pt-16 sm:pb-32 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl items-start gap-6 px-6 pt-6 pb-8 text-foreground sm:gap-12 sm:pt-16 sm:pb-32 md:grid-cols-2">
           <div className="min-w-0">
             <HeroHeadlineRotator />
             <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
@@ -216,7 +216,7 @@ function Landing() {
               </div>
             )}
           </div>
-          <div className="flex min-w-0 flex-col items-center md:pt-8">
+          <div className="hidden min-w-0 flex-col items-center md:flex md:pt-8">
             <div className="relative w-full max-w-[560px] origin-top scale-[0.95]">
               {/* Protocol glow — replaces the dark drop shadow */}
               <div
