@@ -1,62 +1,68 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Sun, CloudSun, Moon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "protocol_theme";
-type Mode = "deep" | "sage" | "mist";
-const MODES: Mode[] = ["deep", "sage", "mist"];
+type Mode = "light" | "medium" | "dark";
+const MODES: Mode[] = ["light", "medium", "dark"];
 
-/* Map therapeutic modes to the existing CSS class hooks so we don't have to
- * rewrite every selector across the app:
- *   deep → :root (no class)
- *   sage → .slate
- *   mist → .light
- */
-
-function applyTheme(mode: Mode) {
+export function applyTheme(mode: Mode) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  root.classList.remove("light", "slate");
-  if (mode === "mist") root.classList.add("light");
-  else if (mode === "sage") root.classList.add("slate");
+  root.classList.remove("theme-light", "theme-medium", "theme-dark", "light", "slate", "dark");
+  root.classList.add(`theme-${mode}`);
+  if (mode === "dark") root.classList.add("dark");
   root.dataset.theme = mode;
 }
 
-function readInitial(): Mode {
-  if (typeof window === "undefined") return "deep";
+export function readPersistedTheme(): Mode {
+  if (typeof window === "undefined") return "light";
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "deep" || v === "sage" || v === "mist") return v;
-    // Migrate old tri-mode key (dark/slate/cream → deep/sage/mist)
-    if (v === "dark") return "deep";
-    if (v === "slate") return "sage";
-    if (v === "cream") return "mist";
-    // Migrate ancient binary key
-    const legacy = window.localStorage.getItem("protocol_theme");
-    if (legacy === "light") return "mist";
+    switch (v) {
+      case "light":
+      case "medium":
+      case "dark":
+        return v;
+      // Legacy migrations
+      case "deep":
+      case "night":
+        return "dark";
+      case "sage":
+      case "slate":
+        return "medium";
+      case "mist":
+      case "cream":
+        return "light";
+    }
   } catch {
     /* ignore */
   }
-  return "deep";
+  return "light";
 }
 
+const ICONS: Record<Mode, typeof Sun> = {
+  light: Sun,
+  medium: CloudSun,
+  dark: Moon,
+};
+
 /**
- * Tri-mode theme toggle — Deep · Sage · Mist (therapeutic palette).
- * Disc divided into 3 sectors (120° each). Active sector marked by an amber
- * tick at the top. Click rotates 120° and advances to the next mode.
+ * 3-state segmented theme toggle: Light · Medium · Dark.
+ * Applies `.theme-{mode}` to <html>, persists to localStorage.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { t } = useTranslation("common");
-  const [mode, setMode] = useState<Mode>("deep");
+  const [mode, setMode] = useState<Mode>("light");
 
   useEffect(() => {
-    const initial = readInitial();
+    const initial = readPersistedTheme();
     setMode(initial);
     applyTheme(initial);
   }, []);
 
-  const cycle = () => {
-    const idx = MODES.indexOf(mode);
-    const next = MODES[(idx + 1) % MODES.length];
+  const select = (next: Mode) => {
     setMode(next);
     applyTheme(next);
     try {
@@ -66,36 +72,38 @@ export function ThemeToggle({ className }: { className?: string }) {
     }
   };
 
-  const label = t("theme.toggle_aria", "Toggle theme");
-  const modeLabel = t(`theme.${mode}`, mode);
-  const rotation = MODES.indexOf(mode) * 120;
-  // Conic gradient: 3 equal sectors — Deep teal-night, Sage teal-grey, Mist parchment.
-  const sectors =
-    "conic-gradient(from -60deg, #15252E 0deg 120deg, #4A5C5E 120deg 240deg, #E8EEEC 240deg 360deg)";
-
   return (
-    <button
-      type="button"
-      onClick={cycle}
-      aria-label={`${label} (${modeLabel})`}
-      title={`${label} · ${modeLabel}`}
-      className={
-        "group relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full " +
-        "border border-border bg-background transition hover:border-accent " +
-        (className ?? "")
-      }
+    <div
+      role="radiogroup"
+      aria-label={t("theme.toggle_aria", "Toggle theme")}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full border border-border bg-surface-warm p-0.5",
+        className,
+      )}
     >
-      <span className="relative block h-5 w-5">
-        <span
-          className="absolute inset-0 rounded-full transition-transform duration-300 ease-out motion-reduce:transition-none"
-          style={{ background: sectors, transform: `rotate(${rotation}deg)` }}
-        />
-        {/* Amber tick at the top to mark the active sector */}
-        <span
-          className="absolute left-1/2 top-0 h-1 w-1 -translate-x-1/2 -translate-y-[2px] rounded-full"
-          style={{ background: "rgba(201,123,92,0.95)", boxShadow: "0 0 4px rgba(201,123,92,0.7)" }}
-        />
-      </span>
-    </button>
+      {MODES.map((m) => {
+        const Icon = ICONS[m];
+        const active = mode === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={t(`theme.${m}`, m)}
+            title={t(`theme.${m}`, m)}
+            onClick={() => select(m)}
+            className={cn(
+              "inline-flex h-6 w-6 items-center justify-center rounded-full transition",
+              active
+                ? "bg-cta-bg text-cta-text"
+                : "text-text-3 hover:text-text-1",
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        );
+      })}
+    </div>
   );
 }
