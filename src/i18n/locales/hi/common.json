@@ -464,6 +464,11 @@
       "evidence": "मापी गई ताकत की परवाह किए बिना पैटर्न अखंडता सुरक्षित लोडिंग को नियंत्रित करती है (FMS / SFMA साहित्य).",
       "short": "गति"
     },
+    "autonomic_regulation": {
+      "name": "स्वायत्त नियमन",
+      "evidence": "विश्राम में हृदय-संवहनी और श्वसन आधाररेखाएँ कार्डियोमेटाबोलिक जोखिम और रिकवरी क्षमता की स्वतंत्र रूप से भविष्यवाणी करती हैं (ESC, Framingham).",
+      "short": "स्वायत्त"
+    },
     "map": {
       "title": "क्षमता मानचित्र",
       "subtitle": "साक्ष्य-आधारित क्षमता स्पेक्ट्रम पर यह क्लाइंट कहाँ है।",
@@ -544,6 +549,13 @@
       "overhead_squat_assessment": "ओवरहेड स्क्वैट मूल्यांकन",
       "single_leg_squat_assessment": "एक-पैर स्क्वैट मूल्यांकन",
       "sfma_total": "SFMA कुल"
+      ,
+      "resting_heart_rate": "विश्राम हृदय गति",
+      "blood_pressure_systolic": "रक्तचाप (सिस्टोलिक)",
+      "blood_pressure_diastolic": "रक्तचाप (डायस्टोलिक)",
+      "hrv_rmssd": "HRV (RMSSD)",
+      "breath_rate_resting": "विश्राम श्वसन दर",
+      "orthostatic_test": "ऑर्थोस्टैटिक परीक्षण (Δ HR)"
     }
   },
   "adaptation": {

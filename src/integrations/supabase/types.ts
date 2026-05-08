@@ -1715,6 +1715,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      backfill_measurement_snapshots_phase_a: {
+        Args: never
+        Returns: {
+          inserted_count: number
+          source: string
+        }[]
+      }
       can_create_more_plans: { Args: { _user_id: string }; Returns: boolean }
       get_intake_branding: {
         Args: { _token: string }

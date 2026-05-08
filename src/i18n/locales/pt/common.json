@@ -487,6 +487,11 @@
       "evidence": "A integridade do padrão limita o carregamento seguro, independentemente da força medida (literatura FMS / SFMA).",
       "short": "Movimento"
     },
+    "autonomic_regulation": {
+      "name": "Regulação autonómica",
+      "evidence": "Os parâmetros cardiovasculares e respiratórios em repouso predizem de forma independente o risco cardiometabólico e a capacidade de recuperação (ESC, Framingham).",
+      "short": "Autonómico"
+    },
     "map": {
       "title": "Mapa de capacidades",
       "subtitle": "Onde está este cliente no espectro de capacidades baseado em evidência.",
@@ -567,6 +572,13 @@
       "overhead_squat_assessment": "Avaliação agachamento overhead",
       "single_leg_squat_assessment": "Avaliação agachamento unipodal",
       "sfma_total": "SFMA total"
+      ,
+      "resting_heart_rate": "Frequência cardíaca em repouso",
+      "blood_pressure_systolic": "Pressão arterial (sistólica)",
+      "blood_pressure_diastolic": "Pressão arterial (diastólica)",
+      "hrv_rmssd": "VFC (RMSSD)",
+      "breath_rate_resting": "Frequência respiratória em repouso",
+      "orthostatic_test": "Teste ortostático (Δ FC)"
     }
   },
   "adaptation": {
