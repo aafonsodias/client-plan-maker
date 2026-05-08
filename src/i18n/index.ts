@@ -7,12 +7,14 @@ import enIntake from "./locales/en/intake.json";
 import enAssessment from "./locales/en/assessment.json";
 import enManual from "./locales/en/manual.json";
 import enSchedule from "./locales/en/schedule.json";
+import enMe from "./locales/en/me.json";
 import ptCommon from "./locales/pt/common.json";
 import ptPlan from "./locales/pt/plan.json";
 import ptIntake from "./locales/pt/intake.json";
 import ptAssessment from "./locales/pt/assessment.json";
 import ptManual from "./locales/pt/manual.json";
 import ptSchedule from "./locales/pt/schedule.json";
+import ptMe from "./locales/pt/me.json";
 import esCommon from "./locales/es/common.json";
 import esPlan from "./locales/es/plan.json";
 import esIntake from "./locales/es/intake.json";
@@ -44,11 +46,11 @@ if (!i18n.isInitialized) {
       fallbackLng: "en",
       lng: "en",
       supportedLngs: SUPPORTED_LOCALES as unknown as string[],
-      ns: ["common", "plan", "intake", "assessment", "manual", "schedule"],
+      ns: ["common", "plan", "intake", "assessment", "manual", "schedule", "me"],
       defaultNS: "common",
       resources: {
-        en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment, manual: enManual, schedule: enSchedule },
-        pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment, manual: ptManual, schedule: ptSchedule },
+        en: { common: enCommon, plan: enPlan, intake: enIntake, assessment: enAssessment, manual: enManual, schedule: enSchedule, me: enMe },
+        pt: { common: ptCommon, plan: ptPlan, intake: ptIntake, assessment: ptAssessment, manual: ptManual, schedule: ptSchedule, me: ptMe },
         es: { common: esCommon, plan: esPlan, intake: esIntake, assessment: esAssessment, manual: esManual, schedule: esSchedule },
         hi: { common: hiCommon, plan: hiPlan, intake: hiIntake, assessment: hiAssessment, manual: hiManual, schedule: hiSchedule },
       },
