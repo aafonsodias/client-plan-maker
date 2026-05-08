@@ -431,7 +431,76 @@
     "headline_unknown": "Sem dados suficientes ainda.",
     "top_lifts": "Top exercícios — e1RM estimado",
     "adherence": "Adesão {{pct}}%",
-    "rpe_drift": "RPE drift {{value}}"
+    "rpe_drift": "RPE drift {{value}}",
+    "cardiorespiratory": {
+      "name": "Cardiorrespiratória",
+      "evidence": "Preditor isolado mais forte de mortalidade por todas as causas entre os componentes de fitness (ACSM, 2022).",
+      "short": "Cardio"
+    },
+    "muscular_strength": {
+      "name": "Força",
+      "evidence": "Associada inversamente à mortalidade por todas as causas, independentemente da aptidão cardiorrespiratória (ACSM, 2022).",
+      "short": "Força"
+    },
+    "muscular_endurance": {
+      "name": "Resistência",
+      "evidence": "Prediz capacidade funcional e tolerância a tarefas diárias com mais fiabilidade do que a força máxima isolada (ACSM, 2022).",
+      "short": "Resist."
+    },
+    "flexibility": {
+      "name": "Flexibilidade",
+      "evidence": "Específica de cada articulação; correlaciona com qualidade de movimento e redução de risco de lesão (ACSM, 2022).",
+      "short": "Flex"
+    },
+    "body_composition": {
+      "name": "Composição corporal",
+      "evidence": "Modificador de risco independente para doença cardiometabólica em toda a gama de IMC (NHANES 2017–2020).",
+      "short": "Composição"
+    },
+    "power": {
+      "name": "Potência",
+      "evidence": "Declina mais cedo do que a força com a idade; marcador-chave de risco de queda em idosos (NSCA Essentials, 4e).",
+      "short": "Potência"
+    },
+    "balance": {
+      "name": "Equilíbrio",
+      "evidence": "Preditor isolado mais forte baseado em teste para risco de queda em adultos com mais de 65 anos (Berg Balance Scale).",
+      "short": "Equilíbrio"
+    },
+    "coordination": {
+      "name": "Coordenação",
+      "evidence": "Sustenta a transferência de competência; treinável independentemente de força ou resistência (NSCA Essentials, 4e).",
+      "short": "Coord"
+    },
+    "agility": {
+      "name": "Agilidade",
+      "evidence": "Exige carga cognitivo-motora combinada; défices acompanham taxas de lesão elevadas em desportos com mudanças de direção (NSCA Essentials, 4e).",
+      "short": "Agilidade"
+    },
+    "cognitive_motor": {
+      "name": "Cognitivo-motor",
+      "evidence": "Desempenho em dupla tarefa prediz independentemente a independência funcional de longo prazo (Plummer et al., 2013).",
+      "short": "Cog-motor"
+    },
+    "movement_quality": {
+      "name": "Qualidade de movimento",
+      "evidence": "A integridade do padrão limita o carregamento seguro, independentemente da força medida (literatura FMS / SFMA).",
+      "short": "Movimento"
+    },
+    "map": {
+      "title": "Mapa de capacidades",
+      "subtitle": "Onde está este cliente no espectro de capacidades baseado em evidência.",
+      "completion": "{{done}} de {{total}} domínios medidos",
+      "empty_title": "Sem medições ainda.",
+      "empty_subtitle": "Adicione o primeiro registo a partir do fluxo de avaliação (em breve).",
+      "tier_health": "Saúde",
+      "tier_skill": "Competência",
+      "tier_integrative": "Integrativo",
+      "tooltip_score": "{{score}} / 100",
+      "tooltip_test": "Teste: {{test}}",
+      "tooltip_unmeasured": "Ainda não medido",
+      "measured_relative": "Medido {{when}}"
+    }
   },
   "adaptation": {
     "compact_all_target": "Tudo no alvo no bloco anterior.",

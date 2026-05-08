@@ -537,6 +537,42 @@ export type Database = {
           },
         ]
       }
+      capacity_domains: {
+        Row: {
+          created_at: string
+          display_order: number
+          evidence_summary_key: string
+          id: string
+          name_key: string
+          norm_reference_source: string | null
+          reference_assessments: Json
+          slug: string
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          display_order: number
+          evidence_summary_key: string
+          id?: string
+          name_key: string
+          norm_reference_source?: string | null
+          reference_assessments?: Json
+          slug: string
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          evidence_summary_key?: string
+          id?: string
+          name_key?: string
+          norm_reference_source?: string | null
+          reference_assessments?: Json
+          slug?: string
+          tier?: string
+        }
+        Relationships: []
+      }
       client_bookings: {
         Row: {
           client_id: string
@@ -584,6 +620,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "client_packs"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_capacity_snapshots: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          domain_slug: string
+          evidence_url: string | null
+          id: string
+          measured_at: string
+          normalized_score: number | null
+          notes: string | null
+          provenance: string
+          raw_unit: string | null
+          raw_value: number | null
+          test_used: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          domain_slug: string
+          evidence_url?: string | null
+          id?: string
+          measured_at?: string
+          normalized_score?: number | null
+          notes?: string | null
+          provenance: string
+          raw_unit?: string | null
+          raw_value?: number | null
+          test_used?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          domain_slug?: string
+          evidence_url?: string | null
+          id?: string
+          measured_at?: string
+          normalized_score?: number | null
+          notes?: string | null
+          provenance?: string
+          raw_unit?: string | null
+          raw_value?: number | null
+          test_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_capacity_snapshots_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_capacity_snapshots_domain_slug_fkey"
+            columns: ["domain_slug"]
+            isOneToOne: false
+            referencedRelation: "capacity_domains"
+            referencedColumns: ["slug"]
           },
         ]
       }

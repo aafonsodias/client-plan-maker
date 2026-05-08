@@ -4,6 +4,7 @@ import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
+import { CapacityMap } from "@/components/CapacityMap";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -1616,6 +1617,8 @@ function ClientDetail() {
           primaryAction = { label: "Continuar avaliação", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" }); } };
         }
         return (
+          <>
+          <CapacityMap clientId={clientId} />
           <section
             aria-label="Protocolo"
             className={[
@@ -1672,6 +1675,7 @@ function ClientDetail() {
               </details>
             )}
           </section>
+          </>
         );
       })()}
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
