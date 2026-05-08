@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.backfill_measurement_snapshots_phase_a() FROM PUBLIC, anon, authenticated;
