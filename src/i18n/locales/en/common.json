@@ -487,6 +487,11 @@
       "evidence": "Pattern integrity gates safe loading regardless of measured strength (FMS / SFMA literature).",
       "short": "Movement"
     },
+    "autonomic_regulation": {
+      "name": "Autonomic regulation",
+      "evidence": "Resting cardiovascular and respiratory baselines independently predict cardiometabolic risk and recovery capacity (ESC, Framingham).",
+      "short": "Autonomic"
+    },
     "map": {
       "title": "Capacity Map",
       "subtitle": "Where this client is across the evidence-based capacity spectrum.",
@@ -567,6 +572,13 @@
       "overhead_squat_assessment": "Overhead squat assessment",
       "single_leg_squat_assessment": "Single-leg squat assessment",
       "sfma_total": "SFMA total"
+      ,
+      "resting_heart_rate": "Resting heart rate",
+      "blood_pressure_systolic": "Blood pressure (systolic)",
+      "blood_pressure_diastolic": "Blood pressure (diastolic)",
+      "hrv_rmssd": "HRV (RMSSD)",
+      "breath_rate_resting": "Resting breath rate",
+      "orthostatic_test": "Orthostatic test (Δ HR)"
     }
   },
   "adaptation": {
