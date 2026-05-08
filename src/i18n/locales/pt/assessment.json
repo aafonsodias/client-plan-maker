@@ -231,13 +231,20 @@
     }
   },
   "readiness_block": {
-    "title": "Prontidão para mudança (Prochaska)",
-    "hint": "Estágio de mudança comportamental — calibra a abordagem de coaching.",
-    "precontemplation": "Pré-contemplação",
-    "contemplation": "Contemplação",
-    "preparation": "Preparação",
-    "action": "Ação",
-    "maintenance": "Manutenção"
+    "title": "Em que momento está?",
+    "hint": "Onde está em relação a treinar — ajuda a calibrar o tom e o ritmo das primeiras semanas.",
+    "help_title": "Como escolher",
+    "help_body": "Modelo Prochaska de mudança comportamental. Escolha o que melhor descreve a relação actual com o treino. Não há resposta certa ou errada — define se começamos com mais educação, mais estrutura ou mais intensidade.",
+    "precontemplation": "Não pensa nisso",
+    "precontemplation_sub": "Sem intenção próximos 6 meses",
+    "contemplation": "A considerar",
+    "contemplation_sub": "Talvez nos próximos 6 meses",
+    "preparation": "A planear",
+    "preparation_sub": "Quer começar este mês",
+    "action": "Já começou",
+    "action_sub": "Treina há menos de 6 meses",
+    "maintenance": "Hábito instalado",
+    "maintenance_sub": "Consistente há 6+ meses"
   },
   "training_block": {
     "title": "Setup de treino",
@@ -334,13 +341,17 @@
     "years": "Anos a treinar",
     "previous": "Estilo de programa anterior",
     "previous_placeholder": "PPL, 5/3/1…",
-    "max_lifts": "Máximos (se conhecidos)"
+    "max_lifts": "Máximos (se conhecidos)",
+    "max_lifts_placeholder": "ex: SQ 100kg · BP 70kg · DL 130kg",
+    "max_lifts_help": "Cargas máximas para 1 repetição (1RM) ou estimativa recente. Não obrigatório — se não souber, deixe em branco. Use abreviaturas: SQ = agachamento, BP = supino, DL = peso morto, OHP = press militar."
   },
   "performance_block": {
     "title": "Marcadores de performance",
     "hint": "Linha de base cardiovascular e condicionamento.",
     "rhr": "FC repouso (bpm)",
     "rhr_hint": "Medida ao acordar, em decúbito.",
+    "rhr_help": "Frequência cardíaca em repouso. Como medir bem: ao acordar, ainda na cama, sem ter saído. Conte as pulsações no pulso ou pescoço durante 60 segundos (ou 30s × 2). Idealmente 3 manhãs seguidas e use a média. Valores típicos: <60 bpm = boa base aeróbica · 60–80 bpm = normal · >80 bpm = pior recuperação ou stress.",
+    "rhr_placeholder": "ex: 62",
     "cardio_test": "Teste cardio",
     "cardio_test_hint": "Escolhe um teste padrão ou 'não testado'.",
     "untested": "Não testado",
