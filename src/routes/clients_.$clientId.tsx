@@ -1832,6 +1832,92 @@ function ClientDetail() {
           }
         >
 
+          {/* Identidade — sexo, data de nascimento, altura e peso.
+              Vive no cliente (não na avaliação). Primeira tab para que o
+              "Ver" do BMV (item identity) possa apontar para cá. */}
+          <SectionBlock
+            id="identity"
+            analysing={false}
+            analysis={null}
+            title="Identidade"
+            hint="Sexo, data de nascimento, altura e peso. Necessários para o brief."
+            complete={isSectionComplete("identity", assessment)}
+          >
+            <div className="grid gap-2 sm:grid-cols-4">
+              <label className="space-y-1">
+                <span className="text-[11px] text-muted-foreground">Sexo</span>
+                <select
+                  value={client?.sex ?? ""}
+                  onChange={async (e) => {
+                    const v = e.target.value || null;
+                    setClient((prev: any) => ({ ...prev, sex: v }));
+                    await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+                  }}
+                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">—</option>
+                  <option value="female">Feminino</option>
+                  <option value="male">Masculino</option>
+                  <option value="other">Outro</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+                <input
+                  type="date"
+                  defaultValue={client?.date_of_birth ?? ""}
+                  onBlur={async (e) => {
+                    const v = e.target.value || null;
+                    if (v === (client?.date_of_birth ?? null)) return;
+                    setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                    await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+                  }}
+                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={80}
+                  max={250}
+                  step={1}
+                  defaultValue={client?.height_cm ?? ""}
+                  placeholder="ex. 175"
+                  onBlur={async (e) => {
+                    const n = Number(e.target.value);
+                    const v = Number.isFinite(n) && n > 0 ? n : null;
+                    if (v === (client?.height_cm ?? null)) return;
+                    setClient((prev: any) => ({ ...prev, height_cm: v }));
+                    await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                  }}
+                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={20}
+                  max={400}
+                  step={0.1}
+                  defaultValue={client?.weight_kg ?? ""}
+                  placeholder="ex. 78.4"
+                  onBlur={async (e) => {
+                    const n = Number(e.target.value);
+                    const v = Number.isFinite(n) && n > 0 ? n : null;
+                    if (v === (client?.weight_kg ?? null)) return;
+                    setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                    await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                  }}
+                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+            </div>
+          </SectionBlock>
+
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
