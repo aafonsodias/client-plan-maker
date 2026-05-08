@@ -572,6 +572,13 @@
       "overhead_squat_assessment": "Avaliação agachamento overhead",
       "single_leg_squat_assessment": "Avaliação agachamento unipodal",
       "sfma_total": "SFMA total"
+      ,
+      "resting_heart_rate": "Frequência cardíaca em repouso",
+      "blood_pressure_systolic": "Pressão arterial (sistólica)",
+      "blood_pressure_diastolic": "Pressão arterial (diastólica)",
+      "hrv_rmssd": "VFC (RMSSD)",
+      "breath_rate_resting": "Frequência respiratória em repouso",
+      "orthostatic_test": "Teste ortostático (Δ FC)"
     }
   },
   "adaptation": {
