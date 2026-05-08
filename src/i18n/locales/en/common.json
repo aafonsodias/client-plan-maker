@@ -272,7 +272,10 @@
     "hindi": "Hindi"
   },
   "theme": {
-    "toggle_aria": "Toggle theme"
+    "toggle_aria": "Toggle theme",
+    "deep": "Deep",
+    "sage": "Sage",
+    "mist": "Mist"
   },
   "plan_status": {
     "draft": "Draft",

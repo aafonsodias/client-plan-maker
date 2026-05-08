@@ -2,40 +2,51 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const STORAGE_KEY = "protocol_theme";
-type Mode = "dark" | "slate" | "cream";
-const MODES: Mode[] = ["dark", "slate", "cream"];
+type Mode = "deep" | "sage" | "mist";
+const MODES: Mode[] = ["deep", "sage", "mist"];
+
+/* Map therapeutic modes to the existing CSS class hooks so we don't have to
+ * rewrite every selector across the app:
+ *   deep → :root (no class)
+ *   sage → .slate
+ *   mist → .light
+ */
 
 function applyTheme(mode: Mode) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.classList.remove("light", "slate");
-  if (mode === "cream") root.classList.add("light");
-  else if (mode === "slate") root.classList.add("slate");
+  if (mode === "mist") root.classList.add("light");
+  else if (mode === "sage") root.classList.add("slate");
   root.dataset.theme = mode;
 }
 
 function readInitial(): Mode {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "deep";
   try {
     const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "dark" || v === "slate" || v === "cream") return v;
-    // Migrate old binary key
+    if (v === "deep" || v === "sage" || v === "mist") return v;
+    // Migrate old tri-mode key (dark/slate/cream → deep/sage/mist)
+    if (v === "dark") return "deep";
+    if (v === "slate") return "sage";
+    if (v === "cream") return "mist";
+    // Migrate ancient binary key
     const legacy = window.localStorage.getItem("forge_theme");
-    if (legacy === "light") return "cream";
+    if (legacy === "light") return "mist";
   } catch {
     /* ignore */
   }
-  return "dark";
+  return "deep";
 }
 
 /**
- * Tri-mode theme toggle — Dark · Slate · Cream.
+ * Tri-mode theme toggle — Deep · Sage · Mist (therapeutic palette).
  * Disc divided into 3 sectors (120° each). Active sector marked by an amber
  * tick at the top. Click rotates 120° and advances to the next mode.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { t } = useTranslation("common");
-  const [mode, setMode] = useState<Mode>("dark");
+  const [mode, setMode] = useState<Mode>("deep");
 
   useEffect(() => {
     const initial = readInitial();
@@ -56,16 +67,18 @@ export function ThemeToggle({ className }: { className?: string }) {
   };
 
   const label = t("theme.toggle_aria", "Toggle theme");
+  const modeLabel = t(`theme.${mode}`, mode);
   const rotation = MODES.indexOf(mode) * 120;
-  // Conic gradient: 3 equal sectors starting at -60° so first sector is centered at top.
-  const sectors = "conic-gradient(from -60deg, #0E0F13 0deg 120deg, #2A3140 120deg 240deg, #F2EEE6 240deg 360deg)";
+  // Conic gradient: 3 equal sectors — Deep teal-night, Sage teal-grey, Mist parchment.
+  const sectors =
+    "conic-gradient(from -60deg, #15252E 0deg 120deg, #4A5C5E 120deg 240deg, #E8EEEC 240deg 360deg)";
 
   return (
     <button
       type="button"
       onClick={cycle}
-      aria-label={`${label} (${mode})`}
-      title={`${label} · ${mode}`}
+      aria-label={`${label} (${modeLabel})`}
+      title={`${label} · ${modeLabel}`}
       className={
         "group relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full " +
         "border border-border bg-background transition hover:border-accent " +
@@ -80,7 +93,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         {/* Amber tick at the top to mark the active sector */}
         <span
           className="absolute left-1/2 top-0 h-1 w-1 -translate-x-1/2 -translate-y-[2px] rounded-full"
-          style={{ background: "rgba(232,165,71,0.95)", boxShadow: "0 0 4px rgba(232,165,71,0.7)" }}
+          style={{ background: "rgba(201,123,92,0.95)", boxShadow: "0 0 4px rgba(201,123,92,0.7)" }}
         />
       </span>
     </button>
