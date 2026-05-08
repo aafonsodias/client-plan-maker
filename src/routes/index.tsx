@@ -942,8 +942,7 @@ function HeroHeadlineRotator() {
       <div className="min-h-[120px] sm:min-h-[290px]">
         <h1
           key={idx}
-          className="animate-fade-in font-light leading-[0.95] tracking-tight sm:text-7xl"
-          style={{ fontSize: "clamp(1.875rem, 7.5vw, 3rem)" }}
+          className="animate-fade-in text-[clamp(1.875rem,7.5vw,3rem)] font-light leading-[0.95] tracking-tight sm:text-7xl"
         >
           {v.line1}
           <span className="block text-accent">{v.line2}</span>
