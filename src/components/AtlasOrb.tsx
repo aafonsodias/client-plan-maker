@@ -44,14 +44,6 @@ export function AtlasOrb({ onClick, active, className, label = "Atlas" }: Props)
             "radial-gradient(circle, color-mix(in oklab, var(--accent) 40%, transparent) 0%, transparent 70%)",
         }}
       />
-      {/* outer ring */}
-      <span
-        aria-hidden
-        className={cn(
-          "absolute inset-0 rounded-full border transition",
-          active ? "border-accent" : "border-accent/40 group-hover:border-accent/70",
-        )}
-      />
       {/* breathing core */}
       <span
         aria-hidden
