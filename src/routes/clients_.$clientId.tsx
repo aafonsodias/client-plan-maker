@@ -1835,16 +1835,39 @@ function ClientDetail() {
               <Toggle label={t("risk_block.sedentary")} value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
-                <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="underweight">{t("risk_block.bmi_underweight")}</SelectItem>
-                    <SelectItem value="normal">{t("risk_block.bmi_normal")}</SelectItem>
-                    <SelectItem value="overweight">{t("risk_block.bmi_overweight")}</SelectItem>
-                    <SelectItem value="obese">{t("risk_block.bmi_obese")}</SelectItem>
-                    <SelectItem value="muscular">{t("risk_block.bmi_muscular")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {bmiAuto.value !== null ? (
+                  <div className="flex h-8 items-center justify-between rounded-md border border-border bg-background/50 px-3 text-sm">
+                    <span className="font-medium">
+                      {bmiAuto.value.toFixed(1)} ·{" "}
+                      {t(`risk_block.bmi_${assessment.risk.bmi_category === "muscular" ? "muscular" : bmiAuto.category}` as const)}
+                    </span>
+                    {assessment.risk.bmi_category !== "muscular" ? (
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                        onClick={() =>
+                          setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: "muscular" } })
+                        }
+                      >
+                        {t("risk_block.bmi_mark_muscular")}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                        onClick={() =>
+                          setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: bmiAuto.category } })
+                        }
+                      >
+                        {t("risk_block.bmi_use_auto")}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex h-8 items-center rounded-md border border-dashed border-border bg-background/30 px-3 text-xs text-muted-foreground">
+                    {t("risk_block.bmi_missing_hw")}
+                  </div>
+                )}
               </div>
               <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
               <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
