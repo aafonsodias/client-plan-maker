@@ -196,6 +196,11 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenuContent>
           </DropdownMenu>
           <span className="lg:hidden"><ThemeToggle /></span>
+          {!!user && (
+            <span className="lg:hidden">
+              <AtlasOrb onClick={() => setAtlasOpen((v) => !v)} active={atlasOpen} />
+            </span>
+          )}
           {/* Mobile hamburger lives in the same right-edge cluster so it stays in the top-right corner */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
