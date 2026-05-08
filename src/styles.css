@@ -2,44 +2,39 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.theme-dark *));
 
 /* Cross-browser scrollbar hide utility */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 
-/* Label-on-tint — soft contour for text rendered over tinted/coloured chips
- * (booking blocks, pack pills). Uses the current theme background as the
- * shadow colour so it self-calibrates across Dark / Slate / Cream without
- * extra variables. The shadow is intentionally subtle: it lifts the glyph
- * one pixel off the tint without becoming a stroke. */
+/* Label-on-tint — soft contour for text rendered over tinted/coloured chips. */
 .label-on-tint {
   text-shadow:
     0 1px 0 color-mix(in oklab, var(--background) 78%, transparent),
     0 0 2px color-mix(in oklab, var(--background) 55%, transparent);
 }
 
-/* Drop target visual feedback while a booking is being dragged across the
- * weekly grid or month grid. */
 .drop-target-active {
   outline: 2px dashed color-mix(in oklab, var(--accent) 75%, transparent);
   outline-offset: -2px;
   background-color: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
-/*
- * Design system definition.
+/* ──────────────────────────────────────────────────────────────────────────
+ * PROTOCOL design system v2 — Three therapeutic themes (Light · Medium · Dark).
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Two parallel token sets, both backed by the SAME variables:
+ *   1. Spec tokens (--bg, --surface, --surface-warm, --text-1/2/3, --accent,
+ *      --accent-strong, --success, --success-bg, --warn, --warn-bg, --info,
+ *      --danger, --cta-bg, --cta-text, --border)
+ *   2. shadcn semantic tokens (--background, --foreground, --card, --primary,
+ *      …) re-pointed to the spec tokens so existing components re-theme
+ *      without touching their source.
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
+ * Rules: no pure white, no pure black, low saturation, amber is the ONLY
+ * decorative accent. Sage/copper RESERVED for semantic states.
+ * ──────────────────────────────────────────────────────────────────────── */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -49,6 +44,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* shadcn semantic tokens (consumed by Card, Button, Input, Dialog, …) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -83,15 +80,25 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ── Protocol design system tokens ──
-   * Added in parallel to the shadcn tokens above. Do NOT replace shadcn
-   * tokens — they're used across the rest of the app. These Protocol tokens
-   * are consumed by the new Plan View / LOG / PDF surfaces only.
-   * Utilities generated: bg-canvas, bg-surface, text-ink-primary,
-   * text-cue, font-display, etc.
-   */
+  /* PROTOCOL spec tokens — exposed as Tailwind utilities (bg-bg, text-text-1, …) */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-warm: var(--surface-warm);
+  --color-text-1: var(--text-1);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent-strong: var(--accent-strong);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-info: var(--info);
+  --color-danger: var(--danger);
+  --color-cta-bg: var(--cta-bg);
+  --color-cta-text: var(--cta-text);
+
+  /* Legacy Protocol PDF tokens — DO NOT remove, consumed by pdf.ts surfaces */
   --color-canvas: var(--protocol-canvas);
-  --color-surface: var(--protocol-surface);
   --color-subtle: var(--protocol-subtle);
   --color-pill: var(--protocol-pill);
   --color-ink-primary: var(--protocol-ink-primary);
@@ -103,6 +110,7 @@
   --color-line: var(--protocol-line);
   --color-edge: var(--protocol-edge);
   --color-warning: var(--protocol-warning);
+  --color-cue: var(--protocol-ink-secondary);
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
@@ -122,51 +130,190 @@
   --text-day--line-height: 28px;
 }
 
-:root {
-  /* Therapeutic "deep" theme — teal-night base + soft terracotta accent.
-   * Evidence-based palette: cool calming surfaces (hue ~215) + warm accent
-   * at ~10% (hue ~45) for vitality without clinical coldness. */
+/* ── LIGHT — default. Day use, presentation-friendly. */
+:root,
+.theme-light,
+.light {
   --radius: 0.75rem;
-  color-scheme: dark;
-  --background: oklch(0.20 0.022 215);
-  --foreground: oklch(0.94 0.010 90);
-  --card: oklch(0.235 0.025 215);
-  --card-foreground: oklch(0.94 0.010 90);
-  --popover: oklch(0.235 0.025 215);
-  --popover-foreground: oklch(0.94 0.010 90);
-  --primary: oklch(0.94 0.010 90);
-  --primary-foreground: oklch(0.20 0.022 215);
-  --secondary: oklch(0.28 0.025 215);
-  --secondary-foreground: oklch(0.94 0.010 90);
-  --muted: oklch(0.255 0.022 215);
-  --muted-foreground: oklch(0.68 0.020 210);
-  --accent: oklch(0.72 0.125 45);              /* soft terracotta — warm 10% */
-  --accent-foreground: oklch(0.18 0.022 215);
-  --destructive: oklch(0.55 0.15 27);
-  --destructive-foreground: oklch(0.97 0 0);
-  --border: oklch(0.30 0.025 215);
-  --input: oklch(0.28 0.025 215);
-  --ring: oklch(0.72 0.115 45 / 0.5);
-  --gradient-hero: linear-gradient(135deg, oklch(0.20 0.022 215), oklch(0.235 0.025 215));
-  --gradient-accent: linear-gradient(135deg, oklch(0.72 0.125 45), oklch(0.62 0.110 35));
-  --shadow-elegant: 0 20px 60px -20px oklch(0.10 0.020 215 / 0.7);
-  --shadow-glow: 0 0 60px oklch(0.72 0.115 45 / 0.25);
-  --chart-1: oklch(0.62 0.080 210);
-  --chart-2: oklch(0.65 0.085 165);
-  --chart-3: oklch(0.72 0.125 45);
-  --chart-4: oklch(0.55 0.060 220);
-  --chart-5: oklch(0.70 0.070 150);
-  --sidebar: oklch(0.235 0.025 215);
-  --sidebar-foreground: oklch(0.94 0.010 90);
-  --sidebar-primary: oklch(0.72 0.115 45);
-  --sidebar-primary-foreground: oklch(0.20 0.022 215);
-  --sidebar-accent: oklch(0.28 0.025 215);
-  --sidebar-accent-foreground: oklch(0.94 0.010 90);
-  --sidebar-border: oklch(0.30 0.025 215);
-  --sidebar-ring: oklch(0.72 0.115 45 / 0.5);
+  color-scheme: light;
 
-  /* Protocol palette — exact hex from the master spec (§2). Defined as
-   * raw values so they don't drift with theme switches. */
+  --bg: #F4F1EA;
+  --surface: #FFFFFF;
+  --surface-warm: #FBF6EC;
+  --border: #E0DAC8;
+  --text-1: #1F1D1A;
+  --text-2: #58544E;
+  --text-3: #8A847A;
+  --accent: #B8743A;
+  --accent-strong: #6B4423;
+  --success: #234231;
+  --success-bg: #DDE7D5;
+  --warn: #7A4F15;
+  --warn-bg: #FCEDD3;
+  --info: #3D5C66;
+  --danger: #8B2E1F;
+  --cta-bg: var(--accent-strong);
+  --cta-text: #FFFBF3;
+
+  /* shadcn remap → spec tokens */
+  --background: var(--bg);
+  --foreground: var(--text-1);
+  --card: var(--surface);
+  --card-foreground: var(--text-1);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-1);
+  --primary: var(--cta-bg);
+  --primary-foreground: var(--cta-text);
+  --secondary: var(--surface-warm);
+  --secondary-foreground: var(--text-1);
+  --muted: var(--surface-warm);
+  --muted-foreground: var(--text-2);
+  --accent-foreground: var(--cta-text);
+  --destructive: var(--danger);
+  --destructive-foreground: #FFFBF3;
+  --input: var(--surface-warm);
+  --ring: color-mix(in oklab, var(--accent) 50%, transparent);
+  --chart-1: var(--accent);
+  --chart-2: var(--success);
+  --chart-3: var(--info);
+  --chart-4: var(--warn);
+  --chart-5: var(--accent-strong);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-1);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--cta-text);
+  --sidebar-accent: var(--surface-warm);
+  --sidebar-accent-foreground: var(--text-1);
+  --sidebar-border: var(--border);
+  --sidebar-ring: color-mix(in oklab, var(--accent) 50%, transparent);
+
+  --shadow-elegant: 0 8px 24px -12px rgb(31 29 26 / 0.18);
+  --shadow-glow: none;
+  --gradient-hero: linear-gradient(135deg, var(--bg), var(--surface-warm));
+  --gradient-accent: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+/* ── MEDIUM — long-session mode, neutral mid-tone, low eye fatigue. */
+.theme-medium,
+.slate {
+  color-scheme: dark;
+
+  --bg: #3E3A33;
+  --surface: #34302A;
+  --surface-warm: #4D4840;
+  --border: #5A5448;
+  --text-1: #EDE6D4;
+  --text-2: #B5AE9F;
+  --text-3: #857F73;
+  --accent: #DD9A60;
+  --accent-strong: #C97D4A;
+  --success: #B8D199;
+  --success-bg: #3A4A33;
+  --warn: #ECBE82;
+  --warn-bg: #5A4830;
+  --info: #8FB0BA;
+  --danger: #D17560;
+  --cta-bg: var(--accent);
+  --cta-text: #2A2622;
+
+  --background: var(--bg);
+  --foreground: var(--text-1);
+  --card: var(--surface);
+  --card-foreground: var(--text-1);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-1);
+  --primary: var(--cta-bg);
+  --primary-foreground: var(--cta-text);
+  --secondary: var(--surface-warm);
+  --secondary-foreground: var(--text-1);
+  --muted: var(--surface-warm);
+  --muted-foreground: var(--text-2);
+  --accent-foreground: var(--cta-text);
+  --destructive: var(--danger);
+  --destructive-foreground: #2A2622;
+  --input: var(--surface-warm);
+  --ring: color-mix(in oklab, var(--accent) 50%, transparent);
+  --chart-1: var(--accent);
+  --chart-2: var(--success);
+  --chart-3: var(--info);
+  --chart-4: var(--warn);
+  --chart-5: var(--accent-strong);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-1);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--cta-text);
+  --sidebar-accent: var(--surface-warm);
+  --sidebar-accent-foreground: var(--text-1);
+  --sidebar-border: var(--border);
+  --sidebar-ring: color-mix(in oklab, var(--accent) 50%, transparent);
+
+  --shadow-elegant: 0 12px 32px -16px rgb(0 0 0 / 0.45);
+  --shadow-glow: none;
+}
+
+/* ── DARK — night, focused work, low ambient light. */
+.theme-dark,
+.dark {
+  color-scheme: dark;
+
+  --bg: #14120F;
+  --surface: #1C1916;
+  --surface-warm: #2A2620;
+  --border: #3A342B;
+  --text-1: #F0E8D6;
+  --text-2: #A8A196;
+  --text-3: #7A746A;
+  --accent: #E8A66B;
+  --accent-strong: #C97D4A;
+  --success: #A8C994;
+  --success-bg: #1F2E1A;
+  --warn: #F0C088;
+  --warn-bg: #3A2D1C;
+  --info: #7BA3B0;
+  --danger: #D17560;
+  --cta-bg: var(--accent);
+  --cta-text: var(--bg);
+
+  --background: var(--bg);
+  --foreground: var(--text-1);
+  --card: var(--surface);
+  --card-foreground: var(--text-1);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-1);
+  --primary: var(--cta-bg);
+  --primary-foreground: var(--cta-text);
+  --secondary: var(--surface-warm);
+  --secondary-foreground: var(--text-1);
+  --muted: var(--surface-warm);
+  --muted-foreground: var(--text-2);
+  --accent-foreground: var(--cta-text);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--bg);
+  --input: var(--surface-warm);
+  --ring: color-mix(in oklab, var(--accent) 50%, transparent);
+  --chart-1: var(--accent);
+  --chart-2: var(--success);
+  --chart-3: var(--info);
+  --chart-4: var(--warn);
+  --chart-5: var(--accent-strong);
+
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text-1);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--cta-text);
+  --sidebar-accent: var(--surface-warm);
+  --sidebar-accent-foreground: var(--text-1);
+  --sidebar-border: var(--border);
+  --sidebar-ring: color-mix(in oklab, var(--accent) 50%, transparent);
+
+  --shadow-elegant: 0 16px 40px -20px rgb(0 0 0 / 0.7);
+  --shadow-glow: none;
+}
+
+/* PROTOCOL PDF tokens — theme-independent, consumed by pdf.ts. Keep amber. */
+:root {
   --protocol-canvas: #0F0F0F;
   --protocol-surface: #1A1A1A;
   --protocol-subtle: #161616;
@@ -182,80 +329,6 @@
   --protocol-warning: #C97B5C;
 }
 
-/* `.light` = "Mist" — therapeutic light theme. Cool parchment with a faint
- * teal sub-tone (hue ~200) + same terracotta accent at low coverage.
- * Class name kept as `.light` so existing selectors and color-scheme switches
- * continue to work. */
-.light {
-  color-scheme: light;
-  --background: oklch(0.97 0.012 200);
-  --foreground: oklch(0.22 0.025 220);
-  --card: oklch(0.985 0.010 200);
-  --card-foreground: oklch(0.22 0.025 220);
-  --popover: oklch(0.985 0.010 200);
-  --popover-foreground: oklch(0.22 0.025 220);
-  --primary: oklch(0.45 0.055 210);
-  --primary-foreground: oklch(0.97 0.012 200);
-  --secondary: oklch(0.93 0.018 200);
-  --secondary-foreground: oklch(0.22 0.025 220);
-  --muted: oklch(0.94 0.015 200);
-  --muted-foreground: oklch(0.50 0.022 215);
-  --accent: oklch(0.66 0.105 45);              /* soft terracotta */
-  --accent-foreground: oklch(0.20 0.020 215);
-  --destructive: oklch(0.55 0.18 27);
-  --destructive-foreground: oklch(0.99 0.005 80);
-  --border: oklch(0.88 0.018 200);
-  --input: oklch(0.92 0.014 200);
-  --ring: oklch(0.66 0.095 45 / 0.45);
-  --gradient-hero: linear-gradient(135deg, oklch(0.97 0.012 200), oklch(0.985 0.010 200));
-  --gradient-accent: linear-gradient(135deg, oklch(0.66 0.105 45), oklch(0.58 0.090 35));
-  --shadow-glow: 0 0 60px oklch(0.66 0.095 45 / 0.20);
-  --sidebar: oklch(0.985 0.010 200);
-  --sidebar-foreground: oklch(0.22 0.025 220);
-  --sidebar-primary: oklch(0.66 0.095 45);
-  --sidebar-primary-foreground: oklch(0.20 0.020 215);
-  --sidebar-accent: oklch(0.93 0.018 200);
-  --sidebar-accent-foreground: oklch(0.22 0.025 220);
-  --sidebar-border: oklch(0.88 0.018 200);
-  --sidebar-ring: oklch(0.66 0.095 45 / 0.45);
-}
-
-/* `.slate` = "Sage" — therapeutic mid theme. Desaturated teal-grey, warm
- * cream ink, terracotta accent. Class name kept as `.slate` for back-compat. */
-.slate {
-  color-scheme: dark;
-  --background: oklch(0.34 0.025 195);
-  --foreground: oklch(0.93 0.012 90);
-  --card: oklch(0.38 0.028 195);
-  --card-foreground: oklch(0.93 0.012 90);
-  --popover: oklch(0.38 0.028 195);
-  --popover-foreground: oklch(0.93 0.012 90);
-  --primary: oklch(0.93 0.012 90);
-  --primary-foreground: oklch(0.30 0.024 195);
-  --secondary: oklch(0.42 0.028 195);
-  --secondary-foreground: oklch(0.93 0.012 90);
-  --muted: oklch(0.40 0.026 195);
-  --muted-foreground: oklch(0.74 0.020 195);
-  --accent: oklch(0.70 0.115 45);
-  --accent-foreground: oklch(0.22 0.022 195);
-  --destructive: oklch(0.6 0.18 27);
-  --destructive-foreground: oklch(0.97 0 0);
-  --border: oklch(0.44 0.028 195);
-  --input: oklch(0.42 0.028 195);
-  --ring: oklch(0.70 0.105 45 / 0.5);
-  --gradient-hero: linear-gradient(135deg, oklch(0.34 0.025 195), oklch(0.38 0.028 195));
-  --gradient-accent: linear-gradient(135deg, oklch(0.70 0.115 45), oklch(0.60 0.100 35));
-  --shadow-glow: 0 0 60px oklch(0.70 0.105 45 / 0.22);
-  --sidebar: oklch(0.38 0.028 195);
-  --sidebar-foreground: oklch(0.93 0.012 90);
-  --sidebar-primary: oklch(0.70 0.105 45);
-  --sidebar-primary-foreground: oklch(0.22 0.022 195);
-  --sidebar-accent: oklch(0.42 0.028 195);
-  --sidebar-accent-foreground: oklch(0.93 0.012 90);
-  --sidebar-border: oklch(0.44 0.028 195);
-  --sidebar-ring: oklch(0.70 0.105 45 / 0.5);
-}
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -268,15 +341,14 @@
 }
 
 @keyframes lime-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.72 0.115 45 / 0.55); }
-  50% { box-shadow: 0 0 0 10px oklch(0.72 0.115 45 / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
+  50% { box-shadow: 0 0 0 10px color-mix(in oklab, var(--accent) 0%, transparent); }
 }
 
 .animate-lime-pulse {
   animation: lime-pulse 1.2s ease-out 3;
 }
 
-/* Confetti — used by Confetti.tsx after a session is finalized. */
 @keyframes confetti-fall {
   0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
@@ -294,7 +366,6 @@
   animation-fill-mode: forwards;
 }
 
-/* Set tick — pulse used when a set is marked complete in the logbook. */
 @keyframes set-tick-pop {
   0%   { transform: scale(0.6); }
   60%  { transform: scale(1.18); }
@@ -305,20 +376,16 @@
   animation: set-tick-pop 240ms ease-out;
 }
 
-/* Indeterminate horizontal progress strip used by StageCard while busy. */
 @keyframes progress {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(400%); }
 }
 
-/* Soft fade-in used when StageCard rotates its "what AI is doing now" copy. */
 @keyframes stagecard-fade {
   0%   { opacity: 0; transform: translateY(2px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* AtlasGenie — the P mark emerges from below the book, blurred and small,
- * lands centered. Halo amber fades around it. */
 @keyframes atlas-genie-emerge {
   0%   { opacity: 0; transform: translateY(40px) scale(0.2); filter: blur(8px); }
   60%  { opacity: 1; filter: blur(0); }
@@ -331,19 +398,13 @@
 }
 .atlas-genie-mark { animation: atlas-genie-emerge 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .atlas-genie-halo {
-  background: radial-gradient(circle, rgba(201,123,92,0.55) 0%, rgba(201,123,92,0) 70%);
+  background: radial-gradient(circle, rgb(201 123 92 / 0.55) 0%, rgb(201 123 92 / 0) 70%);
   animation: atlas-genie-halo 600ms ease-out both;
 }
 @media (prefers-reduced-motion: reduce) {
   .atlas-genie-mark, .atlas-genie-halo { animation: none; }
 }
 
-/* R47 — print mode reset.
- * The trainer sometimes hits Ctrl+P inside the app instead of using the
- * "Download PDF" button, which renders a dark background as solid black on
- * paper. Force a white-on-black palette and hide app chrome so what comes out
- * is at least a readable text dump, plus a banner pointing to the real export.
- */
 @media print {
   html, body {
     background: white !important;
