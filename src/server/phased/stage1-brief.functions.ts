@@ -387,6 +387,10 @@ export const synthesizeBrief = createServerFn({ method: "POST" })
       sectionAnalyses = ((assessment as any)?.section_analyses ?? {}) as Record<string, unknown>;
     }
 
+    // R2 — capacity context (measured + unmeasured per-domain).
+    const capacityCtx = await loadCapacityContext(supabase, (plan as any).client_id);
+    const capacityBlock = renderCapacityForPrompt(capacityCtx);
+
     const system = `You are a senior strength coach. Synthesize a TRAINING BRIEF from the per-section analyses below.
 
 Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work has already been done per section. You must:
@@ -405,9 +409,11 @@ Your job is SYNTHESIS and CONFLICT RESOLUTION — not extraction. The hard work 
   • If 8–10, NORMAL progression cadence applies.
   If current_capacity_vs_pb is missing/unknown, set the brief field to null and proceed with normal cadence.
 
+${CAPACITY_PROMPT_INSTRUCTIONS}
+
 Output ONLY by calling the record_brief tool.`;
 
-    const userMessage = `Per-section analyses (JSON map):\n${JSON.stringify(sectionAnalyses, null, 2)}\n\nDefault mesocycle length (weeks): ${(plan as any).duration_weeks ?? 4}`;
+    const userMessage = `Per-section analyses (JSON map):\n${JSON.stringify(sectionAnalyses, null, 2)}\n\nDefault mesocycle length (weeks): ${(plan as any).duration_weeks ?? 4}\n\n${capacityBlock}`;
 
     const model = resolveModel("FORGE_MODEL_STAGE_1", "claude-haiku-4-5-20251001");
     const result = await callAnthropicWithSchema({
@@ -434,7 +440,17 @@ Output ONLY by calling the record_brief tool.`;
       retry_count: result.retryCount,
       duration_ms: result.durationMs,
       error: result.ok ? null : result.error,
-      input_snapshot: { section_analyses_keys: Object.keys(sectionAnalyses) },
+      input_snapshot: {
+        section_analyses_keys: Object.keys(sectionAnalyses),
+        capacityMeasuredCount: capacityCtx.measuredCount,
+        capacityScores: capacityCtx.measured.reduce<Record<string, number>>(
+          (acc, m) => {
+            acc[m.slug] = m.score;
+            return acc;
+          },
+          {},
+        ),
+      },
       output_snapshot: result.ok ? result.data : (result as any).zodError ?? null,
     });
 
@@ -455,6 +471,21 @@ Output ONLY by calling the record_brief tool.`;
     const withModalities = {
       ...sanitizedBrief,
       training_modalities: inferTrainingModalities(sanitizedBrief, sectionAnalyses as any),
+    };
+
+    // R2 — backfill capacity_profile counts so the panel always shows the
+    // correct measured/total ratio even if the model omitted them.
+    const cp = (withModalities as any).capacity_profile ?? {};
+    (withModalities as any).capacity_profile = {
+      ...cp,
+      measured_count: capacityCtx.measuredCount,
+      total_domains: capacityCtx.totalDomains,
+      // If model returned no unmeasured_priority but we have unmeasured
+      // domains, fall back to the natural display order.
+      unmeasured_priority:
+        Array.isArray(cp.unmeasured_priority) && cp.unmeasured_priority.length > 0
+          ? cp.unmeasured_priority
+          : capacityCtx.unmeasured.slice(0, 5).map((u) => u.slug),
     };
 
     const { error: updErr } = await supabase
