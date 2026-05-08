@@ -2103,25 +2103,28 @@ function ClientDetail() {
 
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
-            <div className="mb-3 rounded-md border border-border bg-background/40 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <Label className="text-xs">Capacidade actual vs pico anterior</Label>
-                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {assessment.current_capacity_vs_pb ?? 5}/10
-                </span>
-              </div>
-              <Slider
-                min={1}
-                max={10}
-                step={1}
-                value={[assessment.current_capacity_vs_pb ?? 5]}
-                onValueChange={([v]) =>
-                  setAssessment({ ...assessment, current_capacity_vs_pb: v })
+            <div className="mb-3">
+              <AnchoredSlider
+                label="Onde está face ao melhor que já conseguiu?"
+                value={assessment.current_capacity_vs_pb ?? 5}
+                onChange={(v) => setAssessment({ ...assessment, current_capacity_vs_pb: v })}
+                trailing={
+                  <HelpPopover label="Capacidade vs pico">
+                    <p>
+                      Compare a forma actual com o melhor pico de treino que já teve. Vamos usar isto
+                      para decidir se começamos em modo reconstrução (mais volume, cargas leves) ou
+                      em modo progressão (intensidade mais alta).
+                    </p>
+                  </HelpPopover>
                 }
+                anchors={[
+                  { upTo: 2, label: "Muito longe do pico — modo reconstrução total" },
+                  { upTo: 4, label: "Bastante abaixo — recuperar base primeiro" },
+                  { upTo: 6, label: "A meio caminho — progressão controlada" },
+                  { upTo: 8, label: "Quase no pico — pronto para empurrar" },
+                  { upTo: 10, label: "No pico ou acima — modo progressão agressiva" },
+                ]}
               />
-              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                1 = muito longe do pico anterior (modo reconstrução) · 5 = a meio · 10 = no pico anterior ou acima (modo progressão).
-              </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
