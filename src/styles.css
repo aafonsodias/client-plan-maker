@@ -401,6 +401,44 @@
   background: radial-gradient(circle, rgb(201 123 92 / 0.55) 0%, rgb(201 123 92 / 0) 70%);
   animation: atlas-genie-halo 600ms ease-out both;
 }
+
+/* --- AtlasOrb: living copilot trigger ---
+ * Three layered rings + an inner breathing core. Designed to read as
+ * "alive, listening" without being noisy. Sits in the AppShell header.
+ */
+@keyframes atlas-orb-breathe {
+  0%, 100% { transform: scale(1);    filter: brightness(1); }
+  50%      { transform: scale(1.06); filter: brightness(1.15); }
+}
+@keyframes atlas-orb-aura {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.65); opacity: 0; }
+  100% { transform: scale(1.65); opacity: 0; }
+}
+@keyframes atlas-orb-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.atlas-orb-core {
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in oklab, var(--accent) 90%, white 10%),
+    color-mix(in oklab, var(--accent) 60%, transparent),
+    color-mix(in oklab, var(--accent) 95%, white 5%),
+    color-mix(in oklab, var(--accent) 50%, transparent),
+    color-mix(in oklab, var(--accent) 90%, white 10%)
+  );
+  background-size: 200% 200%;
+  animation:
+    atlas-orb-breathe 3.4s ease-in-out infinite,
+    atlas-orb-shimmer 6s ease-in-out infinite;
+}
+.atlas-orb-aura  { animation: atlas-orb-aura 2.6s ease-out infinite; }
+.atlas-orb-aura2 { animation: atlas-orb-aura 2.6s ease-out infinite; animation-delay: 1.3s; }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-orb-core, .atlas-orb-aura, .atlas-orb-aura2 { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .atlas-genie-mark, .atlas-genie-halo { animation: none; }
 }
