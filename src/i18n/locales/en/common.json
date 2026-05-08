@@ -431,7 +431,76 @@
     "headline_unknown": "Not enough data yet.",
     "top_lifts": "Top lifts — estimated e1RM",
     "adherence": "Adherence {{pct}}%",
-    "rpe_drift": "RPE drift {{value}}"
+    "rpe_drift": "RPE drift {{value}}",
+    "cardiorespiratory": {
+      "name": "Cardiorespiratory",
+      "evidence": "Strongest single predictor of all-cause mortality among fitness components (ACSM, 2022).",
+      "short": "Cardio"
+    },
+    "muscular_strength": {
+      "name": "Strength",
+      "evidence": "Inversely associated with all-cause mortality independent of cardiorespiratory fitness (ACSM, 2022).",
+      "short": "Strength"
+    },
+    "muscular_endurance": {
+      "name": "Endurance",
+      "evidence": "Predicts functional capacity and daily-task tolerance more reliably than max strength alone (ACSM, 2022).",
+      "short": "Endurance"
+    },
+    "flexibility": {
+      "name": "Flexibility",
+      "evidence": "Joint-specific; correlates with movement quality and injury risk reduction (ACSM, 2022).",
+      "short": "Flex"
+    },
+    "body_composition": {
+      "name": "Body composition",
+      "evidence": "Independent risk modifier for cardiometabolic disease across all BMI ranges (NHANES 2017–2020).",
+      "short": "Body comp"
+    },
+    "power": {
+      "name": "Power",
+      "evidence": "Declines earlier than strength with age; key marker of fall risk in older adults (NSCA Essentials, 4e).",
+      "short": "Power"
+    },
+    "balance": {
+      "name": "Balance",
+      "evidence": "Strongest single test-based predictor of fall risk in adults over 65 (Berg Balance Scale literature).",
+      "short": "Balance"
+    },
+    "coordination": {
+      "name": "Coordination",
+      "evidence": "Underpins skill transfer; trainable independently of strength or endurance (NSCA Essentials, 4e).",
+      "short": "Coord"
+    },
+    "agility": {
+      "name": "Agility",
+      "evidence": "Combined cognitive-motor demand; deficits track with elevated injury rates in cutting sports (NSCA Essentials, 4e).",
+      "short": "Agility"
+    },
+    "cognitive_motor": {
+      "name": "Cognitive-motor",
+      "evidence": "Dual-task performance independently predicts long-term functional independence (Plummer et al., 2013).",
+      "short": "Cog-motor"
+    },
+    "movement_quality": {
+      "name": "Movement quality",
+      "evidence": "Pattern integrity gates safe loading regardless of measured strength (FMS / SFMA literature).",
+      "short": "Movement"
+    },
+    "map": {
+      "title": "Capacity Map",
+      "subtitle": "Where this client is across the evidence-based capacity spectrum.",
+      "completion": "{{done}} of {{total}} domains measured",
+      "empty_title": "No measurements yet.",
+      "empty_subtitle": "Add the first snapshot from the assessment flow (coming next).",
+      "tier_health": "Health-related",
+      "tier_skill": "Skill-related",
+      "tier_integrative": "Integrative",
+      "tooltip_score": "{{score}} / 100",
+      "tooltip_test": "Test: {{test}}",
+      "tooltip_unmeasured": "Not measured yet",
+      "measured_relative": "Measured {{when}}"
+    }
   },
   "adaptation": {
     "compact_all_target": "All on target in the prior block.",
