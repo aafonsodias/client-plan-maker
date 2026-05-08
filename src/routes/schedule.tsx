@@ -643,6 +643,7 @@ function RowHour({
   onToggleDone: (b: Booking) => void;
   clipboardActive: boolean;
 }) {
+  const [dropDay, setDropDay] = useState<number | null>(null);
   return (
     <>
       <div className="border-b border-border px-1 py-2 text-right text-[10px] font-mono text-muted-foreground">
@@ -660,7 +661,30 @@ function RowHour({
         return (
           <div
             key={i}
-            className={`relative h-14 border-b border-l border-border ${clipboardActive ? "hover:bg-secondary/70 cursor-copy" : "hover:bg-secondary/40"}`}
+            className={`relative h-14 border-b border-l border-border ${clipboardActive ? "hover:bg-secondary/70 cursor-copy" : "hover:bg-secondary/40"} ${dropDay === i ? "drop-target-active" : ""}`}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("application/x-booking-id")) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (dropDay !== i) setDropDay(i);
+              }
+            }}
+            onDragLeave={() => {
+              if (dropDay === i) setDropDay(null);
+            }}
+            onDrop={(e) => {
+              const id = e.dataTransfer.getData("application/x-booking-id");
+              setDropDay(null);
+              if (!id) return;
+              e.preventDefault();
+              // Preserve original minute offset; snap to this cell's day+hour.
+              const original = bookings.find((b) => b.id === id);
+              const minutes = original ? new Date(original.starts_at).getMinutes() : 0;
+              const next = new Date(slot);
+              next.setMinutes(minutes, 0, 0);
+              if (original && next.toISOString() === original.starts_at) return;
+              onDragCommit(id, next.toISOString());
+            }}
           >
             <button
               type="button"
