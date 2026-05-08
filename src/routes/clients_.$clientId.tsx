@@ -1743,9 +1743,7 @@ function ClientDetail() {
                 primaryAction={primaryAction}
               />
             </div>
-            <div className="mt-3 border-t border-border/60 pt-3">
-              <CapacityDeltasCard clientId={clientId} />
-            </div>
+            <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-1 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
