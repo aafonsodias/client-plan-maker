@@ -199,7 +199,6 @@ function sectionSignature(assessment: any, section: string): string {
 }
 
 const SECTIONS = [
-  { id: "identity", label: "Identidade" },
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
   { id: "anthro", label: "Anthropometry" },
@@ -219,7 +218,7 @@ const SECTIONS = [
 // Optional sections render collapsed by default and count as complete
 // the moment any of their fields is touched.
 const OPTIONAL_SECTIONS = new Set([
-  "anthro", "meds", "readiness", "lifestyle", "nutrition",
+  "meds", "readiness", "lifestyle", "nutrition",
   "posture", "screen", "history", "performance",
 ]);
 
@@ -232,11 +231,6 @@ function hasVal(v: any): boolean {
 
 function isSectionComplete(id: string, a: any): boolean {
   switch (id) {
-    case "identity":
-      // Completion is tracked on the client record, not the assessment, so the
-      // section reads as complete the moment the trainer touches any field.
-      // The BMV (brief-minimum) does the strict 4-field check separately.
-      return true;
     case "parq":
       return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
     case "risk":
@@ -1832,91 +1826,6 @@ function ClientDetail() {
           }
         >
 
-          {/* Identidade — sexo, data de nascimento, altura e peso.
-              Vive no cliente (não na avaliação). Primeira tab para que o
-              "Ver" do BMV (item identity) possa apontar para cá. */}
-          <SectionBlock
-            id="identity"
-            analysing={false}
-            analysis={null}
-            title="Identidade"
-            hint="Sexo, data de nascimento, altura e peso. Necessários para o brief."
-            complete={isSectionComplete("identity", assessment)}
-          >
-            <div className="grid gap-2 sm:grid-cols-4">
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
-                <select
-                  value={client?.sex ?? ""}
-                  onChange={async (e) => {
-                    const v = e.target.value || null;
-                    setClient((prev: any) => ({ ...prev, sex: v }));
-                    await supabase.from("clients").update({ sex: v }).eq("id", clientId);
-                  }}
-                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                >
-                  <option value="">—</option>
-                  <option value="female">Feminino</option>
-                  <option value="male">Masculino</option>
-                </select>
-              </label>
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
-                <input
-                  type="date"
-                  defaultValue={client?.date_of_birth ?? ""}
-                  onBlur={async (e) => {
-                    const v = e.target.value || null;
-                    if (v === (client?.date_of_birth ?? null)) return;
-                    setClient((prev: any) => ({ ...prev, date_of_birth: v }));
-                    await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
-                  }}
-                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={80}
-                  max={250}
-                  step={1}
-                  defaultValue={client?.height_cm ?? ""}
-                  placeholder="ex. 175"
-                  onBlur={async (e) => {
-                    const n = Number(e.target.value);
-                    const v = Number.isFinite(n) && n > 0 ? n : null;
-                    if (v === (client?.height_cm ?? null)) return;
-                    setClient((prev: any) => ({ ...prev, height_cm: v }));
-                    await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
-                  }}
-                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={20}
-                  max={400}
-                  step={0.1}
-                  defaultValue={client?.weight_kg ?? ""}
-                  placeholder="ex. 78.4"
-                  onBlur={async (e) => {
-                    const n = Number(e.target.value);
-                    const v = Number.isFinite(n) && n > 0 ? n : null;
-                    if (v === (client?.weight_kg ?? null)) return;
-                    setClient((prev: any) => ({ ...prev, weight_kg: v }));
-                    await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
-                  }}
-                  className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                />
-              </label>
-            </div>
-          </SectionBlock>
-
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
             <ul className="space-y-1.5">
@@ -2111,7 +2020,89 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)}>
+            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
+                Vivem em `clients` (não na avaliação) mas pertencem
+                conceptualmente à antropometria: alimentam IMC, BMR e
+                estimativas de %GC. Posicionados em cima por serem o
+                primeiro input clínico que qualquer ficha pede. */}
+            <div className="mb-3 rounded-md border border-border/60 bg-muted/20 p-2.5">
+              <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Dados base
+              </div>
+              <div className="grid gap-2 sm:grid-cols-4">
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
+                  <select
+                    value={client?.sex ?? ""}
+                    onChange={async (e) => {
+                      const v = e.target.value || null;
+                      setClient((prev: any) => ({ ...prev, sex: v }));
+                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="">—</option>
+                    <option value="female">Feminino</option>
+                    <option value="male">Masculino</option>
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+                  <input
+                    type="date"
+                    defaultValue={client?.date_of_birth ?? ""}
+                    onBlur={async (e) => {
+                      const v = e.target.value || null;
+                      if (v === (client?.date_of_birth ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={80}
+                    max={250}
+                    step={1}
+                    defaultValue={client?.height_cm ?? ""}
+                    placeholder="ex. 175"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.height_cm ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, height_cm: v }));
+                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={20}
+                    max={400}
+                    step={0.1}
+                    defaultValue={client?.weight_kg ?? ""}
+                    placeholder="ex. 78.4"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.weight_kg ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
+            </div>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
