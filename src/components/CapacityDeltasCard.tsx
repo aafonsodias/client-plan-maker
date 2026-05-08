@@ -120,7 +120,7 @@ export function CapacityDeltasCard({ clientId }: { clientId: string }) {
   if (deltas.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="mt-3 space-y-2 border-t border-border/60 pt-3">
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {t("capacityDeltas.title")}
