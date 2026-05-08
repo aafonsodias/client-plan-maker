@@ -17,7 +17,7 @@ export function Logo({ className = "h-4 w-4" }: { className?: string }) {
         d="M14 12 L14 52 L22 52 L22 38 L36 38 C44 38 50 32 50 25 C50 18 44 12 36 12 Z M22 18 L36 18 C40 18 42 21 42 25 C42 29 40 32 36 32 L22 32 Z"
         fill="currentColor"
       />
-      <rect x="20" y="55" width="14" height="3" rx="1" fill="#5BA3D8" />
+      <rect x="20" y="55" width="14" height="3" rx="1" fill="var(--accent)" />
     </svg>
   );
 }
