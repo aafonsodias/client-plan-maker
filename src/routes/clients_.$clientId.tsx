@@ -282,6 +282,28 @@ function computeRisk(risk: any): string {
   return "low";
 }
 
+// WHO adult BMI bands. Auto-derived from client height/weight so trainers
+// don't have to categorise manually. "muscular" stays as a manual override
+// elsewhere — it cannot be inferred from BMI alone.
+function categorizeBmi(heightCm: any, weightKg: any): {
+  value: number | null;
+  category: "" | "underweight" | "normal" | "overweight" | "obese";
+} {
+  const h = Number(heightCm);
+  const w = Number(weightKg);
+  if (!Number.isFinite(h) || !Number.isFinite(w) || h <= 0 || w <= 0) {
+    return { value: null, category: "" };
+  }
+  const bmi = w / Math.pow(h / 100, 2);
+  if (!Number.isFinite(bmi)) return { value: null, category: "" };
+  let category: "underweight" | "normal" | "overweight" | "obese";
+  if (bmi < 18.5) category = "underweight";
+  else if (bmi < 25) category = "normal";
+  else if (bmi < 30) category = "overweight";
+  else category = "obese";
+  return { value: Math.round(bmi * 10) / 10, category };
+}
+
 function buildAssessmentPayload(assessment: any, userId: string, clientId: string) {
   return {
     trainer_id: userId,
@@ -1422,6 +1444,21 @@ function ClientDetail() {
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
 
+  // Auto-derive BMI category from client height + weight. Writes back into the
+  // assessment so completion tracking and downstream risk math stay in sync.
+  // "muscular" is preserved if previously chosen (BMI alone can't infer it).
+  const bmiAuto = categorizeBmi(client?.height_cm, client?.weight_kg);
+  useEffect(() => {
+    if (!bmiAuto.category) return;
+    if (assessment.risk?.bmi_category === "muscular") return;
+    if (assessment.risk?.bmi_category === bmiAuto.category) return;
+    setAssessment((a: any) => ({
+      ...a,
+      risk: { ...(a.risk ?? {}), bmi_category: bmiAuto.category },
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bmiAuto.category]);
+
   // Section completion + progress
   const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
   const completedCount = sectionStatus.filter((s) => s.complete).length;
@@ -1798,16 +1835,39 @@ function ClientDetail() {
               <Toggle label={t("risk_block.sedentary")} value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
-                <Select value={assessment.risk.bmi_category} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="underweight">{t("risk_block.bmi_underweight")}</SelectItem>
-                    <SelectItem value="normal">{t("risk_block.bmi_normal")}</SelectItem>
-                    <SelectItem value="overweight">{t("risk_block.bmi_overweight")}</SelectItem>
-                    <SelectItem value="obese">{t("risk_block.bmi_obese")}</SelectItem>
-                    <SelectItem value="muscular">{t("risk_block.bmi_muscular")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                {bmiAuto.value !== null ? (
+                  <div className="flex h-8 items-center justify-between rounded-md border border-border bg-background/50 px-3 text-sm">
+                    <span className="font-medium">
+                      {bmiAuto.value.toFixed(1)} ·{" "}
+                      {t(`risk_block.bmi_${assessment.risk.bmi_category === "muscular" ? "muscular" : bmiAuto.category}` as const)}
+                    </span>
+                    {assessment.risk.bmi_category !== "muscular" ? (
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                        onClick={() =>
+                          setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: "muscular" } })
+                        }
+                      >
+                        {t("risk_block.bmi_mark_muscular")}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                        onClick={() =>
+                          setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: bmiAuto.category } })
+                        }
+                      >
+                        {t("risk_block.bmi_use_auto")}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex h-8 items-center rounded-md border border-dashed border-border bg-background/30 px-3 text-xs text-muted-foreground">
+                    {t("risk_block.bmi_missing_hw")}
+                  </div>
+                )}
               </div>
               <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
               <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
