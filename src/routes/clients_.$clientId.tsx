@@ -4,6 +4,7 @@ import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
+import { CapacityMap } from "@/components/CapacityMap";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
