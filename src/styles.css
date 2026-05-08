@@ -2,7 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.theme-dark *));
+@custom-variant dark (&:is(.theme-dark *, .dark *));
 
 /* Cross-browser scrollbar hide utility */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
