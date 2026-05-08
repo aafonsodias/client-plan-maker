@@ -1623,6 +1623,92 @@ function ClientDetail() {
         </div>
       </div>
 
+      {/* Identity quick-edit strip — alvo do "Ver" do BMV (item identity).
+          Repete os 4 campos obrigatórios (sexo, nascimento, altura, peso)
+          aqui em cima para que o treinador possa preenchê-los sem ter de
+          abrir Antropometria nem o overview. */}
+      <div
+        id="sec-identity"
+        className="rounded-md border border-border bg-background/40 p-3"
+      >
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Identidade
+        </div>
+        <div className="grid gap-2 sm:grid-cols-4">
+          <label className="space-y-1">
+            <span className="text-[11px] text-muted-foreground">Sexo</span>
+            <select
+              value={client?.sex ?? ""}
+              onChange={async (e) => {
+                const v = e.target.value || null;
+                setClient((prev: any) => ({ ...prev, sex: v }));
+                await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+              }}
+              className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="">—</option>
+              <option value="female">Feminino</option>
+              <option value="male">Masculino</option>
+              <option value="other">Outro</option>
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+            <input
+              type="date"
+              defaultValue={client?.date_of_birth ?? ""}
+              onBlur={async (e) => {
+                const v = e.target.value || null;
+                if (v === (client?.date_of_birth ?? null)) return;
+                setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+              }}
+              className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={80}
+              max={250}
+              step={1}
+              defaultValue={client?.height_cm ?? ""}
+              placeholder="ex. 175"
+              onBlur={async (e) => {
+                const n = Number(e.target.value);
+                const v = Number.isFinite(n) && n > 0 ? n : null;
+                if (v === (client?.height_cm ?? null)) return;
+                setClient((prev: any) => ({ ...prev, height_cm: v }));
+                await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+              }}
+              className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={20}
+              max={400}
+              step={0.1}
+              defaultValue={client?.weight_kg ?? ""}
+              placeholder="ex. 78.4"
+              onBlur={async (e) => {
+                const n = Number(e.target.value);
+                const v = Number.isFinite(n) && n > 0 ? n : null;
+                if (v === (client?.weight_kg ?? null)) return;
+                setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+              }}
+              className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+        </div>
+      </div>
+
       {!(client.intake_status === "submitted" ||
         client.intake_status === "reviewed" ||
         lastSavedAt) && (
@@ -3392,6 +3478,11 @@ function ClientDetail() {
           if (sid === "client-overview") {
             const el = document.querySelector('[data-tour="client-overview"]') as HTMLElement | null;
             el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+          }
+          // Identity quick-edit strip lives above the assessment tabs.
+          if (sid === "identity") {
+            document.getElementById("sec-identity")?.scrollIntoView({ behavior: "smooth", block: "start" });
             return;
           }
           // Otherwise let AssessmentTabs activate + expand the right section, then scroll.
