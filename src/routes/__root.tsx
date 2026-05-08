@@ -9,6 +9,8 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { DemoRunsProvider } from "@/contexts/DemoRunsContext";
 import { DemoRunsIndicator } from "@/components/DemoRunsIndicator";
 import { TourProvider } from "@/contexts/TourContext";
+import { ViewAsProvider } from "@/contexts/ViewAsContext";
+import { ViewAsBar } from "@/components/ViewAsBar";
 import i18n, { applyPersistedLocale } from "@/i18n";
 
 import appCss from "../styles.css?url";
@@ -130,9 +132,12 @@ function RootComponent() {
           <CurrencyProvider>
             <DemoRunsProvider>
               <TourProvider>
-                <Outlet />
-                <DemoRunsIndicator />
-                <Toaster />
+                <ViewAsProvider>
+                  <ViewAsBar />
+                  <Outlet />
+                  <DemoRunsIndicator />
+                  <Toaster />
+                </ViewAsProvider>
               </TourProvider>
             </DemoRunsProvider>
           </CurrencyProvider>
