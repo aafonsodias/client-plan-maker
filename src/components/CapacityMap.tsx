@@ -1,3 +1,13 @@
+/**
+ * R2 — Cross-component contract: any other surface (e.g. BriefEditor's
+ * Capacity Profile card) can request opening the AddSnapshotSheet pre-filled
+ * to a specific domain by dispatching a window event:
+ *
+ *   window.dispatchEvent(new CustomEvent("open-add-snapshot", { detail: { slug } }))
+ *
+ * CapacityMap is the single owner of the sheet on the client detail route
+ * and listens for this event below.
+ */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
@@ -133,6 +143,17 @@ export function CapacityMap({
       void supabase.removeChannel(ch);
     };
   }, [clientId, load]);
+
+  // R2 — listen for cross-component "open this domain in the sheet" requests.
+  useEffect(() => {
+    const onOpen = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ slug?: string }>).detail;
+      setSheetDomain(detail?.slug);
+      setSheetOpen(true);
+    };
+    window.addEventListener("open-add-snapshot", onOpen as EventListener);
+    return () => window.removeEventListener("open-add-snapshot", onOpen as EventListener);
+  }, []);
 
   const dateLocale = DATE_LOCALES[i18n.language?.slice(0, 2) ?? "en"] ?? enUS;
 
