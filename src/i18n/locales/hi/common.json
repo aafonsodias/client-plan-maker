@@ -549,6 +549,13 @@
       "overhead_squat_assessment": "ओवरहेड स्क्वैट मूल्यांकन",
       "single_leg_squat_assessment": "एक-पैर स्क्वैट मूल्यांकन",
       "sfma_total": "SFMA कुल"
+      ,
+      "resting_heart_rate": "विश्राम हृदय गति",
+      "blood_pressure_systolic": "रक्तचाप (सिस्टोलिक)",
+      "blood_pressure_diastolic": "रक्तचाप (डायस्टोलिक)",
+      "hrv_rmssd": "HRV (RMSSD)",
+      "breath_rate_resting": "विश्राम श्वसन दर",
+      "orthostatic_test": "ऑर्थोस्टैटिक परीक्षण (Δ HR)"
     }
   },
   "adaptation": {
