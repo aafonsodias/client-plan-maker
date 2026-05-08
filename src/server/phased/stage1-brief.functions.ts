@@ -66,6 +66,7 @@ const BRIEF_TOOL_SCHEMA = {
     "emphasis_split",
     "equipment_constraints",
     "notes_for_next_stage",
+    "capacity_profile",
   ],
   properties: {
     primary_goal: {
@@ -115,6 +116,45 @@ const BRIEF_TOOL_SCHEMA = {
     intensity_appetite: {
       type: "string",
       enum: ["conservador", "padrao", "agressivo"],
+    },
+    capacity_profile: {
+      type: "object",
+      additionalProperties: false,
+      required: ["summary", "strengths", "gaps", "unmeasured_priority"],
+      properties: {
+        summary: { type: "string", maxLength: 800 },
+        strengths: {
+          type: "array",
+          maxItems: 5,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["slug", "note"],
+            properties: {
+              slug: { type: "string" },
+              note: { type: "string", maxLength: 200 },
+            },
+          },
+        },
+        gaps: {
+          type: "array",
+          maxItems: 5,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["slug", "note"],
+            properties: {
+              slug: { type: "string" },
+              note: { type: "string", maxLength: 200 },
+            },
+          },
+        },
+        unmeasured_priority: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string" },
+        },
+      },
     },
   },
 };
