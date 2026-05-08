@@ -3370,6 +3370,38 @@ function ClientDetail() {
           onOpenChange={setReassessOpen}
         />
       )}
+      <DeviceCaptureSheet
+        clientId={clientId}
+        device={TANITA}
+        open={tanitaOpen}
+        onOpenChange={setTanitaOpen}
+        onSaved={() => setBmvReloadTick((t) => t + 1)}
+      />
+      <DeviceCaptureSheet
+        clientId={clientId}
+        device={JAMAR}
+        open={jamarOpen}
+        onOpenChange={setJamarOpen}
+        onSaved={() => setBmvReloadTick((t) => t + 1)}
+      />
+      <BriefMinimumSheet
+        open={bmvOpen}
+        onOpenChange={setBmvOpen}
+        bmv={computeBmv({ client, assessment, snapshots: bmvSnapshots })}
+        busy={phasedBusy}
+        onJumpToSection={(sid) => {
+          const el = document.getElementById(`sec-${sid}`) ?? document.getElementById(sid);
+          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onStartBrief={async () => {
+          try {
+            setPhasedBusy(true);
+            const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
+            if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); }
+            else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
+          } finally { setPhasedBusy(false); }
+        }}
+      />
     </div>
     </TooltipProvider>
   );
