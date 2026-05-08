@@ -3388,8 +3388,16 @@ function ClientDetail() {
         bmv={computeBmv({ client, assessment, snapshots: bmvSnapshots })}
         busy={phasedBusy}
         onJumpToSection={(sid) => {
-          const el = document.getElementById(`sec-${sid}`) ?? document.getElementById(sid);
-          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Identity lives outside the SECTIONS list — scroll to the overview wrapper.
+          if (sid === "client-overview") {
+            const el = document.querySelector('[data-tour="client-overview"]') as HTMLElement | null;
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+          }
+          // Otherwise let AssessmentTabs activate + expand the right section, then scroll.
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("assessment:jump", { detail: { sectionId: sid } }));
+          }
         }}
         onStartBrief={async () => {
           try {
