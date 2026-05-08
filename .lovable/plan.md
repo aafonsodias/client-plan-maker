@@ -1,9 +1,15 @@
-## Fix
+## Problema
 
-In `src/routes/clients_.$clientId.tsx`:
+O ecrã de loading do `AppShell` (mostrado enquanto a sessão carrega ou quando `user` ainda não está pronto) é só um pontinho pulsante (`AppShell.tsx` linhas 117–125). Como aparece em todas as rotas autenticadas durante o boot e em hard-refresh, dá a sensação de "às vezes não há logo".
 
-1. Move the `bmiAuto` computation and its `useEffect` (currently lines 1450–1460) to **above** the `if (!client) return …` guard at line 1439, alongside the other top-level hooks.
-2. Make them null-safe: compute `bmiAuto` from `client?.height_cm / client?.weight_kg` (already does) and inside the effect bail out early when `!client` or `!assessment`.
-3. Leave the JSX usage at lines 1838–1859 unchanged — `bmiAuto` is still in scope.
+A razão histórica do dot foi evitar mismatch de hidratação SSR/CSR — qualquer texto traduzido divergia entre `en` (SSR) e `pt-PT` (cliente). O `<BrandMark/>` é puramente visual (SVG, sem cópia traduzida), por isso é seguro renderizá-lo no fallback.
 
-No other files touched. This restores the hook order invariant and unblocks both viewing existing clients and the post-create redirect.
+## Mudança
+
+Em `src/components/AppShell.tsx`, no bloco `if (loading || !user)`:
+
+- Substituir o `<span>` pulsante por um `<BrandMark size="lg" />` centrado vertical/horizontal, com `animate-pulse` subtle no wrapper para indicar actividade.
+- Manter `suppressHydrationWarning` no container e o `<span className="sr-only">` com `t("actions.loading")` para acessibilidade.
+- Sem texto visível → continua locale-neutral, SSR e primeiro paint client batem certo.
+
+Nada mais é tocado. Sem novas chaves i18n, sem mudanças de rota.
