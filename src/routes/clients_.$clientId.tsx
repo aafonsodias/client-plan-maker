@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HelpPopover } from "@/components/assessment/HelpPopover";
+import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
