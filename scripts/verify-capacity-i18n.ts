@@ -13,7 +13,7 @@ type Locale = (typeof LOCALES)[number];
 const DOMAIN_SLUGS = [
   "cardiorespiratory", "muscular_strength", "muscular_endurance", "flexibility",
   "body_composition", "power", "balance", "coordination", "agility",
-  "cognitive_motor", "movement_quality",
+  "cognitive_motor", "movement_quality", "autonomic_regulation",
 ];
 const DOMAIN_SUBKEYS = ["name", "short", "evidence"];
 
@@ -41,6 +41,8 @@ const TEST_SLUGS = [
   "505_agility", "t_test", "pro_agility_5_10_5", "illinois_agility",
   "tug_dual_task", "walking_while_talking", "stroop_walk",
   "fms_total", "overhead_squat_assessment", "single_leg_squat_assessment", "sfma_total",
+  "resting_heart_rate", "blood_pressure_systolic", "blood_pressure_diastolic",
+  "hrv_rmssd", "breath_rate_resting", "orthostatic_test",
 ];
 
 type AnyObj = Record<string, any>;
