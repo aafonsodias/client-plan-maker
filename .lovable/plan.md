@@ -1,88 +1,92 @@
-## Plan Rápido — refactor de coerência e honestidade
+# Schedule: drag bookings + readable labels + therapeutic palette
 
-Foco: resolver os P0 que podem fazer um PT fechar a página ou ter problema legal, depois P1/P2.
+Three things, in order of risk. The healthcare-color study you sent (soft blues/greens dominant, muted yellows + earth tones as accents, warm for motivation) is a good fit for Protocol — it's a calm, competent, "this person is taking care of you" tool, not a dopamine app. Worth doing, with two caveats I'll flag below.
 
-### Decisão estratégica primeiro
+## 1. Drag bookings to reschedule (week + month)
 
-Antes de tocar em código preciso da tua resposta a UMA pergunta:
+Today the only ways to move a booking are: open dialog → change date/time, or copy-to-next-week. Direct manipulation is the obvious win.
 
-**O Plano Rápido é (a) demonstração do motor para o PT ver, ou (b) plano entregável a um cliente real?**
+**Week view (`RowHour` / `BookingBlock`)**
+- `BookingBlock` becomes draggable (HTML5 `draggable`, dataTransfer = `bookingId`).
+- Each hour cell on each weekday becomes a drop target. Drop = update `starts_at` to that day + hour, keeping the booking's minute offset and duration.
+- Visual feedback: dragged block goes to `opacity-50`; hovered hour cell gets `ring-2 ring-accent`.
+- Optimistic update via existing `updateFn`, `refresh()` on failure (same pattern as `handleToggleDone`).
 
-- Se (a) demo: nome do cliente passa a opcional (default "Cliente Demo"), PDF leva watermark "DEMONSTRAÇÃO — refazer com intake completo antes de entregar", sem PAR-Q.
-- Se (b) entregável: bloqueio com PAR-Q mínimo (3 perguntas binárias: dor torácica em esforço · medicação cardiovascular · lesão activa que limite movimento) antes de gerar.
+**Month view (`ScheduleMonth`)**
+- Each day-cell pill is draggable, day cells are drop targets.
+- Drop = move to that day, **preserve the original time**.
+- Same optimistic pattern.
 
-A minha recomendação é **(a) demo, com botão grande "Promover a plano clínico" no fim que abre o intake completo pré-preenchido** — fecha o loop sem comprometer o teu posicionamento clínico. Mas é decisão tua.
+**Mobile day-strip**: skip drag (no real target — already a single column). Tap-to-edit stays.
 
----
+**Out of scope for this round**: cross-pack drag, multi-select drag, resize-to-change-duration. Resize is the next obvious thing but it needs a separate handle and a different mental model — flag it as P1 backlog.
 
-### P0 — bloqueadores
+## 2. Readable labels on coloured blocks
 
-**1. Promessa "5 campos" cumprida.** Reagrupar em 5 grupos visuais reais:
-- Cliente (Nome · Idade · Sexo numa linha)
-- Objectivo
-- Experiência
-- Frequência
-- Equipamento
+Looking at your screenshot, the problem is real: white text on `bg-{color}-500/15` in dark mode is fine for the *block* but the text uses `text-{color}-300` which dies on its own tinted background. The `line-through opacity-70` for done bookings makes it actively unreadable.
 
-Sexo move-se de 2º campo para dentro do grupo "Cliente", com tooltip "?": *"Usado para calibrar cargas e zonas (ACSM). Editável depois."*
+Fix in `src/lib/schedule.ts` → `PACK_BLOCK`:
 
-**2. Selecção visual sem ambiguidade com warn.** Hoje âmbar dessaturado em texto sobre fundo escuro lê-se como erro de validação — colide com `status-tone.ts` (warn=âmbar).
-- Estado seleccionado = **fundo âmbar sólido suave + texto foreground forte + check ✓ inline**.
-- Não-seleccionado = outline border, texto muted.
-- Aplica-se aos botões de Sexo, Objectivo, Experiência, Dias, Equipamento.
+- **Block fill**: bump tint from `/15` to `/22` in dark, keep `/15` in light/slate (more contrast against the dark canvas without becoming aggressive).
+- **Text colour**: stop using the same hue as the fill. Use `text-foreground` everywhere — the chip is identified by the dot + ring + tinted fill, not by the text colour. Foreground always passes contrast in every theme by definition.
+- **Text legibility under tint**: add a subtle text-shadow so labels stay crisp over any saturated fill in any theme:
+  ```
+  text-shadow: 0 1px 0 color-mix(in oklab, var(--background) 70%, transparent);
+  ```
+  Expose as a utility class `.label-on-tint` in `src/styles.css`. This is the "contour" you asked for — softer than a stroke, no childishness.
+- **Done state**: drop `opacity-70`, keep `line-through`, add a small ✓ pill at the right (already present). Strikethrough alone communicates done; opacity drop is what kills it.
 
-**3. Microcopy "sem lesões" eliminado.** Substituir o parágrafo de honestidade por:
+## 3. Therapeutic palette (the healthcare study, applied honestly)
 
-> "Plano Rápido = motor com defaults conservadores. **Não substitui intake clínico.** Para usar com cliente real, complete o PAR-Q antes de prescrever — abrir intake completo →"
+Current `PACK_COLORS` = `[emerald, amber, blue, violet, rose, cyan, orange, lime]`. That's a generic 8-colour rainbow — fine for tagging, wrong for a clinical-feeling app. The study's recommendation: **cool-dominant** (blues/greens) with **muted warm accents** (amber/terracotta) and **earth tones** at low frequency.
 
-Link directo para `/clients/{id}/intake` quando o plano gerar.
+New `PACK_COLORS` (8 slots, ordered by hand-out frequency — the first picks fire most often via `colorFromId` hash):
 
-### P1 — coerência
+| Slot | Token name | Role | Use |
+|---|---|---|---|
+| 1 | `sage` | cool-green | calm baseline |
+| 2 | `mist` | soft blue | trust/clarity |
+| 3 | `clay` | muted terracotta | warm accent (motivation) |
+| 4 | `ocean` | deeper blue-green | second cool |
+| 5 | `wheat` | muted yellow | low-rate warm |
+| 6 | `stone` | warm grey-brown | earth tone |
+| 7 | `plum` | desaturated mauve | rare, distinctive |
+| 8 | `moss` | deep green | last-resort cool |
 
-**4. RPE cap deixa de estar enterrado em prosa.** Passa a ser função explícita da experiência seleccionada e mostrado como chip sob o seletor:
-- Iniciante → RPE máx 7.5
-- Intermédio → RPE máx 8.5
-- Avançado → RPE máx 9
+All defined in `src/lib/schedule.ts` `PACK_BLOCK` with three variants per token (dark / slate / cream), so each chip is calibrated per theme rather than relying on `dark:` flips of the same `*-500` Tailwind colour. This is more code, but it's the only way the palette holds across all three themes — and it stops us being chained to Tailwind's saturated default scale.
 
-Chip pequeno: *"Tecto de esforço: RPE 8.5"* — actualiza ao mudar experiência. Lógica passa para `quick-plan.server.ts` (já recebe `experience`).
+**Two honest caveats:**
+- The study is about *clinical environments*, not productivity tools. The "calm" effect is real but at high saturation we'd lose at-a-glance distinguishability between the 8 chips. The proposed slots are deliberately distinct in **hue** (green/blue/terracotta/yellow/brown/mauve), not just lightness, to keep glance-readability.
+- The amber accent (`--accent`) stays. It's the brand. The new palette runs in parallel for *client tagging only* — we're not repainting buttons or focus rings.
 
-**5. Hierarquia visual: Objectivo ganha peso, Equipamento perde.** Objectivo = 5 cards maiores com ícone (Hipertrofia=Dumbbell, Força=Anvil/Weight, Recomp=Scale, Saúde=Heart, Performance=Trophy). Equipamento mantém-se como chips compactos.
+## 4. Contrast audit (after the palette lands)
 
-**6. Categorias de equipamento por tipo, não por contexto.** Substituir a lista actual por:
-- Barra + anilhas
-- Halteres
-- Kettlebells
-- Máquinas
-- Elásticos
-- Peso do corpo
+Sweep the surfaces most likely to break with the new chips:
+- `CoachCockpit` calendar dots (already using these colours).
+- `clients_.$clientId` header chips and avatars.
+- `ClientAvatar` initials background derives from the same palette.
+- `RevenuePanel` per-pack legend.
+- Plan view block-evolution chips.
 
-"Treino em casa" e "Halteres em casa" desaparecem (contexto, não equipamento). Migração: mapear `home`/`bodyweight` antigos para `bodyweight`, `dumbbells` mantém-se. Sem mudança de schema necessária — é só lista de IDs no frontend e o `quick-plan.server.ts` já lida com o array.
+Each surface gets eyeballed in dark / slate / cream. Anything below ~4.5:1 on text, below ~3:1 on borders/dots, gets fixed in the same round.
 
-**7. CTA copy fecha o loop de promessa.** "Gerar plano agora" → **"Gerar em 60s"**. Alinha com header "5 campos → plano em 60–90s".
+## Technical notes
 
-### P2 — polish
+- Drag uses HTML5 DnD (no library): `draggable`, `onDragStart`, `onDragOver` (preventDefault), `onDrop`. Keep `e.stopPropagation()` discipline already used by the ✓ button so drag doesn't fight the open-dialog click.
+- Drop handler reads `bookingId` from `dataTransfer`, computes new `starts_at` ISO from the cell's day+hour, calls `updateFn({ id, starts_at })`, then `onBookingsMutated()`.
+- `colorFromId` becomes order-sensitive after we reorder `PACK_COLORS`, so existing clients will get reassigned hues on first render. That's fine (no DB migration), but worth noting in case anyone has memorised "Gustavo is green".
+- `.label-on-tint` utility added to `@layer utilities` in `src/styles.css`. The `color-mix` fallback uses `var(--background)` so it adapts per theme without a new variable.
+- Mobile: drag is desktop/tablet only — touch DnD is a usability disaster without a long-press affordance, and we don't need it for a v1.
 
-**8. Indicador de preenchimento subtil junto ao CTA.** *"5 de 5 preenchidos"* / *"Falta: equipamento"* em texto pequeno muted. Resolve o "porquê é que o botão está disabled" sem toast.
+## Order of work
 
-**9. Largura do input Nome limitada a ~320px** alinhado com a coluna Idade+Sexo.
+1. Palette tokens + `.label-on-tint` utility (foundation — everything else uses it).
+2. Drag week view → drag month view.
+3. Readability pass on done state + audit listed surfaces.
 
-**10. Respiração nos sub-labels** (Iniciante / `<1 ano`): `gap-1` entre as duas linhas dentro do botão, hoje colam-se.
+## Out of scope
 
-**11. Confirmação ao Cancelar** se houver campos preenchidos: AlertDialog "Descartar este plano rápido?". Senão volta directo a `/dashboard`.
-
-### Detalhes técnicos
-
-- **Ficheiros tocados:** `src/routes/plans.quick.tsx` (todo o UI), `src/server/quick-plan.server.ts` (mapping de experience → rpe_cap explícito, hoje provavelmente está hardcoded), `src/lib/equipment-catalog.ts` (alinhar IDs se preciso).
-- **Sem migração de DB.** A coluna `sex` já é texto livre — passar a aceitar só `male|female` no frontend não quebra dados existentes.
-- **i18n:** todo o copy novo em `pt/common.json` sob namespace `quick_plan.*`. Mesmo sendo PT-only landing, mantém a regra "todo copy via t()".
-- **PAR-Q mínimo** (se escolheres (b)): NÃO criar tabela nova, guardar em `clients.notes` ou novo campo `screening_passed_at` em `clients`. Decidimos depois da resposta à pergunta estratégica.
-
-### O que NÃO faço sem ok
-
-- Mexer no `quick-plan.server.ts` para além do RPE cap explícito.
-- Adicionar PAR-Q (depende da decisão (a) vs (b)).
-- Tocar no schema de `workout_plans` ou `clients`.
-
----
-
-**Próximo passo:** responde-me à pergunta estratégica (a vs b) e digo se ataco tudo de uma vez ou faço P0 isolado primeiro.
+- Resize-to-change-duration.
+- Cross-pack reassignment via drag.
+- Touch DnD on mobile.
+- Repainting the brand amber accent.
