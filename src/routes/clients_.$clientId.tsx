@@ -460,6 +460,27 @@ function ClientDetail() {
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
   const [reassessOpen, setReassessOpen] = useState(false);
+  // BMV gate + device capture sheets.
+  const [bmvOpen, setBmvOpen] = useState(false);
+  const [tanitaOpen, setTanitaOpen] = useState(false);
+  const [jamarOpen, setJamarOpen] = useState(false);
+  const [bmvSnapshots, setBmvSnapshots] = useState<BmvSnapshot[]>([]);
+  const [bmvReloadTick, setBmvReloadTick] = useState(0);
+  const listSnapshotsFn = useServerFn(listClientCapacitySnapshots);
+  useEffect(() => {
+    if (!clientId) return;
+    void (async () => {
+      try {
+        const r: any = await listSnapshotsFn({ data: { clientId, days: 365 } });
+        const rows = (r?.snapshots ?? []) as any[];
+        setBmvSnapshots(rows.map((s) => ({
+          domain_slug: s.domain_slug,
+          test_used: s.test_used ?? null,
+          raw_value: s.raw_value ?? null,
+        })));
+      } catch {}
+    })();
+  }, [clientId, listSnapshotsFn, bmvReloadTick]);
   // Assessment collapse — controlled so sidebar can mirror it. Once brief is
   // approved, default to collapsed (the trainer is now working in the stages
   // below). User toggle is persisted per-client.
