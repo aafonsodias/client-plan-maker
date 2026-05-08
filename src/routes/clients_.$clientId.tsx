@@ -2128,18 +2128,22 @@ function ClientDetail() {
 
           {/* Readiness */}
           <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
-            <div className="flex flex-wrap gap-1.5">
-              {(["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setAssessment({ ...assessment, readiness_stage: v })}
-                  className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${assessment.readiness_stage === v ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}
-                >
-                  {t(`readiness_block.${v}` as const)}
-                </button>
-              ))}
+            <div className="mb-2 flex justify-end">
+              <HelpPopover label={t("readiness_block.help_title")} triggerLabel={t("readiness_block.help_title")}>
+                <p>{t("readiness_block.help_body")}</p>
+              </HelpPopover>
             </div>
+            <ChipGroup
+              cols={5}
+              size="sm"
+              value={assessment.readiness_stage ?? null}
+              onChange={(v) => setAssessment({ ...assessment, readiness_stage: v })}
+              options={(["precontemplation", "contemplation", "preparation", "action", "maintenance"] as const).map((v) => ({
+                value: v,
+                label: t(`readiness_block.${v}` as const),
+                sub: t(`readiness_block.${v}_sub` as const),
+              }))}
+            />
           </SectionBlock>
 
           {/* Training setup (existing) */}
@@ -2374,14 +2378,17 @@ function ClientDetail() {
               <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
               <div className="space-y-1">
                 <Label className="text-xs">{t("posture_block.dominant")}</Label>
-                <Select value={assessment.dominant_side ?? ""} onValueChange={(v) => setAssessment({ ...assessment, dominant_side: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="right">{t("posture_block.right")}</SelectItem>
-                    <SelectItem value="left">{t("posture_block.left")}</SelectItem>
-                    <SelectItem value="ambidextrous">{t("posture_block.ambi")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.dominant_side ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, dominant_side: v })}
+                  options={[
+                    { value: "right", label: t("posture_block.right") },
+                    { value: "left", label: t("posture_block.left") },
+                    { value: "ambidextrous", label: t("posture_block.ambi") },
+                  ]}
+                />
               </div>
             </div>
           </SectionBlock>
@@ -2424,14 +2431,34 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
               <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-              <TextField label={t("history_block.max_lifts")} value={assessment.max_lifts} onChange={(v) => setAssessment({ ...assessment, max_lifts: v })} className="sm:col-span-2" />
+              <div className="sm:col-span-2 space-y-1">
+                <div className="flex items-center justify-between gap-1">
+                  <Label className="text-xs">{t("history_block.max_lifts")}</Label>
+                  <HelpPopover label={t("history_block.max_lifts")} triggerLabel="Como anotar?">
+                    <p>{t("history_block.max_lifts_help")}</p>
+                  </HelpPopover>
+                </div>
+                <Input
+                  className="h-8 text-sm"
+                  value={assessment.max_lifts ?? ""}
+                  onChange={(e) => setAssessment({ ...assessment, max_lifts: e.target.value })}
+                  placeholder={t("history_block.max_lifts_placeholder")}
+                />
+              </div>
             </div>
           </SectionBlock>
 
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("performance_block.rhr")} type="number" value={String(assessment.resting_heart_rate ?? "")} onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })} hint={t("performance_block.rhr_hint")} />
+              <MeasureField
+                label={t("performance_block.rhr")}
+                unit="bpm"
+                value={assessment.resting_heart_rate ?? ""}
+                onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })}
+                placeholder={t("performance_block.rhr_placeholder")}
+                helpBody={<p>{t("performance_block.rhr_help")}</p>}
+              />
               <div className="space-y-1">
                 <LabelWithHelp label={t("performance_block.cardio_test")} hint={t("performance_block.cardio_test_hint")} />
                 <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
