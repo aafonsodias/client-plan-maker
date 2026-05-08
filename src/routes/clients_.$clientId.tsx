@@ -35,6 +35,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
+import { MeasureField } from "@/components/assessment/MeasureField";
+import { ChipGroup } from "@/components/assessment/ChipGroup";
+import measureWaistImg from "@/assets/measure-waist.png";
+import measureHipImg from "@/assets/measure-hip.png";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -1988,9 +1992,46 @@ function ClientDetail() {
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-3">
-              <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
-              <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
-              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
+              <MeasureField
+                label="Cintura"
+                unit="cm"
+                value={assessment.waist_cm}
+                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
+                imageSrc={measureWaistImg}
+                imageAlt="Diagrama: medir cintura no ponto mais estreito acima da anca"
+                placeholder="ex. 82"
+                helpBody={
+                  <>
+                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
+                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
+                  </>
+                }
+              />
+              <MeasureField
+                label="Anca"
+                unit="cm"
+                value={assessment.hip_cm}
+                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
+                imageSrc={measureHipImg}
+                imageAlt="Diagrama: medir anca na maior circunferência das nádegas"
+                placeholder="ex. 98"
+                helpBody={
+                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
+                }
+              />
+              <MeasureField
+                label="Gordura corporal"
+                unit="%"
+                value={assessment.body_fat_pct}
+                onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
+                placeholder="opcional"
+                helpBody={
+                  <>
+                    <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
+                    <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
+                  </>
+                }
+              />
               <div className="space-y-1">
                 <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
