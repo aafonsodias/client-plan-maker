@@ -1,123 +1,62 @@
-# Measurement consolidation — remaining phases
+# Fix: dashboard still shows old sessions after deleting all clients
 
-Round 3 + 3.1 closed the backend half of the audit recommendation: the 12th `autonomic_regulation` domain seeded, idempotent backfill in place, AI reads (pre-stage anthro, ACSM screening, Stage 2/3) redirected through `client_capacity_snapshots` with assessment fallback, demo seeders writing snapshots, dead helpers moved out of `measurements.functions.ts`.
+## Root cause
 
-Two phases remain. Each is a self-contained round prompt, copy-pasteable into a new turn.
+When you deleted your old clients, the rows in `client_bookings` and `client_packs` (plus a few related tables) were **not** removed. Those tables don't have a cascading foreign key on `client_id`, so the underlying rows stayed behind as orphans pointing to clients that no longer exist.
 
----
+The dashboard's "This week — 16 sessions", the week timetable dots, and the Packs page reading "Pacote 5 / Pacote 10" with no client name (just "—") are all rendering those orphan rows. They're filtered by `trainer_id`, not by joining clients, so deleted-client data still surfaces.
 
-## Round 3.2 — UI swap + legacy hide (non-destructive)
+Confirmed in DB for your trainer account:
+- `clients`: 1 row (Maria Santos)
+- `client_packs`: 6 rows (all orphans)
+- `client_bookings`: 16 rows (all orphans)
 
-### Goal
-Surface the consolidated capacity data in the trainer client view, retire `RealInsightsCard` in favour of a snapshot-backed deltas component, and hide `ReassessmentSheet` behind a feature flag so it stops being the obvious "add measurement" path. **No tables dropped, no files deleted.**
+I also found that `client_measurements`, `client_measurement_prefs`, `pack_members`, and `daily_activity_log` are in the same situation — no cascade. (`assessments`, `client_capacity_snapshots`, `workout_plans`, `missions`, `plan_feedback`, `demo_runs` already cascade correctly.)
 
-### Scope
+## Plan — two parts
 
-1. **New component `CapacityDeltasCard`** (`src/components/CapacityDeltasCard.tsx`)
-   - Reads `client_capacity_snapshots` for the client, last 90 days, grouped by `domain_slug`.
-   - Renders Δ chips per domain that has ≥2 snapshots: latest vs previous, raw delta + % change, tone via `src/lib/status-tone.ts` (improvement = success, regression > 5% = warn, else neutral).
-   - Empty state: short copy + button "Adicionar medição" that dispatches the existing `open-add-snapshot` window event (same contract `BriefEditor` uses).
-   - i18n keys under `capacityDeltas.*` in `common.json` (en, pt-PT). ES/HI fall back to EN per locale policy.
+### 1. Clean up your account right now
+One-shot SQL to delete orphan rows for **your trainer id** only (`69a581e5-…`). After this the dashboard will read 0 sessions, the week timetable will be empty, and the Packs page will only show packs that belong to Maria Santos (none yet).
 
-2. **Replace `RealInsightsCard` mount** in `src/routes/clients_.$clientId.tsx` (line ~1661): swap import + JSX for `<CapacityDeltasCard clientId={...} />`. Do **not** delete `RealInsightsCard.tsx` yet (Phase B).
+Tables cleaned: `client_bookings`, `client_packs`, `pack_members`, `client_measurements`, `client_measurement_prefs`, `daily_activity_log` — only rows whose `client_id` no longer exists in `clients`.
 
-3. **Feature-flag `ReassessmentSheet`**
-   - Read `import.meta.env.VITE_MEASUREMENT_LEGACY_REASSESSMENT_SHEET === "true"` (default false).
-   - When false: skip the import + the mount at line ~2958 + any CTA that opens it. The `open-reassessment` window dispatcher (if any) becomes a no-op — do not remove the listener, just gate the render.
-   - When true: render exactly as today (escape hatch for the trainer who needs chest/arm/thigh/calf girths until snapshot tests cover them).
-   - Add the flag (commented, default off) to `.env.example` if that file exists; otherwise document in the PR description.
+### 2. Permanent fix — migration
+Add `ON DELETE CASCADE` on the `client_id` foreign key for the 6 tables above so this never happens again. If a table is missing the FK entirely, add it as `REFERENCES clients(id) ON DELETE CASCADE`.
 
-4. **Capacity Map: add the missing tests surfaced by Phase A**
-   - `AddSnapshotSheet` already iterates `capacity_domains.tests`. Confirm the 6 new `autonomic_regulation` tests appear and that their i18n labels resolve (verifier already passes). No code change expected — verify in browser at `/clients/$id`.
-   - Add `body_composition` shortcuts for `waist_cm`, `hip_cm`, `body_fat_pct` if they are not already in the seed (check `capacity_domains` row for `body_composition.tests`; if missing, add a small migration that appends them with `unit` + `direction='lower_better'` for waist/bf, neutral for hip).
-
-5. **Verification**
-   - Run `bunx tsx scripts/verify-consolidation-phase-a.ts` — must still pass.
-   - 375×667 mobile smoke on `/clients/$id`: CapacityDeltasCard renders, empty state works, Add measurement opens the sheet.
-   - With flag off: no "Reavaliação periódica" surface anywhere on the client page. With flag on: legacy sheet still works.
-   - Demo seeder regression: `loadDemo` for a fresh client should produce visible deltas in CapacityDeltasCard within the same Block 1 (because seeders now write snapshots).
+Also do a one-time global sweep of orphans across all trainers (same DELETE pattern as step 1, without the trainer filter) inside the same migration so no other account is sitting on stale data.
 
 ### Out of scope
-- Deleting `RealInsightsCard.tsx`, `ReassessmentSheet.tsx`, `measurements.functions.ts`.
-- Dropping `client_measurements` / `client_measurement_prefs` tables.
-- Dropping `assessments.waist_cm/hip_cm/body_fat_*` columns.
-- Touching the public intake form's anthropometry section (still writes to `assessments` — fallback path is intentional this round).
+- Not touching the "delete client" UI flow — once the FKs cascade, the existing delete works correctly.
+- Not changing dashboard queries. The bug is data, not the read path.
 
-### Risks
-- `RealInsightsCard` i18n keys (`insights.*` in `plan.json`) become orphaned. Leave them — Phase B removes both component and keys together.
-- If `body_composition` tests are missing from the seed, the Add Measurement button from the empty state will land on a domain with no test options. Hence the small additive migration in step 4.
+## Technical details
 
-### Notes
-- One concern per round. Bugs in adjacent code → `.lovable/backlog.md`.
-- Mobile-first; verify the deltas card fits the existing client page rhythm without inner scroll on 375px.
+Tables to fix (all in `public` schema):
 
----
+| Table | Current behavior | Action |
+|---|---|---|
+| `client_bookings.client_id` | no cascade | drop FK if exists, re-add with `ON DELETE CASCADE` |
+| `client_packs.client_id` | no cascade | same |
+| `pack_members.client_id` | no cascade | same |
+| `client_measurements.client_id` | no cascade | same |
+| `client_measurement_prefs.client_id` | no cascade | same |
+| `daily_activity_log.client_id` | no cascade | same |
 
-## Round 3.3 — Phase B: destructive cleanup (after 1–2 weeks burn-in)
+Migration shape:
+```sql
+ALTER TABLE client_bookings
+  DROP CONSTRAINT IF EXISTS client_bookings_client_id_fkey,
+  ADD CONSTRAINT client_bookings_client_id_fkey
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE;
+-- repeat for the 5 others
 
-### Pre-flight (must all be true before starting)
-- [ ] `verify-consolidation-phase-a.ts` passes on prod backup snapshot.
-- [ ] `select count(*) from client_measurements` on prod = 0 OR every row has a matching backfilled snapshot (run `backfill_measurement_snapshots_phase_a()` once more, log the diff).
-- [ ] No production trainer has flipped `VITE_MEASUREMENT_LEGACY_REASSESSMENT_SHEET=true` in the last 14 days (check build env / ask user).
-- [ ] DB backup taken in the same session as the migration.
-
-### Goal
-Remove the deprecated surface entirely: code, server fns, tables, columns, i18n keys, demo writes that still target legacy.
-
-### Scope
-
-1. **Delete components**
-   - `src/components/ReassessmentSheet.tsx`
-   - `src/components/RealInsightsCard.tsx`
-   - All remaining imports / mounts / dispatchers in `src/routes/clients_.$clientId.tsx`. Remove the feature-flag block from Round 3.2 (no longer needed).
-
-2. **Delete server fns**
-   - In `src/server/measurements.functions.ts`: drop `recordMeasurement`, `listMeasurements`, `getMeasurementPrefs`, `updateMeasurementPrefs`. Confirm the file is then empty (helpers were moved in 3.1) and delete the file.
-   - Grep for any remaining import; delete callers that became dead.
-
-3. **Drop database objects** (single migration, idempotent guards)
-   - `drop table if exists public.client_measurements cascade;`
-   - `drop table if exists public.client_measurement_prefs cascade;`
-   - `alter table public.assessments drop column if exists waist_cm, drop column if exists hip_cm, drop column if exists body_fat_pct, drop column if exists body_fat_method;` — only after verifying `pickSectionPayload("anthro", …)` and `preparticipation.server.ts` no longer touch them (they shouldn't after 3.1, double-check).
-   - Drop `backfill_measurement_snapshots_phase_a()` — its job is done.
-   - Keep `daily_activity_log` alone; orphan-table decision is a separate backlog item.
-
-4. **Update demo seeders**
-   - `src/server/demo-client.functions.ts`: stop writing the deprecated `assessments` anthro columns (write only to snapshots — already true after 3.1, but the columns won't exist after this migration so the writes will hard-fail if missed).
-   - `src/server/demo-sessions.functions.ts`: confirm the `client_measurements` block from 3.1 is gone.
-
-5. **i18n cleanup**
-   - Drop the `insights.*` and `reassessment.*` key blocks from `src/i18n/locales/{en,pt,es,hi}/plan.json`.
-   - Drop `capacityDeltas.*` keys that turned out unused (sweep with a grep before delete).
-   - Re-run `bunx tsx scripts/verify-capacity-i18n.ts` — must pass.
-
-6. **Verifier extension**
-   - Add 4 checks to `scripts/verify-consolidation-phase-a.ts` (or a sibling `phase-b.ts`):
-     - `client_measurements` table absent.
-     - `client_measurement_prefs` table absent.
-     - `assessments.waist_cm` column absent.
-     - No `src/` file imports `ReassessmentSheet` or `RealInsightsCard`.
-
-### Out of scope
-- The `daily_activity_log` orphan table (separate decision: ship a UI or drop it).
-- Movement-screen jsonb on `assessments` — structural intake, not periodic measurement, stays.
-- Any AI prompt copy changes beyond what 3.1 already shipped.
-
-### Risks
-- If a production assessment row has anthro values that never made it into a snapshot (e.g. legacy data inserted between 3.1 backfill and Phase B), dropping the columns destroys it. Mitigation: re-run `backfill_measurement_snapshots_phase_a()` inside the same migration, before the `drop column`, and assert `select count(*) from assessments where waist_cm is not null and not exists (select 1 from client_capacity_snapshots s where s.client_id = assessments.client_id and s.domain_slug = 'body_composition' and s.test_used = 'waist_circumference')` returns 0.
-- Public intake form (`src/routes/intake.$token.tsx`) currently writes to `assessments.waist_cm` etc. **Must be updated to write a `body_composition` snapshot instead, or those four anthro fields removed from the intake form, in the same PR as the column drop.** Otherwise client intake submissions hard-fail.
-
----
-
-## Sequencing summary
-
-```text
-Round 3.0 ✅  domain seed + backfill function + i18n
-Round 3.1 ✅  AI reads + helpers refactor + demo seeders
-Round 3.2 ⏭   UI swap (CapacityDeltasCard) + flag ReassessmentSheet
-              → burn-in window (≥1 week, ideally 2)
-Round 3.3 ⏭   Phase B destructive: delete components, server fns,
-              tables, columns, i18n keys; intake form swap
+-- one-time sweep
+DELETE FROM client_bookings        WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM client_packs           WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM pack_members           WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM client_measurements    WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM client_measurement_prefs WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM daily_activity_log     WHERE client_id NOT IN (SELECT id FROM clients);
 ```
 
-After 3.3, the system has one measurement surface (`client_capacity_snapshots`), one writer (`AddSnapshotSheet` + intake), one AI reader path (already redirected), and zero dead code.
+After applying, refresh the dashboard — the "This week" hero will show 0 sessions and the timetable + Packs page will be clean.
