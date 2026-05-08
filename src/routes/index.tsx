@@ -167,23 +167,23 @@ function Landing() {
         <div className="mx-auto grid max-w-6xl items-start gap-6 px-6 pt-6 pb-8 text-foreground sm:gap-12 sm:pt-16 sm:pb-32 md:grid-cols-2">
           <div className="min-w-0">
             <HeroHeadlineRotator />
-            <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
+            <p className="mt-4 max-w-xl text-base font-light text-muted-foreground sm:mt-6 sm:text-lg">
               {t("plan:landing.hero.subtitle")}
             </p>
             {/* PT-only positioning: 3 hard bullets */}
-            <ul className="mt-6 space-y-2">
-              {((t("plan:landing.hero.bullets", { returnObjects: true }) as string[]) ?? []).map((b) => (
-                <li key={b} className="flex items-start gap-2 text-sm text-foreground/85">
+            <ul className="mt-4 space-y-1.5 sm:mt-6 sm:space-y-2">
+              {((t("plan:landing.hero.bullets", { returnObjects: true }) as string[]) ?? []).slice(0, 3).map((b) => (
+                <li key={b} className="flex items-start gap-2 text-[13px] text-foreground/85 sm:text-sm">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                   <span>{b}</span>
                 </li>
               ))}
             </ul>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90 sm:mt-5">
               <Sparkles className="h-3 w-3" />
               {t("plan:landing.hero.beta_softcap_chip")}
             </div>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
               <Button asChild size="lg">
                 <Link to={primaryCtaTo}>
                   {primaryCtaLabel} <ArrowRight className="ml-2 h-4 w-4" />
