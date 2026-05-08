@@ -19,15 +19,24 @@ type Msg = {
 };
 
 /**
- * AtlasDock — global floating dock for Atlas, Protocol's named copilot. Two modes:
+ * AtlasDock — panel for Atlas, Protocol's named copilot. Two modes:
  *  - Navigate: route-aware concierge ("where is X?") that returns clickable
  *    suggestion chips (replaces the old GuideDock).
  *  - Ask: open-ended coaching/programming chat with the user-chosen AI
  *    model and live credit cost (mirrors OpenAI/Claude UX).
- * Available to every signed-in trainer; not just founders.
+ * The trigger is the <AtlasOrb /> rendered inside AppShell's header — this
+ * component only owns the panel, so it can be opened from anywhere via the
+ * `open` prop. Available to every signed-in trainer.
  */
-export function AtlasDock({ enabled }: { enabled: boolean }) {
-  const [open, setOpen] = useState(false);
+export function AtlasDock({
+  enabled,
+  open,
+  onClose,
+}: {
+  enabled: boolean;
+  open: boolean;
+  onClose: () => void;
+}) {
   const [mode, setMode] = useState<Mode>("ask");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,6 +91,7 @@ export function AtlasDock({ enabled }: { enabled: boolean }) {
   }, [navigateMsgs, askMsgs, mode, busy]);
 
   if (!enabled) return null;
+  if (!open) return null;
 
   const messages = mode === "navigate" ? navigateMsgs : askMsgs;
   const setMessages = mode === "navigate" ? setNavigateMsgs : setAskMsgs;
@@ -128,28 +138,18 @@ export function AtlasDock({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <>
-      {!open && (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="fixed bottom-4 left-4 z-40 inline-flex h-12 items-center gap-2 rounded-full border border-accent/40 bg-card px-4 text-sm font-medium shadow-[var(--shadow-elegant)] transition hover:border-accent"
-          aria-label="Atlas"
-          title="Atlas — copiloto do Protocol"
-        >
-          <Logo className="h-4 w-4" />
-          <span>Atlas</span>
-        </button>
-      )}
-      {open && (
-        <div className="fixed bottom-4 left-4 z-40 flex max-h-[80vh] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-accent/40 bg-card/95 backdrop-blur shadow-[var(--shadow-elegant)]">
+    <div
+      className="fixed right-4 top-16 z-40 flex max-h-[80vh] w-96 max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-accent/40 bg-card/95 backdrop-blur shadow-[var(--shadow-elegant)] animate-in fade-in slide-in-from-top-2"
+      role="dialog"
+      aria-label="Atlas"
+    >
           {/* Header */}
           <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
             <div className="flex items-center gap-2">
               <Logo className="h-3.5 w-3.5" />
               <span className="text-xs font-semibold uppercase tracking-widest text-accent">Atlas</span>
             </div>
-            <button type="button" onClick={() => setOpen(false)} className="rounded-md p-1 hover:bg-muted" aria-label="Fechar">
+            <button type="button" onClick={onClose} className="rounded-md p-1 hover:bg-muted" aria-label="Fechar">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -263,8 +263,6 @@ export function AtlasDock({ enabled }: { enabled: boolean }) {
               </div>
             )}
           </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }

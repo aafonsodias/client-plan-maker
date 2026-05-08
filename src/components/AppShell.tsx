@@ -10,6 +10,7 @@ import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AtlasDock } from "@/components/AtlasDock";
 import { AtlasGenie } from "@/components/AtlasGenie";
+import { AtlasOrb } from "@/components/AtlasOrb";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -49,6 +50,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
   const { t } = useTranslation("common");
   const { current: currentLocale, change: changeLocale } = useLocaleControls();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [atlasOpen, setAtlasOpen] = useState(false);
   const isFounder = (user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com";
   const [access, setAccess] = useState<{
     hasAccess: boolean;
@@ -194,6 +196,11 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
             </DropdownMenuContent>
           </DropdownMenu>
           <span className="lg:hidden"><ThemeToggle /></span>
+          {!!user && (
+            <span className="lg:hidden">
+              <AtlasOrb onClick={() => setAtlasOpen((v) => !v)} active={atlasOpen} />
+            </span>
+          )}
           {/* Mobile hamburger lives in the same right-edge cluster so it stays in the top-right corner */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -293,6 +300,9 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
           {/* Desktop right side (≥ lg) — only the avatar menu remains.
               Secondary nav, locale, theme, sign-out all live inside it. */}
           <div className="col-start-3 hidden items-center justify-end gap-1 lg:flex">
+            {!!user && (
+              <AtlasOrb onClick={() => setAtlasOpen((v) => !v)} active={atlasOpen} />
+            )}
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -407,7 +417,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
       </footer>
       <ScrollToTopButton />
       {/* Available to every signed-in trainer; isFounder no longer gates it. */}
-      <AtlasDock enabled={!!user} />
+      <AtlasDock enabled={!!user} open={atlasOpen} onClose={() => setAtlasOpen(false)} />
     </div>
   );
 }
