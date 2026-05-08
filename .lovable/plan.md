@@ -1,77 +1,70 @@
-## Defaults assumidos (avise se quiser mudar)
 
-- **Domínio público**: ainda não temos. Removo `https://protocol.app` (link externo no intake e index) e troco mailtos `hello@protocol.app` por `hello@protocol.app` como placeholder. Diga-me um domínio real depois e faço sweep dedicado.
-- **Chaves locais (`forge_*`, `protocol-intake` IDB, `protocol.locale`)**: rename limpo, sem shim. Em beta privado o impacto é uma vez.
-- **Tokens CSS `--protocol-*` e prefixo `--color-protocol-accent`**: renomeio para `--protocol-*` / `--color-protocol-accent`. Os utilities Tailwind `bg-canvas`, `text-ink-primary`, `bg-pill`, etc. **mantêm o nome** (não dizem "forge", são neutros) — só os var() backing values mudam.
+# Plan — Protocol design system v2 (Light · Medium · Dark)
 
-## Parte A — Rename Protocol → Protocol
+Replaces the current Deep/Sage/Mist tri-theme with the spec'd Light/Medium/Dark therapeutic palette, wires every shadcn semantic token to the new variables, and adds the "Welcome, {name}" greeting on login.
 
-### A1. Copy visível ao utilizador (PT/EN)
-- `src/routes/welcome.tsx`: chip "Protocol" → "Protocol"; H1 "Como vais usar o Protocol?" → "Como vais usar o Protocol?"
-- `src/routes/terms.tsx` + `src/routes/privacy.tsx`: títulos, descrições, parágrafos legais.
-- `src/routes/manual.tsx`: título "Ajuda · Protocol" + og:title + subject de email.
-- `src/routes/billing.tsx` linha 327: "Protocol {tier.name}" → "Protocol {tier.name}".
-- `src/server/billing.functions.ts`: `name: "Protocol Starter"` → `"Protocol Starter"`, `"Protocol Pro"` → `"Protocol Pro"`.
-- `src/server/plan.functions.ts` (4 ocorrências): "Upgrade to Protocol Pro" → "Upgrade to Protocol Pro".
-- `src/routes/plans.$planId.tsx` linha 842: "old Protocol structure" → "old Protocol structure".
-- `src/routes/intake.$token.tsx` linha 740: "powered by Protocol" → "powered by Protocol" (sem link externo).
-- `src/routes/index.tsx`: footer mailto + CTA mailto + `protocol-float` keyframe → `protocol-float`.
+## 1. Theme infrastructure
 
-### A2. Identificadores internos (refactor neutro)
-- CSS vars em `src/styles.css`: `--protocol-canvas/surface/subtle/pill/ink-*/accent/accent-soft/line/edge/warning` → `--protocol-*`. `@theme inline` mappings: `--color-protocol-accent` → `--color-protocol-accent`. Comentários "Protocol design system tokens" → "Protocol design system tokens".
-- Animação `@keyframes protocol-float` (em `src/routes/index.tsx`) → `protocol-float`.
-- HTML id `protocol-stages-lane` (em `clients_.$clientId.tsx`, 3 lugares) → `protocol-stages-lane`.
-- Comentário `Protocol dashboard` em `src/server/feedback.functions.ts` → `Protocol dashboard`.
-- Window flag `__protocolFetchPatched` em `src/hooks/use-auth.tsx` → `__protocolFetchPatched`.
-- `LOCALE_STORAGE_KEY = "protocol.locale"` → `"protocol.locale"`.
-- localStorage/IDB keys (intake drafts, assessment focus/collapse, theme legacy migration target):
-  - `protocol_intake_draft_*` → `protocol_intake_draft_*`
-  - `protocol_intake_photo_*` → `protocol_intake_photo_*`
-  - `protocol-intake` IDB DB name → `protocol-intake`
-  - `protocol_assessment_*` (3 chaves) → `protocol_assessment_*`
-  - `protocol_theme` legacy migration: já cobrimos no ThemeToggle, removo a leitura.
+**`src/styles.css`** — single source of truth for tokens. This project uses Tailwind v4, so there is no `tailwind.config.ts`; semantic Tailwind utilities are generated from `@theme inline` in `styles.css`. I'll:
 
-### A3. Comentários puramente neutros
-**Não tocar** em "fire-and-forget", "don't forget", "forget" em frases inglesas — não são menções à brand. Search será exact-case `Protocol`/`Protocol`/`forge_`/`forge-`/`--protocol-`/`forge.app`/`protocol.locale` para evitar falsos positivos.
+- Replace the current `:root` / `.light` / `.slate` blocks with three new classes: `.theme-light` (default applied via `:root` fallback too), `.theme-medium`, `.theme-dark`. Mutually exclusive.
+- Define the exact hex values from the spec under each class (`--bg`, `--surface`, `--surface-warm`, `--border`, `--text-1/2/3`, `--accent`, `--accent-strong`, `--success`, `--success-bg`, `--warn`, `--warn-bg`, `--info`, `--danger`, `--cta-bg`, `--cta-text`).
+- Map the spec tokens onto the existing shadcn token names so every shadcn component (Card, Button, Input, Dialog, etc.) re-themes without touching its source:
+  - `--background` → `--bg`
+  - `--card`, `--popover` → `--surface`
+  - `--secondary`, `--muted` → `--surface-warm`
+  - `--foreground`, `--card-foreground`, `--popover-foreground` → `--text-1`
+  - `--muted-foreground` → `--text-2` (with `--text-3` available for hints)
+  - `--border`, `--input` → `--border`
+  - `--accent` → `--accent`, `--accent-foreground` → `--cta-text`
+  - `--primary` → `--cta-bg`, `--primary-foreground` → `--cta-text`
+  - `--destructive` → `--danger`
+  - `--ring` → `--accent` at 0.5 alpha
+  - sidebar tokens → mirror of surface/border/accent
+- Extend `@theme inline` to additionally expose the new spec names directly, so the className strings in the spec (`bg-bg`, `bg-surface`, `bg-surface-warm`, `text-text-1/2/3`, `border-border`, `text-accent`, `bg-accent`, `bg-accent-strong`, `text-success`, `bg-success-bg`, `text-warn`, `bg-warn-bg`, `text-info`, `text-danger`, `bg-cta-bg`, `text-cta-text`) all work as Tailwind utilities.
+- Keep the Protocol PDF tokens (`--protocol-accent` etc.) untouched so PDF export stays amber FORGE-spec.
+- Remove gradients/glows that aren't a single subtle card elevation shadow. Drop `--shadow-glow`, `--gradient-accent` usage from theme blocks (definitions can stay but neutralised / unused).
+- Keep `.light` and `.slate` class aliases mapped to `.theme-light` and `.theme-medium` respectively for one release so any stale localStorage values keep working.
 
-### A4. Memória + docs internos
-- `mem/index.md`: actualizar entrada do PDF spec ("Protocol §12" → "Protocol §12 PDF spec"), e qualquer referência amber Protocol no Core que sobrou da R71.
-- `mem/design/pdf-spec.md`: rename título e referências.
-- `mem/design/brand-mark.md`, `brand-mark-prompt.md`: rename.
-- `.lovable/r76`, `r77`, `acsm-12e-gap-report.md`, `backlog.md`, `plan.md`: substituição em massa de "Protocol"/"Protocol" → "Protocol".
+**No-flash boot script** — add a tiny inline script in `src/routes/__root.tsx` head that reads `localStorage.protocol_theme` and sets `documentElement.className` before first paint.
 
-### A5. Migrações SQL
-- 2 ficheiros em `supabase/migrations/` mencionam "forge" só em **comentários SQL**. Migrations são read-only — deixo como estão (nota histórica). Confirmo que nenhuma string "forge" vive em dados (column names, enum values).
+## 2. Theme toggle UI
 
-## Parte B — Smoke QA dos 3 temas
+**`src/components/ThemeToggle.tsx`** — rewrite as a 3-state segmented toggle (Light · Medium · Dark) with sun / half-moon / moon glyphs. Persists to `localStorage.protocol_theme` (values `light` | `medium` | `dark`), migrates legacy values (`deep→dark`, `sage→medium`, `mist→light`, `cream→light`, `slate→medium`, `dark→dark`). Applies the matching `theme-*` class to `<html>`.
 
-Faço browser smoke nos 3 temas (Deep / Sage / Mist) nas rotas:
-- `/` (landing)
-- `/login` ou `/auth`
-- `/dashboard`
-- `/me` (preview mode com cliente selecionado)
-- `/plans/$id` (primeiro plano disponível)
+i18n keys updated: `theme.light`, `theme.medium`, `theme.dark` in `en/common.json` + `pt/common.json` (es/hi fall back to en per project rule).
 
-Para cada combinação tiro screenshot full-page, e olho especificamente para:
-1. **Contraste muted-foreground sobre card** — leio o token computado e comparo com o card. Marco AA fail se contraste < 4.5 para texto normal ou < 3 para texto secundário grande.
-2. **Acento terracota presente em CTAs / focus / chips activos** sem invadir áreas grandes (regra ~10%).
-3. **Texto branco-creme legível** sobre os deep/sage backgrounds.
+## 3. Welcome-by-name on login
 
-### B1. Mobile Safari /me a 375px
-Viewport 375×812, navegação `/me`, screenshot, verificação de overflow horizontal e tap targets.
+In `src/routes/dashboard.tsx` (and/or `AppShell` header), surface "Welcome back, {first_name}" using `useAuth()` → profile name (fallback to email local-part). Single small change, no layout shift. i18n: `common.welcome_back_named`.
 
-### B2. PDF export
-Faço um download do plan PDF (rota /plans/$id → botão Download PDF), converto a PDF para JPG via `pdftoppm`, abro a primeira página e confirmo que continua a usar a paleta amber `#D4A574` (agora `--protocol-accent`, mesmo hex). Reporto issues.
+## 4. Component sweep — only className strings
 
-## Entregáveis
+Pass over the surfaces most likely to have hardcoded colors (landing, dashboard, /me, /plans/$id, auth, billing, manual, BrandMark plate). Replace any remaining `bg-white`, `bg-black`, `text-gray-*`, `bg-slate-*`, `border-zinc-*`, `text-neutral-*`, raw hex, or vivid emerald/amber-500 utilities with the semantic tokens. `status-tone.ts` keeps its emerald/amber/red because it's the documented semantic palette — but I'll re-point its CSS to consume `--success` / `--warn` / `--danger` so it stays in-system. No business-logic changes.
 
-1. PR de rename (Parte A) — sem mudar comportamento, sem tocar lógica.
-2. Relatório de smoke em chat com screenshots por tema/rota.
-3. Lista de fixes de contraste/overflow encontrados — se forem triviais, aplico no mesmo round; se forem mais profundos, ficam como to-do priorizado em `.lovable/backlog.md`.
-4. Memória actualizada (R71 PDF spec rename, comentários Protocol→Protocol).
+Spec mapping enforced:
+- Page bg → `bg-bg`
+- Cards → `bg-surface border border-border rounded-lg` (Card component already does this once tokens are remapped)
+- Eyebrow tags → `bg-surface-warm text-accent border border-border rounded-full`
+- Primary CTA → `bg-cta-bg text-cta-text`
+- Headline structural → `text-text-1`; emotional → `text-accent`
+- Body → `text-text-2`; hints → `text-text-3`
+- Success badge → `bg-success-bg text-success`; warn badge → `bg-warn-bg text-warn`
+- Day headers alternate surface-warm/accent ↔ success-bg/success
 
-## Fora de scope
+## 5. QA before sign-off
 
-- Adquirir/configurar domínio real `protocol.{tld}`.
-- Reescrever copy legal de fundo (mantém-se literal, só troca o nome).
-- Mudar o esquema amber do PDF para terracota — fica como está, é o mark histórico do produto.
+- Build passes (auto).
+- Smoke each theme on `/`, `/auth`, `/dashboard`, `/me` (375px Mobile Safari), `/plans/$id`, `/billing`.
+- Contrast spot-check: `text-text-2` on `bg-surface` and `text-text-3` on `bg-bg` across all three themes ≥ 4.5:1 (3:1 for large). Adjust `--text-3` per theme if needed.
+- Confirm `pdf.ts` accent unchanged (still `#E8A547`).
+- Confirm no `bg-white` / `bg-black` / raw gray-* utilities remain in touched files (`rg` sweep).
+
+## Defaults assumed
+- Default theme = `theme-light` per spec.
+- Legacy `dark`/`slate`/`mist`/`deep`/`sage`/`cream` localStorage values auto-migrate; users keep "their" theme as closely as possible.
+- The shadcn semantic-token remap is the right move (vs forking every component) — preserves existing component logic, satisfies the "encaixa nos shadcn" instruction.
+- Welcome-by-name lives in dashboard hero, not a global toast.
+
+## Out of scope (per spec)
+Typography, spacing, layout, gradients/glows, system-auto mode, business logic.
