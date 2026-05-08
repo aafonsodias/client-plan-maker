@@ -116,38 +116,8 @@ export function CapacityDeltasCard({ clientId }: { clientId: string }) {
     return out;
   }, [data]);
 
-  if (isLoading) {
-    return (
-      <div className="text-xs text-muted-foreground">
-        {t("capacityDeltas.loading", { defaultValue: "Loading…" })}
-      </div>
-    );
-  }
-
-  if (deltas.length === 0) {
-    return (
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-sm font-semibold text-foreground">
-            {t("capacityDeltas.empty_title")}
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {t("capacityDeltas.empty_subtitle")}
-          </div>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("open-add-snapshot"))
-          }
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          {t("capacityDeltas.add_button")}
-        </Button>
-      </div>
-    );
-  }
+  if (isLoading) return null;
+  if (deltas.length === 0) return null;
 
   return (
     <div className="space-y-2">
