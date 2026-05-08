@@ -460,6 +460,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           locale={locale}
           onBookingClick={(b) => setEditing(b)}
           onToggleDone={handleToggleDone}
+          onDragCommit={handleDragMove}
           onDayClick={(d) => (clipboard ? handleDayPaste(d) : setCreating({ startsAt: (() => { const t = new Date(d); t.setHours(9,0,0,0); return t.toISOString(); })() }))}
         />
       )}
