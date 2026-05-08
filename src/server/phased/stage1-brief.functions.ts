@@ -15,6 +15,144 @@ import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movemen
 import type { TrainingModality } from "./schemas";
 import { resolveRules } from "@/server/knowledge/resolve.server";
 
+// R2 — Capacity context shape passed to the Stage-1 LLM prompt. Built from
+// the latest snapshot per capacity domain at synth time. Names resolve in
+// English to keep the prompt deterministic — the brief output is translated
+// downstream by the trainer-facing UI.
+type CapacityContextEntry = {
+  slug: string;
+  name: string;
+  tier: "health_related" | "skill_related" | "integrative";
+  score: number;
+  test: string | null;
+  measuredAt: string;
+  rawValue: number | null;
+  rawUnit: string | null;
+  notes: string | null;
+};
+type CapacityContext = {
+  measured: CapacityContextEntry[];
+  unmeasured: Array<{
+    slug: string;
+    name: string;
+    tier: CapacityContextEntry["tier"];
+  }>;
+  totalDomains: number;
+  measuredCount: number;
+};
+
+// English fallbacks so the prompt never sees a literal i18n key.
+const CAPACITY_NAME_EN: Record<string, string> = {
+  cardiorespiratory: "Cardiorespiratory endurance",
+  muscular_strength: "Muscular strength",
+  muscular_endurance: "Muscular endurance",
+  flexibility: "Flexibility",
+  body_composition: "Body composition",
+  power: "Power",
+  speed: "Speed",
+  agility: "Agility",
+  balance: "Balance",
+  coordination: "Coordination",
+  reaction_time: "Reaction time",
+  movement_quality: "Movement quality",
+  cognitive_motor: "Cognitive-motor integration",
+};
+
+function bandLabel(score: number): string {
+  if (score < 25) return "gap";
+  if (score < 40) return "below average";
+  if (score < 60) return "average";
+  if (score < 75) return "above average";
+  return "strong";
+}
+
+async function loadCapacityContext(
+  supabase: any,
+  clientId: string,
+): Promise<CapacityContext> {
+  const { data: domains } = await supabase
+    .from("capacity_domains")
+    .select("slug, tier, display_order")
+    .order("display_order", { ascending: true });
+  const list = (domains ?? []) as Array<{
+    slug: string;
+    tier: CapacityContextEntry["tier"];
+    display_order: number;
+  }>;
+  if (list.length === 0) {
+    return { measured: [], unmeasured: [], totalDomains: 0, measuredCount: 0 };
+  }
+  const { data: snaps } = await supabase
+    .from("client_capacity_snapshots")
+    .select(
+      "domain_slug, measured_at, raw_value, raw_unit, normalized_score, test_used, notes",
+    )
+    .eq("client_id", clientId)
+    .order("measured_at", { ascending: false });
+  const latest = new Map<string, any>();
+  for (const s of snaps ?? []) {
+    if (!latest.has(s.domain_slug)) latest.set(s.domain_slug, s);
+  }
+  const measured: CapacityContextEntry[] = [];
+  const unmeasured: CapacityContext["unmeasured"] = [];
+  for (const d of list) {
+    const name = CAPACITY_NAME_EN[d.slug] ?? d.slug;
+    const s = latest.get(d.slug);
+    if (s && s.normalized_score != null) {
+      measured.push({
+        slug: d.slug,
+        name,
+        tier: d.tier,
+        score: Math.round(Number(s.normalized_score)),
+        test: s.test_used ?? null,
+        measuredAt: String(s.measured_at).slice(0, 10),
+        rawValue: s.raw_value != null ? Number(s.raw_value) : null,
+        rawUnit: s.raw_unit ?? null,
+        notes: s.notes ?? null,
+      });
+    } else {
+      unmeasured.push({ slug: d.slug, name, tier: d.tier });
+    }
+  }
+  measured.sort((a, b) => a.score - b.score); // gaps first
+  return {
+    measured,
+    unmeasured,
+    totalDomains: list.length,
+    measuredCount: measured.length,
+  };
+}
+
+function renderCapacityForPrompt(ctx: CapacityContext): string {
+  const head = `MEASURED CAPACITIES (0-100 normalized vs population norms, ordered gaps→strengths):`;
+  const measured =
+    ctx.measured.length === 0
+      ? "  (none measured yet)"
+      : ctx.measured
+          .map(
+            (m) =>
+              `  - ${m.name}: ${m.score} (${m.test ?? "n/a"}, ${m.measuredAt}) — ${bandLabel(m.score)}`,
+          )
+          .join("\n");
+  const unmeasured =
+    ctx.unmeasured.length === 0
+      ? "  (all domains measured)"
+      : "  " + ctx.unmeasured.map((u) => u.slug).join(", ");
+  return `${head}\n${measured}\n\nUNMEASURED CAPACITIES:\n${unmeasured}`;
+}
+
+const CAPACITY_PROMPT_INSTRUCTIONS = `
+CAPACITY PROFILE — this client has the following objectively-measured physical capacities (or lack thereof). Use these honestly:
+- Read the measured capacities below. Reference them explicitly in capacity_profile.summary and notes_for_next_stage when they bear on programming intent.
+- Treat unmeasured capacities honestly. Do NOT assume a level. Do NOT invent scores.
+- The capacity_profile section of your output must be grounded ONLY in the measurements provided.
+  • capacity_profile.strengths = capacities scoring ≥ 60. Each entry: { slug, note (≤200 chars) explaining why this strength matters for programming this client }.
+  • capacity_profile.gaps = capacities scoring < 40. Each entry: { slug, note explaining the programming implication (what to introduce, what to delay, what to monitor) }.
+  • capacity_profile.summary = 1–3 sentence narrative grounded in the measurements. If zero measured: "No capacities measured yet. Recommend an assessment battery before progressing." (translated to the brief's language).
+  • capacity_profile.unmeasured_priority = up to 5 domain slugs from the UNMEASURED list, ordered by what would most inform safe programming for THIS client given their goal/constraints. Not a generic list.
+- Capacity informs PROGRAMMING INTENT (notes_for_next_stage) and the CAPACITY PROFILE section. It does NOT change goal/constraints/red_flags — those still come from the intake.
+- All capacity_profile prose must be in European Portuguese (pt-PT), formal address (você).`;
+
 /**
  * R72.2 — Infer training modalities from any free text the brief may carry
  * (goal_text, secondary_goals, notes_for_next_stage). Always keeps "gym" as
