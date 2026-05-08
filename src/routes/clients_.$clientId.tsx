@@ -1675,6 +1675,7 @@ function ClientDetail() {
               </details>
             )}
           </section>
+          </>
         );
       })()}
       <div className={`grid items-start gap-6 [&>*]:min-w-0 ${showSidebar ? "lg:grid-cols-[200px_1fr]" : "lg:grid-cols-1"}`}>
