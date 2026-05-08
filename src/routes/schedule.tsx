@@ -952,6 +952,7 @@ function ScheduleMonth({
   onBookingClick,
   onDayClick,
   onToggleDone,
+  onDragCommit,
 }: {
   monday: Date;
   packById: Map<string, Pack>;
@@ -960,10 +961,12 @@ function ScheduleMonth({
   onBookingClick: (b: Booking) => void;
   onDayClick: (d: Date) => void;
   onToggleDone: (b: Booking) => void;
+  onDragCommit: (id: string, newIso: string) => void;
 }) {
   const { t } = useTranslation("schedule");
   const monthFn = useServerFn(listMonthBookings);
   const [rows, setRows] = useState<Booking[]>([]);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
   const monthAnchor = useMemo(() => {
     const d = new Date(monday);
     d.setDate(1);
@@ -1007,7 +1010,35 @@ function ScheduleMonth({
           return (
             <div
               key={i}
-              className={`min-h-24 border-l border-t border-border p-1.5 text-left ${inMonth ? "" : "bg-secondary/20 text-muted-foreground/60"}`}
+              className={`min-h-24 border-l border-t border-border p-1.5 text-left ${inMonth ? "" : "bg-secondary/20 text-muted-foreground/60"} ${dropIdx === i ? "drop-target-active" : ""}`}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/x-booking-id")) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dropIdx !== i) setDropIdx(i);
+                }
+              }}
+              onDragLeave={() => {
+                if (dropIdx === i) setDropIdx(null);
+              }}
+              onDrop={(e) => {
+                const id = e.dataTransfer.getData("application/x-booking-id");
+                setDropIdx(null);
+                if (!id) return;
+                e.preventDefault();
+                const original = rows.find((b) => b.id === id);
+                if (!original) return;
+                // Preserve original time-of-day; only swap the date.
+                const src = new Date(original.starts_at);
+                const next = new Date(d);
+                next.setHours(src.getHours(), src.getMinutes(), 0, 0);
+                if (next.toISOString() === original.starts_at) return;
+                // Optimistic local update so the pill jumps right away.
+                setRows((prev) =>
+                  prev.map((b) => (b.id === id ? { ...b, starts_at: next.toISOString() } : b)),
+                );
+                onDragCommit(id, next.toISOString());
+              }}
             >
               <button
                 type="button"
@@ -1026,7 +1057,13 @@ function ScheduleMonth({
                   return (
                     <div
                       key={b.id}
-                      className={`group flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("application/x-booking-id", b.id);
+                      }}
+                      title="Arraste para outro dia"
+                      className={`group flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[10px] ring-1 cursor-grab ${cls.bg} ${cls.ring} ${cls.text}`}
                     >
                       <button
                         type="button"
@@ -1034,6 +1071,7 @@ function ScheduleMonth({
                           e.stopPropagation();
                           onToggleDone(b);
                         }}
+                        draggable={false}
                         aria-label={b.status === "done" ? "mark scheduled" : "mark done"}
                         title={b.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
                         className={`shrink-0 rounded p-0.5 hover:bg-foreground/10 ${b.status === "done" ? "text-emerald-600 dark:text-emerald-400" : "opacity-50 group-hover:opacity-100"}`}
@@ -1043,7 +1081,8 @@ function ScheduleMonth({
                       <button
                         type="button"
                         onClick={() => onBookingClick(b)}
-                        className={`flex min-w-0 flex-1 items-center gap-1 truncate text-left ${b.status === "done" ? "line-through opacity-70" : ""}`}
+                        draggable={false}
+                        className={`label-on-tint flex min-w-0 flex-1 items-center gap-1 truncate text-left ${b.status === "done" ? "line-through" : ""}`}
                       >
                         <span className="font-mono">{time}</span>
                         <span className="min-w-0 truncate">{c?.full_name ?? "—"}</span>
