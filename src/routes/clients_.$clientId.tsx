@@ -199,7 +199,6 @@ function sectionSignature(assessment: any, section: string): string {
 }
 
 const SECTIONS = [
-  { id: "identity", label: "Identidade" },
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
   { id: "anthro", label: "Anthropometry" },
@@ -219,7 +218,7 @@ const SECTIONS = [
 // Optional sections render collapsed by default and count as complete
 // the moment any of their fields is touched.
 const OPTIONAL_SECTIONS = new Set([
-  "anthro", "meds", "readiness", "lifestyle", "nutrition",
+  "meds", "readiness", "lifestyle", "nutrition",
   "posture", "screen", "history", "performance",
 ]);
 
@@ -232,11 +231,6 @@ function hasVal(v: any): boolean {
 
 function isSectionComplete(id: string, a: any): boolean {
   switch (id) {
-    case "identity":
-      // Completion is tracked on the client record, not the assessment, so the
-      // section reads as complete the moment the trainer touches any field.
-      // The BMV (brief-minimum) does the strict 4-field check separately.
-      return true;
     case "parq":
       return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
     case "risk":
