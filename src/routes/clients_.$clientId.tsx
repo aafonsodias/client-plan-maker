@@ -1867,8 +1867,55 @@ function ClientDetail() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex h-8 items-center rounded-md border border-dashed border-border bg-background/30 px-3 text-xs text-muted-foreground">
-                    {t("risk_block.bmi_missing_hw")}
+                  <div className="flex h-8 items-stretch gap-1.5">
+                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={80}
+                        max={250}
+                        step={1}
+                        autoComplete="off"
+                        defaultValue={client?.height_cm ?? ""}
+                        placeholder={t("risk_block.bmi_height_ph", { defaultValue: "Altura" })}
+                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                        onBlur={async (e) => {
+                          const n = Number(e.target.value);
+                          const v = Number.isFinite(n) && n > 0 ? n : null;
+                          if (v === (client?.height_cm ?? null)) return;
+                          setClient((prev: any) => ({ ...prev, height_cm: v }));
+                          await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                      />
+                      <span className="text-[11px] text-muted-foreground">cm</span>
+                    </label>
+                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={20}
+                        max={400}
+                        step={0.1}
+                        autoComplete="off"
+                        defaultValue={client?.weight_kg ?? ""}
+                        placeholder={t("risk_block.bmi_weight_ph", { defaultValue: "Peso" })}
+                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                        onBlur={async (e) => {
+                          const n = Number(e.target.value);
+                          const v = Number.isFinite(n) && n > 0 ? n : null;
+                          if (v === (client?.weight_kg ?? null)) return;
+                          setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                          await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                      />
+                      <span className="text-[11px] text-muted-foreground">kg</span>
+                    </label>
                   </div>
                 )}
               </div>
