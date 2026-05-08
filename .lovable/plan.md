@@ -1,95 +1,100 @@
-## Objetivo
+## O problema
 
-O assessment tem 14 secções e mistura linguagem clínica (DCV, IMC, MVPA, FMS, RHR) com inputs vagos (números 1-10 sem âncoras, campos livres). Quero que qualquer pessoa (leigo ou cliente) consiga responder rápido e bem, **sem o PT perder rigor científico**. A regra é: pergunta simples no ecrã, instrumento validado por baixo.
+Hoje o botão **"Iniciar briefing IA"** aparece assim que:
+- o intake foi enviado/recebido, **OU**
+- houve qualquer auto-save de campo
 
-## Princípios (aplicados a todas as secções)
+Resultado: o treinador (ou o próprio cliente) pode disparar a IA com a ficha quase vazia — desperdiça créditos e produz briefs sem substância. Em paralelo, não há sítio óbvio para meter dados de aparelhos que estão a ficar comuns (balança Tanita, dinamómetro Jamar de preensão).
 
-1. **Cada input usa um de 3 padrões** — escolhido pela natureza da pergunta:
-   - **Chips** (2-5 opções, linguagem do dia-a-dia) → para classificações categóricas (frequência, intensidade qualitativa, hábitos).
-   - **Slider 1-10 com label dinâmica** → para escalas onde a precisão importa. Por baixo do slider mostra: `7/10 · "Acordo cansado quase todos os dias"`. As âncoras são copy editorial, não números nus.
-   - **Campo numérico só com unidades + auto-derivação** → para medições objectivas (altura, peso, FC). Sempre com placeholder de exemplo.
-2. **Ajuda em popover, não em tooltip** — substitui o `(?)` Tooltip atual por um botão "Como medir?" / "Porque pergunto isto?" que abre um popover com texto + imagem (quando aplicável). O popover fecha sozinho ao começar a preencher.
-3. **Linguagem na 3ª pessoa neutra (PT-PT, "você"-friendly)** — nada de "DCV", "MVPA", "RHR" no label visível. Esses termos vão para o popover de ajuda + tooltip de provenance que o PT vê depois.
-4. **Auto-deriva o que conseguires** — se a resposta a uma pergunta leiga já chega para preencher um campo técnico, preenche-o e mostra o resultado como chip ("Classificado como sedentário · ACSM <150 min/sem"). Igual ao padrão IMC actual.
-5. **Zero dados perdidos** — mantemos as colunas em `assessment` exactamente como estão. Só muda a camada de input + um eventual campo `extended` para guardar o input bruto leigo (ex: "Pouco" em vez de só `mvpa_min_per_week=60`) para auditoria.
+## O princípio
 
-## Componentes partilhados a criar
+A barra mínima para gerar um plano honesto é a **ficha que um PT em domicílio (ou uma pessoa comum sozinha) consegue preencher sem laboratório**. Tudo o que vier de aparelhos (Tanita, Jamar, tensiómetro, banda de FC) é **bónus opcional** que enriquece o brief mas não bloqueia.
 
-- `<HelpPopover title icon imageSrc>` — substitui `LabelWithHelp`. Trigger discreto ao lado do label. Conteúdo em markdown leve + slot opcional para imagem.
-- `<AnchoredSlider min max value anchors[] onChange>` — slider com 2-4 âncoras editoriais. A label dinâmica por baixo é a âncora interpolada do valor actual. Substitui todos os `Field type="number"` que pedem 1-10.
-- `<ChipGroup options[] value onChange>` — substitui as várias implementações inline de botões selecionáveis (MVPA, prontidão, postura).
-- `<MeasureField label value unit imageSrc helpBody>` — input numérico + popover "Como medir?" com imagem. Para cintura, anca, altura, peso, %MG.
-- `<YesNoCard question rationale value onChange>` — alarga o YesNo do PARQ para todas as secções com sim/não, com slot inline para o rationale.
+## Plano
 
-Tudo em `src/components/assessment/`. O ficheiro `clients_.$clientId.tsx` passa a importar e ficar legível.
+### 1. Gate de "Brief Mínimo Viável" (BMV)
 
-## Imagens (anthro)
+Definir checklist server-side em `src/lib/brief-minimum.ts` com 6 condições obrigatórias (todas preenchíveis numa visita domiciliária, sem equipamento):
 
-Geradas com `imagegen--generate_image` em estilo line-art monocromático (consistente com a marca, sem fotos):
-- `assets/measure-waist.png` — silhueta com fita métrica no ponto mais estreito acima da anca.
-- `assets/measure-hip.png` — fita na maior circunferência das nádegas.
-- `assets/measure-height.png` — postura para medir altura (sem sapatos, calcanhares juntos).
-- `assets/measure-bf-calipers.png` — pontos de skinfold para o método caliper.
+```text
+1. Identidade básica         → sexo, data nascimento, altura, peso
+2. PAR-Q                     → respondido (passa ou flagged-com-justificação)
+3. Objetivo SMART            → primary_goal + smart_specific
+4. Disponibilidade           → training_days_per_week + session_duration_minutes
+5. Contexto/equipamento      → training_location + available_equipment (≥1)
+6. Sinal de prontidão        → readiness_stage OU sleep_quality OU stress_level
+```
 
-Carregadas via `<img loading="lazy">` dentro do `<HelpPopover>`. Só carregam quando o utilizador clica.
+E 3 condições "fortemente recomendadas" (não bloqueiam, mas baixam confiança):
+- 1 perímetro (cintura) **ou** 1 marcador de composição
+- 1 sinal cardiovascular (FC repouso **ou** TA)
+- 1 movimento avaliado (squat, hinge, overhead, ou single-leg)
 
-## Instrumentos validados (camada invisível)
+**Estados do CTA principal** (substituem a lógica em `clients_.$clientId.tsx:1654-1673`):
 
-Cada secção usa um questionário standard por baixo do interface leigo:
-
-| Secção | Instrumento | Como aparece ao utilizador |
+| Estado | Aparência | Ação |
 |---|---|---|
-| PARQ | PAR-Q+ 2024 (já cá) | 7 sim/não, sem mudanças estruturais — só copy mais directa |
-| Risco | ACSM 2022 + IPAQ-SF (atividade) + AUDIT-C (álcool) | Mantém auto-classificação já feita |
-| Antropometria | OMS perímetros + Durnin/Womersley para %MG | Inputs com imagens "como medir" |
-| Estilo de vida | PSS-4 (stress) + PSQI-1 (sono) | Slider 1-10 com âncoras editoriais |
-| Nutrição | Mediterranean Diet Score simplificado + AUDIT-C | Chips de frequência semanal |
-| Prontidão | Stages of Change (Prochaska) | Já tem chips, só refinar copy |
-| Treino | NSCA experience tiers | Já está, melhorar âncoras do slider "capacidade vs PB" |
-| Mobilidade | FMS-lite scoring 1-5 | Substitui número nu por chips com critério ("dor", "compensa", "limpo") |
-| Postura/Screen | FMS qualitative | Mantém MovementPatternCard, só refinar copy dos critérios |
-| Performance | Cooper/Rockport (já cá) + RHR | Adiciona popover "como medir RHR" |
+| `< BMV` (faltam obrigatórios) | Botão **disabled** com chip âmbar "Faltam X campos · ver" | Scroll para 1.ª secção em falta |
+| `BMV ok, recomendados <3` | Botão **enabled** + chip neutro "Brief enxuto · podes enriquecer" | Inicia briefing |
+| `BMV + recomendados ok` | Botão **enabled** emerald "Pronto a gerar" | Inicia briefing |
 
-Nada disto exige nova tabela. Tudo flui para os campos existentes via funções de derivação.
+A lista de "o que falta" abre num popover com links que fazem scroll a cada secção. Sem termos como "completion %" — é uma checklist humana ("Falta: peso, dias por semana, equipamento").
 
-## Plano por secções (ordem proposta)
+### 2. Captura de dados de aparelhos
 
-Faço em **3 rondas**, cada uma com mobile smoke 375px e revisão de copy PT antes de fechar:
+Aproveitar o que já existe — `client_capacity_snapshots` aceita qualquer `test_used + raw_value + raw_unit` — e dar-lhe duas portas de entrada honestas dentro do assessment:
 
-**Ronda 1 — Foundations + secções "sempre abertas"**
-1. Criar componentes partilhados acima.
-2. Gerar imagens das perimetrias.
-3. Reescrever **PARQ** (copy mais leiga nas 7 perguntas + popover "porque pergunto"), **Risco** (copy + chips de tabaco/álcool), **Objetivo** (placeholders mais concretos), **Treino** (slider capacidade com âncoras editoriais).
+**A. "Importar da Tanita" (ou outra balança bioimpedância)**
+- Botão na secção **Antropometria**, ao lado do "+ Adicionar perímetro".
+- Abre uma folha (Sheet) com campos Tanita-style numa grelha:
+  - Peso, % gordura, % músculo, gordura visceral, água total, idade metabólica, BMR
+  - Opcional: segmental (braço E/D, perna E/D, tronco) — colapsado
+- Cada campo tem placeholder com unidade ("ex: 22.4 %") e popover "Como ler?" com mini-imagem do display da Tanita.
+- Submit grava 1 snapshot por campo preenchido (`domain_slug = body_composition`, `provenance = 'pt_assessed'`, `notes = 'Tanita import'`). Vazios são ignorados.
+- Bonus prático: campo "Modelo" (texto livre) guardado em `notes` para rastreabilidade.
 
-**Ronda 2 — Saúde física**
-4. **Antropometria** (MeasureField com imagens em todos os perímetros, auto-cálculo WHR já existe).
-5. **Meds** (chips de categorias comuns + texto livre para o resto).
-6. **Estilo de vida** (sleep/stress → AnchoredSlider; horas sentado/passos → MeasureField).
-7. **Nutrição** (refeições/álcool/processados → chips de frequência semanal; legacy hidden por baixo de "avançado").
+**B. "Força de preensão (Jamar)"**
+- Aparece dentro da secção **Performance** como bloco próprio.
+- 3 campos por mão (3 tentativas D, 3 tentativas E) em kg.
+- Calcula automaticamente o **máximo por mão** + assimetria (%).
+- Grava como snapshots no domínio `muscular_endurance` (ou `strength` se existir) com `test_used = 'grip_right' / 'grip_left'`.
+- Popover "Como medir?" com instruções ACSM padrão (cotovelo a 90°, 3 tentativas, descanso 1 min, melhor de 3) e norma por idade/sexo abaixo do resultado.
 
-**Ronda 3 — Avaliação técnica**
-8. **Prontidão** (refinar copy dos 5 estágios).
-9. **Mobilidade/Postura** (substituir scores numéricos nus por chips com critério qualitativo).
-10. **Screen** (rever copy dos critérios FMS dentro do MovementPatternCard).
-11. **Histórico/Performance** (popover "como medir RHR ao acordar", placeholders concretos para max lifts).
+**C. Arquitetura genérica para o futuro**
+- Os 2 painéis acima são instâncias de um componente novo `<DeviceCaptureSheet>` configurado por um catálogo em `src/lib/devices.ts`:
+  ```ts
+  { id: 'tanita_bc601', label: 'Tanita BC-601', domain: 'body_composition',
+    fields: [{ key: 'body_fat_pct', unit: '%', testUsed: 'body_fat_bia' }, ...] }
+  { id: 'jamar_dyno', label: 'Dinamómetro Jamar', ... }
+  ```
+- Adicionar mais aparelhos no futuro (tensiómetro Omron, Polar H10, fita métrica laser…) é só estender o catálogo.
 
-## Detalhes técnicos
+### 3. Reflexo no BMV
 
-- Todas as keys i18n vão para `src/i18n/locales/pt/assessment.json` e `en/assessment.json`. Nunca strings hard-coded.
-- A camada de derivação (ACSM risk, IMC, WHR, sedentary flag, etc.) **não muda**. Continuamos a popular os mesmos campos da tabela `assessment`.
-- `isSectionComplete()` mantém-se — se mudar a forma de capturar mas o campo final continuar igual, a barra de progresso não regride.
-- Provenance (`assessment.provenance.*`) continua a marcar quem editou pela última vez (PT vs cliente).
-- Sem migrações de schema. Se precisar de guardar a "resposta leiga" para auditoria, vai para o JSON `extended` que já existe.
+Os snapshots dos aparelhos satisfazem automaticamente as condições "fortemente recomendadas" do BMV:
+- snapshot `body_fat_*` ou `waist_circumference` → marca "composição" como ok
+- snapshot `grip_right/left` → marca "performance" como ok (extra)
+- snapshot `resting_heart_rate` ou `blood_pressure_*` → marca "cardiovascular" ok
 
-## Fora de âmbito (desta plano)
+O treinador vê em tempo real o checklist a ficar verde à medida que importa.
 
-- Versão para o cliente preencher (auto-onboarding) — fica para depois, mas estes componentes ficam reutilizáveis.
-- Mudar o fluxo de geração do plano com base nas respostas — só estamos a melhorar a captura.
-- Refactor do ficheiro `clients_.$clientId.tsx` em rotas separadas — mantemos monolítico por agora; só extraímos componentes.
+## Ficheiros tocados
 
-## Definição de "feito"
+```text
+src/lib/brief-minimum.ts                       (novo) — checklist + checker
+src/lib/devices.ts                             (novo) — catálogo Tanita/Jamar/...
+src/components/assessment/DeviceCaptureSheet.tsx (novo)
+src/components/assessment/BriefMinimumChecklist.tsx (novo) — popover do botão
+src/routes/clients_.$clientId.tsx              — gate do CTA + 2 botões "Importar"
+src/i18n/locales/{pt,en}/assessment.json       — labels novos
+src/assets/device-tanita.png                   (gerado) — referência visual
+src/assets/device-jamar.png                    (gerado) — referência visual
+```
 
-- 14 secções respondíveis por alguém sem formação clínica em ≤10 min.
-- Zero termos técnicos (DCV, IMC, MVPA, FMS, RHR, etc.) em labels visíveis sem o respectivo popover de tradução.
-- Toda a copy revista em PT-PT formal ("você"), passada por mobile 375px.
-- Auto-derivações antigas continuam a funcionar (ACSM, WHR, IMC, sedentary, completion).
+Sem migrações: tudo cabe na tabela `client_capacity_snapshots` que já existe.
+
+## Fora deste plano (registo para futuro)
+
+- Sincronização automática Bluetooth com Polar/Tanita Wi-Fi → exige PWA + pareamento, fica para um round dedicado.
+- OCR de foto do display da Tanita → adicionável depois ao mesmo `DeviceCaptureSheet`.
+- Importar CSV histórico → idem.

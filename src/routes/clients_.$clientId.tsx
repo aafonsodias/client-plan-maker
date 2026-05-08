@@ -37,6 +37,11 @@ import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { MeasureField } from "@/components/assessment/MeasureField";
 import { ChipGroup } from "@/components/assessment/ChipGroup";
+import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
+import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
+import { TANITA, JAMAR } from "@/lib/devices";
+import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
+import { listClientCapacitySnapshots } from "@/server/capacity.functions";
 import measureWaistImg from "@/assets/measure-waist.png";
 import measureHipImg from "@/assets/measure-hip.png";
 import { Calendar } from "@/components/ui/calendar";
@@ -455,6 +460,27 @@ function ClientDetail() {
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
   const [reassessOpen, setReassessOpen] = useState(false);
+  // BMV gate + device capture sheets.
+  const [bmvOpen, setBmvOpen] = useState(false);
+  const [tanitaOpen, setTanitaOpen] = useState(false);
+  const [jamarOpen, setJamarOpen] = useState(false);
+  const [bmvSnapshots, setBmvSnapshots] = useState<BmvSnapshot[]>([]);
+  const [bmvReloadTick, setBmvReloadTick] = useState(0);
+  const listSnapshotsFn = useServerFn(listClientCapacitySnapshots);
+  useEffect(() => {
+    if (!clientId) return;
+    void (async () => {
+      try {
+        const r: any = await listSnapshotsFn({ data: { clientId, days: 365 } });
+        const rows = (r?.snapshots ?? []) as any[];
+        setBmvSnapshots(rows.map((s) => ({
+          domain_slug: s.domain_slug,
+          test_used: s.test_used ?? null,
+          raw_value: s.raw_value ?? null,
+        })));
+      } catch {}
+    })();
+  }, [clientId, listSnapshotsFn, bmvReloadTick]);
   // Assessment collapse — controlled so sidebar can mirror it. Once brief is
   // approved, default to collapsed (the trainer is now working in the stages
   // below). User toggle is persisted per-client.
@@ -1655,7 +1681,12 @@ function ClientDetail() {
         if (!intakeDone && !lastSavedAt) {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
-          primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+          const bmvNow = computeBmv({ client, assessment, snapshots: bmvSnapshots });
+          if (!bmvNow.ready) {
+            primaryAction = { label: `Faltam ${bmvNow.missingRequired} dados — ver`, icon: <AlertTriangle className="h-4 w-4" />, onClick: () => setBmvOpen(true) };
+          } else {
+            primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+          }
         } else if (briefReadyLocal) {
           primaryAction = { label: "Rever briefing", icon: <ArrowRight className="h-4 w-4" />, onClick: scrollToStages };
         } else if (briefApproved && !blueprintApprovedLocal) {
@@ -1992,6 +2023,11 @@ function ClientDetail() {
 
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
+              </Button>
+            </div>
             <div className="grid gap-2 sm:grid-cols-3">
               <MeasureField
                 label="Cintura"
@@ -2451,6 +2487,11 @@ function ClientDetail() {
 
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
+              </Button>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <MeasureField
                 label={t("performance_block.rhr")}
@@ -3329,6 +3370,38 @@ function ClientDetail() {
           onOpenChange={setReassessOpen}
         />
       )}
+      <DeviceCaptureSheet
+        clientId={clientId}
+        device={TANITA}
+        open={tanitaOpen}
+        onOpenChange={setTanitaOpen}
+        onSaved={() => setBmvReloadTick((t) => t + 1)}
+      />
+      <DeviceCaptureSheet
+        clientId={clientId}
+        device={JAMAR}
+        open={jamarOpen}
+        onOpenChange={setJamarOpen}
+        onSaved={() => setBmvReloadTick((t) => t + 1)}
+      />
+      <BriefMinimumSheet
+        open={bmvOpen}
+        onOpenChange={setBmvOpen}
+        bmv={computeBmv({ client, assessment, snapshots: bmvSnapshots })}
+        busy={phasedBusy}
+        onJumpToSection={(sid) => {
+          const el = document.getElementById(`sec-${sid}`) ?? document.getElementById(sid);
+          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onStartBrief={async () => {
+          try {
+            setPhasedBusy(true);
+            const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
+            if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); }
+            else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
+          } finally { setPhasedBusy(false); }
+        }}
+      />
     </div>
     </TooltipProvider>
   );
