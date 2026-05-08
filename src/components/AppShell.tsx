@@ -119,7 +119,9 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
         suppressHydrationWarning
         className="flex min-h-screen items-center justify-center text-muted-foreground"
       >
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-muted-foreground/60" aria-hidden />
+        <div className="animate-pulse" aria-hidden>
+          <BrandMark size="lg" />
+        </div>
         <span className="sr-only">{t("actions.loading")}</span>
       </div>
     );
