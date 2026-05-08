@@ -2023,6 +2023,11 @@ function ClientDetail() {
 
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
+              </Button>
+            </div>
             <div className="grid gap-2 sm:grid-cols-3">
               <MeasureField
                 label="Cintura"
