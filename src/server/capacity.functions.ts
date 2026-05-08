@@ -69,3 +69,64 @@ export const getClientCapacityMap = createServerFn({ method: "GET" })
       normBands: { p25: 25, p50: 50, p75: 75 },
     };
   });
+
+/**
+ * Insert a new capacity snapshot for a client.
+ * Caller must be the trainer that owns the client.
+ */
+export const addCapacitySnapshot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        domainSlug: z.string().min(1),
+        testUsed: z.string().max(200).optional(),
+        rawValue: z.number().finite().min(0).optional(),
+        rawUnit: z.string().max(40).optional(),
+        normalizedScore: z.number().min(0).max(100).optional(),
+        measuredAt: z.string().datetime().optional(),
+        notes: z.string().max(1000).optional(),
+      })
+      .refine((d) => d.rawValue != null || d.normalizedScore != null, {
+        message: "Either rawValue or normalizedScore is required",
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id")
+      .eq("id", data.clientId)
+      .maybeSingle();
+    if (!client) throw new Error("Client not found");
+    if (client.trainer_id !== userId) throw new Error("Unauthorized");
+
+    const { data: domain } = await supabaseAdmin
+      .from("capacity_domains")
+      .select("slug")
+      .eq("slug", data.domainSlug)
+      .maybeSingle();
+    if (!domain) throw new Error("Unknown domain");
+
+    const { data: snapshot, error } = await supabaseAdmin
+      .from("client_capacity_snapshots")
+      .insert({
+        client_id: data.clientId,
+        domain_slug: data.domainSlug,
+        test_used: data.testUsed ?? null,
+        raw_value: data.rawValue ?? null,
+        raw_unit: data.rawUnit ?? null,
+        normalized_score: data.normalizedScore ?? null,
+        measured_at: data.measuredAt ?? new Date().toISOString(),
+        notes: data.notes ?? null,
+        provenance: "pt_assessed",
+        created_by: userId,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return snapshot;
+  });

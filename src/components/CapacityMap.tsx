@@ -7,6 +7,8 @@ import { getClientCapacityMap } from "@/server/capacity.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { Plus } from "lucide-react";
+import { AddSnapshotSheet } from "@/components/AddSnapshotSheet";
 
 type Snapshot = {
   domain_slug: string;
@@ -82,12 +84,20 @@ function polygonPoints(total: number, ratio: number) {
 
 /* ------------------------------------------------------------------ */
 
-export function CapacityMap({ clientId }: { clientId: string }) {
+export function CapacityMap({
+  clientId,
+  clientName,
+}: {
+  clientId: string;
+  clientName?: string;
+}) {
   const { t, i18n } = useTranslation("common");
   const fetchMap = useServerFn(getClientCapacityMap);
   const [data, setData] = useState<MapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hover, setHover] = useState<{ domain: Domain; x: number; y: number } | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetDomain, setSheetDomain] = useState<string | undefined>(undefined);
 
   const load = useCallback(async () => {
     try {
@@ -144,8 +154,12 @@ export function CapacityMap({ clientId }: { clientId: string }) {
 
   const total = data.domains.length;
   const handleSpokeClick = (slug: string) => {
-    // Round 2 hook — assessment flow lands on this click target.
-    console.log("open assessment for", slug);
+    setSheetDomain(slug);
+    setSheetOpen(true);
+  };
+  const openAdd = () => {
+    setSheetDomain(undefined);
+    setSheetOpen(true);
   };
 
   return (
@@ -154,9 +168,19 @@ export function CapacityMap({ clientId }: { clientId: string }) {
       className="mb-3 rounded-2xl border border-border bg-card/60 p-3 sm:p-4"
     >
       {/* Header */}
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
-        <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
+          <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("capacity.map.add_button")}
+        </button>
       </div>
 
       {/* Tier legend + completion */}
@@ -367,6 +391,15 @@ export function CapacityMap({ clientId }: { clientId: string }) {
           </div>
         )}
       </div>
+
+      <AddSnapshotSheet
+        clientId={clientId}
+        clientName={clientName}
+        domains={data.domains}
+        initialDomainSlug={sheetDomain}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </section>
   );
 }
