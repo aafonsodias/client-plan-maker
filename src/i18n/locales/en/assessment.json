@@ -168,13 +168,20 @@
     }
   },
   "readiness_block": {
-    "title": "Readiness to change (Prochaska)",
-    "hint": "Stage of behavioral change — calibrates coaching approach.",
-    "precontemplation": "Pre-contemplation",
-    "contemplation": "Contemplation",
-    "preparation": "Preparation",
-    "action": "Action",
-    "maintenance": "Maintenance"
+    "title": "Where are you right now?",
+    "hint": "How they relate to training right now — calibrates the tone and pace of the first weeks.",
+    "help_title": "How to choose",
+    "help_body": "Prochaska's stages of behavior change. Pick what best describes the current relationship with training. There's no right answer — it decides whether we lean on education, structure, or intensity.",
+    "precontemplation": "Not on the radar",
+    "precontemplation_sub": "No intention in next 6 months",
+    "contemplation": "Thinking about it",
+    "contemplation_sub": "Maybe in next 6 months",
+    "preparation": "Planning to start",
+    "preparation_sub": "Wants to begin this month",
+    "action": "Already started",
+    "action_sub": "Training <6 months",
+    "maintenance": "Locked-in habit",
+    "maintenance_sub": "Consistent 6+ months"
   },
   "training_block": {
     "title": "Training setup",
@@ -271,13 +278,17 @@
     "years": "Years training",
     "previous": "Previous program style",
     "previous_placeholder": "PPL, 5/3/1…",
-    "max_lifts": "Max lifts (if known)"
+    "max_lifts": "Max lifts (if known)",
+    "max_lifts_placeholder": "e.g. SQ 100kg · BP 70kg · DL 130kg",
+    "max_lifts_help": "1-rep max loads or recent estimate. Optional — leave blank if unknown. Shorthand: SQ = squat, BP = bench, DL = deadlift, OHP = overhead press."
   },
   "performance_block": {
     "title": "Performance markers",
     "hint": "Cardiovascular and conditioning baseline.",
     "rhr": "Resting HR (bpm)",
     "rhr_hint": "Measured first thing AM, supine.",
+    "rhr_help": "Resting heart rate. How to measure: first thing in the morning, still in bed. Count pulses at the wrist or neck for 60s (or 30s × 2). Ideally 3 mornings in a row, take the average. Typical: <60 bpm = strong aerobic base · 60–80 bpm = normal · >80 bpm = poor recovery or stress.",
+    "rhr_placeholder": "e.g. 62",
     "cardio_test": "Cardio test",
     "cardio_test_hint": "Pick a standard test or 'untested'.",
     "untested": "Untested",
