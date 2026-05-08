@@ -302,7 +302,7 @@ function MePage() {
         )}
 
         <p className="text-center text-[10px] uppercase tracking-widest text-muted-foreground/50">
-          Mais funções em breve — mensagens, registo directo, progresso visual.
+          Em breve — check-in diário, progresso visual, mensagens.
         </p>
       </div>
     </div>
