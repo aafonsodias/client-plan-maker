@@ -1436,6 +1436,24 @@ function ClientDetail() {
     toast.success("Draft cleared");
   };
 
+  // Auto-derive BMI category from client height + weight. Writes back into the
+  // assessment so completion tracking and downstream risk math stay in sync.
+  // "muscular" is preserved if previously chosen (BMI alone can't infer it).
+  // MUST be declared above the `if (!client) return ...` early-return so the
+  // hook order stays stable across renders.
+  const bmiAuto = categorizeBmi(client?.height_cm, client?.weight_kg);
+  useEffect(() => {
+    if (!client) return;
+    if (!bmiAuto.category) return;
+    if (assessment?.risk?.bmi_category === "muscular") return;
+    if (assessment?.risk?.bmi_category === bmiAuto.category) return;
+    setAssessment((a: any) => ({
+      ...a,
+      risk: { ...(a?.risk ?? {}), bmi_category: bmiAuto.category },
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bmiAuto.category, client?.id]);
+
   if (!client) return <p className="text-muted-foreground">{t("loading")}</p>;
 
   const parqYes = parqHasYes(assessment.parq);
@@ -1443,21 +1461,6 @@ function ClientDetail() {
   const whr = assessment.waist_cm && assessment.hip_cm
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
-
-  // Auto-derive BMI category from client height + weight. Writes back into the
-  // assessment so completion tracking and downstream risk math stay in sync.
-  // "muscular" is preserved if previously chosen (BMI alone can't infer it).
-  const bmiAuto = categorizeBmi(client?.height_cm, client?.weight_kg);
-  useEffect(() => {
-    if (!bmiAuto.category) return;
-    if (assessment.risk?.bmi_category === "muscular") return;
-    if (assessment.risk?.bmi_category === bmiAuto.category) return;
-    setAssessment((a: any) => ({
-      ...a,
-      risk: { ...(a.risk ?? {}), bmi_category: bmiAuto.category },
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bmiAuto.category]);
 
   // Section completion + progress
   const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
