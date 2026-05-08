@@ -89,7 +89,7 @@ export function computeBmv(input: {
     has(a.readiness_stage) || has(a.sleep_quality) || has(a.stress_level);
 
   const required: BmvItem[] = [
-    { key: "identity", label: "Sexo, data nascimento, altura e peso", sectionId: "client-overview", ok: identityOk },
+    { key: "identity", label: "Sexo, data nascimento, altura e peso", sectionId: "anthro", ok: identityOk },
     { key: "parq", label: "PAR-Q respondido", sectionId: "parq", ok: parqAnswered },
     { key: "goal", label: "Objetivo principal e o que quer alcançar", sectionId: "goal", ok: goalOk },
     { key: "availability", label: "Dias por semana e duração da sessão", sectionId: "training", ok: availabilityOk },
