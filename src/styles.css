@@ -116,6 +116,25 @@
   --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
+  /* Editorial-clinical typography (R75 landing).
+   * Fraunces = display serif (variable, opsz 9..144).
+   * Inter Tight = body grotesk. NOT regular Inter for landing copy. */
+  --font-serif: "Fraunces", "Source Serif 4", "Cormorant Garamond", Georgia, serif;
+  --font-grotesk: "Inter Tight", "Inter", system-ui, sans-serif;
+
+  /* Golden-ratio type scale (φ ≈ 1.2 minor third blended with 1.44 major). */
+  --text-xs-r:   0.694rem;
+  --text-sm-r:   0.833rem;
+  --text-base-r: 1rem;
+  --text-lg-r:   1.2rem;
+  --text-xl-r:   1.44rem;
+  --text-2xl-r:  1.728rem;
+  --text-3xl-r:  2.488rem;
+  --text-4xl-r:  3.583rem;
+  --text-5xl-r:  5.16rem;
+
+  --shadow-1: 0 1px 0 0 var(--border);
+
   --text-micro: 10px;
   --text-micro--line-height: 14px;
   --text-meta: 11px;
@@ -374,6 +393,75 @@
 
 .animate-set-tick {
   animation: set-tick-pop 240ms ease-out;
+}
+
+/* ── Editorial landing (R75) ──────────────────────────────────────────── */
+
+.font-serif    { font-family: var(--font-serif); font-feature-settings: "ss01", "ss02"; }
+.font-grotesk  { font-family: var(--font-grotesk); }
+
+.editorial-display {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+}
+.editorial-subdisplay {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 24;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.editorial-body {
+  font-family: var(--font-grotesk);
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+.editorial-eyebrow {
+  font-family: var(--font-grotesk);
+  font-weight: 500;
+  font-size: var(--text-xs-r);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-2);
+}
+.editorial-numeral {
+  font-family: var(--font-serif);
+  font-variation-settings: "opsz" 144;
+  font-weight: 400;
+  font-feature-settings: "lnum", "tnum";
+}
+
+@keyframes editorial-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.editorial-rise {
+  opacity: 0;
+  animation: editorial-rise 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.editorial-rise-1 { animation-delay: 80ms; }
+.editorial-rise-2 { animation-delay: 160ms; }
+.editorial-rise-3 { animation-delay: 240ms; }
+.editorial-rise-4 { animation-delay: 360ms; }
+.editorial-rise-5 { animation-delay: 480ms; }
+
+@keyframes editorial-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.editorial-reveal {
+  animation: editorial-reveal 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorial-rise, .editorial-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }
 
 @keyframes progress {
