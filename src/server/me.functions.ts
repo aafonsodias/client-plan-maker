@@ -51,7 +51,7 @@ export const loadMe = createServerFn({ method: "GET" })
     const [{ data: plan }, { data: trainer }] = await Promise.all([
       supabaseAdmin
         .from("workout_plans")
-        .select("id, title, summary, duration_weeks, block_number, status, created_at")
+        .select("id, title, summary, duration_weeks, block_number, status, created_at, block_transition_summary, prior_plan_id, share_token")
         .eq("client_id", client.id)
         .neq("status", "archived")
         .order("created_at", { ascending: false })
@@ -59,7 +59,7 @@ export const loadMe = createServerFn({ method: "GET" })
         .maybeSingle(),
       supabaseAdmin
         .from("profiles")
-        .select("business_name, full_name, logo_url, primary_color")
+        .select("business_name, full_name, logo_url, primary_color, tagline")
         .eq("user_id", client.trainer_id)
         .maybeSingle(),
     ]);
@@ -118,6 +118,25 @@ export const loadMe = createServerFn({ method: "GET" })
       }));
     }
 
+    // Upcoming bookings (next 5 scheduled, future-only)
+    const nowIso = new Date().toISOString();
+    const { data: bookings } = await supabaseAdmin
+      .from("client_bookings")
+      .select("id, starts_at, duration_min, session_type, status, pack_id, notes")
+      .eq("client_id", client.id)
+      .eq("status", "scheduled")
+      .gte("starts_at", nowIso)
+      .order("starts_at", { ascending: true })
+      .limit(5);
+
+    // Active packs (saldo)
+    const { data: packs } = await supabaseAdmin
+      .from("client_packs")
+      .select("id, label, color, pack_size, sessions_used, session_type, weekly_frequency")
+      .eq("client_id", client.id)
+      .eq("archived", false)
+      .order("created_at", { ascending: false });
+
     return {
       linked: true as const,
       previewing,
@@ -127,5 +146,7 @@ export const loadMe = createServerFn({ method: "GET" })
       currentWeek,
       weekDays,
       recentSessions,
+      upcomingBookings: bookings ?? [],
+      activePacks: packs ?? [],
     };
   });
