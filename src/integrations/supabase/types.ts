@@ -615,6 +615,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "client_bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "client_bookings_pack_id_fkey"
             columns: ["pack_id"]
             isOneToOne: false
@@ -714,7 +721,15 @@ export type Database = {
           trainer_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_measurement_prefs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_measurements: {
         Row: {
@@ -747,7 +762,15 @@ export type Database = {
           trainer_id?: string
           values?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_measurements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_packs: {
         Row: {
@@ -798,7 +821,15 @@ export type Database = {
           updated_at?: string
           weekly_frequency?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_packs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {
@@ -912,7 +943,15 @@ export type Database = {
           trainer_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_activity_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       demo_runs: {
         Row: {
@@ -1180,7 +1219,15 @@ export type Database = {
           primary_payer?: boolean
           trainer_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pack_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plan_feedback: {
         Row: {
