@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HelpPopover } from "@/components/assessment/HelpPopover";
+import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -2101,25 +2103,28 @@ function ClientDetail() {
 
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
-            <div className="mb-3 rounded-md border border-border bg-background/40 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <Label className="text-xs">Capacidade actual vs pico anterior</Label>
-                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {assessment.current_capacity_vs_pb ?? 5}/10
-                </span>
-              </div>
-              <Slider
-                min={1}
-                max={10}
-                step={1}
-                value={[assessment.current_capacity_vs_pb ?? 5]}
-                onValueChange={([v]) =>
-                  setAssessment({ ...assessment, current_capacity_vs_pb: v })
+            <div className="mb-3">
+              <AnchoredSlider
+                label="Onde está face ao melhor que já conseguiu?"
+                value={assessment.current_capacity_vs_pb ?? 5}
+                onChange={(v) => setAssessment({ ...assessment, current_capacity_vs_pb: v })}
+                trailing={
+                  <HelpPopover label="Capacidade vs pico">
+                    <p>
+                      Compare a forma actual com o melhor pico de treino que já teve. Vamos usar isto
+                      para decidir se começamos em modo reconstrução (mais volume, cargas leves) ou
+                      em modo progressão (intensidade mais alta).
+                    </p>
+                  </HelpPopover>
                 }
+                anchors={[
+                  { upTo: 2, label: "Muito longe do pico — modo reconstrução total" },
+                  { upTo: 4, label: "Bastante abaixo — recuperar base primeiro" },
+                  { upTo: 6, label: "A meio caminho — progressão controlada" },
+                  { upTo: 8, label: "Quase no pico — pronto para empurrar" },
+                  { upTo: 10, label: "No pico ou acima — modo progressão agressiva" },
+                ]}
               />
-              <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
-                1 = muito longe do pico anterior (modo reconstrução) · 5 = a meio · 10 = no pico anterior ou acima (modo progressão).
-              </p>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
@@ -2158,9 +2163,45 @@ function ClientDetail() {
 
           {/* Lifestyle (rebuilt) */}
           <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
+              <AnchoredSlider
+                label="Como anda o sono?"
+                value={Number(assessment.sleep_quality) || 5}
+                onChange={(v) => setAssessment({ ...assessment, sleep_quality: v as any })}
+                trailing={
+                  <HelpPopover label="Sono">
+                    <p>Avalia a qualidade média das últimas 4 semanas (PSQI item global).
+                    Sono mau prediz pior recuperação e maior risco de lesão.</p>
+                  </HelpPopover>
+                }
+                anchors={[
+                  { upTo: 2, label: "Mau — acorda exausto, várias noites por semana" },
+                  { upTo: 4, label: "Irregular — custa adormecer ou acorda a meio" },
+                  { upTo: 6, label: "Razoável — algumas noites boas, outras nem por isso" },
+                  { upTo: 8, label: "Bom — dorme bem na maioria das noites" },
+                  { upTo: 10, label: "Excelente — descansa profundamente todas as noites" },
+                ]}
+              />
+              <AnchoredSlider
+                label="Quão sob pressão se sente no dia-a-dia?"
+                value={Number(assessment.stress_level) || 5}
+                onChange={(v) => setAssessment({ ...assessment, stress_level: v as any })}
+                trailing={
+                  <HelpPopover label="Stress percebido">
+                    <p>Baseado no PSS-4 (Perceived Stress Scale). Stress crónico alto impacta
+                    recuperação, sono e adesão — vamos calibrar volume com isto em conta.</p>
+                  </HelpPopover>
+                }
+                anchors={[
+                  { upTo: 2, label: "Muito calmo — controla bem o que aparece" },
+                  { upTo: 4, label: "Tranquilo — alguns dias mais cheios que outros" },
+                  { upTo: 6, label: "Médio — sente pressão mas gere" },
+                  { upTo: 8, label: "Tenso — sobrecarregado várias vezes por semana" },
+                  { upTo: 10, label: "Esgotado — em sobrecarga constante" },
+                ]}
+              />
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("lifestyle_block.sleep")} type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint={t("lifestyle_block.sleep_hint")} />
-              <Field label={t("lifestyle_block.stress")} type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint={t("lifestyle_block.stress_hint")} />
               <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
               <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
               <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
@@ -3730,17 +3771,13 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
 }
 
 function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
-  const { t } = useTranslation("assessment");
   return (
     <div className="flex items-center gap-1">
       <Label className="text-xs">{label}</Label>
       {hint && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t("why_we_ask_aria")}><Info className="h-3 w-3" /></button>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-xs"><p>{hint}</p></TooltipContent>
-        </Tooltip>
+        <HelpPopover label={label}>
+          <p>{hint}</p>
+        </HelpPopover>
       )}
     </div>
   );
