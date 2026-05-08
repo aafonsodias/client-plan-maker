@@ -1,90 +1,93 @@
-## O raciocínio em duas perguntas
 
-Estás a misturar duas coisas (de propósito, e bem):
+# Ver como cliente — modo global de pré-visualização
 
-1. **Tu, treinador, queres ver o que o cliente vê** — sem segundo telemóvel, sem segunda conta. É uma ferramenta de QA interna, não uma feature comercial.
-2. **O cliente do PT (o utilizador final)** — o que é que ele precisa mesmo de ter quando paga ao PT que paga ao Forge? Esta é a decisão de produto importante.
+## A estratégia é boa? Sim, e melhor do que parece.
 
-Resposta curta: **duas superfícies, **uma** componente partilhada**. O "ver como cliente" do treinador é apenas o mesmo ecrã de cliente, alimentado pelos dados a que o treinador já tem acesso por RLS. Zero impersonation, zero magia.
+O que está a propor é o padrão **"impersonation / view-as"** que ferramentas sérias (Stripe, Intercom, Linear) usam para QA de produto. Em vez de andar a saltar entre páginas isoladas a tentar imaginar o que o cliente vê, ativa um **modo persistente** que reescreve toda a navegação como se fosse o cliente. Vantagens:
 
----
+1. **Você organiza-se**: vê em tempo real, página a página, exatamente o que o cliente vê — e decide o que cortar/adicionar.
+2. **Acumula decisões**: cada página visitada em modo cliente vira uma decisão de design ("isto fica, isto esconde-se, isto reescreve-se em linguagem de cliente").
+3. **Base técnica para o produto final**: a mesma flag (`viewAs=clientId`) que o treinador usa para QA é a flag que o cliente real usa quando faz login. **Construímos uma vez, usamos duas vezes.**
 
-## Parte A — Ver como cliente (para ti, treinador)
+## Como o cliente terá acesso só ao que decidirmos (a parte que pediu para ensinar)
 
-### Estado actual
-- O cliente hoje só tem 2 superfícies, ambas por token: `/intake/$token` (avaliação) e `/log/$token` (registar treino).
-- Não existe ainda uma "casa do cliente" autenticada. `clients.user_id` + RLS "coached client reads own row" estão preparados em DB mas sem UI.
-- Logo: hoje, "ver como cliente" significa principalmente *ver o que ele veria se houvesse uma casa de cliente* — o que é exactamente o gancho para construirmos a Parte B em simultâneo.
+Há três camadas a separar:
 
-### Mecânica proposta
-- Nova rota `/clients/$clientId/preview` (ou botão "Ver como {Nome}" no header do cliente) que renderiza **a mesma componente** que a futura casa-do-cliente (`<ClientHome/>`).
-- Em modo preview, os dados vêm das queries normais do treinador (RLS de trainer). Em modo real (cliente autenticado), vêm das mesmas queries com filtro `client_id = me`.
-- Banner amber persistente no topo: `Pré-visualização como {Nome} · Sair`. Bloqueia escritas (toda a UI fica `aria-disabled` para acções que escreveriam como cliente — ex.: registar set, marcar check-in). Isto é não-negociável: senão poluis dados reais.
-- Anchor `data-tour="client-preview"` para o tour.
+1. **Camada de rotas (URL)** — controlo na navegação
+   Cada rota declara se é `trainer-only`, `client-visible`, ou `both`. O `__root.tsx` lê o modo atual (trainer normal vs. view-as-client vs. cliente real autenticado) e:
+   - Em modo cliente: esconde do menu/header tudo o que é trainer-only.
+   - Se o cliente tentar abrir uma URL trainer-only diretamente: `redirect → /me`.
 
-### Porque isto é a opção certa
-- **Custo zero em auth.** Não precisas de impersonation tokens, second device, nem GDPR.
-- **Reutilização de componente garantida.** Se a Parte B partir da mesma `<ClientHome/>`, qualquer melhoria que faças em preview já beneficia o cliente real.
-- **Loop de feedback imediato.** Vês exactamente o estado real (incluindo empty states que talvez nunca terias notado).
+2. **Camada de dados (RLS no Supabase)** — controlo na base de dados
+   As políticas RLS já garantem que `clients.user_id = auth.uid()` só vê os próprios dados. Isto **já está**. O modo "view as" do treinador usa as credenciais do treinador (vê tudo), mas a UI finge que é o cliente — é só visual. Quando o cliente real faz login, RLS bloqueia tudo o resto automaticamente.
 
-### Telemetria mínima
-- `generation_log` não serve aqui (é AI). Adicionar coluna `profiles.client_preview_count` ou um `console.info` simples por agora — basta saber se a usas.
+3. **Camada de UI (componentes)** — controlo no que se renderiza
+   Componentes consultam `useViewMode()` e escondem botões de admin, edição, custos, etc. Em modo preview, escrita está bloqueada (já fazemos isto no `/me`).
 
----
+**Regra de ouro**: nunca confiar só na UI. Cada uma das três camadas tem de bloquear independentemente. UI esconde → router redirige → RLS recusa.
 
-## Parte B — O que o cliente do PT precisa de ver
+## Plano em 3 fatias (cada uma entrega valor sozinha)
 
-Antes do "como", o "porquê". O cliente paga ao **PT**, não ao Forge. A casa-do-cliente é, para o cliente, *a app do PT dele*. Logo:
-- White-label real: `profiles.business_name`, `logo_url`, `primary_color`, `tagline` já existem — usar a sério, sem "Forge" visível em lado nenhum dentro deste shell.
-- Mobile-first absoluto. 90% destes clientes abrem isto no WC do ginásio.
+### Fatia 1 — Infra do "view as" (esta ronda)
 
-### As 6 jobs-to-be-done do cliente (priorizadas)
+- **`ViewAsContext`** (`src/contexts/ViewAsContext.tsx`): guarda `{ mode: "trainer" | "preview", clientId?, client? }`. Persistido em `sessionStorage` para sobreviver a refresh mas não a logout.
+- **`ViewAsBar`**: barra âmbar fixa no topo quando ativo. Mostra "A ver como **{nome do cliente}**", dropdown para trocar de cliente, botão "Sair do modo cliente". Aparece em **todas** as páginas (montada no `__root.tsx`).
+- **Botão "Ver como cliente"** ao lado do "+ Novo cliente" no `/dashboard`. Abre um popover com lista de clientes (search + avatar) e ativa o modo.
+- **Hook `useViewAs()`**: `{ isPreview, clientId, exit, switchClient }` para qualquer componente consumir.
 
-| # | Job | Ecrã |
-|---|---|---|
-| 1 | "O que faço hoje?" | Sessão de hoje — exercícios, séries × reps, carga sugerida vs. última, cues, critérios de forma. Botão grande "Começar". |
-| 2 | "Registar o que fiz" | Logbook por set (já existe em `/log/$token` — promover a primary surface). Auto-progressão NSCA visível. |
-| 3 | "Estou a evoluir?" | Top-Lifts trend + e1RM por padrão (Squat/Hinge/Push/Pull) + ring de adesão. Já temos `capacity-gain.ts` e `EvolutionSparkline`. |
-| 4 | "Porque é que estou a fazer isto?" | Brief do bloco em linguagem simples (1 parágrafo do PT) + chip "Bloco N · evoluiu de Bloco N-1". Confiança = retenção. |
-| 5 | "Como me sinto / aviso o PT" | Check-in diário leve: sono 1-5, dores (mapa corporal simples), "vou faltar terça". Alimenta `programNextWeek` autoreg. |
-| 6 | "Quando é o próximo treino + saldo do pack" | Próximas sessões agendadas + saldo "5 de 10 sessões usadas". |
+### Fatia 2 — Mapa de rotas e auditoria página a página (próximas rondas, contigo a conduzir)
 
-### O que o cliente **NÃO** vê (firewall claro)
-- Preçário Forge, billing, dashboard de outros clientes
-- Cockpit de intensidade, blueprint editor, microcycle phase rails, model picker, knowledge profiles
-- `generation_log`, custos AI, telemetria interna
-- Templates, manual de treinador, admin
-- Branding "Forge" — só o do PT
+Crio um registo de visibilidade em `src/lib/route-visibility.ts`:
 
-### Modelo de acesso (decisão pendente, recomendação abaixo)
-- **A. Token-only** (estender `/log/$token`): zero atrito, zero passwords. Limitação: link sprawl, sem multi-device fácil.
-- **B. Auth real** (`clients.user_id` + email/password): seguro mas atrito alto para clientes não-técnicos.
-- **C. Magic-link → cookie persistente**: o PT envia link uma vez, o telemóvel do cliente fica logado para sempre. **Esta é a recomendação.** Sem passwords, multi-device opcional via novo magic-link, revogável.
+```ts
+export const ROUTE_VISIBILITY = {
+  "/dashboard": "trainer-only",      // → redireciona para /me em preview
+  "/me": "client-visible",           // já é a casa do cliente
+  "/clients/$clientId": "trainer-only",
+  "/plans/$id": "shared-readonly",   // cliente vê, sem custos/AI
+  "/log/$token": "client-visible",
+  "/schedule": "shared-readonly",    // cliente vê só as suas marcações
+  "/billing": "trainer-only",
+  // ...
+} as const;
+```
 
----
+À medida que percorre cada página em modo "ver como cliente", decidimos juntos:
+- **`trainer-only`** → redirect para `/me`.
+- **`client-visible`** → mostra como está.
+- **`shared-readonly`** → mesma rota, componentes consultam `isPreview` para esconder custos, botões de regenerar AI, edição, etc.
 
-## Sequência de entrega (3 PRs pequenos, não 1 grande)
+Para `shared-readonly`, em vez de duplicar páginas, criamos pequenos wrappers `<TrainerOnly>{...}</TrainerOnly>` e `<ClientFacing>{...}</ClientFacing>` que mostram/escondem secções. Mantém uma única source of truth por página.
 
-1. **PR1 — Esqueleto da `<ClientHome/>` em modo preview-only.** Rota `/clients/$clientId/preview` para o treinador. Renderiza Hoje + Brief + Top-Lifts + Próximas sessões com dados reais. Escritas bloqueadas. White-label dos `profiles`. Sai com tudo que tu precisas para fazer QA.
-2. **PR2 — Check-in diário do cliente** (job #5). Tabela nova `client_checkins` (sleep, soreness, RPE diário, missed-session flag). Surface dentro de `<ClientHome/>`. Liga ao `programNextWeek` autoreg via novo input.
-3. **PR3 — Auth do cliente real (magic-link).** Activa `clients.user_id`, fluxo de invite, cookie persistente, mesma `<ClientHome/>` renderizada com filtro real. Logbook actual `/log/$token` migra para `/c/sessions/$id`.
+### Fatia 3 — Cliente real autenticado (quando o produto for partilhar)
 
-Cada PR é entregável e útil sozinho. PR1 sozinho já te resolve a tua dor original.
+- Login do cliente via magic-link (Supabase OTP, sem password).
+- `__root.tsx` deteta: se `clients.user_id == auth.uid()` e o utilizador não tem `profiles` (não é treinador), entra automaticamente em modo "self" (visualmente igual ao preview, mas com escrita ativa e RLS a proteger).
+- Migrar o `/log/$token` (atualmente token público) para preferir auth quando disponível.
 
----
+Esta fatia **não é** desta ronda. É o destino. As fatias 1 e 2 são pré-requisitos limpos.
 
-## Aspectos técnicos (para o teu lado)
+## Detalhes técnicos (para referência)
 
-- **Componente única `<ClientHome/>`** em `src/components/client-home/` consumindo um hook `useClientHomeData(clientId, mode: "preview" | "self")`. O hook escolhe a query e RLS adequados.
-- **Bloqueio de escritas em preview**: wrapper `<PreviewGuard>` que intercepta clicks em botões com `data-mutates="true"` e mostra toast "Modo pré-visualização — sem efeito".
-- **Tabela nova (PR2)**: `client_checkins (id, client_id, trainer_id, date, sleep, soreness jsonb, missed boolean, note)` com RLS dupla: trainer-owns-all + coached-client-owns-self. Migration separada com backup.
-- **Magic-link (PR3)**: usar `supabase.auth.signInWithOtp({ email })` + `emailRedirectTo: /c`. Email customizado com branding do PT (já temos RESEND_API_KEY).
-- **i18n**: tudo via `t()` em `pt/common.json` namespace `client_home.*`. PT-PT humano, EN fallback.
-- **Memória de produto a guardar quando aprovares**: "Casa do cliente = `<ClientHome/>` única, modo preview (treinador, sem escritas) e modo self (cliente autenticado). White-label total."
+**Ficheiros a criar nesta ronda (Fatia 1):**
+- `src/contexts/ViewAsContext.tsx` — provider + hook
+- `src/components/ViewAsBar.tsx` — barra âmbar fixa global
+- `src/components/ViewAsClientPicker.tsx` — popover com lista de clientes
+- `src/lib/route-visibility.ts` — esqueleto vazio, preenchemos na Fatia 2
 
----
+**Ficheiros a alterar nesta ronda:**
+- `src/routes/__root.tsx` — montar `<ViewAsProvider>` e `<ViewAsBar />`
+- `src/routes/dashboard.tsx` — botão "Ver como cliente" ao lado do "+ Novo cliente"
+- `mem/index.md` — adicionar regra Core sobre o modo view-as (3 camadas: route-visibility + RLS + UI)
 
-## O que não faço nesta ronda
-- Não toco em billing, AI generation, schedule, ou outras superfícies do treinador.
-- Não construo a Parte B inteira de uma vez. Só PR1.
-- Não introduzo passwords nem fluxo de signup público para clientes — magic-link no PR3.
+**O que não muda nesta ronda:**
+- Nada de RLS novo.
+- Nada de magic-link.
+- Nada de redirects automáticos (só os fazemos quando classificarmos cada rota na Fatia 2).
+- O `/me` atual continua a funcionar exatamente como está.
+
+## Pergunta antes de avançar
+
+Quer que o botão no dashboard seja **"Ver como cliente"** (texto cheio) ou **"Modo cliente"** (mais curto, cabe melhor ao lado do "+ Novo cliente" em ecrãs estreitos)? Ambos com ícone `Eye`.
+
+Se aprovar, implemento a Fatia 1 e começamos a percorrer rotas juntos na próxima mensagem.
