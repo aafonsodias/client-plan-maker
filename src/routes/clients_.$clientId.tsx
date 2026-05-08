@@ -1621,7 +1621,8 @@ function ClientDetail() {
         const briefApproved = !!inlineBrief?.approved;
         const effectiveCollapsed =
           assessmentCollapsed ?? (briefApproved || !!readyPlanForAssessment);
-        const showSidebar = !effectiveCollapsed;
+        // Section navigation sidebar removed — the assessment form on the right keeps all functionality.
+        const showSidebar = false;
         return (
       <>
       {(() => {
