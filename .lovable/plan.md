@@ -1,83 +1,77 @@
-## Premissa de design (a partir dos estudos)
+## Defaults assumidos (avise se quiser mudar)
 
-- **Base = frio suave.** Azul-verde dessaturado nas superfícies grandes (canvas, cards, sidebar). Calma, confiança, segurança clínica.
-- **Texto = ink quente neutro**, nunca cinza puro nem branco-azulado frio (evita "estéril/hospitalar").
-- **Acento quente em ~10%** apenas em CTAs, focus rings, chips activos, KPIs. Tom **terracota suave** (mais humano que amber puro, menos infantil que amarelo, mais clínico que vermelho). Amber fica reservado ao PDF FORGE e BrandMark (já está separado na memória).
-- **Verde-sálvia** como cor de sucesso/"ready" (substitui o emerald cru — mantém a semântica mas em registo terapêutico).
-- **Sem brancos puros nem pretos puros.** Claro = pergaminho frio levíssimo. Escuro = teal-noite, não preto-azul Whoop.
-- **Contraste WCAG AA** garantido em texto sobre superfície em todos os 3 modos.
+- **Domínio público**: ainda não temos. Removo `https://forge.app` (link externo no intake e index) e troco mailtos `hello@forge.app` por `hello@protocol.app` como placeholder. Diga-me um domínio real depois e faço sweep dedicado.
+- **Chaves locais (`forge_*`, `forge-intake` IDB, `forge.locale`)**: rename limpo, sem shim. Em beta privado o impacto é uma vez.
+- **Tokens CSS `--forge-*` e prefixo `--color-forge-accent`**: renomeio para `--protocol-*` / `--color-protocol-accent`. Os utilities Tailwind `bg-canvas`, `text-ink-primary`, `bg-pill`, etc. **mantêm o nome** (não dizem "forge", são neutros) — só os var() backing values mudam.
 
-## Os 3 temas
+## Parte A — Rename Forge → Protocol
 
-### 1. `mist` — Claro (substitui Cream)
-Sala de consulta de manhã. Pergaminho com sub-tom verde-azulado.
-- Background: pergaminho fresco `oklch(0.97 0.012 200)`
-- Card: branco-azulado `oklch(0.985 0.010 200)`
-- Foreground: ink teal-escuro `oklch(0.22 0.025 220)`
-- Muted-foreground: `oklch(0.50 0.022 215)`
-- Border: `oklch(0.88 0.018 200)`
-- Primary (botões): teal médio `oklch(0.45 0.055 210)` com texto creme
-- Accent (warm 10%): terracota suave `oklch(0.66 0.105 45)`
-- Success: sálvia `oklch(0.62 0.075 165)`
-- Ring: terracota α0.45
+### A1. Copy visível ao utilizador (PT/EN)
+- `src/routes/welcome.tsx`: chip "Forge" → "Protocol"; H1 "Como vais usar o Forge?" → "Como vais usar o Protocol?"
+- `src/routes/terms.tsx` + `src/routes/privacy.tsx`: títulos, descrições, parágrafos legais.
+- `src/routes/manual.tsx`: título "Ajuda · Forge" + og:title + subject de email.
+- `src/routes/billing.tsx` linha 327: "Forge {tier.name}" → "Protocol {tier.name}".
+- `src/server/billing.functions.ts`: `name: "Forge Starter"` → `"Protocol Starter"`, `"Forge Pro"` → `"Protocol Pro"`.
+- `src/server/plan.functions.ts` (4 ocorrências): "Upgrade to Forge Pro" → "Upgrade to Protocol Pro".
+- `src/routes/plans.$planId.tsx` linha 842: "old Forge structure" → "old Protocol structure".
+- `src/routes/intake.$token.tsx` linha 740: "powered by Forge" → "powered by Protocol" (sem link externo).
+- `src/routes/index.tsx`: footer mailto + CTA mailto + `forge-float` keyframe → `protocol-float`.
 
-### 2. `sage` — Médio (substitui Slate)
-Penumbra de clínica. Verde-azulado dessaturado, suficientemente escuro para conforto noturno mas sem peso.
-- Background: `oklch(0.34 0.025 195)` (teal-cinza)
-- Card: `oklch(0.38 0.028 195)`
-- Foreground: `oklch(0.93 0.012 90)` (creme quente, evita azul-frio)
-- Muted-foreground: `oklch(0.70 0.020 195)`
-- Border: `oklch(0.42 0.026 195)`
-- Primary: creme `oklch(0.93 0.012 90)`
-- Accent: terracota `oklch(0.70 0.115 45)`
-- Success: sálvia `oklch(0.68 0.085 165)`
-- Ring: terracota α0.5
+### A2. Identificadores internos (refactor neutro)
+- CSS vars em `src/styles.css`: `--forge-canvas/surface/subtle/pill/ink-*/accent/accent-soft/line/edge/warning` → `--protocol-*`. `@theme inline` mappings: `--color-forge-accent` → `--color-protocol-accent`. Comentários "FORGE design system tokens" → "Protocol design system tokens".
+- Animação `@keyframes forge-float` (em `src/routes/index.tsx`) → `protocol-float`.
+- HTML id `forge-stages-lane` (em `clients_.$clientId.tsx`, 3 lugares) → `protocol-stages-lane`.
+- Comentário `Forge dashboard` em `src/server/feedback.functions.ts` → `Protocol dashboard`.
+- Window flag `__forgeFetchPatched` em `src/hooks/use-auth.tsx` → `__protocolFetchPatched`.
+- `LOCALE_STORAGE_KEY = "forge.locale"` → `"protocol.locale"`.
+- localStorage/IDB keys (intake drafts, assessment focus/collapse, theme legacy migration target):
+  - `forge_intake_draft_*` → `protocol_intake_draft_*`
+  - `forge_intake_photo_*` → `protocol_intake_photo_*`
+  - `forge-intake` IDB DB name → `protocol-intake`
+  - `forge_assessment_*` (3 chaves) → `protocol_assessment_*`
+  - `forge_theme` legacy migration: já cobrimos no ThemeToggle, removo a leitura.
 
-### 3. `deep` — Escuro (substitui Dark)
-Noite de hospital, lounge calmo. Teal-noite, não black-blue agressivo.
-- Background: `oklch(0.20 0.022 215)` (deep teal-night)
-- Card: `oklch(0.235 0.025 215)`
-- Foreground: `oklch(0.94 0.010 90)` (creme quente)
-- Muted-foreground: `oklch(0.62 0.020 210)`
-- Border: `oklch(0.28 0.025 215)`
-- Primary: creme
-- Accent: terracota `oklch(0.72 0.125 45)`
-- Success: sálvia `oklch(0.70 0.085 165)`
-- Ring: terracota α0.5
-- Gradient hero: teal-night → teal-card
+### A3. Comentários puramente neutros
+**Não tocar** em "fire-and-forget", "don't forget", "forget" em frases inglesas — não são menções à brand. Search será exact-case `Forge`/`FORGE`/`forge_`/`forge-`/`--forge-`/`forge.app`/`forge.locale` para evitar falsos positivos.
 
-> Tons exactos podem afinar +/- 1–2% na implementação após smoke test no preview, mas a estrutura (hue 195–220 frio + accent hue 45 quente + success hue 165) fica fixa.
+### A4. Memória + docs internos
+- `mem/index.md`: actualizar entrada do PDF spec ("FORGE §12" → "Protocol §12 PDF spec"), e qualquer referência amber FORGE no Core que sobrou da R71.
+- `mem/design/pdf-spec.md`: rename título e referências.
+- `mem/design/brand-mark.md`, `brand-mark-prompt.md`: rename.
+- `.lovable/r76`, `r77`, `acsm-12e-gap-report.md`, `backlog.md`, `plan.md`: substituição em massa de "Forge"/"FORGE" → "Protocol".
 
-## O que muda em código
+### A5. Migrações SQL
+- 2 ficheiros em `supabase/migrations/` mencionam "forge" só em **comentários SQL**. Migrations são read-only — deixo como estão (nota histórica). Confirmo que nenhuma string "forge" vive em dados (column names, enum values).
 
-1. **`src/styles.css`** — reescrever os blocos `:root` (era dark amber → passa a `deep` teal), `.slate` (→ `sage`), `.light` (→ `mist`). Manter os mesmos selectors para não partir o resto:
-   - `:root` = `deep` (default escuro)
-   - `.slate` = `sage`
-   - `.light` = `mist`
-   - **Não tocar** nos tokens `--forge-*` (PDF e BrandMark continuam amber).
-   - Actualizar `--gradient-hero`, `--gradient-accent`, `--shadow-glow`, `--ring`, `@keyframes lime-pulse` (passa a usar accent terracota), e a halo em `.atlas-genie-halo` (rgb terracota).
+## Parte B — Smoke QA dos 3 temas
 
-2. **`src/components/ThemeToggle.tsx`** — manter mecânica tri-state, só renomear o `Mode` union e o conic-gradient para reflectir as novas cores no botão:
-   - `type Mode = "deep" | "sage" | "mist"`
-   - `MODES = ["deep", "sage", "mist"]`
-   - Migration no `readInitial()`: `dark→deep`, `slate→sage`, `cream→mist` (lê ambas as chaves antigas).
-   - Conic gradient com swatch das 3 novas cores.
-   - i18n labels em `common.json` (PT/EN): `theme.deep`, `theme.sage`, `theme.mist` + tooltip "Profundo · Sálvia · Névoa" / "Deep · Sage · Mist".
+Faço browser smoke nos 3 temas (Deep / Sage / Mist) nas rotas:
+- `/` (landing)
+- `/login` ou `/auth`
+- `/dashboard`
+- `/me` (preview mode com cliente selecionado)
+- `/plans/$id` (primeiro plano disponível)
 
-3. **i18n** — adicionar 3 labels em `src/i18n/locales/{en,pt}/common.json` sob `theme.*`.
+Para cada combinação tiro screenshot full-page, e olho especificamente para:
+1. **Contraste muted-foreground sobre card** — leio o token computado e comparo com o card. Marco AA fail se contraste < 4.5 para texto normal ou < 3 para texto secundário grande.
+2. **Acento terracota presente em CTAs / focus / chips activos** sem invadir áreas grandes (regra ~10%).
+3. **Texto branco-creme legível** sobre os deep/sage backgrounds.
 
-4. **Memória** — actualizar `mem://index.md` Core para registar:
-   - "App theme = paleta terapêutica (deep/sage/mist), base teal frio + accent terracota ~10%. FORGE amber só em PDF e BrandMark."
-   - Remover qualquer referência implícita a "amber accent" como token universal.
+### B1. Mobile Safari /me a 375px
+Viewport 375×812, navegação `/me`, screenshot, verificação de overflow horizontal e tap targets.
 
-## O que NÃO muda
+### B2. PDF export
+Faço um download do plan PDF (rota /plans/$id → botão Download PDF), converto a PDF para JPG via `pdftoppm`, abro a primeira página e confirmo que continua a usar a paleta amber `#D4A574` (agora `--protocol-accent`, mesmo hex). Reporto issues.
 
-- `BrandMark`, FORGE PDF tokens (`--forge-*`), founder badge amber, status emerald/amber/red da `status-tone.ts` (mantêm semântica), preview banner amber do "Ver como cliente" (assinatura visual de modo, não tema).
-- Mecânica do toggle, persistência em `localStorage`, ordem de ciclo.
+## Entregáveis
 
-## QA
+1. PR de rename (Parte A) — sem mudar comportamento, sem tocar lógica.
+2. Relatório de smoke em chat com screenshots por tema/rota.
+3. Lista de fixes de contraste/overflow encontrados — se forem triviais, aplico no mesmo round; se forem mais profundos, ficam como to-do priorizado em `.lovable/backlog.md`.
+4. Memória actualizada (R71 PDF spec rename, comentários FORGE→Protocol).
 
-- Smoke nos 3 modos em `/dashboard`, `/me`, `/plans/$id`, login, landing.
-- Verificar contraste do texto secundário sobre cards (`muted-foreground` vs `card`) — ponto fraco habitual em paletas dessaturadas.
-- 375px Mobile Safari no `/me` (non-negotiable da memória).
-- Confirmar que PDF export continua amber FORGE.
+## Fora de scope
+
+- Adquirir/configurar domínio real `protocol.{tld}`.
+- Reescrever copy legal de fundo (mantém-se literal, só troca o nome).
+- Mudar o esquema amber do PDF para terracota — fica como está, é o mark histórico do produto.
