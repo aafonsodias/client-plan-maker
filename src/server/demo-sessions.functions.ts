@@ -455,9 +455,10 @@ export const simulateDemoMesocycle = createServerFn({ method: "POST" })
       }
     }
 
-    // 7. Weekly measurements (weight + waist) with mild downward drift.
-    const measurements: any[] = [];
-    const baseWeight = 78 + (hash32(data.clientId) % 12);
+    // 7. Weekly capacity snapshots (waist circumference) with mild downward
+    // drift. Round 3.1 — write directly to client_capacity_snapshots,
+    // bypassing the deprecated client_measurements legacy path.
+    const snapshotRows: any[] = [];
     const baseWaist = 88 + (hash32(data.clientId + "w") % 8);
     for (let w = 0; w < data.weeks; w++) {
       const weeksBack = data.weeks - w - 1;
@@ -465,15 +466,16 @@ export const simulateDemoMesocycle = createServerFn({ method: "POST" })
       const dow = (day.getDay() + 6) % 7;
       day.setDate(day.getDate() - dow - weeksBack * 7);
       const noise = (rand01(hash32(`${data.clientId}:m:${w}`)) - 0.5) * 0.6;
-      measurements.push({
-        trainer_id: userId,
+      const measuredAt = new Date(day);
+      measuredAt.setHours(8, 0, 0, 0);
+      snapshotRows.push({
         client_id: data.clientId,
-        measured_on: day.toISOString().slice(0, 10),
-        cadence: "weekly",
-        values: {
-          weight_kg: +(baseWeight - w * 0.18 + noise).toFixed(1),
-          waist_cm: +(baseWaist - w * 0.12 + noise * 0.5).toFixed(1),
-        },
+        domain_slug: "body_composition",
+        test_used: "waist_circumference",
+        raw_value: +(baseWaist - w * 0.12 + noise * 0.5).toFixed(1),
+        raw_unit: "cm",
+        provenance: "pt_assessed",
+        measured_at: measuredAt.toISOString(),
         notes: "[demo]",
       });
     }
@@ -492,11 +494,11 @@ export const simulateDemoMesocycle = createServerFn({ method: "POST" })
         .insert(sessions, { count: "exact" });
       if (!error) insSessions = count ?? sessions.length;
     }
-    if (measurements.length) {
+    if (snapshotRows.length) {
       const { error, count } = await supabaseAdmin
-        .from("client_measurements")
-        .insert(measurements, { count: "exact" });
-      if (!error) insMeasurements = count ?? measurements.length;
+        .from("client_capacity_snapshots")
+        .insert(snapshotRows, { count: "exact" });
+      if (!error) insMeasurements = count ?? snapshotRows.length;
     }
 
     const doneCount = bookings.filter((b) => b.status === "done").length;
