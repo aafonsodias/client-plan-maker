@@ -2163,9 +2163,45 @@ function ClientDetail() {
 
           {/* Lifestyle (rebuilt) */}
           <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+            <div className="mb-3 grid gap-3 sm:grid-cols-2">
+              <AnchoredSlider
+                label="Como anda o sono?"
+                value={Number(assessment.sleep_quality) || 5}
+                onChange={(v) => setAssessment({ ...assessment, sleep_quality: v as any })}
+                trailing={
+                  <HelpPopover label="Sono">
+                    <p>Avalia a qualidade média das últimas 4 semanas (PSQI item global).
+                    Sono mau prediz pior recuperação e maior risco de lesão.</p>
+                  </HelpPopover>
+                }
+                anchors={[
+                  { upTo: 2, label: "Mau — acorda exausto, várias noites por semana" },
+                  { upTo: 4, label: "Irregular — custa adormecer ou acorda a meio" },
+                  { upTo: 6, label: "Razoável — algumas noites boas, outras nem por isso" },
+                  { upTo: 8, label: "Bom — dorme bem na maioria das noites" },
+                  { upTo: 10, label: "Excelente — descansa profundamente todas as noites" },
+                ]}
+              />
+              <AnchoredSlider
+                label="Quão sob pressão se sente no dia-a-dia?"
+                value={Number(assessment.stress_level) || 5}
+                onChange={(v) => setAssessment({ ...assessment, stress_level: v as any })}
+                trailing={
+                  <HelpPopover label="Stress percebido">
+                    <p>Baseado no PSS-4 (Perceived Stress Scale). Stress crónico alto impacta
+                    recuperação, sono e adesão — vamos calibrar volume com isto em conta.</p>
+                  </HelpPopover>
+                }
+                anchors={[
+                  { upTo: 2, label: "Muito calmo — controla bem o que aparece" },
+                  { upTo: 4, label: "Tranquilo — alguns dias mais cheios que outros" },
+                  { upTo: 6, label: "Médio — sente pressão mas gere" },
+                  { upTo: 8, label: "Tenso — sobrecarregado várias vezes por semana" },
+                  { upTo: 10, label: "Esgotado — em sobrecarga constante" },
+                ]}
+              />
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("lifestyle_block.sleep")} type="number" value={String(assessment.sleep_quality ?? "")} onChange={(v) => setAssessment({ ...assessment, sleep_quality: v })} hint={t("lifestyle_block.sleep_hint")} />
-              <Field label={t("lifestyle_block.stress")} type="number" value={String(assessment.stress_level ?? "")} onChange={(v) => setAssessment({ ...assessment, stress_level: v })} hint={t("lifestyle_block.stress_hint")} />
               <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
               <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
               <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
