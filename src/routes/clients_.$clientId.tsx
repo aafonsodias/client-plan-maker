@@ -3679,6 +3679,26 @@ function AssessmentSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused, activeId, ctx.setOpen]);
 
+  // External jump requests (e.g. BriefMinimumSheet "Ver →" buttons):
+  // activate the section, expand it, then scroll once it has rendered.
+  useEffect(() => {
+    function onJump(e: Event) {
+      const sid = (e as CustomEvent<{ sectionId: string }>).detail?.sectionId;
+      if (!sid || !sectionIds.includes(sid)) return;
+      setActiveId(sid);
+      ctx.setOpen(sid, true);
+      // Wait two frames so focus-mode swap + collapse expansion paint first.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.getElementById(`sec-${sid}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+    window.addEventListener("assessment:jump", onJump as EventListener);
+    return () => window.removeEventListener("assessment:jump", onJump as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionIds, ctx.setOpen]);
+
   // Map child SectionBlocks by their `id` prop so we can pick the active one.
   const childArray = Children.toArray(children);
   const sectionChildren = new Map<string, React.ReactNode>();
