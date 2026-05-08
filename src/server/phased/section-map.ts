@@ -44,7 +44,8 @@ export const SECTION_BRIEF_CONTRIBUTIONS: Record<PhasedSectionId, string[]> = {
 // only sends THESE fields to the model — never the full assessment row.
 export function pickSectionPayload(
   section: PhasedSectionId,
-  assessment: Record<string, unknown>
+  assessment: Record<string, unknown>,
+  extras?: { bodyCompSnapshots?: Record<string, { raw_value: number | null; raw_unit: string | null; measured_at: string; provenance: string }> }
 ): Record<string, unknown> {
   const a = assessment;
   switch (section) {
@@ -65,12 +66,7 @@ export function pickSectionPayload(
     case "meds":
       return { medications: a.medications, med_flags: a.med_flags };
     case "anthro":
-      return {
-        waist_cm: a.waist_cm,
-        hip_cm: a.hip_cm,
-        body_fat_pct: a.body_fat_pct,
-        body_fat_method: a.body_fat_method,
-      };
+      return buildAnthroPayload(a, extras?.bodyCompSnapshots ?? {});
     case "goal":
       return {
         primary_goal: a.primary_goal,
@@ -153,4 +149,45 @@ export function pickSectionPayload(
         test_result: (a.extended as any)?.cardio_test_result,
       };
   }
+}
+
+// Anthro slice merges legacy assessment columns with latest body_composition
+// snapshots. Snapshot wins when present; legacy fills the gap; if both null,
+// emits an explicit `unmeasured` marker so the model can note the gap
+// factually instead of complaining about missing data.
+function buildAnthroPayload(
+  a: Record<string, unknown>,
+  snaps: Record<string, { raw_value: number | null; raw_unit: string | null; measured_at: string; provenance: string }>,
+): Record<string, unknown> {
+  const pick = (
+    snapKey: string,
+    legacyValue: unknown,
+  ): { value: unknown; unit?: string | null; source: string; measured_at?: string } => {
+    const s = snaps[snapKey];
+    if (s && s.raw_value != null) {
+      return {
+        value: s.raw_value,
+        unit: s.raw_unit,
+        source: s.provenance,
+        measured_at: s.measured_at,
+      };
+    }
+    if (legacyValue != null) {
+      return { value: legacyValue, source: "assessment_intake" };
+    }
+    return { value: null, source: "unmeasured" };
+  };
+  return {
+    waist: pick("waist_circumference", a.waist_cm),
+    hip: pick("hip_circumference", a.hip_cm),
+    body_fat_pct: pick("body_fat_pct", a.body_fat_pct),
+    body_fat_method: a.body_fat_method ?? null,
+    other_girths: Object.fromEntries(
+      Object.entries(snaps)
+        .filter(([k]) =>
+          ["chest_circumference", "arm_circumference", "thigh_circumference", "calf_circumference"].includes(k),
+        )
+        .map(([k, s]) => [k, { value: s.raw_value, unit: s.raw_unit, measured_at: s.measured_at, source: s.provenance }]),
+    ),
+  };
 }

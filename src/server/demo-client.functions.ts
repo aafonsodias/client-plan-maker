@@ -831,6 +831,50 @@ export const createDemoClient = createServerFn({ method: "POST" })
       throw new Error(`Falha ao criar avaliação demo: ${aErr.message}`);
     }
 
+    // Mirror anthropometric intake into the canonical capacity snapshot
+    // store so the new pipeline (Round 3.x) sees the demo client end-to-end.
+    const nowIso = new Date().toISOString();
+    const snapshotRows: Array<Record<string, unknown>> = [];
+    if (typeof (assessment as any).waist_cm === "number") {
+      snapshotRows.push({
+        client_id: client.id,
+        domain_slug: "body_composition",
+        test_used: "waist_circumference",
+        raw_value: (assessment as any).waist_cm,
+        raw_unit: "cm",
+        provenance: "intake_derived",
+        measured_at: nowIso,
+        notes: "[demo] backfilled from intake",
+      });
+    }
+    if (typeof (assessment as any).hip_cm === "number") {
+      snapshotRows.push({
+        client_id: client.id,
+        domain_slug: "body_composition",
+        test_used: "hip_circumference",
+        raw_value: (assessment as any).hip_cm,
+        raw_unit: "cm",
+        provenance: "intake_derived",
+        measured_at: nowIso,
+        notes: "[demo] backfilled from intake",
+      });
+    }
+    if (typeof (assessment as any).body_fat_pct === "number") {
+      snapshotRows.push({
+        client_id: client.id,
+        domain_slug: "body_composition",
+        test_used: `body_fat_${(assessment as any).body_fat_method ?? "unknown"}`,
+        raw_value: (assessment as any).body_fat_pct,
+        raw_unit: "%",
+        provenance: "intake_derived",
+        measured_at: nowIso,
+        notes: "[demo] backfilled from intake",
+      });
+    }
+    if (snapshotRows.length) {
+      await supabaseAdmin.from("client_capacity_snapshots").insert(snapshotRows as any);
+    }
+
     return {
       clientId: client.id as string,
       persona: persona.primary_goal,

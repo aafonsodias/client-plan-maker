@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { SectionAnalysisSchema } from "./schemas";
 import { PHASED_SECTIONS, SECTION_BRIEF_CONTRIBUTIONS, pickSectionPayload, type PhasedSectionId } from "./section-map";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { getLatestBodyCompositionSnapshots } from "@/server/capacity.server";
 
 const InputSchema = z.object({
   assessmentId: z.string().uuid(),
@@ -89,7 +90,22 @@ export const analyzeAssessmentSection = createServerFn({ method: "POST" })
       return { ok: false as const, error: "forbidden" };
     }
 
-    const sectionPayload = pickSectionPayload(data.section, assessment as Record<string, unknown>);
+    // For the anthro slice, blend legacy columns with the latest
+    // body_composition snapshots. All other sections are pure assessment reads.
+    let sectionPayload: Record<string, unknown>;
+    if (data.section === "anthro") {
+      const snaps = await getLatestBodyCompositionSnapshots(
+        (assessment as any).client_id as string,
+        supabase as any,
+      );
+      sectionPayload = pickSectionPayload(
+        data.section,
+        assessment as Record<string, unknown>,
+        { bodyCompSnapshots: snaps },
+      );
+    } else {
+      sectionPayload = pickSectionPayload(data.section, assessment as Record<string, unknown>);
+    }
     const payloadHash = JSON.stringify(sectionPayload);
 
     const cachedAt = ((assessment as any).sections_analysed_at ?? {}) as Record<string, string>;
@@ -100,6 +116,9 @@ export const analyzeAssessmentSection = createServerFn({ method: "POST" })
     }
 
     const allowedFields = SECTION_BRIEF_CONTRIBUTIONS[data.section];
+    const anthroSoftening = data.section === "anthro"
+      ? `\n- ANTHROPOMETRY POLICY: If anthropometric data is sparse or absent (source = "unmeasured"), note it factually as "unmeasured" or "limited measurements available". Do NOT instruct the trainer to collect more data — the trainer chooses what to measure based on client priorities.`
+      : "";
     const system = `You are a strength-coaching assistant doing a focused micro-analysis of ONE section of a client assessment.
 
 Section: ${data.section}
@@ -111,7 +130,7 @@ RULES:
 - For red_flags, only include items derived DIRECTLY from THIS section's payload. Do not restate flags that another section would catch (e.g. PAR-Q answers, lifestyle stress) — assume those sections handle their own flags.
 - For movement_competency_summary, only fill the patterns this section actually informs.
 - Output European Portuguese (pt-PT), formal address (você / o seu / a sua). Never use tu/teu/tua. Use European Portuguese spelling (não use formas brasileiras).
-- Output ONLY by calling the record_section_analysis tool.`;
+- Output ONLY by calling the record_section_analysis tool.${anthroSoftening}`;
 
     const userMessage = `Section data (JSON):\n${JSON.stringify(sectionPayload, null, 2)}`;
 

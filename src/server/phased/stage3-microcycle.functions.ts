@@ -19,6 +19,7 @@ import {
 import { prescribeWeek, prescriptionPromptBlock } from "@/lib/prescribe-volume";
 import { resolveRules } from "@/server/knowledge/resolve.server";
 import { resolveLandmarks } from "@/server/knowledge/schema";
+import { getLatestWaistCm } from "@/server/capacity.server";
 import type { MuscleGroup } from "@/lib/volume-landmarks";
 import type { VolumeLandmark } from "@/lib/volume-landmarks";
 import {
@@ -678,6 +679,12 @@ async function resolveTierGuidelines(
     assessment = (data as any) ?? null;
   }
   if (!brief) return null;
+  if (loadedPlan.client_id) {
+    const latestWaist = await getLatestWaistCm(loadedPlan.client_id, supabase as any);
+    if (latestWaist != null) {
+      assessment = { ...(assessment ?? {}), waist_cm: latestWaist };
+    }
+  }
   const tier = classifyTier(brief, assessment ?? {});
   return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
 }

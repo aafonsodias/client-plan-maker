@@ -24,6 +24,7 @@ import {
   type DesiredIntensity,
 } from "@/server/screening/preparticipation.server";
 import { deriveFittVpFromDb } from "@/server/fitt-vp/derive.server";
+import { getLatestWaistCm } from "@/server/capacity.server";
 
 const BLUEPRINT_TOOL_SCHEMA = {
   type: "object",
@@ -120,6 +121,16 @@ export const generateBlueprint = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
       assessment = (a as any) ?? null;
+    }
+
+    // Redirect ACSM screening reads: prefer freshest body-composition snapshot
+    // for waist circumference. Falls back to assessment's legacy column when
+    // no snapshot exists.
+    if (cid) {
+      const latestWaist = await getLatestWaistCm(cid, supabase as any);
+      if (latestWaist != null) {
+        assessment = { ...(assessment ?? {}), waist_cm: latestWaist } as any;
+      }
     }
 
     // Trainer override wins over the auto-classifier when present.

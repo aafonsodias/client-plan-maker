@@ -40,7 +40,7 @@ import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templa
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
-import { updateTrainerSummary } from "@/server/measurements.functions";
+import { updateTrainerSummary } from "@/server/clients.functions";
 import { startPhasedPlanDraft, synthesizeBrief, approveBrief } from "@/server/phased/stage1-brief.functions";
 import { generateBlueprint } from "@/server/phased/stage2-blueprint.functions";
 import { generateMicrocycleDays } from "@/server/phased/stage3-microcycle.functions";
