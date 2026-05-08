@@ -1681,7 +1681,12 @@ function ClientDetail() {
         if (!intakeDone && !lastSavedAt) {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
-          primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+          const bmvNow = computeBmv({ client, assessment, snapshots: bmvSnapshots });
+          if (!bmvNow.ready) {
+            primaryAction = { label: `Faltam ${bmvNow.missingRequired} dados — ver`, icon: <AlertTriangle className="h-4 w-4" />, onClick: () => setBmvOpen(true) };
+          } else {
+            primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+          }
         } else if (briefReadyLocal) {
           primaryAction = { label: "Rever briefing", icon: <ArrowRight className="h-4 w-4" />, onClick: scrollToStages };
         } else if (briefApproved && !blueprintApprovedLocal) {
