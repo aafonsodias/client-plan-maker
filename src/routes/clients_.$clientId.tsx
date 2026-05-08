@@ -1835,7 +1835,61 @@ function ClientDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <Toggle label={t("risk_block.sedentary")} value={assessment.risk.sedentary} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, sedentary: v } })} />
+              <div className="space-y-1">
+                <LabelWithHelp
+                  label={t("risk_block.mvpa_label", { defaultValue: "Atividade física semanal" })}
+                  hint={t("risk_block.mvpa_hint", {
+                    defaultValue:
+                      "Minutos/semana de atividade moderada-vigorosa (caminhar rápido, correr, treino, desporto). ACSM: <150 min/sem = sedentário.",
+                  })}
+                />
+                <div className="flex h-8 items-stretch gap-1.5">
+                  <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={2000}
+                      step={10}
+                      autoComplete="off"
+                      defaultValue={(assessment.risk as any).mvpa_min_per_week ?? ""}
+                      placeholder={t("risk_block.mvpa_ph", { defaultValue: "min/semana" })}
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                      onBlur={(e) => {
+                        const raw = e.target.value;
+                        const n = Number(raw);
+                        const v = raw === "" || !Number.isFinite(n) || n < 0 ? null : Math.round(n);
+                        setAssessment({
+                          ...assessment,
+                          risk: {
+                            ...assessment.risk,
+                            mvpa_min_per_week: v,
+                            sedentary: v === null ? assessment.risk.sedentary : v < 150,
+                          },
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                    />
+                    <span className="text-[11px] text-muted-foreground">min</span>
+                  </label>
+                  {(assessment.risk as any).mvpa_min_per_week != null ? (
+                    <span
+                      className={
+                        "inline-flex items-center rounded-md px-2 text-[11px] font-medium " +
+                        (assessment.risk.sedentary
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                          : "bg-accent/15 text-accent")
+                      }
+                    >
+                      {assessment.risk.sedentary
+                        ? t("risk_block.mvpa_sedentary", { defaultValue: "Sedentário" })
+                        : t("risk_block.mvpa_active", { defaultValue: "Ativo" })}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
                 {bmiAuto.value !== null ? (
