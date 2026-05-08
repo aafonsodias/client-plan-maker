@@ -50,18 +50,18 @@
     "performance": "Performance"
   },
   "parq_block": {
-    "title": "Pré-rastreio PAR-Q+",
-    "hint": "Rastreio padrão pré-participação. Qualquer 'Sim' sugere validação médica.",
-    "complete_clear": "✓ Pré-rastreio completo. 0 alertas.",
-    "complete_flagged": "✓ Pré-rastreio completo. {{count}} alertas — orientação abaixo",
+    "title": "Antes de começar — segurança",
+    "hint": "7 perguntas rápidas para sinalizar quem deve falar com o médico antes de subir intensidade. Standard internacional (PAR-Q+).",
+    "complete_clear": "✓ Tudo limpo. 0 sinais de alerta.",
+    "complete_flagged": "✓ Concluído. {{count}} alertas — orientação por baixo.",
     "questions": {
-      "q1": "Algum médico já te disse que tens uma condição cardíaca ou que só deves fazer atividade física recomendada por um médico?",
-      "q2": "Sente dores no peito quando faz atividade física?",
-      "q3": "No último mês, tiveste dores no peito sem estar a fazer atividade física?",
-      "q4": "Perdes o equilíbrio devido a tonturas ou já perdeste a consciência?",
-      "q5": "Tens algum problema ósseo ou articular que possa ser agravado por uma mudança na atividade física?",
-      "q6": "O seu médico está a prescrever-te medicamentos para a tensão arterial ou para uma condição cardíaca?",
-      "q7": "Conheces alguma outra razão para não deveres fazer atividade física?"
+      "q1": "Algum médico já lhe disse que tem um problema de coração ou que só deve fazer exercício com supervisão médica?",
+      "q2": "Sente dor no peito quando se esforça fisicamente?",
+      "q3": "No último mês teve dor no peito mesmo em repouso?",
+      "q4": "Costuma sentir tonturas, perder o equilíbrio ou já desmaiou?",
+      "q5": "Tem algum problema nos ossos ou articulações que possa piorar com exercício?",
+      "q6": "Toma medicação para a tensão arterial ou para o coração?",
+      "q7": "Há alguma outra razão pela qual não deva fazer exercício físico?"
     },
     "rationale": {
       "cardio": "Alerta cardiovascular. Validação médica recomendada antes de intensidade moderada-vigorosa. O Protocol pode rascunhar um plano de baixa intensidade, sinalizado para revisão médica.",
