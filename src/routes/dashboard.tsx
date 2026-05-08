@@ -295,7 +295,16 @@ function Dashboard() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">{t("dashboard.eyebrow")}</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">
+            {(() => {
+              const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
+              const raw = meta.full_name || meta.name || user?.email?.split("@")[0] || "";
+              const first = raw.trim().split(/\s+/)[0];
+              return first
+                ? t("dashboard.eyebrow_named", { name: first, defaultValue: "Welcome back, {{name}}" })
+                : t("dashboard.eyebrow");
+            })()}
+          </p>
           <h1 className="mt-1 text-3xl font-light tracking-tight sm:text-4xl">
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
