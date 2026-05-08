@@ -1,3 +1,14 @@
+/**
+ * DEPRECATED — Phase A of measurement consolidation (Round 3.x).
+ *
+ * All write paths in this file are scheduled for removal in Phase B.
+ * New measurement writes MUST go through:
+ *   src/server/capacity.functions.ts -> addCapacitySnapshot
+ *
+ * Do NOT add new functions to this file.
+ * Do NOT call recordMeasurement / listMeasurements / getMeasurementPrefs /
+ * updateMeasurementPrefs from new code.
+ */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -118,84 +129,4 @@ export const updateMeasurementPrefs = createServerFn({ method: "POST" })
       .single();
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const, row };
-  });
-
-/**
- * Trainer-only free-text memo on a client. Kept here (not in measurements)
- * because it shares the same trust boundary and lifecycle.
- */
-export const updateTrainerSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        clientId: z.string().uuid(),
-        summary: z.string().max(500).nullable(),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("clients")
-      .update({ trainer_summary: data.summary })
-      .eq("id", data.clientId)
-      .eq("trainer_id", userId);
-    if (error) return { ok: false as const, error: error.message };
-    return { ok: true as const };
-  });
-
-/**
- * Mark a plan as "finished_logging" — the client says they finished. Only
- * `finished_logging` plans become candidates for "evolve into next block".
- */
-export const markPlanFinishedLogging = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ planId: z.string().uuid() }).parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("workout_plans")
-      .update({ completion_state: "finished_logging" })
-      .eq("id", data.planId)
-      .eq("trainer_id", userId);
-    if (error) return { ok: false as const, error: error.message };
-    return { ok: true as const };
-  });
-
-/**
- * Create an empty manual plan (no AI). Used by the "+ Novo plano · Manual"
- * button. Returns the new planId so the UI can navigate to the editor.
- */
-export const createManualPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        clientId: z.string().uuid(),
-        title: z.string().max(120).optional(),
-        durationWeeks: z.number().int().min(1).max(16).default(4),
-      })
-      .parse(d),
-  )
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: row, error } = await supabase
-      .from("workout_plans")
-      .insert({
-        trainer_id: userId,
-        client_id: data.clientId,
-        title: data.title ?? "Plano manual",
-        duration_weeks: data.durationWeeks,
-        status: "draft",
-        generation_status: "manual",
-        completion_state: "in_progress",
-        plan_data: { weeks: [] } as any,
-      })
-      .select("id")
-      .single();
-    if (error || !row) return { ok: false as const, error: error?.message ?? "insert failed" };
-    return { ok: true as const, planId: (row as any).id as string };
   });
