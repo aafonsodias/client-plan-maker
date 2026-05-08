@@ -76,7 +76,7 @@
     "title": "Estratificação de risco",
     "hint": "Contagem de fatores de risco coronário (ACSM) → baixo / moderado / alto.",
     "complete": "✓ Risco ACSM: {{level}}",
-    "family_cvd": "Histórico familiar de DCV (1º grau, <55 H / <65 M)",
+    "family_cvd": "Pai/mãe/irmão teve enfarte ou AVC cedo (homem <55, mulher <65)",
     "smoking": "Tabagismo",
     "smoking_hint": "Fumadores atuais têm o maior risco cardiovascular.",
     "smoking_never": "Nunca",
