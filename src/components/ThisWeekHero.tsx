@@ -53,9 +53,6 @@ export function ThisWeekHero({
       return (
         <div className="pt-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">Próximo passo</p>
-          <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-            Uma ação de cada vez.
-          </p>
           <div className="mt-2"><PrimaryCta action={primaryAction} /></div>
         </div>
       );
@@ -71,9 +68,6 @@ export function ThisWeekHero({
         <h2 className="mt-1 text-lg font-semibold text-foreground">
           O que fazer agora
         </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          Uma ação de cada vez.
-        </p>
         <div className="mt-4">
           <PrimaryCta action={primaryAction} large />
         </div>
