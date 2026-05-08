@@ -8,6 +8,25 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 
+/* Label-on-tint — soft contour for text rendered over tinted/coloured chips
+ * (booking blocks, pack pills). Uses the current theme background as the
+ * shadow colour so it self-calibrates across Dark / Slate / Cream without
+ * extra variables. The shadow is intentionally subtle: it lifts the glyph
+ * one pixel off the tint without becoming a stroke. */
+.label-on-tint {
+  text-shadow:
+    0 1px 0 color-mix(in oklab, var(--background) 78%, transparent),
+    0 0 2px color-mix(in oklab, var(--background) 55%, transparent);
+}
+
+/* Drop target visual feedback while a booking is being dragged across the
+ * weekly grid or month grid. */
+.drop-target-active {
+  outline: 2px dashed color-mix(in oklab, var(--accent) 75%, transparent);
+  outline-offset: -2px;
+  background-color: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
 /*
  * Design system definition.
  *
