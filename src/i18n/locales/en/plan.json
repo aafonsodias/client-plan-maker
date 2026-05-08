@@ -733,5 +733,65 @@
         }
       }
     }
+  },
+  "landing_v2": {
+    "hero": {
+      "eyebrow": "For personal trainers",
+      "line1": "Clinical screening.",
+      "line2": "Defensible protocol.",
+      "line3": "Weekly adaptation.",
+      "subhead": "From assessment to plan, with visible logic.",
+      "body": "You run the assessment. Protocol builds the program. Every set logged feeds the next week.",
+      "cta": "Request access"
+    },
+    "principles": {
+      "eyebrow": "Principles",
+      "items": [
+        {
+          "n": "01",
+          "title": "Screening before prescription.",
+          "body": "PAR-Q+ and ACSM 12e before any plan. No clinical shortcut."
+        },
+        {
+          "n": "02",
+          "title": "Five editable stages.",
+          "body": "Brief, Blueprint, Microcycle, Progressions, Bulkfill. You approve each one."
+        },
+        {
+          "n": "03",
+          "title": "Deterministic adaptation.",
+          "body": "Bompa wave and NSCA increments per category. No AI improvisation."
+        }
+      ]
+    },
+    "loop": {
+      "eyebrow": "The loop",
+      "headline": "Each week is informed by the previous one.",
+      "nodes": [
+        "Assessment",
+        "Protocol",
+        "Sessions",
+        "Logbook",
+        "Next week"
+      ],
+      "quote": "The trainer approves every stage. The AI does not write the plan alone."
+    },
+    "capacity": {
+      "eyebrow": "Assessment",
+      "headline": "11 capacities. A map that evolves.",
+      "body": "The Capacity Map locates each client across 11 domains, with age- and sex-specific norms. Every assessment fills in more of the map. The plan follows what is measured — not what is assumed.",
+      "caption": "Trainer dashboard view."
+    },
+    "close": {
+      "headline": "Honest. Defensible. Reproducible.",
+      "subhead": "Private beta. No public domain. Invite only.",
+      "cta": "Request access"
+    },
+    "footer": {
+      "line1": "Protocol. Lisbon, 2025.",
+      "line2": "Built by a PT, for PTs.",
+      "line3_label": "Contact",
+      "email": "hello@protocol.app"
+    }
   }
 }
