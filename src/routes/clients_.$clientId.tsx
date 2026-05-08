@@ -2487,6 +2487,11 @@ function ClientDetail() {
 
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
+              </Button>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <MeasureField
                 label={t("performance_block.rhr")}
