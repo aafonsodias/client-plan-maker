@@ -131,6 +131,43 @@ export const BriefSchema = z.object({
     .default(["gym"])
     .transform((arr) => (arr.length === 0 ? ["gym" as const] : arr)),
   modality_targets: ModalityTargetsSchema,
+  // R2 — Capacity profile derived from client_capacity_snapshots at the
+  // moment the brief was synthesised. Read-only context for downstream
+  // stages and the trainer-facing brief panel. Optional + defaulted so
+  // legacy briefs without this section still parse.
+  capacity_profile: z
+    .object({
+      summary: z.string().max(800).default(""),
+      strengths: z
+        .array(
+          z.object({
+            slug: z.string(),
+            note: z.string().max(240).default(""),
+          }),
+        )
+        .max(8)
+        .default([]),
+      gaps: z
+        .array(
+          z.object({
+            slug: z.string(),
+            note: z.string().max(240).default(""),
+          }),
+        )
+        .max(8)
+        .default([]),
+      unmeasured_priority: z.array(z.string()).max(8).default([]),
+      measured_count: z.number().int().min(0).max(50).default(0),
+      total_domains: z.number().int().min(0).max(50).default(0),
+    })
+    .default({
+      summary: "",
+      strengths: [],
+      gaps: [],
+      unmeasured_priority: [],
+      measured_count: 0,
+      total_domains: 0,
+    }),
 });
 export type Brief = z.infer<typeof BriefSchema>;
 

@@ -340,6 +340,8 @@ export default function BriefEditor({
         />
       )}
 
+      <CapacityProfileCard brief={brief} />
+
       {programmingVariables && onProgrammingChange && (
         <Card title="Configuração de programação">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -625,4 +627,125 @@ function buildSafetyConclusion(b: Brief): string {
   if (flags > 0) bits.push(`${flags} sinal${flags === 1 ? "" : "is"} de alerta a acomodar`);
   if (eq > 0) bits.push(`${eq} restrição${eq === 1 ? "" : "ões"} de equipamento`);
   return `${bits.join(" · ")}. Aplicar estratégias AVOID/MODIFY antes de prescrever.`;
+}
+
+/* ─────────── Capacity profile card (R2) ───────────
+ * Reads brief.capacity_profile populated by Stage 1. Tapping a recommended
+ * assessment chip dispatches `open-add-snapshot` on window — the on-page
+ * <CapacityMap /> listens and opens its <AddSnapshotSheet /> pre-filled to
+ * the requested domain. Event contract documented in CapacityMap.tsx too.
+ */
+function CapacityProfileCard({ brief }: { brief: Brief }) {
+  const { t } = useTranslation("common");
+  const cp = (brief as any).capacity_profile;
+  if (!cp) return null;
+  const measured = cp.measured_count ?? 0;
+  const total = cp.total_domains ?? 0;
+  const strengths: Array<{ slug: string; note: string }> = cp.strengths ?? [];
+  const gaps: Array<{ slug: string; note: string }> = cp.gaps ?? [];
+  const unmeasured: string[] = cp.unmeasured_priority ?? [];
+  const summary: string = cp.summary ?? "";
+  const empty = measured === 0 && strengths.length === 0 && gaps.length === 0;
+
+  const openSheet = (slug: string) => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(
+      new CustomEvent("open-add-snapshot", { detail: { slug } }),
+    );
+  };
+  const labelFor = (slug: string) =>
+    t(`capacity.${slug}.short` as any, { defaultValue: slug });
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 sm:px-5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {t("brief.capacity_profile.header", { defaultValue: "Perfil de capacidades" })}
+        </h3>
+        <span className="text-[11px] text-muted-foreground">
+          {t("brief.capacity_profile.subtitle", {
+            measured,
+            total,
+            defaultValue: `${measured} de ${total} medidos`,
+          })}
+        </span>
+      </div>
+      <div className="space-y-3 border-t border-border bg-background/40 px-4 py-3 sm:px-5">
+        {summary && (
+          <p className="text-sm leading-snug text-foreground/90">{summary}</p>
+        )}
+
+        {!empty && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("brief.capacity_profile.strengths_header", { defaultValue: "Pontos fortes" })}
+              </p>
+              {strengths.length === 0 ? (
+                <p className="text-xs italic text-muted-foreground">—</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {strengths.map((s) => (
+                    <li key={`str-${s.slug}`} className="text-xs leading-snug">
+                      <span style={{ color: "var(--success)" }} className="font-semibold">
+                        {labelFor(s.slug)}
+                      </span>
+                      <p className="text-muted-foreground">{s.note}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t("brief.capacity_profile.gaps_header", { defaultValue: "Lacunas" })}
+              </p>
+              {gaps.length === 0 ? (
+                <p className="text-xs italic text-muted-foreground">—</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {gaps.map((g) => (
+                    <li key={`gap-${g.slug}`} className="text-xs leading-snug">
+                      <span style={{ color: "var(--warn)" }} className="font-semibold">
+                        {labelFor(g.slug)}
+                      </span>
+                      <p className="text-muted-foreground">{g.note}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {unmeasured.length > 0 && (
+          <div>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {empty
+                ? t("brief.capacity_profile.empty_cta", { defaultValue: "Começar a medir" })
+                : t("brief.capacity_profile.recommended_assessments", {
+                    defaultValue: "Avaliações recomendadas a seguir",
+                  })}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {unmeasured.map((slug) => (
+                <button
+                  key={`rec-${slug}`}
+                  type="button"
+                  onClick={() => openSheet(slug)}
+                  className={
+                    empty
+                      ? "rounded-full border border-amber-500 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-300"
+                      : "rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] text-foreground/80 transition hover:border-accent/50 hover:bg-muted"
+                  }
+                >
+                  {labelFor(slug)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }

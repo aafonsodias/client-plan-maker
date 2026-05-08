@@ -917,5 +917,15 @@
     "show_all_sections": "Mostrar todas las secciones",
     "focus_one_section": "Centrarse en una sección a la vez",
     "assessment_sections_aria": "Secciones de evaluación"
+  },
+  "brief": {
+    "capacity_profile": {
+      "header": "Perfil de capacidades",
+      "subtitle": "{{measured}} de {{total}} medidas",
+      "strengths_header": "Fortalezas",
+      "gaps_header": "Brechas",
+      "recommended_assessments": "Próximas evaluaciones recomendadas",
+      "empty_cta": "Empezar a medir"
+    }
   }
 }

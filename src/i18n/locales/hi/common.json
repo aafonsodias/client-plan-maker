@@ -918,5 +918,15 @@
     "show_all_sections": "सभी सेक्शन दिखाएं",
     "focus_one_section": "एक बार में एक सेक्शन पर ध्यान दें",
     "assessment_sections_aria": "मूल्यांकन सेक्शन"
+  },
+  "brief": {
+    "capacity_profile": {
+      "header": "क्षमता प्रोफ़ाइल",
+      "subtitle": "{{total}} में से {{measured}} मापे गए",
+      "strengths_header": "ताकत",
+      "gaps_header": "अंतर",
+      "recommended_assessments": "अनुशंसित अगले मूल्यांकन",
+      "empty_cta": "मापना शुरू करें"
+    }
   }
 }

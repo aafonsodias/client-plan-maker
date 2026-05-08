@@ -1035,5 +1035,15 @@
       "aria_label": "Configuration mode",
       "saved_locally": "Preference saved on this device."
     }
+  },
+  "brief": {
+    "capacity_profile": {
+      "header": "Capacity profile",
+      "subtitle": "{{measured}} of {{total}} measured",
+      "strengths_header": "Strengths",
+      "gaps_header": "Gaps",
+      "recommended_assessments": "Recommended next assessments",
+      "empty_cta": "Start measuring"
+    }
   }
 }
