@@ -939,8 +939,12 @@ function HeroHeadlineRotator() {
           {v.audience}
         </span>
       </div>
-      <div className="min-h-[200px] sm:min-h-[290px]">
-        <h1 key={idx} className="animate-fade-in text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
+      <div className="min-h-[120px] sm:min-h-[290px]">
+        <h1
+          key={idx}
+          className="animate-fade-in font-light leading-[0.95] tracking-tight sm:text-7xl"
+          style={{ fontSize: "clamp(1.875rem, 7.5vw, 3rem)" }}
+        >
           {v.line1}
           <span className="block text-accent">{v.line2}</span>
         </h1>
