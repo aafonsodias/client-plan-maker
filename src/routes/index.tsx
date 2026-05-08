@@ -158,32 +158,32 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden flex min-h-[100svh] flex-col justify-center md:block md:min-h-0">
         <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-hero)" }} />
         <div
           className="absolute -right-32 top-20 -z-10 h-96 w-96 rounded-full opacity-30 blur-3xl"
           style={{ background: "var(--gradient-accent)" }}
         />
-        <div className="mx-auto grid max-w-6xl items-start gap-12 px-6 pt-10 pb-24 text-foreground sm:pt-16 sm:pb-32 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl items-start gap-6 px-6 pt-6 pb-8 text-foreground sm:gap-12 sm:pt-16 sm:pb-32 md:grid-cols-2">
           <div className="min-w-0">
             <HeroHeadlineRotator />
-            <p className="mt-6 max-w-xl text-lg font-light text-muted-foreground">
+            <p className="mt-4 max-w-xl text-base font-light text-muted-foreground sm:mt-6 sm:text-lg">
               {t("plan:landing.hero.subtitle")}
             </p>
             {/* PT-only positioning: 3 hard bullets */}
-            <ul className="mt-6 space-y-2">
-              {((t("plan:landing.hero.bullets", { returnObjects: true }) as string[]) ?? []).map((b) => (
-                <li key={b} className="flex items-start gap-2 text-sm text-foreground/85">
+            <ul className="mt-4 space-y-1.5 sm:mt-6 sm:space-y-2">
+              {((t("plan:landing.hero.bullets", { returnObjects: true }) as string[]) ?? []).slice(0, 3).map((b) => (
+                <li key={b} className="flex items-start gap-2 text-[13px] text-foreground/85 sm:text-sm">
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                   <span>{b}</span>
                 </li>
               ))}
             </ul>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-3 py-1 text-[11px] uppercase tracking-widest text-accent/90 sm:mt-5">
               <Sparkles className="h-3 w-3" />
               {t("plan:landing.hero.beta_softcap_chip")}
             </div>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-2 sm:mt-8 sm:gap-3">
               <Button asChild size="lg">
                 <Link to={primaryCtaTo}>
                   {primaryCtaLabel} <ArrowRight className="ml-2 h-4 w-4" />
@@ -216,7 +216,7 @@ function Landing() {
               </div>
             )}
           </div>
-          <div className="flex min-w-0 flex-col items-center md:pt-8">
+          <div className="hidden min-w-0 flex-col items-center md:flex md:pt-8">
             <div className="relative w-full max-w-[560px] origin-top scale-[0.95]">
               {/* Protocol glow — replaces the dark drop shadow */}
               <div
@@ -233,7 +233,7 @@ function Landing() {
       </section>
 
       {/* The journey — 5 stages of the in-app generator + tier chips inline */}
-      <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="how-it-works" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.journey.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.journey.title")}</h2>
@@ -247,7 +247,7 @@ function Landing() {
       <ComparisonTableSection />
 
       {/* Depois do PDF — fused logbook + AI insights */}
-      <section id="logbook" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="logbook" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
@@ -263,7 +263,7 @@ function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="pricing" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-8 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.pricing.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.pricing.title")}</h2>
@@ -369,7 +369,7 @@ function Landing() {
       </section>
 
       {/* Founder note + inline roadmap chips */}
-      <section className="mx-auto max-w-3xl px-6 py-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-3xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
         <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
           <p>{t("plan:landing.founder.p1")}</p>
@@ -396,7 +396,7 @@ function Landing() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-6 pb-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-3xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:pb-24 md:pt-0">
         <h2 className="text-2xl font-light tracking-tight sm:text-3xl">{t("plan:landing.faq.title")}</h2>
         <Accordion type="single" collapsible className="mt-8">
           {[
@@ -419,7 +419,7 @@ function Landing() {
       </section>
 
       {/* Closing CTA */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:pb-24 md:pt-0">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-center text-foreground sm:px-16">
           <div
             className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-25 blur-3xl"
@@ -939,8 +939,11 @@ function HeroHeadlineRotator() {
           {v.audience}
         </span>
       </div>
-      <div className="min-h-[200px] sm:min-h-[290px]">
-        <h1 key={idx} className="animate-fade-in text-5xl font-light leading-[0.95] tracking-tight sm:text-7xl">
+      <div className="min-h-[120px] sm:min-h-[290px]">
+        <h1
+          key={idx}
+          className="animate-fade-in text-[clamp(1.875rem,7.5vw,3rem)] font-light leading-[0.95] tracking-tight sm:text-7xl"
+        >
           {v.line1}
           <span className="block text-accent">{v.line2}</span>
         </h1>
