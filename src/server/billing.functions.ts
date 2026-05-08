@@ -10,7 +10,7 @@ import Stripe from "stripe";
 export const TIERS = {
   starter: {
     id: "starter" as const,
-    name: "Forge Starter",
+    name: "Protocol Starter",
     monthlyPrice: "price_1TS4OHAS79xThsnaDQ4x8n8B",
     yearlyPrice: "price_1TS4OgAS79xThsnaWDJR5pKJ",
     monthlyAmount: 19,
@@ -23,7 +23,7 @@ export const TIERS = {
   },
   pro: {
     id: "pro" as const,
-    name: "Forge Pro",
+    name: "Protocol Pro",
     monthlyPrice: "price_1TS4OyAS79xThsnaGZf6ca2o",
     yearlyPrice: "price_1TS4PNAS79xThsnaI5O4LieY",
     monthlyAmount: 45,
@@ -36,7 +36,7 @@ export const TIERS = {
   },
   studio: {
     id: "studio" as const,
-    name: "Forge Studio",
+    name: "Protocol Studio",
     monthlyPrice: "price_1TS4PmAS79xThsnaNQaPnpvj",
     yearlyPrice: "price_1TS4Q6AS79xThsnalHmNlG2p",
     monthlyAmount: 119,
@@ -55,7 +55,7 @@ export const TOPUP_PREMIUM_PACK = {
   escalations: 10,
 };
 
-// Legacy price (Forge Pro v1 €29) — still honored as "pro"
+// Legacy price (Protocol Pro v1 €29) — still honored as "pro"
 const LEGACY_PRO_PRICE = "price_1TRsCfAS79xThsnazEGqCjzf";
 
 type TierId = keyof typeof TIERS;
@@ -91,7 +91,7 @@ function getOrigin(): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  createCheckout — kicks off Stripe Checkout for Forge Pro          */
+/*  createCheckout — kicks off Stripe Checkout for Protocol Pro          */
 /* ------------------------------------------------------------------ */
 export const createCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

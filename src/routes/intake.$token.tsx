@@ -259,7 +259,7 @@ function IntakePage() {
           setForm(base);
           // localStorage backup
           try {
-            const saved = localStorage.getItem(`forge_intake_draft_${token}`);
+            const saved = localStorage.getItem(`protocol_intake_draft_${token}`);
             if (saved) {
               const parsed = JSON.parse(saved);
               setForm((cur) => ({ ...cur, ...parsed }));
@@ -277,7 +277,7 @@ function IntakePage() {
   // Debounced auto-save
   useEffect(() => {
     if (!hydrated.current || ctx?.status !== "valid" || submitted) return;
-    try { localStorage.setItem(`forge_intake_draft_${token}`, JSON.stringify(form)); } catch {}
+    try { localStorage.setItem(`protocol_intake_draft_${token}`, JSON.stringify(form)); } catch {}
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(async () => {
       setSaveStatus("saving");
@@ -331,7 +331,7 @@ function IntakePage() {
     setSubmitting(true);
     try {
       await save({ data: { token, ...toPayload(form), submit: true } });
-      try { localStorage.removeItem(`forge_intake_draft_${token}`); } catch {}
+      try { localStorage.removeItem(`protocol_intake_draft_${token}`); } catch {}
       setSubmitted(true);
     } catch (e: any) {
       toast.error(e?.message ?? t("submit_failed"));
@@ -737,7 +737,7 @@ function PoweredBy() {
   const { t } = useTranslation("intake");
   return (
     <p className="mt-16 text-center text-[10px] uppercase tracking-widest text-muted-foreground/50">
-      {t("powered_by")} <a href="https://forge.app" className="hover:underline">Forge</a>
+      {t("powered_by")} <a href="https://protocol.app" className="hover:underline">Protocol</a>
     </p>
   );
 }
@@ -1583,7 +1583,7 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
           setDone(true);
         } else {
           // Pending IDB upload? Try to flush.
-          const pending = await idbGet(`forge_intake_photo_${token}_${slot}`);
+          const pending = await idbGet(`protocol_intake_photo_${token}_${slot}`);
           if (pending && typeof pending === "string") {
             setPreview(pending);
             void retryUpload(pending);
@@ -1598,7 +1598,7 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
   const retryUpload = async (dataUrl: string, attempt = 0): Promise<void> => {
     try {
       await upload({ data: { token: token!, slot, dataUrl } });
-      await idbDel(`forge_intake_photo_${token}_${slot}`);
+      await idbDel(`protocol_intake_photo_${token}_${slot}`);
       setDone(true);
     } catch (e) {
       if (attempt < 2) {
@@ -1619,7 +1619,7 @@ function PhotoSlot({ token, slot, label, hint, tutorial }: {
       const dataUrl = await resizeToJpegDataUrl(file, 1600, 0.82);
       setPreview(dataUrl);
       // Stash locally BEFORE upload so a crash doesn't lose the capture.
-      await idbSet(`forge_intake_photo_${token}_${slot}`, dataUrl);
+      await idbSet(`protocol_intake_photo_${token}_${slot}`, dataUrl);
       await retryUpload(dataUrl);
       toast.success(`${label} guardada`);
     } catch (e: any) {
@@ -1717,7 +1717,7 @@ async function resizeToJpegDataUrl(file: File, maxSide: number, quality: number)
 
 /* ─────────────── Tiny IndexedDB key/value (for crash-resistant photo stash) ─────────────── */
 
-const IDB_NAME = "forge-intake";
+const IDB_NAME = "protocol-intake";
 const IDB_STORE = "kv";
 function idbOpen(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

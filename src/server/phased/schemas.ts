@@ -265,7 +265,7 @@ export const ProgressionPlanSchema = z.object({
 export type ProgressionPlan = z.infer<typeof ProgressionPlanSchema>;
 
 // ---- Stage 3 — Single-day workout content ----------------------------------
-// Mirrors the existing FORGE day shape so workout_plan_days.content is
+// Mirrors the existing Protocol day shape so workout_plan_days.content is
 // byte-compatible with the legacy single-shot generator.
 const SectionItemZ = z.object({
   name: z.string(),

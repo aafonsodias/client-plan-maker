@@ -77,7 +77,7 @@ export const setFeedbackStatus = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Trainer-wide top-N open complaints, used by the Forge dashboard. */
+/** Trainer-wide top-N open complaints, used by the Protocol dashboard. */
 export const listOpenFeedbackTrainerWide = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

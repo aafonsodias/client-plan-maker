@@ -69,9 +69,9 @@ function WelcomePage() {
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center gap-3">
           <BrandMark size="sm" />
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Forge</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Protocol</p>
         </div>
-        <h1 className="mt-8 text-3xl font-light tracking-tight sm:text-4xl">Como vais usar o Forge?</h1>
+        <h1 className="mt-8 text-3xl font-light tracking-tight sm:text-4xl">Como vais usar o Protocol?</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Adaptamos a app — perguntas, dashboard, ferramentas — ao teu contexto. Podes mudar mais tarde.
         </p>

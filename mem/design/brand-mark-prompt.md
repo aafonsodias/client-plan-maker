@@ -1,6 +1,6 @@
 ---
 name: brand mark prompt
-description: Image-gen prompt for the FORGE logo — hammer + anvil + sparks
+description: Image-gen prompt for the Protocol logo — hammer + anvil + sparks
 type: design
 ---
 Primary (full-colour):

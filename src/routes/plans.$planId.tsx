@@ -839,7 +839,7 @@ function PlanEditor() {
         <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           <div className="flex-1">
-            <p className="font-semibold text-foreground">This plan uses the old Forge structure.</p>
+            <p className="font-semibold text-foreground">This plan uses the old Protocol structure.</p>
             <p className="mt-0.5 text-muted-foreground">
               Regenerate from {client?.full_name ?? "client"}'s assessment to get the full session arc — warmup, activation,
               dynamic prep, main work, cooldown and an optional finisher — plus muscle tags, RPE and tempo on every exercise.

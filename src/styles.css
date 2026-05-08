@@ -83,26 +83,26 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ── FORGE design system tokens ──
+  /* ── Protocol design system tokens ──
    * Added in parallel to the shadcn tokens above. Do NOT replace shadcn
-   * tokens — they're used across the rest of the app. These FORGE tokens
+   * tokens — they're used across the rest of the app. These Protocol tokens
    * are consumed by the new Plan View / LOG / PDF surfaces only.
    * Utilities generated: bg-canvas, bg-surface, text-ink-primary,
    * text-cue, font-display, etc.
    */
-  --color-canvas: var(--forge-canvas);
-  --color-surface: var(--forge-surface);
-  --color-subtle: var(--forge-subtle);
-  --color-pill: var(--forge-pill);
-  --color-ink-primary: var(--forge-ink-primary);
-  --color-ink-secondary: var(--forge-ink-secondary);
-  --color-ink-tertiary: var(--forge-ink-tertiary);
-  --color-ink-quiet: var(--forge-ink-quiet);
-  --color-forge-accent: var(--forge-accent);
-  --color-forge-accent-soft: var(--forge-accent-soft);
-  --color-line: var(--forge-line);
-  --color-edge: var(--forge-edge);
-  --color-warning: var(--forge-warning);
+  --color-canvas: var(--protocol-canvas);
+  --color-surface: var(--protocol-surface);
+  --color-subtle: var(--protocol-subtle);
+  --color-pill: var(--protocol-pill);
+  --color-ink-primary: var(--protocol-ink-primary);
+  --color-ink-secondary: var(--protocol-ink-secondary);
+  --color-ink-tertiary: var(--protocol-ink-tertiary);
+  --color-ink-quiet: var(--protocol-ink-quiet);
+  --color-protocol-accent: var(--protocol-accent);
+  --color-protocol-accent-soft: var(--protocol-accent-soft);
+  --color-line: var(--protocol-line);
+  --color-edge: var(--protocol-edge);
+  --color-warning: var(--protocol-warning);
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
@@ -165,21 +165,21 @@
   --sidebar-border: oklch(0.30 0.025 215);
   --sidebar-ring: oklch(0.72 0.115 45 / 0.5);
 
-  /* FORGE palette — exact hex from the master spec (§2). Defined as
+  /* Protocol palette — exact hex from the master spec (§2). Defined as
    * raw values so they don't drift with theme switches. */
-  --forge-canvas: #0F0F0F;
-  --forge-surface: #1A1A1A;
-  --forge-subtle: #161616;
-  --forge-pill: #242422;
-  --forge-ink-primary: #F5F0E8;
-  --forge-ink-secondary: #A8A29A;
-  --forge-ink-tertiary: #6B675F;
-  --forge-ink-quiet: #3A3833;
-  --forge-accent: #D4A574;
-  --forge-accent-soft: rgb(212 165 116 / 0.12);
-  --forge-line: #2A2826;
-  --forge-edge: #3D3A35;
-  --forge-warning: #C97B5C;
+  --protocol-canvas: #0F0F0F;
+  --protocol-surface: #1A1A1A;
+  --protocol-subtle: #161616;
+  --protocol-pill: #242422;
+  --protocol-ink-primary: #F5F0E8;
+  --protocol-ink-secondary: #A8A29A;
+  --protocol-ink-tertiary: #6B675F;
+  --protocol-ink-quiet: #3A3833;
+  --protocol-accent: #D4A574;
+  --protocol-accent-soft: rgb(212 165 116 / 0.12);
+  --protocol-line: #2A2826;
+  --protocol-edge: #3D3A35;
+  --protocol-warning: #C97B5C;
 }
 
 /* `.light` = "Mist" — therapeutic light theme. Cool parchment with a faint

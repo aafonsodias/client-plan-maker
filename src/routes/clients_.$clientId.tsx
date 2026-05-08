@@ -421,7 +421,7 @@ function ClientDetail() {
   // Assessment collapse — controlled so sidebar can mirror it. Once brief is
   // approved, default to collapsed (the trainer is now working in the stages
   // below). User toggle is persisted per-client.
-  const assessmentCollapseKey = `forge_assessment_top_collapsed_${clientId}`;
+  const assessmentCollapseKey = `protocol_assessment_top_collapsed_${clientId}`;
   const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
   // Map plan_id → latest week_number with any approved_at day. Used to default
   // the per-week PDF download to the most useful week (R40).
@@ -577,7 +577,7 @@ function ClientDetail() {
   const skipNextAutosaveRef = useRef(true);
   // Snapshot of section field signatures captured at hydration, used to detect trainer edits to client-submitted sections.
   const sectionSnapshotRef = useRef<Record<string, string>>({});
-  const lsKey = `forge_assessment_draft_${clientId}`;
+  const lsKey = `protocol_assessment_draft_${clientId}`;
 
   // Phased generation feature-flag + brief preview coverage.
   const [phasedEnabled, setPhasedEnabled] = useState(false);
@@ -993,7 +993,7 @@ function ClientDetail() {
     if (target) setExpandedStage(target as any);
     // Scroll the stages lane into view so the user sees the chip + stages.
     requestAnimationFrame(() => {
-      document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("protocol-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }, [clientId]);
 
@@ -1593,7 +1593,7 @@ function ClientDetail() {
         const progressionsApprovedLocal = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanComplete;
         const allApprovedLocal = (briefApproved || heroPlanComplete) && blueprintApprovedLocal && microcycleApprovedLocal && progressionsApprovedLocal;
         const scrollToStages = () => {
-          document.getElementById("forge-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          document.getElementById("protocol-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
         };
         let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
         if (!intakeDone && !lastSavedAt) {
@@ -2353,7 +2353,7 @@ function ClientDetail() {
             && (inlineBrief.approvedStages ?? []).includes("microcycle")
             && (inlineBrief.approvedStages ?? []).includes("progressions")
           ) && (
-            <div id="forge-stages-lane" className="space-y-3 scroll-mt-24">
+            <div id="protocol-stages-lane" className="space-y-3 scroll-mt-24">
               <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
               <StageCard
                 stageNumber={2}
@@ -3193,8 +3193,8 @@ function AssessmentSection({
 
   // Focused mode: render one section at a time with prev/next nav.
   // Persist toggle per client; default = on (the whole point of #9).
-  const focusKey = `forge_assessment_focus_${clientId}`;
-  const activeKey = `forge_assessment_focus_active_${clientId}`;
+  const focusKey = `protocol_assessment_focus_${clientId}`;
+  const activeKey = `protocol_assessment_focus_active_${clientId}`;
   const [focused, setFocused] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -3393,13 +3393,13 @@ function AssessmentSection({
 }
 
 function useSectionCollapseProvider(clientId: string, sectionIds: string[]): CollapseCtx & { allOpen: boolean; allClosed: boolean } {
-  const storageKey = useCallback((id: string) => `forge_assessment_collapse_${clientId}_${id}`, [clientId]);
+  const storageKey = useCallback((id: string) => `protocol_assessment_collapse_${clientId}_${id}`, [clientId]);
   const [overrides, setOverrides] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
     const out: Record<string, boolean> = {};
     for (const id of sectionIds) {
       try {
-        const v = window.localStorage.getItem(`forge_assessment_collapse_${clientId}_${id}`);
+        const v = window.localStorage.getItem(`protocol_assessment_collapse_${clientId}_${id}`);
         if (v === "open") out[id] = true;
         else if (v === "closed") out[id] = false;
       } catch { /* ignore */ }

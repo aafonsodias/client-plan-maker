@@ -29,7 +29,7 @@ Companion to [client education layer](mem://features/client-education-layer.md).
 
 - Single page, last page of the PDF before the back cover.
 - Two columns. Term in bold. Definition in 1–2 sentences max.
-- Same brand chrome as the rest of the PDF (FORGE §12 spec).
+- Same brand chrome as the rest of the PDF (Protocol §12 spec).
 
 ## Out of scope for now
 

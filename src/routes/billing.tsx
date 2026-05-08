@@ -324,7 +324,7 @@ function BillingPage() {
                   </div>
                 )}
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-accent">
-                  <Sparkles className="h-3.5 w-3.5" /> Forge {tier.name}
+                  <Sparkles className="h-3.5 w-3.5" /> Protocol {tier.name}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{tier.tagline}</p>
                 <div className="mt-4">

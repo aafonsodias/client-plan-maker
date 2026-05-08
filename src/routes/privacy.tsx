@@ -6,8 +6,8 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: "Privacy · Forge" },
-      { name: "description", content: "How Forge handles your data." },
+      { title: "Privacy · Protocol" },
+      { name: "description", content: "How Protocol handles your data." },
     ],
   }),
 });
@@ -29,7 +29,7 @@ function PrivacyPage() {
         <p className="mt-2 text-sm text-muted-foreground">Last updated: May 2026</p>
         <div className="mt-8 space-y-5 text-[15px] leading-[1.7] text-foreground/85">
           <p>
-            Forge takes privacy seriously. This page summarizes how we handle data.
+            Protocol takes privacy seriously. This page summarizes how we handle data.
             <em> This is a placeholder while we finalize the policy with counsel — replace
             before public launch.</em>
           </p>
@@ -43,7 +43,7 @@ function PrivacyPage() {
           <p>Hosted in EU regions via Supabase. We do not sell or share client data.</p>
           <h2 className="text-xl font-medium">Your rights</h2>
           <p>Export or delete any record at any time from the dashboard. Email
-          <a className="text-accent hover:underline" href="mailto:hello@forge.app"> hello@forge.app</a>
+          <a className="text-accent hover:underline" href="mailto:hello@protocol.app"> hello@protocol.app</a>
           {" "}for GDPR requests.</p>
           <h2 className="text-xl font-medium">Cookies</h2>
           <p>We use only essential cookies for authentication. No third-party trackers.</p>

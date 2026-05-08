@@ -28,9 +28,9 @@ export const Route = createFileRoute("/manual")({
   component: ManualPage,
   head: () => ({
     meta: [
-      { title: "Ajuda · Forge" },
+      { title: "Ajuda · Protocol" },
       { name: "description", content: "Manual passo-a-passo, perguntas frequentes e contacto directo com o fundador." },
-      { property: "og:title", content: "Ajuda · Forge" },
+      { property: "og:title", content: "Ajuda · Protocol" },
       { property: "og:description", content: "Manual passo-a-passo, perguntas frequentes e contacto directo com o fundador." },
     ],
   }),
@@ -273,7 +273,7 @@ function ContactPanel() {
   const email = t("contact.email_value");
 
   const send = () => {
-    const url = `mailto:${email}?subject=${encodeURIComponent(subject || "Forge")}&body=${encodeURIComponent(body)}`;
+    const url = `mailto:${email}?subject=${encodeURIComponent(subject || "Protocol")}&body=${encodeURIComponent(body)}`;
     window.location.href = url;
   };
 

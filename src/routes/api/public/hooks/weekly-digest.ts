@@ -74,7 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/weekly-digest")({
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                from: "Forge <forge@resend.dev>",
+                from: "Protocol <forge@resend.dev>",
                 to: [t.contact_email],
                 subject: "Your Monday roundup — what needs you this week",
                 html,
@@ -269,7 +269,7 @@ function renderDigestHtml(d: {
     ${draftSection}
     ${intakeSection}
     <p style="margin-top:32px;font-size:12px;color:#94a3b8">
-      You're getting this because you have an account on Forge.
+      You're getting this because you have an account on Protocol.
     </p>
   </div>
 </body></html>`;

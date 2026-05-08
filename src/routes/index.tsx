@@ -354,7 +354,7 @@ function Landing() {
                   className="mt-8 w-full"
                 >
                   {isStudio ? (
-                    <a href="mailto:hello@forge.app?subject=Forge%20Studio">{ctaLabel}</a>
+                    <a href="mailto:hello@protocol.app?subject=Protocol%20Studio">{ctaLabel}</a>
                   ) : (
                     <Link to={primaryCtaTo}>{ctaLabel}</Link>
                   )}
@@ -461,7 +461,7 @@ function Landing() {
             <ul className="mt-3 space-y-2 text-xs">
               <li><Link to="/terms" className="hover:text-foreground">{t("plan:landing.footer.legal_terms")}</Link></li>
               <li><Link to="/privacy" className="hover:text-foreground">{t("plan:landing.footer.legal_privacy")}</Link></li>
-              <li><a href="mailto:hello@forge.app" className="hover:text-foreground">{t("plan:landing.footer.legal_contact")}</a></li>
+              <li><a href="mailto:hello@protocol.app" className="hover:text-foreground">{t("plan:landing.footer.legal_contact")}</a></li>
             </ul>
           </div>
         </div>
@@ -478,11 +478,11 @@ function FloatCard({ children, className = "" }: { children: React.ReactNode; cl
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border border-border bg-card/90 p-6 shadow-[var(--shadow-elegant)] ${className}`}
-      style={{ animation: "forge-float 4s ease-in-out infinite" }}
+      style={{ animation: "protocol-float 4s ease-in-out infinite" }}
     >
       {children}
       <style>{`
-        @keyframes forge-float {
+        @keyframes protocol-float {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-8px); }
         }

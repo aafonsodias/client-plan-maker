@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const w = window as any;
-    if (w.__forgeFetchPatched) return;
-    w.__forgeFetchPatched = true;
+    if (w.__protocolFetchPatched) return;
+    w.__protocolFetchPatched = true;
     const orig = window.fetch.bind(window);
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       try {
