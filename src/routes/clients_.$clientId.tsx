@@ -2020,7 +2020,89 @@ function ClientDetail() {
           </SectionBlock>
 
           {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)}>
+            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
+                Vivem em `clients` (não na avaliação) mas pertencem
+                conceptualmente à antropometria: alimentam IMC, BMR e
+                estimativas de %GC. Posicionados em cima por serem o
+                primeiro input clínico que qualquer ficha pede. */}
+            <div className="mb-3 rounded-md border border-border/60 bg-muted/20 p-2.5">
+              <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Dados base
+              </div>
+              <div className="grid gap-2 sm:grid-cols-4">
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
+                  <select
+                    value={client?.sex ?? ""}
+                    onChange={async (e) => {
+                      const v = e.target.value || null;
+                      setClient((prev: any) => ({ ...prev, sex: v }));
+                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="">—</option>
+                    <option value="female">Feminino</option>
+                    <option value="male">Masculino</option>
+                  </select>
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+                  <input
+                    type="date"
+                    defaultValue={client?.date_of_birth ?? ""}
+                    onBlur={async (e) => {
+                      const v = e.target.value || null;
+                      if (v === (client?.date_of_birth ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={80}
+                    max={250}
+                    step={1}
+                    defaultValue={client?.height_cm ?? ""}
+                    placeholder="ex. 175"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.height_cm ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, height_cm: v }));
+                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={20}
+                    max={400}
+                    step={0.1}
+                    defaultValue={client?.weight_kg ?? ""}
+                    placeholder="ex. 78.4"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.weight_kg ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
+            </div>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
