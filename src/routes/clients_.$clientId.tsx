@@ -1617,6 +1617,8 @@ function ClientDetail() {
           primaryAction = { label: "Continuar avaliação", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" }); } };
         }
         return (
+          <>
+          <CapacityMap clientId={clientId} />
           <section
             aria-label="Protocolo"
             className={[
