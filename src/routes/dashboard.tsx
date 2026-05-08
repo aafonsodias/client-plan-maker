@@ -398,6 +398,7 @@ function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
+        <ViewAsClientPicker className="w-full sm:w-auto" />
         </div>
       </div>
 
