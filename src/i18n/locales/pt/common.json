@@ -42,6 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "A tua lista",
+    "eyebrow_named": "Bem-vindo, {{name}}",
     "title": "Clientes",
     "today": {
       "title": "Hoje",
@@ -273,9 +274,9 @@
   },
   "theme": {
     "toggle_aria": "Alternar tema",
-    "deep": "Profundo",
-    "sage": "Sálvia",
-    "mist": "Névoa"
+    "light": "Claro",
+    "medium": "Médio",
+    "dark": "Escuro"
   },
   "plan_status": {
     "draft": "Rascunho",

@@ -42,6 +42,7 @@
   },
   "dashboard": {
     "eyebrow": "Welcome back",
+    "eyebrow_named": "Welcome back, {{name}}",
     "title": "Clients",
     "today": {
       "title": "Today",
@@ -273,9 +274,9 @@
   },
   "theme": {
     "toggle_aria": "Toggle theme",
-    "deep": "Deep",
-    "sage": "Sage",
-    "mist": "Mist"
+    "light": "Light",
+    "medium": "Medium",
+    "dark": "Dark"
   },
   "plan_status": {
     "draft": "Draft",
