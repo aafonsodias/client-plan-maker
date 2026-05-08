@@ -107,9 +107,16 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth theme-light">
       <head>
         <HeadContent />
+        <script
+          // No-flash theme init: apply persisted theme class before first paint.
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var v=localStorage.getItem('protocol_theme');var map={deep:'dark',night:'dark',sage:'medium',slate:'medium',mist:'light',cream:'light',light:'light',medium:'medium',dark:'dark'};var m=map[v]||'light';var r=document.documentElement;r.classList.remove('theme-light','theme-medium','theme-dark','light','slate','dark');r.classList.add('theme-'+m);if(m==='dark')r.classList.add('dark');r.dataset.theme=m;}catch(e){}})();",
+          }}
+        />
       </head>
       <body>
         {children}
