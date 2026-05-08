@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "today": "Today",
+    "progress": "Progress",
+    "history": "History"
+  },
+  "preview": {
+    "banner": "Previewing as client · {{name}}",
+    "back": "Back to client file",
+    "disabled_hint": "Preview mode — disabled"
+  },
+  "header": {
+    "hello": "Hello",
+    "with": "with"
+  },
+  "plan": {
+    "title": "Current plan",
+    "block_week": "Block {{block}} · Week {{current}} of {{total}}",
+    "evolved_from": "Block {{block}} · evolved from Block {{prior}}",
+    "done_count": "{{done}}/{{total}} done",
+    "none_title": "Your plan is on the way",
+    "none_body": "Your trainer is preparing your first block."
+  },
+  "today_session": {
+    "title": "Today's session",
+    "session": "Session {{n}}",
+    "exercise_count_one": "{{count}} exercise",
+    "exercise_count_other": "{{count}} exercises",
+    "start": "Start",
+    "preview_more": "+ {{count}} more",
+    "last_done_today": "You trained today — nice.",
+    "last_done_days": "Last session {{days}} day(s) ago",
+    "no_session": "Rest day. Recover well."
+  },
+  "checkin": {
+    "title": "How are you today?",
+    "hint": "30 seconds. Helps your trainer adjust the plan.",
+    "sleep": "Sleep",
+    "soreness": "Soreness",
+    "energy": "Energy",
+    "submit": "Save check-in",
+    "edit": "Edit",
+    "saved": "Logged today",
+    "saved_summary": "Sleep {{sleep}}/5 · Soreness {{soreness}}/10 · Energy {{energy}}/5",
+    "sleep_levels": ["Awful", "Bad", "Ok", "Good", "Great"],
+    "energy_levels": ["Drained", "Low", "Ok", "Good", "Sharp"]
+  },
+  "week": {
+    "title": "This week",
+    "label": "Week {{n}}",
+    "day": "Session {{n}}",
+    "today_chip": "Today",
+    "done_chip": "Done",
+    "pending_chip": "Pending"
+  },
+  "bookings": {
+    "title": "Upcoming sessions",
+    "online": "Online",
+    "in_person": "In person",
+    "minutes": "{{n}} min"
+  },
+  "packs": {
+    "title": "Session balance",
+    "remaining": "{{remaining}} of {{total}} left"
+  },
+  "sessions": {
+    "title": "Recent sessions"
+  },
+  "message": {
+    "title": "Message from your trainer",
+    "empty": "No messages yet. You can write to your trainer here whenever you need.",
+    "reply_placeholder": "Write to your trainer…",
+    "send": "Send",
+    "sent": "Message sent.",
+    "you": "You",
+    "trainer": "Trainer"
+  },
+  "empty_plan": {
+    "title": "Your plan is on the way",
+    "step_intake": "Onboarding",
+    "step_assessment": "Assessment",
+    "step_building": "Plan in the making",
+    "step_ready": "Plan ready",
+    "while_you_wait": "While you wait",
+    "complete_intake": "Finish onboarding",
+    "say_hello": "Say hello to your trainer",
+    "first_checkin": "Log your first check-in"
+  },
+  "progress": {
+    "title": "Progress",
+    "soon": "Coming soon — top lifts, weight chart and progress photos."
+  },
+  "history": {
+    "title": "History",
+    "soon": "Coming soon — every session you've logged, with full detail."
+  },
+  "footer": {
+    "soon": "Coming soon — daily messages and visual progress."
+  }
+}
