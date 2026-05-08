@@ -77,7 +77,15 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
-import { RealInsightsCard } from "@/components/RealInsightsCard";
+import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
+
+// R3.2 — Legacy ReassessmentSheet (chest/arm/thigh/calf girths) is hidden by
+// default. Trainers who still need it can flip
+// VITE_MEASUREMENT_LEGACY_REASSESSMENT_SHEET=true. Phase B will delete the
+// component entirely. RealInsightsCard import removed; component file kept
+// until Phase B for safe rollback.
+const LEGACY_REASSESSMENT_SHEET =
+  import.meta.env.VITE_MEASUREMENT_LEGACY_REASSESSMENT_SHEET === "true";
 
 export const Route = createFileRoute("/clients_/$clientId")({
   component: ClientDetailRoute,
@@ -1658,7 +1666,7 @@ function ClientDetail() {
               />
             </div>
             <div className="mt-3 border-t border-border/60 pt-3">
-              <RealInsightsCard clientId={clientId} onReassessClick={() => setReassessOpen(true)} />
+              <CapacityDeltasCard clientId={clientId} />
             </div>
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
@@ -2955,11 +2963,13 @@ function ClientDetail() {
 
       {/* Compliance & estatísticas — moved into the Protocolo card above (R56). */}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
-      <ReassessmentSheet
-        clientId={clientId}
-        open={reassessOpen}
-        onOpenChange={setReassessOpen}
-      />
+      {LEGACY_REASSESSMENT_SHEET && (
+        <ReassessmentSheet
+          clientId={clientId}
+          open={reassessOpen}
+          onOpenChange={setReassessOpen}
+        />
+      )}
     </div>
     </TooltipProvider>
   );

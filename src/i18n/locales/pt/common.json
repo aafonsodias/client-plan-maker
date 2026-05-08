@@ -581,6 +581,13 @@
       "orthostatic_test": "Teste ortostático (Δ FC)"
     }
   },
+  "capacityDeltas": {
+    "title": "Medições recentes",
+    "loading": "A carregar medições…",
+    "empty_title": "Sem evolução medida ainda.",
+    "empty_subtitle": "Adicione duas leituras do mesmo teste para ver o progresso.",
+    "add_button": "Adicionar medição"
+  },
   "adaptation": {
     "compact_all_target": "Tudo no alvo no bloco anterior.",
     "title": "Adaptação · bloco anterior",

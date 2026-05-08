@@ -581,6 +581,13 @@
       "orthostatic_test": "Orthostatic test (Δ HR)"
     }
   },
+  "capacityDeltas": {
+    "title": "Recent measurements",
+    "loading": "Loading measurements…",
+    "empty_title": "No measurement trend yet.",
+    "empty_subtitle": "Add two snapshots of the same test to see progress.",
+    "add_button": "Add measurement"
+  },
   "adaptation": {
     "compact_all_target": "All on target in the prior block.",
     "title": "Adaptation · prior block",

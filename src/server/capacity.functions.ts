@@ -130,3 +130,47 @@ export const addCapacitySnapshot = createServerFn({ method: "POST" })
     if (error) throw error;
     return snapshot;
   });
+
+/**
+ * List capacity snapshots for a client over the last N days (default 90).
+ * Used by <CapacityDeltasCard /> to compute latest-vs-previous deltas per
+ * domain. Auth: trainer-owner OR coached-client (self).
+ */
+export const listClientCapacitySnapshots = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        days: z.number().int().min(1).max(3650).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { clientId } = data;
+    const days = data.days ?? 90;
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id, user_id")
+      .eq("id", clientId)
+      .maybeSingle();
+    if (!client) throw new Error("Client not found");
+    const isTrainer = client.trainer_id === userId;
+    const isSelf = client.user_id === userId;
+    if (!isTrainer && !isSelf) throw new Error("Unauthorized");
+
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+    const { data: snaps, error } = await supabaseAdmin
+      .from("client_capacity_snapshots")
+      .select(
+        "domain_slug, measured_at, raw_value, raw_unit, normalized_score, test_used",
+      )
+      .eq("client_id", clientId)
+      .gte("measured_at", since)
+      .order("measured_at", { ascending: false });
+    if (error) throw error;
+
+    return { snapshots: snaps ?? [] };
+  });
