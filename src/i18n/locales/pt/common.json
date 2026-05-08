@@ -272,7 +272,10 @@
     "hindi": "Hindi"
   },
   "theme": {
-    "toggle_aria": "Alternar tema"
+    "toggle_aria": "Alternar tema",
+    "deep": "Profundo",
+    "sage": "Sálvia",
+    "mist": "Névoa"
   },
   "plan_status": {
     "draft": "Rascunho",
