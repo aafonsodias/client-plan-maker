@@ -1845,7 +1845,7 @@ function ClientDetail() {
           >
             <div className="grid gap-2 sm:grid-cols-4">
               <label className="space-y-1">
-                <span className="text-[11px] text-muted-foreground">Sexo</span>
+                <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
                 <select
                   value={client?.sex ?? ""}
                   onChange={async (e) => {
@@ -1858,7 +1858,6 @@ function ClientDetail() {
                   <option value="">—</option>
                   <option value="female">Feminino</option>
                   <option value="male">Masculino</option>
-                  <option value="other">Outro</option>
                 </select>
               </label>
               <label className="space-y-1">
