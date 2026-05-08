@@ -282,6 +282,28 @@ function computeRisk(risk: any): string {
   return "low";
 }
 
+// WHO adult BMI bands. Auto-derived from client height/weight so trainers
+// don't have to categorise manually. "muscular" stays as a manual override
+// elsewhere — it cannot be inferred from BMI alone.
+function categorizeBmi(heightCm: any, weightKg: any): {
+  value: number | null;
+  category: "" | "underweight" | "normal" | "overweight" | "obese";
+} {
+  const h = Number(heightCm);
+  const w = Number(weightKg);
+  if (!Number.isFinite(h) || !Number.isFinite(w) || h <= 0 || w <= 0) {
+    return { value: null, category: "" };
+  }
+  const bmi = w / Math.pow(h / 100, 2);
+  if (!Number.isFinite(bmi)) return { value: null, category: "" };
+  let category: "underweight" | "normal" | "overweight" | "obese";
+  if (bmi < 18.5) category = "underweight";
+  else if (bmi < 25) category = "normal";
+  else if (bmi < 30) category = "overweight";
+  else category = "obese";
+  return { value: Math.round(bmi * 10) / 10, category };
+}
+
 function buildAssessmentPayload(assessment: any, userId: string, clientId: string) {
   return {
     trainer_id: userId,
