@@ -509,11 +509,11 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
                   <button
                     type="button"
                     onClick={() => setEditing(b)}
-                    className={`flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
+                    className={`label-on-tint flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs ring-1 ${cls.bg} ${cls.ring} ${cls.text}`}
                   >
                     <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${cls.dot}`} aria-hidden />
                     <span className="min-w-0 flex-1 truncate font-medium">{c?.full_name ?? "—"}</span>
-                    <span className="font-mono opacity-80">
+                    <span className="font-mono opacity-90">
                       {wd} · {time} · {typeLabel} · {b.duration_min}′
                     </span>
                   </button>
@@ -887,7 +887,7 @@ function DayStrip({
             return (
               <div
                 key={b.id}
-                className={`flex w-full items-center gap-2 rounded-md ring-1 px-3 py-2 text-left text-sm ${cls.bg} ${cls.ring} ${cls.text}`}
+                className={`label-on-tint flex w-full items-center gap-2 rounded-md ring-1 px-3 py-2 text-left text-sm ${cls.bg} ${cls.ring} ${cls.text}`}
               >
                 <button
                   type="button"
@@ -896,8 +896,8 @@ function DayStrip({
                 >
                   <ClientAvatar name={c?.full_name ?? ""} photoUrl={c?.photo_url ?? null} size={28} />
                   <div className="min-w-0 flex-1">
-                    <div className={`truncate font-medium ${b.status === "done" ? "line-through opacity-70" : ""}`}>{c?.full_name ?? "—"}</div>
-                    <div className="truncate text-[11px] opacity-80">
+                    <div className={`truncate font-medium ${b.status === "done" ? "line-through" : ""}`}>{c?.full_name ?? "—"}</div>
+                    <div className="truncate text-[11px] opacity-90">
                       <span className="font-mono">{time}</span> · {typeLabel} · {b.duration_min}′
                     </div>
                   </div>
