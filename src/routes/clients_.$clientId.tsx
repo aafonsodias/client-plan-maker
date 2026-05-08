@@ -3388,8 +3388,16 @@ function ClientDetail() {
         bmv={computeBmv({ client, assessment, snapshots: bmvSnapshots })}
         busy={phasedBusy}
         onJumpToSection={(sid) => {
-          const el = document.getElementById(`sec-${sid}`) ?? document.getElementById(sid);
-          el?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Identity lives outside the SECTIONS list — scroll to the overview wrapper.
+          if (sid === "client-overview") {
+            const el = document.querySelector('[data-tour="client-overview"]') as HTMLElement | null;
+            el?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+          }
+          // Otherwise let AssessmentTabs activate + expand the right section, then scroll.
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("assessment:jump", { detail: { sectionId: sid } }));
+          }
         }}
         onStartBrief={async () => {
           try {
@@ -3670,6 +3678,26 @@ function AssessmentSection({
     // ctx is rebuilt every render, which would create an infinite loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focused, activeId, ctx.setOpen]);
+
+  // External jump requests (e.g. BriefMinimumSheet "Ver →" buttons):
+  // activate the section, expand it, then scroll once it has rendered.
+  useEffect(() => {
+    function onJump(e: Event) {
+      const sid = (e as CustomEvent<{ sectionId: string }>).detail?.sectionId;
+      if (!sid || !sectionIds.includes(sid)) return;
+      setActiveId(sid);
+      ctx.setOpen(sid, true);
+      // Wait two frames so focus-mode swap + collapse expansion paint first.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.getElementById(`sec-${sid}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+    window.addEventListener("assessment:jump", onJump as EventListener);
+    return () => window.removeEventListener("assessment:jump", onJump as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sectionIds, ctx.setOpen]);
 
   // Map child SectionBlocks by their `id` prop so we can pick the active one.
   const childArray = Children.toArray(children);
