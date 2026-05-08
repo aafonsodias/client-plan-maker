@@ -233,7 +233,7 @@ function Landing() {
       </section>
 
       {/* The journey — 5 stages of the in-app generator + tier chips inline */}
-      <section id="how-it-works" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="how-it-works" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.journey.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.journey.title")}</h2>
@@ -247,7 +247,7 @@ function Landing() {
       <ComparisonTableSection />
 
       {/* Depois do PDF — fused logbook + AI insights */}
-      <section id="logbook" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="logbook" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-10 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.logbook_preview.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.logbook_preview.title")}</h2>
@@ -263,7 +263,7 @@ function Landing() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="scroll-mt-20 mx-auto max-w-6xl px-6 py-24">
+      <section id="pricing" className="scroll-mt-20 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <div className="mb-8 max-w-2xl">
           <p className="text-xs uppercase tracking-widest text-accent">{t("plan:landing.pricing.eyebrow")}</p>
           <h2 className="mt-2 text-4xl font-light tracking-tight">{t("plan:landing.pricing.title")}</h2>
@@ -369,7 +369,7 @@ function Landing() {
       </section>
 
       {/* Founder note + inline roadmap chips */}
-      <section className="mx-auto max-w-3xl px-6 py-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-3xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:py-24">
         <h2 className="text-[32px] font-light leading-tight tracking-tight">{t("plan:landing.founder.title")}</h2>
         <div className="mt-6 space-y-5 text-[17px] leading-[1.7] text-foreground/85">
           <p>{t("plan:landing.founder.p1")}</p>
@@ -396,7 +396,7 @@ function Landing() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-3xl px-6 pb-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-3xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:pb-24 md:pt-0">
         <h2 className="text-2xl font-light tracking-tight sm:text-3xl">{t("plan:landing.faq.title")}</h2>
         <Accordion type="single" collapsible className="mt-8">
           {[
@@ -419,7 +419,7 @@ function Landing() {
       </section>
 
       {/* Closing CTA */}
-      <section className="mx-auto max-w-6xl px-6 pb-24">
+      <section className="mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-center px-6 py-12 md:block md:min-h-0 md:pb-24 md:pt-0">
         <div className="relative overflow-hidden rounded-3xl border border-border bg-card px-8 py-16 text-center text-foreground sm:px-16">
           <div
             className="absolute -left-20 -top-20 h-64 w-64 rounded-full opacity-25 blur-3xl"
