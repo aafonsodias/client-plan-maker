@@ -23,7 +23,7 @@ Concierge AI = founder-only chat dock (src/components/ConciergeDock.tsx + src/se
 Inline stage flow: all 5 plan stages live inline on /clients/$id; approving a stage flips it golden + collapsed and auto-expands the next. Brief approval also folds the assessment synthesis. See mem/principles/inline-stage-flow.md.
 
 Demo content = clients.is_demo + workout_plans.is_demo. Quota trigger bump_plan_quota_on_complete skips is_demo plans. Auto-seeded once per trainer via ensureDemoClient (gated by profiles.demo_seeded_at). Demo Lab Instant: logbook always = duration (fill-to-end).
-In-app AI = <AskForgeDock /> (replaces GuideDock). Tabs: Navegar (askConcierge) + Perguntar à IA (askForge — model picker + credit cost). Available to every signed-in trainer.
+In-app AI = <AskProtocolDock /> (replaces GuideDock). Tabs: Navegar (askConcierge) + Perguntar à IA (askProtocol — model picker + credit cost). Available to every signed-in trainer.
 Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Bloco 13 é gerado pela IA real; Blocos 1–12 são clones SQL com mutações leves + logbook back-dated. Botão "Rodar +1 ano" empurra session_date +365d (cap em today). Ver mem/features/demo-year.md.
 Demo + landing names = src/lib/names/regional-names.ts (region-weighted mixture model). Never hardcode display names. Ver mem/features/regional-names.md.
 Dashboard = role-aware cockpit. Coach=hero(semana·sessões·€)+mini-week+nudges (aniversários, pack ending) com MessageComposerSheet (templates PT/EN editáveis, WhatsApp deeplink, sem AI). Lista de clientes vive abaixo.
