@@ -378,6 +378,8 @@
       "per_month": "mês",
       "per_year": "ano",
       "monthly_eq": "≈ €{{price}}/mês",
+      "billed_monthly": "Faturado mensalmente",
+      "billed_annually": "Faturado anualmente · €{{total}}/ano · poupa €{{savings}}",
       "quota": "{{clients}} clientes · {{plans}} planos/mês",
       "beta_strip_title": "Beta privado",
       "beta_strip_body": "1 cliente · 1 plano completo grátis · feedback direto com o autor.",

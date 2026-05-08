@@ -378,6 +378,8 @@
       "per_month": "mo",
       "per_year": "yr",
       "monthly_eq": "≈ €{{price}}/mo",
+      "billed_monthly": "Billed monthly",
+      "billed_annually": "Billed annually · €{{total}}/yr · save €{{savings}}",
       "quota": "{{clients}} clients · {{plans}} plans/mo",
       "beta_strip_title": "Private beta",
       "beta_strip_body": "1 client · 1 complete plan free · direct feedback with the author.",

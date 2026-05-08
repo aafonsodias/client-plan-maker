@@ -290,8 +290,9 @@ function Landing() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {PRICING_TIERS.map((tier) => {
-            const price = priceFor(tier, billing);
-            const monthlyEq = monthlyEquivalent(tier, billing);
+            const annualTotal = priceFor(tier, "annual");
+            const monthlyShown = monthlyEquivalent(tier, billing);
+            const yearlySavings = tier.monthly * 12 - tier.annual;
             const popular = !!tier.popular;
             const features = (t(`plan:landing.pricing.tiers.${tier.id}.features`, {
               returnObjects: true,
@@ -319,18 +320,19 @@ function Landing() {
                   {t(`plan:landing.pricing.tiers.${tier.id}.tagline`, "")}
                 </p>
                 <div className="mt-5 flex items-baseline gap-1.5">
-                  <PriceTag eur={price} className="text-4xl font-light tracking-tight" />
+                  <PriceTag eur={monthlyShown} className="text-4xl font-light tracking-tight" />
                   <span className="text-sm text-muted-foreground">
-                    /{billing === "annual"
-                      ? t("plan:landing.pricing.per_year", "ano")
-                      : t("plan:landing.pricing.per_month", "mês")}
+                    /{t("plan:landing.pricing.per_month", "mês")}
                   </span>
                 </div>
-                {billing === "annual" && (
-                  <p className="mt-1 text-[11px] text-muted-foreground">
-                    {t("plan:landing.pricing.monthly_eq", "≈ €{{price}}/mês", { price: monthlyEq })}
-                  </p>
-                )}
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {billing === "annual"
+                    ? t("plan:landing.pricing.billed_annually", "Faturado anualmente · €{{total}}/ano · poupa €{{savings}}", {
+                        total: annualTotal,
+                        savings: yearlySavings,
+                      })
+                    : t("plan:landing.pricing.billed_monthly", "Faturado mensalmente")}
+                </p>
                 <p className="mt-4 text-xs font-medium text-foreground/80">
                   {t("plan:landing.pricing.quota", "{{clients}} clientes · {{plans}} planos/mês", {
                     clients: tier.clients,
