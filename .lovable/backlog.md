@@ -1,4 +1,4 @@
-# Forge — Backlog vivo
+# Protocol — Backlog vivo
 
 Atualizado: Round 28 (4 Mai 2026)
 
@@ -145,7 +145,7 @@ Atualizado: Round 28 (4 Mai 2026)
 
 ## Closed Round 31
 - BrandMark: optical center fix (-1px nudge) — spark now visually centered in glow ring
-- Dashboard: replaced ⚒ emoji plate with <BrandMark size="sm"/>; title → "Forge · AI Workbench" (PT+EN)
+- Dashboard: replaced ⚒ emoji plate with <BrandMark size="sm"/>; title → "Protocol · AI Workbench" (PT+EN)
 - index.tsx: gate landing render on authLoading (BrandMark splash) — refresh inside app no longer flashes marketing page
 - IntakeLinkPanel: realtime subscription on clients row + auto-collapse to "Aberto" chip when intake_status=opened
 - clients route: brief approval honesty — "Avaliação completa" only when coverage ≥80%, else amber "Avaliação parcial · X%" chip kept open
@@ -210,7 +210,7 @@ Atualizado: Round 28 (4 Mai 2026)
 - PDF: weekly mode (`PdfMeta.week_number`). Renders one cover (with macro index strip + "Esta semana" session list + honest BLOCK/WEEK/SESSIONS KPIs) + one page per session. Walked back full-block export — PTs print weekly and update on weekends.
 - PDF: macro index strip = N chips (W1..WN) with current highlighted + 1-word tag (base/+load/+reps/deload).
 - PDF: exercise name column widened to 220pt + wraps to 2 lines (no more "Reverse Hyperextension Bodywei…" clipping).
-- PDF: footer per page now reads `Forge · {client} · Bloco N · Semana W · email`.
+- PDF: footer per page now reads `Protocol · {client} · Bloco N · Semana W · email`.
 - Plano final UI: per-week selector + "Descarregar Semana" button replaces single "Descarregar PDF".
 - AppShell: founder pill now also carries the verified BadgeCheck (visible marker requested).
 - i18n cleanup: removed mixed PT/EN ("Gerar Microcycle/Progressions", "Stage:").
@@ -257,7 +257,7 @@ Atualizado: Round 28 (4 Mai 2026)
 - IntakeLinkPanel terminology: "Copiar link de intake" + tooltip
 - Workbench title personalised: "O teu Workbench" / "Your Workbench"
 - AtlasGenie pill moved into hero (next to + Novo cliente), removed solo row
-- Forge cleanup: deleted forge-logo.png, renamed STORAGE_KEY → protocol_theme, model key → protocol.ai.model
+- Protocol cleanup: deleted forge-logo.png, renamed STORAGE_KEY → protocol_theme, model key → protocol.ai.model
 
 ## Parked for R47+
 - Missions UI rico (panel, Atlas-pointing, confetti on completion)

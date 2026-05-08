@@ -28,7 +28,7 @@ import hiSchedule from "./locales/hi/schedule.json";
 
 export const SUPPORTED_LOCALES = ["en", "pt", "es", "hi"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
-export const LOCALE_STORAGE_KEY = "forge.locale";
+export const LOCALE_STORAGE_KEY = "protocol.locale";
 
 // Avoid double-init under React StrictMode / HMR.
 // IMPORTANT: SSR has no localStorage/navigator, so it always renders in the

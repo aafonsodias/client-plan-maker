@@ -31,7 +31,7 @@ function readInitial(): Mode {
     if (v === "slate") return "sage";
     if (v === "cream") return "mist";
     // Migrate ancient binary key
-    const legacy = window.localStorage.getItem("forge_theme");
+    const legacy = window.localStorage.getItem("protocol_theme");
     if (legacy === "light") return "mist";
   } catch {
     /* ignore */

@@ -121,7 +121,7 @@ Specific answers:
 | `templates::*` | low | quota | reservation | reuse drafts | reserve | P1 |
 | `intake.$token.tsx` | none | token validity | rate limit | spam POSTs | upstream WAF | P2 |
 | `log.$token.tsx` | none | token validity | rate limit | spam logs | upstream | P2 |
-| AskForge / Concierge | medium if AI | unknown | gating | unlimited prompts | scope to paid | P1 |
+| AskProtocol / Concierge | medium if AI | unknown | gating | unlimited prompts | scope to paid | P1 |
 | Demo seeding | high | founder/admin only | already gated | — | keep | n/a |
 | PDF export | none | ownership | — | — | — | n/a |
 
@@ -130,7 +130,7 @@ Specific answers:
 ## 5. Bankruptcy-risk map
 
 - **Critical:** `generateMicrocycleDays`, `synthesizeBrief`, `generateBlueprint`, `generateDay`, `startQuickPlan` (parallel), `archivePlanAndStartNextBlock`, legacy `generatePlanDraft/Week/Day`.
-- **High:** `discussBlueprint`, `escalatePlanDay`, `regeneratePlanSummary`, `analyzeAssessmentSection`, AskForge if AI-backed.
+- **High:** `discussBlueprint`, `escalatePlanDay`, `regeneratePlanSummary`, `analyzeAssessmentSection`, AskProtocol if AI-backed.
 - **Medium:** stage4/5 deterministic generators, `programNextWeek`, microcycle-edit AI variants.
 - **Low:** insertion-only entries already gated; PDF; templates; intake/log public POST; schedule.
 
@@ -149,7 +149,7 @@ Direct patch for every critical/high: server-side wrapper that runs `checkPlanQu
 - Monthly finalized plan cap: already enforced by `tier_to_plan_quota` + `sync_plan_quota_from_subscriber`.
 - Lock TTL: 2h auto-expiry checked on next acquire.
 - No auto-generation from public links (already true).
-- AskForge: gate behind paid OR cap free at 5 messages/day.
+- AskProtocol: gate behind paid OR cap free at 5 messages/day.
 - Demo Lab: founder/admin only.
 
 | Setting | Free | Paid |
@@ -160,7 +160,7 @@ Direct patch for every critical/high: server-side wrapper that runs `checkPlanQu
 | Per-stage retries | 1 | 3 |
 | Lock TTL | 2h | 2h |
 | Manual regen after finalize | no | yes |
-| AskForge | gated | included |
+| AskProtocol | gated | included |
 
 ---
 
@@ -215,7 +215,7 @@ MVP recommendation:
 - 1 active reservation across all clients (after R78).
 - Multiple clients allowed — intake links are cheap (no AI).
 - PDF export, intake link, WhatsApp deeplink, manual schedule, basic dashboard, plan editing all allowed.
-- No repeated successful regeneration. No GCal sync. No WhatsApp Cloud API. No top-ups for free users. No bulk demo seeding. AskForge gated or capped.
+- No repeated successful regeneration. No GCal sync. No WhatsApp Cloud API. No top-ups for free users. No bulk demo seeding. AskProtocol gated or capped.
 
 UX at limit: PaywallDialog with PT-PT copy "Atingiu o seu plano grátis (1 de 1). Para gerar mais planos, escolha um plano." + CTA → `/billing`.
 
@@ -331,7 +331,7 @@ Rules: calm, direct, "você", no backend names, one next action.
 
 ## 15. Recommended implementation sequence
 
-Ranked: A (quota) → B (lock/idempotency) → C (reservation) → E (webhook) → D (paywall polish) → F (billing state) → G (intake copy-link) → H (intake statuses) → O (publish smoke) → Q (AskForge gating) → P (landing/auto-trial fix) → I (PDF send) → J (schedule polish) → K (`.ics`) → L (GCal, parked) → M (WA Cloud, parked) → N (usage billing, parked).
+Ranked: A (quota) → B (lock/idempotency) → C (reservation) → E (webhook) → D (paywall polish) → F (billing state) → G (intake copy-link) → H (intake statuses) → O (publish smoke) → Q (AskProtocol gating) → P (landing/auto-trial fix) → I (PDF send) → J (schedule polish) → K (`.ics`) → L (GCal, parked) → M (WA Cloud, parked) → N (usage billing, parked).
 
 **Picked rounds:**
 

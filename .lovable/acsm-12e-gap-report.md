@@ -3,7 +3,7 @@
 Updated: 2026-05-03 · Source: `/mnt/documents/acsm-12e.pdf` (server-only)
 Ingested: 8 chapters · 22 sections · 59 recommendations · 79 contraindications · 167 normatives · 37 population triggers.
 
-> Comparison baseline: Forge today touches ACSM in three places only:
+> Comparison baseline: Protocol today touches ACSM in three places only:
 > 1. `assessments.parq_passed` + `assessments.acsm_risk_category` (low/moderate/high)
 > 2. `programming-tier.server.ts`: `parq_passed===false || risk==="high" → remedial`
 > 3. `plan.server.ts` prompt + `pdf.ts` print PAR-Q + risk text
@@ -12,20 +12,20 @@ Ingested: 8 chapters · 22 sections · 59 recommendations · 79 contraindication
 
 ## Section A — Chapter 2: Preparticipation Algorithm
 
-| 12e decision node | Forge | Note |
+| 12e decision node | Protocol | Note |
 |---|---|---|
 | Informed consent (verbal + written) | ❌ | No consent capture step in intake. Trainer-side liability gap. |
 | Current exerciser definition (≥3 d/wk × ≥30 min × ≥3 months at moderate) | ⚠️ | Captures `training_days_per_week` + `years_training` but not the 3-month continuity rule used by the algorithm. |
 | Known CVD/metabolic/renal disease | ⚠️ | `medical_conditions` is free-text; not parsed into the three buckets the algorithm needs. |
 | Signs/symptoms of CVD/metabolic/renal disease | ❌ | The 9 cardinal signs (chest pain, dyspnea, syncope, orthopnea, ankle edema, palpitations, claudication, murmur, unusual fatigue) are not asked. **Highest-impact screening gap.** |
 | Desired exercise intensity (light/moderate/vigorous) gate | ❌ | Not asked at intake; algorithm branches on this. |
-| Medical clearance recommendation output | ⚠️ | Forge collapses to `risk_category=high → remedial tier`. Does not emit "seek medical clearance" message that the algorithm requires. |
-| AACVPR risk stratification (LVEF<40%, MET<5, ST≥2mm, sudden death survivor, etc.) | ❌ | Not modelled; out of scope for non-clinical Forge users but flag for "do not accept" gate. |
-| CVD risk-factor count (age, family hx, smoking, sedentary, BMI, BP, lipids, glucose) | ⚠️ | Forge captures BP, RHR, body comp, sedentary signals — but does not aggregate them into the 12e risk-factor count. |
+| Medical clearance recommendation output | ⚠️ | Protocol collapses to `risk_category=high → remedial tier`. Does not emit "seek medical clearance" message that the algorithm requires. |
+| AACVPR risk stratification (LVEF<40%, MET<5, ST≥2mm, sudden death survivor, etc.) | ❌ | Not modelled; out of scope for non-clinical Protocol users but flag for "do not accept" gate. |
+| CVD risk-factor count (age, family hx, smoking, sedentary, BMI, BP, lipids, glucose) | ⚠️ | Protocol captures BP, RHR, body comp, sedentary signals — but does not aggregate them into the 12e risk-factor count. |
 
 ## Section B — Chapter 3: Health-Related Fitness Testing
 
-| 12e test | Forge | Note |
+| 12e test | Protocol | Note |
 |---|---|---|
 | Resting HR (5-min seated rest, no caffeine 30 min) | ⚠️ | `resting_heart_rate` captured, no protocol enforced. |
 | Resting BP (same protocol, both arms first visit) | ⚠️ | `systolic/diastolic_bp_mmhg` captured, no protocol UI. |
@@ -39,7 +39,7 @@ Ingested: 8 chapters · 22 sections · 59 recommendations · 79 contraindication
 
 ## Section C — Chapter 5: FITT-VP coverage in generator
 
-For each parameter, does Forge's plan generator emit it as a structured, validatable value?
+For each parameter, does Protocol's plan generator emit it as a structured, validatable value?
 
 | Modality × Parameter | Frequency | Intensity | Time | Type | Volume | Progression |
 |---|---|---|---|---|---|---|
@@ -51,11 +51,11 @@ For each parameter, does Forge's plan generator emit it as a structured, validat
 
 ## Section D — Population coverage (Ch. 6, 8–11)
 
-37 population triggers extracted. Coverage classification against Forge's only branch (`risk=high → remedial`):
+37 population triggers extracted. Coverage classification against Protocol's only branch (`risk=high → remedial`):
 
 **Falls silently through (no detection, no overlay) — Round 3 candidates:**
 
-- Children & adolescents (<19y) — Forge has no pediatric guard
+- Children & adolescents (<19y) — Protocol has no pediatric guard
 - Pregnancy (any trimester, postpartum, GDM, preeclampsia hx)
 - Older adults (≥65y) with frailty / fall-risk
 - Low back pain (LBP) — current/chronic
@@ -72,22 +72,22 @@ For each parameter, does Forge's plan generator emit it as a structured, validat
 - POTS, ME/CFS, MASLD, SCAD (12e-new populations)
 
 **Caught correctly by `risk=high → remedial`:**
-- Unstable CHD, decompensated HF, severe pulmonary HTN, aortic stenosis, active myocarditis, aortic dissection, recent embolism — these all map to medical-clearance-required and Forge correctly downgrades programming. ✅
+- Unstable CHD, decompensated HF, severe pulmonary HTN, aortic stenosis, active myocarditis, aortic dissection, recent embolism — these all map to medical-clearance-required and Protocol correctly downgrades programming. ✅
 
 **Estimated overlays needed in Round 3:** ~18 (the silent-fall-through list above).
 
-## Section E — 12e vs 11e/Forge thresholds (Q2 deltas)
+## Section E — 12e vs 11e/Protocol thresholds (Q2 deltas)
 
-Cross-referencing extracted 12e values against current Forge code/prompts:
+Cross-referencing extracted 12e values against current Protocol code/prompts:
 
-| Parameter | Forge / 11e | 12e | Direction | Citation | Recommendation |
+| Parameter | Protocol / 11e | 12e | Direction | Citation | Recommendation |
 |---|---|---|---|---|---|
 | Aerobic moderate intensity (%HRR) | not enforced | 40–59 | n/a | §5 Tbl 5.1 | adopt automatically |
 | Aerobic vigorous intensity (%HRR) | not enforced | 60–89 | n/a | §5 Tbl 5.1 | adopt automatically |
 | Aerobic minimum weekly time (mod) | implicit 150 | 150–300 min/wk | equivalent floor, higher ceiling | §5 Tbl 5.1 | adopt 150 floor |
 | Resistance frequency (general) | trainer-set | 2–4 d/wk | equivalent | §5.6 | adopt as default |
 | RT inter-set rest, strength | not enforced | 120–300 s | n/a | §5 Tbl 5.7 | adopt as validator floor |
-| RT progression rule | Forge: free, Stage-4 LLM | 2-for-2 rule + 2.5–5 %1-RM | more conservative (structured) | §5.6 | adopt automatically |
+| RT progression rule | Protocol: free, Stage-4 LLM | 2-for-2 rule + 2.5–5 %1-RM | more conservative (structured) | §5.6 | adopt automatically |
 | Static stretch hold (general adults) | not enforced | 10–30 s | n/a | §5 Tbl 5.13 | adopt as default |
 | Static stretch hold (older adults) | not enforced | 30–60 s | n/a | §5 Tbl 5.13 | adopt as default |
 | Pre-exercise static stretch >60 s | not flagged | discouraged before performance | new rule | §5.7 | adopt automatically (warn in PDF) |
@@ -100,16 +100,16 @@ Cross-referencing extracted 12e values against current Forge code/prompts:
 | Waist circ "high risk" (men) | absent | 100–120 cm | n/a | Tbl 3.2 | adopt as derived stratifier |
 | WHR "very high" (men <60 / women <60) | absent | >0.95 / >0.86 | n/a | §3.6 | adopt as derived stratifier |
 
-**No `less-conservative` deltas detected** in this slice — every 12e value either matches or tightens the implicit Forge baseline. Q2 directive (auto-adopt when more conservative) applies cleanly to all 17 above.
+**No `less-conservative` deltas detected** in this slice — every 12e value either matches or tightens the implicit Protocol baseline. Q2 directive (auto-adopt when more conservative) applies cleanly to all 17 above.
 
 ## Section F — Executive summary
 
 **Top 3 lacunas a fechar no Round 2:**
 1. **Structured FITT-VP emission** in `workout_plans.prescription_parameters` — without this, none of the 59 ingested recommendations can be enforced or cited.
 2. **Submax VO₂ estimation** (Rockport / 1.5-mile / Ebbeling) — unlocks intensity prescription in %HRR/%VO₂R rather than RPE-only.
-3. **9 cardinal signs/symptoms checklist** in intake — closes the largest preparticipation safety gap (currently invisible to Forge).
+3. **9 cardinal signs/symptoms checklist** in intake — closes the largest preparticipation safety gap (currently invisible to Protocol).
 
-**Top 3 deltas 12e vs Forge requiring user decision:** None — every delta extracted is more conservative than current Forge, so per Q2 all 17 listed in Section E auto-adopt in Round 2. **No blocking decisions for you.**
+**Top 3 deltas 12e vs Protocol requiring user decision:** None — every delta extracted is more conservative than current Protocol, so per Q2 all 17 listed in Section E auto-adopt in Round 2. **No blocking decisions for you.**
 
 **Round 3 overlay forecast:** ~18 special-population overlays (pediatric, pregnancy, older-adults-frailty, LBP, hypertension, T1D, T2D, dyslipidemia, obesity, MASLD, asthma, COPD, stroke, Parkinson's, MS, depression, cancer survivors, osteoporosis). The 12e-new populations (POTS, ME/CFS, SCAD, MASLD, transgender/gender-diverse) are all in this set.
 

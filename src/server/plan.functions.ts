@@ -504,7 +504,7 @@ export const generatePlanDraft = createServerFn({ method: "POST" })
     if (!trialActive && !subActive) {
       return {
         ok: false as const,
-        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        error: "Your free trial has ended. Upgrade to Protocol Pro to keep generating plans.",
         billingRequired: true as const,
       };
     }
@@ -813,7 +813,7 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
     if (!trialActive && !subActive) {
       return {
         ok: false as const,
-        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        error: "Your free trial has ended. Upgrade to Protocol Pro to keep generating plans.",
         billingRequired: true as const,
       };
     }
@@ -941,7 +941,7 @@ export const generatePlanDay = createServerFn({ method: "POST" })
     if (!trialActive && !subActive) {
       return {
         ok: false as const,
-        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        error: "Your free trial has ended. Upgrade to Protocol Pro to keep generating plans.",
         billingRequired: true as const,
       };
     }
@@ -1343,7 +1343,7 @@ export const escalatePlanDay = createServerFn({ method: "POST" })
     if (!trialActive && !subActive) {
       return {
         ok: false as const,
-        error: "Your free trial has ended. Upgrade to Forge Pro to keep generating plans.",
+        error: "Your free trial has ended. Upgrade to Protocol Pro to keep generating plans.",
         billingRequired: true as const,
       };
     }

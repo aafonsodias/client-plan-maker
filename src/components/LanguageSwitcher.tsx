@@ -12,7 +12,7 @@ import {
 /**
  * Globe-icon dropdown — matches the AppShell language menu so the icon is
  * consistent across landing and the in-app chrome (no flags / no segmented
- * control). Persists to localStorage under "forge.locale" via
+ * control). Persists to localStorage under "protocol.locale" via
  * i18next-browser-languagedetector.
  */
 export function LanguageSwitcher({ className }: { className?: string }) {

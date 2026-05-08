@@ -66,7 +66,7 @@ The overlay is a *lens* over the existing assessment → brief → plan → adap
 | Exercise media architecture | No | Provider-agnostic; orthogonal | None | Locked (R75) |
 | Client dashboard (`clients_.$clientId.tsx`) | No | Future: readiness badge per client | Anxiety dashboard | Later |
 | YearView | No | Possible adherence × readiness overlay later | Visual noise | Parked |
-| AskForge / Concierge | No | Future: rationale Q&A using `generation_meta` | Hallucinated medical claims | Parked |
+| AskProtocol / Concierge | No | Future: rationale Q&A using `generation_meta` | Hallucinated medical claims | Parked |
 
 ---
 
@@ -276,7 +276,7 @@ Calm, short, source-tagged. Never invented at runtime. Stored as static notes ke
 | Manual deep dive link | Plan rationale | "Read more" without bloating chip | Manual sections | Per-section review | Manual rot | After Slice A |
 | Knowledge source card | Knowledge page | Trainer self-study | Source map | Per-source review | Wall of text | Later |
 | Logbook reflection prompt | Logbook | Sleep / soreness / pain capture | New field, optional | None | Survey fatigue | Later |
-| AskForge explanation | Concierge | Q&A on rationale | `generation_meta` + sources | Per-claim review | Hallucination | Parked |
+| AskProtocol explanation | Concierge | Q&A on rationale | `generation_meta` + sources | Per-claim review | Hallucination | Parked |
 
 ---
 
@@ -390,7 +390,7 @@ Acceptance for Slice J (when it ships): every exercise card on `/plans/$id` show
 - Loaded cervical work (levels 4–9 of §10) — parked indefinitely for general clients.
 - HRV / wearable integration — parked, post-MVP.
 - `exercise_caution_flags` schema (§15 G/H) — parked until Slice J vocabulary proves stable.
-- AskForge medical Q&A — parked.
+- AskProtocol medical Q&A — parked.
 - Anxiety / mental-health screeners — out of scope.
 - Cycle-phase prescription — parked, requires its own evidence round.
 - Knowledge page redesign — parked.
