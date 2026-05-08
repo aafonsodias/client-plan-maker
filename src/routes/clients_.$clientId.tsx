@@ -1837,58 +1837,62 @@ function ClientDetail() {
               </div>
               <div className="space-y-1">
                 <LabelWithHelp
-                  label={t("risk_block.mvpa_label", { defaultValue: "Atividade física semanal" })}
+                  label={t("risk_block.mvpa_label", { defaultValue: "Quão ativo é o cliente?" })}
                   hint={t("risk_block.mvpa_hint", {
                     defaultValue:
-                      "Minutos/semana de atividade moderada-vigorosa (caminhar rápido, correr, treino, desporto). ACSM: <150 min/sem = sedentário.",
+                      "Conta tudo o que põe o cliente ofegante: caminhar rápido, correr, treinar, desporto, jardinagem pesada. ACSM considera sedentário <150 min/semana.",
                   })}
                 />
-                <div className="flex h-8 items-stretch gap-1.5">
-                  <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={2000}
-                      step={10}
-                      autoComplete="off"
-                      defaultValue={(assessment.risk as any).mvpa_min_per_week ?? ""}
-                      placeholder={t("risk_block.mvpa_ph", { defaultValue: "min/semana" })}
-                      className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                      onBlur={(e) => {
-                        const raw = e.target.value;
-                        const n = Number(raw);
-                        const v = raw === "" || !Number.isFinite(n) || n < 0 ? null : Math.round(n);
-                        setAssessment({
-                          ...assessment,
-                          risk: {
-                            ...assessment.risk,
-                            mvpa_min_per_week: v,
-                            sedentary: v === null ? assessment.risk.sedentary : v < 150,
-                          },
-                        });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                      }}
-                    />
-                    <span className="text-[11px] text-muted-foreground">min</span>
-                  </label>
-                  {(assessment.risk as any).mvpa_min_per_week != null ? (
-                    <span
-                      className={
-                        "inline-flex items-center rounded-md px-2 text-[11px] font-medium " +
-                        (assessment.risk.sedentary
-                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                          : "bg-accent/15 text-accent")
-                      }
-                    >
-                      {assessment.risk.sedentary
-                        ? t("risk_block.mvpa_sedentary", { defaultValue: "Sedentário" })
-                        : t("risk_block.mvpa_active", { defaultValue: "Ativo" })}
-                    </span>
-                  ) : null}
-                </div>
+                {(() => {
+                  const buckets = [
+                    { id: "none", min: 0, label: t("risk_block.mvpa_b_none", { defaultValue: "Quase nada" }), sub: "<1x/sem" },
+                    { id: "light", min: 60, label: t("risk_block.mvpa_b_light", { defaultValue: "Pouco" }), sub: "1–2×/sem" },
+                    { id: "moderate", min: 180, label: t("risk_block.mvpa_b_moderate", { defaultValue: "Moderado" }), sub: "3–4×/sem" },
+                    { id: "high", min: 300, label: t("risk_block.mvpa_b_high", { defaultValue: "Muito ativo" }), sub: "5+×/sem" },
+                  ] as const;
+                  const current = (assessment.risk as any).mvpa_min_per_week as number | null | undefined;
+                  const activeIdx = current == null
+                    ? -1
+                    : current < 30
+                      ? 0
+                      : current < 150
+                        ? 1
+                        : current < 240
+                          ? 2
+                          : 3;
+                  return (
+                    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                      {buckets.map((b, i) => {
+                        const selected = i === activeIdx;
+                        return (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() =>
+                              setAssessment({
+                                ...assessment,
+                                risk: {
+                                  ...assessment.risk,
+                                  mvpa_min_per_week: b.min,
+                                  sedentary: b.min < 150,
+                                },
+                              })
+                            }
+                            className={
+                              "flex flex-col items-start gap-0.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors " +
+                              (selected
+                                ? "border-primary bg-primary/10 text-foreground"
+                                : "border-border bg-background/30 text-muted-foreground hover:border-primary/40 hover:text-foreground")
+                            }
+                          >
+                            <span className="font-medium leading-tight">{b.label}</span>
+                            <span className="text-[10px] opacity-70">{b.sub}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
