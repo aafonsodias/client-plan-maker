@@ -3730,17 +3730,13 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
 }
 
 function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
-  const { t } = useTranslation("assessment");
   return (
     <div className="flex items-center gap-1">
       <Label className="text-xs">{label}</Label>
       {hint && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button type="button" className="text-muted-foreground hover:text-foreground" aria-label={t("why_we_ask_aria")}><Info className="h-3 w-3" /></button>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-xs"><p>{hint}</p></TooltipContent>
-        </Tooltip>
+        <HelpPopover label={label}>
+          <p>{hint}</p>
+        </HelpPopover>
       )}
     </div>
   );
