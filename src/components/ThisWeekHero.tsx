@@ -54,7 +54,7 @@ export function ThisWeekHero({
         <div className="pt-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">Próximo passo</p>
           <p className="mt-1 max-w-prose text-xs text-muted-foreground">
-            Cada cliente tem uma única ação prioritária. Quando este passo estiver feito, aparece o seguinte aqui.
+            Uma ação de cada vez.
           </p>
           <div className="mt-2"><PrimaryCta action={primaryAction} /></div>
         </div>
@@ -72,8 +72,7 @@ export function ThisWeekHero({
           O que fazer agora
         </h2>
         <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          Cada cliente tem uma única ação prioritária. Quando este passo estiver feito,
-          aparece o seguinte aqui — sem ruído de menus.
+          Uma ação de cada vez.
         </p>
         <div className="mt-4">
           <PrimaryCta action={primaryAction} large />
