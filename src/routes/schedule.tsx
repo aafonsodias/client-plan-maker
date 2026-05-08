@@ -733,62 +733,33 @@ function BookingBlock({
   onDragCommit: (id: string, newIso: string) => void;
   onToggleDone: () => void;
 }) {
-  const [dragOffset, setDragOffset] = useState(0); // minutes
   const [dragging, setDragging] = useState(false);
-  const PX_PER_MIN = 56 / 60;
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("[data-copy-btn]")) return;
-    e.preventDefault();
-    const startY = e.clientY;
-    let started = false;
-    let lastDelta = 0;
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
-    const onMove = (ev: PointerEvent) => {
-      const dy = ev.clientY - startY;
-      if (!started && Math.abs(dy) < 4) return;
-      started = true;
-      setDragging(true);
-      const minutes = Math.round(dy / PX_PER_MIN / 15) * 15;
-      lastDelta = minutes;
-      setDragOffset(minutes);
-    };
-    const onUp = () => {
-      target.releasePointerCapture(e.pointerId);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      if (!started) {
-        onClick();
-      } else if (lastDelta !== 0) {
-        const next = new Date(booking.starts_at);
-        next.setMinutes(next.getMinutes() + lastDelta);
-        onDragCommit(booking.id, next.toISOString());
-      }
-      setDragOffset(0);
-      setDragging(false);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-
-  const previewTime = (() => {
-    const t = new Date(booking.starts_at);
-    if (dragOffset) t.setMinutes(t.getMinutes() + dragOffset);
-    return t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  })();
+  const time = new Date(booking.starts_at).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div
-      onPointerDown={onPointerDown}
-      style={{ transform: dragOffset ? `translateY(${dragOffset * PX_PER_MIN}px)` : undefined }}
-      className={`group absolute left-1 right-1 top-1 bottom-1 rounded-md ring-1 px-2 py-1 text-left text-[11px] select-none touch-none ${cls.bg} ${cls.ring} ${cls.text} ${booking.status === "cancelled" ? "opacity-40 line-through" : ""} ${dragging ? "cursor-ns-resize ring-2 ring-foreground/40 z-10" : "cursor-grab"}`}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-booking-id", booking.id);
+        setDragging(true);
+      }}
+      onDragEnd={() => setDragging(false)}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("[data-copy-btn]")) return;
+        onClick();
+      }}
+      title="Arraste para reagendar"
+      className={`group absolute left-1 right-1 top-1 bottom-1 rounded-md ring-1 px-2 py-1 text-left text-[11px] select-none ${cls.bg} ${cls.ring} ${cls.text} ${booking.status === "cancelled" ? "opacity-40 line-through" : ""} ${dragging ? "opacity-50 cursor-grabbing" : "cursor-grab"}`}
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
-          <div className={`truncate font-medium ${booking.status === "done" ? "line-through opacity-70" : ""}`}>{clientName}</div>
-          <div className="truncate font-mono text-[10px] opacity-80">
-            {previewTime} · {booking.duration_min}′
+          <div className={`label-on-tint truncate font-medium ${booking.status === "done" ? "line-through" : ""}`}>{clientName}</div>
+          <div className="label-on-tint truncate font-mono text-[10px] opacity-90">
+            {time} · {booking.duration_min}′
           </div>
         </div>
         <div className="flex items-center gap-0.5">
@@ -799,7 +770,8 @@ function BookingBlock({
               e.stopPropagation();
               onToggleDone();
             }}
-            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            draggable={false}
             aria-label={booking.status === "done" ? "mark scheduled" : "mark done"}
             title={booking.status === "done" ? "Marcar como agendada" : "Marcar como feita"}
             className={`rounded p-0.5 transition-opacity hover:bg-foreground/10 ${booking.status === "done" ? "opacity-100 text-emerald-600 dark:text-emerald-400" : "opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
@@ -813,7 +785,8 @@ function BookingBlock({
               e.stopPropagation();
               onCopy();
             }}
-            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            draggable={false}
             aria-label="copy"
             title="Copiar"
             className="opacity-0 group-hover:opacity-100 focus:opacity-100 rounded p-0.5 hover:bg-foreground/10 transition-opacity"
