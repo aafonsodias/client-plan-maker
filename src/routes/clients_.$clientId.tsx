@@ -35,6 +35,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
+import { MeasureField } from "@/components/assessment/MeasureField";
+import { ChipGroup } from "@/components/assessment/ChipGroup";
+import measureWaistImg from "@/assets/measure-waist.png";
+import measureHipImg from "@/assets/measure-hip.png";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -1988,9 +1992,46 @@ function ClientDetail() {
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} defaultCollapsed complete={isSectionComplete("anthro", assessment)}>
             <div className="grid gap-2 sm:grid-cols-3">
-              <Field label={t("anthro_block.waist")} type="number" value={assessment.waist_cm} onChange={(v) => setAssessment({ ...assessment, waist_cm: v })} hint={t("anthro_block.waist_hint")} />
-              <Field label={t("anthro_block.hip")} type="number" value={assessment.hip_cm} onChange={(v) => setAssessment({ ...assessment, hip_cm: v })} hint={t("anthro_block.hip_hint")} />
-              <Field label={t("anthro_block.bf_pct")} type="number" value={assessment.body_fat_pct} onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })} hint={t("anthro_block.bf_pct_hint")} />
+              <MeasureField
+                label="Cintura"
+                unit="cm"
+                value={assessment.waist_cm}
+                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
+                imageSrc={measureWaistImg}
+                imageAlt="Diagrama: medir cintura no ponto mais estreito acima da anca"
+                placeholder="ex. 82"
+                helpBody={
+                  <>
+                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
+                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
+                  </>
+                }
+              />
+              <MeasureField
+                label="Anca"
+                unit="cm"
+                value={assessment.hip_cm}
+                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
+                imageSrc={measureHipImg}
+                imageAlt="Diagrama: medir anca na maior circunferência das nádegas"
+                placeholder="ex. 98"
+                helpBody={
+                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
+                }
+              />
+              <MeasureField
+                label="Gordura corporal"
+                unit="%"
+                value={assessment.body_fat_pct}
+                onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
+                placeholder="opcional"
+                helpBody={
+                  <>
+                    <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
+                    <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
+                  </>
+                }
+              />
               <div className="space-y-1">
                 <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
@@ -2212,15 +2253,96 @@ function ClientDetail() {
 
           {/* Nutrition (rebuilt) */}
           <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("nutrition_block.meals")} type="number" value={assessment.ext_meals_per_day} onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: v })} />
-              <Field label={t("nutrition_block.alcohol")} type="number" value={assessment.ext_alcohol_units_week} onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: v })} hint={t("nutrition_block.alcohol_hint")} />
-              <Field label={t("nutrition_block.processed")} type="number" value={assessment.ext_processed_food_freq} onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: v })} hint={t("nutrition_block.processed_hint")} />
-              <Field label={t("nutrition_block.water")} type="number" value={assessment.ext_water_l_per_day} onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: v })} />
+            <div className="space-y-3">
+              <div>
+                <div className="mb-1 flex items-center gap-1">
+                  <Label className="text-xs">Quantas refeições faz por dia?</Label>
+                  <HelpPopover label="Refeições">
+                    <p>Inclui pequeno-almoço, almoço, jantar e snacks que sentem como refeição. Café com leite a meio da manhã não conta.</p>
+                  </HelpPopover>
+                </div>
+                <ChipGroup
+                  cols={5}
+                  size="sm"
+                  value={assessment.ext_meals_per_day || null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_meals_per_day: String(v) })}
+                  options={[
+                    { value: "2", label: "2", sub: "intermitente" },
+                    { value: "3", label: "3", sub: "clássico" },
+                    { value: "4", label: "4", sub: "+ snack" },
+                    { value: "5", label: "5", sub: "fracionado" },
+                    { value: "6", label: "6+", sub: "atleta" },
+                  ]}
+                />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center gap-1">
+                  <Label className="text-xs">Bebidas alcoólicas por semana</Label>
+                  <HelpPopover label="Álcool">
+                    <p>1 bebida ≈ 1 cerveja (33cl), 1 copo de vinho (15cl) ou 1 shot. Baseado no AUDIT-C — &gt;14 unidades/semana é zona de risco para recuperação.</p>
+                  </HelpPopover>
+                </div>
+                <ChipGroup
+                  cols={4}
+                  size="sm"
+                  value={assessment.ext_alcohol_units_week || null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_alcohol_units_week: String(v) })}
+                  options={[
+                    { value: "0", label: "Nada", sub: "abstinente" },
+                    { value: "3", label: "Pouco", sub: "1-4/sem" },
+                    { value: "8", label: "Moderado", sub: "5-10/sem" },
+                    { value: "16", label: "Muito", sub: "11+/sem" },
+                  ]}
+                />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center gap-1">
+                  <Label className="text-xs">Comida processada e fast-food</Label>
+                  <HelpPopover label="Processados">
+                    <p>Refeições prontas, takeaway, snacks embalados, refrigerantes. Sopa caseira ou pão tradicional não contam.</p>
+                  </HelpPopover>
+                </div>
+                <ChipGroup
+                  cols={5}
+                  size="sm"
+                  value={assessment.ext_processed_food_freq || null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: String(v) })}
+                  options={[
+                    { value: "1", label: "Raro", sub: "1×/sem" },
+                    { value: "2", label: "Pouco", sub: "2-3×/sem" },
+                    { value: "3", label: "Médio", sub: "1×/dia" },
+                    { value: "4", label: "Muito", sub: "várias/dia" },
+                    { value: "5", label: "Quase tudo", sub: "rotina" },
+                  ]}
+                />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center gap-1">
+                  <Label className="text-xs">Quantos litros de água bebe por dia?</Label>
+                  <HelpPopover label="Hidratação">
+                    <p>Inclui água, chá e infusões sem açúcar. Café e bebidas com cafeína contam só metade. ACSM recomenda 30-40 ml/kg/dia.</p>
+                  </HelpPopover>
+                </div>
+                <ChipGroup
+                  cols={5}
+                  size="sm"
+                  value={assessment.ext_water_l_per_day || null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: String(v) })}
+                  options={[
+                    { value: "0.5", label: "<1 L", sub: "muito pouco" },
+                    { value: "1", label: "1 L", sub: "pouco" },
+                    { value: "1.5", label: "1.5 L", sub: "razoável" },
+                    { value: "2", label: "2 L", sub: "bom" },
+                    { value: "3", label: "3+ L", sub: "atleta" },
+                  ]}
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
               {showAdvancedNutrition && (
                 <Field label={t("nutrition_block.hydration_legacy")} type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
               )}
               <TextField label={t("nutrition_block.notes")} value={assessment.nutrition_habits} onChange={(v) => setAssessment({ ...assessment, nutrition_habits: v })} className="sm:col-span-2" />
+              </div>
             </div>
             <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
