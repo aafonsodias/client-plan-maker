@@ -42,7 +42,7 @@ export function HelpPopover({
             src={imageSrc}
             alt={imageAlt ?? ""}
             loading="lazy"
-            className="w-full rounded-md border border-border bg-background/40"
+            className="w-full rounded-md border border-border bg-background/40 dark:invert dark:hue-rotate-180"
           />
         )}
         <div className="text-muted-foreground">{children}</div>
