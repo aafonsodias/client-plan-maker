@@ -2085,20 +2085,20 @@ function ClientDetail() {
               </div>
               <div className="grid gap-2 sm:grid-cols-4">
                 <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
-                  <select
-                    value={client?.sex ?? ""}
-                    onChange={async (e) => {
-                      const v = e.target.value || null;
+                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
+                  <VisualChipGroup
+                    size="sm"
+                    columns={2}
+                    value={(client?.sex as "female" | "male") ?? null}
+                    onChange={async (v) => {
                       setClient((prev: any) => ({ ...prev, sex: v }));
                       await supabase.from("clients").update({ sex: v }).eq("id", clientId);
                     }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="">—</option>
-                    <option value="female">Feminino</option>
-                    <option value="male">Masculino</option>
-                  </select>
+                    options={[
+                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
+                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
+                    ]}
+                  />
                 </label>
                 <label className="space-y-1">
                   <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
