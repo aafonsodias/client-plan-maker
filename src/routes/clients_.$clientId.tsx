@@ -3858,13 +3858,13 @@ function AssessmentSection({
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+    <section className="space-y-4 rounded-2xl bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="ml-auto eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
         >
           <ChevronDown className="h-3 w-3" /> {t("detail.section.collapse")}
         </button>
@@ -3873,7 +3873,7 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => setFocused((f) => !f)}
-          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest transition ${focused ? "border-accent/60 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+          className={`eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 transition ${focused ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
           title={focused ? t("detail.section.focus_tip_show_all") : t("detail.section.focus_tip_focus")}
         >
           {focused ? <List className="h-3 w-3" /> : <Focus className="h-3 w-3" />}
@@ -3884,14 +3884,14 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => ctx.setAll(true)}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
         >
           <ChevronsUpDown className="h-3 w-3" /> {t("detail.section.expand_all")}
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
         >
           <ChevronsDownUp className="h-3 w-3" /> {t("detail.section.collapse_all")}
         </button>
@@ -3909,7 +3909,7 @@ function AssessmentSection({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveId(s.id)}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${isActive ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                className={`label-caps inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition ${isActive ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
               >
                 <span className="font-mono tabular-nums">{i + 1}</span>
                 <span className="hidden sm:inline">{s.label}</span>
