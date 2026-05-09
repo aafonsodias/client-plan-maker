@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Cake, Inbox, AlertTriangle, Sparkles } from "lucide-react";
+import { Cake, Inbox, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
