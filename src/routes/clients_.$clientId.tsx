@@ -78,6 +78,7 @@ import { BlueprintEditorPanel } from "@/components/BlueprintEditorPanel";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { useClientPhases } from "@/hooks/use-client-phases";
+import { isRequiredComplete } from "@/lib/client-phase";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
