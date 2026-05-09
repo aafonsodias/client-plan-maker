@@ -1558,6 +1558,26 @@ function ClientDetail() {
             <div className="flex flex-wrap items-center gap-3 min-w-0">
               <h1 className="t-1 break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
+              {(() => {
+                const heroPlanLocal = plans.find((p) => ((p as any).generation_state?.stage ?? null) === "complete") ?? null;
+                const heroPlanCompleteLocal = !!heroPlanLocal && (heroPlanLocal as any).generation_status === "complete";
+                const stage1 = heroPlanCompleteLocal || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80);
+                const stage2 = !!inlineBrief?.approved || heroPlanCompleteLocal;
+                const stage3 = (inlineBrief?.approvedStages ?? []).includes("blueprint") || heroPlanCompleteLocal;
+                const stage4 = (inlineBrief?.approvedStages ?? []).includes("microcycle") || heroPlanCompleteLocal;
+                const stage5 = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanCompleteLocal;
+                const done = [stage1, stage2, stage3, stage4, stage5];
+                const idx = done.findIndex((d) => !d);
+                const n = idx === -1 ? 5 : idx + 1;
+                return (
+                  <span
+                    className="ml-1 text-[10px] font-medium tabular-nums text-muted-foreground/60"
+                    title={`Protocolo · etapa ${n} de 5`}
+                  >
+                    {n}/5
+                  </span>
+                );
+              })()}
             </div>
             <p className="body-prose mt-1 text-sm text-[var(--text-2)] break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
           </div>
