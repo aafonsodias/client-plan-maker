@@ -917,7 +917,9 @@ function PlanEditor() {
 
       {mode === "view" ? (
         <>
-          <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          <div className="animate-fade-in">
+            <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
+          </div>
           <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
           {/* Around-the-workout nutrition windows — moved here from the client overview (R55). */}
           <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
