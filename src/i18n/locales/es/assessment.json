@@ -152,35 +152,46 @@
     "measurable_hint": "Number you'll measure.",
     "deadline": "Deadline",
     "deadline_hint": "Realistic completion date.",
-    "context": "Goal context (optional)",
-    "templates_label": "Suggestions",
-    "templates_placeholder": "Pick a template…",
-    "templates_hint": "Fills the three fields. Tweak numbers afterwards.",
-    "categories": {
-      "strength": "Strength",
-      "hypertrophy": "Hypertrophy",
-      "body_comp": "Body composition",
-      "endurance": "Endurance",
-      "mobility": "Mobility",
-      "skill": "Skill",
-      "health": "Health"
+    "context": "Goal context (optional)"
+  },
+  "goals": {
+    "category_label": "Categoría",
+    "fill_manual": "O rellenar manualmente",
+    "confirm_overwrite": "Has personalizado los campos. ¿Reemplazar con la plantilla?",
+    "confirm_replace": "Reemplazar",
+    "confirm_keep": "Mantener",
+    "cat": {
+      "strength": "Fuerza",
+      "hypertrophy": "Hipertrofia",
+      "composition": "Composición",
+      "endurance": "Resistencia",
+      "mobility": "Movilidad",
+      "function": "Función"
     },
-    "templates": {
-      "strength_squat_bw":     { "label": "Squat 1.5×BW for 5 reps",       "specific": "Back-squat 1.5× bodyweight for 5 clean reps",                "measurable": "e.g. 120 kg @ BW 80 kg" },
-      "strength_bench_bw":     { "label": "Bench bodyweight for 5 reps",   "specific": "Bench press bodyweight for 5 clean reps",                    "measurable": "e.g. 80 kg @ BW 80 kg" },
-      "strength_deadlift_2bw": { "label": "Deadlift 2×BW for 3 reps",      "specific": "Conventional deadlift 2× bodyweight for 3 reps",             "measurable": "e.g. 160 kg @ BW 80 kg" },
-      "hypertrophy_arms":      { "label": "+3 cm arm circumference",       "specific": "Add 3 cm to relaxed upper-arm circumference",                "measurable": "from 36 → 39 cm (avg L/R)" },
-      "hypertrophy_legs":      { "label": "+4 cm thigh circumference",     "specific": "Add 4 cm to mid-thigh circumference",                        "measurable": "from 55 → 59 cm (avg L/R)" },
-      "body_comp_lose_fat":    { "label": "Lose 5 kg fat, keep LBM",       "specific": "Drop 5 kg of fat mass while preserving lean body mass",      "measurable": "from 22% → 17% body fat (same method)" },
-      "body_comp_recomp":      { "label": "Recomp: −3% BF, +2 kg LBM",     "specific": "Lower body-fat % and add lean body mass simultaneously",     "measurable": "−3% BF and +2 kg LBM (DEXA or BIA)" },
-      "endurance_5k":          { "label": "5 km under 25:00",              "specific": "Run a continuous 5 km in under 25 minutes",                  "measurable": "5 km · 24:59 (GPS-tracked)" },
-      "endurance_cooper":      { "label": "Cooper 12-min ≥ 2400 m",        "specific": "Cover ≥ 2400 m in the 12-min Cooper test",                   "measurable": "≥ 2400 m in 12 min" },
-      "mobility_toe_touch":    { "label": "Pain-free toe touch",           "specific": "Standing forward fold with fingertips to the floor, pain-free", "measurable": "Fingertips touching floor (knees soft)" },
-      "mobility_overhead":     { "label": "Full overhead reach",           "specific": "Arms vertical against the wall with low back flat",          "measurable": "Wall-test pass (lumbar spine flat, elbows locked)" },
-      "skill_first_pullup":    { "label": "First strict pull-up",          "specific": "Complete one strict, dead-hang pull-up",                     "measurable": "1 × strict, full ROM" },
-      "skill_handstand":       { "label": "60-sec freestanding handstand", "specific": "Hold a freestanding handstand for 60 seconds",               "measurable": "60 s hold, no wall" },
-      "health_resting_hr":     { "label": "Resting HR < 60 bpm",           "specific": "Lower resting heart rate below 60 bpm",                       "measurable": "from current 72 → ≤ 58 bpm (morning, supine)" },
-      "health_steps":          { "label": "8 000 daily steps",             "specific": "Average 8 000 steps/day across the week",                     "measurable": "8 000 steps/day on ≥ 5 days/week" }
+    "duration": {
+      "4w": "4 sem",
+      "8w": "8 sem",
+      "12w": "12 sem",
+      "16w": "16 sem",
+      "6m": "6 meses",
+      "1y": "1 año",
+      "custom": "Fecha específica",
+      "resolved": "→ {{date}}"
+    },
+    "tpl": {
+      "str_squat_15bw_5":  { "specific": "Sentadilla 1,5× peso corporal para 5 repeticiones limpias",        "measurable": "Lograr 1,5×PC en sentadilla × 5 reps con técnica controlada" },
+      "str_bench_bw_5":    { "specific": "Press banca con peso corporal para 5 repeticiones",                "measurable": "1×PC en banca × 5 reps en rango completo" },
+      "str_dl_2bw_3":      { "specific": "Peso muerto 2× peso corporal para 3 repeticiones",                 "measurable": "2×PC en peso muerto × 3 reps con espalda neutra" },
+      "hyp_arm_3cm":       { "specific": "Aumentar 3 cm de perímetro de brazo",                              "measurable": "+3 cm en medición de brazo (relajado, promedio I/D)" },
+      "hyp_thigh_4cm":     { "specific": "Aumentar 4 cm de perímetro de muslo",                              "measurable": "+4 cm en medición media del muslo (promedio I/D)" },
+      "comp_fatloss_5":    { "specific": "Perder 5 kg de grasa manteniendo el músculo",                      "measurable": "−5 kg de masa grasa por DEXA/BIA, masa magra estable" },
+      "comp_recomp":       { "specific": "Reducir grasa y ganar músculo simultáneamente",                    "measurable": "−3% grasa corporal y +2 kg masa magra (DEXA o BIA)" },
+      "end_5k_25":         { "specific": "Correr 5 km en menos de 25 minutos",                               "measurable": "5 km continuos en ≤ 25:00 sin paradas" },
+      "end_cooper_2400":   { "specific": "Cubrir más de 2400 m en el test de Cooper de 12 min",              "measurable": "≥ 2400 m en 12 minutos continuos" },
+      "mob_toes_painfree": { "specific": "Tocar los pies de pie sin dolor",                                  "measurable": "Sit-and-reach ≥ 0 cm sin dolor lumbar" },
+      "mob_overhead_full": { "specific": "Levantar los brazos verticales contra la pared sin compensar",     "measurable": "Wall-test pasa: lumbar plana, codos extendidos" },
+      "fn_carry_30s":      { "specific": "Cargar medio peso corporal por mano durante 30 segundos",          "measurable": "Farmer carry ½PC × 30 s sin perder postura" },
+      "fn_get_up_floor":   { "specific": "Levantarse del suelo sin usar las manos",                          "measurable": "Levantarse desde piernas cruzadas sin apoyo de manos" }
     }
   },
   "readiness_block": {
