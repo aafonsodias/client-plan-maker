@@ -53,8 +53,6 @@ import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
-import measureWaistImg from "@/assets/measure-waist.png";
-import measureHipImg from "@/assets/measure-hip.png";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
