@@ -471,9 +471,9 @@
     "map": {
       "title": "Mapa de capacidades",
       "subtitle": "Dónde está este cliente en el espectro de capacidades basado en evidencia.",
-      "completion": "{{done}} de {{total}} dominios medidos",
-      "empty_title": "Sin mediciones todavía.",
-      "empty_subtitle": "Añade el primer registro desde el flujo de evaluación (próximamente).",
+      "completion": "{{total}} dominios · {{done}} medidos",
+      "empty_title": "Sin mediciones.",
+      "empty_subtitle": "Comience por la primera evaluación.",
       "tier_health": "Salud",
       "tier_skill": "Habilidad",
       "tier_integrative": "Integrativo",
