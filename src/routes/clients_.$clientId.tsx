@@ -24,7 +24,7 @@ import { parseMeds, serializeMeds, type OtherMed } from "@/lib/meds-format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield, X } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield, X, Users, Gauge } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
