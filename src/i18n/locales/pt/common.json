@@ -524,9 +524,9 @@
     "map": {
       "title": "Mapa de capacidades",
       "subtitle": "Onde está este cliente no espectro de capacidades baseado em evidência.",
-      "completion": "{{done}} de {{total}} domínios medidos",
-      "empty_title": "Sem medições ainda.",
-      "empty_subtitle": "Adicione o primeiro registo a partir do fluxo de avaliação (em breve).",
+      "completion": "{{total}} domínios · {{done}} medidos",
+      "empty_title": "Sem medições.",
+      "empty_subtitle": "Comece pela primeira avaliação.",
       "tier_health": "Saúde",
       "tier_skill": "Competência",
       "tier_integrative": "Integrativo",
