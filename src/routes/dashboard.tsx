@@ -29,6 +29,7 @@ import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
+import { NextActionCard } from "@/components/dashboard/NextActionCard";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
