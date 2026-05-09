@@ -88,7 +88,6 @@ import { Slider } from "@/components/ui/slider";
 import { planStatusInfo } from "@/lib/plan-status";
 import { downloadPlanById } from "@/lib/download-plan";
 import { PipelineStrip } from "@/components/PipelineStrip";
-import { ThisWeekHero } from "@/components/ThisWeekHero";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
@@ -1701,7 +1700,7 @@ function ClientDetail() {
         const scrollToStages = () => {
           document.getElementById("protocol-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
         };
-        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
+        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction | null = null;
         if (!intakeDone && !lastSavedAt) {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
@@ -1764,16 +1763,30 @@ function ClientDetail() {
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
               />
             )}
-            <div className="mt-2 border-t border-border/60">
-              <ThisWeekHero
-                bare
-                key={heroPlan?.id ?? "empty"}
-                plan={heroPlan as any}
-                defaultWeek={heroDefaultWeek}
-                zeroState={zeroState}
-                primaryAction={primaryAction}
-              />
-            </div>
+            {(() => {
+              const stagesDone = [
+                (heroPlanComplete || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80)),
+                !!inlineBrief?.approved || heroPlanComplete,
+                blueprintApprovedLocal,
+                microcycleApprovedLocal,
+                progressionsApprovedLocal,
+              ];
+              const currentIdx = stagesDone.findIndex((d) => !d);
+              const currentStage = currentIdx === -1 ? 5 : currentIdx + 1;
+              const stageLabels = ["Avaliação", "Briefing", "Plano-mestre", "Semana-tipo", "Progressão"];
+              const allDone = currentIdx === -1;
+              return (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Protocolo
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/[0.06] px-3 py-1 text-[11px] font-medium text-amber-300">
+                    <span className="tabular-nums opacity-70">{allDone ? "✓" : `${currentStage}/5`}</span>
+                    <span>{allDone ? "Protocolo completo" : stageLabels[currentStage - 1]}</span>
+                  </span>
+                </div>
+              );
+            })()}
             <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
