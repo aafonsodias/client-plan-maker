@@ -302,6 +302,17 @@ function Dashboard() {
     <div className="space-y-10">
       <OnboardingChecklist />
 
+      <NextActionCard
+        clients={clientRows.map((c) => ({
+          id: c.id,
+          full_name: c.full_name,
+          photo_url: c.photo_url,
+          date_of_birth: c.date_of_birth,
+          intake_status: c.intake_status,
+        }))}
+        onInvite={() => setInviteOpen(true)}
+      />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">
