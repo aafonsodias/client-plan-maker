@@ -106,19 +106,16 @@ function Settings() {
         <p className="mt-2 text-muted-foreground">Idioma, tema e marca para os teus PDFs.</p>
       </div>
 
-      <section className="grid gap-4 rounded-2xl border border-border bg-card p-6 sm:grid-cols-2">
+      <section className="grid gap-6 rounded-2xl border border-border bg-card p-6 sm:grid-cols-2 sm:gap-8">
         <div className="space-y-1.5">
           <Label>Idioma</Label>
           <div><LanguageSwitcher /></div>
           <p className="text-xs text-muted-foreground">Detetado do sistema; podes mudar a qualquer momento.</p>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 sm:border-l sm:border-border/60 sm:pl-8">
           <Label>Tema</Label>
-          <div className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm">
-            <span className="h-3 w-3 rounded-full bg-foreground/80" />
-            Slate (default)
-          </div>
-          <p className="text-xs text-muted-foreground">Mais temas em breve.</p>
+          <div><ThemeToggle /></div>
+          <p className="text-xs text-muted-foreground">Claro, médio ou escuro — aplica-se à app.</p>
         </div>
       </section>
 
