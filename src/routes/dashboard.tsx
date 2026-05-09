@@ -524,16 +524,22 @@ function Dashboard() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              {filteredClients.map((c) => (
-                <ClientPlayerCard
-                  key={c.id}
-                  client={c}
-                  phase={phases[c.id]}
-                  plan={planByClient[c.id] ?? null}
-                  logs={logsByClient[c.id] ?? []}
-                  onDelete={() => void removeClient(c.id)}
-                />
-              ))}
+              {filteredClients.map((c) => {
+                const d = daysUntilBirthday(c.date_of_birth);
+                const isBday = d !== null && d <= 7;
+                const isSubmitted = c.intake_status === "submitted";
+                return (
+                  <ClientPlayerCard
+                    key={c.id}
+                    client={c}
+                    phase={phases[c.id]}
+                    plan={planByClient[c.id] ?? null}
+                    logs={logsByClient[c.id] ?? []}
+                    onDelete={() => void removeClient(c.id)}
+                    flagged={isBday || isSubmitted}
+                  />
+                );
+              })}
             </div>
           </>
         )}
