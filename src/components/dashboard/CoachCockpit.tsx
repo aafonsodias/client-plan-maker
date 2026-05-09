@@ -9,7 +9,7 @@ import { startOfIsoWeek, addDays, fmtWeekRange, packBlockClasses, type Pack, typ
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PriceTag } from "@/components/PriceTag";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
-import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Cake, Coins, AlertCircle, Clock, MessageCircle, Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { MessageComposerSheet, type ComposerKind, type ComposerCtx } from "./MessageComposerSheet";
 
 /**
@@ -275,8 +275,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   return (
     <section className="space-y-4">
-      {/* Today + This week — side by side on desktop, stacked on mobile */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      {/* Today + This week — golden-ratio split on desktop, stacked on mobile */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
       {/* Today / Needs attention */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -328,53 +328,55 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         )}
       </div>
 
-      {/* Hero strip */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card px-5 py-4 sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            {lang === "pt" ? "Esta semana" : "This week"}
-          </p>
-          <p className="text-lg font-light tracking-tight">
-            {fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
-            <span className="ml-3 text-sm text-muted-foreground">
-              · {sessionsCount} {lang === "pt" ? "sessões" : "sessions"}
-            </span>
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="text-left sm:text-right">
-            <div className="flex items-center gap-1.5 sm:justify-end">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {lang === "pt" ? "Receita esperada" : "Expected income"}
-              </p>
+      {/* Hero strip — tonal separation, single horizontal rhythm on desktop */}
+      <div className="rounded-2xl bg-muted/40 px-4 py-3 lg:px-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          {/* Left · week (φ smaller side) */}
+          <div className="min-w-0 sm:flex-[1]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {lang === "pt" ? "Esta semana" : "This week"}
+            </p>
+            <p className="mt-0.5 font-display text-xl font-light tracking-tight text-foreground">
+              {fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
+              <span className="ml-2 font-sans text-sm font-normal text-muted-foreground">
+                · {sessionsCount} {lang === "pt" ? "sessões" : "sessions"}
+              </span>
+            </p>
+          </div>
+          {/* Right · revenue + CTA (φ heavier side, asymmetric) */}
+          <div
+            className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:flex-[1.618] sm:justify-end"
+            title={t("dashboard.revenue_caption")}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {lang === "pt" ? "Receita" : "Revenue"}
+              </span>
               <button
                 type="button"
                 onClick={toggleRevenue}
                 aria-label={revealRevenue ? (lang === "pt" ? "Ocultar valores" : "Hide amounts") : (lang === "pt" ? "Mostrar valores" : "Show amounts")}
-                title={revealRevenue ? (lang === "pt" ? "Ocultar valores" : "Hide amounts") : (lang === "pt" ? "Mostrar valores" : "Show amounts")}
-                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                className="rounded p-0.5 text-muted-foreground transition hover:text-foreground"
               >
                 {revealRevenue ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
               </button>
+              <span className="flex items-center gap-1 font-mono text-base tabular-nums">
+                <Coins className="h-3.5 w-3.5 text-amber-500" />
+                {revealRevenue ? (
+                  <PriceTag eur={expectedIncome} interactive={false} />
+                ) : (
+                  <span className="tracking-widest text-muted-foreground">•••€</span>
+                )}
+              </span>
             </div>
-            <div className="mt-0.5 flex items-center gap-1.5 font-mono text-base sm:justify-end">
-              <Coins className="h-3.5 w-3.5 text-amber-500" />
-              {revealRevenue ? (
-                <PriceTag eur={expectedIncome} interactive={false} />
-              ) : (
-                <span className="tracking-widest text-muted-foreground">•••€</span>
-              )}
-            </div>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
-              · {t("dashboard.revenue_caption")}
-            </p>
+            <Link
+              to="/schedule"
+              className="group inline-flex items-center gap-1 text-xs font-medium text-foreground/80 transition hover:text-foreground"
+            >
+              {lang === "pt" ? "Agenda" : "Schedule"}
+              <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
+            </Link>
           </div>
-          <Link
-            to="/schedule"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-          >
-            <CalendarDays className="h-3.5 w-3.5" /> {lang === "pt" ? "Abrir agenda" : "Open schedule"}
-          </Link>
         </div>
       </div>
       </div>
