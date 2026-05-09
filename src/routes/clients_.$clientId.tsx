@@ -4066,7 +4066,8 @@ function AssessmentSection({
   }
 
   return (
-    <section className="space-y-4 rounded-2xl bg-muted/30 p-4">
+    <section className={isMobile ? "rounded-2xl bg-muted/30" : "space-y-4 rounded-2xl bg-muted/30 p-4"}>
+      {!isMobile && (
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
         <button
@@ -4077,6 +4078,8 @@ function AssessmentSection({
           <ChevronDown className="h-3 w-3" /> {t("detail.section.collapse")}
         </button>
       </div>
+      )}
+      {!isMobile && (
       <div className="flex flex-wrap items-center gap-2 border-b border-border/60 pb-2">
         <button
           type="button"
@@ -4106,7 +4109,8 @@ function AssessmentSection({
           </>
         )}
       </div>
-      {focused && (
+      )}
+      {!isMobile && focused && (
         <div
           className="flex flex-wrap items-center gap-1 pb-2"
           role="tablist"
