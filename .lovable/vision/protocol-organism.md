@@ -29,6 +29,7 @@ These are the constitution of the organism. Any feature, copy, or decision that 
 8. **One concern per round.** Backups before prod SQL. 375px Mobile Safari smoke. All copy via i18n. Every AI call writes `generation_log`. (Project's existing operating rule.)
 9. **AI never generates more than 1 microcycle. AI never prescribes more than 1 mesocycle.** Beyond that, AI may *intend* a macrocycle but not prescribe it. Determinism takes over.
 10. **Simple by default, depth by choice.** Beginner PTs and clients see one clear action. Advanced users can drill into FITT-VP, periodization knobs, multi-block lineage, capacity maps. The progression from simple to advanced happens through user interaction, not modes or toggles.
+11. **Assessment before prescription, no shortcuts.** Every plan flows from completed assessment. Speed comes from clarity at each stage, not from skipping stages. (See §4 — No quick-plans.)
 
 ---
 
@@ -184,6 +185,14 @@ interventions table:
 
 Implementation pending. This decision locks the scope, not the timeline.
 
+### No quick-plans (Round 74, May 2026)
+
+The `/plans/quick` route (5-input fast lane) was deleted. It violated the foundational principle: "assessment before prescription." Protocol exists to give people without resources access to golden-standard assessment + defensible mesocycle prescription + iterative macrocycle building. A 5-input shortcut produces something Protocol's own founder would not buy as a PT.
+
+This decision is enforced in code (route deleted, server functions removed, i18n keys cleaned) and documented at `mem://principles/no-quick-plans.md`.
+
+Implication: the only path to a plan is through the assessment → brief → blueprint → microcycle → progressions pipeline. Onboarding speed comes from making each stage faster and clearer, not from skipping stages.
+
 ---
 
 ## 5. Threads of thought (the founder's pending raciocínios)
@@ -200,8 +209,8 @@ Each thread is something the founder has voiced as part of the vision but is not
 | 6 | Validated exercise library with evidence tiers (DNS, McGill, peer-reviewed yoga, FMS/SFMA) | 🌿 partial | Exercise library exists; evidence-tier tagging does not. | Round to add `evidence_tier` column + provenance per exercise. |
 | 7 | Awareness / meditation / "managing the animal" | ❄️ paused | Captured in domain `cognitive_motor` indirectly; nothing built. | v3 territory. Park. |
 | 8 | App runs from simple-stupid to as advanced as it gets, via user interaction | 🌿 partial | Implicit in current UI (collapsible stages, advanced toggles in cockpit). Not explicit as a design principle. | Make this an invariant principle (above). Audit every surface against it. |
-| 9 | Aesthetic coherence app-wide | 🌿 partial | Landing has editorial-clinical aesthetic. App has refined-minimalist working-tool aesthetic. They're sibling, not identical. | Decision pending: should app slowly absorb landing's editorial language, or stay in working-tool register? See open questions. |
-| 10 | MVP a PT would buy themselves | 🌿 partial | Quick-plan onboarding (R70) attempts this. Capacity Map + assessment loop (R1-3) attempts this. Not yet field-tested with paying customers. | Field test with first 3-5 trainers in Lisbon. Iterate from feedback, not speculation. |
+| 9 | Aesthetic coherence app-wide | 🌿 advancing | Round A foundations landed (May 9). Round B applied to top regions of /clients/$id (May 9). R101/R102 applied 7 principles to /dashboard + CoachCockpit (golden-ratio grid, tonal separation, amber reduced to 3 moments, font-display in headers). Round B.2 pending to complete /clients/$id. | After B.2 lands, Round C replicates to /me, /intake, /log, /plans/$id. |
+| 10 | MVP a PT would buy themselves | 🌿 partial | Capacity Map + assessment loop (R1-3) and aesthetic-coherent dashboard (R101-102) approach this. Quick-plan rejected (R74) as inconsistent with the principle. Not yet field-tested with paying customers. | Field test with first 3-5 trainers in Lisbon. Iterate from feedback, not speculation. |
 | 11 | Verticalized company — info from clients feeds back; everything managed in one place | 🌿 partial | Logbook + check-ins + assessments exist as data ingress. Insights surfaces (`CapacityDeltasCard`, `ComplianceDashboard`) exist as feedback. | Continue via the loop closure work already in motion. |
 | 12 | Holistic plan generator | 🌿 partial | Stage 1 Brief now reads capacity profile. Stage 2/3 do not yet prescribe across all capacities. | Round 4+ once Capacity Map has real data and the founder has tested with real clients. |
 
@@ -240,7 +249,31 @@ The assistant's voice is not louder than the founder's. It is sharper.
 
 ---
 
-## 8. How to update this document
+## 8. Working agreement between founder and AI
+
+The founder is the maximum responsible. He works at his own pace, on his own threads, sometimes ahead of plans the AI proposed. This is correct and expected.
+
+The AI's job is not to gate the founder's progress. The AI's job is:
+
+- **Receive updates after the fact** when the founder iterated solo, integrate them into this document, and adjust upcoming plans accordingly.
+
+- **Surface inconsistencies** when solo work conflicts with invariant principles (§2) or closed decisions (§4) — not to block, but to make the conflict visible.
+
+- **Prepare prompts when asked**, tight enough that Lovable executes in one shot.
+
+- **Conserve credits** by writing prompts that don't waste, and pushing back on dopamine-driven scope creep.
+
+When the founder reports solo work:
+
+- Capture what was done in §4 if it closed a decision, in §5 if it advanced a thread, in §6 if it answered an open question.
+
+- Never relitigate work already shipped unless it broke an invariant.
+
+This document is the spine. The founder writes muscle. The AI maintains skeleton.
+
+---
+
+## 9. How to update this document
 
 When something material changes:
 - A new decision closes → add to §4.
@@ -253,4 +286,4 @@ Update by editing this file directly in a normal commit. Note the round number i
 
 This document is the spine. Keep it true.
 
-— Last updated: 2026-05-09
+— Last updated: 2026-05-10
