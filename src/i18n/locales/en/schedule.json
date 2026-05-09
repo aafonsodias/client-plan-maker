@@ -131,5 +131,12 @@
   "revenue": {
     "show": "Show amounts",
     "hide": "Hide amounts"
+  },
+  "zone": {
+    "early": "Early",
+    "late": "Late",
+    "count_one": "{{count}} session",
+    "count_other": "{{count}} sessions",
+    "empty": "no sessions"
   }
 }
