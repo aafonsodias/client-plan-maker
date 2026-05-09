@@ -3490,7 +3490,7 @@ function ClientDetail() {
                 </>
           )}
           </div>
-          ))}
+          )}
 
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
       {/* "Around the workout" nutrition cue moved to the plan page (view mode) — it belongs next to the workout, not in the client overview. */}
