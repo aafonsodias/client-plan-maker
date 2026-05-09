@@ -471,3 +471,15 @@ Decisões em aberto antes de implementar:
 - Como conviver com o modo "Ver tudo" actual (long-form) — fica como toggle ou desaparece?
 
 Scope estimado: 2-3 rounds (R-A wireframe + slider mechanics em 1 secção como prova; R-B aplicar a todas; R-C aterragem dashboard). Não tocar antes de fechar as decisões acima.
+
+### Round 74 — Cleanup quick-plan (10 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 99 | P0 | Cleanup | Apagada rota `/plans/quick`, server fns `quick-plan.functions.ts` + `quick-plan.server.ts`, chaves i18n `quick_title/sub/cta` (PT+EN) — fecha conflito com `mem://principles/no-quick-plans.md` | R74 ✅ |
+| 100 | meta | Process | Novo contrato de operação (admin do backlog) escrito em `.lovable/plan.md` — confronto com visão antes de implementar, ideias soltas aterram com prioridade, 1 P0 por round | R74 ✅ |
+
+**Próximos candidatos (escolha do utilizador no próximo turno):**
+- Aesthetic pass `/dashboard` → `/plans/$id` → `/me` (tratamento editorial do NextActionCard replicado)
+- Slider de assessment — fechar 6 decisões abertas (linha 461) antes de qualquer código
+- R62 #3/#4/#5 (storyboards vídeo, funnel analytics, revisão nativa ES/HI) — re-priorizar com gatilho concreto
