@@ -114,7 +114,18 @@
     "bf_bia": "Bioimpedance (BIA)",
     "bf_dexa": "DEXA",
     "bf_bodpod": "BodPod",
-    "bf_visual": "Visual estimate"
+    "bf_visual": "Visual",
+    "sex_label": "Sexo biológico",
+    "sex_female": "Femenino",
+    "sex_male": "Masculino",
+    "how_to_measure": "¿Cómo medir?",
+    "measure_height_instructions": "De pie, descalzo, talones juntos, mirando al frente. Inspira.",
+    "measure_waist_instructions": "En el punto más estrecho sobre la cadera, de pie, exhalando.",
+    "measure_hip_instructions": "En el punto más ancho de la cadera, pies juntos.",
+    "measure_chest_instructions": "A la altura de los pezones, de pie, brazos relajados.",
+    "measure_arm_instructions": "Punto medio del bíceps, brazo relajado al costado.",
+    "measure_thigh_instructions": "Punto medio entre cadera y rodilla, de pie, peso equilibrado.",
+    "measure_calf_instructions": "Punto más ancho de la pantorrilla, de pie, peso equilibrado."
   },
   "meds_block": {
     "title": "Medication & supplements",
