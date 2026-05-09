@@ -310,7 +310,6 @@ function Dashboard() {
           date_of_birth: c.date_of_birth,
           intake_status: c.intake_status,
         }))}
-        onInvite={() => setInviteOpen(true)}
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
