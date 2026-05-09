@@ -2818,26 +2818,37 @@ function ClientDetail() {
                         </Link>
                       </Button>
                     );
-                  })() : phasedEnabled ? (
-                    <Button
-                      onClick={() => void runPhasedStart()}
-                      disabled={busy || phasedBusy}
-                      size="lg"
-                      className="w-full sm:w-auto"
-                    >
-                      {phasedBusy ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-2 h-4 w-4" />
-                      )}
-                      {t("generate.button")}
-                    </Button>
-                  ) : (
-                    <Button onClick={() => void generate()} disabled={busy} size="lg" className="w-full sm:w-auto">
-                      {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                      {t("generate.button")}
-                    </Button>
-                  )}
+                  })() : (() => {
+                    const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
+                    const tooltip = assessmentComplete ? undefined : "Termina a avaliação para desbloquear";
+                    return phasedEnabled ? (
+                      <Button
+                        onClick={() => void runPhasedStart()}
+                        disabled={busy || phasedBusy || !assessmentComplete}
+                        size="lg"
+                        className="w-full sm:w-auto"
+                        title={tooltip}
+                      >
+                        {phasedBusy ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        {t("generate.button")}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => void generate()}
+                        disabled={busy || !assessmentComplete}
+                        size="lg"
+                        className="w-full sm:w-auto"
+                        title={tooltip}
+                      >
+                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        {t("generate.button")}
+                      </Button>
+                    );
+                  })()}
                 </div>
               );
             })()}
