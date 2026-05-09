@@ -55,3 +55,4 @@ Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp 
 - [Exercise media production workflow](mem://specs/exercise-media-production-workflow.md) — R75 7-step Plan→Film→Select→Edit→Review→Encode→Attach
 - [Exercise AI visual pipeline](mem://specs/exercise-ai-visual-pipeline.md) — R75 AI/avatar/stickfigure are visual layers, never source of truth
 - [Exercise media implementation plan](mem://audits/exercise-media-implementation-plan.md) — R75 phased rollout; Now = docs+file discipline, Next = Slice 2 identity wiring
+- [NextAction priority](mem://principles/next-action-priority.md) — dashboard card never suggests plan-gen below 100% assessment
