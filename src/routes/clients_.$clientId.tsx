@@ -3569,10 +3569,10 @@ function StatCard({
     : tone === "success" ? "text-accent"
     : "text-foreground";
   return (
-    <div className="rounded-xl border border-border bg-background/40 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-light tracking-tight ${toneClass}`}>{value}</p>
-      {caption && <p className="mt-1 text-xs text-muted-foreground">{caption}</p>}
+    <div className="rounded-xl bg-muted/40 p-3">
+      <p className="eyebrow text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-light tracking-tight tabular-nums ${toneClass}`}>{value}</p>
+      {caption && <p className="body-prose mt-1 text-xs text-muted-foreground">{caption}</p>}
     </div>
   );
 }
