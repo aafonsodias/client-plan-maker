@@ -496,3 +496,13 @@ Scope estimado: 2-3 rounds (R-A wireframe + slider mechanics em 1 secção como 
 | 106 | deferred | clients/$id | BriefEditor asymmetric layout (1:φ) — vive em `src/components/BriefEditor.tsx`, fica para round dedicado (componente separado, deserve own pass) | next |
 | 107 | deferred | clients/$id | Microcopy audit (no "Let's", ellipsis → ".", "Adicionar medição" etc.) + i18n 4 locales + verify-capacity-i18n.ts — separar por tocar muitas keys em 4 ficheiros | next |
 | 108 | deferred | clients/$id | Screenshot canónico em `.lovable/design/round-b-canonical-screenshots/clients-id-full-page.png` + smoke 375px + verificação 3 temas | next |
+
+### Round B (Trust pass) — Decide to wire or delete (hidden assessment fields)
+
+Hidden behind `VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS` per assessment foundational audit (`.lovable/audits/assessment-foundational-2026.md`). No documented downstream consumer in Stage 1 brief, deterministic calcs, or any other code path. Decide in Phase B whether to wire to a real consumer or drop column + i18n keys.
+
+| Field | Captured at | Reason hidden |
+|---|---|---|
+| `nutrition.ext_processed_food_freq` | §9 Nutrition (clients_.$clientId.tsx) | No documented downstream consumer per audit |
+| `nutrition.ext_water_l_per_day` | §9 Nutrition (clients_.$clientId.tsx) | No documented downstream consumer per audit |
+| `posture.standing_posture_notes` | §11 Posture (clients_.$clientId.tsx) | No documented downstream consumer per audit |
