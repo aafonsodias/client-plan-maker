@@ -167,21 +167,22 @@
   },
   "goal_block": {
     "title": "Primary goal (SMART)",
-    "hint": "Specific · Measurable · Achievable · Relevant · Time-bound.",
+    "hint": "Measurable commitment to work over a time window.",
     "complete": "✓ Goal logged: {{text}}",
-    "specific": "Specific outcome",
-    "specific_placeholder": "e.g. Squat 1.5×BW for 5 reps",
-    "specific_hint": "What concrete result?",
-    "measurable": "Measurable target",
-    "measurable_placeholder": "e.g. 120kg @ BW80kg",
-    "measurable_hint": "Number you'll measure.",
-    "deadline": "Deadline",
-    "deadline_hint": "Realistic completion date.",
+    "specific": "Work focus",
+    "specific_placeholder": "e.g. squat strength, technique and progress",
+    "specific_hint": "What we'll specifically work on.",
+    "measurable": "How we measure progress",
+    "measurable_placeholder": "e.g. 1RM/5RM on the squat; measure every 4 weeks",
+    "measurable_hint": "Metric + frequency. Exploratory target, adjusted by real data.",
+    "deadline": "Working window",
+    "deadline_hint": "When we reassess progress. Not a finish line.",
     "context": "Goal context (optional)"
   },
   "goals": {
-    "category_label": "Category",
-    "fill_manual": "Or fill in manually",
+    "category_label": "Capacity category",
+    "fill_manual": "Or fill the fields manually",
+    "empty": "Pick a category to see common work focuses",
     "confirm_overwrite": "You've customised the fields. Replace with the template?",
     "confirm_replace": "Replace",
     "confirm_keep": "Keep",
@@ -201,7 +202,7 @@
       "6m": "6 mo",
       "1y": "1 yr",
       "custom": "Specific date",
-      "resolved": "→ {{date}}"
+      "resolved": "→ reassess by {{date}}"
     },
     "tpl": {
       "str_squat_15bw_5":  { "specific": "Build squat strength over 16 weeks, measure progress",            "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1.5×BW × 5 reps" },
