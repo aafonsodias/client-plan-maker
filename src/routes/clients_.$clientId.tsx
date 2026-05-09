@@ -78,6 +78,7 @@ import { BlueprintEditorPanel } from "@/components/BlueprintEditorPanel";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { PaywallDialog } from "@/components/PaywallDialog";
 import { useClientPhases } from "@/hooks/use-client-phases";
+import { isRequiredComplete } from "@/lib/client-phase";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
@@ -1711,8 +1712,12 @@ function ClientDetail() {
         }
         return (
           <>
-          <CapacityMap clientId={clientId} clientName={client?.full_name} />
-          <ReassessmentReminders clientId={clientId} />
+          {isRequiredComplete({ ...assessment, height_cm: assessment?.height_cm ?? client?.height_cm, weight_kg: assessment?.weight_kg ?? client?.weight_kg }) && (
+            <>
+              <CapacityMap clientId={clientId} clientName={client?.full_name} />
+              <ReassessmentReminders clientId={clientId} />
+            </>
+          )}
           <section
             aria-label="Protocolo"
             className={[
