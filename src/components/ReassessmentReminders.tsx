@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { getClientReassessmentReminders } from "@/server/capacity.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 type Reminder = {
@@ -39,11 +40,27 @@ export function ReassessmentReminders({ clientId }: { clientId: string }) {
 
   useEffect(() => {
     void refresh();
-    const onSaved = () => void refresh();
-    window.addEventListener("capacity-snapshot-added", onSaved as EventListener);
-    return () =>
-      window.removeEventListener("capacity-snapshot-added", onSaved as EventListener);
   }, [refresh]);
+
+  // Refresh when snapshots change OR cadence overrides change.
+  useEffect(() => {
+    const ch = supabase
+      .channel(`reassessment-reminders-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_capacity_snapshots", filter: `client_id=eq.${clientId}` },
+        () => void refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_measurement_cadence", filter: `client_id=eq.${clientId}` },
+        () => void refresh(),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [clientId, refresh]);
 
   if (!loaded || reminders.length === 0) return null;
 
