@@ -199,7 +199,7 @@ export function CapacityMap({
         {/* Header (mobile position; on lg moves to the right column via order) */}
         <div className="mb-3 flex items-start justify-between gap-2 lg:hidden">
           <div className="min-w-0">
-            <h3 className="h-3 text-foreground">{t("capacity.map.title")}</h3>
+            <h3 className="t-3 text-foreground">{t("capacity.map.title")}</h3>
             <p className="body-prose mt-0.5 text-[var(--text-2)] text-sm">{t("capacity.map.subtitle")}</p>
           </div>
           <button
@@ -424,7 +424,7 @@ export function CapacityMap({
         <div className="hidden lg:flex lg:flex-col lg:gap-5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h2 className="h-2 text-foreground">{t("capacity.map.title")}</h2>
+              <h2 className="t-2 text-foreground">{t("capacity.map.title")}</h2>
               <p className="body-prose mt-2 text-[var(--text-2)]">{t("capacity.map.subtitle")}</p>
             </div>
             <button
