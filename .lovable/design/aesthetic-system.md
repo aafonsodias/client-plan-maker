@@ -31,10 +31,10 @@ The app speaks like an instrument manual. Concise, factual, no marketing tone. N
 
 | Context | Class | Family | Size |
 |---|---|---|---|
-| Page title | `h-1` | Fraunces | --text-4xl-v2 |
-| Section header | `h-2` | Fraunces | --text-3xl-v2 |
-| Card title | `h-3` | Inter Tight | --text-xl-v2 |
-| Sub-card title | `h-4` | Inter Tight | --text-lg-v2 |
+| Page title | `t-1` | Fraunces | --text-4xl-v2 |
+| Section header | `t-2` | Fraunces | --text-3xl-v2 |
+| Card title | `t-3` | Inter Tight | --text-xl-v2 |
+| Sub-card title | `t-4` | Inter Tight | --text-lg-v2 |
 | Eyebrow | `eyebrow` | Inter Tight (small caps) | --text-2xs-v2 |
 | Body data | `body-data` | Inter Tight (tabular nums) | --text-base-v2 |
 | Body prose | `body-prose` | Inter Tight | --text-base-v2 |
@@ -50,7 +50,7 @@ The app speaks like an instrument manual. Concise, factual, no marketing tone. N
 
 ## What Round B will change (in /clients/$id)
 
-- Apply `h-1`, `h-2`, etc. to existing headers
+- Apply `t-1`, `t-2`, etc. to existing headers
 - Reduce amber usage to 2-3 moments per page
 - Replace borders with tonal background shifts where appropriate
 - Introduce asymmetric layout in 2-3 large panels
@@ -60,5 +60,12 @@ The app speaks like an instrument manual. Concise, factual, no marketing tone. N
 
 - Type scale variables are suffixed `-v2` (e.g. `--text-4xl-v2`) to coexist with the legacy `--text-*` tokens already consumed by Tailwind utilities. Round B may consolidate.
 - Font family canonical names: `--font-display-v2` (Fraunces) and `--font-body` (Inter Tight). Legacy `--font-display` / `--font-grotesk` aliases remain wired until Round B migration.
+
+## Naming note (Round B fix)
+
+Original Round A used `.h-1`–`.h-4`. These collided with Tailwind's
+`h-N` height utilities (e.g. `h-2 = height: 0.5rem`), collapsing real
+titles to 8px-tall flex children. Round B renamed them to `.t-1`–`.t-4`
+(`t` for "type"). Same scale, same intent, no collision.
 
 — Last updated: 2026-05-09

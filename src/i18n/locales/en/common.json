@@ -524,9 +524,9 @@
     "map": {
       "title": "Capacity Map",
       "subtitle": "Where this client is across the evidence-based capacity spectrum.",
-      "completion": "{{done}} of {{total}} domains measured",
-      "empty_title": "No measurements yet.",
-      "empty_subtitle": "Add the first snapshot from the assessment flow (coming next).",
+      "completion": "{{total}} domains · {{done}} measured",
+      "empty_title": "No measurements.",
+      "empty_subtitle": "Begin with the first assessment.",
       "tier_health": "Health-related",
       "tier_skill": "Skill-related",
       "tier_integrative": "Integrative",

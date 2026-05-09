@@ -17,7 +17,6 @@ import { getClientCapacityMap } from "@/server/capacity.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
 import { AddSnapshotSheet } from "@/components/AddSnapshotSheet";
 
 type Snapshot = {
@@ -164,7 +163,7 @@ export function CapacityMap({
 
   if (loading) {
     return (
-      <section className="mb-3 rounded-2xl border border-border bg-card/60 p-4">
+      <section className="mb-3 rounded-2xl bg-[var(--surface)] p-4 sm:p-5">
         <Skeleton className="h-5 w-40 mb-2" />
         <Skeleton className="h-3 w-64 mb-4" />
         <Skeleton className="aspect-square w-full max-w-[360px] mx-auto" />
@@ -186,7 +185,7 @@ export function CapacityMap({
   return (
     <section
       aria-label={t("capacity.map.title")}
-      className="mb-3 rounded-2xl border border-border bg-card/60 p-3 sm:p-4"
+      className="mb-3 rounded-2xl bg-[var(--surface)] p-4 sm:p-5"
     >
       {/*
         Layout:
@@ -194,19 +193,20 @@ export function CapacityMap({
         - ≥lg: two columns — radar left (fixed 360), header/legend/completion
           right. Kills the huge empty gutters on desktop.
       */}
-      <div className="lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-6">
+      {/* Asymmetric on desktop: radar 38%, side panel 62% (golden ratio inverted —
+          radar is fixed-width, side panel takes the breathing room). */}
+      <div className="lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-8">
         {/* Header (mobile position; on lg moves to the right column via order) */}
         <div className="mb-3 flex items-start justify-between gap-2 lg:hidden">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
-            <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+            <h3 className="t-3 text-foreground">{t("capacity.map.title")}</h3>
+            <p className="body-prose mt-0.5 text-[var(--text-2)] text-sm">{t("capacity.map.subtitle")}</p>
           </div>
           <button
             type="button"
             onClick={openAdd}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            className="label-caps inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--surface-2)] px-3 py-1.5 text-foreground hover:bg-[var(--surface-3)]"
           >
-            <Plus className="h-3.5 w-3.5" />
             {t("capacity.map.add_button")}
           </button>
         </div>
@@ -219,15 +219,15 @@ export function CapacityMap({
             <TierPill tier="integrative" label={t("capacity.map.tier_integrative")} />
           </div>
           <div className="min-w-[140px] flex-1 sm:flex-none">
-            <p className="mb-1 text-[11px] text-muted-foreground">
+            <p className="body-data mb-1 text-[11px] text-[var(--text-2)]">
               {t("capacity.map.completion", { done: measuredCount, total })}
             </p>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-3)]">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(measuredCount / total) * 100}%`,
-                  background: "var(--accent)",
+                  background: "var(--text-2)",
                 }}
               />
             </div>
@@ -421,18 +421,17 @@ export function CapacityMap({
         </div>
 
         {/* Desktop side panel — header, add button, legend, completion */}
-        <div className="hidden lg:flex lg:flex-col lg:gap-4">
+        <div className="hidden lg:flex lg:flex-col lg:gap-5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
-              <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+              <h2 className="t-2 text-foreground">{t("capacity.map.title")}</h2>
+              <p className="body-prose mt-2 text-[var(--text-2)]">{t("capacity.map.subtitle")}</p>
             </div>
             <button
               type="button"
               onClick={openAdd}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+              className="label-caps inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-foreground hover:bg-[var(--surface-3)]"
             >
-              <Plus className="h-3.5 w-3.5" />
               {t("capacity.map.add_button")}
             </button>
           </div>
@@ -442,15 +441,15 @@ export function CapacityMap({
             <TierPill tier="integrative" label={t("capacity.map.tier_integrative")} />
           </div>
           <div>
-            <p className="mb-1 text-[11px] text-muted-foreground">
+            <p className="body-data mb-1.5 text-xs text-[var(--text-2)]">
               {t("capacity.map.completion", { done: measuredCount, total })}
             </p>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--surface-3)]">
               <div
                 className="h-full rounded-full transition-all"
                 style={{
                   width: `${(measuredCount / total) * 100}%`,
-                  background: "var(--accent)",
+                  background: "var(--text-2)",
                 }}
               />
             </div>

@@ -1537,10 +1537,10 @@ function ClientDetail() {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-light tracking-tight break-words min-w-0">{client?.full_name}</h1>
+              <h1 className="t-1 break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
             </div>
-            <p className="text-sm text-muted-foreground break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
+            <p className="body-prose mt-1 text-sm text-[var(--text-2)] break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
           </div>
           {/* Single icon-only overflow menu for every secondary action.
               R68 — header trim for mobile. */}
@@ -1708,10 +1708,10 @@ function ClientDetail() {
           <section
             aria-label="Protocolo"
             className={[
-              "mb-3 overflow-hidden rounded-2xl border p-3",
+              "mb-3 overflow-hidden rounded-2xl p-4 sm:p-5",
               heroPlan
-                ? "border-amber-500/30 bg-gradient-to-br from-amber-500/[0.06] via-card to-card shadow-[0_8px_32px_-12px_rgba(245,158,11,0.18)]"
-                : "border-border bg-card/60",
+                ? "bg-[var(--surface-2)]"
+                : "bg-[var(--surface)]",
             ].join(" ")}
           >
             <ProtocolRail
