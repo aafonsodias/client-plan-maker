@@ -4640,15 +4640,43 @@ function TextField({ label, value, onChange, className = "", hint }: { label: st
   );
 }
 
-function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  value,
+  onChange,
+  icon,
+  description,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  icon?: React.ReactNode;
+  description?: string;
+}) {
+  const hasMeta = Boolean(icon || description);
   return (
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs transition ${value ? "border-accent bg-accent/10 text-foreground" : "border-border bg-background hover:bg-secondary"}`}
+      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-xs transition ${value ? "border-accent bg-accent/10 text-foreground" : "border-border bg-background hover:bg-secondary"}`}
     >
-      <span>{label}</span>
-      <span className={`ml-2 inline-flex h-4 w-7 items-center rounded-full transition ${value ? "bg-accent" : "bg-secondary"}`}>
+      {icon ? (
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition ${value ? "bg-accent/20 text-accent-foreground" : "bg-secondary/60 text-muted-foreground"}`}
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate font-medium leading-tight ${hasMeta ? "" : "text-xs"}`}>{label}</span>
+        {description ? (
+          <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">
+            {description}
+          </span>
+        ) : null}
+      </span>
+      <span className={`ml-1 inline-flex h-4 w-7 shrink-0 items-center rounded-full transition ${value ? "bg-accent" : "bg-secondary"}`}>
         <span className={`block h-3 w-3 rounded-full bg-background shadow transition ${value ? "translate-x-3.5" : "translate-x-0.5"}`} />
       </span>
     </button>
