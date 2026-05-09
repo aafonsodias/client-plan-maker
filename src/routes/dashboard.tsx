@@ -53,6 +53,7 @@ type ClientRow = {
   intake_token: string | null;
   intake_submitted_at: string | null;
   created_at: string;
+  assessment_completion: number;
 };
 
 function Dashboard() {
@@ -89,7 +90,7 @@ function Dashboard() {
     const [{ data: cRows }, { data: r }, { data: allPlans }] = await Promise.all([
       supabase
         .from("clients")
-        .select("id, full_name, email, phone, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at")
+        .select("id, full_name, email, phone, date_of_birth, photo_url, intake_status, intake_token, intake_submitted_at, created_at, assessment_completion")
         .order("created_at", { ascending: false }),
       supabase
         .from("workout_plans")
@@ -309,7 +310,10 @@ function Dashboard() {
           photo_url: c.photo_url,
           date_of_birth: c.date_of_birth,
           intake_status: c.intake_status,
+          assessment_completion: c.assessment_completion ?? 0,
+          has_plan: Boolean(planByClient[c.id]),
         }))}
+        onInvite={() => setInviteOpen(true)}
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
