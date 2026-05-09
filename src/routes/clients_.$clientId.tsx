@@ -4146,7 +4146,8 @@ function AssessmentSection({
     if (saveStatus === "saving") return t("save.saving");
     if (saveStatus === "offline") return t("save.offline");
     if (saveStatus === "saved" && lastSavedAt) {
-      const diff = Math.max(1, Math.round((Date.now() - lastSavedAt) / 1000));
+      const diff = Math.max(0, Math.round((Date.now() - lastSavedAt) / 1000));
+      if (diff < 10) return t("save.saved_recent");
       if (diff < 60) return t("save.saved", { when: t("rel_time.seconds_ago", { s: diff }) });
       const m = Math.round(diff / 60);
       if (m < 60) return t("save.saved", { when: t("rel_time.minutes_ago", { m }) });
@@ -4904,10 +4905,15 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
     );
   }
   if (status === "saved" || lastSavedAt) {
+    const diff = lastSavedAt ? Math.max(0, Math.round((Date.now() - lastSavedAt) / 1000)) : null;
+    const label =
+      diff !== null && diff < 10
+        ? t("save.saved_recent")
+        : t("save.saved", { when: formatRel(lastSavedAt) });
     return (
       <span className={`${base} text-muted-foreground/70`}>
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-        {t("save.saved", { when: formatRel(lastSavedAt) })}
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
+        {label}
       </span>
     );
   }
