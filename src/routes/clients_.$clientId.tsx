@@ -1539,6 +1539,9 @@ function ClientDetail() {
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
 
+  const headerPhases = useClientPhases([client.id]);
+  const clientPhase = headerPhases[client.id];
+
   const expLabelById: Record<string, string> = {
     beginner: t("training_block.beginner"),
     intermediate: t("training_block.intermediate"),
