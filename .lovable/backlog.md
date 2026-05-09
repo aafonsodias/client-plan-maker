@@ -479,6 +479,7 @@ Scope estimado: 2-3 rounds (R-A wireframe + slider mechanics em 1 secção como 
 | 99 | P0 | Cleanup | Apagada rota `/plans/quick`, server fns `quick-plan.functions.ts` + `quick-plan.server.ts`, chaves i18n `quick_title/sub/cta` (PT+EN) — fecha conflito com `mem://principles/no-quick-plans.md` | R74 ✅ |
 | 100 | meta | Process | Novo contrato de operação (admin do backlog) escrito em `.lovable/plan.md` — confronto com visão antes de implementar, ideias soltas aterram com prioridade, 1 P0 por round | R74 ✅ |
 | 101 | P1 | Dashboard | Hero "Esta semana" reescrito com aesthetic system: grelha 1:φ (1.618), separação tonal (`bg-muted/40`, sem borda), Fraunces no intervalo da semana, copy editorial ("Receita" + "Agenda →"), caption movida para `title=` (sem perder função) | R74 ✅ |
+| 102 | P1 | Dashboard | Aesthetic pass aplicada ao resto da página: título h1 em Fraunces, cartões Today/MiniWeek/Nudges/Attention em separação tonal (sem borda+card), eyebrows com tracking 0.18em, amber reduzido a 3 momentos (NextActionCard bar, Coins, Today header) — lista de clientes mantém borda por densidade | R74 ✅ |
 
 **Próximos candidatos (escolha do utilizador no próximo turno):**
 - Aesthetic pass `/dashboard` → `/plans/$id` → `/me` (tratamento editorial do NextActionCard replicado)
