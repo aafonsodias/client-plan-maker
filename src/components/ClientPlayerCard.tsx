@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ChevronDown, Inbox, ClipboardList, Sparkles, Cake, ArrowRight } from "lucide-react";
+import { Trash2, Inbox, ClipboardList, Sparkles, Cake, ArrowRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -14,7 +14,6 @@ import { toneDot } from "@/lib/status-tone";
 import {
   CardPlan, CardLog, planFocus, currentWeek, daysSinceLog, formatRelativeDays,
 } from "@/lib/client-card-data";
-import { ClientCockpit } from "@/components/ClientCockpit";
 import { clientNextAction } from "@/lib/client-next-action";
 
 type Props = {
@@ -37,7 +36,6 @@ type Props = {
 export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged = false }: Props) {
   const { t, i18n } = useTranslation("common");
   const lang = i18n.language === "pt" ? "pt" : "en";
-  const [open, setOpen] = useState(false);
   const [signals, setSignals] = useState<{ risk: string | null; readiness: number | null }>({ risk: null, readiness: null });
 
   // Tiny lightweight fetch for the inline ACSM/Recovery chips. Single row, cheap.
@@ -71,6 +69,19 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
   const block = plan?.block_number ?? null;
   const lastLog = logs.length > 0 ? logs[0] : null;
   const days = daysSinceLog(lastLog);
+
+  // Coarse protocol-stage hint inferred from data we already have on the card
+  // (no extra fetches). Honest about limits: we can pinpoint stage 1, 2, and 5
+  // exactly; anything in between collapses to "em produção".
+  const assessmentPct = client.assessment_completion ?? 0;
+  const protocolStage: { n: number | null; label: string; tone: "muted" | "amber" | "emerald" } =
+    plan?.generation_status === "complete"
+      ? { n: 5, label: "Pronto", tone: "emerald" }
+      : plan
+        ? { n: null, label: "Em produção", tone: "amber" }
+        : assessmentPct >= 80
+          ? { n: 2, label: "Briefing", tone: "amber" }
+          : { n: 1, label: "Avaliação", tone: "muted" };
 
   const nextAction = clientNextAction({
     id: client.id,
@@ -130,10 +141,9 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
       }`}
     >
       <div className="flex items-stretch hover:bg-muted/60">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
+      <Link
+        to="/clients/$clientId"
+        params={{ clientId: client.id }}
         className="flex flex-1 items-center gap-3 px-3 py-3 text-left sm:gap-4 sm:px-5 sm:py-4"
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
@@ -201,9 +211,22 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
             <p className="truncate text-xs text-muted-foreground">{client.email ?? t("clients.no_email")}</p>
           )}
         </div>
-        <ChevronDown className={`ml-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {nextAction && !open && (
+        <span
+          className={[
+            "ml-2 hidden shrink-0 self-center items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums sm:inline-flex",
+            protocolStage.tone === "emerald"
+              ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
+              : protocolStage.tone === "amber"
+                ? "border-amber-500/25 bg-amber-500/[0.06] text-amber-300"
+                : "border-border bg-background text-muted-foreground",
+          ].join(" ")}
+          title={`Protocolo · ${protocolStage.label}`}
+        >
+          {protocolStage.n != null && <span className="opacity-70">{protocolStage.n}/5</span>}
+          <span>{protocolStage.label}</span>
+        </span>
+      </Link>
+      {nextAction && (
         nextAction.target.type === "client" ? (
           <Link
             to="/clients/$clientId"
@@ -251,7 +274,6 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         </AlertDialogContent>
       </AlertDialog>
       </div>
-      {open && <ClientCockpit clientId={client.id} plan={plan} logs={logs} />}
     </div>
   );
 }
