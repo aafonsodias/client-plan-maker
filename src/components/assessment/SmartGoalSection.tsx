@@ -205,6 +205,7 @@ export function SmartGoalSection({
               onChange={(e) => onChange({ ...value, smart_specific: e.target.value })}
               placeholder={t("goal_block.specific_placeholder") as string}
             />
+            <p className="body-prose text-[10px] text-muted-foreground">{t("goal_block.specific_hint")}</p>
           </div>
           <div className="space-y-1">
             <Label className="label-caps text-[10px] text-muted-foreground">{t("goal_block.measurable")}</Label>
@@ -215,11 +216,13 @@ export function SmartGoalSection({
               onChange={(e) => onChange({ ...value, smart_measurable: e.target.value })}
               placeholder={t("goal_block.measurable_placeholder") as string}
             />
+            <p className="body-prose text-[10px] text-muted-foreground">{t("goal_block.measurable_hint")}</p>
           </div>
 
           {/* Deadline as duration chips */}
           <div className="space-y-1.5">
             <Label className="label-caps text-[10px] text-muted-foreground">{t("goal_block.deadline")}</Label>
+            <p className="body-prose text-[10px] text-muted-foreground">{t("goal_block.deadline_hint")}</p>
             <div className="flex flex-wrap gap-1.5">
               {DURATION_PRESETS.map((p) => {
                 const selected = durationMode === p.id;

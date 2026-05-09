@@ -142,22 +142,23 @@
     "flag_anticoag": "Anticoagulant"
   },
   "goal_block": {
-    "title": "Primary goal (SMART)",
-    "hint": "Specific · Measurable · Achievable · Relevant · Time-bound.",
+    "title": "Objetivo principal (SMART)",
+    "hint": "Compromiso de trabajo medible durante una ventana de tiempo.",
     "complete": "✓ Goal logged: {{text}}",
-    "specific": "Specific outcome",
-    "specific_placeholder": "e.g. Squat 1.5×BW for 5 reps",
-    "specific_hint": "What concrete result?",
-    "measurable": "Measurable target",
-    "measurable_placeholder": "e.g. 120kg @ BW80kg",
-    "measurable_hint": "Number you'll measure.",
-    "deadline": "Deadline",
-    "deadline_hint": "Realistic completion date.",
+    "specific": "Foco del trabajo",
+    "specific_placeholder": "p.ej. fuerza de sentadilla, técnica y progreso",
+    "specific_hint": "Lo que vamos a trabajar específicamente.",
+    "measurable": "Cómo medimos progreso",
+    "measurable_placeholder": "p.ej. 1RM/5RM en sentadilla; medir cada 4 semanas",
+    "measurable_hint": "Métrica + frecuencia. Meta exploratoria, ajustada por datos reales.",
+    "deadline": "Ventana de trabajo",
+    "deadline_hint": "Cuándo reevaluamos el progreso. No es punto de llegada.",
     "context": "Goal context (optional)"
   },
   "goals": {
-    "category_label": "Categoría",
-    "fill_manual": "O rellenar manualmente",
+    "category_label": "Categoría de capacidad",
+    "fill_manual": "O rellenar los campos manualmente",
+    "empty": "Elige una categoría para ver focos de trabajo comunes",
     "confirm_overwrite": "Has personalizado los campos. ¿Reemplazar con la plantilla?",
     "confirm_replace": "Reemplazar",
     "confirm_keep": "Mantener",
@@ -177,7 +178,7 @@
       "6m": "6 meses",
       "1y": "1 año",
       "custom": "Fecha específica",
-      "resolved": "→ {{date}}"
+      "resolved": "→ reevaluar el {{date}}"
     },
     "tpl": {
       "str_squat_15bw_5":  { "specific": "Trabajar fuerza de sentadilla durante 16 semanas, medir progreso", "measurable": "Seguir 1RM/5RM en sentadilla; meta exploratoria: 1,5×PC × 5 reps" },

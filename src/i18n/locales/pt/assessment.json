@@ -170,21 +170,22 @@
   },
   "goal_block": {
     "title": "Objetivo principal (SMART)",
-    "hint": "Específico · Mensurável · Atingível · Relevante · Temporal.",
+    "hint": "Compromisso de trabalho mensurável durante uma janela de tempo.",
     "complete": "✓ Objetivo registado: {{text}}",
-    "specific": "Resultado específico",
-    "specific_placeholder": "ex.: agachar 1,5×PC para 5 reps",
-    "specific_hint": "Que resultado concreto?",
-    "measurable": "Alvo mensurável",
-    "measurable_placeholder": "ex.: 120kg @ PC80kg",
-    "measurable_hint": "Número que vais medir.",
-    "deadline": "Prazo",
-    "deadline_hint": "Data realista para concluir.",
+    "specific": "Foco do trabalho",
+    "specific_placeholder": "ex.: força de agachamento, técnica e progresso",
+    "specific_hint": "O que vamos trabalhar especificamente.",
+    "measurable": "Como medimos progresso",
+    "measurable_placeholder": "ex.: 1RM/5RM no agachamento; medir a cada 4 semanas",
+    "measurable_hint": "Métrica + frequência. Meta exploratória, ajustada por dados reais.",
+    "deadline": "Janela de trabalho",
+    "deadline_hint": "Quando reavaliamos progresso. Não é ponto de chegada.",
     "context": "Contexto do objetivo (opcional)"
   },
   "goals": {
-    "category_label": "Categoria",
-    "fill_manual": "Ou preencher manualmente",
+    "category_label": "Categoria de capacidade",
+    "fill_manual": "Ou preencher os campos manualmente",
+    "empty": "Escolhe uma categoria para ver focos de trabalho comuns",
     "confirm_overwrite": "Já personalizou os campos. Substituir pelo modelo?",
     "confirm_replace": "Substituir",
     "confirm_keep": "Manter",
@@ -204,7 +205,7 @@
       "6m": "6 meses",
       "1y": "1 ano",
       "custom": "Data específica",
-      "resolved": "→ {{date}}"
+      "resolved": "→ reavaliar a {{date}}"
     },
     "tpl": {
       "str_squat_15bw_5":  { "specific": "Trabalhar força de agachamento durante 16 semanas, medir progresso", "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1,5×PC × 5 reps" },

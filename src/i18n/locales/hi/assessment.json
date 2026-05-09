@@ -137,22 +137,23 @@
     "flag_anticoag": "Anticoagulant"
   },
   "goal_block": {
-    "title": "Primary goal (SMART)",
-    "hint": "Specific · Measurable · Achievable · Relevant · Time-bound.",
+    "title": "मुख्य लक्ष्य (SMART)",
+    "hint": "एक समय-खिड़की के दौरान काम करने की मापने योग्य प्रतिबद्धता।",
     "complete": "✓ Goal logged: {{text}}",
-    "specific": "Specific outcome",
-    "specific_placeholder": "e.g. Squat 1.5×BW for 5 reps",
-    "specific_hint": "What concrete result?",
-    "measurable": "Measurable target",
-    "measurable_placeholder": "e.g. 120kg @ BW80kg",
-    "measurable_hint": "Number you'll measure.",
-    "deadline": "Deadline",
-    "deadline_hint": "Realistic completion date.",
+    "specific": "कार्य का फोकस",
+    "specific_placeholder": "उदा. स्क्वाट की ताकत, तकनीक और प्रगति",
+    "specific_hint": "हम विशेष रूप से किस पर काम करेंगे।",
+    "measurable": "हम प्रगति कैसे मापते हैं",
+    "measurable_placeholder": "उदा. स्क्वाट पर 1RM/5RM; हर 4 हफ्तों में मापें",
+    "measurable_hint": "मापदंड + आवृत्ति। खोजी लक्ष्य, असली डेटा से समायोजित।",
+    "deadline": "कार्य की खिड़की",
+    "deadline_hint": "जब हम प्रगति का पुनर्मूल्यांकन करते हैं। यह अंतिम रेखा नहीं है।",
     "context": "Goal context (optional)"
   },
   "goals": {
-    "category_label": "श्रेणी",
-    "fill_manual": "या मैन्युअल रूप से भरें",
+    "category_label": "क्षमता श्रेणी",
+    "fill_manual": "या फ़ील्ड मैन्युअल रूप से भरें",
+    "empty": "सामान्य कार्य फोकस देखने के लिए एक श्रेणी चुनें",
     "confirm_overwrite": "आपने फ़ील्ड बदले हैं। टेम्पलेट से बदलें?",
     "confirm_replace": "बदलें",
     "confirm_keep": "रखें",
@@ -172,7 +173,7 @@
       "6m": "6 महीने",
       "1y": "1 वर्ष",
       "custom": "विशिष्ट तिथि",
-      "resolved": "→ {{date}}"
+      "resolved": "→ {{date}} को पुनर्मूल्यांकन करें"
     },
     "tpl": {
       "str_squat_15bw_5":  { "specific": "16 हफ्तों तक स्क्वाट की ताकत पर काम करें, प्रगति मापें",          "measurable": "स्क्वाट पर 1RM/5RM ट्रैक करें; खोजी लक्ष्य: 1.5×BW × 5 रेप्स" },
