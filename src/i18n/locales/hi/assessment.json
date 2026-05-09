@@ -10,7 +10,8 @@
   "save": {
     "saving": "Saving…",
     "offline": "Offline — saved locally",
-    "saved": "Saved · {{when}}"
+    "saved": "Saved · {{when}}",
+    "saved_recent": "Saved"
   },
   "rel_time": {
     "just_now": "just now",
@@ -147,35 +148,46 @@
     "measurable_hint": "Number you'll measure.",
     "deadline": "Deadline",
     "deadline_hint": "Realistic completion date.",
-    "context": "Goal context (optional)",
-    "templates_label": "Suggestions",
-    "templates_placeholder": "Pick a template…",
-    "templates_hint": "Fills the three fields. Tweak numbers afterwards.",
-    "categories": {
-      "strength": "Strength",
-      "hypertrophy": "Hypertrophy",
-      "body_comp": "Body composition",
-      "endurance": "Endurance",
-      "mobility": "Mobility",
-      "skill": "Skill",
-      "health": "Health"
+    "context": "Goal context (optional)"
+  },
+  "goals": {
+    "category_label": "श्रेणी",
+    "fill_manual": "या मैन्युअल रूप से भरें",
+    "confirm_overwrite": "आपने फ़ील्ड बदले हैं। टेम्पलेट से बदलें?",
+    "confirm_replace": "बदलें",
+    "confirm_keep": "रखें",
+    "cat": {
+      "strength": "शक्ति",
+      "hypertrophy": "हाइपरट्रॉफी",
+      "composition": "संरचना",
+      "endurance": "सहनशक्ति",
+      "mobility": "गतिशीलता",
+      "function": "कार्य"
     },
-    "templates": {
-      "strength_squat_bw":     { "label": "Squat 1.5×BW for 5 reps",       "specific": "Back-squat 1.5× bodyweight for 5 clean reps",                "measurable": "e.g. 120 kg @ BW 80 kg" },
-      "strength_bench_bw":     { "label": "Bench bodyweight for 5 reps",   "specific": "Bench press bodyweight for 5 clean reps",                    "measurable": "e.g. 80 kg @ BW 80 kg" },
-      "strength_deadlift_2bw": { "label": "Deadlift 2×BW for 3 reps",      "specific": "Conventional deadlift 2× bodyweight for 3 reps",             "measurable": "e.g. 160 kg @ BW 80 kg" },
-      "hypertrophy_arms":      { "label": "+3 cm arm circumference",       "specific": "Add 3 cm to relaxed upper-arm circumference",                "measurable": "from 36 → 39 cm (avg L/R)" },
-      "hypertrophy_legs":      { "label": "+4 cm thigh circumference",     "specific": "Add 4 cm to mid-thigh circumference",                        "measurable": "from 55 → 59 cm (avg L/R)" },
-      "body_comp_lose_fat":    { "label": "Lose 5 kg fat, keep LBM",       "specific": "Drop 5 kg of fat mass while preserving lean body mass",      "measurable": "from 22% → 17% body fat (same method)" },
-      "body_comp_recomp":      { "label": "Recomp: −3% BF, +2 kg LBM",     "specific": "Lower body-fat % and add lean body mass simultaneously",     "measurable": "−3% BF and +2 kg LBM (DEXA or BIA)" },
-      "endurance_5k":          { "label": "5 km under 25:00",              "specific": "Run a continuous 5 km in under 25 minutes",                  "measurable": "5 km · 24:59 (GPS-tracked)" },
-      "endurance_cooper":      { "label": "Cooper 12-min ≥ 2400 m",        "specific": "Cover ≥ 2400 m in the 12-min Cooper test",                   "measurable": "≥ 2400 m in 12 min" },
-      "mobility_toe_touch":    { "label": "Pain-free toe touch",           "specific": "Standing forward fold with fingertips to the floor, pain-free", "measurable": "Fingertips touching floor (knees soft)" },
-      "mobility_overhead":     { "label": "Full overhead reach",           "specific": "Arms vertical against the wall with low back flat",          "measurable": "Wall-test pass (lumbar spine flat, elbows locked)" },
-      "skill_first_pullup":    { "label": "First strict pull-up",          "specific": "Complete one strict, dead-hang pull-up",                     "measurable": "1 × strict, full ROM" },
-      "skill_handstand":       { "label": "60-sec freestanding handstand", "specific": "Hold a freestanding handstand for 60 seconds",               "measurable": "60 s hold, no wall" },
-      "health_resting_hr":     { "label": "Resting HR < 60 bpm",           "specific": "Lower resting heart rate below 60 bpm",                       "measurable": "from current 72 → ≤ 58 bpm (morning, supine)" },
-      "health_steps":          { "label": "8 000 daily steps",             "specific": "Average 8 000 steps/day across the week",                     "measurable": "8 000 steps/day on ≥ 5 days/week" }
+    "duration": {
+      "4w": "4 सप्ताह",
+      "8w": "8 सप्ताह",
+      "12w": "12 सप्ताह",
+      "16w": "16 सप्ताह",
+      "6m": "6 महीने",
+      "1y": "1 वर्ष",
+      "custom": "विशिष्ट तिथि",
+      "resolved": "→ {{date}}"
+    },
+    "tpl": {
+      "str_squat_15bw_5":  { "specific": "5 साफ़ रेप्स के लिए 1.5× शरीर के वजन से स्क्वाट करें",       "measurable": "1.5×BW बैक-स्क्वाट × 5 रेप्स नियंत्रित गति से" },
+      "str_bench_bw_5":    { "specific": "5 रेप्स के लिए शरीर के वजन से बेंच-प्रेस",                "measurable": "1×BW बेंच × 5 रेप्स पूर्ण रेंज में" },
+      "str_dl_2bw_3":      { "specific": "3 रेप्स के लिए 2× शरीर के वजन से डेडलिफ्ट",               "measurable": "2×BW डेडलिफ्ट × 3 रेप्स तटस्थ रीढ़ के साथ" },
+      "hyp_arm_3cm":       { "specific": "बांह की परिधि में 3 सेमी जोड़ें",                          "measurable": "+3 सेमी आराम की भुजा माप पर (औसत L/R)" },
+      "hyp_thigh_4cm":     { "specific": "जांघ की परिधि में 4 सेमी जोड़ें",                          "measurable": "+4 सेमी मध्य-जांघ माप पर (औसत L/R)" },
+      "comp_fatloss_5":    { "specific": "मांसपेशी बनाए रखते हुए 5 किग्रा वसा कम करें",                "measurable": "−5 किग्रा वसा DEXA/BIA से, लीन मास स्थिर" },
+      "comp_recomp":       { "specific": "एक साथ वसा कम करें और मांसपेशी बढ़ाएं",                     "measurable": "−3% शरीर वसा और +2 किग्रा लीन मास (DEXA या BIA)" },
+      "end_5k_25":         { "specific": "5 किमी 25 मिनट से कम में दौड़ें",                            "measurable": "लगातार 5 किमी ≤ 25:00 बिना रुके" },
+      "end_cooper_2400":   { "specific": "12-मिनट कूपर परीक्षण में 2400 मीटर से अधिक",                 "measurable": "12 मिनट लगातार में ≥ 2400 मीटर" },
+      "mob_toes_painfree": { "specific": "बिना दर्द के खड़े होकर पैर छुएं",                            "measurable": "Sit-and-reach ≥ 0 सेमी बिना कमर दर्द के" },
+      "mob_overhead_full": { "specific": "बिना मुआवजे के दीवार पर हाथ ऊर्ध्वाधर उठाएं",                "measurable": "Wall-test पास: कमर सपाट, कोहनी लॉक" },
+      "fn_carry_30s":      { "specific": "30 सेकंड के लिए प्रत्येक हाथ में आधा शरीर वजन उठाएं",         "measurable": "Farmer carry ½BW × 30 सेकंड बिना मुद्रा खोए" },
+      "fn_get_up_floor":   { "specific": "हाथ का उपयोग किए बिना ज़मीन से उठें",                         "measurable": "क्रॉस-लेग्ड उठना बिना हाथ के सहारे" }
     }
   },
   "readiness_block": {
