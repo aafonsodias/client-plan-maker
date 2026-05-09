@@ -14,6 +14,7 @@ export function MeasureField({
   onChange,
   imageSrc,
   imageAlt,
+  imageNode,
   helpTitle = "Como medir?",
   helpBody,
   placeholder,
@@ -24,6 +25,7 @@ export function MeasureField({
   onChange: (v: string) => void;
   imageSrc?: string;
   imageAlt?: string;
+  imageNode?: ReactNode;
   helpTitle?: string;
   helpBody: ReactNode;
   placeholder?: string;
@@ -32,7 +34,7 @@ export function MeasureField({
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-1">
         <Label className="text-xs">{label}</Label>
-        <HelpPopover label={helpTitle} triggerLabel={helpTitle} imageSrc={imageSrc} imageAlt={imageAlt}>
+        <HelpPopover label={helpTitle} triggerLabel={helpTitle} imageSrc={imageSrc} imageAlt={imageAlt} imageNode={imageNode}>
           {helpBody}
         </HelpPopover>
       </div>
