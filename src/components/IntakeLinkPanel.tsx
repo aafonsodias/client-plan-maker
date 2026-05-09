@@ -244,7 +244,7 @@ export function IntakeLinkPanel({
           </a>
         </Button>
         <Button size="sm" variant="outline" asChild>
-          <a href={`mailto:?subject=${mailSubj}&body=${mailBody}`}>
+          <a href={mailHref}>
             <Mail className="mr-1.5 h-3.5 w-3.5" /> {t("intake.send_email")}
           </a>
         </Button>
