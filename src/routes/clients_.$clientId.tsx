@@ -217,17 +217,17 @@ function sectionSignature(assessment: any, section: string): string {
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
-  { id: "anthro", label: "Anthropometry" },
-  { id: "meds", label: "Medications" },
-  { id: "goal", label: "SMART goal" },
-  { id: "readiness", label: "Readiness" },
   { id: "training", label: "Training setup" },
+  { id: "history", label: "Training history" },
+  { id: "goal", label: "SMART goal" },
+  { id: "meds", label: "Medications" },
+  { id: "anthro", label: "Anthropometry" },
+  { id: "readiness", label: "Readiness" },
   { id: "lifestyle", label: "Lifestyle" },
   { id: "nutrition", label: "Nutrition" },
   { id: "mobility", label: "Mobility" },
   { id: "posture", label: "Posture" },
   { id: "screen", label: "Movement screen" },
-  { id: "history", label: "Training history" },
   { id: "performance", label: "Performance" },
 ];
 
