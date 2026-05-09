@@ -1601,21 +1601,25 @@ function ClientDetail() {
                 "bg-muted-foreground/50";
               return (
                 <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-3)]">
-                  <span className="min-w-0 flex-shrink truncate" title={client.email ?? undefined}>
-                    {client.email ?? t("no_email")}
-                  </span>
+                  {client.email && (
+                    <>
+                      <span className="hidden sm:inline min-w-0 flex-shrink truncate" title={client.email}>
+                        {client.email}
+                      </span>
+                      <span className="hidden sm:inline text-muted-foreground/40" aria-hidden="true">·</span>
+                    </>
+                  )}
                   {phase && (
                     <>
-                      <span className="text-muted-foreground/40" aria-hidden="true">·</span>
-                      <span className="inline-flex shrink-0 items-center gap-1.5">
+                      <span className="inline-flex min-w-0 items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 rounded-full ${phaseToneCls}`} aria-hidden="true" />
-                        <span className="eyebrow text-[10px] text-muted-foreground" title={phase.label}>
+                        <span className="eyebrow text-[10px] text-muted-foreground truncate" title={phase.label}>
                           {phase.label}
                         </span>
                       </span>
+                      <span className="text-muted-foreground/40 shrink-0" aria-hidden="true">·</span>
                     </>
                   )}
-                  <span className="text-muted-foreground/40" aria-hidden="true">·</span>
                   <span
                     className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70"
                     title={`Protocolo · etapa ${stepN} de 5`}
