@@ -97,6 +97,8 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Menu as MenuIcon } from "lucide-react";
 
 // R3.2 — Legacy ReassessmentSheet (chest/arm/thigh/calf girths) is hidden by
 // default. Trainers who still need it can flip
