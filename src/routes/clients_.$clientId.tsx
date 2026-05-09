@@ -1934,15 +1934,15 @@ function ClientDetail() {
               <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
-                <ChipGroup
-                  cols={3}
+                <VisualChipGroup
+                  columns={3}
                   size="sm"
                   value={assessment.risk.smoking ?? null}
                   onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}
                   options={[
-                    { value: "never", label: t("risk_block.smoking_never") },
-                    { value: "former", label: t("risk_block.smoking_former") },
-                    { value: "current", label: t("risk_block.smoking_current") },
+                    { value: "never", label: t("risk_block.smoking_never"), icon: <IconSmokeNever /> },
+                    { value: "former", label: t("risk_block.smoking_former"), icon: <IconSmokeFormer /> },
+                    { value: "current", label: t("risk_block.smoking_current"), icon: <IconSmokeCurrent /> },
                   ]}
                 />
               </div>
