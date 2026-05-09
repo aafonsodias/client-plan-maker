@@ -98,6 +98,10 @@
     "late": "देर शाम",
     "count_one": "{{count}} सत्र",
     "count_other": "{{count}} सत्र",
-    "empty": "कोई सत्र नहीं"
+    "empty": "कोई सत्र नहीं",
+    "extend_early": "दिन जल्दी शुरू करें",
+    "shrink_early": "दिन देर से शुरू करें",
+    "extend_late": "दिन देर तक रखें",
+    "shrink_late": "दिन जल्दी समाप्त करें"
   }
 }
