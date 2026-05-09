@@ -657,6 +657,13 @@ function ClientDetail() {
     total: number;
   } | null>(null);
   const [activeSection, setActiveSection] = useState("parq");
+  // On mobile we use the section-stepper UX: each assessment section is its
+  // own screen. The "Gerar rascunho do plano" CTA must NOT appear on every
+  // step — the plan is generated AFTER the protocol, so it only belongs on
+  // the last step (Performance) or on desktop where every section is visible
+  // at once.
+  const isMobileStepper = useIsMobile(1024);
+  const showGenerateCta = !isMobileStepper || activeSection === "performance";
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
   // R-X · Lote 1: flash highlight on Antropometria "Dados base" when Risco BMI
