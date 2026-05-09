@@ -1635,9 +1635,6 @@ function ClientDetail() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <ClientDocuments clientId={client.id} />
-        </div>
       </div>
 
       {!(client.intake_status === "submitted" ||
