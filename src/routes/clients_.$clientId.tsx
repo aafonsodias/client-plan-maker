@@ -1712,8 +1712,12 @@ function ClientDetail() {
         }
         return (
           <>
-          <CapacityMap clientId={clientId} clientName={client?.full_name} />
-          <ReassessmentReminders clientId={clientId} />
+          {isRequiredComplete({ ...assessment, height_cm: assessment?.height_cm ?? client?.height_cm, weight_kg: assessment?.weight_kg ?? client?.weight_kg }) && (
+            <>
+              <CapacityMap clientId={clientId} clientName={client?.full_name} />
+              <ReassessmentReminders clientId={clientId} />
+            </>
+          )}
           <section
             aria-label="Protocolo"
             className={[
