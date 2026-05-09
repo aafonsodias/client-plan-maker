@@ -28,6 +28,7 @@ Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Blo
 Demo + landing names = src/lib/names/regional-names.ts (region-weighted mixture model). Never hardcode display names. Ver mem/features/regional-names.md.
 Dashboard = role-aware cockpit. Coach=hero(semana·sessões·€)+mini-week+nudges (aniversários, pack ending) com MessageComposerSheet (templates PT/EN editáveis, WhatsApp deeplink, sem AI). Lista de clientes vive abaixo.
 No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Trainerize/RP/generic apps. No "vs", "melhor que", "sem viver no Excel". Show workflow + benefit + control; let user connect dots. See [non-adversarial](mem://positioning/non-adversarial.md).
+No "quick plans". The product is golden-standard ACSM-grade assessment scaled to available equipment; default = no-equipment baseline, depth unlocks as equipment is declared. Never ship `/plans/quick`-style entry points or "5-click plan" copy. See [no-quick-plans](mem://principles/no-quick-plans.md).
 Inner-app design = "calm tools, loud moments". One bold gesture per page (amber under-glow / large numeral / 600ms reveal); the rest stays editorial-quiet. Status colour vocabulary only (emerald/amber/muted/red). Per-page table in mem://design/aesthetic-direction.md.
 Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp + Email buttons in IntakeLinkPanel are already addressed. createInviteClient accepts {fullName?, email?, phone?}.
 

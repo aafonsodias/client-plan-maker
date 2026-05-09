@@ -9,7 +9,7 @@ import { startOfIsoWeek, addDays, fmtWeekRange, packBlockClasses, type Pack, typ
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PriceTag } from "@/components/PriceTag";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
-import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, Zap, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Cake, Coins, CalendarDays, AlertCircle, Clock, MessageCircle, Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { MessageComposerSheet, type ComposerKind, type ComposerCtx } from "./MessageComposerSheet";
 
 /**
@@ -369,13 +369,6 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               · {t("dashboard.revenue_caption")}
             </p>
           </div>
-          <Link
-            to="/plans/quick"
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-500/20 dark:text-amber-400"
-            title={lang === "pt" ? "Gera um plano em 5 cliques" : "Generate a plan in 5 clicks"}
-          >
-            <Zap className="h-3.5 w-3.5" /> {lang === "pt" ? "Plano rápido" : "Quick plan"}
-          </Link>
           <Link
             to="/schedule"
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-secondary"
