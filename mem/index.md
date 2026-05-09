@@ -50,6 +50,8 @@ Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp 
 - [Exercise media hosting architecture](mem://specs/exercise-media-hosting-architecture.md) — R75 raw → master → streaming → app metadata; provider-agnostic; YouTube as reference only
 - [Exercise media data model](mem://specs/exercise-media-data-model.md) — R75 future `exercise_media` shape keyed by `ExerciseKey`; reuses R74 `MediaQualityStatus`
 - [Exercise media file organisation](mem://specs/exercise-media-file-organisation.md) — R75 naming convention + `/Protocol Exercise Media` folder structure
+- [Aesthetic direction](mem://design/aesthetic-direction.md) — "calm tools, loud moments" + per-page loud-moment table for every authenticated page
+- [One loud moment per page](mem://principles/one-loud-moment-per-page.md) — rule + how to apply when adding new sections
 - [Exercise media production workflow](mem://specs/exercise-media-production-workflow.md) — R75 7-step Plan→Film→Select→Edit→Review→Encode→Attach
 - [Exercise AI visual pipeline](mem://specs/exercise-ai-visual-pipeline.md) — R75 AI/avatar/stickfigure are visual layers, never source of truth
 - [Exercise media implementation plan](mem://audits/exercise-media-implementation-plan.md) — R75 phased rollout; Now = docs+file discipline, Next = Slice 2 identity wiring
