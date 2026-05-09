@@ -2829,7 +2829,7 @@ function ClientDetail() {
             />
           )}
 
-          {readyPlanForAssessment ? (
+          {showGenerateCta && (readyPlanForAssessment ? (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs">
               <span className="text-muted-foreground">
                 Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
@@ -3488,9 +3488,9 @@ function ClientDetail() {
                     status="placeholder"
                   />
                 </>
-              )}
-            </div>
           )}
+          </div>
+          ))}
 
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
       {/* "Around the workout" nutrition cue moved to the plan page (view mode) — it belongs next to the workout, not in the client overview. */}
