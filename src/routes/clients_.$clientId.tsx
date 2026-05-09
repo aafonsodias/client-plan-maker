@@ -4833,9 +4833,12 @@ function ParqFlagSummary({ count }: { count: number }) {
 }
 
 function CompletionStrip({ text }: { text: string }) {
+  // Strip the leading "✓ " (legacy) — the icon now carries that signal.
+  const cleaned = text.replace(/^\s*✓\s*/, "");
   return (
-    <div className="body-prose mt-3 animate-fade-in rounded-md bg-muted/40 px-2.5 py-1 text-[12px] text-muted-foreground">
-      {text}
+    <div className="mt-3 flex animate-fade-in items-center gap-2 rounded-md bg-emerald-500/[0.06] px-3 py-1.5 text-[12px] text-emerald-800/90 ring-1 ring-inset ring-emerald-500/15 dark:text-emerald-200/85">
+      <Check className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+      <span className="body-prose truncate">{cleaned}</span>
     </div>
   );
 }
