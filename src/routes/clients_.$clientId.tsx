@@ -490,6 +490,22 @@ function ClientDetail() {
   // below). User toggle is persisted per-client.
   const assessmentCollapseKey = `protocol_assessment_top_collapsed_${clientId}`;
   const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  // Protocol rail open/closed (default closed — frees attention for the
+  // "This week" / capacity panels below). Persisted per-client.
+  const protocolRailOpenKey = `protocol_rail_open_${clientId}`;
+  const [protocolRailOpen, setProtocolRailOpen] = useState<boolean>(false);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(protocolRailOpenKey);
+      if (v === "1") setProtocolRailOpen(true);
+      else if (v === "0") setProtocolRailOpen(false);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+  const setProtocolRailOpenPersist = (v: boolean) => {
+    setProtocolRailOpen(v);
+    try { window.localStorage.setItem(protocolRailOpenKey, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   // Map plan_id → latest week_number with any approved_at day. Used to default
   // the per-week PDF download to the most useful week (R40).
   const [planLatestWeek, setPlanLatestWeek] = useState<Record<string, number>>({});
@@ -1727,25 +1743,75 @@ function ClientDetail() {
                 : "bg-[var(--surface)]",
             ].join(" ")}
           >
-            <ProtocolRail
-              bare
-              assessmentPct={
-                heroPlanComplete
-                  ? 100
-                  : briefCoverage && briefCoverage.total > 0
-                  ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
-                  : null
-              }
-              lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
-              briefApproved={!!inlineBrief?.approved || heroPlanComplete}
-              blueprintApproved={blueprintApprovedLocal}
-              microcycleApproved={microcycleApprovedLocal}
-              progressionsApproved={progressionsApprovedLocal}
-              onReassessClick={() => setReassessOpen(true)}
-              stage1Expanded={!effectiveCollapsed}
-              onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
-              onShowSynthesis={() => setSynthesisOpen((o) => !o)}
-            />
+            {(() => {
+              const stagesDone = [
+                (heroPlanComplete || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80)),
+                !!inlineBrief?.approved || heroPlanComplete,
+                blueprintApprovedLocal,
+                microcycleApprovedLocal,
+                progressionsApprovedLocal,
+              ];
+              const doneCount = stagesDone.filter(Boolean).length;
+              const currentIdx = stagesDone.findIndex((d) => !d);
+              const currentStage = currentIdx === -1 ? 5 : currentIdx + 1;
+              const stageLabels = ["Avaliação", "Briefing", "Plano-mestre", "Semana-tipo", "Progressão"];
+              return (
+                <button
+                  type="button"
+                  onClick={() => setProtocolRailOpenPersist(!protocolRailOpen)}
+                  className="-mx-1 mb-2 flex w-[calc(100%+0.5rem)] items-center gap-2 rounded-md px-1 py-1 text-left transition hover:bg-muted/30"
+                  aria-expanded={protocolRailOpen}
+                  title={protocolRailOpen ? "Ocultar protocolo" : "Mostrar protocolo"}
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Protocolo
+                  </span>
+                  <span className="text-[11px] tabular-nums text-muted-foreground">
+                    {doneCount}/5
+                  </span>
+                  <span className="truncate text-[11px] text-foreground/80">
+                    · Etapa {currentStage} · {stageLabels[currentStage - 1]}
+                  </span>
+                  <span className="ml-auto flex shrink-0 items-center gap-0.5">
+                    {stagesDone.map((d, i) => (
+                      <span
+                        key={i}
+                        className={[
+                          "h-1 w-4 rounded-full transition",
+                          d ? "bg-emerald-500/60" : i + 1 === currentStage ? "bg-amber-500/60" : "bg-border",
+                        ].join(" ")}
+                      />
+                    ))}
+                    {protocolRailOpen ? (
+                      <ChevronDown className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="ml-1 h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </span>
+                </button>
+              );
+            })()}
+            {protocolRailOpen && (
+              <ProtocolRail
+                bare
+                assessmentPct={
+                  heroPlanComplete
+                    ? 100
+                    : briefCoverage && briefCoverage.total > 0
+                    ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
+                    : null
+                }
+                lastAssessmentAt={(assessment as any)?.performed_on ?? (assessment as any)?.updated_at ?? null}
+                briefApproved={!!inlineBrief?.approved || heroPlanComplete}
+                blueprintApproved={blueprintApprovedLocal}
+                microcycleApproved={microcycleApprovedLocal}
+                progressionsApproved={progressionsApprovedLocal}
+                onReassessClick={() => setReassessOpen(true)}
+                stage1Expanded={!effectiveCollapsed}
+                onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
+                onShowSynthesis={() => setSynthesisOpen((o) => !o)}
+              />
+            )}
             <div className="mt-2 border-t border-border/60">
               <ThisWeekHero
                 bare
