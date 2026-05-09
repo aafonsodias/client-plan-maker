@@ -4160,6 +4160,121 @@ function AssessmentSection({
       )}
       <SectionCollapseContext.Provider value={ctx}>
         {focused ? (
+          isMobile ? (
+            <div className="flex flex-col">
+              {/* Sticky header */}
+              <div className="sticky top-0 z-30 -mx-px border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <div className="h-1 w-full bg-muted/30">
+                  <div
+                    className="h-full bg-primary transition-all duration-500"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 px-3 pt-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="eyebrow text-[10px] text-muted-foreground">
+                      {t("progress_short", { current: activeIdx + 1, total: totalCount, pct: progressPct })}
+                    </p>
+                    <h2 className="truncate text-sm font-bold leading-tight">
+                      {(sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId}
+                    </h2>
+                  </div>
+                  <Sheet open={jumpOpen} onOpenChange={setJumpOpen}>
+                    <SheetTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t("jump_to")}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
+                      >
+                        <MenuIcon className="h-4 w-4" />
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-[85vw] max-w-sm">
+                      <SheetHeader>
+                        <SheetTitle>{t("jump_to")}</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-3 flex flex-col gap-1 overflow-y-auto pb-6">
+                        {SECTIONS.map((s, i) => {
+                          const complete = statusById.get(s.id) ?? false;
+                          const isActive = s.id === activeId;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => { setActiveId(s.id); setJumpOpen(false); }}
+                              className={cn(
+                                "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition",
+                                isActive ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                              )}
+                            >
+                              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/50 font-mono text-[10px] tabular-nums">
+                                {i + 1}
+                              </span>
+                              <span className="flex-1 truncate">{s.label}</span>
+                              {complete ? (
+                                <>
+                                  <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                                  <span className="sr-only">{t("section_complete_indicator")}</span>
+                                </>
+                              ) : (
+                                <Circle className="h-3 w-3 text-muted-foreground/40" aria-hidden="true" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+                {saveLabel && (
+                  <p className="px-3 pb-2 pt-0.5 text-right text-[10px] text-muted-foreground/80">{saveLabel}</p>
+                )}
+              </div>
+              {/* Body */}
+              <div ref={stepperBodyRef} className="min-h-[60vh] overflow-y-auto px-3 py-4">
+                <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
+                  {sectionChildren.get(activeId) ?? (
+                    <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
+                      {t("detail.section.unavailable")}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Sticky footer */}
+              <div
+                className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+                style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom))" }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goPrev}
+                  disabled={activeIdx === 0}
+                >
+                  <ArrowLeft className="mr-1 h-3.5 w-3.5" /> {t("previous")}
+                </Button>
+                <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                  {activeIdx + 1}/{totalCount}
+                </span>
+                <Button
+                  key={pulseKey}
+                  size="sm"
+                  onClick={goNext}
+                  disabled={isLast}
+                  className={cn(
+                    "transition",
+                    currentComplete && !isLast
+                      ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+                      : "",
+                    currentComplete ? "animate-pulse-once" : ""
+                  )}
+                >
+                  {isLast ? t("finish") : t("next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </Button>
+              </div>
+              {extras.length > 0 && <div className="space-y-3 px-3 py-4">{extras}</div>}
+            </div>
+          ) : (
           <>
             <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
               {sectionChildren.get(activeId) ?? (
@@ -4191,6 +4306,7 @@ function AssessmentSection({
             </div>
             {extras.length > 0 && <div className="space-y-3">{extras}</div>}
           </>
+          )
         ) : (
           children
         )}
