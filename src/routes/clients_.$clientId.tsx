@@ -24,7 +24,7 @@ import { parseMeds, serializeMeds, type OtherMed } from "@/lib/meds-format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield, X } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield, X, Users, Gauge } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1995,7 +1995,13 @@ function ClientDetail() {
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
-              <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
+              <Toggle
+                label={t("risk_block.family_cvd_label", { defaultValue: "História familiar precoce" })}
+                description={t("risk_block.family_cvd_desc", { defaultValue: "Pai, mãe ou irmão com enfarte ou AVC antes dos 55 (homem) / 65 (mulher)." })}
+                icon={<Users className="h-4 w-4" />}
+                value={assessment.risk.family_cvd}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })}
+              />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
                 <VisualChipGroup
@@ -2119,9 +2125,27 @@ function ClientDetail() {
                   </button>
                 )}
               </div>
-              <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
-              <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
-              <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
+              <Toggle
+                label={t("risk_block.dyslipidemia")}
+                description={t("risk_block.dyslipidemia_desc", { defaultValue: "Colesterol ou triglicéridos alterados — confirmado em análises ou medicado." })}
+                icon={<Droplet className="h-4 w-4" />}
+                value={assessment.risk.dyslipidemia}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })}
+              />
+              <Toggle
+                label={t("risk_block.prediabetes")}
+                description={t("risk_block.prediabetes_desc", { defaultValue: "Glicose em jejum 100–125 mg/dL ou HbA1c 5,7–6,4%." })}
+                icon={<Droplets className="h-4 w-4" />}
+                value={assessment.risk.prediabetes}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })}
+              />
+              <Toggle
+                label={t("risk_block.hypertension")}
+                description={t("risk_block.hypertension_desc", { defaultValue: "Tensão ≥130/80 mmHg em duas medições ou em terapêutica anti-hipertensora." })}
+                icon={<Gauge className="h-4 w-4" />}
+                value={assessment.risk.hypertension}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
+              />
             </div>
           </SectionBlock>
           {/* Training setup (existing) */}
@@ -4640,15 +4664,43 @@ function TextField({ label, value, onChange, className = "", hint }: { label: st
   );
 }
 
-function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label,
+  value,
+  onChange,
+  icon,
+  description,
+}: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  icon?: React.ReactNode;
+  description?: string;
+}) {
+  const hasMeta = Boolean(icon || description);
   return (
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs transition ${value ? "border-accent bg-accent/10 text-foreground" : "border-border bg-background hover:bg-secondary"}`}
+      className={`flex w-full items-center gap-2.5 rounded-md border px-2.5 py-1.5 text-left text-xs transition ${value ? "border-accent bg-accent/10 text-foreground" : "border-border bg-background hover:bg-secondary"}`}
     >
-      <span>{label}</span>
-      <span className={`ml-2 inline-flex h-4 w-7 items-center rounded-full transition ${value ? "bg-accent" : "bg-secondary"}`}>
+      {icon ? (
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition ${value ? "bg-accent/20 text-accent-foreground" : "bg-secondary/60 text-muted-foreground"}`}
+          aria-hidden
+        >
+          {icon}
+        </span>
+      ) : null}
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate font-medium leading-tight ${hasMeta ? "" : "text-xs"}`}>{label}</span>
+        {description ? (
+          <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">
+            {description}
+          </span>
+        ) : null}
+      </span>
+      <span className={`ml-1 inline-flex h-4 w-7 shrink-0 items-center rounded-full transition ${value ? "bg-accent" : "bg-secondary"}`}>
         <span className={`block h-3 w-3 rounded-full bg-background shadow transition ${value ? "translate-x-3.5" : "translate-x-0.5"}`} />
       </span>
     </button>
