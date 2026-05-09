@@ -850,6 +850,21 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
+  // Re-hydrate meds local state when assessment.medications changes from
+  // outside our writes (initial load, external sync). While the trainer is
+  // editing, our writes serialize back into assessment.medications so this
+  // effect sees the same string and no-ops.
+  useEffect(() => {
+    const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+    const flags: string[] = assessment.med_flags ?? [];
+    const ours = serializeMeds(flags, medsLocal.doses, medsLocal.others, otherLabel);
+    const incoming = String(assessment.medications ?? "");
+    if (incoming !== ours) {
+      setMedsLocal(parseMeds(incoming));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment.medications]);
+
   // Detect trainer edits: when a client-submitted section's signature changes
   // after hydration, flip its provenance to "trainer-edited".
   useEffect(() => {
