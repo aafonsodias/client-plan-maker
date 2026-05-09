@@ -123,19 +123,21 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{blockLine}</p>
           )}
           {(signals.risk || signals.readiness != null) && (
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
               {signals.risk && (
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${
-                    signals.risk === "high"
-                      ? "border-red-500/40 bg-red-500/10 text-red-400"
-                      : signals.risk === "moderate"
-                        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                  }`}
+                  className="inline-flex items-center gap-1.5"
                   title={`ACSM ${signals.risk} CVD risk`}
                 >
-                  <AlertTriangle className="h-2.5 w-2.5" />
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                      signals.risk === "high"
+                        ? "bg-red-500"
+                        : signals.risk === "moderate"
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                    }`}
+                  />
                   {signals.risk === "high"
                     ? t("clients.card.cvd_high", { defaultValue: "High CVD risk" })
                     : signals.risk === "moderate"
@@ -145,16 +147,18 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
               )}
               {signals.readiness != null && (
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium tabular-nums ${
-                    signals.readiness >= 75
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
-                      : signals.readiness >= 50
-                        ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-                        : "border-red-500/40 bg-red-500/10 text-red-400"
-                  }`}
+                  className="inline-flex items-center gap-1.5 tabular-nums"
                   title={t("clients.cockpit.recovery")}
                 >
-                  <Activity className="h-2.5 w-2.5" />
+                  <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                      signals.readiness >= 75
+                        ? "bg-emerald-500"
+                        : signals.readiness >= 50
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                    }`}
+                  />
                   {t("clients.card.recovery_pct", { defaultValue: "Recovery {{n}}%", n: signals.readiness })}
                 </span>
               )}
