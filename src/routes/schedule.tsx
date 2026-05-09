@@ -477,7 +477,55 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               </div>
             </div>
           ))}
-          {HOURS.map((h) => (
+          <ZoneBand
+            label={t("zone.early")}
+            range={`${String(EARLY_HOURS[0]).padStart(2, "0")}:00–${String(EARLY_HOURS[EARLY_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            count={earlyCount}
+            open={earlyOpen}
+            onToggle={() => { const next = !earlyOpen; setEarlyPref(next); persistZone("early", next); }}
+            t={t}
+          />
+          {earlyOpen && EARLY_HOURS.map((h) => (
+            <RowHour
+              key={h}
+              hour={h}
+              days={days}
+              bookings={bookings}
+              packById={packById}
+              clientById={clientById}
+              onSlotClick={handleSlotClick}
+              onBookingClick={(b) => setEditing(b)}
+              onCopy={(b) => setClipboard(b)}
+              onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
+              clipboardActive={!!clipboard}
+            />
+          ))}
+          {CORE_HOURS.map((h) => (
+            <RowHour
+              key={h}
+              hour={h}
+              days={days}
+              bookings={bookings}
+              packById={packById}
+              clientById={clientById}
+              onSlotClick={handleSlotClick}
+              onBookingClick={(b) => setEditing(b)}
+              onCopy={(b) => setClipboard(b)}
+              onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
+              clipboardActive={!!clipboard}
+            />
+          ))}
+          <ZoneBand
+            label={t("zone.late")}
+            range={`${String(LATE_HOURS[0]).padStart(2, "0")}:00–${String(LATE_HOURS[LATE_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            count={lateCount}
+            open={lateOpen}
+            onToggle={() => { const next = !lateOpen; setLatePref(next); persistZone("late", next); }}
+            t={t}
+          />
+          {lateOpen && LATE_HOURS.map((h) => (
             <RowHour
               key={h}
               hour={h}
