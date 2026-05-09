@@ -3464,6 +3464,12 @@ function ClientDetail() {
 
       {/* Compliance & estatísticas — moved into the Protocolo card above (R56). */}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
+      <CadenceSheet
+        clientId={clientId}
+        clientName={client?.full_name}
+        open={cadenceOpen}
+        onOpenChange={setCadenceOpen}
+      />
       {LEGACY_REASSESSMENT_SHEET && (
         <ReassessmentSheet
           clientId={clientId}
