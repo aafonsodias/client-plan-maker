@@ -47,6 +47,7 @@ import {
   IconJobSedentary, IconJobStanding, IconJobPhysical, IconJobMixed,
   IconSmokeNever, IconSmokeFormer, IconSmokeCurrent,
 } from "@/components/assessment/svg/icons";
+import { GuideWaist, GuideHip } from "@/components/assessment/svg/icons";
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
