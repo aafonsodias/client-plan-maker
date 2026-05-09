@@ -44,6 +44,23 @@
     "eyebrow": "Welcome back",
     "eyebrow_named": "Welcome back, {{name}}",
     "title": "Clients",
+    "next_action": {
+      "eyebrow": "Next action",
+      "review_title": "Review {{name}}'s assessment",
+      "review_sub": "Just submitted the questionnaire.",
+      "review_cta": "Open",
+      "bday_today": "{{name}} turns {{age}} today",
+      "bday_tomorrow": "{{name}} turns {{age}} tomorrow",
+      "bday_in": "{{name}}'s birthday in {{n}} days",
+      "bday_sub": "A message now goes a long way.",
+      "bday_cta": "Wish them",
+      "invite_title": "Invite your first client",
+      "invite_sub": "Send the assessment link. They fill it on mobile.",
+      "invite_cta": "Invite",
+      "quick_title": "Quick plan in 90 seconds",
+      "quick_sub": "5 inputs · full pipeline, with your name on it.",
+      "quick_cta": "Start"
+    },
     "today": {
       "title": "Today",
       "empty": "Nothing urgent. Good week.",
