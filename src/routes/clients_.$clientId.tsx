@@ -3937,9 +3937,14 @@ function AssessmentSection({
         )}
       </div>
       {focused && (
-        <div className="flex flex-wrap items-center gap-1.5 pb-1" role="tablist" aria-label={t("detail.section.tabs_aria")}>
+        <div
+          className="flex flex-wrap items-center gap-1 pb-2"
+          role="tablist"
+          aria-label={t("detail.section.tabs_aria")}
+        >
           {SECTIONS.map((s, i) => {
             const isActive = s.id === activeId;
+            const isPast = i < activeIdx;
             return (
               <button
                 key={s.id}
@@ -3947,10 +3952,33 @@ function AssessmentSection({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveId(s.id)}
-                className={`label-caps inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition ${isActive ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
+                title={s.label}
+                className={[
+                  "group inline-flex items-center gap-1.5 rounded-full transition",
+                  isActive
+                    ? "bg-amber-500/[0.08] px-2.5 py-1 text-amber-300 ring-1 ring-amber-500/30"
+                    : isPast
+                      ? "px-2 py-1 text-muted-foreground/80 hover:bg-muted/40 hover:text-foreground"
+                      : "px-2 py-1 text-muted-foreground/50 hover:bg-muted/30 hover:text-foreground",
+                ].join(" ")}
               >
-                <span className="font-mono tabular-nums">{i + 1}</span>
-                <span className="hidden sm:inline">{s.label}</span>
+                <span
+                  className={[
+                    "inline-flex h-4 w-4 items-center justify-center rounded-full font-mono text-[10px] tabular-nums transition",
+                    isActive
+                      ? "bg-amber-500/25 text-amber-200"
+                      : isPast
+                        ? "bg-muted/50 text-foreground/70"
+                        : "bg-muted/30 text-muted-foreground/60",
+                  ].join(" ")}
+                >
+                  {i + 1}
+                </span>
+                <span
+                  className={`hidden text-[11px] tracking-tight sm:inline ${isActive ? "font-medium" : ""}`}
+                >
+                  {s.label}
+                </span>
               </button>
             );
           })}
