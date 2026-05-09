@@ -39,15 +39,14 @@ import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { MeasureField } from "@/components/assessment/MeasureField";
 import { ChipGroup } from "@/components/assessment/ChipGroup";
 import { VisualChipGroup } from "@/components/ui/visual-chip-group";
-import { MeasureGuide } from "@/components/assessment/MeasureGuide";
 import {
   FemaleSilhouette, MaleSilhouette,
   IconCalipers, IconBIA, IconDEXA, IconBodPod, IconVisualEstimate,
   IconHome, IconGym, IconOutdoor, IconHybrid,
   IconJobSedentary, IconJobStanding, IconJobPhysical, IconJobMixed,
   IconSmokeNever, IconSmokeFormer, IconSmokeCurrent,
+  GuideWaist, GuideHip,
 } from "@/components/assessment/svg/icons";
-import { GuideWaist, GuideHip } from "@/components/assessment/svg/icons";
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
