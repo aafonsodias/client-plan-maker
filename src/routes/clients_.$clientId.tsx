@@ -2168,8 +2168,7 @@ function ClientDetail() {
                 unit="cm"
                 value={assessment.waist_cm}
                 onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
-                imageSrc={measureWaistImg}
-                imageAlt="Diagrama: medir cintura no ponto mais estreito acima da anca"
+                imageNode={<GuideWaist />}
                 placeholder="ex. 82"
                 helpBody={
                   <>
@@ -2183,8 +2182,7 @@ function ClientDetail() {
                 unit="cm"
                 value={assessment.hip_cm}
                 onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
-                imageSrc={measureHipImg}
-                imageAlt="Diagrama: medir anca na maior circunferência das nádegas"
+                imageNode={<GuideHip />}
                 placeholder="ex. 98"
                 helpBody={
                   <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
