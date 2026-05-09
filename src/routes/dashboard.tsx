@@ -526,7 +526,7 @@ function Dashboard() {
               ))}
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="overflow-hidden rounded-2xl bg-muted/40">
               {filteredClients.map((c) => {
                 const d = daysUntilBirthday(c.date_of_birth);
                 const isBday = d !== null && d <= 7;
