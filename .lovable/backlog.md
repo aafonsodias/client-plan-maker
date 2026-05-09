@@ -440,3 +440,12 @@ Atualizado: Round 28 (4 Mai 2026)
 | 93 | P1 | clients list | Thin amber left border for birthday + red-flag rows | next |
 | 94 | P1 | intake.$token | Numbered chips per section (1/N) | next |
 | 95 | P1 | plans.$id | "Pronto" 600ms fade-in reveal when status flips to ready | next |
+
+### Round 72 — Aesthetic loud-moments pass (9 May 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 92 | P1 | dashboard | `<NextActionCard/>` mounted at top of `/dashboard` (submitted → birthday ≤7d → invite → quick) — single amber under-glow | R72 ✅ |
+| 93 | P1 | clients list | `flagged` prop on ClientPlayerCard → `border-l-2 border-l-amber-500/60` for birthday ≤7d or submitted | R72 ✅ |
+| 94 | P1 | intake.$token | Section chip = `01 · 06` tabular numerals; between-section spacing → `space-y-12` (48px rhythm) | R72 ✅ |
+| 95 | P1 | plans.$id | View-mode CapacityGainBlock wrapped in `animate-fade-in` (~300ms) — soft "ready" reveal | R72 ✅ |
