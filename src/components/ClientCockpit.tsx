@@ -284,20 +284,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         </div>
       )}
 
-      {/* 3. Stage panel — collapsed by default, opens on stage click */}
-      {stageOpen && (
-        <div className="relative rounded-xl bg-muted/40 px-3 py-2.5 pr-9">
-          <button
-            type="button"
-            onClick={() => setStageOpen(false)}
-            className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            aria-label="Fechar"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          {stagePanel}
-        </div>
-      )}
+      {/* Stage chips navigate to /clients/$id where each stage is editable. */}
     </div>
   );
 }
