@@ -38,11 +38,14 @@ export function MeasureField({
       </div>
       <div className="relative">
         <Input
-          className="h-8 pr-10 text-sm"
+          className="h-8 pr-10 text-sm tabular-nums"
           type="number"
           inputMode="decimal"
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          }}
           placeholder={placeholder}
         />
         {unit && (

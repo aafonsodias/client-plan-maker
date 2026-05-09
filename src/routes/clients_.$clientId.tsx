@@ -645,6 +645,9 @@ function ClientDetail() {
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
+  // R-X · Lote 1: flash highlight on Antropometria "Dados base" when Risco BMI
+  // card prompts the trainer to fill height/weight there. Single source of truth.
+  const [flashAnthroBase, setFlashAnthroBase] = useState(false);
   const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
   const [safetyOverride, setSafetyOverride] = useState(false);
 
@@ -1894,14 +1897,17 @@ function ClientDetail() {
               <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
-                <Select value={assessment.risk.smoking} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="never">{t("risk_block.smoking_never")}</SelectItem>
-                    <SelectItem value="former">{t("risk_block.smoking_former")}</SelectItem>
-                    <SelectItem value="current">{t("risk_block.smoking_current")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.risk.smoking ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}
+                  options={[
+                    { value: "never", label: t("risk_block.smoking_never") },
+                    { value: "former", label: t("risk_block.smoking_former") },
+                    { value: "current", label: t("risk_block.smoking_current") },
+                  ]}
+                />
               </div>
               <div className="space-y-1">
                 <LabelWithHelp
@@ -1993,56 +1999,23 @@ function ClientDetail() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex h-8 items-stretch gap-1.5">
-                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={80}
-                        max={250}
-                        step={1}
-                        autoComplete="off"
-                        defaultValue={client?.height_cm ?? ""}
-                        placeholder={t("risk_block.bmi_height_ph", { defaultValue: "Altura" })}
-                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                        onBlur={async (e) => {
-                          const n = Number(e.target.value);
-                          const v = Number.isFinite(n) && n > 0 ? n : null;
-                          if (v === (client?.height_cm ?? null)) return;
-                          setClient((prev: any) => ({ ...prev, height_cm: v }));
-                          await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                      />
-                      <span className="text-[11px] text-muted-foreground">cm</span>
-                    </label>
-                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min={20}
-                        max={400}
-                        step={0.1}
-                        autoComplete="off"
-                        defaultValue={client?.weight_kg ?? ""}
-                        placeholder={t("risk_block.bmi_weight_ph", { defaultValue: "Peso" })}
-                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                        onBlur={async (e) => {
-                          const n = Number(e.target.value);
-                          const v = Number.isFinite(n) && n > 0 ? n : null;
-                          if (v === (client?.weight_kg ?? null)) return;
-                          setClient((prev: any) => ({ ...prev, weight_kg: v }));
-                          await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                      />
-                      <span className="text-[11px] text-muted-foreground">kg</span>
-                    </label>
-                  </div>
+                  // R-X · Lote 1: H/W is owned by Antropometria → "Dados base".
+                  // Don't render a duplicate input here. CTA scrolls + flashes.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById("anthro-base");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                        setFlashAnthroBase(true);
+                        window.setTimeout(() => setFlashAnthroBase(false), 1800);
+                      }
+                    }}
+                    className="flex h-8 w-full items-center justify-between rounded-md border border-dashed border-amber-500/40 bg-amber-500/[0.04] px-3 text-left text-xs text-muted-foreground transition-colors hover:bg-amber-500/[0.08] hover:text-foreground"
+                  >
+                    <span>{t("risk_block.bmi_missing_cta", { defaultValue: "Preenche altura e peso em Antropometria" })}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-amber-400/80" />
+                  </button>
                 )}
               </div>
               <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
@@ -2058,9 +2031,20 @@ function ClientDetail() {
                 conceptualmente à antropometria: alimentam IMC, BMR e
                 estimativas de %GC. Posicionados em cima por serem o
                 primeiro input clínico que qualquer ficha pede. */}
-            <div className="mb-3 rounded-md border border-border/60 bg-muted/20 p-2.5">
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Dados base
+            <div
+              id="anthro-base"
+              className={
+                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
+                (flashAnthroBase
+                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
+                  : "border-border/60")
+              }
+            >
+              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>Dados base</span>
+                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
+                  usados em IMC, BMR e %GC
+                </span>
               </div>
               <div className="grid gap-2 sm:grid-cols-4">
                 <label className="space-y-1">
@@ -2199,16 +2183,19 @@ function ClientDetail() {
                 />
                 <div className="space-y-1 sm:col-span-2">
                   <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
-                      <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
-                      <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
-                      <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
-                      <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ChipGroup
+                    cols={5}
+                    size="sm"
+                    value={assessment.body_fat_method ?? null}
+                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
+                    options={[
+                      { value: "calipers", label: t("anthro_block.bf_calipers") },
+                      { value: "bia", label: t("anthro_block.bf_bia") },
+                      { value: "dexa", label: t("anthro_block.bf_dexa") },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod") },
+                      { value: "visual", label: t("anthro_block.bf_visual") },
+                    ]}
+                  />
                 </div>
               </div>
             </details>
@@ -2336,18 +2323,56 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
-                <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">{t("training_block.beginner")}</SelectItem>
-                    <SelectItem value="intermediate">{t("training_block.intermediate")}</SelectItem>
-                    <SelectItem value="advanced">{t("training_block.advanced")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.experience_level ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, experience_level: v })}
+                  options={[
+                    { value: "beginner", label: t("training_block.beginner") },
+                    { value: "intermediate", label: t("training_block.intermediate") },
+                    { value: "advanced", label: t("training_block.advanced") },
+                  ]}
+                />
               </div>
-              <Field label={t("training_block.days_per_week")} type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label={t("training_block.session_length")} type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-              <Field label={t("training_block.training_location")} value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+              <Field label={t("training_block.days_per_week")} type="number" placeholder="3" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label={t("training_block.session_length")} type="number" placeholder="60" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              {(() => {
+                // R-X · Lote 2: training_location was free text. Now canonical chips.
+                // Legacy non-canonical values are preserved as a "outro" chip.
+                const canonical = ["home", "gym", "outdoor", "hybrid"] as const;
+                const raw = (Array.isArray(assessment.training_location)
+                  ? assessment.training_location[0]
+                  : assessment.training_location) as string | null | undefined;
+                const isLegacy = !!raw && !canonical.includes(raw as any);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("training_block.training_location")}</Label>
+                    <ChipGroup
+                      cols={4}
+                      size="sm"
+                      value={isLegacy ? null : ((raw as any) ?? null)}
+                      onChange={(v) => setAssessment({ ...assessment, training_location: v })}
+                      options={[
+                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }) },
+                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }) },
+                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }) },
+                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }) },
+                      ]}
+                    />
+                    {isLegacy && (
+                      <button
+                        type="button"
+                        onClick={() => setAssessment({ ...assessment, training_location: null })}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        title="Limpar valor antigo"
+                      >
+                        outro · {String(raw)} ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
             <div className="mt-3">
@@ -2411,7 +2436,39 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
               <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
-              <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
+              {(() => {
+                // R-X · Lote 2: job_type free text → canonical chips. Legacy values preserved.
+                const canonical = ["sedentary", "standing", "physical", "mixed"] as const;
+                const raw = assessment.ext_job_type as string | null | undefined;
+                const isLegacy = !!raw && !canonical.includes(raw as any);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("lifestyle_block.job_type")}</Label>
+                    <ChipGroup
+                      cols={4}
+                      size="sm"
+                      value={isLegacy ? null : ((raw as any) ?? null)}
+                      onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })}
+                      options={[
+                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }) },
+                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }) },
+                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }) },
+                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }) },
+                      ]}
+                    />
+                    {isLegacy && (
+                      <button
+                        type="button"
+                        onClick={() => setAssessment({ ...assessment, ext_job_type: null })}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        title="Limpar valor antigo"
+                      >
+                        outro · {String(raw)} ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
               <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
             </div>
@@ -2623,20 +2680,23 @@ function ClientDetail() {
                 unit="bpm"
                 value={assessment.resting_heart_rate ?? ""}
                 onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })}
-                placeholder={t("performance_block.rhr_placeholder")}
+                placeholder={t("performance_block.rhr_placeholder", { defaultValue: "ex. 65" })}
                 helpBody={<p>{t("performance_block.rhr_help")}</p>}
               />
               <div className="space-y-1">
                 <LabelWithHelp label={t("performance_block.cardio_test")} hint={t("performance_block.cardio_test_hint")} />
-                <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="untested">{t("performance_block.untested")}</SelectItem>
-                    <SelectItem value="cooper">{t("performance_block.cooper")}</SelectItem>
-                    <SelectItem value="rockport">{t("performance_block.rockport")}</SelectItem>
-                    <SelectItem value="other">{t("performance_block.other")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={4}
+                  size="sm"
+                  value={assessment.ext_cardio_test ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}
+                  options={[
+                    { value: "untested", label: t("performance_block.untested") },
+                    { value: "cooper", label: t("performance_block.cooper") },
+                    { value: "rockport", label: t("performance_block.rockport") },
+                    { value: "other", label: t("performance_block.other") },
+                  ]}
+                />
               </div>
               {assessment.ext_cardio_test !== "untested" && (
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
