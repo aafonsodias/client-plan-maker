@@ -21,9 +21,10 @@ type Props = {
   plan: CardPlan | null;
   logs: CardLog[];
   onDelete: () => void;
+  flagged?: boolean;
 };
 
-export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props) {
+export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged = false }: Props) {
   const { t, i18n } = useTranslation("common");
   const lang = i18n.language === "pt" ? "pt" : "en";
   const [open, setOpen] = useState(false);
@@ -96,7 +97,11 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete }: Props)
   }
 
   return (
-    <div className="group relative border-b border-border last:border-b-0">
+    <div
+      className={`group relative border-b border-border last:border-b-0 ${
+        flagged ? "border-l-2 border-l-amber-500/60" : ""
+      }`}
+    >
       <div className="flex items-stretch hover:bg-secondary/40">
       <button
         type="button"
