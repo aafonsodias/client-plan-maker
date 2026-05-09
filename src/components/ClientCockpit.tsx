@@ -216,7 +216,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
   }
 
   return (
-    <div className="space-y-3 border-t border-border bg-secondary/20 px-4 py-4 sm:px-5">
+    <div className="space-y-3 border-t border-border/60 bg-muted/30 px-4 py-4 sm:px-5">
       {/* 1. Protocol rail — single compact line */}
       <ProtocolRail
         bare
@@ -232,17 +232,17 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
       {/* 2. Plan strip — directly under the protocol */}
       {plan && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card/60 p-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/40 p-2">
           <Link
             to="/plans/$planId"
             params={{ planId: plan.id }}
-            className="group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-secondary/60 hover:ring-1 hover:ring-amber-500/40"
+            className="group flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-muted/60"
             title={t("clients.cockpit.open_plan")}
           >
-            <ChevronRight className="h-4 w-4 shrink-0 text-amber-400 transition group-hover:translate-x-0.5" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{plan.title ?? t("clients.cockpit.no_title")}</p>
-              <p className="truncate text-[11px] text-muted-foreground">
+              <p className="truncate text-[11px] tabular-nums text-muted-foreground">
                 {t("clients.card.block_n", { n: block })} · {t("clients.cockpit.week_x_of_y", { x: week, y: totalWeeks ?? "—" })} · {t("clients.cockpit.open_plan")}
               </p>
             </div>
@@ -269,12 +269,12 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
       {/* 3. Stage panel — collapsed by default, opens on stage click */}
       {stageOpen && (
-        <div className="rounded-xl border border-border bg-card/40 p-3">
+        <div className="rounded-xl bg-muted/40 p-3">
           <div className="mb-2 flex items-center justify-end">
             <button
               type="button"
               onClick={() => setStageOpen(false)}
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:bg-secondary"
+              className="eyebrow inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               aria-label="Fechar"
             >
               <ChevronDown className="h-3 w-3" /> Fechar
