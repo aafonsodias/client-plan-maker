@@ -1670,6 +1670,20 @@ function ClientDetail() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("discard.title")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("discard.desc")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("discard.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { discardDraft(); setDiscardDialogOpen(false); }}>
+                  {t("discard.confirm")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
