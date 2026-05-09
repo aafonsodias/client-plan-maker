@@ -92,5 +92,12 @@
   "day": {
     "list_header_one": "{{count}} session scheduled",
     "list_header_other": "{{count}} sessions scheduled"
+  },
+  "zone": {
+    "early": "सुबह जल्दी",
+    "late": "देर शाम",
+    "count_one": "{{count}} सत्र",
+    "count_other": "{{count}} सत्र",
+    "empty": "कोई सत्र नहीं"
   }
 }
