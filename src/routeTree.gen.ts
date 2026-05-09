@@ -15,6 +15,7 @@ import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as MeRouteImport } from './routes/me'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -26,6 +27,8 @@ import { Route as SchedulePacksRouteImport } from './routes/schedule.packs'
 import { Route as PlansQuickRouteImport } from './routes/plans.quick'
 import { Route as PlansNewRouteImport } from './routes/plans.new'
 import { Route as PlansPlanIdRouteImport } from './routes/plans.$planId'
+import { Route as MeProgressoRouteImport } from './routes/me.progresso'
+import { Route as MeHistoricoRouteImport } from './routes/me.historico'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
@@ -66,6 +69,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManualRoute = ManualRouteImport.update({
@@ -122,6 +130,16 @@ const PlansPlanIdRoute = PlansPlanIdRouteImport.update({
   id: '/plans/$planId',
   path: '/plans/$planId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MeProgressoRoute = MeProgressoRouteImport.update({
+  id: '/progresso',
+  path: '/progresso',
+  getParentRoute: () => MeRoute,
+} as any)
+const MeHistoricoRoute = MeHistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => MeRoute,
 } as any)
 const LogTokenRoute = LogTokenRouteImport.update({
   id: '/log/$token',
@@ -187,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -197,6 +216,8 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
+  '/me/historico': typeof MeHistoricoRoute
+  '/me/progresso': typeof MeProgressoRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/quick': typeof PlansQuickRoute
@@ -217,6 +238,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -227,6 +249,8 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
+  '/me/historico': typeof MeHistoricoRoute
+  '/me/progresso': typeof MeProgressoRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/quick': typeof PlansQuickRoute
@@ -248,6 +272,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/knowledge': typeof KnowledgeRoute
   '/manual': typeof ManualRoute
+  '/me': typeof MeRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/schedule': typeof ScheduleRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -258,6 +283,8 @@ export interface FileRoutesById {
   '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
+  '/me/historico': typeof MeHistoricoRoute
+  '/me/progresso': typeof MeProgressoRoute
   '/plans/$planId': typeof PlansPlanIdRouteWithChildren
   '/plans/new': typeof PlansNewRoute
   '/plans/quick': typeof PlansQuickRoute
@@ -280,6 +307,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/knowledge'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -290,6 +318,8 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
+    | '/me/historico'
+    | '/me/progresso'
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/quick'
@@ -310,6 +340,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/knowledge'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -320,6 +351,8 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
+    | '/me/historico'
+    | '/me/progresso'
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/quick'
@@ -340,6 +373,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/knowledge'
     | '/manual'
+    | '/me'
     | '/privacy'
     | '/schedule'
     | '/settings'
@@ -350,6 +384,8 @@ export interface FileRouteTypes {
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
+    | '/me/historico'
+    | '/me/progresso'
     | '/plans/$planId'
     | '/plans/new'
     | '/plans/quick'
@@ -371,6 +407,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   KnowledgeRoute: typeof KnowledgeRoute
   ManualRoute: typeof ManualRoute
+  MeRoute: typeof MeRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ScheduleRoute: typeof ScheduleRouteWithChildren
   SettingsRoute: typeof SettingsRoute
@@ -430,6 +467,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manual': {
@@ -508,6 +552,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/plans/$planId'
       preLoaderRoute: typeof PlansPlanIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/me/progresso': {
+      id: '/me/progresso'
+      path: '/progresso'
+      fullPath: '/me/progresso'
+      preLoaderRoute: typeof MeProgressoRouteImport
+      parentRoute: typeof MeRoute
+    }
+    '/me/historico': {
+      id: '/me/historico'
+      path: '/historico'
+      fullPath: '/me/historico'
+      preLoaderRoute: typeof MeHistoricoRouteImport
+      parentRoute: typeof MeRoute
     }
     '/log/$token': {
       id: '/log/$token'
@@ -589,6 +647,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MeRouteChildren {
+  MeHistoricoRoute: typeof MeHistoricoRoute
+  MeProgressoRoute: typeof MeProgressoRoute
+}
+
+const MeRouteChildren: MeRouteChildren = {
+  MeHistoricoRoute: MeHistoricoRoute,
+  MeProgressoRoute: MeProgressoRoute,
+}
+
+const MeRouteWithChildren = MeRoute._addFileChildren(MeRouteChildren)
+
 interface ScheduleRouteChildren {
   SchedulePacksRoute: typeof SchedulePacksRoute
 }
@@ -640,6 +710,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   KnowledgeRoute: KnowledgeRoute,
   ManualRoute: ManualRoute,
+  MeRoute: MeRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ScheduleRoute: ScheduleRouteWithChildren,
   SettingsRoute: SettingsRoute,
@@ -659,12 +730,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
