@@ -2387,16 +2387,16 @@ function ClientDetail() {
                 return (
                   <div className="space-y-1">
                     <Label className="text-xs">{t("training_block.training_location")}</Label>
-                    <ChipGroup
-                      cols={4}
+                    <VisualChipGroup
+                      columns={4}
                       size="sm"
                       value={isLegacy ? null : ((raw as any) ?? null)}
                       onChange={(v) => setAssessment({ ...assessment, training_location: v })}
                       options={[
-                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }) },
-                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }) },
-                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }) },
-                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }) },
+                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }), icon: <IconHome /> },
+                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }), icon: <IconGym /> },
+                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }), icon: <IconOutdoor /> },
+                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }), icon: <IconHybrid /> },
                       ]}
                     />
                     {isLegacy && (
