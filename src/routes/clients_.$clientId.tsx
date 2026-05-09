@@ -1700,8 +1700,7 @@ function ClientDetail() {
         const scrollToStages = () => {
           document.getElementById("protocol-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
         };
-        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction;
-        void primaryAction; void heroDefaultWeek; void zeroState;
+        let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction | null = null;
         if (!intakeDone && !lastSavedAt) {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
