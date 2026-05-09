@@ -193,6 +193,41 @@ This decision is enforced in code (route deleted, server functions removed, i18n
 
 Implication: the only path to a plan is through the assessment → brief → blueprint → microcycle → progressions pipeline. Onboarding speed comes from making each stage faster and clearer, not from skipping stages.
 
+### Client cockpit consolidation (May 2026 sub-rounds)
+
+The trainer's view of a single client moved to a denser, navigation-driven model:
+
+- AI-generated client avatars when `photo_url` is null (`ClientAvatar` component, gender-based fallback)
+- NextAction embedded in `ClientPlayerCard` as amber pill on hover (review / complete / generate / birthday); standalone `NextActionCard` removed; intake-link copy button removed (duplicate path)
+- `ProtocolRail` densified: Stage 1 chip shows inline `11/14 · 79%`
+- Stage 1 of cockpit slim: in-progress shows only CTA; complete shows active mesocycle + discrete "Reavaliar" link
+- Clicking protocol stages navigates to `/clients/$clientId`; inline `stagePanel` accordion deleted
+
+Reflects principle §2.10 ("simple by default, depth by choice"): cockpit shows one priority action; depth lives in destination routes.
+
+### Re-measurement cadence (May 2026)
+
+Each capacity has a default re-measurement interval based on evidence (signal vs. noise):
+
+| Capacity domain | Default cadence | Rationale |
+|---|---|---|
+| cardiorespiratory | 4 weeks | Submax tests show meaningful change at 3-4 weeks of consistent training |
+| muscular_strength | 4 weeks | 1RM/5RM signal exceeds noise at ~4 weeks; testing more often = neural fatigue confound |
+| muscular_endurance | 3 weeks | Faster adaptation than strength, less neural cost |
+| flexibility | 2 weeks | ROM responds quickly to consistent intervention |
+| body_composition | 4 weeks | Below this, water/glycogen noise dominates lean/fat signal |
+| power | 4 weeks | Same neural-fatigue logic as strength |
+| balance | 2 weeks | Especially relevant for older adults; faster adaptation, lower fatigue cost |
+| coordination | 3 weeks | Skill acquisition timeline |
+| agility | 3 weeks | Combined cognitive-motor; tracks with coordination |
+| cognitive_motor | 3 weeks | Dual-task adaptation timeline |
+| movement_quality | 4 weeks | Pattern integrity changes slowly with consistent practice |
+| autonomic_regulation | 2 weeks | RHR/HRV/BP respond quickly to training and recovery state |
+
+PT can override per mesocycle (global) or per capacity per client (granular). Reminder appears in cockpit when interval has elapsed since latest snapshot for that capacity.
+
+Implementation: stored in `client_measurement_cadence` per (client_id, domain_slug). Reads default from `capacity_domains.default_cadence_days` if no override exists.
+
 ---
 
 ## 5. Threads of thought (the founder's pending raciocínios)
@@ -211,7 +246,7 @@ Each thread is something the founder has voiced as part of the vision but is not
 | 8 | App runs from simple-stupid to as advanced as it gets, via user interaction | 🌿 partial | Implicit in current UI (collapsible stages, advanced toggles in cockpit). Not explicit as a design principle. | Make this an invariant principle (above). Audit every surface against it. |
 | 9 | Aesthetic coherence app-wide | 🌿 advancing | Round A foundations landed (May 9). Round B applied to top regions of /clients/$id (May 9). R101/R102 applied 7 principles to /dashboard + CoachCockpit (golden-ratio grid, tonal separation, amber reduced to 3 moments, font-display in headers). Round B.2 pending to complete /clients/$id. | After B.2 lands, Round C replicates to /me, /intake, /log, /plans/$id. |
 | 10 | MVP a PT would buy themselves | 🌿 partial | Capacity Map + assessment loop (R1-3) and aesthetic-coherent dashboard (R101-102) approach this. Quick-plan rejected (R74) as inconsistent with the principle. Not yet field-tested with paying customers. | Field test with first 3-5 trainers in Lisbon. Iterate from feedback, not speculation. |
-| 11 | Verticalized company — info from clients feeds back; everything managed in one place | 🌿 partial | Logbook + check-ins + assessments exist as data ingress. Insights surfaces (`CapacityDeltasCard`, `ComplianceDashboard`) exist as feedback. | Continue via the loop closure work already in motion. |
+| 11 | Verticalized company | 🌿 advancing | Cockpit consolidated (May 2026). Logbook + check-ins + assessments as ingress. CapacityDeltasCard + ComplianceDashboard as feedback. | Continue loop closure. Re-measurement cadence decision: see §4. |
 | 12 | Holistic plan generator | 🌿 partial | Stage 1 Brief now reads capacity profile. Stage 2/3 do not yet prescribe across all capacities. | Round 4+ once Capacity Map has real data and the founder has tested with real clients. |
 
 ---
@@ -222,8 +257,7 @@ Each thread is something the founder has voiced as part of the vision but is not
 2. **Macrocycle as intent vs prescription:** the principle is set (intent only). The UI representation is not. List view? Curve view? Something else?
 3. **Per-domain norm sources:** which population datasets become the truth for each of the 12 domains? NHANES is partial. ACSM 12e has tables for some. Need a canonical mapping.
 4. **Evidence tier system:** how many tiers, how labeled? Suggested: T1 RCT-backed / T2 expert-consensus / T3 traditional-practice-with-emerging-evidence. Confirm or revise.
-5. **Re-measurement cadence per domain:** strength every 4-6 weeks; balance more often; body comp every 4-8 weeks. Need a data model that captures this and reminds the trainer.
-6. **`assessments.waist_cm/hip_cm/body_fat_*` columns:** retire in favor of snapshot writes, or keep as trainer-input front door with a trigger that mirrors to snapshots? Decision pending Phase B cleanup.
+5. **`assessments.waist_cm/hip_cm/body_fat_*` columns:** retire in favor of snapshot writes, or keep as trainer-input front door with a trigger that mirrors to snapshots? Decision pending Phase B cleanup.
 
 ---
 
@@ -270,6 +304,14 @@ When the founder reports solo work:
 - Never relitigate work already shipped unless it broke an invariant.
 
 This document is the spine. The founder writes muscle. The AI maintains skeleton.
+
+### Checkpoint discipline
+
+If a Lovable round lands with problems: try ONE corrective prompt. If the issue persists after that prompt and ~5 credits, restore the Lovable checkpoint and re-approach with a fresh prompt informed by what failed. Don't keep patching.
+
+### Diagnose with Chat mode before Agent prompts
+
+When app behavior is unexpected or ambiguous: open Lovable's Chat mode (read-only, credit-light), ask it to diagnose by reading files/inspecting DB. Then write a tight Agent prompt based on the diagnosis. Don't jump into Agent mode with "fix this thing" — that burns credits guessing.
 
 ---
 

@@ -540,6 +540,7 @@ export type Database = {
       capacity_domains: {
         Row: {
           created_at: string
+          default_cadence_days: number
           display_order: number
           evidence_summary_key: string
           id: string
@@ -551,6 +552,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_cadence_days?: number
           display_order: number
           evidence_summary_key: string
           id?: string
@@ -562,6 +564,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_cadence_days?: number
           display_order?: number
           evidence_summary_key?: string
           id?: string
@@ -737,6 +740,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_measurement_cadence: {
+        Row: {
+          client_id: string
+          created_at: string
+          domain_slug: string
+          interval_days: number
+          set_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          domain_slug: string
+          interval_days: number
+          set_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          domain_slug?: string
+          interval_days?: number
+          set_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_measurement_cadence_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_measurement_cadence_domain_slug_fkey"
+            columns: ["domain_slug"]
+            isOneToOne: false
+            referencedRelation: "capacity_domains"
+            referencedColumns: ["slug"]
           },
         ]
       }

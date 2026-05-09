@@ -5,6 +5,8 @@ import { ClientDocuments } from "@/components/ClientDocuments";
 import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { CapacityMap } from "@/components/CapacityMap";
+import { ReassessmentReminders } from "@/components/ReassessmentReminders";
+import { CadenceSheet } from "@/components/CadenceSheet";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -460,6 +462,7 @@ function ClientDetail() {
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
   const [reassessOpen, setReassessOpen] = useState(false);
+  const [cadenceOpen, setCadenceOpen] = useState(false);
   // BMV gate + device capture sheets.
   const [bmvOpen, setBmvOpen] = useState(false);
   const [tanitaOpen, setTanitaOpen] = useState(false);
@@ -1578,6 +1581,10 @@ function ClientDetail() {
                   <Eye className="mr-2 h-3.5 w-3.5" /> Ver como cliente
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setCadenceOpen(true); }}>
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {t("cadence.menu_label")}
+              </DropdownMenuItem>
               {(client.intake_status === "submitted" ||
                 client.intake_status === "reviewed" ||
                 lastSavedAt) && (
@@ -1705,6 +1712,7 @@ function ClientDetail() {
         return (
           <>
           <CapacityMap clientId={clientId} clientName={client?.full_name} />
+          <ReassessmentReminders clientId={clientId} />
           <section
             aria-label="Protocolo"
             className={[
@@ -3456,6 +3464,12 @@ function ClientDetail() {
 
       {/* Compliance & estatísticas — moved into the Protocolo card above (R56). */}
       <PaywallDialog open={paywallOpen} onOpenChange={setPaywallOpen} reason="quota" />
+      <CadenceSheet
+        clientId={clientId}
+        clientName={client?.full_name}
+        open={cadenceOpen}
+        onOpenChange={setCadenceOpen}
+      />
       {LEGACY_REASSESSMENT_SHEET && (
         <ReassessmentSheet
           clientId={clientId}
