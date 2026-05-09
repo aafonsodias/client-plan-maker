@@ -88,11 +88,35 @@
   },
   "progress": {
     "title": "Progress",
-    "soon": "Coming soon — top lifts, weight chart and progress photos."
+    "soon": "Coming soon — top lifts, weight chart and progress photos.",
+    "block": "Block {{n}}",
+    "hero_caption": "Average e1RM gain vs previous block",
+    "hero_empty_title": "No block comparison yet",
+    "hero_empty_body": "Finish your first block and your progress shows up here.",
+    "capacity_title": "Capacity gain vs previous block",
+    "strip_title": "Last 14 days",
+    "strip_legend_both": "Workout + check-in",
+    "strip_legend_one": "One of the two",
+    "strip_tooltip_workout": "workout",
+    "strip_tooltip_checkin": "check-in",
+    "top_lifts": "Top lifts (e1RM)",
+    "top_lifts_empty": "No sessions logged yet.",
+    "weight_title": "Weight (90 days)",
+    "weight_empty": "No weight entries yet.",
+    "weight_tooltip": "Weight",
+    "photos_title": "Progress photos",
+    "photos_empty": "No photos yet."
   },
   "history": {
     "title": "History",
-    "soon": "Coming soon — every session you've logged, with full detail."
+    "soon": "Coming soon — every session you've logged, with full detail.",
+    "count_one": "{{count}} session",
+    "count_other": "{{count}} sessions",
+    "empty": "No sessions logged yet.",
+    "load_more": "Load more",
+    "block_week": "Block {{block}} · Wk {{week}}",
+    "exercises_short": "{{n}} ex",
+    "no_details": "No details."
   },
   "footer": {
     "soon": "Coming soon — daily messages and visual progress."
