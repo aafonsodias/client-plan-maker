@@ -663,7 +663,8 @@ function ClientDetail() {
   // the last step (Performance) or on desktop where every section is visible
   // at once.
   const isMobileStepper = useIsMobile(1024);
-  const showGenerateCta = !isMobileStepper || activeSection === "performance";
+  // CTA only belongs at the end of the protocol (Performance section), regardless of viewport.
+  const showGenerateCta = activeSection === "performance";
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
   // R-X · Lote 1: flash highlight on Antropometria "Dados base" when Risco BMI
