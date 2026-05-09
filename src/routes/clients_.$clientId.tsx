@@ -642,6 +642,12 @@ function ClientDetail() {
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  // Meds local UI state (doses keyed by canonical flag + free-form "Other"
+  // entries). Source of truth visually; serialized into assessment.medications
+  // on every change so PDFs / AI briefs see a single readable string.
+  const [medsLocal, setMedsLocal] = useState<{ doses: Record<string, string>; others: OtherMed[] }>(
+    () => parseMeds(""),
+  );
   const [progressStep, setProgressStep] = useState(0);
   // Per-day generation progress: map of "w-d" -> "pending" | "running" | "done" | "error"
   const [dayProgress, setDayProgress] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
