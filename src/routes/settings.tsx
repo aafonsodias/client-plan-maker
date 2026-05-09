@@ -11,6 +11,7 @@ import { Upload, Save, ArrowLeft, LayoutDashboard, Users } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Link } from "@tanstack/react-router";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/settings")({
   component: () => (
