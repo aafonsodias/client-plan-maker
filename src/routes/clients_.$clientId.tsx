@@ -1581,6 +1581,10 @@ function ClientDetail() {
                   <Eye className="mr-2 h-3.5 w-3.5" /> Ver como cliente
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setCadenceOpen(true); }}>
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {t("cadence.menu_label")}
+              </DropdownMenuItem>
               {(client.intake_status === "submitted" ||
                 client.intake_status === "reviewed" ||
                 lastSavedAt) && (
