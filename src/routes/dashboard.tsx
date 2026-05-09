@@ -29,7 +29,6 @@ import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
-import { NextActionCard } from "@/components/dashboard/NextActionCard";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -436,19 +435,6 @@ function Dashboard() {
         <ViewAsClientPicker className="w-full sm:w-auto" />
         </div>
       </div>
-
-      <NextActionCard
-        clients={clientRows.map((c) => ({
-          id: c.id,
-          full_name: c.full_name,
-          photo_url: c.photo_url,
-          date_of_birth: c.date_of_birth,
-          intake_status: c.intake_status,
-          assessment_completion: c.assessment_completion ?? 0,
-          has_plan: Boolean(planByClient[c.id]),
-        }))}
-        onInvite={() => setInviteOpen(true)}
-      />
 
       {/* Quick "copy last intake link" button removed — it copied a per-client link
           and read as a public join link, which it wasn't. Intake links are

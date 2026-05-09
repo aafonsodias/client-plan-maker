@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown, Inbox, ClipboardList, Sparkles, Cake, ArrowRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
@@ -14,9 +15,18 @@ import {
   CardPlan, CardLog, planFocus, currentWeek, daysSinceLog, formatRelativeDays,
 } from "@/lib/client-card-data";
 import { ClientCockpit } from "@/components/ClientCockpit";
+import { clientNextAction } from "@/lib/client-next-action";
 
 type Props = {
-  client: { id: string; full_name: string; email: string | null; photo_url: string | null };
+  client: {
+    id: string;
+    full_name: string;
+    email: string | null;
+    photo_url: string | null;
+    intake_status?: string;
+    assessment_completion?: number | null;
+    date_of_birth?: string | null;
+  };
   phase: ClientPhase | undefined;
   plan: CardPlan | null;
   logs: CardLog[];
@@ -61,6 +71,23 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
   const block = plan?.block_number ?? null;
   const lastLog = logs.length > 0 ? logs[0] : null;
   const days = daysSinceLog(lastLog);
+
+  const nextAction = clientNextAction({
+    id: client.id,
+    intake_status: client.intake_status ?? "not_sent",
+    assessment_completion: client.assessment_completion ?? 0,
+    date_of_birth: client.date_of_birth ?? null,
+    has_plan: Boolean(plan),
+  });
+  const ActionIcon = nextAction
+    ? nextAction.kind === "review"
+      ? Inbox
+      : nextAction.kind === "complete"
+        ? ClipboardList
+        : nextAction.kind === "generate"
+          ? Sparkles
+          : Cake
+    : null;
 
   // Status line (line 3): chooses one of a few honest states.
   let statusText: string | null = null;
@@ -176,6 +203,31 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         </div>
         <ChevronDown className={`ml-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
+      {nextAction && !open && (
+        nextAction.target.type === "client" ? (
+          <Link
+            to="/clients/$clientId"
+            params={{ clientId: nextAction.target.clientId }}
+            className="hidden self-center mr-1 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-amber-700 opacity-0 transition hover:bg-amber-500/10 group-hover:opacity-100 focus:opacity-100 sm:inline-flex dark:text-amber-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
+            <span>{t(nextAction.ctaKey)}</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        ) : (
+          <Link
+            to="/plans/new"
+            search={{ clientId: nextAction.target.clientId }}
+            className="hidden self-center mr-1 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-amber-700 opacity-0 transition hover:bg-amber-500/10 group-hover:opacity-100 focus:opacity-100 sm:inline-flex dark:text-amber-400"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
+            <span>{t(nextAction.ctaKey)}</span>
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        )
+      )}
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
