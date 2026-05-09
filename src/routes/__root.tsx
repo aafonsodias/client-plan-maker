@@ -95,8 +95,11 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
+        // Round A foundation: load full Fraunces variable axes (opsz, wght, SOFT, WONK)
+        // and the full Inter Tight weight range. Plain Inter + JetBrains Mono kept for
+        // legacy callers; Round B will migrate them off.
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Inter+Tight:wght@400..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
       },
     ],
   }),
