@@ -138,7 +138,12 @@
   "meds_block": {
     "title": "Medicação & suplementos",
     "hint": "Beta-bloqueadores reduzem FC; estatinas têm risco de mialgia; anticoagulantes pedem cuidado em desportos de contacto.",
-    "free_text": "Texto livre (medicação, suplementos, dosagem)",
+    "dose_placeholder": "ex.: 5 mg/dia",
+    "add_other": "Adicionar outro medicamento",
+    "other_name_placeholder": "Nome (ex.: Vitamina D)",
+    "other_dose_placeholder": "Dose",
+    "other_remove_aria": "Remover",
+    "other_label": "Outro",
     "flag_beta": "Beta-bloqueador",
     "flag_statin": "Estatina",
     "flag_anticoag": "Anticoagulante",
