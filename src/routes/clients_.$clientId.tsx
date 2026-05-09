@@ -2282,21 +2282,36 @@ function ClientDetail() {
           {/* Medications */}
           <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
             <TextField label={t("meds_block.free_text")} value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {[
-                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta") },
-                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin") },
-                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag") },
-              ].map(({ id, canonical: flag, label }) => {
+                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
+                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
+                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag"), effect: t("meds_block.effect_anticoag"), Icon: Droplet },
+                { id: "antihtn", canonical: "Antihypertensive", label: t("meds_block.flag_antihtn"), effect: t("meds_block.effect_antihtn"), Icon: Activity },
+                { id: "diuretic", canonical: "Diuretic", label: t("meds_block.flag_diuretic"), effect: t("meds_block.effect_diuretic"), Icon: Droplets },
+                { id: "insulin", canonical: "Insulin/Antidiabetic", label: t("meds_block.flag_insulin"), effect: t("meds_block.effect_insulin"), Icon: Syringe },
+                { id: "bronchodilator", canonical: "Bronchodilator", label: t("meds_block.flag_bronchodilator"), effect: t("meds_block.effect_bronchodilator"), Icon: Wind },
+                { id: "ssri", canonical: "SSRI", label: t("meds_block.flag_ssri"), effect: t("meds_block.effect_ssri"), Icon: Brain },
+                { id: "thyroid", canonical: "Thyroid", label: t("meds_block.flag_thyroid"), effect: t("meds_block.effect_thyroid"), Icon: Shield },
+                { id: "nsaid", canonical: "NSAID", label: t("meds_block.flag_nsaid"), effect: t("meds_block.effect_nsaid"), Icon: Tablets },
+                { id: "corticosteroid", canonical: "Oral corticosteroid", label: t("meds_block.flag_corticosteroid"), effect: t("meds_block.effect_corticosteroid"), Icon: Pill },
+              ].map(({ id, canonical: flag, label, effect, Icon }) => {
                 const on = assessment.med_flags.includes(flag);
                 return (
                   <button
                     key={id}
                     type="button"
+                    aria-pressed={on}
                     onClick={() => setAssessment({ ...assessment, med_flags: on ? assessment.med_flags.filter((f: string) => f !== flag) : [...assessment.med_flags, flag] })}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-destructive bg-destructive/10 text-destructive" : "border-border bg-background hover:bg-secondary"}`}
+                    className={`group flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition ${on ? "border-amber-500/40 bg-amber-500/[0.06] ring-1 ring-inset ring-amber-500/20" : "border-border/60 bg-background/40 hover:border-border hover:bg-muted/30"}`}
                   >
-                    {on && "⚑ "}{label}
+                    <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${on ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted/60 text-muted-foreground"}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block text-[12px] font-medium leading-tight ${on ? "text-amber-700 dark:text-amber-300" : "text-foreground"}`}>{label}</span>
+                      <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">{effect}</span>
+                    </span>
                   </button>
                 );
               })}
