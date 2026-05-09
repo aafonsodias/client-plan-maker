@@ -3853,6 +3853,9 @@ function AssessmentSection({
   completionPct,
   onShowSynthesis,
   hideCollapsedStrip = false,
+  sectionStatus,
+  saveStatus,
+  lastSavedAt,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -3867,8 +3870,13 @@ function AssessmentSection({
   onShowSynthesis?: () => void;
   /** When true, render nothing while collapsed (the parent ProtocolRail owns the toggle). */
   hideCollapsedStrip?: boolean;
+  /** Per-section completeness, used by mobile stepper jump sheet + Próxima styling. */
+  sectionStatus?: Array<{ id: string; label: string; complete: boolean }>;
+  saveStatus?: SaveStatus;
+  lastSavedAt?: number | null;
 }) {
   const { t } = useTranslation("assessment");
+  const isMobile = useIsMobile(1024);
   const sectionIds = useMemo(() => SECTIONS.map((s) => s.id), []);
   const ctx = useSectionCollapseProvider(clientId, sectionIds);
   const [collapsedInternal, setCollapsedInternal] = useState<boolean>(defaultCollapsed);
