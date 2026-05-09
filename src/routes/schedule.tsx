@@ -112,6 +112,12 @@ function ScheduleTabs() {
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
+/** Collapsible zones — early morning + late evening rarely have clients,
+ *  but they do happen. Default collapsed; auto-expand if the visible week
+ *  has any booking inside the zone. User toggle persists per zone. */
+const EARLY_HOURS = [6, 7, 8] as const;
+const CORE_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const;
+const LATE_HOURS = [20, 21, 22] as const;
 
 /** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
  *  otherwise next weekday at 09:00. */
