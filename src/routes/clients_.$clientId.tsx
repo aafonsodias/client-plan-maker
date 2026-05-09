@@ -1522,6 +1522,9 @@ function ClientDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bmiAuto.category, client?.id]);
 
+  const headerPhases = useClientPhases(client ? [client.id] : []);
+  const clientPhase = client ? headerPhases[client.id] : undefined;
+
   if (!client) return <p className="text-muted-foreground">{t("loading")}</p>;
 
   const parqYes = parqHasYes(assessment.parq);
@@ -1538,9 +1541,6 @@ function ClientDetail() {
   const minutesLeft = Math.max(1, Math.round((totalSections - completedCount) * 0.6));
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
-
-  const headerPhases = useClientPhases([client.id]);
-  const clientPhase = headerPhases[client.id];
 
   const expLabelById: Record<string, string> = {
     beginner: t("training_block.beginner"),
