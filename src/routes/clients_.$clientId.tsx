@@ -1743,6 +1743,7 @@ function ClientDetail() {
               <ReassessmentReminders clientId={clientId} />
             </>
           )}
+          {(heroPlan || plans.length > 0 || protocolRailOpen) && (
           <section
             aria-label="Protocolo"
             className={[
@@ -1789,6 +1790,7 @@ function ClientDetail() {
               </details>
             )}
           </section>
+          )}
           </>
         );
       })()}
