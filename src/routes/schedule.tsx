@@ -336,23 +336,48 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     const v = window.localStorage.getItem("schedule_zone_late");
     return v === "open" ? true : v === "closed" ? false : null;
   });
+  // Editable day boundaries (persisted). dayStart = first core hour,
+  // dayEnd = last core hour. Hours below dayStart are "early"; above are "late".
+  const [dayStart, setDayStart] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_DAY_START;
+    const v = Number(window.localStorage.getItem("schedule_day_start"));
+    return Number.isFinite(v) && v >= HOUR_FLOOR && v <= HOUR_CEIL ? v : DEFAULT_DAY_START;
+  });
+  const [dayEnd, setDayEnd] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_DAY_END;
+    const v = Number(window.localStorage.getItem("schedule_day_end"));
+    return Number.isFinite(v) && v >= HOUR_FLOOR && v <= HOUR_CEIL ? v : DEFAULT_DAY_END;
+  });
+  const earlyHours = useMemo(() => range(HOUR_FLOOR, dayStart - 1), [dayStart]);
+  const coreHours = useMemo(() => range(dayStart, dayEnd), [dayStart, dayEnd]);
+  const lateHours = useMemo(() => range(dayEnd + 1, HOUR_CEIL), [dayEnd]);
+  const setDayStartClamped = (next: number) => {
+    const clamped = Math.max(HOUR_FLOOR, Math.min(dayEnd, next));
+    setDayStart(clamped);
+    try { window.localStorage.setItem("schedule_day_start", String(clamped)); } catch {}
+  };
+  const setDayEndClamped = (next: number) => {
+    const clamped = Math.max(dayStart, Math.min(HOUR_CEIL, next));
+    setDayEnd(clamped);
+    try { window.localStorage.setItem("schedule_day_end", String(clamped)); } catch {}
+  };
   const earlyCount = useMemo(
     () =>
       bookings.filter((b) => {
         if (b.status === "cancelled") return false;
         const h = new Date(b.starts_at).getHours();
-        return (EARLY_HOURS as readonly number[]).includes(h);
+        return earlyHours.includes(h);
       }).length,
-    [bookings],
+    [bookings, earlyHours],
   );
   const lateCount = useMemo(
     () =>
       bookings.filter((b) => {
         if (b.status === "cancelled") return false;
         const h = new Date(b.starts_at).getHours();
-        return (LATE_HOURS as readonly number[]).includes(h);
+        return lateHours.includes(h);
       }).length,
-    [bookings],
+    [bookings, lateHours],
   );
   const earlyOpen = earlyPref ?? earlyCount > 0;
   const lateOpen = latePref ?? lateCount > 0;
