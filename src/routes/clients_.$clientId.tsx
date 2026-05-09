@@ -2183,16 +2183,19 @@ function ClientDetail() {
                 />
                 <div className="space-y-1 sm:col-span-2">
                   <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
-                    <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
-                      <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
-                      <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
-                      <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
-                      <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <ChipGroup
+                    cols={5}
+                    size="sm"
+                    value={assessment.body_fat_method ?? null}
+                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
+                    options={[
+                      { value: "calipers", label: t("anthro_block.bf_calipers") },
+                      { value: "bia", label: t("anthro_block.bf_bia") },
+                      { value: "dexa", label: t("anthro_block.bf_dexa") },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod") },
+                      { value: "visual", label: t("anthro_block.bf_visual") },
+                    ]}
+                  />
                 </div>
               </div>
             </details>
