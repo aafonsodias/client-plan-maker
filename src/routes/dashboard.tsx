@@ -507,23 +507,35 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap gap-1 text-[11px] uppercase tracking-widest">
+            <div className="mb-3 flex flex-wrap gap-0.5 text-[11px] uppercase tracking-widest">
               {[
-                { id: "all", label: t("clients.filter_all", { count: counts.all }) },
-                { id: "onboarding", label: t("clients.filter_onboarding", { count: counts.onboarding }) },
-                { id: "active", label: t("clients.filter_active", { count: counts.active }) },
-                { id: "idle", label: t("clients.filter_idle", { count: counts.idle }) },
-                { id: "ready", label: t("clients.filter_ready", { count: counts.ready }) },
-              ].map((f) => (
-                <Link
-                  key={f.id}
-                  to="/dashboard"
-                  search={{ filter: f.id }}
-                  className={`rounded-full px-3 py-1 transition ${filter === f.id ? "bg-accent text-accent-foreground shadow-sm" : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-                >
-                  {f.label}
-                </Link>
-              ))}
+                { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
+                { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
+                { id: "active", label: t("clients.filter_active_label", { defaultValue: "Ativos" }), count: counts.active },
+                { id: "idle", label: t("clients.filter_idle_label", { defaultValue: "Inativos" }), count: counts.idle },
+                { id: "ready", label: t("clients.filter_ready_label", { defaultValue: "Prontos para plano" }), count: counts.ready },
+              ].map((f) => {
+                const isActive = filter === f.id;
+                return (
+                  <Link
+                    key={f.id}
+                    to="/dashboard"
+                    search={{ filter: f.id }}
+                    className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                    }`}
+                  >
+                    {isActive && (
+                      <span aria-hidden className="h-1 w-1 rounded-full bg-amber-500" />
+                    )}
+                    <span>{f.label}</span>
+                    <span className={isActive ? "text-foreground/50" : "text-foreground/30"}>·</span>
+                    <span className={isActive ? "text-foreground/70 tabular-nums" : "text-foreground/40 tabular-nums"}>{f.count}</span>
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="overflow-hidden rounded-2xl bg-muted/40">
