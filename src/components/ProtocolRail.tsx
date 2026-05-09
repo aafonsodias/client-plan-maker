@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
  */
 export function ProtocolRail({
   assessmentPct,
+  assessmentCoverage,
   lastAssessmentAt,
   briefApproved,
   blueprintApproved,
@@ -27,6 +28,8 @@ export function ProtocolRail({
   onStageClick,
 }: {
   assessmentPct: number | null;
+  /** Optional fine-grained section coverage (e.g. 11/14). Renders inline on the stage 1 chip. */
+  assessmentCoverage?: { done: number; total: number } | null;
   lastAssessmentAt: string | null;
   briefApproved: boolean;
   blueprintApproved: boolean;
@@ -103,7 +106,10 @@ export function ProtocolRail({
                 <span className="font-bold">{s.n}</span>
                 <span>{s.label}</span>
                 {s.n === 1 && assessmentPct != null && (
-                  <span className="opacity-70">{assessmentPct}%</span>
+                  <span className="tabular-nums opacity-70">
+                    {assessmentCoverage ? `${assessmentCoverage.done}/${assessmentCoverage.total} · ` : ""}
+                    {assessmentPct}%
+                  </span>
                 )}
               </>
             );
