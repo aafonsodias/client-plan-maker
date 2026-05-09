@@ -2790,24 +2790,7 @@ function ClientDetail() {
               </div>
             </div>
           ) : (
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" disabled={busy} className="w-full sm:w-auto">
-                  <Eraser className="mr-2 h-4 w-4" /> {t("discard.button")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("discard.title")}</AlertDialogTitle>
-                  <AlertDialogDescription>{t("discard.desc")}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t("discard.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={discardDraft}>{t("discard.confirm")}</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
             {(() => {
               const isHigh = riskCategory === "high";
               const blocked = parqYes || isHigh;
