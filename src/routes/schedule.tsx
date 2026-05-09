@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Minus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -114,10 +114,15 @@ function ScheduleTabs() {
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
 /** Collapsible zones — early morning + late evening rarely have clients,
  *  but they do happen. Default collapsed; auto-expand if the visible week
- *  has any booking inside the zone. User toggle persists per zone. */
-const EARLY_HOURS = [6, 7, 8] as const;
-const CORE_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const;
-const LATE_HOURS = [20, 21, 22] as const;
+ *  has any booking inside the zone. User toggle persists per zone.
+ *  The boundary between early/core and core/late is editable per trainer
+ *  (persisted in localStorage). Bounds: 6 ≤ dayStart ≤ dayEnd ≤ 22. */
+const HOUR_FLOOR = 6;
+const HOUR_CEIL = 22;
+const DEFAULT_DAY_START = 9;
+const DEFAULT_DAY_END = 19;
+const range = (a: number, b: number): number[] =>
+  a > b ? [] : Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
 /** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
  *  otherwise next weekday at 09:00. */
