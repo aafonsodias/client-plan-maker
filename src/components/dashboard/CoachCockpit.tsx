@@ -278,8 +278,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       {/* Today + This week — golden-ratio split on desktop, stacked on mobile */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
       {/* Today / Needs attention */}
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      <div className="rounded-2xl bg-muted/40 p-4">
+        <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           <span>{t("dashboard.today.title")}</span>
           <Sparkles className="h-3 w-3 text-amber-500" />
         </div>
@@ -386,10 +386,10 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         <button
           type="button"
           onClick={() => navigate({ to: "/schedule" })}
-          className="group relative rounded-2xl border border-border bg-card p-3 text-left transition hover:border-amber-500/40"
+          className="group relative rounded-2xl bg-muted/40 p-3 text-left transition hover:bg-muted/60"
           aria-label={lang === "pt" ? "Abrir agenda da semana" : "Open this week's schedule"}
         >
-          <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             <span>{lang === "pt" ? "Calendário da semana" : "Week timetable"}</span>
             <span className="opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">→</span>
           </div>
@@ -403,10 +403,10 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         </button>
 
         {/* Nudges */}
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <div className="rounded-2xl bg-muted/40 p-3">
+          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             <span>{lang === "pt" ? "Lembretes para clientes" : "Client reminders"}</span>
-            <Sparkles className="h-3 w-3 text-amber-500" />
+            <span className="text-muted-foreground/60">·</span>
           </div>
           {nudges.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">
