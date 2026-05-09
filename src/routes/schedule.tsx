@@ -509,13 +509,23 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
           <ZoneBand
             label={t("zone.early")}
-            range={`${String(EARLY_HOURS[0]).padStart(2, "0")}:00–${String(EARLY_HOURS[EARLY_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            range={
+              earlyHours.length === 0
+                ? `${String(HOUR_FLOOR).padStart(2, "0")}:00`
+                : `${String(earlyHours[0]).padStart(2, "0")}:00–${String(earlyHours[earlyHours.length - 1] + 1).padStart(2, "0")}:00`
+            }
             count={earlyCount}
             open={earlyOpen}
             onToggle={() => { const next = !earlyOpen; setEarlyPref(next); persistZone("early", next); }}
+            canExtend={dayStart > HOUR_FLOOR}
+            canShrink={dayStart < dayEnd}
+            onExtend={() => setDayStartClamped(dayStart - 1)}
+            onShrink={() => setDayStartClamped(dayStart + 1)}
+            extendLabel={t("zone.extend_early")}
+            shrinkLabel={t("zone.shrink_early")}
             t={t}
           />
-          {earlyOpen && EARLY_HOURS.map((h) => (
+          {earlyOpen && earlyHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -531,7 +541,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               clipboardActive={!!clipboard}
             />
           ))}
-          {CORE_HOURS.map((h) => (
+          {coreHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -549,13 +559,23 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
           <ZoneBand
             label={t("zone.late")}
-            range={`${String(LATE_HOURS[0]).padStart(2, "0")}:00–${String(LATE_HOURS[LATE_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            range={
+              lateHours.length === 0
+                ? `${String(HOUR_CEIL + 1).padStart(2, "0")}:00`
+                : `${String(lateHours[0]).padStart(2, "0")}:00–${String(lateHours[lateHours.length - 1] + 1).padStart(2, "0")}:00`
+            }
             count={lateCount}
             open={lateOpen}
             onToggle={() => { const next = !lateOpen; setLatePref(next); persistZone("late", next); }}
+            canExtend={dayEnd < HOUR_CEIL}
+            canShrink={dayEnd > dayStart}
+            onExtend={() => setDayEndClamped(dayEnd + 1)}
+            onShrink={() => setDayEndClamped(dayEnd - 1)}
+            extendLabel={t("zone.extend_late")}
+            shrinkLabel={t("zone.shrink_late")}
             t={t}
           />
-          {lateOpen && LATE_HOURS.map((h) => (
+          {lateOpen && lateHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
