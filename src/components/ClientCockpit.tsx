@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Download, Edit3, ChevronRight, ChevronDown, Loader2, ArrowRight } from "lucide-react";
+import { Download, Edit3, ChevronRight, ChevronDown, Loader2, ArrowRight, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ProtocolRail } from "@/components/ProtocolRail";
@@ -148,15 +148,31 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       ) : null;
 
     if (activeStage === 1) {
-      const summary = coverage
-        ? t("clients.cockpit.stage.1.summary", { done: coverage.done, total: coverage.total, pct: realPct ?? 0 })
-        : "—";
-      return (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground">{t("clients.cockpit.stage.1.title")}</p>
-            <p className="truncate">{summary}</p>
+      const isComplete = (realPct ?? 0) >= 80;
+      // Done → surface the active mesocycle inline; In-progress → just the CTA
+      // (the rail chip already shows X/Y · %, no need to repeat it here).
+      if (isComplete && plan) {
+        const focus = (plan as any)?.session_focus ?? null;
+        const mesoLine = [
+          t("clients.card.block_n", { n: block }),
+          t("clients.cockpit.week_x_of_y", { x: week, y: totalWeeks ?? "—" }),
+          focus,
+        ].filter(Boolean).join(" · ");
+        return (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <p className="min-w-0 truncate text-foreground">{mesoLine}</p>
+            <Link
+              to="/clients/$clientId"
+              params={{ clientId }}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" /> Reavaliar
+            </Link>
           </div>
+        );
+      }
+      return (
+        <div className="flex items-center justify-end">
           {clientLink(t("clients.cockpit.stage.1.cta"))}
         </div>
       );
@@ -221,6 +237,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
       <ProtocolRail
         bare
         assessmentPct={realPct}
+        assessmentCoverage={coverage}
         lastAssessmentAt={assessment?.performed_on ?? assessment?.updated_at ?? null}
         briefApproved={briefApproved}
         blueprintApproved={blueprintApproved}
@@ -228,6 +245,9 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         progressionsApproved={progressionsApproved}
         activeStage={stageOpen ? activeStage : null}
         onStageClick={handleStageClick}
+        onReassessClick={() => {
+          if (typeof window !== "undefined") window.location.assign(`/clients/${clientId}`);
+        }}
       />
 
       {/* 2. Plan strip — directly under the protocol */}
@@ -269,17 +289,15 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
 
       {/* 3. Stage panel — collapsed by default, opens on stage click */}
       {stageOpen && (
-        <div className="rounded-xl bg-muted/40 p-3">
-          <div className="mb-2 flex items-center justify-end">
-            <button
-              type="button"
-              onClick={() => setStageOpen(false)}
-              className="eyebrow inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              aria-label="Fechar"
-            >
-              <ChevronDown className="h-3 w-3" /> Fechar
-            </button>
-          </div>
+        <div className="relative rounded-xl bg-muted/40 px-3 py-2.5 pr-9">
+          <button
+            type="button"
+            onClick={() => setStageOpen(false)}
+            className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            aria-label="Fechar"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
           {stagePanel}
         </div>
       )}
