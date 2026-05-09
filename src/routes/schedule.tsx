@@ -866,6 +866,12 @@ function ZoneBand({
   count,
   open,
   onToggle,
+  canExtend,
+  canShrink,
+  onExtend,
+  onShrink,
+  extendLabel,
+  shrinkLabel,
   t,
 }: {
   label: string;
@@ -873,23 +879,55 @@ function ZoneBand({
   count: number;
   open: boolean;
   onToggle: () => void;
+  canExtend: boolean;
+  canShrink: boolean;
+  onExtend: () => void;
+  onShrink: () => void;
+  extendLabel: string;
+  shrinkLabel: string;
   t: (k: string, opts?: any) => string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
+    <div
       style={{ gridColumn: "1 / -1" }}
-      className="flex items-center gap-2 border-b border-border bg-secondary/20 px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-widest text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
-      aria-expanded={open}
+      className="flex items-center gap-2 border-b border-border bg-secondary/20 text-[10px] font-medium uppercase tracking-widest text-muted-foreground"
     >
-      <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-      <span>{label}</span>
-      <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
-      <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
-        {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
-      </span>
-    </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex flex-1 items-center gap-2 px-3 py-1.5 text-left hover:bg-secondary/40 hover:text-foreground transition-colors"
+      >
+        <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
+        <span>{label}</span>
+        <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
+        <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
+          {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
+        </span>
+      </button>
+      <div className="flex items-center gap-0.5 pr-2">
+        <button
+          type="button"
+          onClick={onExtend}
+          disabled={!canExtend}
+          aria-label={extendLabel}
+          title={extendLabel}
+          className="rounded p-1 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          onClick={onShrink}
+          disabled={!canShrink}
+          aria-label={shrinkLabel}
+          title={shrinkLabel}
+          className="rounded p-1 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
   );
 }
 
