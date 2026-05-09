@@ -275,6 +275,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   return (
     <section className="space-y-4">
+      {/* Today + This week — side by side on desktop, stacked on mobile */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       {/* Today / Needs attention */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -381,6 +383,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             <CalendarDays className="h-3.5 w-3.5" /> {lang === "pt" ? "Abrir agenda" : "Open schedule"}
           </Link>
         </div>
+      </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
