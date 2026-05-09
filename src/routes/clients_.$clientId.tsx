@@ -655,6 +655,7 @@ function ClientDetail() {
   const [flashAnthroBase, setFlashAnthroBase] = useState(false);
   const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
   const [safetyOverride, setSafetyOverride] = useState(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
 
   // Auto-save state
   const [hydrated, setHydrated] = useState(false);
@@ -1627,6 +1628,14 @@ function ClientDetail() {
               <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setCadenceOpen(true); }}>
                 <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                 {t("cadence.menu_label")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(e) => { e.preventDefault(); setDiscardDialogOpen(true); }}
+                className="text-destructive focus:text-destructive"
+              >
+                <Eraser className="mr-2 h-3.5 w-3.5" />
+                {t("discard.button")}
               </DropdownMenuItem>
               {(client.intake_status === "submitted" ||
                 client.intake_status === "reviewed" ||
