@@ -1537,7 +1537,7 @@ function ClientDetail() {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="h-1 break-words min-w-0">{client?.full_name}</h1>
+              <h1 className="t-1 break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
             </div>
             <p className="body-prose mt-1 text-sm text-[var(--text-2)] break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
