@@ -2025,12 +2025,12 @@ function ClientDetail() {
                   })}
                 />
                 {(() => {
-                  const buckets = [
-                    { id: "none", min: 0, label: t("risk_block.mvpa_b_none", { defaultValue: "Quase nada" }), sub: "<1x/sem" },
-                    { id: "light", min: 60, label: t("risk_block.mvpa_b_light", { defaultValue: "Pouco" }), sub: "1–2×/sem" },
-                    { id: "moderate", min: 180, label: t("risk_block.mvpa_b_moderate", { defaultValue: "Moderado" }), sub: "3–4×/sem" },
-                    { id: "high", min: 300, label: t("risk_block.mvpa_b_high", { defaultValue: "Muito ativo" }), sub: "5+×/sem" },
-                  ] as const;
+                   const buckets = [
+                     { id: "none", min: 0, label: t("risk_block.mvpa_b_none", { defaultValue: "Quase nada" }), sub: "<30 min/sem" },
+                     { id: "light", min: 60, label: t("risk_block.mvpa_b_light", { defaultValue: "Pouco" }), sub: "30–149 min/sem" },
+                     { id: "moderate", min: 180, label: t("risk_block.mvpa_b_moderate", { defaultValue: "Moderado" }), sub: "150–239 min/sem" },
+                     { id: "high", min: 300, label: t("risk_block.mvpa_b_high", { defaultValue: "Muito ativo" }), sub: "240+ min/sem" },
+                   ] as const;
                   const current = (assessment.risk as any).mvpa_min_per_week as number | null | undefined;
                   const activeIdx = current == null
                     ? -1
