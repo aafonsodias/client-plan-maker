@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Download, Edit3, ChevronRight, ChevronDown, Loader2, ArrowRight, X, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ type Props = {
  */
 export function ClientCockpit({ clientId, plan, logs }: Props) {
   const { t } = useTranslation("common");
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<any | null>(null);
   const [genState, setGenState] = useState<any | null>(null);
@@ -110,14 +111,10 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
     else setActiveStage(1);
   }, [loading, planComplete, plan?.id]);
 
-  const handleStageClick = (n: number) => {
-    const stage = n as 1 | 2 | 3 | 4 | 5;
-    if (stageOpen && activeStage === stage) {
-      setStageOpen(false);
-    } else {
-      setActiveStage(stage);
-      setStageOpen(true);
-    }
+  // Stage chips are navigation, not accordions: send the trainer to the
+  // client page where every stage can actually be edited.
+  const handleStageClick = (_n: number) => {
+    void navigate({ to: "/clients/$clientId", params: { clientId } });
   };
 
   const handleDownload = async () => {
@@ -287,20 +284,7 @@ export function ClientCockpit({ clientId, plan, logs }: Props) {
         </div>
       )}
 
-      {/* 3. Stage panel — collapsed by default, opens on stage click */}
-      {stageOpen && (
-        <div className="relative rounded-xl bg-muted/40 px-3 py-2.5 pr-9">
-          <button
-            type="button"
-            onClick={() => setStageOpen(false)}
-            className="absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-            aria-label="Fechar"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          {stagePanel}
-        </div>
-      )}
+      {/* Stage chips navigate to /clients/$id where each stage is editable. */}
     </div>
   );
 }
