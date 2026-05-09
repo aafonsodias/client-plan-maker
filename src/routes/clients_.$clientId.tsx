@@ -1995,7 +1995,13 @@ function ClientDetail() {
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
-              <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
+              <Toggle
+                label={t("risk_block.family_cvd_label", { defaultValue: "História familiar precoce" })}
+                description={t("risk_block.family_cvd_desc", { defaultValue: "Pai, mãe ou irmão com enfarte ou AVC antes dos 55 (homem) / 65 (mulher)." })}
+                icon={<Users className="h-4 w-4" />}
+                value={assessment.risk.family_cvd}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })}
+              />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
                 <VisualChipGroup
@@ -2119,9 +2125,27 @@ function ClientDetail() {
                   </button>
                 )}
               </div>
-              <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
-              <Toggle label={t("risk_block.prediabetes")} value={assessment.risk.prediabetes} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })} />
-              <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
+              <Toggle
+                label={t("risk_block.dyslipidemia")}
+                description={t("risk_block.dyslipidemia_desc", { defaultValue: "Colesterol ou triglicéridos alterados — confirmado em análises ou medicado." })}
+                icon={<Droplet className="h-4 w-4" />}
+                value={assessment.risk.dyslipidemia}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })}
+              />
+              <Toggle
+                label={t("risk_block.prediabetes")}
+                description={t("risk_block.prediabetes_desc", { defaultValue: "Glicose em jejum 100–125 mg/dL ou HbA1c 5,7–6,4%." })}
+                icon={<Droplets className="h-4 w-4" />}
+                value={assessment.risk.prediabetes}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, prediabetes: v } })}
+              />
+              <Toggle
+                label={t("risk_block.hypertension")}
+                description={t("risk_block.hypertension_desc", { defaultValue: "Tensão ≥130/80 mmHg em duas medições ou em terapêutica anti-hipertensora." })}
+                icon={<Gauge className="h-4 w-4" />}
+                value={assessment.risk.hypertension}
+                onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
+              />
             </div>
           </SectionBlock>
           {/* Training setup (existing) */}
