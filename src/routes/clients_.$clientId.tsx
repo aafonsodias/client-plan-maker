@@ -645,6 +645,9 @@ function ClientDetail() {
   const [activeSection, setActiveSection] = useState("parq");
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
+  // R-X · Lote 1: flash highlight on Antropometria "Dados base" when Risco BMI
+  // card prompts the trainer to fill height/weight there. Single source of truth.
+  const [flashAnthroBase, setFlashAnthroBase] = useState(false);
   const [safetyDialogOpen, setSafetyDialogOpen] = useState(false);
   const [safetyOverride, setSafetyOverride] = useState(false);
 
