@@ -2702,48 +2702,52 @@ function ClientDetail() {
                   ]}
                 />
               </div>
-              <div>
-                <div className="mb-1 flex items-center gap-1">
-                  <Label className="text-xs">Comida processada e fast-food</Label>
-                  <HelpPopover label="Processados">
-                    <p>Refeições prontas, takeaway, snacks embalados, refrigerantes. Sopa caseira ou pão tradicional não contam.</p>
-                  </HelpPopover>
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <div>
+                  <div className="mb-1 flex items-center gap-1">
+                    <Label className="text-xs">Comida processada e fast-food</Label>
+                    <HelpPopover label="Processados">
+                      <p>Refeições prontas, takeaway, snacks embalados, refrigerantes. Sopa caseira ou pão tradicional não contam.</p>
+                    </HelpPopover>
+                  </div>
+                  <ChipGroup
+                    cols={5}
+                    size="sm"
+                    value={assessment.ext_processed_food_freq || null}
+                    onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: String(v) })}
+                    options={[
+                      { value: "1", label: "Raro", sub: "1×/sem" },
+                      { value: "2", label: "Pouco", sub: "2-3×/sem" },
+                      { value: "3", label: "Médio", sub: "1×/dia" },
+                      { value: "4", label: "Muito", sub: "várias/dia" },
+                      { value: "5", label: "Quase tudo", sub: "rotina" },
+                    ]}
+                  />
                 </div>
-                <ChipGroup
-                  cols={5}
-                  size="sm"
-                  value={assessment.ext_processed_food_freq || null}
-                  onChange={(v) => setAssessment({ ...assessment, ext_processed_food_freq: String(v) })}
-                  options={[
-                    { value: "1", label: "Raro", sub: "1×/sem" },
-                    { value: "2", label: "Pouco", sub: "2-3×/sem" },
-                    { value: "3", label: "Médio", sub: "1×/dia" },
-                    { value: "4", label: "Muito", sub: "várias/dia" },
-                    { value: "5", label: "Quase tudo", sub: "rotina" },
-                  ]}
-                />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-1">
-                  <Label className="text-xs">Quantos litros de água bebe por dia?</Label>
-                  <HelpPopover label="Hidratação">
-                    <p>Inclui água, chá e infusões sem açúcar. Café e bebidas com cafeína contam só metade. ACSM recomenda 30-40 ml/kg/dia.</p>
-                  </HelpPopover>
+              )}
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <div>
+                  <div className="mb-1 flex items-center gap-1">
+                    <Label className="text-xs">Quantos litros de água bebe por dia?</Label>
+                    <HelpPopover label="Hidratação">
+                      <p>Inclui água, chá e infusões sem açúcar. Café e bebidas com cafeína contam só metade. ACSM recomenda 30-40 ml/kg/dia.</p>
+                    </HelpPopover>
+                  </div>
+                  <ChipGroup
+                    cols={5}
+                    size="sm"
+                    value={assessment.ext_water_l_per_day || null}
+                    onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: String(v) })}
+                    options={[
+                      { value: "0.5", label: "<1 L", sub: "muito pouco" },
+                      { value: "1", label: "1 L", sub: "pouco" },
+                      { value: "1.5", label: "1.5 L", sub: "razoável" },
+                      { value: "2", label: "2 L", sub: "bom" },
+                      { value: "3", label: "3+ L", sub: "atleta" },
+                    ]}
+                  />
                 </div>
-                <ChipGroup
-                  cols={5}
-                  size="sm"
-                  value={assessment.ext_water_l_per_day || null}
-                  onChange={(v) => setAssessment({ ...assessment, ext_water_l_per_day: String(v) })}
-                  options={[
-                    { value: "0.5", label: "<1 L", sub: "muito pouco" },
-                    { value: "1", label: "1 L", sub: "pouco" },
-                    { value: "1.5", label: "1.5 L", sub: "razoável" },
-                    { value: "2", label: "2 L", sub: "bom" },
-                    { value: "3", label: "3+ L", sub: "atleta" },
-                  ]}
-                />
-              </div>
+              )}
               <div className="grid gap-2 sm:grid-cols-2">
               {showAdvancedNutrition && (
                 <Field label={t("nutrition_block.hydration_legacy")} type="number" value={String(assessment.hydration_glasses_per_day ?? "")} onChange={(v) => setAssessment({ ...assessment, hydration_glasses_per_day: v })} />
@@ -2777,12 +2781,14 @@ function ClientDetail() {
           {/* Posture */}
           <SectionBlock id="posture" analysing={analysingSections["posture"]} analysis={sectionAnalyses["posture"]} title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <TextField
-                label={t("posture_block.standing")}
-                value={assessment.standing_posture_notes}
-                onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })}
-                className="sm:col-span-2"
-              />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField
+                  label={t("posture_block.standing")}
+                  value={assessment.standing_posture_notes}
+                  onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })}
+                  className="sm:col-span-2"
+                />
+              )}
               {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
                 <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
               )}
