@@ -34,12 +34,14 @@ export function IntakeLinkPanel({
   clientId,
   clientFirstName,
   clientPhone,
+  clientEmail,
   intake,
   onChange,
 }: {
   clientId: string;
   clientFirstName: string;
   clientPhone?: string | null;
+  clientEmail?: string | null;
   intake: IntakeFields;
   onChange: (fields: Partial<IntakeFields>) => void;
 }) {
