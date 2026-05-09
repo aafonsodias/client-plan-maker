@@ -1,5 +1,11 @@
 # Assessment Foundational Audit — May 2026
 
+> **Round A landed (10 May 2026)** — section reorder applied per the
+> "Reorder recommended" table. New on-screen order: PARQ · Risk · Training
+> setup · Training history · SMART goal · Medications · Anthropometry ·
+> Readiness · Lifestyle · Nutrition · Mobility · Posture · Movement screen ·
+> Performance. Subsequent rounds reference NEW section numbers.
+
 _File scope: `src/routes/clients_.$clientId.tsx` (5 152 LOC, 14 sections) + the
 SMART goal sub-component, the medication block, the movement screen, the
 device-capture and re-assessment sheets that hang off the same surface._
