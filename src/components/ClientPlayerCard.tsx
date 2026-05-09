@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ChevronDown, AlertTriangle, Activity } from "lucide-react";
+import { Trash2, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
