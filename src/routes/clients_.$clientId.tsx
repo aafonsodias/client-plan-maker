@@ -1897,14 +1897,17 @@ function ClientDetail() {
               <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
-                <Select value={assessment.risk.smoking} onValueChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="never">{t("risk_block.smoking_never")}</SelectItem>
-                    <SelectItem value="former">{t("risk_block.smoking_former")}</SelectItem>
-                    <SelectItem value="current">{t("risk_block.smoking_current")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.risk.smoking ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}
+                  options={[
+                    { value: "never", label: t("risk_block.smoking_never") },
+                    { value: "former", label: t("risk_block.smoking_former") },
+                    { value: "current", label: t("risk_block.smoking_current") },
+                  ]}
+                />
               </div>
               <div className="space-y-1">
                 <LabelWithHelp
