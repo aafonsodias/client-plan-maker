@@ -2,7 +2,13 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
-import { dateLocale } from "@/lib/date-locale";
+
+function langToLocale(lang: string): string {
+  if (lang?.startsWith("pt")) return "pt-PT";
+  if (lang?.startsWith("es")) return "es-ES";
+  if (lang?.startsWith("hi")) return "hi-IN";
+  return "en-US";
+}
 import { supabase } from "@/integrations/supabase/client";
 import { loadMe, loadProgress } from "@/server/me.functions";
 import { MeShell } from "@/components/me/MeShell";
@@ -33,7 +39,7 @@ function MeProgressoPage() {
   const loadShell = useServerFn(loadMe);
   const loadProg = useServerFn(loadProgress);
   const { t, i18n } = useTranslation("me");
-  const locale = dateLocale(i18n.language);
+  const locale = langToLocale(i18n.language);
   const [shell, setShell] = useState<any>(null);
   const [prog, setProg] = useState<any>(null);
 
