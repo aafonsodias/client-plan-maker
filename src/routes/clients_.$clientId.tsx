@@ -1996,56 +1996,23 @@ function ClientDetail() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex h-8 items-stretch gap-1.5">
-                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={80}
-                        max={250}
-                        step={1}
-                        autoComplete="off"
-                        defaultValue={client?.height_cm ?? ""}
-                        placeholder={t("risk_block.bmi_height_ph", { defaultValue: "Altura" })}
-                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                        onBlur={async (e) => {
-                          const n = Number(e.target.value);
-                          const v = Number.isFinite(n) && n > 0 ? n : null;
-                          if (v === (client?.height_cm ?? null)) return;
-                          setClient((prev: any) => ({ ...prev, height_cm: v }));
-                          await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                      />
-                      <span className="text-[11px] text-muted-foreground">cm</span>
-                    </label>
-                    <label className="flex flex-1 items-center gap-1 rounded-md border border-dashed border-border bg-background/30 px-2 focus-within:border-primary focus-within:bg-background">
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        min={20}
-                        max={400}
-                        step={0.1}
-                        autoComplete="off"
-                        defaultValue={client?.weight_kg ?? ""}
-                        placeholder={t("risk_block.bmi_weight_ph", { defaultValue: "Peso" })}
-                        className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                        onBlur={async (e) => {
-                          const n = Number(e.target.value);
-                          const v = Number.isFinite(n) && n > 0 ? n : null;
-                          if (v === (client?.weight_kg ?? null)) return;
-                          setClient((prev: any) => ({ ...prev, weight_kg: v }));
-                          await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        }}
-                      />
-                      <span className="text-[11px] text-muted-foreground">kg</span>
-                    </label>
-                  </div>
+                  // R-X · Lote 1: H/W is owned by Antropometria → "Dados base".
+                  // Don't render a duplicate input here. CTA scrolls + flashes.
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById("anthro-base");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                        setFlashAnthroBase(true);
+                        window.setTimeout(() => setFlashAnthroBase(false), 1800);
+                      }
+                    }}
+                    className="flex h-8 w-full items-center justify-between rounded-md border border-dashed border-amber-500/40 bg-amber-500/[0.04] px-3 text-left text-xs text-muted-foreground transition-colors hover:bg-amber-500/[0.08] hover:text-foreground"
+                  >
+                    <span>{t("risk_block.bmi_missing_cta", { defaultValue: "Preenche altura e peso em Antropometria" })}</span>
+                    <ArrowRight className="h-3.5 w-3.5 text-amber-400/80" />
+                  </button>
                 )}
               </div>
               <Toggle label={t("risk_block.dyslipidemia")} value={assessment.risk.dyslipidemia} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, dyslipidemia: v } })} />
