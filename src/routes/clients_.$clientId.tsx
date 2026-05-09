@@ -2869,15 +2869,6 @@ function ClientDetail() {
               }
               return (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
-                  {phasedEnabled && briefCoverage && !inlineBrief?.approved && (
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground self-start sm:self-auto">
-                      {t("generate.brief_coverage", {
-                        done: briefCoverage.done,
-                        total: briefCoverage.total,
-                        defaultValue: `Pré-visualização do brief · ${briefCoverage.done}/${briefCoverage.total}`,
-                      })}
-                    </span>
-                  )}
                   {phasedEnabled && inlineBrief?.approved ? (() => {
                     const stages = inlineBrief.approvedStages ?? ["brief"];
                     // Pick deepest approved stage to decide where to go next.
@@ -2916,7 +2907,6 @@ function ClientDetail() {
                     const LockBadge = !assessmentComplete ? (
                       <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-amber-300 ring-1 ring-amber-500/30">
                         <Lock className="h-2.5 w-2.5" />
-                        {briefCoverage ? `${briefCoverage.done}/${briefCoverage.total}` : null}
                       </span>
                     ) : null;
                     return phasedEnabled ? (
