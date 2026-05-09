@@ -141,6 +141,49 @@ These are the constitution of the organism. Any feature, copy, or decision that 
 - Brand mark never on PDFs.
 - Labels: "Sessão N · Foco" / "Session N · Focus", never "Day N" in PT.
 
+### Modality library v1 (Round 74, May 2026)
+
+The Modality Library is the set of structured interventions Protocol can prescribe alongside resistance training to develop capacities that pure resistance work doesn't reach (autonomic regulation, mobility through full ROM, awareness, cold/heat tolerance).
+
+**v1 scope: 5 categories, ~15 protocols.**
+
+| Category | v1 protocols | Capacity domains served |
+|---|---|---|
+| Breathwork | Diaphragmatic, Box (4-4-4-4), Slow (5.5 breaths/min), Alternate-nostril, Wim Hof tummo | autonomic_regulation, cardiorespiratory, cognitive_motor |
+| Cold/heat exposure | Cold shower (30s-3min), Cold immersion (above 5°C), Sauna 80°C+ | autonomic_regulation, cardiorespiratory |
+| Pelvic floor | Kegels, Reverse kegels | movement_quality, body_composition (intra-abdominal pressure management) |
+| Mobility flows | CARs (controlled articular rotations), Cossack flow, McGill big-3 | flexibility, movement_quality |
+| Awareness micro-practices | Body scan, Breath counting, Single-task focus drill | cognitive_motor |
+
+**Inclusion criteria for v1:**
+- Has ≥1 RCT or systematic review published
+- Executable without special equipment OR with equipment the client already owns (bathtub, shower, yoga mat)
+- Maps clearly to ≥1 of the 12 capacity domains
+- Safe for most healthy adults without supervision
+
+**Excluded from v1 (deferred to v2+):**
+- Abdominal vacuum — weak evidence as isolated intervention
+- Plant medicine, ayahuasca-style practices — outside clinical scope
+- Advanced pranayama (sustained kapalabhati, bhastrika) — hyperventilation risk without instructor
+- Cold immersion below 5°C — cardiovascular risk without prior assessment
+- Prolonged breath holds without supervision
+
+**Data model (specification, not yet built):**
+
+```
+interventions table:
+  id, slug, category, name_key (i18n)
+  evidence_tier: T1 (RCT-backed) / T2 (expert-consensus) / T3 (traditional-with-emerging)
+  capacity_domains_served: text[] (refs capacity_domains.slug)
+  prerequisites: text
+  contraindications: text[]
+  default_dose: jsonb (e.g. {duration_min: 5, frequency_per_week: 3})
+  source_citation: text
+  description_key, instructions_key (i18n)
+```
+
+Implementation pending. This decision locks the scope, not the timeline.
+
 ---
 
 ## 5. Threads of thought (the founder's pending raciocínios)
@@ -153,7 +196,7 @@ Each thread is something the founder has voiced as part of the vision but is not
 | 2 | Guided physical evaluation protocol (PDF + structured flow) — client does what they can, then guided assessment brick by brick | 🌱 not started | AddSnapshotSheet is per-test, not protocol-level. | Design a `evaluation_protocols` template + `client_evaluations` execution flow. |
 | 3 | Map of human potential — where client is vs. evidence-based potential by age/sex | 🌿 partial | Capacity Map exists; norm bands are static p25/p50/p75 placeholders. | Round to seed real per-domain age/sex norms (NHANES, ACSM tables). |
 | 4 | Macro view — mesocycles in line, yearly, 5-year, lifetime view | 🌱 not started | `block_number` lineage exists; no UI surface for macro. | Honest macrocycle = intent, not prescription. UI shows emphasis curves per block. |
-| 5 | Modality library — breathwork (diaphragmatic, box, alt-nostril), pelvic floor (kegels, reverse), abdominal vacuum, mobility flows, awareness practices | 🌱 not started | No tables, no UI. | Round to add `interventions` table with evidence-tier tagging, mapped to capacity domains they serve. |
+| 5 | Modality library — breathwork, cold/heat, pelvic floor, mobility flows, awareness practices | 🌿 partial (scope locked) | Scope decided in §4 (Modality library v1). No tables, no UI yet. | Round to add `interventions` table per spec. Wait until first 3-5 trainers field-test the existing capacity loop before building. |
 | 6 | Validated exercise library with evidence tiers (DNS, McGill, peer-reviewed yoga, FMS/SFMA) | 🌿 partial | Exercise library exists; evidence-tier tagging does not. | Round to add `evidence_tier` column + provenance per exercise. |
 | 7 | Awareness / meditation / "managing the animal" | ❄️ paused | Captured in domain `cognitive_motor` indirectly; nothing built. | v3 territory. Park. |
 | 8 | App runs from simple-stupid to as advanced as it gets, via user interaction | 🌿 partial | Implicit in current UI (collapsible stages, advanced toggles in cockpit). Not explicit as a design principle. | Make this an invariant principle (above). Audit every surface against it. |
@@ -168,11 +211,10 @@ Each thread is something the founder has voiced as part of the vision but is not
 
 1. **Aesthetic register for the app:** does the app slowly migrate to editorial-clinical (Fraunces serif, Swiss grid) or stay refined-minimalist working-tool? Either is defensible; pick one and commit.
 2. **Macrocycle as intent vs prescription:** the principle is set (intent only). The UI representation is not. List view? Curve view? Something else?
-3. **Modality library scope:** which interventions enter v1? Breathwork (3-4 protocols), pelvic floor (2 protocols), mobility (?). Drawing the line matters.
-4. **Per-domain norm sources:** which population datasets become the truth for each of the 12 domains? NHANES is partial. ACSM 12e has tables for some. Need a canonical mapping.
-5. **Evidence tier system:** how many tiers, how labeled? Suggested: T1 RCT-backed / T2 expert-consensus / T3 traditional-practice-with-emerging-evidence. Confirm or revise.
-6. **Re-measurement cadence per domain:** strength every 4-6 weeks; balance more often; body comp every 4-8 weeks. Need a data model that captures this and reminds the trainer.
-7. **`assessments.waist_cm/hip_cm/body_fat_*` columns:** retire in favor of snapshot writes, or keep as trainer-input front door with a trigger that mirrors to snapshots? Decision pending Phase B cleanup.
+3. **Per-domain norm sources:** which population datasets become the truth for each of the 12 domains? NHANES is partial. ACSM 12e has tables for some. Need a canonical mapping.
+4. **Evidence tier system:** how many tiers, how labeled? Suggested: T1 RCT-backed / T2 expert-consensus / T3 traditional-practice-with-emerging-evidence. Confirm or revise.
+5. **Re-measurement cadence per domain:** strength every 4-6 weeks; balance more often; body comp every 4-8 weeks. Need a data model that captures this and reminds the trainer.
+6. **`assessments.waist_cm/hip_cm/body_fat_*` columns:** retire in favor of snapshot writes, or keep as trainer-input front door with a trigger that mirrors to snapshots? Decision pending Phase B cleanup.
 
 ---
 
