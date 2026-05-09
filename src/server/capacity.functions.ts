@@ -174,3 +174,190 @@ export const listClientCapacitySnapshots = createServerFn({ method: "GET" })
 
     return { snapshots: snaps ?? [] };
   });
+
+/**
+ * Reassessment reminders for a client.
+ *
+ * For each capacity domain, computes the effective cadence (per-client
+ * override OR domain default), looks up the most recent snapshot, and
+ * returns the domains that are overdue or have never been measured.
+ *
+ * Sorted most-overdue first. Capped at the caller (UI shows top 3).
+ * Auth: trainer-owner OR coached-client (self).
+ */
+export const getClientReassessmentReminders = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ clientId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { clientId } = data;
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id, user_id")
+      .eq("id", clientId)
+      .maybeSingle();
+    if (!client) throw new Error("Client not found");
+    const isTrainer = client.trainer_id === userId;
+    const isSelf = client.user_id === userId;
+    if (!isTrainer && !isSelf) throw new Error("Unauthorized");
+
+    const [{ data: domains }, { data: overrides }, { data: snaps }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("capacity_domains")
+          .select("slug, name_key, tier, display_order, default_cadence_days")
+          .order("display_order", { ascending: true }),
+        supabaseAdmin
+          .from("client_measurement_cadence")
+          .select("domain_slug, interval_days")
+          .eq("client_id", clientId),
+        supabaseAdmin
+          .from("client_capacity_snapshots")
+          .select("domain_slug, measured_at")
+          .eq("client_id", clientId)
+          .order("measured_at", { ascending: false }),
+      ]);
+
+    const overrideBySlug = new Map<string, number>();
+    for (const o of overrides ?? []) overrideBySlug.set(o.domain_slug, o.interval_days);
+
+    const latestBySlug = new Map<string, string>();
+    for (const s of snaps ?? []) {
+      if (!latestBySlug.has(s.domain_slug)) latestBySlug.set(s.domain_slug, s.measured_at);
+    }
+
+    const now = Date.now();
+    const reminders = (domains ?? [])
+      .map((d) => {
+        const effective_cadence = overrideBySlug.get(d.slug) ?? d.default_cadence_days;
+        const last = latestBySlug.get(d.slug);
+        if (!last) {
+          return {
+            domain_slug: d.slug,
+            name_key: d.name_key,
+            tier: d.tier,
+            effective_cadence,
+            never_measured: true,
+            days_overdue: null as number | null,
+          };
+        }
+        const ageDays = Math.floor((now - new Date(last).getTime()) / 86_400_000);
+        const overdue = ageDays - effective_cadence;
+        if (overdue < 0) return null;
+        return {
+          domain_slug: d.slug,
+          name_key: d.name_key,
+          tier: d.tier,
+          effective_cadence,
+          never_measured: false,
+          days_overdue: overdue,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .sort((a, b) => {
+        // never-measured first, then most-overdue first
+        if (a.never_measured && !b.never_measured) return -1;
+        if (!a.never_measured && b.never_measured) return 1;
+        return (b.days_overdue ?? 0) - (a.days_overdue ?? 0);
+      });
+
+    return { reminders };
+  });
+
+/**
+ * List effective re-measurement cadences (per-domain override + default)
+ * for a client. Used by the cadence override sheet.
+ */
+export const listClientCadences = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ clientId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { clientId } = data;
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id")
+      .eq("id", clientId)
+      .maybeSingle();
+    if (!client) throw new Error("Client not found");
+    if (client.trainer_id !== userId) throw new Error("Unauthorized");
+
+    const [{ data: domains }, { data: overrides }] = await Promise.all([
+      supabaseAdmin
+        .from("capacity_domains")
+        .select("slug, name_key, tier, display_order, default_cadence_days")
+        .order("display_order", { ascending: true }),
+      supabaseAdmin
+        .from("client_measurement_cadence")
+        .select("domain_slug, interval_days")
+        .eq("client_id", clientId),
+    ]);
+
+    const overrideBySlug = new Map<string, number>();
+    for (const o of overrides ?? []) overrideBySlug.set(o.domain_slug, o.interval_days);
+
+    const rows = (domains ?? []).map((d) => ({
+      domain_slug: d.slug,
+      name_key: d.name_key,
+      tier: d.tier,
+      default_days: d.default_cadence_days,
+      override_days: overrideBySlug.get(d.slug) ?? null,
+      effective_days: overrideBySlug.get(d.slug) ?? d.default_cadence_days,
+    }));
+
+    return { rows };
+  });
+
+/**
+ * Upsert a per-client per-domain cadence override, or clear it (when
+ * `intervalDays` is null) so the domain default applies again.
+ */
+export const upsertClientCadence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        domainSlug: z.string().min(1),
+        intervalDays: z.number().int().min(7).max(90).nullable(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: client } = await supabaseAdmin
+      .from("clients")
+      .select("id, trainer_id")
+      .eq("id", data.clientId)
+      .maybeSingle();
+    if (!client) throw new Error("Client not found");
+    if (client.trainer_id !== userId) throw new Error("Unauthorized");
+
+    if (data.intervalDays === null) {
+      const { error } = await supabaseAdmin
+        .from("client_measurement_cadence")
+        .delete()
+        .eq("client_id", data.clientId)
+        .eq("domain_slug", data.domainSlug);
+      if (error) throw error;
+      return { ok: true, cleared: true };
+    }
+
+    const { error } = await supabaseAdmin
+      .from("client_measurement_cadence")
+      .upsert({
+        client_id: data.clientId,
+        domain_slug: data.domainSlug,
+        interval_days: data.intervalDays,
+        set_by: userId,
+      }, { onConflict: "client_id,domain_slug" });
+    if (error) throw error;
+    return { ok: true, cleared: false };
+  });
