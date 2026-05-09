@@ -112,6 +112,12 @@ function ScheduleTabs() {
 }
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
+/** Collapsible zones — early morning + late evening rarely have clients,
+ *  but they do happen. Default collapsed; auto-expand if the visible week
+ *  has any booking inside the zone. User toggle persists per zone. */
+const EARLY_HOURS = [6, 7, 8] as const;
+const CORE_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const;
+const LATE_HOURS = [20, 21, 22] as const;
 
 /** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
  *  otherwise next weekday at 09:00. */
@@ -312,6 +318,43 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     })
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
+  // ── Collapsible off-peak bands. Default: collapsed when the visible week
+  //    has no bookings in the zone; auto-opens when there are. User toggle
+  //    persists across weeks (explicit > auto).
+  const [earlyPref, setEarlyPref] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("schedule_zone_early");
+    return v === "open" ? true : v === "closed" ? false : null;
+  });
+  const [latePref, setLatePref] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("schedule_zone_late");
+    return v === "open" ? true : v === "closed" ? false : null;
+  });
+  const earlyCount = useMemo(
+    () =>
+      bookings.filter((b) => {
+        if (b.status === "cancelled") return false;
+        const h = new Date(b.starts_at).getHours();
+        return (EARLY_HOURS as readonly number[]).includes(h);
+      }).length,
+    [bookings],
+  );
+  const lateCount = useMemo(
+    () =>
+      bookings.filter((b) => {
+        if (b.status === "cancelled") return false;
+        const h = new Date(b.starts_at).getHours();
+        return (LATE_HOURS as readonly number[]).includes(h);
+      }).length,
+    [bookings],
+  );
+  const earlyOpen = earlyPref ?? earlyCount > 0;
+  const lateOpen = latePref ?? lateCount > 0;
+  const persistZone = (key: "early" | "late", open: boolean) => {
+    try { window.localStorage.setItem(`schedule_zone_${key}`, open ? "open" : "closed"); } catch {}
+  };
+
   const onSavedJumpToWeek = async (savedIso?: string) => {
     if (savedIso) {
       const w = startOfIsoWeek(new Date(savedIso));
@@ -434,7 +477,55 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               </div>
             </div>
           ))}
-          {HOURS.map((h) => (
+          <ZoneBand
+            label={t("zone.early")}
+            range={`${String(EARLY_HOURS[0]).padStart(2, "0")}:00–${String(EARLY_HOURS[EARLY_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            count={earlyCount}
+            open={earlyOpen}
+            onToggle={() => { const next = !earlyOpen; setEarlyPref(next); persistZone("early", next); }}
+            t={t}
+          />
+          {earlyOpen && EARLY_HOURS.map((h) => (
+            <RowHour
+              key={h}
+              hour={h}
+              days={days}
+              bookings={bookings}
+              packById={packById}
+              clientById={clientById}
+              onSlotClick={handleSlotClick}
+              onBookingClick={(b) => setEditing(b)}
+              onCopy={(b) => setClipboard(b)}
+              onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
+              clipboardActive={!!clipboard}
+            />
+          ))}
+          {CORE_HOURS.map((h) => (
+            <RowHour
+              key={h}
+              hour={h}
+              days={days}
+              bookings={bookings}
+              packById={packById}
+              clientById={clientById}
+              onSlotClick={handleSlotClick}
+              onBookingClick={(b) => setEditing(b)}
+              onCopy={(b) => setClipboard(b)}
+              onDragCommit={handleDragMove}
+              onToggleDone={handleToggleDone}
+              clipboardActive={!!clipboard}
+            />
+          ))}
+          <ZoneBand
+            label={t("zone.late")}
+            range={`${String(LATE_HOURS[0]).padStart(2, "0")}:00–${String(LATE_HOURS[LATE_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            count={lateCount}
+            open={lateOpen}
+            onToggle={() => { const next = !lateOpen; setLatePref(next); persistZone("late", next); }}
+            t={t}
+          />
+          {lateOpen && LATE_HOURS.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -714,6 +805,41 @@ function RowHour({
         );
       })}
     </>
+  );
+}
+
+/** Full-width band that toggles a contiguous group of hour rows. Sits inside
+ *  the same CSS grid as the rows; spans all 8 columns via `gridColumn: "1/-1"`. */
+function ZoneBand({
+  label,
+  range,
+  count,
+  open,
+  onToggle,
+  t,
+}: {
+  label: string;
+  range: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  t: (k: string, opts?: any) => string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{ gridColumn: "1 / -1" }}
+      className="flex items-center gap-2 border-b border-border bg-secondary/20 px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-widest text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+      aria-expanded={open}
+    >
+      <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
+      <span>{label}</span>
+      <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
+      <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
+        {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
+      </span>
+    </button>
   );
 }
 

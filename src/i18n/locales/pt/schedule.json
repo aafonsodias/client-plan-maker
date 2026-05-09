@@ -128,5 +128,12 @@
   "revenue": {
     "show": "Mostrar valores",
     "hide": "Ocultar valores"
+  },
+  "zone": {
+    "early": "Manhã cedo",
+    "late": "Fim do dia",
+    "count_one": "{{count}} sessão",
+    "count_other": "{{count}} sessões",
+    "empty": "sem sessões"
   }
 }
