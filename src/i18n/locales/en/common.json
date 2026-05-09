@@ -597,8 +597,7 @@
       "fms_total": "FMS total",
       "overhead_squat_assessment": "Overhead squat assessment",
       "single_leg_squat_assessment": "Single-leg squat assessment",
-      "sfma_total": "SFMA total"
-      ,
+      "sfma_total": "SFMA total",
       "resting_heart_rate": "Resting heart rate",
       "blood_pressure_systolic": "Blood pressure (systolic)",
       "blood_pressure_diastolic": "Blood pressure (diastolic)",
@@ -1090,5 +1089,21 @@
       "recommended_assessments": "Recommended next assessments",
       "empty_cta": "Start measuring"
     }
+  },
+  "cockpit": {
+    "reminders": {
+      "title": "To reassess",
+      "overdue": "{{days}} days overdue",
+      "never": "Never measured"
+    }
+  },
+  "cadence": {
+    "sheet_title": "Reassessment cadences",
+    "reset_default": "Reset to default",
+    "save": "Save",
+    "cancel": "Cancel",
+    "menu_label": "Set reassessment cadences",
+    "default_label": "Default: {{days}} days",
+    "toast_saved": "Cadences saved"
   }
 }

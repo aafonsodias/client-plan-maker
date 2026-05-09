@@ -548,8 +548,7 @@
       "fms_total": "FMS कुल",
       "overhead_squat_assessment": "ओवरहेड स्क्वैट मूल्यांकन",
       "single_leg_squat_assessment": "एक-पैर स्क्वैट मूल्यांकन",
-      "sfma_total": "SFMA कुल"
-      ,
+      "sfma_total": "SFMA कुल",
       "resting_heart_rate": "विश्राम हृदय गति",
       "blood_pressure_systolic": "रक्तचाप (सिस्टोलिक)",
       "blood_pressure_diastolic": "रक्तचाप (डायस्टोलिक)",
@@ -940,5 +939,21 @@
       "recommended_assessments": "अनुशंसित अगले मूल्यांकन",
       "empty_cta": "मापना शुरू करें"
     }
+  },
+  "cockpit": {
+    "reminders": {
+      "title": "पुनर्मूल्यांकन के लिए",
+      "overdue": "{{days}} दिन देर से",
+      "never": "अभी तक नहीं मापा गया"
+    }
+  },
+  "cadence": {
+    "sheet_title": "पुनर्मूल्यांकन कैडेंस",
+    "reset_default": "डिफ़ॉल्ट पर रीसेट करें",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "menu_label": "पुनर्मूल्यांकन कैडेंस सेट करें",
+    "default_label": "डिफ़ॉल्ट: {{days}} दिन",
+    "toast_saved": "कैडेंस सहेजे गए"
   }
 }

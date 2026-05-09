@@ -597,8 +597,7 @@
       "fms_total": "FMS total",
       "overhead_squat_assessment": "Avaliação agachamento overhead",
       "single_leg_squat_assessment": "Avaliação agachamento unipodal",
-      "sfma_total": "SFMA total"
-      ,
+      "sfma_total": "SFMA total",
       "resting_heart_rate": "Frequência cardíaca em repouso",
       "blood_pressure_systolic": "Pressão arterial (sistólica)",
       "blood_pressure_diastolic": "Pressão arterial (diastólica)",
@@ -1090,5 +1089,21 @@
       "recommended_assessments": "Avaliações recomendadas a seguir",
       "empty_cta": "Começar a medir"
     }
+  },
+  "cockpit": {
+    "reminders": {
+      "title": "A reavaliar",
+      "overdue": "{{days}} dias em atraso",
+      "never": "Por medir"
+    }
+  },
+  "cadence": {
+    "sheet_title": "Cadências de avaliação",
+    "reset_default": "Voltar ao padrão",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "menu_label": "Definir cadências de avaliação",
+    "default_label": "Padrão: {{days}} dias",
+    "toast_saved": "Cadências guardadas"
   }
 }
