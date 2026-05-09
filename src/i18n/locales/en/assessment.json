@@ -15,7 +15,8 @@
   "save": {
     "saving": "Saving…",
     "offline": "Offline — saved locally",
-    "saved": "Saved · {{when}}"
+    "saved": "Saved · {{when}}",
+    "saved_recent": "Saved"
   },
   "rel_time": {
     "just_now": "just now",
