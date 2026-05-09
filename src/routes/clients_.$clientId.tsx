@@ -4045,7 +4045,7 @@ function SectionBlock({
     tagClass = "text-muted-foreground/70";
   }
   return (
-    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl border border-border bg-background/40 p-3 ${borderClass}`}>
+    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl bg-muted/40 p-3 ${borderClass}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -4053,8 +4053,8 @@ function SectionBlock({
         aria-expanded={open}
       >
         {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-        <h3 className={`text-xs font-bold uppercase tracking-widest ${analysed ? "text-accent/70" : "text-accent"}`}>{title}</h3>
-        {analysed && <Check className="h-3 w-3 text-accent" aria-label="analysed" />}
+        <h3 className={`eyebrow ${analysed ? "text-foreground/70" : "text-foreground"}`}>{title}</h3>
+        {analysed && <Check className="h-3 w-3 text-muted-foreground" aria-label="analysed" />}
         {!analysed && complete && <Check className="h-3 w-3 text-muted-foreground/60" />}
         {hint && (
           <Tooltip>
