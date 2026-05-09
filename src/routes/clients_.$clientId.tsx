@@ -4095,7 +4095,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const { t } = useTranslation("assessment");
   if (analysing) {
     return (
-      <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      <div className="body-prose mt-3 flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
         <span>{t("detail.analysing_section")}</span>
       </div>
@@ -4108,7 +4108,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
   if (!insight) return null;
   return (
-    <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-2.5 text-xs text-muted-foreground">
+    <div className="body-prose mt-3 rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground">
       {insight}
     </div>
   );
@@ -4432,7 +4432,7 @@ function ParqFlagSummary({ count }: { count: number }) {
 
 function CompletionStrip({ text }: { text: string }) {
   return (
-    <div className="mt-3 animate-fade-in border-l-2 border-accent/40 bg-accent/5 px-2 py-1 text-[12px] opacity-80">
+    <div className="body-prose mt-3 animate-fade-in rounded-md bg-muted/40 px-2.5 py-1 text-[12px] text-muted-foreground">
       {text}
     </div>
   );
