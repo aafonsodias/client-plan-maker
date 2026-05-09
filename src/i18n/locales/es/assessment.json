@@ -180,19 +180,19 @@
       "resolved": "→ {{date}}"
     },
     "tpl": {
-      "str_squat_15bw_5":  { "specific": "Sentadilla 1,5× peso corporal para 5 repeticiones limpias",        "measurable": "Lograr 1,5×PC en sentadilla × 5 reps con técnica controlada" },
-      "str_bench_bw_5":    { "specific": "Press banca con peso corporal para 5 repeticiones",                "measurable": "1×PC en banca × 5 reps en rango completo" },
-      "str_dl_2bw_3":      { "specific": "Peso muerto 2× peso corporal para 3 repeticiones",                 "measurable": "2×PC en peso muerto × 3 reps con espalda neutra" },
-      "hyp_arm_3cm":       { "specific": "Aumentar 3 cm de perímetro de brazo",                              "measurable": "+3 cm en medición de brazo (relajado, promedio I/D)" },
-      "hyp_thigh_4cm":     { "specific": "Aumentar 4 cm de perímetro de muslo",                              "measurable": "+4 cm en medición media del muslo (promedio I/D)" },
-      "comp_fatloss_5":    { "specific": "Perder 5 kg de grasa manteniendo el músculo",                      "measurable": "−5 kg de masa grasa por DEXA/BIA, masa magra estable" },
-      "comp_recomp":       { "specific": "Reducir grasa y ganar músculo simultáneamente",                    "measurable": "−3% grasa corporal y +2 kg masa magra (DEXA o BIA)" },
-      "end_5k_25":         { "specific": "Correr 5 km en menos de 25 minutos",                               "measurable": "5 km continuos en ≤ 25:00 sin paradas" },
-      "end_cooper_2400":   { "specific": "Cubrir más de 2400 m en el test de Cooper de 12 min",              "measurable": "≥ 2400 m en 12 minutos continuos" },
-      "mob_toes_painfree": { "specific": "Tocar los pies de pie sin dolor",                                  "measurable": "Sit-and-reach ≥ 0 cm sin dolor lumbar" },
-      "mob_overhead_full": { "specific": "Levantar los brazos verticales contra la pared sin compensar",     "measurable": "Wall-test pasa: lumbar plana, codos extendidos" },
-      "fn_carry_30s":      { "specific": "Cargar medio peso corporal por mano durante 30 segundos",          "measurable": "Farmer carry ½PC × 30 s sin perder postura" },
-      "fn_get_up_floor":   { "specific": "Levantarse del suelo sin usar las manos",                          "measurable": "Levantarse desde piernas cruzadas sin apoyo de manos" }
+      "str_squat_15bw_5":  { "specific": "Trabajar fuerza de sentadilla durante 16 semanas, medir progreso", "measurable": "Seguir 1RM/5RM en sentadilla; meta exploratoria: 1,5×PC × 5 reps" },
+      "str_bench_bw_5":    { "specific": "Trabajar fuerza de empuje horizontal durante 16 semanas",          "measurable": "Seguir 1RM/5RM en banca; meta exploratoria: 1×PC × 5 reps" },
+      "str_dl_2bw_3":      { "specific": "Trabajar fuerza de tracción y cadena posterior durante 20 semanas","measurable": "Seguir 1RM/3RM en peso muerto; meta exploratoria: 2×PC × 3 reps" },
+      "hyp_arm_3cm":       { "specific": "Trabajar hipertrofia de brazo durante 12 semanas, medir progreso", "measurable": "Medir perímetro de brazo cada 4 semanas; observar tendencia" },
+      "hyp_thigh_4cm":     { "specific": "Trabajar hipertrofia de muslo durante 12 semanas, medir progreso", "measurable": "Medir perímetro de muslo cada 4 semanas; observar tendencia" },
+      "comp_fatloss_5":    { "specific": "Reducir grasa durante 16 semanas, manteniendo masa magra",         "measurable": "Seguir composición (DEXA/BIA) cada 4-6 semanas; ajustar por trayectoria" },
+      "comp_recomp":       { "specific": "Recomposición corporal durante 20 semanas (perder grasa, ganar masa magra)", "measurable": "Seguir composición y fuerza en paralelo; ajustar según respuesta" },
+      "end_5k_25":         { "specific": "Trabajar resistencia de carrera 5 km durante 10 semanas",          "measurable": "Seguir tiempo en 5 km cada 3-4 semanas; meta exploratoria: ≤ 25:00" },
+      "end_cooper_2400":   { "specific": "Trabajar capacidad aeróbica durante 8 semanas",                    "measurable": "Reaplicar Cooper 12 min cada 4 semanas; meta exploratoria: ≥ 2400 m" },
+      "mob_toes_painfree": { "specific": "Trabajar movilidad lumbar e isquiotibial durante 6 semanas",       "measurable": "Sit-and-reach y percepción de dolor; medir cada 2 semanas" },
+      "mob_overhead_full": { "specific": "Trabajar movilidad torácica y de hombros durante 8 semanas",       "measurable": "Test overhead contra pared; medir cada 2 semanas" },
+      "fn_carry_30s":      { "specific": "Trabajar fuerza funcional de transporte (carry) durante 12 semanas","measurable": "Tiempo en farmer's carry con carga progresiva; reevaluar cada 4 semanas" },
+      "fn_get_up_floor":   { "specific": "Trabajar movilidad integrada suelo-pie durante 8 semanas",         "measurable": "Evaluar Turkish get-up sin manos cada 2 semanas; observar limpieza del patrón" }
     }
   },
   "readiness_block": {
