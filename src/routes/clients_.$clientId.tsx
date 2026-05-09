@@ -1573,7 +1573,7 @@ function ClientDetail() {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="t-1 break-words min-w-0">{client?.full_name}</h1>
+              <h1 className="t-1 min-w-0 line-clamp-2 [overflow-wrap:anywhere] text-2xl sm:text-3xl lg:text-4xl" title={client?.full_name}>{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
               {(() => {
                 const heroPlanLocal = plans.find((p) => ((p as any).generation_state?.stage ?? null) === "complete") ?? null;
