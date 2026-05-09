@@ -1,117 +1,77 @@
-## Objectivo
+## Round A — Quick fixes (mobile chrome)
 
-Transformar `/me` (Casa do cliente) numa app pessoal que o cliente do PT abre todos os dias e em que confia: hoje sabe o que treinar, durante a semana sabe como vai, ao longo do tempo vê que está a evoluir, e tem um canal directo com o seu treinador. Tudo mobile-first (375px), respeitando o white-label do PT.
+**1. Sign-out hidden behind Lovable preview overlay**
 
-## Princípios
+The mobile sheet (`src/components/AppShell.tsx`, lines 213–276) renders nav → language section → sign-out at the very bottom. On a real phone the Lovable preview toolbar sits over the bottom ~80px and eats the sign-out button. Two changes:
 
-- **Cliente real é a audiência primária.** Preview do PT (`?as=`) continua a funcionar mas é secundário.
-- **Quando há dados, mostrar dados.** Quando não há, dar contexto humano sobre o que vai acontecer a seguir, nunca um vazio em branco.
-- **Read-only não chega.** Cliente precisa de fazer 3 coisas: começar a sessão, fazer check-in diário, escrever ao PT. Tudo o resto é leitura.
-- **PT voice = "você".** Toda a copy nova entra em `i18n/locales/pt/me.json` (criar) + `en/me.json` para EN básico.
-- **Reaproveitar o que já temos.** `plan_feedback` (já existe, author=client/trainer) é o canal de mensagens. `daily_activity_log` + `client_measurements` já guardam steps e peso. Falta apenas `client_checkins` para sono/dores/energia.
+- Move the **sign-out row to the top of the sheet** (right under the brand header), styled as a clear destructive-tinted row. Most-used escape action, always reachable.
+- Make the sheet body **scrollable** (`overflow-y-auto`) with `pb-[env(safe-area-inset-bottom)]` + extra `pb-24` so even at the bottom the last item clears the iOS home indicator and any preview chrome.
+- Mirror the same reorder logic in the desktop avatar dropdown only if needed (it's fine — dropdown opens upward when near viewport edge).
 
-## Arquitectura — 6 superfícies + 1 nova rota
+**2. Language menu shows "Inglês" four times**
 
-A página `/me` passa de scroll plano para 5 cards focados + bottom nav que abre 2 sub-rotas. Mantém-se SSR-safe, mantém-se o `loadMe` como loader único.
+`AppShell.tsx` has three ternaries `code === "pt" ? portuguese : english` (lines 195, 258, 355) — so `es` and `hi` fall through to "english". `LanguageSwitcher.tsx` already does it right. Replace each ternary with a small `localeLabel(code, t)` helper that maps:
+- `pt` → `language.portuguese` ("Português")
+- `es` → `language.spanish` ("Español")
+- `hi` → `language.hindi` ("हिन्दी")
+- `en` → `language.english` ("English")
 
-```text
-/me                    → Hoje (default)
-/me/progresso          → Progresso (peso, fotos, top-lifts, capacity-gain)
-/me/historico          → Histórico (todas as sessões loggeadas, paginação)
-```
+Add the missing `language.spanish` / `language.hindi` keys to `en/common.json` and `pt/common.json` (es/hi files already have native names; if missing, add them too — purely cosmetic, not full translation work, so it's safe to do now and doesn't bloat the i18n debt).
 
-### Hoje (default `/me`)
+No other locale strings are touched. Per your direction, full translations stay parked until post-MVP.
 
-1. **Hero do treinador** — logo + nome do PT + tagline. Quando `primary_color` definido, gradiente do hero usa-o (com fallback amber). Resolve o avatar partido da screenshot: se `logo_url` falhar, cai para `<BrandMark>` em vez de `<img>` com src vazio.
-2. **Card "Sessão de hoje"** (substitui "Próxima sessão") — quando há prescrição:
-   - Título grande "Sessão N · Foco"
-   - Lista compacta dos 4-6 exercícios principais com sets×reps + RPE
-   - CTA emerald "Começar sessão" gigante (link para `/log/$token` com query `?day=N`)
-   - Badge "Última feita há X dias" para criar urgência saudável
-3. **Card "Check-in de hoje"** — 3 emojis para sono (😴 1-5), dores (🤕 0-10), energia (⚡ 1-5). Submissão optimista escreve em `client_checkins` (nova tabela). Já feito hoje → mostra resumo + botão "editar". **Alimenta `programNextWeek` no futuro** (autoreg_strictness usa estes sinais).
-4. **Card "Esta semana"** — versão mais visual do que existe: barra de progresso `feitos/total`, lista colapsada de dias com chip de estado (✅ feito, 🔵 hoje, ⚪ pendente). Click num dia abre o seu detalhe inline.
-5. **Card "Próximas marcações"** — mantém o que já existe.
-6. **Card "Mensagem do treinador"** — última nota do PT com `author='trainer'` em `plan_feedback`. Inline reply abre input que escreve com `author='client'`. Realtime via supabase channel.
+---
 
-### Progresso (`/me/progresso`)
+## Round B — `/me` Round 2 (Progresso + Mensagens + Histórico)
 
-Sub-rota. Tab interna ou stack vertical:
+Three sub-routes, all in the same `MeShell`. Server fns extend `src/server/me.functions.ts`; UI pieces under `src/components/me/`.
 
-1. **Streak semanal** — últimas 12 semanas em barras (ades­ão %). Reaproveita `compliance.ts`.
-2. **Capacity gain** — quando `block_number > 1`, importa `<CapacityGainCard/>` que já existe. Mostra Δ% load + e1RM por padrão (squat/hinge/push/pull).
-3. **Top-lifts** — best set por exercício principal nas últimas 4 semanas. Tira de `workout_sessions.entries` agrupando por exercise_id.
-4. **Peso ao longo do tempo** — gráfico simples (recharts já usado no projecto) sobre `client_measurements` cadence='periodic' campo 'weight'. Input rápido "Adicionar peso de hoje" abaixo.
-5. **Fotos antes/depois** — usa o bucket `client-photos` que já existe. Cliente faz upload de selfie de progresso (nova etiqueta "progress" no path), grid 3-col. Thumbs com data, click para fullscreen.
+### B1 — `/me/progresso` (real)
 
-### Histórico (`/me/historico`)
+Replace the stub with four cards:
 
-Lista paginada de todas as `workout_sessions` com filtro por bloco. Click numa sessão abre drawer com entries (peso × reps × RPE prescrito vs realizado, com diff a verde/amber).
+- **Streak strip** — last 14 days of `client_checkins` + completed `workout_sessions` as a heat row (emerald = both, amber = one, muted = none).
+- **Capacity gain** — reuse `computeCapacityGain` (`src/lib/capacity-gain.ts`) on the last two blocks of the active plan. Render `<CapacityGainCard/>` if it exists, otherwise a slim fallback (Δ% load + e1RM per pattern).
+- **Top lifts** — top 5 working sets by e1RM across all logged sessions for the current plan. Computed server-side in a new `loadProgress` server fn.
+- **Weight trend** — `recharts` line chart over `client_measurements.weight_kg` for the last 90 days, with smoothed tooltip. Empty state if no entries.
+- **Progress photos** — grid pulled from the `client-photos` storage bucket under `progress/{clientId}/...` via signed URLs (60-min TTL). Read-only in client mode; upload entry deferred to a later round (not on critical path).
 
-### Bottom nav
+### B2 — Trainer messages (realtime, on `/me`)
 
-Mobile-first, sticky bottom: Hoje · Progresso · Histórico · Mensagens (badge com count de não lidas do PT). Em ≥sm vira topnav horizontal sob o header.
+Promote `TrainerMessageCard` to a full thread:
 
-### Estado vazio (sem plano)
+- New server fns in `me.functions.ts`: `loadMessages({ before? })` (paginated, 20 per page), `markMessagesRead()` (sets `plan_feedback.status='resolved'` on trainer messages once viewed). `sendClientMessage` already exists.
+- Component `MessageThread.tsx`: reverse-chronological, infinite scroll up, optimistic send. Subscribes to `postgres_changes` on `plan_feedback` filtered by `client_id=eq.{id}` so trainer replies appear within ~1s. Migration: `ALTER PUBLICATION supabase_realtime ADD TABLE public.plan_feedback;` if not already.
+- Bottom-nav `nav.today` keeps an unread chip when `unreadCount > 0`.
+- Preview mode (`?as=`): thread visible read-only, send box disabled with the existing "preview disabled" hint.
 
-Substitui o "Sem plano activo" actual por algo útil:
-- Hero do PT continua igual.
-- Card "O seu plano está a ser preparado" com timeline 4 passos (Recolha · Avaliação · Plano em construção · Plano pronto). O passo actual ilumina-se a amber a partir de heurísticas (`assessments` existe? `clients.intake_status`? alguma `workout_plans` em status≠finalised?).
-- Card "Enquanto espera" com 2-3 acções: completar perfil (link para `/intake/$token` se ainda aberto), enviar mensagem ao treinador, fazer check-in de baseline.
+### B3 — `/me/historico` (real)
 
-## Mudanças de dados (1 migração)
+Replace the stub with a paginated list:
 
-**Nova tabela `client_checkins`** — base para autoreg + casa do cliente. Campos relevantes: `client_id`, `trainer_id`, `checked_on date` (UNIQUE com client_id), `sleep_quality 1-5`, `soreness_level 0-10`, `energy_level 1-5`, `notes text`. RLS: cliente faz CRUD nos seus próprios via `clients.user_id = auth.uid()`; PT lê os do seu cliente. Sem trigger de autoreg neste round — só persistência.
+- New server fn `loadHistory({ cursor? })` returning 20 sessions ordered by `session_date desc`, joined with `workout_plan_days` for the prescribed reference.
+- Component `SessionHistoryRow.tsx`: date, focus, exercise count, RPE avg, expand → per-exercise rows with prescribed vs actual diff (`+5kg`, `-1 rep`, `RPE 8 → 8.5`) using emerald/amber/red tone tokens from `status-tone.ts`.
+- "Load more" cursor button at the bottom.
 
-**Reaproveitar `plan_feedback` para mensagens.** Adicionar índice composto `(client_id, status, created_at desc)` se ainda não existir. Sem novas colunas.
+### Smoke checklist
 
-**Bucket storage `client-photos`** — adicionar política para `user_id = auth.uid()` poder upload em pasta `progress/{clientId}/...` (path actual é `{trainerId}/{clientId}.{ext}`, precisa de extensão). Resolve-se na mesma migração com nova policy de storage.objects.
+- 375×812 mobile Safari for `/me`, `/me/progresso`, `/me/historico` — every CTA reachable, no overlap with Lovable bottom chrome.
+- Sign out reachable from the mobile sheet within first viewport.
+- Language menu shows 4 distinct names.
+- Realtime: open trainer view in another tab, send a `plan_feedback` row, confirm it appears in `<2s` on `/me`.
+- Preview mode (`?as={clientId}`): all writes (checkin, send message) disabled.
 
-## Mudanças de código
+### Files
 
-**Novo `src/server/me.functions.ts`** — `loadMe` evolui para devolver: tudo o que já devolve + `todayCheckin` + `weekCheckins` + `unreadMessages count` + `lastTrainerMessage` + `lastSessionDate` + `weightSeries` (últimos 90 dias) + `topLifts`. Adicionar `submitCheckin`, `sendMessage` (cliente → PT, escreve em plan_feedback), `addWeightEntry`, `uploadProgressPhoto` (signed upload URL).
+**Edited:** `src/components/AppShell.tsx`, `src/i18n/locales/en/common.json`, `src/i18n/locales/pt/common.json`, `src/server/me.functions.ts`, `src/routes/me.tsx`, `src/routes/me.progresso.tsx`, `src/routes/me.historico.tsx`, `src/components/me/MeBottomNav.tsx`.
 
-**Novo `src/routes/me.tsx`** — vira layout com `<Outlet/>` + bottom nav. Conteúdo "Hoje" passa para `src/routes/me.index.tsx`. Cria `src/routes/me.progresso.tsx` e `src/routes/me.historico.tsx`. Loader partilhado via context.
+**New:** `src/components/me/MessageThread.tsx`, `src/components/me/StreakStrip.tsx`, `src/components/me/WeightTrendChart.tsx`, `src/components/me/TopLiftsTable.tsx`, `src/components/me/ProgressPhotoGrid.tsx`, `src/components/me/SessionHistoryRow.tsx`.
 
-**Componentes novos** (`src/components/me/`):
-- `TrainerHero.tsx` (header + white-label)
-- `TodaySessionCard.tsx`
-- `CheckinCard.tsx` (com `useOptimistic`)
-- `WeekProgressCard.tsx`
-- `TrainerMessageCard.tsx` (realtime via channel)
-- `EmptyPlanTimeline.tsx`
-- `WeightTrendChart.tsx`
-- `TopLiftsTable.tsx`
-- `ProgressPhotoGrid.tsx`
-- `MeBottomNav.tsx`
+**Migration:** add `plan_feedback` to realtime publication (idempotent guard).
 
-**i18n**: `src/i18n/locales/{en,pt}/me.json` novos. PT em "você". Outros locales fallback EN.
+### Order of execution
 
-**CSS tokens**: zero novos — paleta existente (emerald/amber/muted) chega. White-label: derivar `--accent` runtime do `trainer.primary_color` num `<style>` inline no layout, com fallback amber. Mantém o resto do app intacto.
-
-## Smoke checklist (definição de "pronto")
-
-- 375px Mobile Safari: scroll suave, todos os cards lêem-se sem clipping, CTAs ≥44px, bottom nav não cobre conteúdo.
-- Cliente real (não preview): pode iniciar sessão, fazer check-in, ver semana, ler/responder mensagem, adicionar peso, fazer upload de foto.
-- Preview PT (`?as=`): banner amber persiste em todas as sub-rotas, todas as escritas estão desactivadas com tooltip.
-- Estado vazio (cliente novo, sem plano): mostra timeline em vez de white space.
-- Logo partido do PT (`logo_url` 404): cai graciosamente para BrandMark.
-- White-label: PT com `primary_color = '#9333ea'` vê accents roxos no hero; cliente sem PT custom vê amber.
-- Realtime: PT escreve mensagem em `/clients/$id` → cliente vê chegar em <2s sem refresh.
-- i18n: nada hardcoded em PT no JSX; tudo via `t('me.*')`.
-- Memory update no fim: actualizar a entrada "Casa do cliente (R69)" com as novas superfícies + nota de que `plan_feedback` é o canal de mensagens.
-
-## Por onde começar
-
-Round 1 — fundações + Hoje rico:
-1. Migração `client_checkins` + storage policy progress photos.
-2. Layout shell `/me` com bottom nav + 3 sub-rotas.
-3. `TrainerHero` (resolve logo partido) + `TodaySessionCard` + `CheckinCard` + `WeekProgressCard`.
-4. `EmptyPlanTimeline` para estado sem plano.
-5. i18n base PT.
-
-Round 2 — Progresso + Mensagens:
-6. `/me/progresso` com peso, top-lifts, capacity-gain, fotos.
-7. `TrainerMessageCard` com realtime e thread mínima.
-8. `/me/historico` paginado.
-
-Confirma se a divisão em 2 rounds te serve, ou queres que o round 1 inclua já as mensagens (reaproveita `plan_feedback`, é barato).
+1. Round A (15 min, ships first as a clean commit — unblocks your testing on phone).
+2. B2 messages (highest user value, leverages existing `plan_feedback`).
+3. B3 histórico.
+4. B1 progresso (most data-heavy, last so the prior surfaces are stable).
