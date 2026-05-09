@@ -3967,6 +3967,56 @@ function AssessmentSection({
   const goPrev = () => setActiveId(sectionIds[Math.max(0, activeIdx - 1)]);
   const goNext = () => setActiveId(sectionIds[Math.min(sectionIds.length - 1, activeIdx + 1)]);
 
+  // Mobile stepper helpers --------------------------------------------------
+  const statusById = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (sectionStatus ?? []).forEach((s) => m.set(s.id, s.complete));
+    return m;
+  }, [sectionStatus]);
+  const currentComplete = statusById.get(activeId) ?? false;
+  const completedCount = (sectionStatus ?? []).filter((s) => s.complete).length;
+  const totalCount = sectionIds.length;
+  const progressPct = Math.round((completedCount / totalCount) * 100);
+  const isLast = activeIdx === sectionIds.length - 1;
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const [pulseKey, setPulseKey] = useState(0);
+  const prevCompleteRef = useRef<boolean>(currentComplete);
+  useEffect(() => {
+    if (currentComplete && !prevCompleteRef.current) setPulseKey((k) => k + 1);
+    prevCompleteRef.current = currentComplete;
+  }, [currentComplete]);
+  // On mobile/tablet, force focused mode (one section at a time).
+  useEffect(() => {
+    if (isMobile && !focused) setFocused(true);
+  }, [isMobile, focused]);
+  // Scroll to top + focus first interactive element on section change (mobile).
+  const stepperBodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isMobile) return;
+    const node = stepperBodyRef.current;
+    if (!node) return;
+    node.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => {
+      const first = node.querySelector<HTMLElement>(
+        "input:not([type=hidden]), textarea, select, [role=tab], button:not([aria-hidden=true])"
+      );
+      first?.focus({ preventScroll: true });
+    });
+  }, [activeId, isMobile]);
+  // Save status pill (mobile sticky header)
+  const saveLabel = (() => {
+    if (saveStatus === "saving") return t("save.saving");
+    if (saveStatus === "offline") return t("save.offline");
+    if (saveStatus === "saved" && lastSavedAt) {
+      const diff = Math.max(1, Math.round((Date.now() - lastSavedAt) / 1000));
+      if (diff < 60) return t("save.saved", { when: t("rel_time.seconds_ago", { s: diff }) });
+      const m = Math.round(diff / 60);
+      if (m < 60) return t("save.saved", { when: t("rel_time.minutes_ago", { m }) });
+      return t("save.saved", { when: t("rel_time.hours_ago", { h: Math.round(m / 60) }) });
+    }
+    return null;
+  })();
+
   if (collapsed) {
     if (hideCollapsedStrip) return null;
     const isComplete = (completionPct ?? 0) >= 80;
