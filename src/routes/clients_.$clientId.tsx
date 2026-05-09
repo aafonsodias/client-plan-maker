@@ -2680,20 +2680,23 @@ function ClientDetail() {
                 unit="bpm"
                 value={assessment.resting_heart_rate ?? ""}
                 onChange={(v) => setAssessment({ ...assessment, resting_heart_rate: v })}
-                placeholder={t("performance_block.rhr_placeholder")}
+                placeholder={t("performance_block.rhr_placeholder", { defaultValue: "ex. 65" })}
                 helpBody={<p>{t("performance_block.rhr_help")}</p>}
               />
               <div className="space-y-1">
                 <LabelWithHelp label={t("performance_block.cardio_test")} hint={t("performance_block.cardio_test_hint")} />
-                <Select value={assessment.ext_cardio_test} onValueChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}>
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="untested">{t("performance_block.untested")}</SelectItem>
-                    <SelectItem value="cooper">{t("performance_block.cooper")}</SelectItem>
-                    <SelectItem value="rockport">{t("performance_block.rockport")}</SelectItem>
-                    <SelectItem value="other">{t("performance_block.other")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={4}
+                  size="sm"
+                  value={assessment.ext_cardio_test ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, ext_cardio_test: v })}
+                  options={[
+                    { value: "untested", label: t("performance_block.untested") },
+                    { value: "cooper", label: t("performance_block.cooper") },
+                    { value: "rockport", label: t("performance_block.rockport") },
+                    { value: "other", label: t("performance_block.other") },
+                  ]}
+                />
               </div>
               {assessment.ext_cardio_test !== "untested" && (
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
