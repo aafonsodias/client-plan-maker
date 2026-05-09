@@ -2136,37 +2136,50 @@ function ClientDetail() {
                   <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
                 }
               />
-              <MeasureField
-                label="Gordura corporal"
-                unit="%"
-                value={assessment.body_fat_pct}
-                onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
-                placeholder="opcional"
-                helpBody={
-                  <>
-                    <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
-                    <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
-                  </>
-                }
-              />
               <div className="space-y-1">
                 <Label className="text-xs">{t("anthro_block.whr")}</Label>
                 <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
               </div>
-              <div className="space-y-1 sm:col-span-2">
-                <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
-                    <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
-                    <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
-                    <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
-                    <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+            {/* Avançado — requer equipamento (calipers / BIA / DEXA / BodPod).
+                Não faz parte da avaliação default; fica colapsado mas
+                acessível e ligado ao mesmo `assessment` state. */}
+            <details className="group mt-3 rounded-md border border-dashed border-border/60 bg-muted/10 open:bg-muted/20">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground">
+                <span>Avançado · requer equipamento</span>
+                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground/80 group-open:hidden">
+                  {assessment.body_fat_pct ? `%MG ${assessment.body_fat_pct}` : "opcional"}
+                </span>
+              </summary>
+              <div className="grid gap-2 px-2.5 pb-2.5 pt-1 sm:grid-cols-3">
+                <MeasureField
+                  label="Gordura corporal"
+                  unit="%"
+                  value={assessment.body_fat_pct}
+                  onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
+                  placeholder="opcional"
+                  helpBody={
+                    <>
+                      <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
+                      <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
+                    </>
+                  }
+                />
+                <div className="space-y-1 sm:col-span-2">
+                  <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
+                  <Select value={assessment.body_fat_method} onValueChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}>
+                    <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="calipers">{t("anthro_block.bf_calipers")}</SelectItem>
+                      <SelectItem value="bia">{t("anthro_block.bf_bia")}</SelectItem>
+                      <SelectItem value="dexa">{t("anthro_block.bf_dexa")}</SelectItem>
+                      <SelectItem value="bodpod">{t("anthro_block.bf_bodpod")}</SelectItem>
+                      <SelectItem value="visual">{t("anthro_block.bf_visual")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </details>
           </SectionBlock>
 
           {/* Medications */}
