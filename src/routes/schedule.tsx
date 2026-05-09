@@ -808,6 +808,41 @@ function RowHour({
   );
 }
 
+/** Full-width band that toggles a contiguous group of hour rows. Sits inside
+ *  the same CSS grid as the rows; spans all 8 columns via `gridColumn: "1/-1"`. */
+function ZoneBand({
+  label,
+  range,
+  count,
+  open,
+  onToggle,
+  t,
+}: {
+  label: string;
+  range: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  t: (k: string, opts?: any) => string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{ gridColumn: "1 / -1" }}
+      className="flex items-center gap-2 border-b border-border bg-secondary/20 px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-widest text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
+      aria-expanded={open}
+    >
+      <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
+      <span>{label}</span>
+      <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
+      <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
+        {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
+      </span>
+    </button>
+  );
+}
+
 function BookingBlock({
   booking,
   clientName,
