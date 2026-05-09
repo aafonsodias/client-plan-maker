@@ -498,7 +498,7 @@ function Dashboard() {
       {/* Clients section — single source of truth */}
       <section>
         {isEmpty ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+          <div className="rounded-2xl bg-muted/30 p-12 text-center">
             <p className="font-medium">{t("dashboard.empty_clients_title", { defaultValue: "Adiciona o teu primeiro cliente" })}</p>
             <p className="mt-1 text-sm text-muted-foreground">{t("dashboard.empty_clients_hint", { defaultValue: "Envia o link de avaliação. Eles preenchem no telemóvel." })}</p>
             <Button className="mt-4" onClick={() => setInviteOpen(true)}>
