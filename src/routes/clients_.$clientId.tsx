@@ -154,14 +154,13 @@ function parqFlagCount(parq: Record<string, boolean | null>): number {
   return Object.values(parq ?? {}).filter((v) => v === true).length;
 }
 
-// Section -> assessment field keys used to compute a signature for edit detection.
-const PROV_SECTION_FIELDS: Record<string, string[]> = {
-  // Lote 5 — feature flag to keep deprecated fields visible when explicitly enabled.
-  // Default OFF; set VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS=true in .env to re-show.
-};
+// Lote 5 — feature flag to keep deprecated fields visible when explicitly enabled.
+// Default OFF; set VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS=true in .env to re-show.
 const SHOW_DEPRECATED_ASSESSMENT_FIELDS =
   import.meta.env.VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS === "true";
-const _PROV_SECTION_FIELDS_REAL: Record<string, string[]> = {
+
+// Section -> assessment field keys used to compute a signature for edit detection.
+const PROV_SECTION_FIELDS: Record<string, string[]> = {
   parq: ["parq"],
   risk: ["risk"],
   anthro: ["waist_cm", "hip_cm", "body_fat_pct", "body_fat_method"],
