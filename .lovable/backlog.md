@@ -422,3 +422,10 @@ Atualizado: Round 28 (4 Mai 2026)
 - ✅ Studio CTA = mailto até Stripe estar wired para tier — sem chip "Em breve" (enfraquece a venda), só o canal honesto.
 - ✅ i18n PT+EN: novo bloco `landing.pricing.{subtitle, popular_badge, per_month, per_year, monthly_eq, quota, beta_strip_*, toggle.*, tiers.{starter,pro,studio}.{tagline,cta,features}}`. Chaves antigas mantidas (não quebram billing.tsx).
 - ⏭ R72 next: Stripe price IDs anual + storyboards 5 vídeos curtos + funnel analytics (R62 #3/#4).
+
+## R7x — Aesthetic direction visual touches (queued)
+- Dashboard: "next action" card with amber under-glow (single loud moment).
+- Clients list: thin amber left border on birthday / red-flag rows.
+- Intake.$token: numbered chips (01, 02…) per section; spacing rhythm to 48.
+- Plan view: 600ms fade-in once on "Pronto" reveal.
+- Capacity-gain: large display numeral typography pass on /me/progresso.
