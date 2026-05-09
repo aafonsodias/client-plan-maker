@@ -385,9 +385,9 @@ function IntakePage() {
         <h1 className="text-2xl font-light tracking-tight sm:text-3xl">{t("hi", { name: ctx.client?.first_name ?? "" })}</h1>
         <p className="mt-3 text-sm text-muted-foreground">{t("intro")}</p>
 
-        <div className="mt-10 space-y-10">
+        <div className="mt-10 space-y-12">
           {/* SAFETY — PAR-Q+ */}
-          <Section number={1} title={t("sections.parq_title")}>
+          <Section number={1} total={6} title={t("sections.parq_title")}>
             <p className="-mt-2 text-xs text-muted-foreground">{t("sections.parq_intro")}</p>
             <div className="space-y-3">
               {PARQ_KEYS.map((qk) => (
