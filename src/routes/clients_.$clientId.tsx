@@ -3569,10 +3569,10 @@ function StatCard({
     : tone === "success" ? "text-accent"
     : "text-foreground";
   return (
-    <div className="rounded-xl border border-border bg-background/40 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-light tracking-tight ${toneClass}`}>{value}</p>
-      {caption && <p className="mt-1 text-xs text-muted-foreground">{caption}</p>}
+    <div className="rounded-xl bg-muted/40 p-3">
+      <p className="eyebrow text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-light tracking-tight tabular-nums ${toneClass}`}>{value}</p>
+      {caption && <p className="body-prose mt-1 text-xs text-muted-foreground">{caption}</p>}
     </div>
   );
 }
@@ -3632,10 +3632,10 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("detail.synthesis.title")}</p>
-        <span className="text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
+        <p className="eyebrow text-muted-foreground">{t("detail.synthesis.title")}</p>
+        <span className="body-data text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -3660,10 +3660,10 @@ function AssessmentSynthesisDashboard({
       <MovementCompetencyRadar assessment={assessment} sectionAnalyses={sectionAnalyses} />
 
       {flags.length > 0 && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+        <div className="rounded-lg bg-muted/40 p-3">
           <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <p className="eyebrow text-muted-foreground">
               {t("detail.synthesis.alerts", { n: flags.length })}
             </p>
           </div>
@@ -3672,7 +3672,7 @@ function AssessmentSynthesisDashboard({
               const acc = accMap.get(f);
               return (
                 <li key={f} className="flex items-start gap-2 text-xs">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
                   <span className="flex-1 text-foreground">{f}</span>
                   {acc && (
                     <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
@@ -3858,13 +3858,13 @@ function AssessmentSection({
   }
 
   return (
-    <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+    <section className="space-y-4 rounded-2xl bg-muted/30 p-4">
       <div className="flex flex-wrap items-center gap-3">
         {headerProgress}
         <button
           type="button"
           onClick={() => setCollapsed(true)}
-          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="ml-auto eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
         >
           <ChevronDown className="h-3 w-3" /> {t("detail.section.collapse")}
         </button>
@@ -3873,7 +3873,7 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => setFocused((f) => !f)}
-          className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest transition ${focused ? "border-accent/60 bg-accent/10 text-accent" : "border-border text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+          className={`eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 transition ${focused ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
           title={focused ? t("detail.section.focus_tip_show_all") : t("detail.section.focus_tip_focus")}
         >
           {focused ? <List className="h-3 w-3" /> : <Focus className="h-3 w-3" />}
@@ -3884,14 +3884,14 @@ function AssessmentSection({
         <button
           type="button"
           onClick={() => ctx.setAll(true)}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
         >
           <ChevronsUpDown className="h-3 w-3" /> {t("detail.section.expand_all")}
         </button>
         <button
           type="button"
           onClick={() => ctx.setAll(false)}
-          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+          className="eyebrow inline-flex items-center gap-1 rounded-md px-2 py-1 text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
         >
           <ChevronsDownUp className="h-3 w-3" /> {t("detail.section.collapse_all")}
         </button>
@@ -3909,7 +3909,7 @@ function AssessmentSection({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveId(s.id)}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition ${isActive ? "border-accent bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                className={`label-caps inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition ${isActive ? "bg-muted/60 text-foreground" : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
               >
                 <span className="font-mono tabular-nums">{i + 1}</span>
                 <span className="hidden sm:inline">{s.label}</span>
@@ -4045,7 +4045,7 @@ function SectionBlock({
     tagClass = "text-muted-foreground/70";
   }
   return (
-    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl border border-border bg-background/40 p-3 ${borderClass}`}>
+    <div id={`sec-${id}`} className={`scroll-mt-20 rounded-xl bg-muted/40 p-3 ${borderClass}`}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -4053,8 +4053,8 @@ function SectionBlock({
         aria-expanded={open}
       >
         {open ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-        <h3 className={`text-xs font-bold uppercase tracking-widest ${analysed ? "text-accent/70" : "text-accent"}`}>{title}</h3>
-        {analysed && <Check className="h-3 w-3 text-accent" aria-label="analysed" />}
+        <h3 className={`eyebrow ${analysed ? "text-foreground/70" : "text-foreground"}`}>{title}</h3>
+        {analysed && <Check className="h-3 w-3 text-muted-foreground" aria-label="analysed" />}
         {!analysed && complete && <Check className="h-3 w-3 text-muted-foreground/60" />}
         {hint && (
           <Tooltip>
@@ -4095,7 +4095,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const { t } = useTranslation("assessment");
   if (analysing) {
     return (
-      <div className="mt-3 flex items-center gap-2 rounded-md border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+      <div className="body-prose mt-3 flex items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <Loader2 className="h-3 w-3 animate-spin" />
         <span>{t("detail.analysing_section")}</span>
       </div>
@@ -4108,7 +4108,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
   if (!insight) return null;
   return (
-    <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-2.5 text-xs text-muted-foreground">
+    <div className="body-prose mt-3 rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground">
       {insight}
     </div>
   );
@@ -4432,7 +4432,7 @@ function ParqFlagSummary({ count }: { count: number }) {
 
 function CompletionStrip({ text }: { text: string }) {
   return (
-    <div className="mt-3 animate-fade-in border-l-2 border-accent/40 bg-accent/5 px-2 py-1 text-[12px] opacity-80">
+    <div className="body-prose mt-3 animate-fade-in rounded-md bg-muted/40 px-2.5 py-1 text-[12px] text-muted-foreground">
       {text}
     </div>
   );
@@ -4477,31 +4477,31 @@ function ClientSnapshotCard({
     : "—";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="rounded-2xl bg-muted/40 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <p className="eyebrow text-muted-foreground">
           {t("detail.snapshot.title")}
         </p>
-        <p className="text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
+        <p className="body-data text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
-          <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
+          <p className={`mt-0.5 text-lg font-light tracking-tight ${riskTone}`}>{riskLabel}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.recovery")}</p>
-          <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.recovery")}</p>
+          <p className="mt-0.5 text-lg font-light tracking-tight">{recovery?.label ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.composition")}</p>
-          <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.composition")}</p>
+          <p className="mt-0.5 text-lg font-light tabular-nums tracking-tight">{bf} · WHR {whr}</p>
         </div>
       </div>
       {flags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {flags.map((f) => (
-            <span key={f} className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+            <span key={f} className="rounded-full bg-muted/70 px-2 py-0.5 text-[10px] text-muted-foreground">
               {f}
             </span>
           ))}

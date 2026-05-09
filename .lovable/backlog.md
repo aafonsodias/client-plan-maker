@@ -485,3 +485,14 @@ Scope estimado: 2-3 rounds (R-A wireframe + slider mechanics em 1 secção como 
 - Aesthetic pass `/dashboard` → `/plans/$id` → `/me` (tratamento editorial do NextActionCard replicado)
 - Slider de assessment — fechar 6 decisões abertas (linha 461) antes de qualquer código
 - R62 #3/#4/#5 (storyboards vídeo, funnel analytics, revisão nativa ES/HI) — re-priorizar com gatilho concreto
+
+### Round B.2 — `/clients/$id` aesthetic pass (10 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 103 | P1 | clients/$id | StatCard, AssessmentSynthesisDashboard (incl. flag block sem amber), ClientSnapshotCard → separação tonal (`bg-muted/30-40`, sem borda), `eyebrow` + `body-prose`, `tabular-nums` nos números | R B.2 ✅ |
+| 104 | P1 | clients/$id | AssessmentSection: shell sem borda, tab pills + toggles em `label-caps`/`eyebrow` com `bg-muted/40-60` (sem amber/accent), checkmarks em muted | R B.2 ✅ |
+| 105 | P1 | clients/$id | SectionBlock + SectionAnalysisCard + CompletionStrip → `bg-muted/40` sem borda accent, títulos em `eyebrow`, body em `body-prose` muted | R B.2 ✅ |
+| 106 | deferred | clients/$id | BriefEditor asymmetric layout (1:φ) — vive em `src/components/BriefEditor.tsx`, fica para round dedicado (componente separado, deserve own pass) | next |
+| 107 | deferred | clients/$id | Microcopy audit (no "Let's", ellipsis → ".", "Adicionar medição" etc.) + i18n 4 locales + verify-capacity-i18n.ts — separar por tocar muitas keys em 4 ficheiros | next |
+| 108 | deferred | clients/$id | Screenshot canónico em `.lovable/design/round-b-canonical-screenshots/clients-id-full-page.png` + smoke 375px + verificação 3 temas | next |
