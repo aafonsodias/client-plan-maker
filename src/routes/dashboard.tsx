@@ -315,7 +315,7 @@ function Dashboard() {
                 : t("dashboard.eyebrow");
             })()}
           </p>
-          <h1 className="mt-1 text-3xl font-light tracking-tight sm:text-4xl">
+          <h1 className="mt-1 font-display text-3xl font-light tracking-tight sm:text-4xl">
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
@@ -469,8 +469,8 @@ function Dashboard() {
 
       {attention.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-bold">{t("dashboard.attention")}</h2>
-          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <h2 className="mb-3 font-display text-lg font-light tracking-tight text-foreground">{t("dashboard.attention")}</h2>
+          <div className="overflow-hidden rounded-2xl bg-muted/40">
             {attention.map((it) => {
               const Icon = it.kind === "submitted" ? Inbox : it.kind === "birthday" ? Cake : Clock;
               return (
@@ -478,7 +478,7 @@ function Dashboard() {
                   key={it.key}
                   to="/clients/$clientId"
                   params={{ clientId: it.clientId! }}
-                  className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 hover:bg-secondary/50"
+                  className="flex items-center gap-3 border-b border-border/40 px-5 py-3 last:border-b-0 transition hover:bg-muted/60"
                 >
                   <Icon className={`h-4 w-4 shrink-0 ${it.urgent ? "text-accent" : "text-muted-foreground"}`} />
                   <div className="min-w-0 flex-1">
