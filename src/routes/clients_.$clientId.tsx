@@ -490,6 +490,22 @@ function ClientDetail() {
   // below). User toggle is persisted per-client.
   const assessmentCollapseKey = `protocol_assessment_top_collapsed_${clientId}`;
   const [assessmentCollapsed, setAssessmentCollapsed] = useState<boolean | null>(null);
+  // Protocol rail open/closed (default closed — frees attention for the
+  // "This week" / capacity panels below). Persisted per-client.
+  const protocolRailOpenKey = `protocol_rail_open_${clientId}`;
+  const [protocolRailOpen, setProtocolRailOpen] = useState<boolean>(false);
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(protocolRailOpenKey);
+      if (v === "1") setProtocolRailOpen(true);
+      else if (v === "0") setProtocolRailOpen(false);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
+  const setProtocolRailOpenPersist = (v: boolean) => {
+    setProtocolRailOpen(v);
+    try { window.localStorage.setItem(protocolRailOpenKey, v ? "1" : "0"); } catch { /* ignore */ }
+  };
   // Map plan_id → latest week_number with any approved_at day. Used to default
   // the per-week PDF download to the most useful week (R40).
   const [planLatestWeek, setPlanLatestWeek] = useState<Record<string, number>>({});
