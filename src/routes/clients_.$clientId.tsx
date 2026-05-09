@@ -4204,27 +4204,30 @@ function AssessmentSection({
             <div className="flex flex-col">
               {/* Sticky header */}
               <div className="sticky top-0 z-30 -mx-px border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-                <div className="h-1 w-full bg-muted/30">
+                <div className="h-0.5 w-full bg-muted/30">
                   <div
-                    className="h-full bg-primary transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-amber-500/70 via-primary to-primary transition-all duration-500"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-2 px-3 pt-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="eyebrow text-[10px] text-muted-foreground">
-                      {t("progress_short", { current: activeIdx + 1, total: totalCount, pct: progressPct })}
-                    </p>
-                    <h2 className="truncate text-sm font-bold leading-tight">
-                      {(sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId}
-                    </h2>
-                  </div>
+                <div className="flex items-center gap-2.5 px-3 py-2">
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-medium tabular-nums tracking-tight text-amber-700 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300/90">
+                    {String(activeIdx + 1).padStart(2, "0")}/{String(totalCount).padStart(2, "0")}
+                  </span>
+                  <h2 className="min-w-0 flex-1 truncate font-display text-base leading-tight tracking-tight">
+                    {(sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId}
+                  </h2>
+                  {saveLabel && (
+                    <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70 [@media(min-width:360px)]:inline">
+                      {saveLabel}
+                    </span>
+                  )}
                   <Sheet open={jumpOpen} onOpenChange={setJumpOpen}>
                     <SheetTrigger asChild>
                       <button
                         type="button"
                         aria-label={t("jump_to")}
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/40 text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
                       >
                         <MenuIcon className="h-4 w-4" />
                       </button>
@@ -4266,9 +4269,6 @@ function AssessmentSection({
                     </SheetContent>
                   </Sheet>
                 </div>
-                {saveLabel && (
-                  <p className="px-3 pb-2 pt-0.5 text-right text-[10px] text-muted-foreground/80">{saveLabel}</p>
-                )}
               </div>
               {/* Body */}
               <div ref={stepperBodyRef} className="min-h-[60vh] overflow-y-auto px-3 py-4">
