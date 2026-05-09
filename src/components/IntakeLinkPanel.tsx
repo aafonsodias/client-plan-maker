@@ -131,6 +131,8 @@ export function IntakeLinkPanel({
   const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
   const mailSubj = encodeURIComponent(t("intake.mail_subject"));
   const mailBody = encodeURIComponent(t("intake.wa_msg", { name: clientFirstName, url }));
+  const mailTo = (clientEmail ?? "").trim();
+  const mailHref = `mailto:${encodeURIComponent(mailTo)}?subject=${mailSubj}&body=${mailBody}`;
 
   const doReview = async () => {
     setBusy(true);
