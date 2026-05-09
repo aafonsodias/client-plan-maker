@@ -2993,7 +2993,7 @@ function ClientDetail() {
               );
             })()}
           </div>
-          )}
+          ))}
 
         </AssessmentSection>
       </div>
