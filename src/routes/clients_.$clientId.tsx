@@ -1559,44 +1559,69 @@ function ClientDetail() {
     <TooltipProvider delayDuration={200}>
     <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
       <div>
-        <div className="flex flex-wrap items-center gap-3 min-w-0">
-          {user?.id && (
+        <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 min-w-0">
+          {user?.id ? (
             <ClientAvatarUpload
               clientId={client.id}
               trainerId={user.id}
               name={client.full_name}
               photoUrl={client.photo_url ?? null}
               onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
-              size={48}
+              size={44}
               showFounderDot={(client.email ?? "").toLowerCase() === "aafonsodias@gmail.com"}
             />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-3 min-w-0">
-              <h1 className="t-1 min-w-0 line-clamp-2 [overflow-wrap:anywhere] !text-[clamp(1.5rem,6.5vw,2.75rem)]" title={client?.full_name}>{client?.full_name}</h1>
-              <ClientPhaseHeaderPill clientId={client.id} />
-              {(() => {
-                const heroPlanLocal = plans.find((p) => ((p as any).generation_state?.stage ?? null) === "complete") ?? null;
-                const heroPlanCompleteLocal = !!heroPlanLocal && (heroPlanLocal as any).generation_status === "complete";
-                const stage1 = heroPlanCompleteLocal || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80);
-                const stage2 = !!inlineBrief?.approved || heroPlanCompleteLocal;
-                const stage3 = (inlineBrief?.approvedStages ?? []).includes("blueprint") || heroPlanCompleteLocal;
-                const stage4 = (inlineBrief?.approvedStages ?? []).includes("microcycle") || heroPlanCompleteLocal;
-                const stage5 = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanCompleteLocal;
-                const done = [stage1, stage2, stage3, stage4, stage5];
-                const idx = done.findIndex((d) => !d);
-                const n = idx === -1 ? 5 : idx + 1;
-                return (
-                  <span
-                    className="ml-1 text-[10px] font-medium tabular-nums text-muted-foreground/60"
-                    title={`Protocolo · etapa ${n} de 5`}
-                  >
-                    {n}/5
+          ) : <span />}
+          <div className="min-w-0">
+            <h1
+              className="t-1 min-w-0 line-clamp-2 [overflow-wrap:anywhere] !text-[clamp(1.375rem,5.5vw,2.25rem)] !leading-[1.1]"
+              title={client?.full_name}
+            >
+              {client?.full_name}
+            </h1>
+            {(() => {
+              const heroPlanLocal = plans.find((p) => ((p as any).generation_state?.stage ?? null) === "complete") ?? null;
+              const heroPlanCompleteLocal = !!heroPlanLocal && (heroPlanLocal as any).generation_status === "complete";
+              const stage1 = heroPlanCompleteLocal || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80);
+              const stage2 = !!inlineBrief?.approved || heroPlanCompleteLocal;
+              const stage3 = (inlineBrief?.approvedStages ?? []).includes("blueprint") || heroPlanCompleteLocal;
+              const stage4 = (inlineBrief?.approvedStages ?? []).includes("microcycle") || heroPlanCompleteLocal;
+              const stage5 = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanCompleteLocal;
+              const done = [stage1, stage2, stage3, stage4, stage5];
+              const idx = done.findIndex((d) => !d);
+              const stepN = idx === -1 ? 5 : idx + 1;
+              const phase = clientPhase;
+              const phaseToneCls =
+                phase?.kind === "active" || phase?.kind === "ready" ? "bg-emerald-500" :
+                phase?.kind === "idle" ? "bg-amber-500" :
+                phase?.kind === "assessment" ? "bg-teal-500" :
+                phase?.kind === "intake_sent" ? "bg-sky-500" :
+                "bg-muted-foreground/50";
+              return (
+                <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-3)]">
+                  <span className="min-w-0 flex-shrink truncate" title={client.email ?? undefined}>
+                    {client.email ?? t("no_email")}
                   </span>
-                );
-              })()}
-            </div>
-            <p className="body-prose mt-1 text-sm text-[var(--text-2)] break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
+                  {phase && (
+                    <>
+                      <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+                      <span className="inline-flex shrink-0 items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 rounded-full ${phaseToneCls}`} aria-hidden="true" />
+                        <span className="eyebrow text-[10px] text-muted-foreground" title={phase.label}>
+                          {phase.label}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+                  <span
+                    className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70"
+                    title={`Protocolo · etapa ${stepN} de 5`}
+                  >
+                    {stepN}/5
+                  </span>
+                </p>
+              );
+            })()}
           </div>
           {/* Single icon-only overflow menu for every secondary action.
               R68 — header trim for mobile. */}
