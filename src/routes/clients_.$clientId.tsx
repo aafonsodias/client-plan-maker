@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -2820,20 +2820,31 @@ function ClientDetail() {
                     );
                   })() : (() => {
                     const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
-                    const tooltip = assessmentComplete ? undefined : "Termina a avaliação para desbloquear";
+                    const remaining = briefCoverage ? Math.max(0, briefCoverage.total - briefCoverage.done) : 0;
+                    const tooltip = assessmentComplete
+                      ? undefined
+                      : `Faltam ${remaining} ${remaining === 1 ? "campo" : "campos"} da avaliação`;
+                    const lockedClass = !assessmentComplete
+                      ? "relative w-full sm:w-auto opacity-60 cursor-not-allowed ring-1 ring-amber-500/30 bg-muted/40 hover:bg-muted/40 text-muted-foreground"
+                      : "w-full sm:w-auto";
+                    const LeadingIcon = !assessmentComplete ? (
+                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/15 ring-1 ring-amber-500/40">
+                        <Lock className="h-3 w-3 text-amber-300" />
+                      </span>
+                    ) : null;
                     return phasedEnabled ? (
                       <Button
                         onClick={() => void runPhasedStart()}
                         disabled={busy || phasedBusy || !assessmentComplete}
                         size="lg"
-                        className="w-full sm:w-auto"
+                        className={lockedClass}
                         title={tooltip}
                       >
-                        {phasedBusy ? (
+                        {LeadingIcon ?? (phasedBusy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Sparkles className="mr-2 h-4 w-4" />
-                        )}
+                        ))}
                         {t("generate.button")}
                       </Button>
                     ) : (
@@ -2841,10 +2852,10 @@ function ClientDetail() {
                         onClick={() => void generate()}
                         disabled={busy || !assessmentComplete}
                         size="lg"
-                        className="w-full sm:w-auto"
+                        className={lockedClass}
                         title={tooltip}
                       >
-                        {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        {LeadingIcon ?? (busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />)}
                         {t("generate.button")}
                       </Button>
                     );
