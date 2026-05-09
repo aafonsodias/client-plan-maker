@@ -4477,31 +4477,31 @@ function ClientSnapshotCard({
     : "—";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
+    <div className="rounded-2xl bg-muted/40 p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+        <p className="eyebrow text-muted-foreground">
           {t("detail.snapshot.title")}
         </p>
-        <p className="text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
+        <p className="body-data text-[10px] text-muted-foreground">{t("detail.snapshot.last", { when: dateLabel })}</p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
-          <p className={`mt-0.5 text-lg font-light ${riskTone}`}>{riskLabel}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
+          <p className={`mt-0.5 text-lg font-light tracking-tight ${riskTone}`}>{riskLabel}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.recovery")}</p>
-          <p className="mt-0.5 text-lg font-light">{recovery?.label ?? "—"}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.recovery")}</p>
+          <p className="mt-0.5 text-lg font-light tracking-tight">{recovery?.label ?? "—"}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("detail.snapshot.composition")}</p>
-          <p className="mt-0.5 text-lg font-light">{bf} · WHR {whr}</p>
+          <p className="eyebrow text-muted-foreground">{t("detail.snapshot.composition")}</p>
+          <p className="mt-0.5 text-lg font-light tabular-nums tracking-tight">{bf} · WHR {whr}</p>
         </div>
       </div>
       {flags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {flags.map((f) => (
-            <span key={f} className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+            <span key={f} className="rounded-full bg-muted/70 px-2 py-0.5 text-[10px] text-muted-foreground">
               {f}
             </span>
           ))}
