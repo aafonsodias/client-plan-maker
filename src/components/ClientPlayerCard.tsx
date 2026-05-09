@@ -98,11 +98,11 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
 
   return (
     <div
-      className={`group relative border-b border-border last:border-b-0 ${
+      className={`group relative border-b border-border/50 last:border-b-0 ${
         flagged ? "border-l-2 border-l-amber-500/60" : ""
       }`}
     >
-      <div className="flex items-stretch hover:bg-secondary/40">
+      <div className="flex items-stretch hover:bg-muted/60">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
