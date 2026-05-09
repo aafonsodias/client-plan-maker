@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Cake, Inbox } from "lucide-react";
+import { Cake, Inbox, ClipboardList, Sparkles, UserPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
@@ -12,26 +12,33 @@ type ClientLite = {
   photo_url: string | null;
   date_of_birth: string | null;
   intake_status: string;
+  assessment_completion: number;
+  has_plan: boolean;
 };
 
 type Props = {
   clients: ClientLite[];
+  onInvite?: () => void;
 };
 
 /**
- * NextActionCard — the single "loud moment" of /dashboard.
- * Only shows when there is a real client-driven signal:
- *  1. Submitted assessment awaiting review
- *  2. Birthday in ≤7 days
- * No invite/quick-plan fallbacks — we don't manufacture noise. Returns null
- * when there's nothing meaningful to act on.
+ * NextActionCard — compact "next thing to do" strip on /dashboard.
+ * Always renders. Priority order, first match wins:
+ *  1. Submitted (100%) → review
+ *  2. Assessment incomplete (<100%) → finish missions FIRST
+ *  3. 100% complete + no plan → generate plan
+ *  4. Birthday ≤ 7 days
+ *  5. Empty (no clients) → invite, otherwise idle "all caught up"
+ * NEVER suggests generating a plan with assessment_completion < 100.
  */
-export function NextActionCard({ clients }: Props) {
+export function NextActionCard({ clients, onInvite }: Props) {
   const { t } = useTranslation("common");
 
   const action = useMemo(() => {
-    // 1. Submitted assessment awaiting review.
-    const submitted = clients.find((c) => c.intake_status === "submitted");
+    // 1. Submitted, fully complete → review.
+    const submitted = clients.find(
+      (c) => c.intake_status === "submitted" && (c.assessment_completion ?? 0) >= 100,
+    );
     if (submitted) {
       return {
         kind: "review" as const,
@@ -44,7 +51,44 @@ export function NextActionCard({ clients }: Props) {
         params: { clientId: submitted.id },
       };
     }
-    // 2. Birthday ≤ 7 days.
+    // 2. Incomplete assessment — pick the closest-to-finished one.
+    const incomplete = clients
+      .filter((c) => {
+        const pct = c.assessment_completion ?? 0;
+        return pct < 100 && c.intake_status !== "not_sent";
+      })
+      .sort((a, b) => (b.assessment_completion ?? 0) - (a.assessment_completion ?? 0));
+    if (incomplete[0]) {
+      const c = incomplete[0];
+      const pct = c.assessment_completion ?? 0;
+      return {
+        kind: "complete" as const,
+        client: c,
+        icon: ClipboardList,
+        title: t("dashboard.next_action.complete_title", { name: c.full_name }),
+        sub: t("dashboard.next_action.complete_sub", { pct }),
+        cta: t("dashboard.next_action.complete_cta"),
+        to: "/clients/$clientId" as const,
+        params: { clientId: c.id },
+      };
+    }
+    // 3. 100% complete + no plan → generate.
+    const ready = clients.find(
+      (c) => (c.assessment_completion ?? 0) >= 100 && !c.has_plan,
+    );
+    if (ready) {
+      return {
+        kind: "generate" as const,
+        client: ready,
+        icon: Sparkles,
+        title: t("dashboard.next_action.generate_title", { name: ready.full_name }),
+        sub: t("dashboard.next_action.generate_sub"),
+        cta: t("dashboard.next_action.generate_cta"),
+        to: "/plans/new" as const,
+        search: { clientId: ready.id },
+      };
+    }
+    // 4. Birthday ≤ 7 days.
     const withBday = clients
       .map((c) => ({ c, d: daysUntilBirthday(c.date_of_birth) }))
       .filter((x) => x.d !== null && (x.d as number) <= 7)
@@ -68,46 +112,99 @@ export function NextActionCard({ clients }: Props) {
         params: { clientId: c.id },
       };
     }
-    return null;
-  }, [clients, t]);
-
-  if (!action) return null;
+    // 5. Empty / idle.
+    if (clients.length === 0) {
+      return {
+        kind: "invite" as const,
+        client: null,
+        icon: UserPlus,
+        title: t("dashboard.next_action.empty_invite_title"),
+        sub: t("dashboard.next_action.empty_invite_sub"),
+        cta: t("dashboard.next_action.empty_invite_cta"),
+        onClick: onInvite,
+      };
+    }
+    return {
+      kind: "idle" as const,
+      client: null,
+      icon: Check,
+      title: t("dashboard.next_action.idle_title"),
+      sub:
+        clients.length === 1
+          ? t("dashboard.next_action.idle_sub_one", { n: clients.length })
+          : t("dashboard.next_action.idle_sub_other", { n: clients.length }),
+      cta: null,
+    };
+  }, [clients, t, onInvite]);
 
   const Icon = action.icon;
+  const isIdle = action.kind === "idle";
+  const tone = isIdle ? "emerald" : "amber";
 
   const inner = (
-    <div className="flex items-center gap-4 sm:gap-5">
+    <div className="flex items-center gap-3">
       {action.client ? (
-        <ClientAvatar name={action.client.full_name} photoUrl={action.client.photo_url} size={56} />
+        <ClientAvatar name={action.client.full_name} photoUrl={action.client.photo_url} size={32} />
       ) : (
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-500">
-          <Icon className="h-6 w-6" />
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+            isIdle ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+          }`}
+        >
+          <Icon className="h-4 w-4" />
         </span>
       )}
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-amber-500/80">
-          {t("dashboard.next_action.eyebrow")}
+      <div className="min-w-0 flex-1 leading-tight">
+        <p className="truncate text-sm font-medium">
+          {!isIdle && (
+            <span className={`mr-2 text-[10px] uppercase tracking-[0.16em] text-${tone}-500/80`}>
+              {t("dashboard.next_action.eyebrow")}
+            </span>
+          )}
+          {action.title}
         </p>
-        <p className="mt-1 truncate text-base font-medium sm:text-lg">{action.title}</p>
-        <p className="mt-0.5 truncate text-xs text-muted-foreground">{action.sub}</p>
+        <p className="truncate text-xs text-muted-foreground">{action.sub}</p>
       </div>
-      <Button
-        size="sm"
-        className="shrink-0 bg-amber-500 text-amber-950 hover:bg-amber-400"
-      >
-        {action.cta}
-      </Button>
+      {action.cta ? (
+        <Button
+          size="sm"
+          variant={isIdle ? "ghost" : "default"}
+          className={
+            isIdle
+              ? "shrink-0"
+              : "shrink-0 bg-amber-500 text-amber-950 hover:bg-amber-400"
+          }
+        >
+          {action.cta}
+        </Button>
+      ) : null}
     </div>
   );
 
-  const wrapClass =
-    "block rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.10] via-card to-card p-5 shadow-[0_30px_80px_-50px_rgba(245,158,11,0.55)] transition hover:border-amber-500/50 sm:p-6";
+  const wrapBase = "block rounded-2xl border bg-card px-4 py-3 transition";
+  const wrapClass = isIdle
+    ? `${wrapBase} border-border/60`
+    : `${wrapBase} border-amber-500/25 hover:border-amber-500/50`;
 
-  if ("to" in action && action.to === "/clients/$clientId" && (action as any).params) {
+  if ("to" in action && action.to === "/clients/$clientId") {
     return (
       <Link to="/clients/$clientId" params={(action as any).params} className={wrapClass}>
         {inner}
       </Link>
+    );
+  }
+  if ("to" in action && action.to === "/plans/new") {
+    return (
+      <Link to="/plans/new" search={(action as any).search} className={wrapClass}>
+        {inner}
+      </Link>
+    );
+  }
+  if ("onClick" in action && action.onClick) {
+    return (
+      <button type="button" onClick={action.onClick} className={`${wrapClass} w-full text-left`}>
+        {inner}
+      </button>
     );
   }
   return <div className={wrapClass}>{inner}</div>;

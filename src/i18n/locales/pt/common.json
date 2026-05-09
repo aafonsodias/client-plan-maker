@@ -59,7 +59,19 @@
       "invite_cta": "Convidar",
       "quick_title": "Plano rápido em 90 segundos",
       "quick_sub": "5 inputs · pipeline completo, com o seu nome.",
-      "quick_cta": "Começar"
+      "quick_cta": "Começar",
+      "complete_title": "Completar avaliação · {{name}}",
+      "complete_sub": "{{pct}}% feito",
+      "complete_cta": "Completar",
+      "generate_title": "{{name}} pronto para o plano",
+      "generate_sub": "Avaliação 100% — gerar brief",
+      "generate_cta": "Gerar plano",
+      "empty_invite_title": "Convidar primeiro cliente",
+      "empty_invite_sub": "O fluxo começa aqui.",
+      "empty_invite_cta": "Convidar",
+      "idle_title": "Tudo em dia",
+      "idle_sub_one": "{{n}} cliente activo",
+      "idle_sub_other": "{{n}} clientes activos"
     },
     "today": {
       "title": "Hoje",

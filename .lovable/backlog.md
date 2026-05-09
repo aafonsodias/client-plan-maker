@@ -104,6 +104,14 @@ Atualizado: Round 28 (4 Mai 2026)
 | 81 | P1 | UX | Erro "low_adherence" mostrado inline na própria card (sem toast) | R66 ✅ |
 | 75 | P1 | Plan page | `<IntensityCockpit/>` montado no `/plans/$id` modo edit, persist directo em `programming_variables` | R67 ✅ |
 
+### Round 73 — NextActionCard compact + assessment-first (9 Mai 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 96 | P0 | Dashboard | NextActionCard sempre presente, layout compacto (strip ~56px, sem glow), nunca null | R73 ✅ |
+| 97 | P0 | Dashboard | Prioridade respeita pipeline: rever submetida → completar incompleta → gerar quando 100% → aniversário → empty | R73 ✅ |
+| 98 | P0 | Princípios | mem://principles/next-action-priority.md trava regressão (nunca gerar plano com avaliação <100%) | R73 ✅ |
+
 ## Meta-prompt sugerido
 > "Continua o backlog. Foco P0 desta ronda: **[área]**. Resultado esperado: **[1 frase]**. Princípio: útil, funcional, bonito, divertido — sem inventar features fora do backlog. Atualiza .lovable/backlog.md no fim."
 

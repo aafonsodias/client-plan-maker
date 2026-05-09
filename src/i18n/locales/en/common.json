@@ -59,7 +59,19 @@
       "invite_cta": "Invite",
       "quick_title": "Quick plan in 90 seconds",
       "quick_sub": "5 inputs · full pipeline, with your name on it.",
-      "quick_cta": "Start"
+      "quick_cta": "Start",
+      "complete_title": "Finish assessment · {{name}}",
+      "complete_sub": "{{pct}}% done",
+      "complete_cta": "Continue",
+      "generate_title": "{{name}} is ready for a plan",
+      "generate_sub": "Assessment complete — generate brief",
+      "generate_cta": "Generate plan",
+      "empty_invite_title": "Invite first client",
+      "empty_invite_sub": "The flow starts here.",
+      "empty_invite_cta": "Invite",
+      "idle_title": "All caught up",
+      "idle_sub_one": "{{n}} active client",
+      "idle_sub_other": "{{n}} active clients"
     },
     "today": {
       "title": "Today",
