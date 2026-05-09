@@ -657,6 +657,13 @@ function ClientDetail() {
     total: number;
   } | null>(null);
   const [activeSection, setActiveSection] = useState("parq");
+  // On mobile we use the section-stepper UX: each assessment section is its
+  // own screen. The "Gerar rascunho do plano" CTA must NOT appear on every
+  // step — the plan is generated AFTER the protocol, so it only belongs on
+  // the last step (Performance) or on desktop where every section is visible
+  // at once.
+  const isMobileStepper = useIsMobile(1024);
+  const showGenerateCta = !isMobileStepper || activeSection === "performance";
   const [showAdvancedNutrition, setShowAdvancedNutrition] = useState(false);
   const [showAdvancedPerformance, setShowAdvancedPerformance] = useState(false);
   // R-X · Lote 1: flash highlight on Antropometria "Dados base" when Risco BMI
@@ -2822,7 +2829,7 @@ function ClientDetail() {
             />
           )}
 
-          {readyPlanForAssessment ? (
+          {showGenerateCta && (readyPlanForAssessment ? (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs">
               <span className="text-muted-foreground">
                 Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
@@ -2986,7 +2993,7 @@ function ClientDetail() {
               );
             })()}
           </div>
-          )}
+          ))}
 
         </AssessmentSection>
       </div>
@@ -3481,8 +3488,8 @@ function ClientDetail() {
                     status="placeholder"
                   />
                 </>
-              )}
-            </div>
+          )}
+          </div>
           )}
 
       {/* Hero "Esta semana" — now merged into the Protocolo card above (R53). */}
