@@ -3632,10 +3632,10 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl border border-border bg-background/40 p-3">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("detail.synthesis.title")}</p>
-        <span className="text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
+        <p className="eyebrow text-muted-foreground">{t("detail.synthesis.title")}</p>
+        <span className="body-data text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -3660,10 +3660,10 @@ function AssessmentSynthesisDashboard({
       <MovementCompetencyRadar assessment={assessment} sectionAnalyses={sectionAnalyses} />
 
       {flags.length > 0 && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3">
+        <div className="rounded-lg bg-muted/40 p-3">
           <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <p className="eyebrow text-muted-foreground">
               {t("detail.synthesis.alerts", { n: flags.length })}
             </p>
           </div>
@@ -3672,7 +3672,7 @@ function AssessmentSynthesisDashboard({
               const acc = accMap.get(f);
               return (
                 <li key={f} className="flex items-start gap-2 text-xs">
-                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/50" />
                   <span className="flex-1 text-foreground">{f}</span>
                   {acc && (
                     <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${
