@@ -457,3 +457,17 @@ Atualizado: Round 28 (4 Mai 2026)
 | 93 | P1 | clients list | `flagged` prop on ClientPlayerCard → `border-l-2 border-l-amber-500/60` for birthday ≤7d or submitted | R72 ✅ |
 | 94 | P1 | intake.$token | Section chip = `01 · 06` tabular numerals; between-section spacing → `space-y-12` (48px rhythm) | R72 ✅ |
 | 95 | P1 | plans.$id | View-mode CapacityGainBlock wrapped in `animate-fade-in` (~300ms) — soft "ready" reveal | R72 ✅ |
+
+### Open thread — Assessment as bite-sized slider (proposed 9 May 2026)
+
+Vision (founder): cada secção do protocolo (PAR-Q+, Antropometria, Goals, …, Performance — 14 no total) é servida como um cartão único, navegável por swipe / setas, em vez de uma página longa com tudo aberto. No fim do último cartão sai-se do protocolo e aterra-se no dashboard do cliente com o meso atual + gráficos de progresso. Sentir-se-ia mais como onboarding humano que como formulário clínico.
+
+Decisões em aberto antes de implementar:
+- 1 input por slide ou 1 secção por slide? (14 vs ~60 slides)
+- Como tratar campos opcionais sem fazer o utilizador "swipar por nada"?
+- Persist drift: guarda a cada swipe (já temos autosave) ou só no "Próxima"?
+- Aterragem final: `/clients/$id` (vista treinador) ou `/me` (vista cliente)? Provavelmente depende de quem preencheu (treinador vs cliente via intake token).
+- Mobile-first → setas + swipe nativo + barra de progresso fina no topo. Desktop → setas teclado ←/→.
+- Como conviver com o modo "Ver tudo" actual (long-form) — fica como toggle ou desaparece?
+
+Scope estimado: 2-3 rounds (R-A wireframe + slider mechanics em 1 secção como prova; R-B aplicar a todas; R-C aterragem dashboard). Não tocar antes de fechar as decisões acima.
