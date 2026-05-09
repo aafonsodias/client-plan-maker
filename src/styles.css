@@ -542,3 +542,110 @@
   nav,
   aside { display: none !important; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * ROUND A — Aesthetic Foundations (May 2026)
+ *
+ * Type scale + semantic header classes + font-family aliases. Defined here
+ * but NOT applied to existing components yet — Round B consumes these.
+ * Coexists with legacy --text-* utilities; suffixed -v2 to avoid collision
+ * with Tailwind's own --text-xs..--text-6xl tokens.
+ * ──────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Type scale — golden ratio derived (φ ≈ 1.618, step √φ ≈ 1.272) */
+  --text-2xs-v2: 0.625rem;   /* 10px — micro labels, eyebrow tracking */
+  --text-xs-v2:  0.75rem;    /* 12px — captions, fine print */
+  --text-sm-v2:  0.875rem;   /* 14px — secondary body, dense data */
+  --text-base-v2: 1rem;      /* 16px — body baseline */
+  --text-lg-v2:  1.125rem;   /* 18px — emphasized body */
+  --text-xl-v2:  1.272rem;   /* ~20px — h4 / card titles */
+  --text-2xl-v2: 1.618rem;   /* ~26px — h3 */
+  --text-3xl-v2: 2.058rem;   /* ~33px — h2 */
+  --text-4xl-v2: 2.618rem;   /* ~42px — h1 */
+  --text-5xl-v2: 3.330rem;   /* ~53px — display */
+  --text-6xl-v2: 4.236rem;   /* ~68px — hero (rare in app) */
+
+  /* Type families — Round A canonical names. Legacy --font-display / --font-grotesk
+   * remain for back-compat; Round B migrates callers to --font-body / --font-display-v2. */
+  --font-display-v2: "Fraunces", "Tiempos Headline", "Source Serif 4", Georgia, serif;
+  --font-body:       "Inter Tight", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono-v2:    ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Line heights */
+  --leading-tight-v2:   1.15;
+  --leading-snug-v2:    1.25;
+  --leading-normal-v2:  1.5;
+  --leading-relaxed-v2: 1.65;
+
+  /* Letter spacing */
+  --tracking-tight-v2:   -0.02em;
+  --tracking-normal-v2:  0;
+  --tracking-eyebrow-v2: 0.18em;
+}
+
+/* Semantic typography — Round A foundation. Round B applies these. */
+.h-display {
+  font-family: var(--font-display-v2);
+  font-size: var(--text-5xl-v2);
+  font-weight: 400;
+  line-height: var(--leading-tight-v2);
+  letter-spacing: var(--tracking-tight-v2);
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+}
+.h-1 {
+  font-family: var(--font-display-v2);
+  font-size: var(--text-4xl-v2);
+  font-weight: 500;
+  line-height: var(--leading-snug-v2);
+  letter-spacing: var(--tracking-tight-v2);
+  font-variation-settings: "opsz" 96;
+}
+.h-2 {
+  font-family: var(--font-display-v2);
+  font-size: var(--text-3xl-v2);
+  font-weight: 500;
+  line-height: var(--leading-snug-v2);
+  font-variation-settings: "opsz" 48;
+}
+.h-3 {
+  font-family: var(--font-body);
+  font-size: var(--text-xl-v2);
+  font-weight: 600;
+  line-height: var(--leading-snug-v2);
+  letter-spacing: -0.005em;
+}
+.h-4 {
+  font-family: var(--font-body);
+  font-size: var(--text-lg-v2);
+  font-weight: 600;
+  line-height: var(--leading-snug-v2);
+}
+.eyebrow {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs-v2);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow-v2);
+  color: var(--text-2);
+}
+.body-data {
+  font-family: var(--font-body);
+  font-size: var(--text-base-v2);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.body-prose {
+  font-family: var(--font-body);
+  font-size: var(--text-base-v2);
+  font-weight: 400;
+  line-height: var(--leading-relaxed-v2);
+  max-width: 62ch;
+}
+.label-caps {
+  font-family: var(--font-body);
+  font-size: var(--text-sm-v2);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-2);
+}
