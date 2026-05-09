@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload";
-import { ClientDocuments } from "@/components/ClientDocuments";
 import { MicrocyclePanel } from "@/components/MicrocyclePanel";
 import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { CapacityMap } from "@/components/CapacityMap";
@@ -1558,6 +1557,26 @@ function ClientDetail() {
             <div className="flex flex-wrap items-center gap-3 min-w-0">
               <h1 className="t-1 break-words min-w-0">{client?.full_name}</h1>
               <ClientPhaseHeaderPill clientId={client.id} />
+              {(() => {
+                const heroPlanLocal = plans.find((p) => ((p as any).generation_state?.stage ?? null) === "complete") ?? null;
+                const heroPlanCompleteLocal = !!heroPlanLocal && (heroPlanLocal as any).generation_status === "complete";
+                const stage1 = heroPlanCompleteLocal || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80);
+                const stage2 = !!inlineBrief?.approved || heroPlanCompleteLocal;
+                const stage3 = (inlineBrief?.approvedStages ?? []).includes("blueprint") || heroPlanCompleteLocal;
+                const stage4 = (inlineBrief?.approvedStages ?? []).includes("microcycle") || heroPlanCompleteLocal;
+                const stage5 = (inlineBrief?.approvedStages ?? []).includes("progressions") || heroPlanCompleteLocal;
+                const done = [stage1, stage2, stage3, stage4, stage5];
+                const idx = done.findIndex((d) => !d);
+                const n = idx === -1 ? 5 : idx + 1;
+                return (
+                  <span
+                    className="ml-1 text-[10px] font-medium tabular-nums text-muted-foreground/60"
+                    title={`Protocolo · etapa ${n} de 5`}
+                  >
+                    {n}/5
+                  </span>
+                );
+              })()}
             </div>
             <p className="body-prose mt-1 text-sm text-[var(--text-2)] break-words min-w-0 truncate">{client.email ?? t("no_email")}</p>
           </div>
@@ -1634,9 +1653,6 @@ function ClientDetail() {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <ClientDocuments clientId={client.id} />
         </div>
       </div>
 
@@ -1757,30 +1773,6 @@ function ClientDetail() {
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
               />
             )}
-            {(() => {
-              const stagesDone = [
-                (heroPlanComplete || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80)),
-                !!inlineBrief?.approved || heroPlanComplete,
-                blueprintApprovedLocal,
-                microcycleApprovedLocal,
-                progressionsApprovedLocal,
-              ];
-              const currentIdx = stagesDone.findIndex((d) => !d);
-              const currentStage = currentIdx === -1 ? 5 : currentIdx + 1;
-              const stageLabels = ["Avaliação", "Briefing", "Plano-mestre", "Semana-tipo", "Progressão"];
-              const allDone = currentIdx === -1;
-              return (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Protocolo
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/[0.06] px-3 py-1 text-[11px] font-medium text-amber-300">
-                    <span className="tabular-nums opacity-70">{allDone ? "✓" : `${currentStage}/5`}</span>
-                    <span>{allDone ? "Protocolo completo" : stageLabels[currentStage - 1]}</span>
-                  </span>
-                </div>
-              );
-            })()}
             <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
