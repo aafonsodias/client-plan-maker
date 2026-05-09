@@ -217,17 +217,17 @@ function sectionSignature(assessment: any, section: string): string {
 const SECTIONS = [
   { id: "parq", label: "PAR-Q+" },
   { id: "risk", label: "Risk strat." },
-  { id: "anthro", label: "Anthropometry" },
-  { id: "meds", label: "Medications" },
-  { id: "goal", label: "SMART goal" },
-  { id: "readiness", label: "Readiness" },
   { id: "training", label: "Training setup" },
+  { id: "history", label: "Training history" },
+  { id: "goal", label: "SMART goal" },
+  { id: "meds", label: "Medications" },
+  { id: "anthro", label: "Anthropometry" },
+  { id: "readiness", label: "Readiness" },
   { id: "lifestyle", label: "Lifestyle" },
   { id: "nutrition", label: "Nutrition" },
   { id: "mobility", label: "Mobility" },
   { id: "posture", label: "Posture" },
   { id: "screen", label: "Movement screen" },
-  { id: "history", label: "Training history" },
   { id: "performance", label: "Performance" },
 ];
 
@@ -1991,7 +1991,6 @@ function ClientDetail() {
               })}
             </ul>
           </SectionBlock>
-
           {/* Risk stratification */}
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
@@ -2125,7 +2124,276 @@ function ClientDetail() {
               <Toggle label={t("risk_block.hypertension")} value={assessment.risk.hypertension} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })} />
             </div>
           </SectionBlock>
-
+          {/* Training setup (existing) */}
+          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
+            <div className="mb-3">
+              <AnchoredSlider
+                label="Onde está face ao melhor que já conseguiu?"
+                value={assessment.current_capacity_vs_pb ?? 5}
+                onChange={(v) => setAssessment({ ...assessment, current_capacity_vs_pb: v })}
+                trailing={
+                  <HelpPopover label="Capacidade vs pico">
+                    <p>
+                      Compare a forma actual com o melhor pico de treino que já teve. Vamos usar isto
+                      para decidir se começamos em modo reconstrução (mais volume, cargas leves) ou
+                      em modo progressão (intensidade mais alta).
+                    </p>
+                  </HelpPopover>
+                }
+                anchors={[
+                  { upTo: 2, label: "Muito longe do pico — modo reconstrução total" },
+                  { upTo: 4, label: "Bastante abaixo — recuperar base primeiro" },
+                  { upTo: 6, label: "A meio caminho — progressão controlada" },
+                  { upTo: 8, label: "Quase no pico — pronto para empurrar" },
+                  { upTo: 10, label: "No pico ou acima — modo progressão agressiva" },
+                ]}
+              />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1">
+                <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.experience_level ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, experience_level: v })}
+                  options={[
+                    { value: "beginner", label: t("training_block.beginner") },
+                    { value: "intermediate", label: t("training_block.intermediate") },
+                    { value: "advanced", label: t("training_block.advanced") },
+                  ]}
+                />
+              </div>
+              <Field label={t("training_block.days_per_week")} type="number" placeholder="3" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label={t("training_block.session_length")} type="number" placeholder="60" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              {(() => {
+                // R-X · Lote 2: training_location was free text. Now canonical chips.
+                // Legacy non-canonical values are preserved as a "outro" chip.
+                const canonical = ["home", "gym", "outdoor", "hybrid"] as const;
+                const raw = (Array.isArray(assessment.training_location)
+                  ? assessment.training_location[0]
+                  : assessment.training_location) as string | null | undefined;
+                const isLegacy = !!raw && !canonical.includes(raw as any);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("training_block.training_location")}</Label>
+                    <VisualChipGroup
+                      columns={4}
+                      size="sm"
+                      value={isLegacy ? null : ((raw as any) ?? null)}
+                      onChange={(v) => setAssessment({ ...assessment, training_location: v })}
+                      options={[
+                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }), icon: <IconHome /> },
+                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }), icon: <IconGym /> },
+                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }), icon: <IconOutdoor /> },
+                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }), icon: <IconHybrid /> },
+                      ]}
+                    />
+                    {isLegacy && (
+                      <button
+                        type="button"
+                        onClick={() => setAssessment({ ...assessment, training_location: null })}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        title="Limpar valor antigo"
+                      >
+                        outro · {String(raw)} ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+              <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
+            </div>
+            <div className="mt-3">
+              <Label className="text-xs">{t("training_block.available_equipment")}</Label>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {EQUIPMENT_OPTIONS.map(({ id, canonical }) => {
+                  const on = assessment.available_equipment.includes(canonical);
+                  return (
+                    <button key={id} type="button" onClick={() => toggleEq(canonical)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{t(`equipment.${id}` as const)}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
+              )}
+              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
+            </div>
+          </SectionBlock>
+          {/* Training history */}
+          <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
+              <div className="sm:col-span-2 space-y-1">
+                <div className="flex items-center justify-between gap-1">
+                  <Label className="text-xs">{t("history_block.max_lifts")}</Label>
+                  <HelpPopover label={t("history_block.max_lifts")} triggerLabel="Como anotar?">
+                    <p>{t("history_block.max_lifts_help")}</p>
+                  </HelpPopover>
+                </div>
+                <Input
+                  className="h-8 text-sm"
+                  value={assessment.max_lifts ?? ""}
+                  onChange={(e) => setAssessment({ ...assessment, max_lifts: e.target.value })}
+                  placeholder={t("history_block.max_lifts_placeholder")}
+                />
+              </div>
+            </div>
+          </SectionBlock>
+          {/* SMART goal */}
+          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
+            <SmartGoalSection
+              value={{
+                smart_specific: assessment.smart_specific ?? null,
+                smart_measurable: assessment.smart_measurable ?? null,
+                smart_deadline: assessment.smart_deadline ?? null,
+                primary_goal: assessment.primary_goal ?? null,
+              }}
+              onChange={(next) => setAssessment({ ...assessment, ...next })}
+            />
+            {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+              <div className="mt-3">
+                <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
+              </div>
+            )}
+          </SectionBlock>
+          {/* Medications */}
+          <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
+                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
+                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag"), effect: t("meds_block.effect_anticoag"), Icon: Droplet },
+                { id: "antihtn", canonical: "Antihypertensive", label: t("meds_block.flag_antihtn"), effect: t("meds_block.effect_antihtn"), Icon: Activity },
+                { id: "diuretic", canonical: "Diuretic", label: t("meds_block.flag_diuretic"), effect: t("meds_block.effect_diuretic"), Icon: Droplets },
+                { id: "insulin", canonical: "Insulin/Antidiabetic", label: t("meds_block.flag_insulin"), effect: t("meds_block.effect_insulin"), Icon: Syringe },
+                { id: "bronchodilator", canonical: "Bronchodilator", label: t("meds_block.flag_bronchodilator"), effect: t("meds_block.effect_bronchodilator"), Icon: Wind },
+                { id: "ssri", canonical: "SSRI", label: t("meds_block.flag_ssri"), effect: t("meds_block.effect_ssri"), Icon: Brain },
+                { id: "thyroid", canonical: "Thyroid", label: t("meds_block.flag_thyroid"), effect: t("meds_block.effect_thyroid"), Icon: Shield },
+                { id: "nsaid", canonical: "NSAID", label: t("meds_block.flag_nsaid"), effect: t("meds_block.effect_nsaid"), Icon: Tablets },
+                { id: "corticosteroid", canonical: "Oral corticosteroid", label: t("meds_block.flag_corticosteroid"), effect: t("meds_block.effect_corticosteroid"), Icon: Pill },
+              ].map(({ id, canonical: flag, label, effect, Icon }) => {
+                const on = assessment.med_flags.includes(flag);
+                const dose = medsLocal.doses[flag] ?? "";
+                const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+                const commit = (nextFlags: string[], nextDoses: Record<string, string>) => {
+                  setMedsLocal((m) => ({ ...m, doses: nextDoses }));
+                  setAssessment({
+                    ...assessment,
+                    med_flags: nextFlags,
+                    medications: serializeMeds(nextFlags, nextDoses, medsLocal.others, otherLabel),
+                  });
+                };
+                return (
+                  <div
+                    key={id}
+                    className={`rounded-lg border p-2.5 transition ${on ? "border-amber-500/40 bg-amber-500/[0.06] ring-1 ring-inset ring-amber-500/20" : "border-border/60 bg-background/40 hover:border-border hover:bg-muted/30"}`}
+                  >
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        const nextFlags = on
+                          ? assessment.med_flags.filter((f: string) => f !== flag)
+                          : [...assessment.med_flags, flag];
+                        const nextDoses = { ...medsLocal.doses };
+                        if (on) delete nextDoses[flag];
+                        commit(nextFlags, nextDoses);
+                      }}
+                      className="flex w-full items-start gap-2.5 text-left"
+                    >
+                      <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${on ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted/60 text-muted-foreground"}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-[12px] font-medium leading-tight ${on ? "text-amber-700 dark:text-amber-300" : "text-foreground"}`}>{label}</span>
+                        <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">{effect}</span>
+                      </span>
+                    </button>
+                    {on ? (
+                      <div className="mt-2 border-t border-amber-500/15 pt-2">
+                        <Input
+                          value={dose}
+                          onChange={(e) => {
+                            const nextDoses = { ...medsLocal.doses, [flag]: e.target.value };
+                            commit(assessment.med_flags, nextDoses);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder={t("meds_block.dose_placeholder")}
+                          className="h-7 border-amber-500/20 bg-background/60 px-2 text-[11px] tabular-nums focus-visible:ring-amber-500/40"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            {(() => {
+              const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+              const setOthers = (next: OtherMed[]) => {
+                setMedsLocal((m) => ({ ...m, others: next }));
+                setAssessment({
+                  ...assessment,
+                  medications: serializeMeds(assessment.med_flags ?? [], medsLocal.doses, next, otherLabel),
+                });
+              };
+              return (
+                <div className="mt-3 space-y-2">
+                  {medsLocal.others.map((o, idx) => (
+                    <div
+                      key={idx}
+                      className="grid items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.06] p-2.5 ring-1 ring-inset ring-amber-500/20 grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_auto]"
+                    >
+                      <Input
+                        value={o.name}
+                        onChange={(e) => {
+                          const next = medsLocal.others.slice();
+                          next[idx] = { ...next[idx], name: e.target.value };
+                          setOthers(next);
+                        }}
+                        placeholder={t("meds_block.other_name_placeholder")}
+                        className="h-8 border-amber-500/20 bg-background/60 text-[12px] sm:col-auto col-span-1 row-start-1"
+                      />
+                      <Input
+                        value={o.dose}
+                        onChange={(e) => {
+                          const next = medsLocal.others.slice();
+                          next[idx] = { ...next[idx], dose: e.target.value };
+                          setOthers(next);
+                        }}
+                        placeholder={t("meds_block.other_dose_placeholder")}
+                        className="h-8 border-amber-500/20 bg-background/60 text-[11px] tabular-nums col-span-2 row-start-2 sm:col-auto sm:row-start-1"
+                      />
+                      <button
+                        type="button"
+                        aria-label={t("meds_block.other_remove_aria")}
+                        onClick={() => {
+                          const next = medsLocal.others.slice();
+                          next.splice(idx, 1);
+                          setOthers(next);
+                        }}
+                        className="row-start-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setOthers([...medsLocal.others, { name: "", dose: "" }])}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-muted/40 py-2 text-xs font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {t("meds_block.add_other")}
+                  </button>
+                </div>
+              );
+            })()}
+          </SectionBlock>
           {/* Anthropometry */}
           <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)}>
             {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
@@ -2300,159 +2568,6 @@ function ClientDetail() {
               </div>
             </details>
           </SectionBlock>
-
-          {/* Medications */}
-          <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {[
-                { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
-                { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
-                { id: "anticoag", canonical: "Anticoagulant", label: t("meds_block.flag_anticoag"), effect: t("meds_block.effect_anticoag"), Icon: Droplet },
-                { id: "antihtn", canonical: "Antihypertensive", label: t("meds_block.flag_antihtn"), effect: t("meds_block.effect_antihtn"), Icon: Activity },
-                { id: "diuretic", canonical: "Diuretic", label: t("meds_block.flag_diuretic"), effect: t("meds_block.effect_diuretic"), Icon: Droplets },
-                { id: "insulin", canonical: "Insulin/Antidiabetic", label: t("meds_block.flag_insulin"), effect: t("meds_block.effect_insulin"), Icon: Syringe },
-                { id: "bronchodilator", canonical: "Bronchodilator", label: t("meds_block.flag_bronchodilator"), effect: t("meds_block.effect_bronchodilator"), Icon: Wind },
-                { id: "ssri", canonical: "SSRI", label: t("meds_block.flag_ssri"), effect: t("meds_block.effect_ssri"), Icon: Brain },
-                { id: "thyroid", canonical: "Thyroid", label: t("meds_block.flag_thyroid"), effect: t("meds_block.effect_thyroid"), Icon: Shield },
-                { id: "nsaid", canonical: "NSAID", label: t("meds_block.flag_nsaid"), effect: t("meds_block.effect_nsaid"), Icon: Tablets },
-                { id: "corticosteroid", canonical: "Oral corticosteroid", label: t("meds_block.flag_corticosteroid"), effect: t("meds_block.effect_corticosteroid"), Icon: Pill },
-              ].map(({ id, canonical: flag, label, effect, Icon }) => {
-                const on = assessment.med_flags.includes(flag);
-                const dose = medsLocal.doses[flag] ?? "";
-                const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
-                const commit = (nextFlags: string[], nextDoses: Record<string, string>) => {
-                  setMedsLocal((m) => ({ ...m, doses: nextDoses }));
-                  setAssessment({
-                    ...assessment,
-                    med_flags: nextFlags,
-                    medications: serializeMeds(nextFlags, nextDoses, medsLocal.others, otherLabel),
-                  });
-                };
-                return (
-                  <div
-                    key={id}
-                    className={`rounded-lg border p-2.5 transition ${on ? "border-amber-500/40 bg-amber-500/[0.06] ring-1 ring-inset ring-amber-500/20" : "border-border/60 bg-background/40 hover:border-border hover:bg-muted/30"}`}
-                  >
-                    <button
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => {
-                        const nextFlags = on
-                          ? assessment.med_flags.filter((f: string) => f !== flag)
-                          : [...assessment.med_flags, flag];
-                        const nextDoses = { ...medsLocal.doses };
-                        if (on) delete nextDoses[flag];
-                        commit(nextFlags, nextDoses);
-                      }}
-                      className="flex w-full items-start gap-2.5 text-left"
-                    >
-                      <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${on ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted/60 text-muted-foreground"}`}>
-                        <Icon className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={`block text-[12px] font-medium leading-tight ${on ? "text-amber-700 dark:text-amber-300" : "text-foreground"}`}>{label}</span>
-                        <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">{effect}</span>
-                      </span>
-                    </button>
-                    {on ? (
-                      <div className="mt-2 border-t border-amber-500/15 pt-2">
-                        <Input
-                          value={dose}
-                          onChange={(e) => {
-                            const nextDoses = { ...medsLocal.doses, [flag]: e.target.value };
-                            commit(assessment.med_flags, nextDoses);
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          placeholder={t("meds_block.dose_placeholder")}
-                          className="h-7 border-amber-500/20 bg-background/60 px-2 text-[11px] tabular-nums focus-visible:ring-amber-500/40"
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-            {(() => {
-              const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
-              const setOthers = (next: OtherMed[]) => {
-                setMedsLocal((m) => ({ ...m, others: next }));
-                setAssessment({
-                  ...assessment,
-                  medications: serializeMeds(assessment.med_flags ?? [], medsLocal.doses, next, otherLabel),
-                });
-              };
-              return (
-                <div className="mt-3 space-y-2">
-                  {medsLocal.others.map((o, idx) => (
-                    <div
-                      key={idx}
-                      className="grid items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.06] p-2.5 ring-1 ring-inset ring-amber-500/20 grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_auto]"
-                    >
-                      <Input
-                        value={o.name}
-                        onChange={(e) => {
-                          const next = medsLocal.others.slice();
-                          next[idx] = { ...next[idx], name: e.target.value };
-                          setOthers(next);
-                        }}
-                        placeholder={t("meds_block.other_name_placeholder")}
-                        className="h-8 border-amber-500/20 bg-background/60 text-[12px] sm:col-auto col-span-1 row-start-1"
-                      />
-                      <Input
-                        value={o.dose}
-                        onChange={(e) => {
-                          const next = medsLocal.others.slice();
-                          next[idx] = { ...next[idx], dose: e.target.value };
-                          setOthers(next);
-                        }}
-                        placeholder={t("meds_block.other_dose_placeholder")}
-                        className="h-8 border-amber-500/20 bg-background/60 text-[11px] tabular-nums col-span-2 row-start-2 sm:col-auto sm:row-start-1"
-                      />
-                      <button
-                        type="button"
-                        aria-label={t("meds_block.other_remove_aria")}
-                        onClick={() => {
-                          const next = medsLocal.others.slice();
-                          next.splice(idx, 1);
-                          setOthers(next);
-                        }}
-                        className="row-start-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setOthers([...medsLocal.others, { name: "", dose: "" }])}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-muted/40 py-2 text-xs font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {t("meds_block.add_other")}
-                  </button>
-                </div>
-              );
-            })()}
-          </SectionBlock>
-
-          {/* SMART goal */}
-          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
-            <SmartGoalSection
-              value={{
-                smart_specific: assessment.smart_specific ?? null,
-                smart_measurable: assessment.smart_measurable ?? null,
-                smart_deadline: assessment.smart_deadline ?? null,
-                primary_goal: assessment.primary_goal ?? null,
-              }}
-              onChange={(next) => setAssessment({ ...assessment, ...next })}
-            />
-            {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
-              <div className="mt-3">
-                <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
-              </div>
-            )}
-          </SectionBlock>
-
           {/* Readiness */}
           <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
             <div className="mb-2 flex justify-end">
@@ -2472,107 +2587,6 @@ function ClientDetail() {
               }))}
             />
           </SectionBlock>
-
-          {/* Training setup (existing) */}
-          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
-            <div className="mb-3">
-              <AnchoredSlider
-                label="Onde está face ao melhor que já conseguiu?"
-                value={assessment.current_capacity_vs_pb ?? 5}
-                onChange={(v) => setAssessment({ ...assessment, current_capacity_vs_pb: v })}
-                trailing={
-                  <HelpPopover label="Capacidade vs pico">
-                    <p>
-                      Compare a forma actual com o melhor pico de treino que já teve. Vamos usar isto
-                      para decidir se começamos em modo reconstrução (mais volume, cargas leves) ou
-                      em modo progressão (intensidade mais alta).
-                    </p>
-                  </HelpPopover>
-                }
-                anchors={[
-                  { upTo: 2, label: "Muito longe do pico — modo reconstrução total" },
-                  { upTo: 4, label: "Bastante abaixo — recuperar base primeiro" },
-                  { upTo: 6, label: "A meio caminho — progressão controlada" },
-                  { upTo: 8, label: "Quase no pico — pronto para empurrar" },
-                  { upTo: 10, label: "No pico ou acima — modo progressão agressiva" },
-                ]}
-              />
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div className="space-y-1">
-                <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
-                <ChipGroup
-                  cols={3}
-                  size="sm"
-                  value={assessment.experience_level ?? null}
-                  onChange={(v) => setAssessment({ ...assessment, experience_level: v })}
-                  options={[
-                    { value: "beginner", label: t("training_block.beginner") },
-                    { value: "intermediate", label: t("training_block.intermediate") },
-                    { value: "advanced", label: t("training_block.advanced") },
-                  ]}
-                />
-              </div>
-              <Field label={t("training_block.days_per_week")} type="number" placeholder="3" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label={t("training_block.session_length")} type="number" placeholder="60" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-              {(() => {
-                // R-X · Lote 2: training_location was free text. Now canonical chips.
-                // Legacy non-canonical values are preserved as a "outro" chip.
-                const canonical = ["home", "gym", "outdoor", "hybrid"] as const;
-                const raw = (Array.isArray(assessment.training_location)
-                  ? assessment.training_location[0]
-                  : assessment.training_location) as string | null | undefined;
-                const isLegacy = !!raw && !canonical.includes(raw as any);
-                return (
-                  <div className="space-y-1">
-                    <Label className="text-xs">{t("training_block.training_location")}</Label>
-                    <VisualChipGroup
-                      columns={4}
-                      size="sm"
-                      value={isLegacy ? null : ((raw as any) ?? null)}
-                      onChange={(v) => setAssessment({ ...assessment, training_location: v })}
-                      options={[
-                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }), icon: <IconHome /> },
-                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }), icon: <IconGym /> },
-                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }), icon: <IconOutdoor /> },
-                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }), icon: <IconHybrid /> },
-                      ]}
-                    />
-                    {isLegacy && (
-                      <button
-                        type="button"
-                        onClick={() => setAssessment({ ...assessment, training_location: null })}
-                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
-                        title="Limpar valor antigo"
-                      >
-                        outro · {String(raw)} ✕
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-              <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
-            </div>
-            <div className="mt-3">
-              <Label className="text-xs">{t("training_block.available_equipment")}</Label>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {EQUIPMENT_OPTIONS.map(({ id, canonical }) => {
-                  const on = assessment.available_equipment.includes(canonical);
-                  return (
-                    <button key={id} type="button" onClick={() => toggleEq(canonical)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{t(`equipment.${id}` as const)}</button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
-              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
-                <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-              )}
-              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
-            </div>
-          </SectionBlock>
-
           {/* Lifestyle (rebuilt) */}
           <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
             <div className="mb-3 grid gap-3 sm:grid-cols-2">
@@ -2657,7 +2671,6 @@ function ClientDetail() {
               )}
             </div>
           </SectionBlock>
-
           {/* Nutrition (rebuilt) */}
           <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
             <div className="space-y-3">
@@ -2759,7 +2772,6 @@ function ClientDetail() {
               {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
           </SectionBlock>
-
           {/* Mobility checklist */}
           <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
@@ -2777,7 +2789,6 @@ function ClientDetail() {
             </div>
             <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
           </SectionBlock>
-
           {/* Posture */}
           <SectionBlock id="posture" analysing={analysingSections["posture"]} analysis={sectionAnalyses["posture"]} title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -2808,7 +2819,6 @@ function ClientDetail() {
               </div>
             </div>
           </SectionBlock>
-
           {/* Movement screen */}
           <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">
@@ -2841,29 +2851,6 @@ function ClientDetail() {
               ))}
             </div>
           </SectionBlock>
-
-          {/* Training history */}
-          <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
-              <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
-              <div className="sm:col-span-2 space-y-1">
-                <div className="flex items-center justify-between gap-1">
-                  <Label className="text-xs">{t("history_block.max_lifts")}</Label>
-                  <HelpPopover label={t("history_block.max_lifts")} triggerLabel="Como anotar?">
-                    <p>{t("history_block.max_lifts_help")}</p>
-                  </HelpPopover>
-                </div>
-                <Input
-                  className="h-8 text-sm"
-                  value={assessment.max_lifts ?? ""}
-                  onChange={(e) => setAssessment({ ...assessment, max_lifts: e.target.value })}
-                  placeholder={t("history_block.max_lifts_placeholder")}
-                />
-              </div>
-            </div>
-          </SectionBlock>
-
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
             <div className="mb-2 flex justify-end">
