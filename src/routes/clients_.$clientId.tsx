@@ -1754,30 +1754,6 @@ function ClientDetail() {
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
               />
             )}
-            {(() => {
-              const stagesDone = [
-                (heroPlanComplete || (briefCoverage && briefCoverage.total > 0 && Math.round((briefCoverage.done / briefCoverage.total) * 100) >= 80)),
-                !!inlineBrief?.approved || heroPlanComplete,
-                blueprintApprovedLocal,
-                microcycleApprovedLocal,
-                progressionsApprovedLocal,
-              ];
-              const currentIdx = stagesDone.findIndex((d) => !d);
-              const currentStage = currentIdx === -1 ? 5 : currentIdx + 1;
-              const stageLabels = ["Avaliação", "Briefing", "Plano-mestre", "Semana-tipo", "Progressão"];
-              const allDone = currentIdx === -1;
-              return (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Protocolo
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/[0.06] px-3 py-1 text-[11px] font-medium text-amber-300">
-                    <span className="tabular-nums opacity-70">{allDone ? "✓" : `${currentStage}/5`}</span>
-                    <span>{allDone ? "Protocolo completo" : stageLabels[currentStage - 1]}</span>
-                  </span>
-                </div>
-              );
-            })()}
             <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && (
               <details className="group mt-2 border-t border-border/60 pt-2">
