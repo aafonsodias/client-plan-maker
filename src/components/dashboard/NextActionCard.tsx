@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Cake, Inbox, Sparkles } from "lucide-react";
+import { Cake, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
@@ -21,11 +21,13 @@ type Props = {
 
 /**
  * NextActionCard — the single "loud moment" of /dashboard.
- * Deterministic priority: submitted assessment → birthday ≤7d → invite first
- * client → quick plan. One amber under-glow card; nothing else on the page
- * should compete.
+ * Only shows when there is a real client-driven signal:
+ *  1. Submitted assessment awaiting review
+ *  2. Birthday in ≤7 days
+ * No invite/quick-plan fallbacks — we don't manufacture noise. Returns null
+ * when there's nothing meaningful to act on.
  */
-export function NextActionCard({ clients, onInvite }: Props) {
+export function NextActionCard({ clients }: Props) {
   const { t } = useTranslation("common");
 
   const action = useMemo(() => {
@@ -67,29 +69,10 @@ export function NextActionCard({ clients, onInvite }: Props) {
         params: { clientId: c.id },
       };
     }
-    // 3. No clients yet.
-    if (clients.length === 0) {
-      return {
-        kind: "invite" as const,
-        client: null,
-        icon: Sparkles,
-        title: t("dashboard.next_action.invite_title"),
-        sub: t("dashboard.next_action.invite_sub"),
-        cta: t("dashboard.next_action.invite_cta"),
-        onClick: onInvite,
-      };
-    }
-    // 4. Default: nudge to quick plan.
-    return {
-      kind: "quick" as const,
-      client: null,
-      icon: Sparkles,
-      title: t("dashboard.next_action.quick_title"),
-      sub: t("dashboard.next_action.quick_sub"),
-      cta: t("dashboard.next_action.quick_cta"),
-      to: "/plans/quick" as const,
-    };
-  }, [clients, t, onInvite]);
+    return null;
+  }, [clients, t]);
+
+  if (!action) return null;
 
   const Icon = action.icon;
 
@@ -121,20 +104,6 @@ export function NextActionCard({ clients, onInvite }: Props) {
   const wrapClass =
     "block rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.10] via-card to-card p-5 shadow-[0_30px_80px_-50px_rgba(245,158,11,0.55)] transition hover:border-amber-500/50 sm:p-6";
 
-  if ("onClick" in action && action.onClick) {
-    return (
-      <button type="button" onClick={action.onClick} className={`${wrapClass} w-full text-left`}>
-        {inner}
-      </button>
-    );
-  }
-  if ("to" in action && action.to === "/plans/quick") {
-    return (
-      <Link to="/plans/quick" className={wrapClass}>
-        {inner}
-      </Link>
-    );
-  }
   if ("to" in action && action.to === "/clients/$clientId" && (action as any).params) {
     return (
       <Link to="/clients/$clientId" params={(action as any).params} className={wrapClass}>
