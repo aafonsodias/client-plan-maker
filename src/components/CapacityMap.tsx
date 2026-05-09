@@ -188,47 +188,54 @@ export function CapacityMap({
       aria-label={t("capacity.map.title")}
       className="mb-3 rounded-2xl border border-border bg-card/60 p-3 sm:p-4"
     >
-      {/* Header */}
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
-          <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+      {/*
+        Layout:
+        - <lg: stacked (header → legend → radar) — the original mobile flow.
+        - ≥lg: two columns — radar left (fixed 360), header/legend/completion
+          right. Kills the huge empty gutters on desktop.
+      */}
+      <div className="lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start lg:gap-6">
+        {/* Header (mobile position; on lg moves to the right column via order) */}
+        <div className="mb-3 flex items-start justify-between gap-2 lg:hidden">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
+            <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+          </div>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("capacity.map.add_button")}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t("capacity.map.add_button")}
-        </button>
-      </div>
 
-      {/* Tier legend + completion */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
-          <TierPill tier="health_related" label={t("capacity.map.tier_health")} />
-          <TierPill tier="skill_related" label={t("capacity.map.tier_skill")} />
-          <TierPill tier="integrative" label={t("capacity.map.tier_integrative")} />
-        </div>
-        <div className="min-w-[140px] flex-1 sm:flex-none">
-          <p className="mb-1 text-[11px] text-muted-foreground">
-            {t("capacity.map.completion", { done: measuredCount, total })}
-          </p>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${(measuredCount / total) * 100}%`,
-                background: "var(--accent)",
-              }}
-            />
+        {/* Tier legend + completion (mobile position) */}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 lg:hidden">
+          <div className="flex flex-wrap gap-1.5">
+            <TierPill tier="health_related" label={t("capacity.map.tier_health")} />
+            <TierPill tier="skill_related" label={t("capacity.map.tier_skill")} />
+            <TierPill tier="integrative" label={t("capacity.map.tier_integrative")} />
+          </div>
+          <div className="min-w-[140px] flex-1 sm:flex-none">
+            <p className="mb-1 text-[11px] text-muted-foreground">
+              {t("capacity.map.completion", { done: measuredCount, total })}
+            </p>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${(measuredCount / total) * 100}%`,
+                  background: "var(--accent)",
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Radar */}
-      <div className="relative mx-auto w-full max-w-[360px]">
+        {/* Radar */}
+        <div className="relative mx-auto w-full max-w-[360px] lg:mx-0">
         <svg
           viewBox={`0 0 ${SIZE} ${SIZE}`}
           className="w-full h-auto select-none"
@@ -411,6 +418,44 @@ export function CapacityMap({
             </p>
           </div>
         )}
+        </div>
+
+        {/* Desktop side panel — header, add button, legend, completion */}
+        <div className="hidden lg:flex lg:flex-col lg:gap-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">{t("capacity.map.title")}</h3>
+              <p className="text-xs text-muted-foreground">{t("capacity.map.subtitle")}</p>
+            </div>
+            <button
+              type="button"
+              onClick={openAdd}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t("capacity.map.add_button")}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <TierPill tier="health_related" label={t("capacity.map.tier_health")} />
+            <TierPill tier="skill_related" label={t("capacity.map.tier_skill")} />
+            <TierPill tier="integrative" label={t("capacity.map.tier_integrative")} />
+          </div>
+          <div>
+            <p className="mb-1 text-[11px] text-muted-foreground">
+              {t("capacity.map.completion", { done: measuredCount, total })}
+            </p>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${(measuredCount / total) * 100}%`,
+                  background: "var(--accent)",
+                }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <AddSnapshotSheet
