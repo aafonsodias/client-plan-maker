@@ -447,7 +447,7 @@ function IntakePage() {
           </Section>
 
           {/* SMART GOAL */}
-          <Section number={2} title={t("sections.goal_title")}>
+          <Section number={2} total={6} title={t("sections.goal_title")}>
             <Field label={t("sections.goal_what")}>
               <Textarea value={form.smart_specific} onChange={(e) => setForm({ ...form, smart_specific: e.target.value })} placeholder={t("sections.goal_what_placeholder")} rows={3} />
             </Field>
@@ -463,7 +463,7 @@ function IntakePage() {
           </Section>
 
           {/* READINESS */}
-          <Section number={3} title={t("sections.readiness_title")}>
+          <Section number={3} total={6} title={t("sections.readiness_title")}>
             <div className="flex flex-wrap gap-2">
               {READINESS_IDS.map((rid) => (
                 <button
@@ -479,7 +479,7 @@ function IntakePage() {
           </Section>
 
           {/* TRAINING SETUP */}
-          <Section number={4} title={t("sections.training_title")}>
+          <Section number={4} total={6} title={t("sections.training_title")}>
             <Field label={t("sections.training_experience")}>
               <Pills
                 options={[
@@ -535,7 +535,7 @@ function IntakePage() {
           </Section>
 
           {/* LIFESTYLE */}
-          <Section number={5} title={t("sections.lifestyle_title")}>
+          <Section number={5} total={6} title={t("sections.lifestyle_title")}>
             <SliderField label={t("sections.lifestyle_sleep")} value={form.sleep_quality} min={1} max={10} onChange={(v) => setForm({ ...form, sleep_quality: v })} legend={t("sections.lifestyle_sleep_legend")} />
             <SliderField label={t("sections.lifestyle_stress")} value={form.stress_level} min={1} max={10} onChange={(v) => setForm({ ...form, stress_level: v })} legend={t("sections.lifestyle_stress_legend")} />
             <Field label={t("sections.lifestyle_seated")}>
@@ -565,7 +565,7 @@ function IntakePage() {
           </Section>
 
           {/* NUTRITION */}
-          <Section number={6} title={t("sections.nutrition_title")}>
+          <Section number={6} total={6} title={t("sections.nutrition_title")}>
             <Field label={t("sections.nutrition_meals")}>
               <Input inputMode="numeric" value={form.ext_meals_per_day} onChange={(e) => setForm({ ...form, ext_meals_per_day: e.target.value })} />
             </Field>
