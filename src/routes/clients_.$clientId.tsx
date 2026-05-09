@@ -2485,16 +2485,16 @@ function ClientDetail() {
                 return (
                   <div className="space-y-1">
                     <Label className="text-xs">{t("lifestyle_block.job_type")}</Label>
-                    <ChipGroup
-                      cols={4}
+                    <VisualChipGroup
+                      columns={4}
                       size="sm"
                       value={isLegacy ? null : ((raw as any) ?? null)}
                       onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })}
                       options={[
-                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }) },
-                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }) },
-                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }) },
-                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }) },
+                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }), icon: <IconJobSedentary /> },
+                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }), icon: <IconJobStanding /> },
+                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }), icon: <IconJobPhysical /> },
+                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }), icon: <IconJobMixed /> },
                       ]}
                     />
                     {isLegacy && (
