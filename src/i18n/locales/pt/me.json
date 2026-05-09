@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "today": "Hoje",
+    "progress": "Progresso",
+    "history": "Histórico"
+  },
+  "preview": {
+    "banner": "Pré-visualização como cliente · {{name}}",
+    "back": "Voltar à ficha",
+    "disabled_hint": "Modo pré-visualização — desactivado"
+  },
+  "header": {
+    "hello": "Olá",
+    "with": "com"
+  },
+  "plan": {
+    "title": "Plano actual",
+    "block_week": "Bloco {{block}} · Semana {{current}} de {{total}}",
+    "evolved_from": "Bloco {{block}} · evoluiu do Bloco {{prior}}",
+    "done_count": "{{done}}/{{total}} feitos",
+    "none_title": "O seu plano está a chegar",
+    "none_body": "O seu treinador está a preparar o primeiro bloco."
+  },
+  "today_session": {
+    "title": "Sessão de hoje",
+    "session": "Sessão {{n}}",
+    "exercise_count_one": "{{count}} exercício",
+    "exercise_count_other": "{{count}} exercícios",
+    "start": "Começar",
+    "preview_more": "+ {{count}} mais",
+    "last_done_today": "Já treinou hoje — boa.",
+    "last_done_days": "Última sessão há {{days}} dia(s)",
+    "no_session": "Dia de descanso. Recupere bem."
+  },
+  "checkin": {
+    "title": "Como está hoje?",
+    "hint": "30 segundos. Ajuda o seu treinador a ajustar o plano.",
+    "sleep": "Sono",
+    "soreness": "Dores",
+    "energy": "Energia",
+    "submit": "Guardar check-in",
+    "edit": "Editar",
+    "saved": "Registado hoje",
+    "saved_summary": "Sono {{sleep}}/5 · Dores {{soreness}}/10 · Energia {{energy}}/5",
+    "sleep_levels": ["Péssimo", "Mau", "Razoável", "Bom", "Óptimo"],
+    "energy_levels": ["Vazio", "Baixa", "Razoável", "Boa", "Em forma"]
+  },
+  "week": {
+    "title": "Esta semana",
+    "label": "Semana {{n}}",
+    "day": "Sessão {{n}}",
+    "today_chip": "Hoje",
+    "done_chip": "Feita",
+    "pending_chip": "Pendente"
+  },
+  "bookings": {
+    "title": "Próximas marcações",
+    "online": "Online",
+    "in_person": "Presencial",
+    "minutes": "{{n}} min"
+  },
+  "packs": {
+    "title": "Saldo de sessões",
+    "remaining": "{{remaining}} de {{total}} disponíveis"
+  },
+  "sessions": {
+    "title": "Sessões recentes"
+  },
+  "message": {
+    "title": "Mensagem do seu treinador",
+    "empty": "Sem mensagens ainda. Pode escrever ao seu treinador aqui sempre que precisar.",
+    "reply_placeholder": "Escrever ao seu treinador…",
+    "send": "Enviar",
+    "sent": "Mensagem enviada.",
+    "you": "Você",
+    "trainer": "Treinador"
+  },
+  "empty_plan": {
+    "title": "O seu plano está a chegar",
+    "step_intake": "Recolha de dados",
+    "step_assessment": "Avaliação",
+    "step_building": "Plano em construção",
+    "step_ready": "Plano pronto",
+    "while_you_wait": "Enquanto espera",
+    "complete_intake": "Concluir recolha de dados",
+    "say_hello": "Cumprimentar o treinador",
+    "first_checkin": "Fazer o primeiro check-in"
+  },
+  "progress": {
+    "title": "Progresso",
+    "soon": "Em breve — top lifts, gráfico de peso e fotos de progresso."
+  },
+  "history": {
+    "title": "Histórico",
+    "soon": "Em breve — todas as sessões registadas, com detalhe completo."
+  },
+  "footer": {
+    "soon": "Em breve — mensagens diárias e progresso visual."
+  }
+}

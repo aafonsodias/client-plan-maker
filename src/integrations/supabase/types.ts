@@ -693,6 +693,53 @@ export type Database = {
           },
         ]
       }
+      client_checkins: {
+        Row: {
+          checked_on: string
+          client_id: string
+          created_at: string
+          energy_level: number | null
+          id: string
+          notes: string | null
+          sleep_quality: number | null
+          soreness_level: number | null
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          checked_on?: string
+          client_id: string
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          sleep_quality?: number | null
+          soreness_level?: number | null
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          checked_on?: string
+          client_id?: string
+          created_at?: string
+          energy_level?: number | null
+          id?: string
+          notes?: string | null
+          sleep_quality?: number | null
+          soreness_level?: number | null
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_checkins_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_measurement_prefs: {
         Row: {
           client_id: string
