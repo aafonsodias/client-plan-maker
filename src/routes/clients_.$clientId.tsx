@@ -2323,18 +2323,56 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />
-                <Select value={assessment.experience_level} onValueChange={(v) => setAssessment({ ...assessment, experience_level: v })}>
-                  <SelectTrigger className="h-8"><SelectValue placeholder={t("select_placeholder")} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="beginner">{t("training_block.beginner")}</SelectItem>
-                    <SelectItem value="intermediate">{t("training_block.intermediate")}</SelectItem>
-                    <SelectItem value="advanced">{t("training_block.advanced")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <ChipGroup
+                  cols={3}
+                  size="sm"
+                  value={assessment.experience_level ?? null}
+                  onChange={(v) => setAssessment({ ...assessment, experience_level: v })}
+                  options={[
+                    { value: "beginner", label: t("training_block.beginner") },
+                    { value: "intermediate", label: t("training_block.intermediate") },
+                    { value: "advanced", label: t("training_block.advanced") },
+                  ]}
+                />
               </div>
-              <Field label={t("training_block.days_per_week")} type="number" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label={t("training_block.session_length")} type="number" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
-              <Field label={t("training_block.training_location")} value={assessment.training_location} onChange={(v) => setAssessment({ ...assessment, training_location: v })} />
+              <Field label={t("training_block.days_per_week")} type="number" placeholder="3" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
+              <Field label={t("training_block.session_length")} type="number" placeholder="60" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              {(() => {
+                // R-X · Lote 2: training_location was free text. Now canonical chips.
+                // Legacy non-canonical values are preserved as a "outro" chip.
+                const canonical = ["home", "gym", "outdoor", "hybrid"] as const;
+                const raw = (Array.isArray(assessment.training_location)
+                  ? assessment.training_location[0]
+                  : assessment.training_location) as string | null | undefined;
+                const isLegacy = !!raw && !canonical.includes(raw as any);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("training_block.training_location")}</Label>
+                    <ChipGroup
+                      cols={4}
+                      size="sm"
+                      value={isLegacy ? null : ((raw as any) ?? null)}
+                      onChange={(v) => setAssessment({ ...assessment, training_location: v })}
+                      options={[
+                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }) },
+                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }) },
+                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }) },
+                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }) },
+                      ]}
+                    />
+                    {isLegacy && (
+                      <button
+                        type="button"
+                        onClick={() => setAssessment({ ...assessment, training_location: null })}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        title="Limpar valor antigo"
+                      >
+                        outro · {String(raw)} ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
             <div className="mt-3">
