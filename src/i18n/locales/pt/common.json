@@ -267,10 +267,10 @@
   },
   "language": {
     "switch_aria": "Mudar idioma",
-    "english": "Inglês",
+    "english": "English",
     "portuguese": "Português",
-    "spanish": "Espanhol",
-    "hindi": "Hindi"
+    "spanish": "Español",
+    "hindi": "हिन्दी"
   },
   "theme": {
     "toggle_aria": "Alternar tema",

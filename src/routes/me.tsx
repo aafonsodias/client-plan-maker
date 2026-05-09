@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { loadMe, submitCheckin } from "@/server/me.functions";
 import { MeShell } from "@/components/me/MeShell";
+import { MessageThread } from "@/components/me/MessageThread";
 import { BrandMark } from "@/components/BrandMark";
 import {
   Loader2,
@@ -77,6 +78,7 @@ function MePage() {
 
 function MeToday({ state, reload }: { state: any; reload: () => Promise<void> }) {
   const { t } = useTranslation("me");
+  const search = Route.useSearch();
   const {
     client,
     plan,
@@ -87,7 +89,6 @@ function MeToday({ state, reload }: { state: any; reload: () => Promise<void> })
     upcomingBookings,
     activePacks,
     todayCheckin,
-    lastTrainerMessage,
     lastSessionDate,
     unreadCount,
     previewing,
@@ -148,9 +149,11 @@ function MeToday({ state, reload }: { state: any; reload: () => Promise<void> })
         <WeekCard weekDays={weekDays} doneLabels={doneLabels} currentWeek={currentWeek} />
       )}
 
-      {lastTrainerMessage ? (
-        <TrainerMessageCard message={lastTrainerMessage} unreadCount={unreadCount ?? 0} />
-      ) : null}
+      <MessageThread
+        clientId={client.id}
+        previewing={!!previewing}
+        asParam={search.as ?? null}
+      />
 
       {upcomingBookings && upcomingBookings.length > 0 && (
         <BookingsCard bookings={upcomingBookings} />

@@ -43,6 +43,22 @@ function useLocaleControls() {
   return { current, change };
 }
 
+/**
+ * Native label for each supported locale. Always render a language in its
+ * own script (so a PT user sees "English / Português / Español / हिन्दी"),
+ * which avoids the previous bug where every non-PT entry collapsed to
+ * "Inglês" because of a 2-way ternary.
+ */
+function localeLabel(code: Locale, t: (k: string, opts?: any) => string): string {
+  switch (code) {
+    case "pt": return t("language.portuguese", { defaultValue: "Português" });
+    case "es": return t("language.spanish", { defaultValue: "Español" });
+    case "hi": return t("language.hindi", { defaultValue: "हिन्दी" });
+    case "en":
+    default:   return t("language.english", { defaultValue: "English" });
+  }
+}
+
 export function AppShell({ children, back }: { children: ReactNode; back?: { to: string; label?: string } }) {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -192,7 +208,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   ) : (
                     <span className="mr-2 inline-block h-4 w-4" />
                   )}
-                  {code === "pt" ? t("language.portuguese") : t("language.english")}
+                  {localeLabel(code, t)}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -210,11 +226,28 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="flex w-[85vw] max-w-sm flex-col gap-1 p-4">
+            <SheetContent
+              side="right"
+              className="flex w-[85vw] max-w-sm flex-col gap-1 overflow-y-auto p-4 pb-[max(6rem,env(safe-area-inset-bottom))]"
+            >
               <div className="mb-2 flex items-center gap-2 border-b border-border pb-3 font-light tracking-[0.2em] uppercase text-xs">
                 <Logo className="h-7 w-7" />
                 <span>{t("brand.name")}</span>
               </div>
+              {/* Sign-out lives at the top of the sheet so it stays reachable
+                  on mobile even when bottom browser/preview chrome covers
+                  the last ~80px of the viewport. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleSignOut();
+                }}
+                className="mb-1 flex items-center gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-3 text-sm font-medium text-destructive transition hover:bg-destructive/10"
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t("actions.sign_out")}</span>
+              </button>
               {[...primaryNav, ...secondaryNav].map((n) => {
                 const active = isActive(n.to);
                 return (
@@ -255,23 +288,12 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                   >
                     <Globe className="h-4 w-4 shrink-0" />
                     <span className="truncate">
-                      {code === "pt" ? t("language.portuguese") : t("language.english")}
+                      {localeLabel(code, t)}
                     </span>
                     {currentLocale === code && <Check className="ml-auto h-4 w-4" />}
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileOpen(false);
-                  handleSignOut();
-                }}
-                className="mt-2 flex items-center gap-3 rounded-md border-t border-border px-3 py-3 pt-4 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-              >
-                <LogOut className="h-4 w-4 shrink-0" />
-                <span className="truncate">{t("actions.sign_out")}</span>
-              </button>
             </SheetContent>
           </Sheet>
           </div>
@@ -352,7 +374,7 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                     ) : (
                       <Globe className="mr-2 h-4 w-4 opacity-50" />
                     )}
-                    {code === "pt" ? t("language.portuguese") : t("language.english")}
+                    {localeLabel(code, t)}
                   </DropdownMenuItem>
                 ))}
                 <div className="my-1 border-t border-border" />

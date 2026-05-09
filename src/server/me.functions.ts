@@ -3,6 +3,27 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
+/** Resolve the client row for the calling user — own (self mode) or a
+ * client owned by the trainer (preview mode via `as`). Returns null if the
+ * caller has no access. */
+async function resolveClient(userId: string, asId: string | null) {
+  if (asId) {
+    const { data: owned } = await supabaseAdmin
+      .from("clients")
+      .select("id, full_name, photo_url, trainer_id, intake_status, intake_token")
+      .eq("id", asId)
+      .eq("trainer_id", userId)
+      .maybeSingle();
+    if (owned) return { client: owned, previewing: true as const };
+  }
+  const { data: own } = await supabaseAdmin
+    .from("clients")
+    .select("id, full_name, photo_url, trainer_id, intake_status, intake_token")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return own ? { client: own, previewing: false as const } : null;
+}
+
 /**
  * Coached-client portal loader (R70 — Casa do cliente, golden standard).
  *
@@ -276,4 +297,307 @@ export const sendClientMessage = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
+  });
+
+/**
+ * Full message thread between client and trainer.
+ * Supports `as` (trainer preview) so the trainer can see what the client sees.
+ * Returns chronological-asc array (oldest → newest), capped at `limit`.
+ */
+export const loadMessages = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        as: z.string().uuid().nullable().optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const resolved = await resolveClient(context.userId, data.as ?? null);
+    if (!resolved) return { ok: false as const, messages: [] };
+    const limit = data.limit ?? 50;
+    const { data: rows } = await supabaseAdmin
+      .from("plan_feedback")
+      .select("id, author, body, status, created_at")
+      .eq("client_id", resolved.client.id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return {
+      ok: true as const,
+      previewing: resolved.previewing,
+      messages: (rows ?? []).reverse(),
+    };
+  });
+
+/** Mark all open trainer→client messages as acknowledged once the client
+ *  has actually viewed them. No-op for trainer preview. */
+export const markMessagesRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: c } = await supabaseAdmin
+      .from("clients")
+      .select("id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!c) return { ok: false as const };
+    await supabaseAdmin
+      .from("plan_feedback")
+      .update({ status: "acknowledged" })
+      .eq("client_id", c.id)
+      .eq("author", "trainer")
+      .eq("status", "open");
+    return { ok: true as const };
+  });
+
+/**
+ * Paginated workout-session history for the linked client (or previewed
+ * client). Returns sessions newest-first plus a cursor (next session_date
+ * to fetch under).
+ */
+export const loadHistory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        as: z.string().uuid().nullable().optional(),
+        cursor: z.string().nullable().optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const resolved = await resolveClient(context.userId, data.as ?? null);
+    if (!resolved) return { ok: false as const, sessions: [], nextCursor: null };
+    const limit = data.limit ?? 20;
+    // Find all plans for this client (active + archived) for full history.
+    const { data: plans } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, title, block_number")
+      .eq("client_id", resolved.client.id);
+    const planIds = (plans ?? []).map((p: any) => p.id);
+    if (planIds.length === 0) return { ok: true as const, sessions: [], nextCursor: null };
+    const planMap = new Map<string, any>((plans ?? []).map((p: any) => [p.id, p]));
+
+    let q = supabaseAdmin
+      .from("workout_sessions")
+      .select("id, plan_id, session_date, day_label, week_number, entries, session_notes, status")
+      .in("plan_id", planIds)
+      .eq("status", "done")
+      .order("session_date", { ascending: false })
+      .limit(limit + 1);
+    if (data.cursor) q = q.lt("session_date", data.cursor);
+    const { data: rows } = await q;
+    const list = (rows ?? []) as any[];
+    const hasMore = list.length > limit;
+    const sessions = list.slice(0, limit).map((s) => {
+      const entries = Array.isArray(s.entries) ? s.entries : [];
+      const rpes = entries
+        .flatMap((e: any) => (Array.isArray(e?.sets) ? e.sets : []))
+        .map((set: any) => Number(set?.rpe))
+        .filter((n: number) => Number.isFinite(n) && n > 0);
+      const avgRpe = rpes.length ? rpes.reduce((a: number, b: number) => a + b, 0) / rpes.length : null;
+      const plan = planMap.get(s.plan_id);
+      return {
+        id: s.id,
+        session_date: s.session_date,
+        day_label: s.day_label,
+        week_number: s.week_number,
+        block_number: plan?.block_number ?? 1,
+        plan_title: plan?.title ?? "",
+        exercise_count: entries.length,
+        avg_rpe: avgRpe ? Math.round(avgRpe * 10) / 10 : null,
+        notes: s.session_notes ?? null,
+        entries: entries.map((e: any) => ({
+          name: String(e?.name ?? e?.exercise ?? ""),
+          sets: Array.isArray(e?.sets)
+            ? e.sets.map((set: any) => ({
+                load: set?.load ?? set?.weight ?? null,
+                reps: set?.reps ?? null,
+                rpe: set?.rpe ?? null,
+              }))
+            : [],
+          prescribed: e?.prescribed ?? null,
+        })),
+      };
+    });
+    const nextCursor = hasMore ? sessions[sessions.length - 1].session_date : null;
+    return { ok: true as const, sessions, nextCursor };
+  });
+
+/**
+ * Aggregated progress data for /me/progresso:
+ *  - 14-day adherence strip (sessions done + check-ins logged per day)
+ *  - Top 5 lifts by Epley e1RM across the active plan
+ *  - Weight series for the last 90 days
+ *  - Capacity gain (Δ load + Δ e1RM per pattern) when a prior block exists
+ */
+export const loadProgress = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ as: z.string().uuid().nullable().optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const resolved = await resolveClient(context.userId, data.as ?? null);
+    if (!resolved) return { ok: false as const };
+    const clientId = resolved.client.id;
+
+    const today = new Date();
+    const fromDate = new Date(today);
+    fromDate.setDate(today.getDate() - 13);
+    const fromIso = fromDate.toISOString().slice(0, 10);
+    const ninetyAgo = new Date(today);
+    ninetyAgo.setDate(today.getDate() - 90);
+    const ninetyIso = ninetyAgo.toISOString().slice(0, 10);
+
+    // Plans + sessions
+    const { data: plans } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, status, block_number, created_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false });
+    const planList = (plans ?? []) as any[];
+    const activePlan = planList.find((p) => p.status !== "archived") ?? planList[0] ?? null;
+    const priorPlan = activePlan
+      ? planList.find(
+          (p) => p.id !== activePlan.id && (p.block_number ?? 1) === (activePlan.block_number ?? 1) - 1,
+        )
+      : null;
+
+    const planIds = planList.map((p) => p.id);
+    const { data: sessions } = planIds.length
+      ? await supabaseAdmin
+          .from("workout_sessions")
+          .select("id, plan_id, session_date, entries")
+          .in("plan_id", planIds)
+          .eq("status", "done")
+          .order("session_date", { ascending: false })
+          .limit(500)
+      : { data: [] as any[] };
+    const sessionRows = (sessions ?? []) as any[];
+
+    // 14-day strip
+    const checkinsRes = await supabaseAdmin
+      .from("client_checkins")
+      .select("checked_on")
+      .eq("client_id", clientId)
+      .gte("checked_on", fromIso);
+    const checkinDays = new Set((checkinsRes.data ?? []).map((r: any) => r.checked_on));
+    const sessionDays = new Set(sessionRows.map((s) => String(s.session_date)));
+    const strip: Array<{ date: string; session: boolean; checkin: boolean }> = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(fromDate);
+      d.setDate(fromDate.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      strip.push({ date: iso, session: sessionDays.has(iso), checkin: checkinDays.has(iso) });
+    }
+
+    // Top lifts (active plan)
+    const epley = (load: number, reps: number) => load * (1 + reps / 30);
+    const bestByExercise = new Map<string, { name: string; e1rm: number; load: number; reps: number; date: string }>();
+    const activeSessions = activePlan
+      ? sessionRows.filter((s) => s.plan_id === activePlan.id)
+      : [];
+    for (const s of activeSessions) {
+      const entries = Array.isArray(s.entries) ? s.entries : [];
+      for (const e of entries) {
+        const name = String(e?.name ?? e?.exercise ?? "").trim();
+        if (!name) continue;
+        const sets = Array.isArray(e?.sets) ? e.sets : [];
+        for (const set of sets) {
+          const load = Number(set?.load ?? set?.weight);
+          const reps = Number(set?.reps);
+          if (!Number.isFinite(load) || !Number.isFinite(reps) || load <= 0 || reps <= 0) continue;
+          const e1 = epley(load, reps);
+          const prev = bestByExercise.get(name.toLowerCase());
+          if (!prev || e1 > prev.e1rm) {
+            bestByExercise.set(name.toLowerCase(), {
+              name,
+              e1rm: Math.round(e1 * 10) / 10,
+              load,
+              reps,
+              date: String(s.session_date),
+            });
+          }
+        }
+      }
+    }
+    const topLifts = Array.from(bestByExercise.values())
+      .sort((a, b) => b.e1rm - a.e1rm)
+      .slice(0, 5);
+
+    // Weight series (90d) — read from client_measurements.values.weight_kg
+    const { data: measurements } = await supabaseAdmin
+      .from("client_measurements")
+      .select("measured_on, values")
+      .eq("client_id", clientId)
+      .gte("measured_on", ninetyIso)
+      .order("measured_on", { ascending: true });
+    const weightSeries = (measurements ?? [])
+      .map((m: any) => {
+        const w = Number(m?.values?.weight_kg ?? m?.values?.weight ?? NaN);
+        return Number.isFinite(w) ? { date: m.measured_on, weight_kg: Math.round(w * 10) / 10 } : null;
+      })
+      .filter(Boolean) as Array<{ date: string; weight_kg: number }>;
+
+    // Capacity gain — simplified per-exercise comparison vs prior block
+    let capacity: Array<{ name: string; deltaLoadPct: number; deltaE1rmPct: number }> = [];
+    if (activePlan && priorPlan) {
+      const priorBest = new Map<string, number>();
+      const priorSessions = sessionRows.filter((s) => s.plan_id === priorPlan.id);
+      for (const s of priorSessions) {
+        const entries = Array.isArray(s.entries) ? s.entries : [];
+        for (const e of entries) {
+          const name = String(e?.name ?? e?.exercise ?? "").trim().toLowerCase();
+          if (!name) continue;
+          for (const set of (Array.isArray(e?.sets) ? e.sets : [])) {
+            const load = Number(set?.load ?? set?.weight);
+            const reps = Number(set?.reps);
+            if (!Number.isFinite(load) || !Number.isFinite(reps) || load <= 0 || reps <= 0) continue;
+            const e1 = epley(load, reps);
+            if (!priorBest.has(name) || e1 > (priorBest.get(name) ?? 0)) priorBest.set(name, e1);
+          }
+        }
+      }
+      capacity = topLifts
+        .map((lift) => {
+          const prior = priorBest.get(lift.name.toLowerCase());
+          if (!prior || prior <= 0) return null;
+          const cur = lift.e1rm;
+          return {
+            name: lift.name,
+            deltaLoadPct: Math.round(((lift.load - 0) / Math.max(0.001, prior)) * 1000) / 10 - 100,
+            deltaE1rmPct: Math.round(((cur - prior) / prior) * 1000) / 10,
+          };
+        })
+        .filter(Boolean) as any;
+    }
+
+    // Progress photos — list under client-photos/progress/{clientId}/
+    const { data: photoFiles } = await supabaseAdmin.storage
+      .from("client-photos")
+      .list(`progress/${clientId}`, { limit: 24, sortBy: { column: "created_at", order: "desc" } });
+    const photos: Array<{ name: string; url: string; created_at: string | null }> = [];
+    for (const f of photoFiles ?? []) {
+      if (!f.name) continue;
+      const { data: signed } = await supabaseAdmin.storage
+        .from("client-photos")
+        .createSignedUrl(`progress/${clientId}/${f.name}`, 60 * 60);
+      if (signed?.signedUrl) {
+        photos.push({ name: f.name, url: signed.signedUrl, created_at: f.created_at ?? null });
+      }
+    }
+
+    return {
+      ok: true as const,
+      previewing: resolved.previewing,
+      strip,
+      topLifts,
+      weightSeries,
+      capacity,
+      photos,
+      hasPlan: !!activePlan,
+      blockNumber: activePlan?.block_number ?? 1,
+    };
   });
