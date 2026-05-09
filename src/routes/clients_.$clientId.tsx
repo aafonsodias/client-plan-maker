@@ -2904,11 +2904,6 @@ function ClientDetail() {
                     const lockedClass = !assessmentComplete
                       ? "w-full sm:w-auto cursor-not-allowed border border-dashed border-amber-500/40 bg-muted/30 hover:bg-muted/30 text-muted-foreground/90"
                       : "w-full sm:w-auto";
-                    const LockBadge = !assessmentComplete ? (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-amber-300 ring-1 ring-amber-500/30">
-                        <Lock className="h-2.5 w-2.5" />
-                      </span>
-                    ) : null;
                     return phasedEnabled ? (
                       <Button
                         onClick={() => void runPhasedStart()}
@@ -2925,7 +2920,6 @@ function ClientDetail() {
                           <Lock className="mr-2 h-4 w-4 text-amber-400" />
                         )}
                         {t("generate.button")}
-                        {LockBadge}
                       </Button>
                     ) : (
                       <Button
@@ -2943,7 +2937,6 @@ function ClientDetail() {
                           <Lock className="mr-2 h-4 w-4 text-amber-400" />
                         )}
                         {t("generate.button")}
-                        {LockBadge}
                       </Button>
                     );
                   })()}
