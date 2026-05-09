@@ -2436,7 +2436,39 @@ function ClientDetail() {
             <div className="grid gap-2 sm:grid-cols-2">
               <Field label={t("lifestyle_block.hours_seated")} type="number" value={assessment.ext_hours_seated} onChange={(v) => setAssessment({ ...assessment, ext_hours_seated: v })} hint={t("lifestyle_block.hours_seated_hint")} />
               <Field label={t("lifestyle_block.daily_steps")} type="number" value={assessment.ext_daily_steps} onChange={(v) => setAssessment({ ...assessment, ext_daily_steps: v })} hint={t("lifestyle_block.daily_steps_hint")} />
-              <Field label={t("lifestyle_block.job_type")} value={assessment.ext_job_type} onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })} placeholder={t("lifestyle_block.job_placeholder")} />
+              {(() => {
+                // R-X · Lote 2: job_type free text → canonical chips. Legacy values preserved.
+                const canonical = ["sedentary", "standing", "physical", "mixed"] as const;
+                const raw = assessment.ext_job_type as string | null | undefined;
+                const isLegacy = !!raw && !canonical.includes(raw as any);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("lifestyle_block.job_type")}</Label>
+                    <ChipGroup
+                      cols={4}
+                      size="sm"
+                      value={isLegacy ? null : ((raw as any) ?? null)}
+                      onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })}
+                      options={[
+                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }) },
+                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }) },
+                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }) },
+                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }) },
+                      ]}
+                    />
+                    {isLegacy && (
+                      <button
+                        type="button"
+                        onClick={() => setAssessment({ ...assessment, ext_job_type: null })}
+                        className="mt-1 inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                        title="Limpar valor antigo"
+                      >
+                        outro · {String(raw)} ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
               <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
               <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
             </div>
