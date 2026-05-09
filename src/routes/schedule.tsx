@@ -318,6 +318,43 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     })
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
+  // ── Collapsible off-peak bands. Default: collapsed when the visible week
+  //    has no bookings in the zone; auto-opens when there are. User toggle
+  //    persists across weeks (explicit > auto).
+  const [earlyPref, setEarlyPref] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("schedule_zone_early");
+    return v === "open" ? true : v === "closed" ? false : null;
+  });
+  const [latePref, setLatePref] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("schedule_zone_late");
+    return v === "open" ? true : v === "closed" ? false : null;
+  });
+  const earlyCount = useMemo(
+    () =>
+      bookings.filter((b) => {
+        if (b.status === "cancelled") return false;
+        const h = new Date(b.starts_at).getHours();
+        return (EARLY_HOURS as readonly number[]).includes(h);
+      }).length,
+    [bookings],
+  );
+  const lateCount = useMemo(
+    () =>
+      bookings.filter((b) => {
+        if (b.status === "cancelled") return false;
+        const h = new Date(b.starts_at).getHours();
+        return (LATE_HOURS as readonly number[]).includes(h);
+      }).length,
+    [bookings],
+  );
+  const earlyOpen = earlyPref ?? earlyCount > 0;
+  const lateOpen = latePref ?? lateCount > 0;
+  const persistZone = (key: "early" | "late", open: boolean) => {
+    try { window.localStorage.setItem(`schedule_zone_${key}`, open ? "open" : "closed"); } catch {}
+  };
+
   const onSavedJumpToWeek = async (savedIso?: string) => {
     if (savedIso) {
       const w = startOfIsoWeek(new Date(savedIso));
