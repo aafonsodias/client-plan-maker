@@ -462,6 +462,7 @@ function ClientDetail() {
   // expands; when collapsed, only the chip remains and stages stay below.
   const [synthesisOpen, setSynthesisOpen] = useState(false);
   const [reassessOpen, setReassessOpen] = useState(false);
+  const [cadenceOpen, setCadenceOpen] = useState(false);
   // BMV gate + device capture sheets.
   const [bmvOpen, setBmvOpen] = useState(false);
   const [tanitaOpen, setTanitaOpen] = useState(false);
