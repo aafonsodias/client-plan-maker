@@ -34,12 +34,14 @@ export function IntakeLinkPanel({
   clientId,
   clientFirstName,
   clientPhone,
+  clientEmail,
   intake,
   onChange,
 }: {
   clientId: string;
   clientFirstName: string;
   clientPhone?: string | null;
+  clientEmail?: string | null;
   intake: IntakeFields;
   onChange: (fields: Partial<IntakeFields>) => void;
 }) {
@@ -129,6 +131,8 @@ export function IntakeLinkPanel({
   const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
   const mailSubj = encodeURIComponent(t("intake.mail_subject"));
   const mailBody = encodeURIComponent(t("intake.wa_msg", { name: clientFirstName, url }));
+  const mailTo = (clientEmail ?? "").trim();
+  const mailHref = `mailto:${encodeURIComponent(mailTo)}?subject=${mailSubj}&body=${mailBody}`;
 
   const doReview = async () => {
     setBusy(true);
@@ -240,7 +244,7 @@ export function IntakeLinkPanel({
           </a>
         </Button>
         <Button size="sm" variant="outline" asChild>
-          <a href={`mailto:?subject=${mailSubj}&body=${mailBody}`}>
+          <a href={mailHref}>
             <Mail className="mr-1.5 h-3.5 w-3.5" /> {t("intake.send_email")}
           </a>
         </Button>

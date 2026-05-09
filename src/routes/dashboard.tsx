@@ -71,10 +71,12 @@ function Dashboard() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [mode, setMode] = useState<"invite" | "manual">("invite");
   const [optionalName, setOptionalName] = useState("");
-  const [showOptionalName, setShowOptionalName] = useState(false);
+  const [optionalEmail, setOptionalEmail] = useState("");
+  const [optionalPhone, setOptionalPhone] = useState("");
+  const [showOptionalContact, setShowOptionalContact] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createdClient, setCreatedClient] = useState<{
-    id: string; full_name: string; phone: string | null;
+    id: string; full_name: string; email: string | null; phone: string | null;
     intake_token: string; intake_token_expires_at: string; intake_status: any;
   } | null>(null);
   const [manualName, setManualName] = useState("");
@@ -240,12 +242,16 @@ function Dashboard() {
     if (!user || creating) return;
     setCreating(true);
     try {
-      const row: any = await createInviteFn({ data: { fullName: optionalName.trim() || null } });
+      const row: any = await createInviteFn({ data: {
+        fullName: optionalName.trim() || null,
+        email: optionalEmail.trim() || null,
+        phone: optionalPhone.trim() || null,
+      } });
       if (!row?.id) throw new Error("Resposta inválida");
       toast.success(t("clients.invite_ready_toast", { defaultValue: "Convite pronto. Envia o link." }));
       void markOnboardingStep(user.id, "add_client");
       setCreatedClient({
-        id: row.id, full_name: row.full_name, phone: row.phone ?? null,
+        id: row.id, full_name: row.full_name, email: row.email ?? null, phone: row.phone ?? null,
         intake_token: row.intake_token,
         intake_token_expires_at: row.intake_token_expires_at,
         intake_status: row.intake_status,
@@ -262,7 +268,9 @@ function Dashboard() {
     setInviteOpen(false);
     setTimeout(() => {
       setOptionalName("");
-      setShowOptionalName(false);
+      setOptionalEmail("");
+      setOptionalPhone("");
+      setShowOptionalContact(false);
       setCreatedClient(null);
       setManualName("");
       setManualEmail("");
@@ -338,18 +346,33 @@ function Dashboard() {
                 {mode === "invite" ? (
                 <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">{t("clients.invite_intro")}</p>
-                  {!showOptionalName ? (
+                  {!showOptionalContact ? (
                     <button
                       type="button"
-                      onClick={() => setShowOptionalName(true)}
+                      onClick={() => setShowOptionalContact(true)}
                       className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                     >
-                      {t("clients.know_name")}
+                      {t("clients.know_contact", { defaultValue: "Já tens contacto? Adiciona nome, email ou telemóvel" })}
                     </button>
                   ) : (
-                    <div className="space-y-1.5">
-                      <Label>{t("clients.optional_name_label")}</Label>
-                      <Input value={optionalName} onChange={(e) => setOptionalName(e.target.value)} />
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label>{t("clients.optional_name_label")}</Label>
+                        <Input value={optionalName} onChange={(e) => setOptionalName(e.target.value)} placeholder="Nome (opcional)" />
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label>{t("clients.optional_email_label", { defaultValue: "Email (opcional)" })}</Label>
+                          <Input type="email" value={optionalEmail} onChange={(e) => setOptionalEmail(e.target.value)} placeholder="nome@email.com" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label>{t("clients.optional_phone_label", { defaultValue: "Telemóvel (opcional)" })}</Label>
+                          <Input type="tel" value={optionalPhone} onChange={(e) => setOptionalPhone(e.target.value)} placeholder="+351 9XX XXX XXX" />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t("clients.contact_hint", { defaultValue: "Com email ou telemóvel preenchidos, os botões WhatsApp e Email já vão pré-endereçados." })}
+                      </p>
                     </div>
                   )}
                   <DialogFooter>
@@ -389,6 +412,7 @@ function Dashboard() {
                   clientId={createdClient.id}
                   clientFirstName={(createdClient.full_name || "").split(" ")[0] || "olá"}
                   clientPhone={createdClient.phone}
+                  clientEmail={createdClient.email}
                   intake={{
                     intake_token: createdClient.intake_token,
                     intake_token_expires_at: createdClient.intake_token_expires_at,

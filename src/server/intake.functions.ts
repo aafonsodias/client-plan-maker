@@ -39,8 +39,12 @@ export const generateIntakeToken = createServerFn({ method: "POST" })
 
 export const createInviteClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { fullName?: string | null }) =>
-    z.object({ fullName: z.string().trim().max(120).nullable().optional() }).parse(d),
+  .inputValidator((d: { fullName?: string | null; email?: string | null; phone?: string | null }) =>
+    z.object({
+      fullName: z.string().trim().max(120).nullable().optional(),
+      email: z.string().trim().email().max(254).nullable().optional().or(z.literal("")),
+      phone: z.string().trim().max(40).nullable().optional().or(z.literal("")),
+    }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -51,11 +55,13 @@ export const createInviteClient = createServerFn({ method: "POST" })
       .insert({
         trainer_id: userId,
         full_name: placeholder,
+        email: (data.email && data.email.length > 0) ? data.email : null,
+        phone: (data.phone && data.phone.length > 0) ? data.phone : null,
         intake_token: crypto.randomUUID(),
         intake_token_expires_at: expires,
         intake_status: "sent",
       } as any)
-      .select("id, full_name, phone, intake_token, intake_token_expires_at, intake_status")
+      .select("id, full_name, email, phone, intake_token, intake_token_expires_at, intake_status")
       .single();
     if (error || !row) throw new Error("Could not create invite.");
     return row;

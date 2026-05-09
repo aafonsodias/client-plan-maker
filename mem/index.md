@@ -28,6 +28,8 @@ Demo onboarding seed = 1 ano completo (13 blocos × 4 semanas) para a Maria. Blo
 Demo + landing names = src/lib/names/regional-names.ts (region-weighted mixture model). Never hardcode display names. Ver mem/features/regional-names.md.
 Dashboard = role-aware cockpit. Coach=hero(semana·sessões·€)+mini-week+nudges (aniversários, pack ending) com MessageComposerSheet (templates PT/EN editáveis, WhatsApp deeplink, sem AI). Lista de clientes vive abaixo.
 No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Trainerize/RP/generic apps. No "vs", "melhor que", "sem viver no Excel". Show workflow + benefit + control; let user connect dots. See [non-adversarial](mem://positioning/non-adversarial.md).
+Inner-app design = "calm tools, loud moments". One bold gesture per page (amber under-glow / large numeral / 600ms reveal); the rest stays editorial-quiet. Status colour vocabulary only (emerald/amber/muted/red). Per-page table in mem://design/aesthetic-direction.md.
+Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp + Email buttons in IntakeLinkPanel are already addressed. createInviteClient accepts {fullName?, email?, phone?}.
 
 - [Intake recurrence](mem://principles/intake-recurrence.md) — intake = on-demand re-assessment; continuous data (sleep/HR/wearables) lives on client dashboard
 - [No stage redirects](mem://principles/no-stage-redirects.md) — all 5 stages render inline on /clients/$id, /plans/* are thin back-compat wrappers
@@ -48,6 +50,8 @@ No adversarial positioning. Never sell Protocol by attacking Excel/ChatGPT/Train
 - [Exercise media hosting architecture](mem://specs/exercise-media-hosting-architecture.md) — R75 raw → master → streaming → app metadata; provider-agnostic; YouTube as reference only
 - [Exercise media data model](mem://specs/exercise-media-data-model.md) — R75 future `exercise_media` shape keyed by `ExerciseKey`; reuses R74 `MediaQualityStatus`
 - [Exercise media file organisation](mem://specs/exercise-media-file-organisation.md) — R75 naming convention + `/Protocol Exercise Media` folder structure
+- [Aesthetic direction](mem://design/aesthetic-direction.md) — "calm tools, loud moments" + per-page loud-moment table for every authenticated page
+- [One loud moment per page](mem://principles/one-loud-moment-per-page.md) — rule + how to apply when adding new sections
 - [Exercise media production workflow](mem://specs/exercise-media-production-workflow.md) — R75 7-step Plan→Film→Select→Edit→Review→Encode→Attach
 - [Exercise AI visual pipeline](mem://specs/exercise-ai-visual-pipeline.md) — R75 AI/avatar/stickfigure are visual layers, never source of truth
 - [Exercise media implementation plan](mem://audits/exercise-media-implementation-plan.md) — R75 phased rollout; Now = docs+file discipline, Next = Slice 2 identity wiring
