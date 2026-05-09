@@ -11,12 +11,14 @@ export function HelpPopover({
   triggerLabel,
   imageSrc,
   imageAlt,
+  imageNode,
   children,
 }: {
   label?: string;
   triggerLabel?: string;
   imageSrc?: string;
   imageAlt?: string;
+  imageNode?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,7 +39,11 @@ export function HelpPopover({
         align="start"
         className="max-w-sm space-y-2 text-xs leading-relaxed"
       >
-        {imageSrc && (
+        {imageNode ? (
+          <div className="flex w-full items-center justify-center rounded-md border border-border bg-background/40 p-2 text-muted-foreground">
+            {imageNode}
+          </div>
+        ) : imageSrc && (
           <img
             src={imageSrc}
             alt={imageAlt ?? ""}
