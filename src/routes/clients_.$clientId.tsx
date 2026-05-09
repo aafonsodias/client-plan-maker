@@ -1707,6 +1707,7 @@ function ClientDetail() {
         return (
           <>
           <CapacityMap clientId={clientId} clientName={client?.full_name} />
+          <ReassessmentReminders clientId={clientId} />
           <section
             aria-label="Protocolo"
             className={[
