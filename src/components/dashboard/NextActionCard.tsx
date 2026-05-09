@@ -142,49 +142,57 @@ export function NextActionCard({ clients, onInvite }: Props) {
   const tone = isIdle ? "emerald" : "amber";
 
   const inner = (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
+      <span
+        aria-hidden
+        className={`h-10 w-px shrink-0 ${isIdle ? "bg-emerald-500/40" : "bg-amber-500/70"}`}
+      />
       {action.client ? (
-        <ClientAvatar name={action.client.full_name} photoUrl={action.client.photo_url} size={32} />
+        <ClientAvatar name={action.client.full_name} photoUrl={action.client.photo_url} size={36} />
       ) : (
         <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-            isIdle ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+            isIdle ? "text-emerald-500" : "text-amber-500"
           }`}
         >
           <Icon className="h-4 w-4" />
         </span>
       )}
       <div className="min-w-0 flex-1 leading-tight">
-        <p className="truncate text-sm font-medium">
-          {!isIdle && (
-            <span className={`mr-2 text-[10px] uppercase tracking-[0.16em] text-${tone}-500/80`}>
-              {t("dashboard.next_action.eyebrow")}
-            </span>
-          )}
-          {action.title}
+        <p
+          className={`text-[10px] uppercase tracking-[0.18em] ${
+            isIdle ? "text-emerald-600/80 dark:text-emerald-500/80" : "text-amber-600/80 dark:text-amber-500/80"
+          }`}
+        >
+          {isIdle ? action.title : t("dashboard.next_action.eyebrow")}
         </p>
-        <p className="truncate text-xs text-muted-foreground">{action.sub}</p>
+        {!isIdle && (
+          <p className="mt-0.5 truncate font-display text-lg font-light tracking-tight text-foreground">
+            {action.title}
+          </p>
+        )}
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{action.sub}</p>
       </div>
       {action.cta ? (
         <Button
           size="sm"
-          variant={isIdle ? "ghost" : "default"}
+          variant={isIdle ? "ghost" : "ghost"}
           className={
             isIdle
               ? "shrink-0"
-              : "shrink-0 bg-amber-500 text-amber-950 hover:bg-amber-400"
+              : "shrink-0 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
           }
         >
-          {action.cta}
+          {action.cta} →
         </Button>
       ) : null}
     </div>
   );
 
-  const wrapBase = "block rounded-2xl border bg-card px-4 py-3 transition";
+  const wrapBase = "block py-2 transition";
   const wrapClass = isIdle
-    ? `${wrapBase} border-border/60`
-    : `${wrapBase} border-amber-500/25 hover:border-amber-500/50`;
+    ? `${wrapBase} opacity-90`
+    : `${wrapBase} hover:opacity-90`;
 
   if ("to" in action && action.to === "/clients/$clientId") {
     return (
