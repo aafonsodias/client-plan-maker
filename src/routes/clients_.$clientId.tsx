@@ -1636,12 +1636,6 @@ function ClientDetail() {
           </DropdownMenu>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <AssessmentDatePicker
-            value={assessment.performed_on || ""}
-            onChange={(iso) => setAssessment({ ...assessment, performed_on: iso })}
-            label={t("performed_on_label")}
-            placeholder={t("performed_on_placeholder")}
-          />
           <ClientDocuments clientId={client.id} />
         </div>
       </div>
