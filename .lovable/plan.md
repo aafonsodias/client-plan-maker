@@ -1,50 +1,57 @@
-## Round 73 — NextActionCard compacto + prioridade de avaliação
 
-### Objetivo
-A `NextActionCard` no `/dashboard` deve estar **sempre** visível (nunca `null`) mas **discreta**: uma faixa fina, não um cartão grande com glow. A prioridade tem de respeitar o pipeline real do treinador — primeiro completar a avaliação, só depois gerar o brief.
+# Como vou operar daqui em diante
 
-### Mudanças
+## Contrato (o que muda no meu lado)
 
-**1. Reescrever `src/components/dashboard/NextActionCard.tsx`**
-- Trocar layout grande (avatar 56px, glow amber, gradient) por uma **strip horizontal compacta**: ~56px altura, padding `py-3 px-4`, border `border-amber-500/25` (apenas amber discreto, sem under-glow shadow), avatar/ícone 32px, título 1 linha + CTA pill à direita.
-- Remover o `shadow-[0_30px_80px_…]` e o `bg-gradient-to-br`.
+1. **Backlog é sagrado.** Cada conversa nossa termina com `.lovable/backlog.md` actualizado: o que fechou, o que abriu, o que ficou parqueado e porquê. Hoje há rounds (R72) que fechei e nem todos os items aparecem; outros (R70 quick-plan) entram em conflito directo com decisões posteriores. Isso pára.
 
-**2. Nova lógica de prioridade (top-down, primeira que casa ganha):**
-1. **Avaliação submetida → rever** (intake_status = `submitted`) — CTA "Rever avaliação" → `/clients/$id`.
-2. **Avaliação incompleta → completar** (intake_status `in_progress` OU `submitted` com `assessment_completion < 100`) — CTA "Completar avaliação" → `/clients/$id` (secção missions). Mostra `{name} · {pct}%`.
-3. **Pronto para gerar brief** (intake `submitted`/`reviewed`, `assessment_completion = 100`, sem plano ativo) — CTA "Gerar plano" → `/plans/new?clientId={id}`.
-4. **Aniversário ≤ 7 dias** (já existe).
-5. **Fallback (estado vazio honesto):** se não há clientes, "Convidar primeiro cliente" → abre InviteDialog. Se há clientes mas nada acionável, copy neutro: "Tudo em dia · {n} clientes ativos" sem CTA (ou CTA secundário "Ver agenda").
+2. **Confronto com a visão antes de implementar.** Sempre que uma ideia tua bate em algo gravado em `mem/` ou em `.lovable/`, paro e digo-te onde bate, em vez de implementar e deixar o conflito vivo no código. Tu decides se a visão evoluiu ou se a ideia é incompatível.
 
-**3. Dashboard:**
-- `dashboard.tsx` passa também `assessment_completion` no shape do `ClientLite`. Adicionar à query (`clients` select já provavelmente tem; confirmar) + ao tipo da prop.
-- Re-passar `onInvite` para o caso fallback "convidar primeiro cliente" (quando `clients.length === 0`).
+3. **Sou o admin, não o estagiário.** Se algo me parece errado (vai contra o que decidiste antes, ou enfraquece a tese), aviso antes de mexer. Se algo me parece bom mas tu não pediste, sugiro como nota separada — nunca implemento à boleia. Se duvido, pergunto com 2-4 opções concretas em vez de "o que achas?".
 
-**4. i18n** (`en/common.json` + `pt/common.json` em `dashboard.next_action.*`):
-- `complete_title`: "Completar avaliação · {{name}}" / "Finish assessment · {{name}}"
-- `complete_sub`: "{{pct}}% completo — faltam {{missing}} passos" / "{{pct}}% done — {{missing}} steps left"
-- `complete_cta`: "Completar" / "Continue"
-- `generate_title`: "{{name}} está pronto para o plano" / "{{name}} is ready for a plan"
-- `generate_sub`: "Avaliação 100% — gerar brief" / "Assessment complete — generate brief"
-- `generate_cta`: "Gerar plano" / "Generate plan"
-- `empty_invite_title`: "Convidar primeiro cliente" / "Invite first client"
-- `empty_idle`: "Tudo em dia · {{n}} clientes" / "All caught up · {{n}} clients"
+4. **Ideias soltas têm de aterrar.** Toda ideia tua que não vire código nesta sessão entra em `.lovable/backlog.md` com prioridade (P0/P1/P2/P3), área, e — crucial — o que falta decidir antes de poder ir para código. Sem isso, ficam a flutuar como aconteceu até agora (vê o "Open thread — Assessment as bite-sized slider" sem dono e sem fim).
 
-**5. Backlog:** marcar #92 como ✅ revisto (compact + lógica correta), criar entrada R73 a documentar a regra:
-> "NextActionCard nunca convida a gerar plano com avaliação <100%. Prioridade: rever submetida → completar incompleta → gerar quando 100%."
+5. **Cada round fecha 1 P0 ou avança 1 P1.** Nunca dois P0 ao mesmo tempo. Princípio antigo, vou voltar a respeitá-lo.
 
-E gravar isto em memory: novo `mem://principles/next-action-priority.md` para travar regressão futura.
+## Estado actual — o que está solto agora
 
-### Fora de escopo
-- Engine/AI changes
-- Mover a card para outro sítio
-- Onboarding checklist (separado)
+Triagem rápida do backlog + memória, items que estão a sangrar:
 
-### Verificação
-- 1389×869 (viewport actual) + 375px iOS smoke
-- Casos manuais: cliente com `assessment_completion = 40`, cliente `submitted` à espera de revisão, cliente `100%` sem plano, conta sem clientes.
-- Confirmar que a strip ocupa ≤72px de altura e não compete visualmente com o resto do dashboard.
+### Conflitos por resolver (decisão tua)
 
-### Onde podes ajudar
-- Confirma se preferes o fallback "tudo em dia" silencioso (sem CTA) ou se queres sempre um CTA secundário (ex: "Ver agenda de hoje").
-- Confirma a copy PT da prioridade #2 — gosto mais de "Completar avaliação" que "Continuar avaliação", mas se preferires outro tom diz.
+- **`/plans/quick` ainda existe.** Ontem decidiste "não fazemos planos rápidos" e gravámos `mem://principles/no-quick-plans.md`. Mas a rota `src/routes/plans.quick.tsx`, os servers `src/server/quick-plan.functions.ts` + `quick-plan.server.ts`, e a chave i18n "Plano rápido" continuam no código. Round 70 (de 5 Mai) criou-os. Há duas saídas: (a) apagar tudo e gravar a morte no backlog; (b) renomear para `/plans/baseline` e mudar copy para "Avaliação baseline ACSM (sem equipamento)" — o caminho continua útil, é o framing que estava errado. **Prefiro (b) — mata o conceito mau, salva a velocidade boa.**
+
+- **"Quick plan" CTA na landing.** Round 70.1 adicionou "Experimente em 5 cliques" no hero da landing para signed-in. Mesma lógica acima — temos de tirar ou refazer o copy.
+
+### Ideias soltas sem dono
+
+- **"Assessment as bite-sized slider"** (proposto 9 Mai, está em `.lovable/backlog.md` linha 461). Tem 6 decisões em aberto antes de poder começar. Vou fechar essas decisões contigo numa sessão dedicada — separada desta — antes de qualquer código.
+
+- **R7x aesthetic touches** (linha 434). Lista de 5 polimentos visuais para 5 surfaces diferentes. Round 72 fechou 4 deles, mas ninguém atualizou o R7x para confirmar que está done. Vou consolidar e fechar a entrada.
+
+- **Round 62 #3/#4/#5** (linha 399): storyboards de vídeos, analytics de funil, revisão nativa ES/HI. Os três estão parqueados sem critério de "quando voltar". Vou re-priorizar com chip de gatilho ("quando tivermos N signups", etc.).
+
+### Próximos P0 candidatos (preciso da tua escolha)
+
+1. Resolver `/plans/quick` (ver acima) — 1 round pequeno.
+2. Round B/C do redesign aesthetic — começou em `/clients/$id`, falta replicar nas outras surfaces canónicas (`/dashboard`, `/plans/$id`, `/me`).
+3. Slider de assessment — fecha decisões primeiro, depois 2-3 rounds de implementação.
+
+## Decisões que preciso de ti agora
+
+Vou fazer-te perguntas concretas (com `ask_questions`) num próximo turno em vez de aqui — para a resposta ser estruturada e ficar registada. As três que estão à frente:
+
+1. `/plans/quick`: apagar, renomear para "baseline ACSM", ou manter para Demo Lab interno?
+2. Próximo round (B/C aesthetic vs slider de assessment vs limpar quick-plan)?
+3. Quem é o critério de "done" do round? (Eu? Tu confirmas em preview? Smoke test em mobile 375px primeiro?)
+
+## O que **não** vou fazer
+
+- Implementar features que não passam por `looks → function → ease`.
+- Aceitar "faz isto" sem perguntar se bate com a visão quando há suspeita.
+- Deixar items abertos em `.lovable/backlog.md` sem dono ou sem critério de fecho.
+- Reintroduzir conceitos que matámos (quick-plan, Crown badge, etc.).
+
+## Próximo passo
+
+Aprova este contrato e respondo com 3 perguntas concretas (`ask_questions`) para fechar as decisões pendentes. Depois entramos no primeiro round real sob esta nova mecânica.
