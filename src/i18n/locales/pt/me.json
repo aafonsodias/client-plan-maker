@@ -88,11 +88,35 @@
   },
   "progress": {
     "title": "Progresso",
-    "soon": "Em breve — top lifts, gráfico de peso e fotos de progresso."
+    "soon": "Em breve — top lifts, gráfico de peso e fotos de progresso.",
+    "block": "Bloco {{n}}",
+    "hero_caption": "Ganho médio de e1RM vs bloco anterior",
+    "hero_empty_title": "Ainda sem comparação de blocos",
+    "hero_empty_body": "Termine o primeiro bloco e o seu progresso aparece aqui.",
+    "capacity_title": "Ganho de capacidade vs bloco anterior",
+    "strip_title": "Últimos 14 dias",
+    "strip_legend_both": "Treino + check-in",
+    "strip_legend_one": "Um dos dois",
+    "strip_tooltip_workout": "treino",
+    "strip_tooltip_checkin": "check-in",
+    "top_lifts": "Top lifts (e1RM)",
+    "top_lifts_empty": "Sem sessões registadas ainda.",
+    "weight_title": "Peso (90 dias)",
+    "weight_empty": "Sem registos de peso ainda.",
+    "weight_tooltip": "Peso",
+    "photos_title": "Fotos de progresso",
+    "photos_empty": "Ainda sem fotos."
   },
   "history": {
     "title": "Histórico",
-    "soon": "Em breve — todas as sessões registadas, com detalhe completo."
+    "soon": "Em breve — todas as sessões registadas, com detalhe completo.",
+    "count_one": "{{count}} sessão",
+    "count_other": "{{count}} sessões",
+    "empty": "Sem sessões registadas ainda.",
+    "load_more": "Carregar mais",
+    "block_week": "Bloco {{block}} · Sem {{week}}",
+    "exercises_short": "{{n}} ex",
+    "no_details": "Sem detalhes."
   },
   "footer": {
     "soon": "Em breve — mensagens diárias e progresso visual."

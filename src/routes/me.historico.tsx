@@ -7,6 +7,13 @@ import { loadMe, loadHistory } from "@/server/me.functions";
 import { MeShell } from "@/components/me/MeShell";
 import { Loader2, ChevronDown, ChevronUp, Calendar } from "lucide-react";
 
+function langToLocale(lang: string): string {
+  if (lang?.startsWith("pt")) return "pt-PT";
+  if (lang?.startsWith("es")) return "es-ES";
+  if (lang?.startsWith("hi")) return "hi-IN";
+  return "en-US";
+}
+
 export const Route = createFileRoute("/me/historico")({
   validateSearch: (s: Record<string, unknown>): { as?: string } => ({
     as: typeof s.as === "string" ? s.as : undefined,
@@ -39,7 +46,8 @@ function MeHistoricoPage() {
   const search = Route.useSearch();
   const loadShell = useServerFn(loadMe);
   const loadList = useServerFn(loadHistory);
-  const { t } = useTranslation("me");
+  const { t, i18n } = useTranslation("me");
+  const locale = langToLocale(i18n.language);
   const [shell, setShell] = useState<any>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -95,19 +103,19 @@ function MeHistoricoPage() {
       <header>
         <h1 className="text-2xl font-light tracking-tight">{t("history.title")}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          {sessions.length} {sessions.length === 1 ? "sessão" : "sessões"}
+          {t("history.count", { count: sessions.length })}
         </p>
       </header>
 
       {sessions.length === 0 ? (
         <section className="rounded-2xl border border-border bg-card p-6 text-center">
           <Calendar className="mx-auto h-8 w-8 text-muted-foreground/60" />
-          <p className="mt-3 text-sm text-muted-foreground">Sem sessões registadas ainda.</p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("history.empty")}</p>
         </section>
       ) : (
         <ul className="space-y-3">
           {sessions.map((s) => (
-            <SessionRow key={s.id} s={s} />
+            <SessionRow key={s.id} s={s} t={t} locale={locale} />
           ))}
         </ul>
       )}
@@ -120,16 +128,16 @@ function MeHistoricoPage() {
           className="mx-auto flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-xs font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
         >
           {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-          Carregar mais
+          {t("history.load_more")}
         </button>
       )}
     </MeShell>
   );
 }
 
-function SessionRow({ s }: { s: Session }) {
+function SessionRow({ s, t, locale }: { s: Session; t: (k: string, o?: any) => string; locale: string }) {
   const [open, setOpen] = useState(false);
-  const dateLabel = new Date(s.session_date).toLocaleDateString("pt-PT", {
+  const dateLabel = new Date(s.session_date).toLocaleDateString(locale, {
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -146,13 +154,13 @@ function SessionRow({ s }: { s: Session }) {
           <p className="truncate text-sm font-medium">
             {s.day_label}
             <span className="ml-1.5 text-muted-foreground">
-              · Bloco {s.block_number} · Sem {s.week_number}
+              · {t("history.block_week", { block: s.block_number, week: s.week_number })}
             </span>
           </p>
           <p className="text-[11px] text-muted-foreground">{dateLabel}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2 text-xs tabular-nums text-muted-foreground">
-          <span>{s.exercise_count} ex</span>
+          <span>{t("history.exercises_short", { n: s.exercise_count })}</span>
           {s.avg_rpe != null ? (
             <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
               RPE {s.avg_rpe}
@@ -164,7 +172,7 @@ function SessionRow({ s }: { s: Session }) {
       {open && (
         <div className="border-t border-border/60 bg-background/40 px-4 py-3">
           {s.entries.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Sem detalhes.</p>
+            <p className="text-xs text-muted-foreground">{t("history.no_details")}</p>
           ) : (
             <ul className="space-y-2">
               {s.entries.map((e, i) => (

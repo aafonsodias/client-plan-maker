@@ -429,3 +429,14 @@ Atualizado: Round 28 (4 Mai 2026)
 - Intake.$token: numbered chips (01, 02…) per section; spacing rhythm to 48.
 - Plan view: 600ms fade-in once on "Pronto" reveal.
 - Capacity-gain: large display numeral typography pass on /me/progresso.
+
+### Round 68 — /me polish (9 May 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 90 | P0 | /me/progresso | CapacityHero: big tabular numeral (avg Δ% e1RM) as page loud-moment; emerald/amber tone by sign | R68 ✅ |
+| 91 | P0 | /me i18n | progress + history hardcoded PT → keys; locale-aware date formatting (pt/en/es/hi) | R68 ✅ |
+| 92 | P1 | dashboard | "Next action" loud card (next session / top alert) | next |
+| 93 | P1 | clients list | Thin amber left border for birthday + red-flag rows | next |
+| 94 | P1 | intake.$token | Numbered chips per section (1/N) | next |
+| 95 | P1 | plans.$id | "Pronto" 600ms fade-in reveal when status flips to ready | next |

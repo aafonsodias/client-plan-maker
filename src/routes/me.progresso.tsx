@@ -1,7 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
+
+function langToLocale(lang: string): string {
+  if (lang?.startsWith("pt")) return "pt-PT";
+  if (lang?.startsWith("es")) return "es-ES";
+  if (lang?.startsWith("hi")) return "hi-IN";
+  return "en-US";
+}
 import { supabase } from "@/integrations/supabase/client";
 import { loadMe, loadProgress } from "@/server/me.functions";
 import { MeShell } from "@/components/me/MeShell";
@@ -31,7 +38,8 @@ function MeProgressoPage() {
   const search = Route.useSearch();
   const loadShell = useServerFn(loadMe);
   const loadProg = useServerFn(loadProgress);
-  const { t } = useTranslation("me");
+  const { t, i18n } = useTranslation("me");
+  const locale = langToLocale(i18n.language);
   const [shell, setShell] = useState<any>(null);
   const [prog, setProg] = useState<any>(null);
 
@@ -69,28 +77,82 @@ function MeProgressoPage() {
       <header>
         <h1 className="text-2xl font-light tracking-tight">{t("progress.title")}</h1>
         {prog.blockNumber > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">Bloco {prog.blockNumber}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("progress.block", { n: prog.blockNumber })}</p>
         )}
       </header>
 
-      <StreakStrip strip={prog.strip ?? []} />
+      <CapacityHero rows={prog.capacity ?? []} t={t} />
 
-      {prog.capacity?.length > 0 && <CapacityCard rows={prog.capacity} />}
+      <StreakStrip strip={prog.strip ?? []} t={t} locale={locale} />
 
-      <TopLifts lifts={prog.topLifts ?? []} />
+      {prog.capacity?.length > 0 && <CapacityCard rows={prog.capacity} t={t} />}
 
-      <WeightChart data={prog.weightSeries ?? []} />
+      <TopLifts lifts={prog.topLifts ?? []} t={t} locale={locale} />
 
-      <PhotoGrid photos={prog.photos ?? []} />
+      <WeightChart data={prog.weightSeries ?? []} t={t} locale={locale} />
+
+      <PhotoGrid photos={prog.photos ?? []} t={t} />
     </MeShell>
   );
 }
 
-function StreakStrip({ strip }: { strip: Array<{ date: string; session: boolean; checkin: boolean }> }) {
+function CapacityHero({ rows, t }: { rows: Array<{ deltaE1rmPct: number }>; t: (k: string, o?: any) => string }) {
+  const avg = useMemo(() => {
+    if (!rows || rows.length === 0) return null;
+    const sum = rows.reduce((acc, r) => acc + (Number(r.deltaE1rmPct) || 0), 0);
+    return Math.round((sum / rows.length) * 10) / 10;
+  }, [rows]);
+
+  if (avg === null) {
+    return (
+      <section className="rounded-3xl border border-border bg-card p-6">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.hero_empty_title")}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t("progress.hero_empty_body")}</p>
+      </section>
+    );
+  }
+
+  const positive = avg >= 0;
+  return (
+    <section
+      className={`relative overflow-hidden rounded-3xl border p-6 transition-shadow ${
+        positive
+          ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.10] via-card to-card shadow-[0_30px_80px_-50px_rgba(16,185,129,0.5)]"
+          : "border-amber-500/30 bg-gradient-to-br from-amber-500/[0.10] via-card to-card shadow-[0_30px_80px_-50px_rgba(245,158,11,0.5)]"
+      }`}
+    >
+      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+        {t("progress.hero_caption")}
+      </p>
+      <div className="mt-3 flex items-baseline gap-2">
+        <span
+          className={`font-light tabular-nums leading-none ${
+            positive ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+          }`}
+          style={{ fontSize: "clamp(3rem, 12vw, 5.5rem)" }}
+        >
+          {positive ? "+" : ""}
+          {avg}
+        </span>
+        <span className="text-2xl font-light text-muted-foreground">%</span>
+      </div>
+    </section>
+  );
+}
+
+function StreakStrip({
+  strip,
+  t,
+  locale,
+}: {
+  strip: Array<{ date: string; session: boolean; checkin: boolean }>;
+  t: (k: string, o?: any) => string;
+  locale: any;
+}) {
   return (
     <section className="rounded-2xl border border-border bg-card p-5">
       <p className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
-        Últimos 14 dias
+        {t("progress.strip_title")}
       </p>
       <div className="grid grid-cols-14 gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
         {strip.map((d) => {
@@ -100,11 +162,14 @@ function StreakStrip({ strip }: { strip: Array<{ date: string; session: boolean;
               ? "bg-amber-500/60"
               : "bg-muted";
           const day = new Date(d.date).getDate();
+          const parts: string[] = [];
+          if (d.session) parts.push(t("progress.strip_tooltip_workout"));
+          if (d.checkin) parts.push(t("progress.strip_tooltip_checkin"));
           return (
             <div key={d.date} className="flex flex-col items-center gap-1">
               <div
                 className={`h-8 w-full rounded-md ${tone}`}
-                title={`${d.date} · ${d.session ? "treino" : ""}${d.session && d.checkin ? " + " : ""}${d.checkin ? "check-in" : ""}`}
+                title={`${d.date}${parts.length ? " · " + parts.join(" + ") : ""}`}
               />
               <span className="text-[9px] tabular-nums text-muted-foreground/70">{day}</span>
             </div>
@@ -113,24 +178,28 @@ function StreakStrip({ strip }: { strip: Array<{ date: string; session: boolean;
       </div>
       <div className="mt-3 flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-sm bg-emerald-500/80" /> Treino + check-in
+          <span className="inline-block h-2 w-2 rounded-sm bg-emerald-500/80" /> {t("progress.strip_legend_both")}
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-sm bg-amber-500/60" /> Um dos dois
+          <span className="inline-block h-2 w-2 rounded-sm bg-amber-500/60" /> {t("progress.strip_legend_one")}
         </span>
       </div>
     </section>
   );
 }
 
-function CapacityCard({ rows }: { rows: Array<{ name: string; deltaLoadPct: number; deltaE1rmPct: number }> }) {
+function CapacityCard({
+  rows,
+  t,
+}: {
+  rows: Array<{ name: string; deltaLoadPct: number; deltaE1rmPct: number }>;
+  t: (k: string, o?: any) => string;
+}) {
   return (
-    <section className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.06] via-card to-card p-5">
+    <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
-        <Activity className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-        <p className="text-xs uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-          Ganho de capacidade vs bloco anterior
-        </p>
+        <Activity className="h-4 w-4 text-muted-foreground" />
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.capacity_title")}</p>
       </div>
       <ul className="space-y-2">
         {rows.map((r) => (
@@ -156,15 +225,23 @@ function CapacityCard({ rows }: { rows: Array<{ name: string; deltaLoadPct: numb
   );
 }
 
-function TopLifts({ lifts }: { lifts: Array<{ name: string; e1rm: number; load: number; reps: number; date: string }> }) {
+function TopLifts({
+  lifts,
+  t,
+  locale,
+}: {
+  lifts: Array<{ name: string; e1rm: number; load: number; reps: number; date: string }>;
+  t: (k: string, o?: any) => string;
+  locale: any;
+}) {
   if (lifts.length === 0) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-2 flex items-center gap-2">
           <Trophy className="h-4 w-4 text-amber-500" />
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Top lifts</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.top_lifts")}</p>
         </div>
-        <p className="text-sm text-muted-foreground">Sem sessões registadas ainda.</p>
+        <p className="text-sm text-muted-foreground">{t("progress.top_lifts_empty")}</p>
       </section>
     );
   }
@@ -172,7 +249,7 @@ function TopLifts({ lifts }: { lifts: Array<{ name: string; e1rm: number; load: 
     <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <Trophy className="h-4 w-4 text-amber-500" />
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Top lifts (e1RM)</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.top_lifts")}</p>
       </div>
       <ul className="space-y-2">
         {lifts.map((l, i) => (
@@ -183,7 +260,7 @@ function TopLifts({ lifts }: { lifts: Array<{ name: string; e1rm: number; load: 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{l.name}</p>
               <p className="text-[11px] text-muted-foreground tabular-nums">
-                {l.load}kg × {l.reps} · {new Date(l.date).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
+                {l.load}kg × {l.reps} · {new Date(l.date).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
               </p>
             </div>
             <span className="shrink-0 text-sm font-semibold tabular-nums">{l.e1rm}kg</span>
@@ -194,15 +271,23 @@ function TopLifts({ lifts }: { lifts: Array<{ name: string; e1rm: number; load: 
   );
 }
 
-function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }> }) {
+function WeightChart({
+  data,
+  t,
+  locale,
+}: {
+  data: Array<{ date: string; weight_kg: number }>;
+  t: (k: string, o?: any) => string;
+  locale: any;
+}) {
   if (data.length === 0) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-2 flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Peso (90 dias)</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.weight_title")}</p>
         </div>
-        <p className="text-sm text-muted-foreground">Sem registos de peso ainda.</p>
+        <p className="text-sm text-muted-foreground">{t("progress.weight_empty")}</p>
       </section>
     );
   }
@@ -210,7 +295,7 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
     <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-emerald-500" />
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Peso (90 dias)</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.weight_title")}</p>
       </div>
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -218,7 +303,7 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
             <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" />
             <XAxis
               dataKey="date"
-              tickFormatter={(v) => new Date(v).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
+              tickFormatter={(v) => new Date(v).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
               fontSize={10}
               stroke="var(--muted-foreground)"
             />
@@ -231,8 +316,8 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
                 fontSize: 12,
                 color: "var(--card-foreground)",
               }}
-              labelFormatter={(v) => new Date(v).toLocaleDateString("pt-PT", { day: "2-digit", month: "short", year: "numeric" })}
-              formatter={(v: any) => [`${v} kg`, "Peso"]}
+              labelFormatter={(v) => new Date(v).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+              formatter={(v: any) => [`${v} kg`, t("progress.weight_tooltip")]}
             />
             <Line
               type="monotone"
@@ -249,15 +334,21 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
   );
 }
 
-function PhotoGrid({ photos }: { photos: Array<{ name: string; url: string; created_at: string | null }> }) {
+function PhotoGrid({
+  photos,
+  t,
+}: {
+  photos: Array<{ name: string; url: string; created_at: string | null }>;
+  t: (k: string, o?: any) => string;
+}) {
   if (photos.length === 0) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="mb-2 flex items-center gap-2">
           <Camera className="h-4 w-4 text-muted-foreground" />
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Fotos de progresso</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.photos_title")}</p>
         </div>
-        <p className="text-sm text-muted-foreground">Ainda sem fotos.</p>
+        <p className="text-sm text-muted-foreground">{t("progress.photos_empty")}</p>
       </section>
     );
   }
@@ -265,7 +356,7 @@ function PhotoGrid({ photos }: { photos: Array<{ name: string; url: string; crea
     <section className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <Camera className="h-4 w-4 text-muted-foreground" />
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Fotos de progresso</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("progress.photos_title")}</p>
       </div>
       <div className="grid grid-cols-3 gap-2">
         {photos.map((p) => (
