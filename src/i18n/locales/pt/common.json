@@ -44,6 +44,23 @@
     "eyebrow": "A tua lista",
     "eyebrow_named": "Bem-vindo, {{name}}",
     "title": "Clientes",
+    "next_action": {
+      "eyebrow": "Próxima acção",
+      "review_title": "Rever avaliação de {{name}}",
+      "review_sub": "Acabou de submeter o questionário.",
+      "review_cta": "Abrir",
+      "bday_today": "{{name}} faz {{age}} anos hoje",
+      "bday_tomorrow": "{{name}} faz {{age}} anos amanhã",
+      "bday_in": "{{name}} faz anos em {{n}} dias",
+      "bday_sub": "Uma mensagem agora vale ouro.",
+      "bday_cta": "Felicitar",
+      "invite_title": "Convide o seu primeiro cliente",
+      "invite_sub": "Envie o link de avaliação. Eles preenchem no telemóvel.",
+      "invite_cta": "Convidar",
+      "quick_title": "Plano rápido em 90 segundos",
+      "quick_sub": "5 inputs · pipeline completo, com o seu nome.",
+      "quick_cta": "Começar"
+    },
     "today": {
       "title": "Hoje",
       "empty": "Nada urgente. Boa semana.",

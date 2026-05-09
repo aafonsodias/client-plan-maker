@@ -29,6 +29,7 @@ import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
+import { NextActionCard } from "@/components/dashboard/NextActionCard";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -301,6 +302,17 @@ function Dashboard() {
     <div className="space-y-10">
       <OnboardingChecklist />
 
+      <NextActionCard
+        clients={clientRows.map((c) => ({
+          id: c.id,
+          full_name: c.full_name,
+          photo_url: c.photo_url,
+          date_of_birth: c.date_of_birth,
+          intake_status: c.intake_status,
+        }))}
+        onInvite={() => setInviteOpen(true)}
+      />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">
@@ -512,16 +524,22 @@ function Dashboard() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border bg-card">
-              {filteredClients.map((c) => (
-                <ClientPlayerCard
-                  key={c.id}
-                  client={c}
-                  phase={phases[c.id]}
-                  plan={planByClient[c.id] ?? null}
-                  logs={logsByClient[c.id] ?? []}
-                  onDelete={() => void removeClient(c.id)}
-                />
-              ))}
+              {filteredClients.map((c) => {
+                const d = daysUntilBirthday(c.date_of_birth);
+                const isBday = d !== null && d <= 7;
+                const isSubmitted = c.intake_status === "submitted";
+                return (
+                  <ClientPlayerCard
+                    key={c.id}
+                    client={c}
+                    phase={phases[c.id]}
+                    plan={planByClient[c.id] ?? null}
+                    logs={logsByClient[c.id] ?? []}
+                    onDelete={() => void removeClient(c.id)}
+                    flagged={isBday || isSubmitted}
+                  />
+                );
+              })}
             </div>
           </>
         )}
