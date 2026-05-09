@@ -114,7 +114,18 @@
     "bf_bia": "Bioimpedance (BIA)",
     "bf_dexa": "DEXA",
     "bf_bodpod": "BodPod",
-    "bf_visual": "Visual estimate"
+    "bf_visual": "Visual",
+    "sex_label": "जैविक लिंग",
+    "sex_female": "महिला",
+    "sex_male": "पुरुष",
+    "how_to_measure": "कैसे मापें?",
+    "measure_height_instructions": "खड़े होकर, नंगे पैर, एड़ियाँ मिलाकर, सामने देखते हुए। साँस लें।",
+    "measure_waist_instructions": "कूल्हे के ऊपर सबसे संकरे बिंदु पर, खड़े होकर, साँस छोड़कर।",
+    "measure_hip_instructions": "कूल्हे के सबसे चौड़े बिंदु पर, पैर मिलाकर।",
+    "measure_chest_instructions": "निप्पल स्तर पर, खड़े होकर, बाहें ढीली।",
+    "measure_arm_instructions": "बाइसेप के मध्य में, बांह बगल में ढीली।",
+    "measure_thigh_instructions": "कूल्हे और घुटने के बीच मध्य, खड़े होकर, वज़न संतुलित।",
+    "measure_calf_instructions": "पिंडली के सबसे चौड़े बिंदु पर, खड़े होकर, वज़न संतुलित।"
   },
   "meds_block": {
     "title": "Medication & supplements",

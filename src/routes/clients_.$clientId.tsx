@@ -38,13 +38,20 @@ import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { MeasureField } from "@/components/assessment/MeasureField";
 import { ChipGroup } from "@/components/assessment/ChipGroup";
+import { VisualChipGroup } from "@/components/ui/visual-chip-group";
+import {
+  FemaleSilhouette, MaleSilhouette,
+  IconCalipers, IconBIA, IconDEXA, IconBodPod, IconVisualEstimate,
+  IconHome, IconGym, IconOutdoor, IconHybrid,
+  IconJobSedentary, IconJobStanding, IconJobPhysical, IconJobMixed,
+  IconSmokeNever, IconSmokeFormer, IconSmokeCurrent,
+  GuideWaist, GuideHip,
+} from "@/components/assessment/svg/icons";
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
-import measureWaistImg from "@/assets/measure-waist.png";
-import measureHipImg from "@/assets/measure-hip.png";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -1925,15 +1932,15 @@ function ClientDetail() {
               <Toggle label={t("risk_block.family_cvd")} value={assessment.risk.family_cvd} onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, family_cvd: v } })} />
               <div className="space-y-1">
                 <LabelWithHelp label={t("risk_block.smoking")} hint={t("risk_block.smoking_hint")} />
-                <ChipGroup
-                  cols={3}
+                <VisualChipGroup
+                  columns={3}
                   size="sm"
                   value={assessment.risk.smoking ?? null}
                   onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, smoking: v } })}
                   options={[
-                    { value: "never", label: t("risk_block.smoking_never") },
-                    { value: "former", label: t("risk_block.smoking_former") },
-                    { value: "current", label: t("risk_block.smoking_current") },
+                    { value: "never", label: t("risk_block.smoking_never"), icon: <IconSmokeNever /> },
+                    { value: "former", label: t("risk_block.smoking_former"), icon: <IconSmokeFormer /> },
+                    { value: "current", label: t("risk_block.smoking_current"), icon: <IconSmokeCurrent /> },
                   ]}
                 />
               </div>
@@ -2076,20 +2083,20 @@ function ClientDetail() {
               </div>
               <div className="grid gap-2 sm:grid-cols-4">
                 <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Sexo biológico</span>
-                  <select
-                    value={client?.sex ?? ""}
-                    onChange={async (e) => {
-                      const v = e.target.value || null;
+                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
+                  <VisualChipGroup
+                    size="sm"
+                    columns={2}
+                    value={(client?.sex as "female" | "male") ?? null}
+                    onChange={async (v) => {
                       setClient((prev: any) => ({ ...prev, sex: v }));
                       await supabase.from("clients").update({ sex: v }).eq("id", clientId);
                     }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  >
-                    <option value="">—</option>
-                    <option value="female">Feminino</option>
-                    <option value="male">Masculino</option>
-                  </select>
+                    options={[
+                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
+                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
+                    ]}
+                  />
                 </label>
                 <label className="space-y-1">
                   <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
@@ -2158,8 +2165,7 @@ function ClientDetail() {
                 unit="cm"
                 value={assessment.waist_cm}
                 onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
-                imageSrc={measureWaistImg}
-                imageAlt="Diagrama: medir cintura no ponto mais estreito acima da anca"
+                imageNode={<GuideWaist />}
                 placeholder="ex. 82"
                 helpBody={
                   <>
@@ -2173,8 +2179,7 @@ function ClientDetail() {
                 unit="cm"
                 value={assessment.hip_cm}
                 onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
-                imageSrc={measureHipImg}
-                imageAlt="Diagrama: medir anca na maior circunferência das nádegas"
+                imageNode={<GuideHip />}
                 placeholder="ex. 98"
                 helpBody={
                   <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
@@ -2211,17 +2216,17 @@ function ClientDetail() {
                 />
                 <div className="space-y-1 sm:col-span-2">
                   <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <ChipGroup
-                    cols={5}
+                  <VisualChipGroup
+                    columns={5}
                     size="sm"
                     value={assessment.body_fat_method ?? null}
                     onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
                     options={[
-                      { value: "calipers", label: t("anthro_block.bf_calipers") },
-                      { value: "bia", label: t("anthro_block.bf_bia") },
-                      { value: "dexa", label: t("anthro_block.bf_dexa") },
-                      { value: "bodpod", label: t("anthro_block.bf_bodpod") },
-                      { value: "visual", label: t("anthro_block.bf_visual") },
+                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
+                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
+                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
+                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
                     ]}
                   />
                 </div>
@@ -2378,16 +2383,16 @@ function ClientDetail() {
                 return (
                   <div className="space-y-1">
                     <Label className="text-xs">{t("training_block.training_location")}</Label>
-                    <ChipGroup
-                      cols={4}
+                    <VisualChipGroup
+                      columns={4}
                       size="sm"
                       value={isLegacy ? null : ((raw as any) ?? null)}
                       onChange={(v) => setAssessment({ ...assessment, training_location: v })}
                       options={[
-                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }) },
-                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }) },
-                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }) },
-                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }) },
+                        { value: "home", label: t("training_block.loc_home", { defaultValue: "Casa" }), icon: <IconHome /> },
+                        { value: "gym", label: t("training_block.loc_gym", { defaultValue: "Ginásio" }), icon: <IconGym /> },
+                        { value: "outdoor", label: t("training_block.loc_outdoor", { defaultValue: "Ar livre" }), icon: <IconOutdoor /> },
+                        { value: "hybrid", label: t("training_block.loc_hybrid", { defaultValue: "Híbrido" }), icon: <IconHybrid /> },
                       ]}
                     />
                     {isLegacy && (
@@ -2476,16 +2481,16 @@ function ClientDetail() {
                 return (
                   <div className="space-y-1">
                     <Label className="text-xs">{t("lifestyle_block.job_type")}</Label>
-                    <ChipGroup
-                      cols={4}
+                    <VisualChipGroup
+                      columns={4}
                       size="sm"
                       value={isLegacy ? null : ((raw as any) ?? null)}
                       onChange={(v) => setAssessment({ ...assessment, ext_job_type: v })}
                       options={[
-                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }) },
-                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }) },
-                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }) },
-                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }) },
+                        { value: "sedentary", label: t("lifestyle_block.job_sedentary", { defaultValue: "Sentado" }), icon: <IconJobSedentary /> },
+                        { value: "standing", label: t("lifestyle_block.job_standing", { defaultValue: "Em pé" }), icon: <IconJobStanding /> },
+                        { value: "physical", label: t("lifestyle_block.job_physical", { defaultValue: "Físico" }), icon: <IconJobPhysical /> },
+                        { value: "mixed", label: t("lifestyle_block.job_mixed", { defaultValue: "Misto" }), icon: <IconJobMixed /> },
                       ]}
                     />
                     {isLegacy && (
