@@ -4504,9 +4504,15 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
   if (!insight) return null;
   return (
-    <div className="body-prose mt-3 rounded-md bg-muted/40 p-2.5 text-xs text-muted-foreground">
-      {insight}
-    </div>
+    <figure className="mt-3 animate-fade-in rounded-md bg-gradient-to-br from-muted/30 to-muted/10 px-4 py-3 ring-1 ring-inset ring-amber-500/15">
+      <figcaption className="eyebrow mb-1.5 flex items-center gap-1.5 text-amber-700/80 dark:text-amber-300/70">
+        <Sparkles className="h-3 w-3" aria-hidden />
+        <span>{t("insight_label")}</span>
+      </figcaption>
+      <blockquote className="border-l-2 border-amber-500/40 pl-3 font-display text-[13px] italic leading-relaxed text-foreground/85">
+        {insight}
+      </blockquote>
+    </figure>
   );
 }
 
@@ -4827,9 +4833,12 @@ function ParqFlagSummary({ count }: { count: number }) {
 }
 
 function CompletionStrip({ text }: { text: string }) {
+  // Strip the leading "✓ " (legacy) — the icon now carries that signal.
+  const cleaned = text.replace(/^\s*✓\s*/, "");
   return (
-    <div className="body-prose mt-3 animate-fade-in rounded-md bg-muted/40 px-2.5 py-1 text-[12px] text-muted-foreground">
-      {text}
+    <div className="mt-3 flex animate-fade-in items-center gap-2 rounded-md bg-emerald-500/[0.06] px-3 py-1.5 text-[12px] text-emerald-800/90 ring-1 ring-inset ring-emerald-500/15 dark:text-emerald-200/85">
+      <Check className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
+      <span className="body-prose truncate">{cleaned}</span>
     </div>
   );
 }
