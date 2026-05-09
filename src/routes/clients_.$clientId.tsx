@@ -2220,17 +2220,17 @@ function ClientDetail() {
                 />
                 <div className="space-y-1 sm:col-span-2">
                   <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <ChipGroup
-                    cols={5}
+                  <VisualChipGroup
+                    columns={5}
                     size="sm"
                     value={assessment.body_fat_method ?? null}
                     onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
                     options={[
-                      { value: "calipers", label: t("anthro_block.bf_calipers") },
-                      { value: "bia", label: t("anthro_block.bf_bia") },
-                      { value: "dexa", label: t("anthro_block.bf_dexa") },
-                      { value: "bodpod", label: t("anthro_block.bf_bodpod") },
-                      { value: "visual", label: t("anthro_block.bf_visual") },
+                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
+                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
+                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
+                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
                     ]}
                   />
                 </div>
