@@ -215,20 +215,21 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
       <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" />
             <XAxis
               dataKey="date"
               tickFormatter={(v) => new Date(v).toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })}
               fontSize={10}
-              stroke="hsl(var(--muted-foreground))"
+              stroke="var(--muted-foreground)"
             />
-            <YAxis fontSize={10} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
+            <YAxis fontSize={10} stroke="var(--muted-foreground)" domain={["auto", "auto"]} />
             <Tooltip
               contentStyle={{
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
+                background: "var(--card)",
+                border: "1px solid var(--border)",
                 borderRadius: 8,
                 fontSize: 12,
+                color: "var(--card-foreground)",
               }}
               labelFormatter={(v) => new Date(v).toLocaleDateString("pt-PT", { day: "2-digit", month: "short", year: "numeric" })}
               formatter={(v: any) => [`${v} kg`, "Peso"]}
@@ -236,7 +237,7 @@ function WeightChart({ data }: { data: Array<{ date: string; weight_kg: number }
             <Line
               type="monotone"
               dataKey="weight_kg"
-              stroke="hsl(var(--primary))"
+              stroke="var(--primary)"
               strokeWidth={2}
               dot={{ r: 2 }}
               activeDot={{ r: 4 }}
