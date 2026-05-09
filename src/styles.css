@@ -589,8 +589,11 @@
   --tracking-eyebrow-v2: 0.18em;
 }
 
-/* Semantic typography — Round A foundation. Round B applies these. */
-.h-display {
+/* Semantic typography — Round A foundation. Round B applies these.
+ * Renamed from .h-1/.h-2/... → .t-1/.t-2/... because Tailwind reserves
+ * `.h-N` for height utilities (h-2 = height: 0.5rem). The collision was
+ * collapsing real titles to 8px tall. Keep semantic intent, just rename. */
+.t-display {
   font-family: var(--font-display-v2);
   font-size: var(--text-5xl-v2);
   font-weight: 400;
@@ -598,7 +601,7 @@
   letter-spacing: var(--tracking-tight-v2);
   font-variation-settings: "opsz" 144, "SOFT" 30;
 }
-.h-1 {
+.t-1 {
   font-family: var(--font-display-v2);
   font-size: var(--text-4xl-v2);
   font-weight: 500;
@@ -606,21 +609,21 @@
   letter-spacing: var(--tracking-tight-v2);
   font-variation-settings: "opsz" 96;
 }
-.h-2 {
+.t-2 {
   font-family: var(--font-display-v2);
   font-size: var(--text-3xl-v2);
   font-weight: 500;
   line-height: var(--leading-snug-v2);
   font-variation-settings: "opsz" 48;
 }
-.h-3 {
+.t-3 {
   font-family: var(--font-body);
   font-size: var(--text-xl-v2);
   font-weight: 600;
   line-height: var(--leading-snug-v2);
   letter-spacing: -0.005em;
 }
-.h-4 {
+.t-4 {
   font-family: var(--font-body);
   font-size: var(--text-lg-v2);
   font-weight: 600;
