@@ -742,11 +742,14 @@ function PoweredBy() {
   );
 }
 
-function Section({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+function Section({ number, total, title, children }: { number: number; total?: number; title: string; children: React.ReactNode }) {
+  const pad = (n: number) => n.toString().padStart(2, "0");
   return (
     <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="mb-5 flex items-center gap-3">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-xs font-semibold text-accent">{number}</span>
+        <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] tabular-nums text-accent">
+          {pad(number)}{total ? ` · ${pad(total)}` : ""}
+        </span>
         <h2 className="text-base font-medium">{title}</h2>
       </div>
       <div className="space-y-5">{children}</div>
