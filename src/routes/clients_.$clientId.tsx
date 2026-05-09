@@ -2825,11 +2825,12 @@ function ClientDetail() {
                       ? undefined
                       : `Faltam ${remaining} ${remaining === 1 ? "campo" : "campos"} da avaliação`;
                     const lockedClass = !assessmentComplete
-                      ? "relative w-full sm:w-auto opacity-60 cursor-not-allowed ring-1 ring-amber-500/30 bg-muted/40 hover:bg-muted/40 text-muted-foreground"
+                      ? "w-full sm:w-auto cursor-not-allowed border border-dashed border-amber-500/40 bg-muted/30 hover:bg-muted/30 text-muted-foreground/90"
                       : "w-full sm:w-auto";
-                    const LeadingIcon = !assessmentComplete ? (
-                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/15 ring-1 ring-amber-500/40">
-                        <Lock className="h-3 w-3 text-amber-300" />
+                    const LockBadge = !assessmentComplete ? (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-amber-300 ring-1 ring-amber-500/30">
+                        <Lock className="h-2.5 w-2.5" />
+                        {briefCoverage ? `${briefCoverage.done}/${briefCoverage.total}` : null}
                       </span>
                     ) : null;
                     return phasedEnabled ? (
@@ -2840,12 +2841,15 @@ function ClientDetail() {
                         className={lockedClass}
                         title={tooltip}
                       >
-                        {LeadingIcon ?? (phasedBusy ? (
+                        {phasedBusy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
+                        ) : assessmentComplete ? (
                           <Sparkles className="mr-2 h-4 w-4" />
-                        ))}
+                        ) : (
+                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                        )}
                         {t("generate.button")}
+                        {LockBadge}
                       </Button>
                     ) : (
                       <Button
@@ -2855,8 +2859,15 @@ function ClientDetail() {
                         className={lockedClass}
                         title={tooltip}
                       >
-                        {LeadingIcon ?? (busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />)}
+                        {busy ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : assessmentComplete ? (
+                          <Sparkles className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                        )}
                         {t("generate.button")}
+                        {LockBadge}
                       </Button>
                     );
                   })()}
