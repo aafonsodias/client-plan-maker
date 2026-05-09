@@ -98,6 +98,10 @@
     "late": "Final del día",
     "count_one": "{{count}} sesión",
     "count_other": "{{count}} sesiones",
-    "empty": "sin sesiones"
+    "empty": "sin sesiones",
+    "extend_early": "Empezar el día antes",
+    "shrink_early": "Empezar el día más tarde",
+    "extend_late": "Terminar el día más tarde",
+    "shrink_late": "Terminar el día antes"
   }
 }

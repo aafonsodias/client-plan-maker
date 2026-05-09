@@ -137,6 +137,10 @@
     "late": "Late",
     "count_one": "{{count}} session",
     "count_other": "{{count}} sessions",
-    "empty": "no sessions"
+    "empty": "no sessions",
+    "extend_early": "Start day earlier",
+    "shrink_early": "Start day later",
+    "extend_late": "End day later",
+    "shrink_late": "End day earlier"
   }
 }

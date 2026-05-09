@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Minus, Sparkles, Loader2, Trash2, Copy, Check, CalendarPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -114,10 +114,15 @@ function ScheduleTabs() {
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 06..22
 /** Collapsible zones — early morning + late evening rarely have clients,
  *  but they do happen. Default collapsed; auto-expand if the visible week
- *  has any booking inside the zone. User toggle persists per zone. */
-const EARLY_HOURS = [6, 7, 8] as const;
-const CORE_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] as const;
-const LATE_HOURS = [20, 21, 22] as const;
+ *  has any booking inside the zone. User toggle persists per zone.
+ *  The boundary between early/core and core/late is editable per trainer
+ *  (persisted in localStorage). Bounds: 6 ≤ dayStart ≤ dayEnd ≤ 22. */
+const HOUR_FLOOR = 6;
+const HOUR_CEIL = 22;
+const DEFAULT_DAY_START = 9;
+const DEFAULT_DAY_END = 19;
+const range = (a: number, b: number): number[] =>
+  a > b ? [] : Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
 /** Next sensible booking slot: today rounded up to next hour if it's a weekday before 19:00,
  *  otherwise next weekday at 09:00. */
@@ -331,23 +336,48 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
     const v = window.localStorage.getItem("schedule_zone_late");
     return v === "open" ? true : v === "closed" ? false : null;
   });
+  // Editable day boundaries (persisted). dayStart = first core hour,
+  // dayEnd = last core hour. Hours below dayStart are "early"; above are "late".
+  const [dayStart, setDayStart] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_DAY_START;
+    const v = Number(window.localStorage.getItem("schedule_day_start"));
+    return Number.isFinite(v) && v >= HOUR_FLOOR && v <= HOUR_CEIL ? v : DEFAULT_DAY_START;
+  });
+  const [dayEnd, setDayEnd] = useState<number>(() => {
+    if (typeof window === "undefined") return DEFAULT_DAY_END;
+    const v = Number(window.localStorage.getItem("schedule_day_end"));
+    return Number.isFinite(v) && v >= HOUR_FLOOR && v <= HOUR_CEIL ? v : DEFAULT_DAY_END;
+  });
+  const earlyHours = useMemo(() => range(HOUR_FLOOR, dayStart - 1), [dayStart]);
+  const coreHours = useMemo(() => range(dayStart, dayEnd), [dayStart, dayEnd]);
+  const lateHours = useMemo(() => range(dayEnd + 1, HOUR_CEIL), [dayEnd]);
+  const setDayStartClamped = (next: number) => {
+    const clamped = Math.max(HOUR_FLOOR, Math.min(dayEnd, next));
+    setDayStart(clamped);
+    try { window.localStorage.setItem("schedule_day_start", String(clamped)); } catch {}
+  };
+  const setDayEndClamped = (next: number) => {
+    const clamped = Math.max(dayStart, Math.min(HOUR_CEIL, next));
+    setDayEnd(clamped);
+    try { window.localStorage.setItem("schedule_day_end", String(clamped)); } catch {}
+  };
   const earlyCount = useMemo(
     () =>
       bookings.filter((b) => {
         if (b.status === "cancelled") return false;
         const h = new Date(b.starts_at).getHours();
-        return (EARLY_HOURS as readonly number[]).includes(h);
+        return earlyHours.includes(h);
       }).length,
-    [bookings],
+    [bookings, earlyHours],
   );
   const lateCount = useMemo(
     () =>
       bookings.filter((b) => {
         if (b.status === "cancelled") return false;
         const h = new Date(b.starts_at).getHours();
-        return (LATE_HOURS as readonly number[]).includes(h);
+        return lateHours.includes(h);
       }).length,
-    [bookings],
+    [bookings, lateHours],
   );
   const earlyOpen = earlyPref ?? earlyCount > 0;
   const lateOpen = latePref ?? lateCount > 0;
@@ -479,13 +509,23 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
           <ZoneBand
             label={t("zone.early")}
-            range={`${String(EARLY_HOURS[0]).padStart(2, "0")}:00–${String(EARLY_HOURS[EARLY_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            range={
+              earlyHours.length === 0
+                ? `${String(HOUR_FLOOR).padStart(2, "0")}:00`
+                : `${String(earlyHours[0]).padStart(2, "0")}:00–${String(earlyHours[earlyHours.length - 1] + 1).padStart(2, "0")}:00`
+            }
             count={earlyCount}
             open={earlyOpen}
             onToggle={() => { const next = !earlyOpen; setEarlyPref(next); persistZone("early", next); }}
+            canExtend={dayStart > HOUR_FLOOR}
+            canShrink={dayStart < dayEnd}
+            onExtend={() => setDayStartClamped(dayStart - 1)}
+            onShrink={() => setDayStartClamped(dayStart + 1)}
+            extendLabel={t("zone.extend_early")}
+            shrinkLabel={t("zone.shrink_early")}
             t={t}
           />
-          {earlyOpen && EARLY_HOURS.map((h) => (
+          {earlyOpen && earlyHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -501,7 +541,7 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
               clipboardActive={!!clipboard}
             />
           ))}
-          {CORE_HOURS.map((h) => (
+          {coreHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -519,13 +559,23 @@ function ScheduleWeek({ bookingTick, onBookingsMutated }: { bookingTick: number;
           ))}
           <ZoneBand
             label={t("zone.late")}
-            range={`${String(LATE_HOURS[0]).padStart(2, "0")}:00–${String(LATE_HOURS[LATE_HOURS.length - 1] + 1).padStart(2, "0")}:00`}
+            range={
+              lateHours.length === 0
+                ? `${String(HOUR_CEIL + 1).padStart(2, "0")}:00`
+                : `${String(lateHours[0]).padStart(2, "0")}:00–${String(lateHours[lateHours.length - 1] + 1).padStart(2, "0")}:00`
+            }
             count={lateCount}
             open={lateOpen}
             onToggle={() => { const next = !lateOpen; setLatePref(next); persistZone("late", next); }}
+            canExtend={dayEnd < HOUR_CEIL}
+            canShrink={dayEnd > dayStart}
+            onExtend={() => setDayEndClamped(dayEnd + 1)}
+            onShrink={() => setDayEndClamped(dayEnd - 1)}
+            extendLabel={t("zone.extend_late")}
+            shrinkLabel={t("zone.shrink_late")}
             t={t}
           />
-          {lateOpen && LATE_HOURS.map((h) => (
+          {lateOpen && lateHours.map((h) => (
             <RowHour
               key={h}
               hour={h}
@@ -816,6 +866,12 @@ function ZoneBand({
   count,
   open,
   onToggle,
+  canExtend,
+  canShrink,
+  onExtend,
+  onShrink,
+  extendLabel,
+  shrinkLabel,
   t,
 }: {
   label: string;
@@ -823,23 +879,55 @@ function ZoneBand({
   count: number;
   open: boolean;
   onToggle: () => void;
+  canExtend: boolean;
+  canShrink: boolean;
+  onExtend: () => void;
+  onShrink: () => void;
+  extendLabel: string;
+  shrinkLabel: string;
   t: (k: string, opts?: any) => string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
+    <div
       style={{ gridColumn: "1 / -1" }}
-      className="flex items-center gap-2 border-b border-border bg-secondary/20 px-3 py-1.5 text-left text-[10px] font-medium uppercase tracking-widest text-muted-foreground hover:bg-secondary/40 hover:text-foreground transition-colors"
-      aria-expanded={open}
+      className="flex items-center gap-2 border-b border-border bg-secondary/20 text-[10px] font-medium uppercase tracking-widest text-muted-foreground"
     >
-      <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-      <span>{label}</span>
-      <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
-      <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
-        {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
-      </span>
-    </button>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex flex-1 items-center gap-2 px-3 py-1.5 text-left hover:bg-secondary/40 hover:text-foreground transition-colors"
+      >
+        <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
+        <span>{label}</span>
+        <span className="font-mono normal-case tracking-normal text-muted-foreground/70">· {range}</span>
+        <span className="ml-auto font-mono normal-case tracking-normal text-muted-foreground/70">
+          {count > 0 ? t("zone.count", { count }) : t("zone.empty")}
+        </span>
+      </button>
+      <div className="flex items-center gap-0.5 pr-2">
+        <button
+          type="button"
+          onClick={onExtend}
+          disabled={!canExtend}
+          aria-label={extendLabel}
+          title={extendLabel}
+          className="rounded p-1 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+        <button
+          type="button"
+          onClick={onShrink}
+          disabled={!canShrink}
+          aria-label={shrinkLabel}
+          title={shrinkLabel}
+          className="rounded p-1 text-muted-foreground/70 hover:bg-secondary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
   );
 }
 
