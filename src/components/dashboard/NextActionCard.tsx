@@ -16,7 +16,6 @@ type ClientLite = {
 
 type Props = {
   clients: ClientLite[];
-  onInvite: () => void;
 };
 
 /**
