@@ -17,7 +17,6 @@ import { getClientCapacityMap } from "@/server/capacity.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
 import { AddSnapshotSheet } from "@/components/AddSnapshotSheet";
 
 type Snapshot = {
