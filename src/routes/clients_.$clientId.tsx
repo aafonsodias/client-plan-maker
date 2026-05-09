@@ -2028,9 +2028,20 @@ function ClientDetail() {
                 conceptualmente à antropometria: alimentam IMC, BMR e
                 estimativas de %GC. Posicionados em cima por serem o
                 primeiro input clínico que qualquer ficha pede. */}
-            <div className="mb-3 rounded-md border border-border/60 bg-muted/20 p-2.5">
-              <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                Dados base
+            <div
+              id="anthro-base"
+              className={
+                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
+                (flashAnthroBase
+                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
+                  : "border-border/60")
+              }
+            >
+              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>Dados base</span>
+                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
+                  usados em IMC, BMR e %GC
+                </span>
               </div>
               <div className="grid gap-2 sm:grid-cols-4">
                 <label className="space-y-1">
