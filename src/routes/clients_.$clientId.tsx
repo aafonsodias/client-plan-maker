@@ -1859,6 +1859,9 @@ function ClientDetail() {
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
           hideCollapsedStrip
+          sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
+          saveStatus={saveStatus}
+          lastSavedAt={lastSavedAt}
           completionPct={
             briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
