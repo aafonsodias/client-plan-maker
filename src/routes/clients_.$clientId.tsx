@@ -2276,7 +2276,9 @@ function ClientDetail() {
               <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
               <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
               <Field label={t("goal_block.deadline")} type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint={t("goal_block.deadline_hint")} />
-              <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
+              )}
             </div>
           </SectionBlock>
 
@@ -2393,8 +2395,10 @@ function ClientDetail() {
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
-              <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
-              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className="sm:col-span-2" />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
+              )}
+              <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
           </SectionBlock>
 
@@ -2474,8 +2478,12 @@ function ClientDetail() {
                   </div>
                 );
               })()}
-              <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
-              <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <>
+                  <TextField label={t("lifestyle_block.energy")} value={assessment.energy_levels} onChange={(v) => setAssessment({ ...assessment, energy_levels: v })} />
+                  <TextField label={t("lifestyle_block.recovery")} value={assessment.recovery_capacity} onChange={(v) => setAssessment({ ...assessment, recovery_capacity: v })} />
+                </>
+              )}
             </div>
           </SectionBlock>
 
@@ -2598,8 +2606,15 @@ function ClientDetail() {
           {/* Posture */}
           <SectionBlock id="posture" analysing={analysingSections["posture"]} analysis={sectionAnalyses["posture"]} title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <TextField label={t("posture_block.standing")} value={assessment.standing_posture_notes} onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })} />
-              <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+              <TextField
+                label={t("posture_block.standing")}
+                value={assessment.standing_posture_notes}
+                onChange={(v) => setAssessment({ ...assessment, standing_posture_notes: v })}
+                className="sm:col-span-2"
+              />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField label={t("posture_block.imbalances")} value={assessment.known_imbalances} onChange={(v) => setAssessment({ ...assessment, known_imbalances: v })} />
+              )}
               <div className="space-y-1">
                 <Label className="text-xs">{t("posture_block.dominant")}</Label>
                 <ChipGroup
