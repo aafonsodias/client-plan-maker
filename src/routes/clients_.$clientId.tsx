@@ -56,7 +56,7 @@ import { listClientCapacitySnapshots } from "@/server/capacity.functions";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
-import { SMART_GOAL_TEMPLATES, deadlineFromWeeks } from "@/lib/smart-goal-templates";
+import { SmartGoalSection } from "@/components/assessment/SmartGoalSection";
 import { useServerFn } from "@tanstack/react-start";
 import { generatePlanDraft, generatePlanWeek, generatePlanDay, finalizePlanGeneration } from "@/server/plan.functions";
 import { analyzeAssessmentSection, getSectionAnalysisCoverage } from "@/server/phased/pre-stage.functions";
@@ -2437,54 +2437,20 @@ function ClientDetail() {
 
           {/* SMART goal */}
           <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
-            <div className="mb-3 space-y-1">
-              <Label className="text-xs">{t("goal_block.templates_label")}</Label>
-              <Select
-                value=""
-                onValueChange={(id) => {
-                  const tpl = SMART_GOAL_TEMPLATES.find((x) => x.id === id);
-                  if (!tpl) return;
-                  setAssessment({
-                    ...assessment,
-                    smart_specific: t(`goal_block.templates.${tpl.id}.specific` as const),
-                    smart_measurable: t(`goal_block.templates.${tpl.id}.measurable` as const),
-                    smart_deadline: deadlineFromWeeks(tpl.default_weeks),
-                  });
-                }}
-              >
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder={t("goal_block.templates_placeholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["strength","hypertrophy","body_comp","endurance","mobility","skill","health"] as const).map((cat) => {
-                    const items = SMART_GOAL_TEMPLATES.filter((x) => x.category === cat);
-                    if (items.length === 0) return null;
-                    return (
-                      <div key={cat}>
-                        <div className="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                          {t(`goal_block.categories.${cat}` as const)}
-                        </div>
-                        {items.map((tpl) => (
-                          <SelectItem key={tpl.id} value={tpl.id} className="text-xs">
-                            {t(`goal_block.templates.${tpl.id}.label` as const)}
-                            <span className="ml-2 text-[10px] text-muted-foreground">· {tpl.default_weeks}w</span>
-                          </SelectItem>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">{t("goal_block.templates_hint")}</p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("goal_block.specific")} value={assessment.smart_specific} onChange={(v) => setAssessment({ ...assessment, smart_specific: v })} placeholder={t("goal_block.specific_placeholder")} hint={t("goal_block.specific_hint")} className="sm:col-span-2" />
-              <Field label={t("goal_block.measurable")} value={assessment.smart_measurable} onChange={(v) => setAssessment({ ...assessment, smart_measurable: v })} placeholder={t("goal_block.measurable_placeholder")} hint={t("goal_block.measurable_hint")} />
-              <Field label={t("goal_block.deadline")} type="date" value={assessment.smart_deadline} onChange={(v) => setAssessment({ ...assessment, smart_deadline: v })} hint={t("goal_block.deadline_hint")} />
-              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
-                <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} className="sm:col-span-2" />
-              )}
-            </div>
+            <SmartGoalSection
+              value={{
+                smart_specific: assessment.smart_specific ?? null,
+                smart_measurable: assessment.smart_measurable ?? null,
+                smart_deadline: assessment.smart_deadline ?? null,
+                primary_goal: assessment.primary_goal ?? null,
+              }}
+              onChange={(next) => setAssessment({ ...assessment, ...next })}
+            />
+            {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+              <div className="mt-3">
+                <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
+              </div>
+            )}
           </SectionBlock>
 
           {/* Readiness */}
