@@ -135,7 +135,12 @@
   "meds_block": {
     "title": "Medication & supplements",
     "hint": "Beta-blockers blunt HR; statins risk myalgia; anticoagulants require contact-sport caution.",
-    "free_text": "Free text (medications, supplements, dosage)",
+    "dose_placeholder": "e.g. 5 mg/day",
+    "add_other": "Add another medication",
+    "other_name_placeholder": "Name (e.g. Vitamin D)",
+    "other_dose_placeholder": "Dose",
+    "other_remove_aria": "Remove",
+    "other_label": "Other",
     "flag_beta": "Beta-blocker",
     "flag_statin": "Statin",
     "flag_anticoag": "Anticoagulant",

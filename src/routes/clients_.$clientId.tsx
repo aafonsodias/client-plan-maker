@@ -20,10 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { parseMeds, serializeMeds, type OtherMed } from "@/lib/meds-format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield } from "lucide-react";
+import { Sparkles, FileText, Loader2, CheckCircle2, Circle, Info, AlertTriangle, Trash2, Eraser, Check, ChevronDown, ChevronRight, StopCircle, ChevronsDownUp, ChevronsUpDown, ArrowLeft, ArrowRight, Calendar as CalendarIcon, Download, Plus, Focus, List, Eye, Send, MoreHorizontal, Lock, HeartPulse, Pill, Droplet, Droplets, Activity, Syringe, Wind, Brain, Tablets, Shield, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -641,6 +642,12 @@ function ClientDetail() {
   const [duration, setDuration] = useState(4);
   const [plans, setPlans] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
+  // Meds local UI state (doses keyed by canonical flag + free-form "Other"
+  // entries). Source of truth visually; serialized into assessment.medications
+  // on every change so PDFs / AI briefs see a single readable string.
+  const [medsLocal, setMedsLocal] = useState<{ doses: Record<string, string>; others: OtherMed[] }>(
+    () => parseMeds(""),
+  );
   const [progressStep, setProgressStep] = useState(0);
   // Per-day generation progress: map of "w-d" -> "pending" | "running" | "done" | "error"
   const [dayProgress, setDayProgress] = useState<Record<string, "pending" | "running" | "done" | "error">>({});
@@ -842,6 +849,21 @@ function ClientDetail() {
     sectionSnapshotRef.current = snap;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
+
+  // Re-hydrate meds local state when assessment.medications changes from
+  // outside our writes (initial load, external sync). While the trainer is
+  // editing, our writes serialize back into assessment.medications so this
+  // effect sees the same string and no-ops.
+  useEffect(() => {
+    const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+    const flags: string[] = assessment.med_flags ?? [];
+    const ours = serializeMeds(flags, medsLocal.doses, medsLocal.others, otherLabel);
+    const incoming = String(assessment.medications ?? "");
+    if (incoming !== ours) {
+      setMedsLocal(parseMeds(incoming));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assessment.medications]);
 
   // Detect trainer edits: when a client-submitted section's signature changes
   // after hydration, flip its provenance to "trainer-edited".
@@ -2281,8 +2303,7 @@ function ClientDetail() {
 
           {/* Medications */}
           <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <TextField label={t("meds_block.free_text")} value={assessment.medications} onChange={(v) => setAssessment({ ...assessment, medications: v })} className="sm:col-span-2" />
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {[
                 { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
                 { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
@@ -2297,25 +2318,121 @@ function ClientDetail() {
                 { id: "corticosteroid", canonical: "Oral corticosteroid", label: t("meds_block.flag_corticosteroid"), effect: t("meds_block.effect_corticosteroid"), Icon: Pill },
               ].map(({ id, canonical: flag, label, effect, Icon }) => {
                 const on = assessment.med_flags.includes(flag);
+                const dose = medsLocal.doses[flag] ?? "";
+                const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+                const commit = (nextFlags: string[], nextDoses: Record<string, string>) => {
+                  setMedsLocal((m) => ({ ...m, doses: nextDoses }));
+                  setAssessment({
+                    ...assessment,
+                    med_flags: nextFlags,
+                    medications: serializeMeds(nextFlags, nextDoses, medsLocal.others, otherLabel),
+                  });
+                };
                 return (
-                  <button
+                  <div
                     key={id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => setAssessment({ ...assessment, med_flags: on ? assessment.med_flags.filter((f: string) => f !== flag) : [...assessment.med_flags, flag] })}
-                    className={`group flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition ${on ? "border-amber-500/40 bg-amber-500/[0.06] ring-1 ring-inset ring-amber-500/20" : "border-border/60 bg-background/40 hover:border-border hover:bg-muted/30"}`}
+                    className={`rounded-lg border p-2.5 transition ${on ? "border-amber-500/40 bg-amber-500/[0.06] ring-1 ring-inset ring-amber-500/20" : "border-border/60 bg-background/40 hover:border-border hover:bg-muted/30"}`}
                   >
-                    <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${on ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted/60 text-muted-foreground"}`}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={`block text-[12px] font-medium leading-tight ${on ? "text-amber-700 dark:text-amber-300" : "text-foreground"}`}>{label}</span>
-                      <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">{effect}</span>
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        const nextFlags = on
+                          ? assessment.med_flags.filter((f: string) => f !== flag)
+                          : [...assessment.med_flags, flag];
+                        const nextDoses = { ...medsLocal.doses };
+                        if (on) delete nextDoses[flag];
+                        commit(nextFlags, nextDoses);
+                      }}
+                      className="flex w-full items-start gap-2.5 text-left"
+                    >
+                      <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${on ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-muted/60 text-muted-foreground"}`}>
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block text-[12px] font-medium leading-tight ${on ? "text-amber-700 dark:text-amber-300" : "text-foreground"}`}>{label}</span>
+                        <span className="mt-0.5 block text-[10.5px] leading-snug text-muted-foreground">{effect}</span>
+                      </span>
+                    </button>
+                    {on ? (
+                      <div className="mt-2 border-t border-amber-500/15 pt-2">
+                        <Input
+                          value={dose}
+                          onChange={(e) => {
+                            const nextDoses = { ...medsLocal.doses, [flag]: e.target.value };
+                            commit(assessment.med_flags, nextDoses);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder={t("meds_block.dose_placeholder")}
+                          className="h-7 border-amber-500/20 bg-background/60 px-2 text-[11px] tabular-nums focus-visible:ring-amber-500/40"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>
+            {(() => {
+              const otherLabel = t("meds_block.other_label", { defaultValue: "Outro" });
+              const setOthers = (next: OtherMed[]) => {
+                setMedsLocal((m) => ({ ...m, others: next }));
+                setAssessment({
+                  ...assessment,
+                  medications: serializeMeds(assessment.med_flags ?? [], medsLocal.doses, next, otherLabel),
+                });
+              };
+              return (
+                <div className="mt-3 space-y-2">
+                  {medsLocal.others.map((o, idx) => (
+                    <div
+                      key={idx}
+                      className="grid items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.06] p-2.5 ring-1 ring-inset ring-amber-500/20 grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_auto]"
+                    >
+                      <Input
+                        value={o.name}
+                        onChange={(e) => {
+                          const next = medsLocal.others.slice();
+                          next[idx] = { ...next[idx], name: e.target.value };
+                          setOthers(next);
+                        }}
+                        placeholder={t("meds_block.other_name_placeholder")}
+                        className="h-8 border-amber-500/20 bg-background/60 text-[12px] sm:col-auto col-span-1 row-start-1"
+                      />
+                      <Input
+                        value={o.dose}
+                        onChange={(e) => {
+                          const next = medsLocal.others.slice();
+                          next[idx] = { ...next[idx], dose: e.target.value };
+                          setOthers(next);
+                        }}
+                        placeholder={t("meds_block.other_dose_placeholder")}
+                        className="h-8 border-amber-500/20 bg-background/60 text-[11px] tabular-nums col-span-2 row-start-2 sm:col-auto sm:row-start-1"
+                      />
+                      <button
+                        type="button"
+                        aria-label={t("meds_block.other_remove_aria")}
+                        onClick={() => {
+                          const next = medsLocal.others.slice();
+                          next.splice(idx, 1);
+                          setOthers(next);
+                        }}
+                        className="row-start-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setOthers([...medsLocal.others, { name: "", dose: "" }])}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-muted/40 py-2 text-xs font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {t("meds_block.add_other")}
+                  </button>
+                </div>
+              );
+            })()}
           </SectionBlock>
 
           {/* SMART goal */}
