@@ -38,7 +38,7 @@ function isAssessmentTouched(a: any | null): boolean {
   return false;
 }
 
-function isRequiredComplete(a: any | null): boolean {
+export function isRequiredComplete(a: any | null): boolean {
   if (!a) return false;
   return REQUIRED_SECTIONS.every((id) => {
     switch (id) {
