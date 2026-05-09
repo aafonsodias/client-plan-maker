@@ -4933,9 +4933,14 @@ function CompletionStrip({ text }: { text: string }) {
   // Strip the leading "✓ " (legacy) — the icon now carries that signal.
   const cleaned = text.replace(/^\s*✓\s*/, "");
   return (
-    <div className="mt-3 flex animate-fade-in items-center gap-2 rounded-md bg-emerald-500/[0.06] px-3 py-1.5 text-[12px] text-emerald-800/90 ring-1 ring-inset ring-emerald-500/15 dark:text-emerald-200/85">
-      <Check className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
-      <span className="body-prose truncate">{cleaned}</span>
+    <div className="mt-3 flex animate-fade-in items-center gap-2.5 rounded-full bg-emerald-500/[0.05] py-1 pl-1 pr-3 text-[12px] text-emerald-900/85 dark:text-emerald-100/85">
+      <span
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+        aria-hidden
+      >
+        <Check className="h-3 w-3" strokeWidth={2.75} />
+      </span>
+      <span className="body-prose truncate leading-none tracking-[-0.005em]">{cleaned}</span>
     </div>
   );
 }
