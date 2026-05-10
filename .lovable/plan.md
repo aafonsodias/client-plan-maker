@@ -1,78 +1,87 @@
-## Round D — escopo confirmado
 
-6 itens P0, 1 ficheiro principal (`src/routes/clients_.$clientId.tsx`) + componentes pequenos. Mantém-se o princípio "1 concern per round" porque tudo gira em torno do mesmo formulário. Estimativa: ~20 créditos.
+## Diagnóstico
 
----
+A página fica vazia por uma combinação de gates pessimistas, não porque a avaliação acabou:
 
-### 1. #4 Concluir sempre ativo (CC5/C1) — já quase pronto, fechar últimas frestas
+1. **AssessmentSection retorna `null`** quando `collapsed=true` E `hideCollapsedStrip=true` (linha 4304–4305 de `clients_.$clientId.tsx`). A página passa sempre `hideCollapsedStrip` porque conta com a `ProtocolRail` para mostrar o toggle.
+2. **ProtocolRail só renderiza** se `(heroPlan || plans.length > 0 || protocolRailOpen)`. Para um cliente sem plano e sem rascunho, nenhuma das três é verdade.
+3. **`assessmentCollapsed`** ficou persistido a `true` numa sessão anterior em que tu colapsaste manualmente.
 
-**Estado actual (`clients_.$clientId.tsx:1970–1995`):** o `onConclude` já não bloqueia. Quando incompleto, abre `incompleteWarnOpen` e gera depois da confirmação.
+Resultado: zero toggle, zero conteúdo, zero forma de recuperar — só o header.
 
-**Falta:**
-- Reescrever copy do dialog (`assessment.generate.incomplete_*` em pt/en/es) para a mensagem certa: "Qualidade do plano reduzida — secções em falta podem ser completadas em pessoa contigo mais tarde. Gerar mesmo assim?" + confirm "Gerar com o que tenho".
-- No footer do stepper (`AssessmentSection`, ~linha 4523) garantir que `disabled={concludeBusy || (isLast && !onConclude)}` continua a permitir clicar mesmo com `completedCount < totalSections` (já permite — apenas verificar e remover qualquer estilo "ghost/dimmed" condicional residual).
+`IntakeLinkPanel` também não aparece porque a tua condição (`!submitted && !reviewed && !lastSavedAt`) falha quando há draft local (preencheste sozinho ⇒ `lastSavedAt` ficou setado).
 
-### 2. #19 SMART — estado seleccionado claro dentro da categoria
+## Objetivo
 
-**Onde:** bloco do goal (templates SMART), aprox. 2441–2460 + componente `SmartGoalTemplateChip` (procurar). Hoje, dentro da aba "Força", o template seleccionado fica com diferença visual mínima.
+Garantir que a página do cliente **nunca fica em branco** numa fase legítima, e dar à fase "intake enviado, ainda sem dados úteis" um landing decente inspirado na linguagem do `/me`.
 
-**Mudança:**
-- Adicionar `ring-2 ring-primary` + ícone `Check` num pill "Selecionado" no template activo.
-- Aumentar contraste do `bg` do seleccionado vs unselected (usar `bg-primary/10` vs `bg-muted/20`).
-- Garantir alinhamento das letras (user reportou desalinhamento — provavelmente `items-start` em vez de `items-center` no row).
+## O que vai mudar
 
-### 3. #3 Live update das Implicações por secção (CC8 — versão incremental)
+### 1. Bug fix — assessment nunca desaparece (P0)
 
-**Diagnóstico (`clients_.$clientId.tsx:977–999`):** `triggerSectionAnalyses` itera as secções sequencialmente, mas **só refaz `setSectionAnalyses` no fim de toda a queue**. Resultado: enquanto a queue corre (vários segundos × N secções), a UI mostra o estado antigo.
+Em `clients_.$clientId.tsx`, alterar a condição que esconde o `AssessmentSection`:
 
-**Fix:** dentro do `for (const section of queue)`, depois de `analyzeSectionFn` retornar com sucesso, fazer um fetch leve de `getCoverageFn` (ou idealmente um endpoint que devolva só a análise dessa secção) e fazer `setSectionAnalyses(prev => ({ ...prev, [section]: r.analyses[section] }))` imediatamente. O fetch final no fim da queue mantém-se como reconciliação.
+- Se a `ProtocolRail` não renderiza E não há plano, **forçar `effectiveCollapsed = false`** (ignora a persistência).
+- Manter o `hideCollapsedStrip` apenas quando há um toggle visível (rail aberto OU plano existe).
 
-Nota: usa o endpoint `getCoverageFn` actual com merge parcial — não exige migração nem novo server fn.
+Resultado: o utilizador volta a ver a avaliação automaticamente quando não há outro lugar para a abrir.
 
-### 4. #48 Rockport — verificar, não reconstruir
+### 2. Stage-1 hero (P1)
 
-`src/components/assessment/RockportWizard.tsx` já existe e é completo (peso/idade/sexo + tempo + HR → VO₂max). Acção: confirmar que está renderizado dentro da §Performance (procurar `RockportWizard` no route) e que aparece quando `ext_cardio_test === "rockport"` (ou similar). Se não estiver visível na UI, ligar; caso contrário, marcar como done.
+Novo componente `<ClientStageOneHero/>` em `src/components/ClientStageOneHero.tsx`. Renderiza só quando:
+- Sem plano
+- Sem briefing aprovado
+- Não estamos em rascunho avançado
 
-### 5. #11.1 Mobility — instruções mínimas viáveis por articulação
+Estrutura (linguagem visual de `/me`):
 
-**Onde:** `clients_.$clientId.tsx:2990–3005` (loop dos `ScoreRow` para mobility).
+```text
+┌─ ClientStageOneHero ─────────────────────────────┐
+│  AVALIAÇÃO · Etapa 1 de 5                        │
+│  ●━━○━━○━━○━━○                                   │
+│  Avaliação · Briefing · Plano-mestre · Semana · Progressões │
+│                                                  │
+│  [Continuar avaliação →]   [Ver como o cliente vê ↗] │
+│                                                  │
+│  Estado do link: enviado há 2d · ainda não aberto│
+│  [Pedir nova avaliação]  [Copiar link]           │
+└──────────────────────────────────────────────────┘
+```
 
-**Mudança mínima viável (sem SVGs custom ainda):**
-- Adicionar um campo `hint` curto (1 frase) por articulação no i18n (`mobility_block.tests.<joint>.hint`), ex: "Sentado, levanta o braço lateralmente até à orelha sem rodar o tronco".
-- `ScoreRow` ganha prop opcional `hint?: string` → render como `<p className="body-prose text-[11px] text-muted-foreground">{hint}</p>` por baixo do label.
-- 4 articulações × 3 idiomas = 12 strings curtas.
+- Progresso: barra com 5 pontos (etapas do protocolo) com o atual em amber.
+- CTA primário muda conforme o estado: "Continuar avaliação" se houver draft, "Pedir avaliação" se ainda nada.
+- CTA secundário: "Ver como o cliente vê" → abre `/me?as={clientId}` (preview).
+- Tira do estado do intake: usa `client.intake_status` + `intake_token_expires_at` para um sub-bloco compacto. Se o link já tiver caducado, badge âmbar "Caducado — gerar novo".
+- Tudo via `t()` em `assessment.json` (chave `stage_one_hero.*`), PT/EN/ES.
 
-Desenhos completos ficam para Round F (#11.1 versão large).
+Inserido logo após o header, antes do `IntakeLinkPanel`. O `IntakeLinkPanel` grande passa a ser secundário (dentro de um `<details>` "Detalhes do envio") porque o hero já cobre o essencial.
 
-### 6. #13.2 Movement screen — chips de critério (versão mínima)
+### 3. Limpeza pequena
 
-**Onde:** componente que renderiza os 5 padrões (`SQUAT`/`HINGE`/etc.) — aprox. 3037–3070 + `formScore`/criteria UI em `src/lib/movement-criteria.ts`.
+- Remover do hero o `IntakeLinkPanel` solto que aparece duplicado quando `lastSavedAt` é null.
+- Adicionar as 5 chaves de i18n em falta detetadas nos console logs (`training_block.loc_*`, `lifestyle_block.job_*`) — bug independente que apareceu enquanto investiguei.
 
-**Mudança mínima:**
-- Cada critério já é uma checkbox/score. Adicionar um pequeno tooltip/hover-card (já existe `Tooltip` do shadcn) com 1 linha de texto: "Correcto: joelhos alinhados com pés · Incorrecto: valgo (joelhos para dentro)".
-- Strings em `screen_block.criteria.<pattern>.<criterion>.right` / `.wrong`.
-- Sem imagens reais ainda — só texto. Imagens ficam para Round F.
+## Fora de âmbito (próximos rounds)
 
----
+- Conteúdo educativo / drawings no hero (Round H).
+- Reformulação completa da `ProtocolRail` (continua tal como está, só deixa de ser obrigatória).
+- Outros itens do `assessment-walkthrough-may-2026.md`.
 
 ## Ficheiros tocados
 
-- `src/routes/clients_.$clientId.tsx` — secções 2, 3, 5, 6 + verificação 4
-- `src/components/assessment/RockportWizard.tsx` — só verificação/wiring se necessário
-- Componente `ScoreRow` (provavelmente inline no route ou em `src/components/assessment/`) — adicionar prop `hint`
-- `src/i18n/locales/{en,pt,es}/assessment.json` — copy do dialog #1, hints de mobilidade #5, critérios de screen #6
+- `src/routes/clients_.$clientId.tsx` — fix do gate + integrar hero.
+- `src/components/ClientStageOneHero.tsx` — novo.
+- `src/i18n/locales/{pt,en,es}/assessment.json` — chaves do hero + as 5 chaves em falta.
 
-## Validação manual
+## Validação
 
-1. **#4:** abrir cliente com 8/14 secções → carregar Concluir → dialog mostra "Qualidade reduzida..." → confirmar → geração arranca.
-2. **#19:** §Goal, escolher categoria Força, clicar template → ring + chip "Selecionado" visíveis; mudar template → o anterior perde estado.
-3. **#3:** preencher um campo na §Lifestyle → guardar (auto, 1.5s) → o bloco "Implicações" da §Lifestyle actualiza sozinho em <5s, sem esperar pelas outras secções.
-4. **#48:** §Performance, escolher Rockport → wizard aparece com inputs.
-5. **#11.1:** §Mobility → cada articulação tem 1 frase de instrução por baixo.
-6. **#13.2:** §Screen → hover/tap num critério mostra tooltip "Correcto vs Incorrecto".
+- Abrir `/clients/{id}` num cliente em estado idêntico ao do screenshot → ver hero + assessment expandida.
+- Carregar em "Ver como o cliente vê" → abre `/me?as={id}` em modo preview.
+- Forçar `assessmentCollapsed=true` em localStorage e recarregar → continua a ver o hero (assessment colapsada ok agora porque o hero já mostra estado).
+- Criar plano de teste → hero desaparece, ProtocolRail volta a aparecer.
+- Mobile 375px: hero empilhado, sem overflow.
+- `bunx tsc --noEmit` limpo.
 
-Smoke a 390×812 (mobile) e 1280×800 (desktop).
+## Estimativa
 
-## Fora do escopo (vai para Round E/F)
-
-CC1 collapse padronizado, CC2 sweep estético, CC4 page-per-topic, CC9 pre-stage por secção (já é por secção — só falta consolidar), CC10 nome único, e tudo o que envolva SVGs reais (mobility/screen completos, equipment, nutrition).
+~10 créditos. Concern único: "página do cliente nunca em branco na fase 1".
