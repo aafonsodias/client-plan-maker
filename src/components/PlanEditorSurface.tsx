@@ -1821,23 +1821,22 @@ function RegenerateWithFeedbackDialog({
       const newSummary = week1?.summary || previousPlan.summary;
 
       setProgress((p) => ({ ...p, phase: "saving" }));
-      // Read current version so we can bump it (stale-session detection).
-      const { data: cur } = await supabase
-        .from("workout_plans")
-        .select("plan_data_version")
-        .eq("id", planId)
-        .maybeSingle();
-      const nextVersion = ((cur?.plan_data_version as number | null) ?? 1) + 1;
-      const { error: upErr } = await supabase
-        .from("workout_plans")
-        .update({
+      // C1 — call the canonical writer. For phased-complete plans this
+      // wipes + re-inserts every workout_plan_days row (the real source of
+      // truth) so the realtime subscription cannot snap us back to stale
+      // content. For legacy plans (no day rows) the write of plan_data still
+      // takes effect via the same RPC.
+      const persistRes = await persistFn({
+        data: {
+          planId,
           title: newTitle,
           summary: newSummary,
-          plan_data: { weeks: newWeeks },
-          plan_data_version: nextVersion,
-        })
-        .eq("id", planId);
-      if (upErr) throw upErr;
+          weeks: newWeeks as any,
+          programming_variables: resolvedPv as any,
+          trainer_feedback: feedback.trim(),
+        },
+      });
+      if (!persistRes.ok) throw new Error(persistRes.error);
 
       onRegenerated({ title: newTitle, summary: newSummary, weeks: newWeeks });
       setProgress((p) => ({ ...p, phase: "done" }));
