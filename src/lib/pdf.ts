@@ -5,6 +5,7 @@ import {
   distributeMissionsAcrossDays,
   missionsRemainingScore,
 } from "@/lib/assessment-missions";
+import { PATTERN_IDS, PATTERN_LABELS_PT, formScore, type PatternId } from "@/lib/movement-criteria";
 
 // ---------- Public types (kept compatible with existing callers) ----------
 export type Exercise = {
@@ -1143,20 +1144,41 @@ export async function generatePlanPdf(
 }
 
 
+
 // ===========================================================================
-// Assessment report PDF — 2 pages max, brand-aware, locale-aware.
+// Assessment report PDF — synthesis + programming impact, brand-aware,
+// locale-aware. Replaces the old flat field dump.
 // ===========================================================================
+
+type RFAcc = { flag: string; strategy: string; detail?: string };
+type ProgVars = {
+  rpe_ceiling?: number;
+  wave_model?: string;
+  deload_frequency?: string;
+  deload_style?: string;
+  intensity_volume_tradeoff?: string;
+  exercise_bias?: string;
+  training_split?: string;
+  cockpit_preset?: string;
+  autoreg_strictness?: string;
+};
 
 type RenderAssessmentArgs = {
   assessment: any;
   client: { full_name?: string | null; email?: string | null } | null;
+  plan?: {
+    title?: string | null;
+    programming_variables?: ProgVars | null;
+    red_flag_accommodations?: RFAcc[] | null;
+  } | null;
+  sectionAnalyses?: Record<string, { summary?: string | null; red_flags?: string[] } | null>;
   t?: (key: string, opts?: any) => string;
 };
 
 function safe(v: unknown, fallback = "—"): string {
   if (v === null || v === undefined || v === "") return fallback;
   if (typeof v === "number") return String(v);
-  if (typeof v === "boolean") return v ? "Yes" : "No";
+  if (typeof v === "boolean") return v ? "Sim" : "Não";
   return String(v);
 }
 
@@ -1177,7 +1199,100 @@ function slugify(s: string): string {
     .slice(0, 40) || "client";
 }
 
-export function renderAssessmentPdf({ assessment, client, t }: RenderAssessmentArgs) {
+/** jsPDF helvetica core font is Latin-1 only; arrows/em-dashes/smart quotes
+ *  render as garbled spaced characters (the "f r o m   c u r r e n t" bug).
+ *  Strip non-Latin1 down to ASCII equivalents. */
+function ascii(s: string): string {
+  return String(s ?? "")
+    .replace(/[\u2018\u2019\u02BC]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/\u2192/g, "->")
+    .replace(/\u2190/g, "<-")
+    .replace(/\u2191/g, "up")
+    .replace(/\u2193/g, "down")
+    .replace(/\u2022/g, "*")
+    .replace(/\u2026/g, "...")
+    // keep accented Latin-1 (à, ã, é, ç, …) intact, drop everything else
+    .replace(/[^\x00-\xFF]/g, "");
+}
+
+const ACSM_CAPTION: Record<string, string> = {
+  low: "sem fatores de risco major — pode treinar com intensidade próxima do máximo",
+  moderate: "1+ fator de risco — começar conservador, validar progresso bloco a bloco",
+  high: "doença/sintoma cardiovascular — exigir clearance médico antes de carga elevada",
+};
+
+function recoveryProfile(a: any): { label: string; caption: string } | null {
+  const sleep = a?.sleep_quality != null ? Number(a.sleep_quality) : null;
+  const stress = a?.stress_level != null ? Number(a.stress_level) : null;
+  if (sleep == null && stress == null) return null;
+  let score = 0;
+  let n = 0;
+  if (sleep != null) { score += sleep; n++; }
+  if (stress != null) { score += (10 - stress); n++; }
+  const avg = n ? score / n : 0;
+  const label = avg >= 7 ? "Alta" : avg >= 5 ? "Moderada" : "Baixa";
+  const parts: string[] = [];
+  if (sleep != null) parts.push(`sono ${sleep}/10`);
+  if (stress != null) parts.push(`stress ${stress}/10`);
+  return { label, caption: parts.join(" · ") };
+}
+
+function rpeReason(rpe: number, a: any): string {
+  const sleep = a?.sleep_quality != null ? Number(a.sleep_quality) : null;
+  const stress = a?.stress_level != null ? Number(a.stress_level) : null;
+  if (rpe <= 7.5) {
+    if (sleep != null && sleep <= 5) return "sono baixo limita intensidade segura";
+    if (stress != null && stress >= 7) return "stress elevado limita intensidade segura";
+    return "primeiro bloco — margem de segurança até validar adesão";
+  }
+  if (rpe >= 9) return "atleta tolera carga próxima do máximo";
+  return "intensidade moderada-alta — equilíbrio típico de hipertrofia";
+}
+
+function waveReason(wave: string | undefined): string {
+  switch (wave) {
+    case "step": return "estabilizar antes de carga ondulada — ideal em remedial/iniciante";
+    case "linear": return "progressão linear simples — ganho previsível em iniciantes";
+    case "wave": return "onda clássica de Bompa — re-acumular após deload";
+    case "undulating": return "intensidade varia entre sessões — manter frescura";
+    case "block": return "blocos focados — máxima especificidade";
+    default: return "modelo de progressão de carga semana a semana";
+  }
+}
+
+function deloadReason(freq: string | undefined): string {
+  if (!freq) return "—";
+  if (freq.includes("3")) return "frequência alta — fadiga acumula rápido neste perfil";
+  if (freq.includes("4")) return "cadência standard de re-acumulação para hipertrofia";
+  if (freq.includes("5") || freq.includes("6")) return "atleta avançado tolera blocos longos";
+  return "intervalo de re-acumulação programado";
+}
+
+function tradeoffReason(t: string | undefined): string {
+  switch (t) {
+    case "volume_leaning": return "prioriza volume — adequado a hipertrofia/recomp";
+    case "intensity_leaning": return "prioriza carga — adequado a força máxima";
+    case "balanced": return "equilíbrio entre volume e intensidade";
+    default: return "—";
+  }
+}
+
+const STRATEGY_COLOR: Record<string, [number, number, number]> = {
+  AVOID: [220, 38, 38],       // red-600
+  MODIFY: [217, 119, 6],      // amber-600
+  MONITOR: [13, 148, 136],    // teal-600
+  ACCOMMODATE: [113, 113, 122], // muted
+};
+
+export function renderAssessmentPdf({
+  assessment,
+  client,
+  plan,
+  sectionAnalyses,
+  t,
+}: RenderAssessmentArgs) {
   const tr = (k: string, fb: string) => (t ? t(k, { defaultValue: fb }) : fb);
 
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -1188,183 +1303,389 @@ export function renderAssessmentPdf({ assessment, client, t }: RenderAssessmentA
   const INK: [number, number, number] = [24, 24, 27];
   const MUTED: [number, number, number] = [113, 113, 122];
   const RULE: [number, number, number] = [228, 228, 231];
-  const ACCENT: [number, number, number] = [217, 119, 6]; // amber-600
+  const ACCENT: [number, number, number] = [217, 119, 6];
 
   let y = M;
+  const text = (s: string, x: number, yy: number, opts?: any) =>
+    doc.text(ascii(s), x, yy, opts);
+
+  const ensure = (need: number) => {
+    if (y > H - need) { doc.addPage(); y = M; }
+  };
 
   // ---------- Header ----------
   setText(doc, INK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text(tr("pdf.title", "Assessment Report"), M, y);
+  text(tr("pdf.title", "Relatório de Avaliação"), M, y);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   setText(doc, MUTED);
-  const headerRight = `${tr("pdf.performed_on", "Performed on")}: ${fmtDate(assessment?.performed_on ?? assessment?.created_at)}`;
-  doc.text(headerRight, W - M, y, { align: "right" });
+  text(`Realizada em: ${fmtDate(assessment?.performed_on ?? assessment?.created_at)}`, W - M, y, { align: "right" });
 
   y += 18;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   setText(doc, INK);
-  doc.text(safe(client?.full_name, tr("pdf.client", "Client")), M, y);
+  text(safe(client?.full_name, "Cliente"), M, y);
 
   if (client?.email) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     setText(doc, MUTED);
-    doc.text(client.email, W - M, y, { align: "right" });
+    text(client.email, W - M, y, { align: "right" });
   }
 
   y += 8;
   setDraw(doc, ACCENT);
   doc.setLineWidth(1.2);
   doc.line(M, y, M + 36, y);
-  y += 14;
+  y += 16;
 
-  // ---------- Section helper ----------
+  // ---------- Section title helper ----------
   const sectionTitle = (label: string) => {
-    if (y > H - 80) {
-      doc.addPage();
-      y = M;
-    }
+    ensure(40);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     setText(doc, MUTED);
-    doc.text(label.toUpperCase(), M, y);
+    text(label.toUpperCase(), M, y);
     y += 4;
     setDraw(doc, RULE);
     doc.setLineWidth(0.4);
     doc.line(M, y, W - M, y);
-    y += 10;
+    y += 12;
   };
 
-  const kv = (rows: Array<[string, string]>, cols = 2) => {
-    const colW = (W - M * 2) / cols;
-    const rowH = 24;
-    const perPage = Math.ceil(rows.length / cols);
-    for (let i = 0; i < rows.length; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const x = M + col * colW;
-      const ry = y + row * rowH;
+  // ---------- Tile (synthesis) ----------
+  const tile = (
+    x: number,
+    width: number,
+    label: string,
+    value: string,
+    caption: string,
+    tone: [number, number, number] = INK,
+  ) => {
+    setFill(doc, [250, 250, 251]);
+    doc.roundedRect(x, y, width, 56, 4, 4, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    setText(doc, MUTED);
+    text(label.toUpperCase(), x + 10, y + 14);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    setText(doc, tone);
+    text(value, x + 10, y + 32);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    setText(doc, MUTED);
+    const lines = doc.splitTextToSize(ascii(caption), width - 20).slice(0, 2);
+    doc.text(lines, x + 10, y + 46);
+  };
+
+  // =========================================================================
+  // PAGE 1 — SYNTHESIS
+  // =========================================================================
+  sectionTitle("Síntese");
+
+  const acsm = String(assessment?.acsm_risk_category ?? assessment?.risk?.acsm_category ?? "").toLowerCase();
+  const acsmLabel = acsm === "high" ? "Elevado" : acsm === "moderate" ? "Moderado" : acsm === "low" ? "Baixo" : "—";
+  const acsmTone: [number, number, number] = acsm === "high" ? [220, 38, 38] : acsm === "moderate" ? [217, 119, 6] : acsm === "low" ? [16, 185, 129] : INK;
+  const acsmCap = ACSM_CAPTION[acsm] ?? "classificação ACSM não disponível";
+
+  const recovery = recoveryProfile(assessment);
+
+  const bf = assessment?.body_fat_pct ? `${assessment.body_fat_pct}%` : "—";
+  const whr = (() => {
+    const w = Number(assessment?.waist_cm);
+    const hp = Number(assessment?.hip_cm);
+    if (!w || !hp) return null;
+    return (w / hp).toFixed(2);
+  })();
+  const bodyVal = whr ? `${bf} · WHR ${whr}` : bf;
+  const bodyCap = whr == null
+    ? "circunferências não medidas"
+    : Number(whr) >= 0.95 ? "WHR elevado — risco cardiometabólico"
+    : Number(whr) >= 0.85 ? "WHR moderado — monitorizar"
+    : "WHR saudável";
+
+  const tileW = (W - M * 2 - 16) / 3;
+  tile(M, tileW, "Risco ACSM", acsmLabel, acsmCap, acsmTone);
+  tile(M + tileW + 8, tileW, "Recuperação", recovery?.label ?? "—", recovery?.caption ?? "sem dados de sono/stress");
+  tile(M + (tileW + 8) * 2, tileW, "Composição", bodyVal, bodyCap);
+  y += 56 + 14;
+
+  // ---------- Movement screen readout ----------
+  ensure(120);
+  sectionTitle("Triagem de movimento");
+  const colW = (W - M * 2) / 2;
+  const rowH = 16;
+  const visiblePatterns = PATTERN_IDS.filter((p) => {
+    if (assessment?.screen_not_assessed?.[p]) return false;
+    const fc = assessment?.[`${p}_form_criteria`];
+    return !!fc;
+  });
+  if (visiblePatterns.length === 0) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    setText(doc, MUTED);
+    text("Triagem de movimento ainda não realizada.", M, y);
+    y += 16;
+  } else {
+    visiblePatterns.forEach((p, i) => {
+      const fc = assessment[`${p}_form_criteria`];
+      const score = formScore(fc);
+      const cleared = score >= 3;
+      const x = M + (i % 2) * colW;
+      const ry = y + Math.floor(i / 2) * rowH;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(7.5);
-      setText(doc, MUTED);
-      doc.text(rows[i][0].toUpperCase(), x, ry);
-      doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       setText(doc, INK);
-      const valLines = doc.splitTextToSize(rows[i][1], colW - 8);
-      doc.text(valLines.slice(0, 1), x, ry + 11);
-    }
-    y += perPage * rowH + 6;
-  };
+      text(PATTERN_LABELS_PT[p], x, ry);
+      doc.setFont("helvetica", "bold");
+      const tagX = x + colW - 90;
+      setText(doc, MUTED);
+      text(`${score}/5`, tagX, ry);
+      setText(doc, cleared ? [16, 185, 129] : [217, 119, 6]);
+      text(cleared ? "OK cleared" : "! rever", tagX + 30, ry);
+    });
+    y += Math.ceil(visiblePatterns.length / 2) * rowH + 8;
+  }
 
-  const paragraph = (text: string) => {
-    if (!text || text === "—") return;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    setText(doc, INK);
-    const lines = doc.splitTextToSize(text, W - M * 2);
-    for (const line of lines) {
-      if (y > H - 60) {
-        doc.addPage();
-        y = M;
+  // ---------- Red flags ----------
+  const accs: RFAcc[] = plan?.red_flag_accommodations ?? [];
+  const flagsFromAnalyses = new Set<string>();
+  for (const a of Object.values(sectionAnalyses ?? {})) {
+    for (const f of a?.red_flags ?? []) flagsFromAnalyses.add(f);
+  }
+  const accMap = new Map(accs.map((a) => [a.flag, a]));
+  const allFlags = Array.from(new Set([...accs.map((a) => a.flag), ...flagsFromAnalyses]));
+
+  if (allFlags.length > 0) {
+    ensure(60);
+    sectionTitle("Sinais de alerta");
+    const SEV: Record<string, number> = { AVOID: 0, MODIFY: 1, MONITOR: 2, ACCOMMODATE: 3 };
+    allFlags.sort((a, b) => (SEV[accMap.get(a)?.strategy ?? ""] ?? 4) - (SEV[accMap.get(b)?.strategy ?? ""] ?? 4));
+    for (const f of allFlags) {
+      ensure(20);
+      const acc = accMap.get(f);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      setText(doc, INK);
+      text(`• ${f}`, M, y);
+      if (acc?.strategy) {
+        const c = STRATEGY_COLOR[acc.strategy] ?? MUTED;
+        const pillW = doc.getTextWidth(acc.strategy) + 14;
+        setFill(doc, c);
+        doc.roundedRect(W - M - pillW, y - 9, pillW, 13, 6, 6, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        setText(doc, [255, 255, 255]);
+        text(acc.strategy, W - M - pillW / 2, y, { align: "center" });
       }
-      doc.text(line, M, y);
-      y += 12;
+      y += 14;
     }
-    y += 4;
-  };
+    y += 6;
+  }
 
-  // ---------- Demographics & goals ----------
-  sectionTitle(tr("pdf.section_overview", "Overview"));
-  kv(
-    [
-      [tr("pdf.primary_goal", "Primary goal"), safe(assessment?.primary_goal)],
-      [tr("pdf.experience", "Experience"), safe(assessment?.experience_level)],
-      [tr("pdf.training_days", "Days/week"), safe(assessment?.training_days_per_week)],
-      [tr("pdf.session_duration", "Session (min)"), safe(assessment?.session_duration_minutes)],
-      [tr("pdf.location", "Location"), safe(
-        Array.isArray(assessment?.training_location)
-          ? assessment.training_location.join(", ")
-          : assessment?.training_location,
-      )],
-      [tr("pdf.years_training", "Years training"), safe(assessment?.years_training)],
-    ],
-    3,
-  );
+  // =========================================================================
+  // PAGE 2 — IMPACT ON PRESCRIPTION
+  // =========================================================================
+  doc.addPage();
+  y = M;
 
-  // ---------- Readiness / risk ----------
-  sectionTitle(tr("pdf.section_readiness", "Readiness & risk"));
-  kv(
-    [
-      [tr("pdf.parq", "PAR-Q+"), assessment?.parq_passed === false ? tr("pdf.parq_flagged", "Flagged") : tr("pdf.parq_clear", "Cleared")],
-      [tr("pdf.acsm_risk", "ACSM risk"), safe(assessment?.acsm_risk_category)],
-      [tr("pdf.bp", "BP (mmHg)"), assessment?.systolic_bp_mmhg && assessment?.diastolic_bp_mmhg ? `${assessment.systolic_bp_mmhg}/${assessment.diastolic_bp_mmhg}` : "—"],
-      [tr("pdf.rhr", "Resting HR"), safe(assessment?.resting_heart_rate)],
-    ],
-    4,
-  );
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  setText(doc, INK);
+  text("Impacto na prescrição", M, y);
+  y += 6;
+  setDraw(doc, ACCENT);
+  doc.setLineWidth(1.2);
+  doc.line(M, y, M + 36, y);
+  y += 16;
 
-  // ---------- Lifestyle ----------
-  sectionTitle(tr("pdf.section_lifestyle", "Lifestyle"));
-  kv(
-    [
-      [tr("pdf.sleep", "Sleep (1-10)"), safe(assessment?.sleep_quality)],
-      [tr("pdf.stress", "Stress (1-10)"), safe(assessment?.stress_level)],
-      [tr("pdf.hydration", "Water (glasses)"), safe(assessment?.hydration_glasses_per_day)],
-      [tr("pdf.capacity_vs_pb", "Capacity vs PB"), safe(assessment?.current_capacity_vs_pb)],
-    ],
-    4,
-  );
-
-  // ---------- Movement screen ----------
-  sectionTitle(tr("pdf.section_movement", "Movement screen (1-5)"));
-  kv(
-    [
-      [tr("pdf.squat", "Squat depth"), safe(assessment?.squat_depth_score)],
-      [tr("pdf.hinge", "Hip hinge"), safe(assessment?.hip_hinge_score)],
-      [tr("pdf.overhead", "Overhead reach"), safe(assessment?.overhead_reach_score)],
-      [tr("pdf.sl_balance", "Single-leg balance"), safe(assessment?.single_leg_balance_score)],
-    ],
-    4,
-  );
-
-  // ---------- Notes (only if present) ----------
-  const notes: Array<[string, string]> = [
-    [tr("pdf.injuries", "Injuries"), assessment?.injuries],
-    [tr("pdf.medical", "Medical conditions"), assessment?.medical_conditions],
-    [tr("pdf.preferences", "Preferences"), assessment?.preferences],
-    [tr("pdf.imbalances", "Known imbalances"), assessment?.known_imbalances],
-  ].filter(([, v]) => v && String(v).trim().length > 0) as Array<[string, string]>;
-
-  if (notes.length > 0) {
-    sectionTitle(tr("pdf.section_notes", "Notes"));
-    for (const [label, value] of notes) {
+  if (!plan?.programming_variables) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    setText(doc, MUTED);
+    const lines = doc.splitTextToSize(
+      "Plano ainda não gerado — assim que aprovar o briefing, esta secção mostra como cada decisão de programação se liga a esta avaliação.",
+      W - M * 2,
+    );
+    doc.text(lines, M, y);
+    y += lines.length * 13;
+  } else {
+    const pv = plan.programming_variables;
+    sectionTitle("Variáveis programadas");
+    const kvReason = (label: string, value: string, reason: string) => {
+      ensure(40);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
       setText(doc, MUTED);
-      if (y > H - 60) { doc.addPage(); y = M; }
-      doc.text(label.toUpperCase(), M, y);
-      y += 11;
-      paragraph(String(value));
+      text(label.toUpperCase(), M, y);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      setText(doc, INK);
+      text(value, M + 160, y);
+      y += 12;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      setText(doc, MUTED);
+      const lines = doc.splitTextToSize(ascii(`porque ${reason}`), W - M * 2 - 160);
+      doc.text(lines, M + 160, y);
+      y += Math.max(12, lines.length * 11) + 4;
+    };
+
+    if (pv.rpe_ceiling != null) {
+      kvReason("RPE máx", String(pv.rpe_ceiling), rpeReason(Number(pv.rpe_ceiling), assessment));
+    }
+    if (pv.wave_model) {
+      kvReason("Modelo de onda", pv.wave_model, waveReason(pv.wave_model));
+    }
+    if (pv.deload_frequency) {
+      kvReason("Deload", pv.deload_frequency, deloadReason(pv.deload_frequency));
+    }
+    if (pv.intensity_volume_tradeoff) {
+      kvReason("Volume vs intensidade", pv.intensity_volume_tradeoff.replace(/_/g, " "), tradeoffReason(pv.intensity_volume_tradeoff));
+    }
+    if (pv.training_split) {
+      kvReason("Divisão semanal", pv.training_split.replace(/_/g, " "), "estrutura semanal escolhida com base em dias/semana e local de treino");
+    }
+
+    // Per-flag accommodations
+    if (accs.length > 0) {
+      sectionTitle("Acomodações por sinal de alerta");
+      for (const acc of accs) {
+        ensure(36);
+        const c = STRATEGY_COLOR[acc.strategy] ?? MUTED;
+        // Pill on the left
+        const pillW = doc.getTextWidth(acc.strategy) + 14;
+        setFill(doc, c);
+        doc.roundedRect(M, y - 9, pillW, 13, 6, 6, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        setText(doc, [255, 255, 255]);
+        text(acc.strategy, M + pillW / 2, y, { align: "center" });
+        // Flag name to the right
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        setText(doc, INK);
+        text(acc.flag, M + pillW + 8, y);
+        y += 14;
+        if (acc.detail) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          setText(doc, INK);
+          const lines = doc.splitTextToSize(ascii(acc.detail), W - M * 2 - 12);
+          for (const l of lines) {
+            ensure(20);
+            text(l, M + 12, y);
+            y += 11;
+          }
+        }
+        y += 6;
+      }
     }
   }
 
   // ---------- SMART goal ----------
   if (assessment?.smart_specific || assessment?.smart_measurable || assessment?.smart_deadline) {
-    sectionTitle(tr("pdf.section_smart", "SMART goal"));
-    kv(
-      [
-        [tr("pdf.smart_specific", "Specific"), safe(assessment?.smart_specific)],
-        [tr("pdf.smart_measurable", "Measurable"), safe(assessment?.smart_measurable)],
-        [tr("pdf.smart_deadline", "Deadline"), fmtDate(assessment?.smart_deadline)],
+    ensure(60);
+    sectionTitle("Objetivo SMART");
+    const fields: Array<[string, string]> = [
+      ["Específico", safe(assessment?.smart_specific)],
+      ["Mensurável", safe(assessment?.smart_measurable)],
+      ["Prazo", fmtDate(assessment?.smart_deadline)],
+    ];
+    for (const [label, value] of fields) {
+      if (value === "—") continue;
+      ensure(30);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      setText(doc, MUTED);
+      text(label.toUpperCase(), M, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      setText(doc, INK);
+      const lines = doc.splitTextToSize(ascii(value), W - M * 2 - 80);
+      doc.text(lines, M + 80, y);
+      y += Math.max(12, lines.length * 11) + 4;
+    }
+  }
+
+  // =========================================================================
+  // PAGE 3 — RAW DATA (only fields that have values)
+  // =========================================================================
+  const rawSections: Array<{ title: string; rows: Array<[string, string]> }> = [
+    {
+      title: "Visão geral",
+      rows: [
+        ["Objetivo", safe(assessment?.primary_goal)],
+        ["Experiência", safe(assessment?.experience_level)],
+        ["Dias/semana", safe(assessment?.training_days_per_week)],
+        ["Sessão (min)", safe(assessment?.session_duration_minutes)],
+        ["Local", safe(Array.isArray(assessment?.training_location) ? assessment.training_location.join(", ") : assessment?.training_location)],
+        ["Anos a treinar", safe(assessment?.years_training)],
       ],
-      3,
-    );
+    },
+    {
+      title: "Prontidão e risco",
+      rows: [
+        ["PAR-Q+", assessment?.parq_passed === false ? "Sinalizado" : assessment?.parq_passed === true ? "Aprovado" : "—"],
+        ["TA (mmHg)", assessment?.systolic_bp_mmhg && assessment?.diastolic_bp_mmhg ? `${assessment.systolic_bp_mmhg}/${assessment.diastolic_bp_mmhg}` : "—"],
+        ["FC repouso", safe(assessment?.resting_heart_rate)],
+      ],
+    },
+    {
+      title: "Estilo de vida",
+      rows: [
+        ["Sono (1-10)", safe(assessment?.sleep_quality)],
+        ["Stress (1-10)", safe(assessment?.stress_level)],
+        ["Água (copos)", safe(assessment?.hydration_glasses_per_day)],
+      ],
+    },
+  ];
+
+  const filtered = rawSections
+    .map((s) => ({ ...s, rows: s.rows.filter(([, v]) => v && v !== "—") }))
+    .filter((s) => s.rows.length > 0);
+
+  if (filtered.length > 0) {
+    doc.addPage();
+    y = M;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    setText(doc, INK);
+    text("Dados brutos", M, y);
+    y += 6;
+    setDraw(doc, ACCENT);
+    doc.setLineWidth(1.2);
+    doc.line(M, y, M + 36, y);
+    y += 16;
+
+    for (const sec of filtered) {
+      sectionTitle(sec.title);
+      const cols = 3;
+      const cw = (W - M * 2) / cols;
+      const rh = 24;
+      const perPage = Math.ceil(sec.rows.length / cols);
+      for (let i = 0; i < sec.rows.length; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = M + col * cw;
+        const ry = y + row * rh;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        setText(doc, MUTED);
+        text(sec.rows[i][0].toUpperCase(), x, ry);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        setText(doc, INK);
+        const valLines = doc.splitTextToSize(ascii(sec.rows[i][1]), cw - 8);
+        doc.text(valLines.slice(0, 1), x, ry + 11);
+      }
+      y += perPage * rh + 6;
+    }
   }
 
   // ---------- Footer ----------
@@ -1374,12 +1695,8 @@ export function renderAssessmentPdf({ assessment, client, t }: RenderAssessmentA
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
     setText(doc, MUTED);
-    doc.text(
-      tr("pdf.confidential", "Confidential — for trainer & client use only"),
-      M,
-      H - 22,
-    );
-    doc.text(`${i} / ${pageCount}`, W - M, H - 22, { align: "right" });
+    text("Confidencial — uso exclusivo do treinador e cliente", M, H - 22);
+    text(`${i} / ${pageCount}`, W - M, H - 22, { align: "right" });
   }
 
   const datePart = (assessment?.performed_on ?? new Date().toISOString().slice(0, 10)).slice(0, 10);
