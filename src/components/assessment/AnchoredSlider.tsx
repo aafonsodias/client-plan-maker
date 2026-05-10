@@ -21,6 +21,7 @@ export function AnchoredSlider({
   step = 1,
   anchors,
   trailing,
+  unit,
 }: {
   label?: string;
   value: number | null | undefined;
@@ -31,6 +32,8 @@ export function AnchoredSlider({
   anchors: SliderAnchor[];
   /** Optional element rendered to the right of the label (e.g. HelpPopover). */
   trailing?: React.ReactNode;
+  /** Optional unit suffix shown next to the value (e.g. "h"). When omitted, "v/max" is shown. */
+  unit?: string;
 }) {
   const v = typeof value === "number" ? value : Math.round((min + max) / 2);
   const anchor = anchors.find((a) => v <= a.upTo) ?? anchors[anchors.length - 1];
@@ -43,7 +46,7 @@ export function AnchoredSlider({
             {trailing}
           </div>
           <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-            {v}/{max}
+            {unit ? `${v}${unit}` : `${v}/${max}`}
           </span>
         </div>
       )}

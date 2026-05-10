@@ -2626,7 +2626,7 @@ function ClientDetail() {
             </div>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -2729,24 +2729,29 @@ function ClientDetail() {
             )}
           </SectionBlock>
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}/10 · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
+          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}h · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
             <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <AnchoredSlider
-                label="Como anda o sono?"
-                value={Number(assessment.sleep_quality) || 5}
+                label="Horas de sono médias por noite"
+                value={Number(assessment.sleep_quality) || 7}
                 onChange={(v) => setAssessment({ ...assessment, sleep_quality: v as any })}
+                min={4}
+                max={10}
+                step={1}
+                unit="h"
                 trailing={
                   <HelpPopover label="Sono">
-                    <p>Avalia a qualidade média das últimas 4 semanas (PSQI item global).
-                    Sono mau prediz pior recuperação e maior risco de lesão.</p>
+                    <p>Média de horas dormidas por noite nas últimas 4 semanas.
+                    Menos de 6h prediz pior recuperação e maior risco de lesão.</p>
                   </HelpPopover>
                 }
                 anchors={[
-                  { upTo: 2, label: "Mau — acorda exausto, várias noites por semana" },
-                  { upTo: 4, label: "Irregular — custa adormecer ou acorda a meio" },
-                  { upTo: 6, label: "Razoável — algumas noites boas, outras nem por isso" },
-                  { upTo: 8, label: "Bom — dorme bem na maioria das noites" },
-                  { upTo: 10, label: "Excelente — descansa profundamente todas as noites" },
+                  { upTo: 4, label: "≤4h — privação severa, recuperação muito comprometida" },
+                  { upTo: 5, label: "5h — défice marcado, ajustar volume em baixa" },
+                  { upTo: 6, label: "6h — limite mínimo, recuperação parcial" },
+                  { upTo: 7, label: "7h — adequado para a maioria dos adultos" },
+                  { upTo: 8, label: "8h — óptimo, boa janela de recuperação" },
+                  { upTo: 10, label: "9h+ — descanso amplo" },
                 ]}
               />
               <AnchoredSlider
@@ -3003,11 +3008,6 @@ function ClientDetail() {
           </SectionBlock>
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)} footer={isSectionComplete("performance", assessment) ? <CompletionStrip text={t("performance_block.complete", { summary: `FC ${assessment.resting_heart_rate ?? "—"} bpm · ${assessment.ext_cardio_test ?? "sem teste"}` })} description={t("performance_block.complete_meaning")} /> : null}>
-            <div className="mb-2 flex justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
-              </Button>
-            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <MeasureField
                 label={t("performance_block.rhr")}
@@ -3044,7 +3044,14 @@ function ClientDetail() {
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
               ) : null}
               {showAdvancedPerformance && (
-                <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                <>
+                  <div className="sm:col-span-2 flex justify-end">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
+                      <Plus className="mr-1.5 h-3.5 w-3.5" /> Dinamómetro de preensão
+                    </Button>
+                  </div>
+                  <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                </>
               )}
             </div>
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">

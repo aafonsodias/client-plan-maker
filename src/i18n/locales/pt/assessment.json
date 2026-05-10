@@ -409,7 +409,7 @@
     "max_lifts_help": "Cargas máximas para 1 repetição (1RM) ou estimativa recente. Não obrigatório — se não souber, deixe em branco. Use abreviaturas: SQ = agachamento, BP = supino, DL = peso morto, OHP = press militar."
   },
   "performance_block": {
-    "title": "Marcadores de performance",
+    "title": "Saúde cardiovascular",
     "hint": "Linha de base cardiovascular e condicionamento.",
     "rhr": "FC repouso (bpm)",
     "rhr_hint": "Medida ao acordar, em decúbito.",
