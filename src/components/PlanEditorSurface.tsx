@@ -30,7 +30,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft, generatePlanWeek, regeneratePlanSummary } from "@/server/plan.functions";
+import { generatePlanWeek, regeneratePlanSummary } from "@/server/plan.functions";
 import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
