@@ -30,6 +30,7 @@ export function ThisWeekHero({
   zeroState,
   primaryAction,
   secondaryAction,
+  assessmentPdf,
   bare = false,
 }: {
   plan: {
@@ -45,11 +46,14 @@ export function ThisWeekHero({
   primaryAction: HeroPrimaryAction;
   /** Optional secondary action shown next to the primary (ghost style). */
   secondaryAction?: HeroPrimaryAction;
+  /** Optional sibling chip to download the client's assessment PDF. */
+  assessmentPdf?: { onDownload: () => void | Promise<void> };
   /** When true, omit the outer card chrome (used when embedded in the Protocolo card). */
   bare?: boolean;
 }) {
   const [selectedWeek, setSelectedWeek] = useState(defaultWeek);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingAssessment, setDownloadingAssessment] = useState(false);
 
   if (zeroState || !plan) {
     if (bare) {
@@ -143,6 +147,30 @@ export function ThisWeekHero({
                 onSelect={setSelectedWeek}
                 compact
               />
+            )}
+            {assessmentPdf && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (downloadingAssessment) return;
+                  setDownloadingAssessment(true);
+                  const tId = toast.loading("A preparar PDF da avaliação…");
+                  try {
+                    await assessmentPdf.onDownload();
+                    toast.success("PDF descarregado.", { id: tId });
+                  } catch (err: any) {
+                    toast.error(err?.message ?? "Falha a gerar PDF.", { id: tId });
+                  } finally {
+                    setDownloadingAssessment(false);
+                  }
+                }}
+                disabled={downloadingAssessment}
+                className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/[0.07] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sky-300/90 hover:bg-sky-500/15 disabled:opacity-60"
+                title="Descarregar PDF da avaliação"
+              >
+                {downloadingAssessment ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Avaliação · PDF
+              </button>
             )}
             <button
               type="button"

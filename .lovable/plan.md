@@ -1,80 +1,67 @@
 ## Goal
 
-On `/clients/$id`, the plan card (`ThisWeekHero`) should expose the same tabs as the dedicated plan editor — **View · Logbook · Results · Progress** — so the trainer never has to leave the client page to consult or edit the active block.
+Surface the **assessment summary PDF** download right next to the **plan PDF** chip on the `ThisWeekHero` (top of `/clients/$id`), so both documents (avaliação + plano) sit side-by-side in the same place.
 
-Today only two CTAs render ("Abrir editor" → `/plans/$planId`, "Abrir logbook do cliente" → `/log/$token`). The user wants those collapsed into an inline tabbed surface right under the hero.
-
-## Constraint
-
-`PlanEditor` in `src/routes/plans.$planId.tsx` is ~1960 lines, owns its own data loading, save handlers, dialogs, and stage-redirect logic. Inlining it verbatim would balloon `clients_.$clientId.tsx` (already 6414 lines) and duplicate state. We must extract first.
+Today the assessment PDF exists (`renderAssessmentPdf` in `src/lib/pdf.ts`, already wired in the "⋯" dropdown at line 1714) but is hidden inside a kebab menu, far from the plan controls. The trainer asked: pode estar disponível nesta página, perto do download do PDF do plano?
 
 ## Plan
 
-### Step 1 — Extract `<PlanEditorSurface />`
+### 1. Add a second optional action prop to `ThisWeekHero`
 
-- Move the inner `PlanEditor` body (everything after the route wrapper at line 80) into a new file `src/components/PlanEditorSurface.tsx`.
-- Accept `planId: string` as a prop instead of reading from `Route.useParams()`.
-- Optional `embedded?: boolean` prop:
-  - `true` → omit `<AppShell back=…>`, omit the page-level "Back to all plans" header, render only the tabbed editor (the `view | edit | log | results | progress` switcher already lives inside).
-  - `false` (default) → behaves exactly as today.
-- Stage-in-progress redirect (`brief/blueprint/microcycle/...`) stays inside the surface so embedding still respects it; in embedded mode it renders an inline notice + link instead of `navigate({ replace: true })`.
+`src/components/ThisWeekHero.tsx` — extend the props with:
 
-### Step 2 — Update `/plans/$planId` route
+```ts
+assessmentPdf?: { onDownload: () => void | Promise<void>; loading?: boolean };
+```
 
-Replace the 80-line PlanEditor scaffolding with:
+Render a sibling chip immediately to the left of the existing emerald **PDF · Sem. N** chip. Same pill shape, but tonal (e.g. teal/info) so the two are visually distinct yet clearly a pair:
+
+```
+[ Avaliação · PDF ]   [ PDF · Sem. 1 ]   [W1 W2 W3 W4]   [Abrir logbook]
+```
+
+Keep the chip small (`text-[10px]`, same height) so it fits the condensed hero we just landed.
+
+### 2. Wire it on the client page
+
+`src/routes/clients_.$clientId.tsx` — in the `<ThisWeekHero …/>` call (~line 2010), pass:
+
 ```tsx
-function PlanPage() {
-  const { planId } = Route.useParams();
-  return (
-    <AppShell back={{ to: "/plans", label: "All plans" }}>
-      <PlanEditorSurface planId={planId} />
-    </AppShell>
-  );
+assessmentPdf={
+  assessment
+    ? {
+        onDownload: async () => {
+          const { renderAssessmentPdf } = await import("@/lib/pdf");
+          renderAssessmentPdf({ assessment, client, t: t as any });
+        },
+      }
+    : undefined
 }
 ```
-Pure refactor — no behavior change for the standalone route.
 
-### Step 3 — Embed on `/clients/$id`
+The chip renders only when an `assessment` exists for the client.
 
-In `src/routes/clients_.$clientId.tsx`, right after the `<ThisWeekHero …/>` block (around line 2015) and only when `allApprovedLocal && heroPlan`:
+### 3. Keep the dropdown entry (for now)
 
-```tsx
-<section className="mt-6">
-  <PlanEditorSurface planId={heroPlan.id} embedded />
-</section>
-```
+The "Documentos → Download PDF" item in the "⋯" menu (line 1714) stays as a back-up surface — removing it is a separate decision. Trainers who already learned the dropdown path won't be surprised.
 
-### Step 4 — Simplify the hero CTAs
+### Optional polish
 
-Now that the editor is inline, the redundant "Abrir editor" CTA disappears. Keep:
-- **Primary**: "Abrir logbook do cliente" → `/log/$token` (the only action that genuinely leaves the page).
-- **Secondary**: removed (or kept as "Ver no editor dedicado" pointing to `/plans/$planId` for the trainer who wants the full-screen view — optional).
-
-### Step 5 — Smoke
-
-- `/plans/$planId` renders identically (View · Edit · Log · Results · Progress, save, dialogs).
-- `/clients/$id` for Aspiringbaconeer shows the hero, then the same tab bar inline; switching tabs doesn't navigate away; the URL stays `/clients/<id>`.
-- In-progress phased plans (stage ≠ complete) still redirect to the stage editor when opened standalone, and show an inline "Continue briefing →" link when embedded.
-- Mobile 375px: tab bar wraps, no horizontal overflow.
+- Loading toast on click (mirror the existing plan PDF toast pattern).
+- `title` tooltip: "Descarregar PDF da avaliação".
+- If no assessment is present, no chip — keeps the hero clean.
 
 ## Files touched
 
-```
-NEW   src/components/PlanEditorSurface.tsx       (~1880 lines — moved verbatim from plans.$planId.tsx)
-EDIT  src/routes/plans.$planId.tsx               (collapses to ~30 lines)
-EDIT  src/routes/clients_.$clientId.tsx          (import + 1 inline render + CTA cleanup)
-```
+- `src/components/ThisWeekHero.tsx` — new prop + chip render.
+- `src/routes/clients_.$clientId.tsx` — pass the prop.
 
 No DB / migration / i18n changes.
 
 ## Out of scope
 
-- Refactoring PlanEditor's internal state (state lives where it always lived; we just relocate the component).
-- Tab-state syncing to URL (`?mode=results`) — can come later if useful.
-- Changing the actual tabs or their content.
+- Reorganising the "⋯" menu.
+- A unified "Documentos" panel surfacing every artifact (assessment + plan PDFs + share-token URL). Future round if the list grows.
+- Embedding the assessment as an inline tab inside the editor (different scope; would conflict with View/Edit/Log tabs).
 
-## Risk
-
-Medium. Move is mechanical but the file is large; one missed import or hook call breaks the route. Mitigation: do the extract in a single `git mv`-style copy + delete, keep imports alphabetised, run typecheck before wiring it into `/clients/$id`.
-
-Estimate: ~10–15 credits.
+Estimate: ~3–5 credits.
