@@ -328,11 +328,11 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         )}
       </div>
 
-      {/* Hero strip — tonal separation, single horizontal rhythm on desktop */}
+      {/* Hero strip — tonal separation, content left-anchored to match Today panel */}
       <div className="rounded-2xl bg-muted/40 p-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          {/* Left · week (φ smaller side) */}
-          <div className="min-w-0 sm:flex-[1]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
+          {/* Left · week */}
+          <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {lang === "pt" ? "Esta semana" : "This week"}
             </p>
@@ -343,9 +343,10 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               </span>
             </p>
           </div>
-          {/* Right · revenue + CTA (φ heavier side, asymmetric) */}
+          {/* Right · revenue + CTA — pushed to the right edge only via auto-margin
+              so it can collapse next to the week info on narrower lg widths. */}
           <div
-            className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:flex-[1.618] sm:justify-end"
+            className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:ml-auto"
             title={t("dashboard.revenue_caption")}
           >
             <div className="flex items-center gap-2">
