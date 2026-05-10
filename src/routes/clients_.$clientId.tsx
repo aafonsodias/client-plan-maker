@@ -814,7 +814,7 @@ function ClientDetail() {
 
       const { data: p } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, assessment_completion_pct")
+        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, duration_weeks, share_token, share_token_expires_at, assessment_completion_pct")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
@@ -1453,7 +1453,7 @@ function ClientDetail() {
   const refreshPlans = async () => {
     const { data: p } = await supabase
       .from("workout_plans")
-      .select("id, title, status, updated_at, brief, generation_state, generation_status, assessment_completion_pct")
+      .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, duration_weeks, share_token, share_token_expires_at, assessment_completion_pct")
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false });
     setPlans(p ?? []);
