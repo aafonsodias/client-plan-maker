@@ -278,7 +278,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       {/* Today + This week — golden-ratio split on desktop, stacked on mobile */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
       {/* Today / Needs attention */}
-      <div className="rounded-2xl bg-muted/40 p-4">
+      <div className="rounded-2xl bg-muted/40 p-3">
         <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           <span>{t("dashboard.today.title")}</span>
           <Sparkles className="h-3 w-3 text-amber-500" />
@@ -329,7 +329,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
 
       {/* Hero strip — tonal separation, single horizontal rhythm on desktop */}
-      <div className="rounded-2xl bg-muted/40 px-4 py-3 lg:px-5">
+      <div className="rounded-2xl bg-muted/40 p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           {/* Left · week (φ smaller side) */}
           <div className="min-w-0 sm:flex-[1]">
