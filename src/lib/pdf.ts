@@ -1441,7 +1441,7 @@ export function renderAssessmentPdf({
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       setText(doc, INK);
-      text(PATTERN_LABEL[p], x, ry);
+      text(PATTERN_LABELS_PT[p], x, ry);
       doc.setFont("helvetica", "bold");
       const tagX = x + colW - 90;
       setText(doc, MUTED);
