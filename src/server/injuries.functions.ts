@@ -55,12 +55,22 @@ async function resolveIntake(token: string) {
   if (!client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date()) {
     throw new Error("This link has expired.");
   }
-  const { data: assessment } = await supabaseAdmin
+  let { data: assessment } = await supabaseAdmin
     .from("assessments")
     .select("id")
     .eq("client_id", client.id)
     .maybeSingle();
-  if (!assessment) throw new Error("Assessment not found.");
+  if (!assessment) {
+    // Create an empty assessment shell so injuries can be logged before the
+    // client has saved any other section. saveIntake will populate later.
+    const { data: created, error: createErr } = await supabaseAdmin
+      .from("assessments")
+      .insert({ client_id: client.id, trainer_id: client.trainer_id })
+      .select("id")
+      .single();
+    if (createErr || !created) throw new Error(createErr?.message ?? "Failed to create assessment.");
+    assessment = created;
+  }
   return { client, assessmentId: assessment.id as string };
 }
 
