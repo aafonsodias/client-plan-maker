@@ -842,13 +842,15 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
       {/* Mode tabs — editorial underline row, tonal hover, no card-soup */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border/60">
         <div role="tablist" className="-mb-px flex w-full max-w-full items-center gap-0.5 overflow-x-auto text-[11px] font-semibold uppercase tracking-widest sm:w-auto sm:gap-1">
-          {([
-            { key: "view", label: "View", Icon: Eye },
-            { key: "edit", label: "Edit", Icon: Pencil, title: isPhasedComplete ? "Edit values inline — no re-approval needed" : undefined },
-            { key: "log", label: "Log", Icon: NotebookPen },
-            { key: "results", label: "Resultados", Icon: BarChart3, badge: sessions.length > 0 ? sessions.length : undefined },
-            { key: "progress", label: "Progresso", Icon: TrendingUp, title: tCommon("plan.trend_chart_title") },
-          ] as const).map(({ key, label, Icon, title, badge }) => {
+          {(
+            [
+              { key: "view", label: "View", Icon: Eye },
+              { key: "edit", label: "Edit", Icon: Pencil, title: isPhasedComplete ? "Edit values inline — no re-approval needed" : undefined },
+              { key: "log", label: "Log", Icon: NotebookPen },
+              { key: "results", label: "Resultados", Icon: BarChart3, badge: sessions.length > 0 ? sessions.length : undefined },
+              { key: "progress", label: "Progresso", Icon: TrendingUp, title: tCommon("plan.trend_chart_title") },
+            ] as Array<{ key: Mode; label: string; Icon: typeof Eye; title?: string; badge?: number }>
+          ).map(({ key, label, Icon, title, badge }) => {
             const active = mode === key;
             return (
               <button
