@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useServerFn } from "@tanstack/react-start";
 import {
   GOAL_TEMPLATES,
   GOAL_CATEGORIES,
@@ -8,6 +9,8 @@ import {
   type GoalTemplate,
   type GoalCategory,
 } from "@/lib/goal-templates";
+import { matchAspiration, type SkillAspiration } from "@/lib/skill-aspirations";
+import { logUnmatchedAspiration } from "@/server/aspirations.functions";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,9 +41,12 @@ function durationDeadline(p: (typeof DURATION_PRESETS)[number]): string {
 export function SmartGoalSection({
   value,
   onChange,
+  clientId,
 }: {
   value: SmartGoalValue;
   onChange: (next: SmartGoalValue) => void;
+  /** Required to log unmatched aspirations for founder review. */
+  clientId?: string;
 }) {
   const { t, i18n } = useTranslation("assessment");
   const dateLocale = i18n.language === "pt" ? "pt-PT" : i18n.language === "es" ? "es-ES" : i18n.language === "hi" ? "hi-IN" : "en-GB";
@@ -65,6 +71,50 @@ export function SmartGoalSection({
   const [durationMode, setDurationMode] = useState<string>(initialMode);
 
   const filtered = useMemo(() => GOAL_TEMPLATES.filter((x) => x.category === activeCat), [activeCat]);
+
+  // ── Custom skill aspiration builder ────────────────────────────────────
+  const logAspirationFn = useServerFn(logUnmatchedAspiration);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [aspirationInput, setAspirationInput] = useState("");
+  const [searchedFor, setSearchedFor] = useState<string | null>(null);
+  const [matched, setMatched] = useState<SkillAspiration | null>(null);
+  const [logState, setLogState] = useState<"idle" | "logging" | "logged">("idle");
+
+  function runSearch() {
+    const text = aspirationInput.trim();
+    if (text.length < 3) return;
+    const m = matchAspiration(text);
+    setSearchedFor(text);
+    setMatched(m);
+    setLogState("idle");
+    if (!m && clientId) {
+      setLogState("logging");
+      logAspirationFn({ data: { clientId, text } })
+        .then(() => setLogState("logged"))
+        .catch(() => setLogState("idle"));
+    }
+  }
+
+  function applyAspiration(a: SkillAspiration) {
+    const specific = t(a.specific_key as never) as string;
+    const measurable = t(a.measurable_key as never) as string;
+    const deadline = deadlineFromDuration({ weeks: a.default_weeks });
+    onChange({
+      smart_specific: specific,
+      smart_measurable: measurable,
+      smart_deadline: deadline,
+      primary_goal: "skill",
+    });
+    setManualRevealed(true);
+    setActiveCat("skill");
+    setLastApplied(null);
+    const matchedPreset = DURATION_PRESETS.find((p) => durationDeadline(p) === deadline);
+    setDurationMode(matchedPreset?.id ?? "custom");
+    setBuilderOpen(false);
+    setAspirationInput("");
+    setSearchedFor(null);
+    setMatched(null);
+  }
 
   function applyTemplate(tpl: GoalTemplate) {
     const specific = t(tpl.specific_key as never) as string;
@@ -125,7 +175,9 @@ export function SmartGoalSection({
                 aria-pressed={selected}
                 className={cn(
                   "rounded-full px-3 py-1 text-[11px] font-medium transition-colors",
-                  selected ? "bg-muted/60 text-foreground" : "bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  selected
+                    ? "bg-foreground/10 ring-1 ring-foreground/30 text-foreground"
+                    : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
                 )}
               >
                 {t(`goals.cat.${cat}` as never) as string}
@@ -159,6 +211,98 @@ export function SmartGoalSection({
           );
         })}
       </div>
+
+      {/* Custom skill aspiration builder ─ collapsible deterministic search */}
+      {activeCat === "skill" && (
+        <div className="rounded-md border border-border/50 bg-muted/15 p-2.5">
+          {!builderOpen ? (
+            <button
+              type="button"
+              onClick={() => setBuilderOpen(true)}
+              className="text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              {t("aspirations.builder.open")}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div>
+                <Label className="label-caps text-[10px] text-muted-foreground">
+                  {t("aspirations.builder.label")}
+                </Label>
+                <p className="body-prose text-[10px] text-muted-foreground">
+                  {t("aspirations.builder.hint")}
+                </p>
+              </div>
+              <div className="flex gap-1.5">
+                <Input
+                  className="h-8 flex-1 text-sm"
+                  value={aspirationInput}
+                  onChange={(e) => setAspirationInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runSearch(); } }}
+                  placeholder={t("aspirations.builder.placeholder") as string}
+                />
+                <button
+                  type="button"
+                  onClick={runSearch}
+                  disabled={aspirationInput.trim().length < 3}
+                  className="rounded-md bg-foreground/90 px-3 py-1 text-[11px] font-medium text-background hover:bg-foreground disabled:opacity-40"
+                >
+                  {t("aspirations.builder.search")}
+                </button>
+              </div>
+
+              {searchedFor && matched && (
+                <div className="space-y-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/[0.05] p-2.5">
+                  <p className="label-caps text-[10px] text-emerald-700 dark:text-emerald-400">
+                    {t("aspirations.builder.matched")}
+                  </p>
+                  <p className="body-prose text-[12px] text-foreground">
+                    {t(matched.specific_key as never) as string}
+                  </p>
+                  <p className="body-prose text-[11px] text-muted-foreground">
+                    {t(matched.measurable_key as never) as string}
+                  </p>
+                  <p className="body-prose text-[10px] italic text-muted-foreground">
+                    {t(matched.prerequisite_note_key as never) as string}
+                  </p>
+                  <div className="flex gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => applyAspiration(matched)}
+                      className="rounded-md bg-foreground/90 px-2.5 py-1 text-[11px] font-medium text-background hover:bg-foreground"
+                    >
+                      {t("aspirations.builder.apply")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setSearchedFor(null); setMatched(null); }}
+                      className="rounded-md bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-foreground hover:bg-muted/60"
+                    >
+                      {t("aspirations.builder.cancel")}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {searchedFor && !matched && (
+                <div className="space-y-1 rounded-md border border-amber-500/30 bg-amber-500/[0.05] p-2.5">
+                  <p className="label-caps text-[10px] text-amber-700 dark:text-amber-400">
+                    {t("aspirations.builder.unmatched_title")}
+                  </p>
+                  <p className="body-prose text-[11px] text-foreground">
+                    {t("aspirations.builder.unmatched_body", { text: searchedFor })}
+                  </p>
+                  {logState === "logged" && (
+                    <p className="body-prose text-[10px] italic text-muted-foreground">
+                      {t("aspirations.builder.logged")}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Pending overwrite confirmation */}
       {pendingTpl && (
