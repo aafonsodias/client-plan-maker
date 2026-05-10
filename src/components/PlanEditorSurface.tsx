@@ -52,10 +52,8 @@ import { summarizeRotation } from "@/lib/rotation-audit";
 import type { BlockSummary } from "@/lib/block-feedback";
 import { ValidationReport } from "@/components/ValidationReport";
 import { HumanReviewBanner } from "@/components/HumanReviewBanner";
-import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
 import { ResultsPanel } from "@/components/ResultsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
-import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { markPlanFinished } from "@/server/blocks-manual.functions";
 import { ImportLogDialog } from "@/components/ImportLogDialog";
 import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
@@ -358,10 +356,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
           <span className="inline-flex items-center gap-2 normal-case tracking-normal">
             <SettingsIcon className="h-3.5 w-3.5" />
-            <span className="font-semibold uppercase tracking-widest">Detalhes & ações do plano</span>
-            {plan?.title && (
-              <span className="ml-1 truncate text-[11px] font-normal text-muted-foreground/80">— {plan.title}</span>
-            )}
+            <span className="font-semibold uppercase tracking-widest">Detalhes & acções do plano</span>
           </span>
           <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
         </summary>
@@ -544,7 +539,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             clientPhone={client?.phone ?? null}
             planTitle={plan.title}
           />
-          {client?.id && <PlanAssessmentSheet clientId={client.id} />}
           <Button
             size="sm"
             onClick={exportPdf}
@@ -555,36 +549,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           </Button>
           <ImportLogDialog planId={planId} plan={data} />
           <SaveAsTemplateDialog planId={planId} defaultName={plan.title} />
-          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8"
-              disabled={regenSummaryBusy}
-              title={tCommon("plan.rewrite_summary_title")}
-              onClick={async () => {
-                setRegenSummaryBusy(true);
-                try {
-                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
-                  if (r?.ok && r?.summary) {
-                    setPlan({ ...plan, summary: r.summary });
-                    toast.success("Resumo regenerado a partir do brief.");
-                  } else {
-                    toast.error(r?.error ?? "Falhou regenerar resumo.");
-                  }
-                } finally {
-                  setRegenSummaryBusy(false);
-                }
-              }}
-            >
-              {regenSummaryBusy ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Re-gerar resumo
-            </Button>
-          )}
           {isPhasedComplete && (
             <Button
               size="sm"
@@ -636,31 +600,57 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           >
             <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
           </Button>
-          <Link to="/settings" className="group flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-xs hover:border-accent">
-            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded border border-dashed border-border bg-background">
-              {logoUrl ? <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" /> : <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-            </div>
-            <span className="text-muted-foreground group-hover:text-foreground">Branding</span>
-          </Link>
         </div>
       </div>
 
       {/* Summary — collapsible */}
       <div className="rounded-lg border border-border bg-card/50">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen((o) => !o)}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            Summary {plan.summary?.trim() ? "" : "(empty)"}
-          </span>
-          {summaryOpen ? (
-            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex w-full items-center justify-between gap-2 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setSummaryOpen((o) => !o)}
+            className="flex flex-1 items-center justify-between gap-2 text-left"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Summary {plan.summary?.trim() ? "" : "(empty)"}
+            </span>
+            {summaryOpen ? (
+              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
+          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[10px]"
+              disabled={regenSummaryBusy}
+              title={tCommon("plan.rewrite_summary_title")}
+              onClick={async () => {
+                setRegenSummaryBusy(true);
+                try {
+                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
+                  if (r?.ok && r?.summary) {
+                    setPlan({ ...plan, summary: r.summary });
+                    toast.success("Resumo regenerado a partir do brief.");
+                  } else {
+                    toast.error(r?.error ?? "Falhou regenerar resumo.");
+                  }
+                } finally {
+                  setRegenSummaryBusy(false);
+                }
+              }}
+            >
+              {regenSummaryBusy ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1 h-3 w-3" />
+              )}
+              Re-gerar
+            </Button>
           )}
-        </button>
+        </div>
         {summaryOpen && (
           <div className="border-t border-border px-3 pb-3 pt-2 animate-fade-in">
             {client && (
@@ -744,72 +734,22 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             sessions={sessions as any}
             fullyLogged={isPlanFullyLogged(plan, sessions.length)}
             allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
+            completionState={(plan as any).completion_state}
+            onMarkFinished={async () => {
+              const r: any = await markFinishedFn({ data: { planId, archive: false } });
+              if (r?.ok) {
+                toast.success(tCommon("plan.marked_complete"));
+                setPlan({ ...plan, completion_state: "finished_logging" });
+              } else {
+                toast.error(r?.error ?? tCommon("plan.mark_complete_failed"));
+              }
+            }}
           />
           {/* R66: deterministic next-week generator, gated by adherence ≥ 80%. */}
           <NextWeekCard
             planId={planId}
             onCreated={async () => { await reloadPlanDays(); await reloadSessions(); }}
           />
-        {(() => {
-          const fullyLogged = isPlanFullyLogged(plan, sessions.length);
-          const wrapClass = fullyLogged
-            ? "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs"
-            : "flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs";
-          return (
-        <div className={wrapClass}>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground inline-flex items-center gap-1.5">
-              {fullyLogged && <Sparkles className="h-3.5 w-3.5 text-amber-400" />}
-              Bloco {(plan as any).block_number ?? 1}
-              {fullyLogged
-                ? tCommon("plan.fully_completed")
-                : (plan as any).completion_state === "finished_logging"
-                ? tCommon("plan.completed_by_trainer")
-                : sessions.length > 0
-                ? ` · ${sessions.length} sessão(ões) registada(s)`
-                : " · pronto para fechar"}
-            </p>
-            <p className="mt-0.5 text-muted-foreground">
-              {fullyLogged
-                ? `Pronto para fechar e desenhar o Bloco ${((plan as any).block_number ?? 1) + 1}? A nota de transição traz adesão e variação de RPE pré-preenchidas — você assina.`
-                : `Arquive este bloco e desenhe o Bloco ${((plan as any).block_number ?? 1) + 1}. Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.`}
-            </p>
-          </div>
-          {(plan as any).completion_state !== "finished_logging" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                const r: any = await markFinishedFn({ data: { planId, archive: false } });
-                if (r?.ok) {
-                  toast.success(tCommon("plan.marked_complete"));
-                  setPlan({ ...plan, completion_state: "finished_logging" });
-                } else {
-                  toast.error(r?.error ?? tCommon("plan.mark_complete_failed"));
-                }
-              }}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Marcar como concluído
-            </Button>
-          )}
-          <BlockTransitionDialog
-            priorPlanId={planId}
-            currentBlockNumber={(plan as any).block_number ?? 1}
-            allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
-            trigger={
-              <Button
-                size="sm"
-                className={fullyLogged ? "bg-amber-500 text-black hover:bg-amber-400" : undefined}
-              >
-                <PlayCircle className="mr-2 h-4 w-4" />
-                Iniciar Bloco {((plan as any).block_number ?? 1) + 1}
-              </Button>
-            }
-          />
-        </div>
-          );
-        })()}
         </>
       )}
 
@@ -942,11 +882,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             }}
           />
           <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-[var(--shadow-elegant)] backdrop-blur">
-            <Button onClick={exportPdf}>
-              <Download className="mr-2 h-4 w-4" /> Export PDF
-            </Button>
-          </div>
         </>
       ) : mode === "results" ? (
         <>
