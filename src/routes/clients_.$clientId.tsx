@@ -1967,7 +1967,17 @@ function ClientDetail() {
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
           concludeBusy={busy || phasedBusy}
-          onConclude={readyPlanForAssessment ? undefined : () => {
+          onConclude={readyPlanForAssessment ? () => {
+            // Plano já existe — Concluir leva à síntese (não regenera).
+            setSynthesisOpen(true);
+            if (typeof window !== "undefined") {
+              requestAnimationFrame(() => {
+                document
+                  .getElementById("sintese-da-avaliacao")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }
+          } : () => {
             const isHigh = riskCategory === "high";
             const blocked = parqYes || isHigh;
             if (blocked) {
