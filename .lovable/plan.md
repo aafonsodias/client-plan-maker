@@ -1,89 +1,138 @@
 
-## 1. Where is the mobile-logbook navigation triggered from /clients/$id?
+# Diagnostic — Aspiringbaconeer plan `9e588c89…`
 
-**File:** `src/routes/clients_.$clientId.tsx`
-**Lines:** 1938–1957 (inside the `primaryAction` builder for `<ThisWeekHero/>`)
+## Snapshot of the plan row
 
-Relevant excerpt:
+```
+generation_meta = {"intensity_appetite": "padrao"}     ← no `cockpit`, no `tier`
+programming_variables.wave_model = "undulating"        ← cockpit_preset = "custom"
+programming_variables.tier        = (null)
+brief.tier                        = (null)
+brief.intensity_appetite          = "padrao"
+brief.red_flags = 4 items (anticoagulant, beta-blocker, statin, ACSM moderate)
+status = ready, generation_status = complete, progression_plan has 40 rows
+```
+
+The 4-week mesocycle was generated end-to-end (Stage 1→5), so all the failures are inside the deterministic pipeline, not the AI.
+
+---
+
+## PROBLEM A — RPE never moves across W1–W4
+
+### Root cause: `proposeProgressions` collapses every exercise to ≤ 2 rows, killing RPE deltas and the deload
+
+`src/server/phased/stage4-progressions.functions.ts` lines 138–157:
+
 ```ts
-} else if (allApprovedLocal && heroPlan) {
-  primaryAction = {
-    label: "Abrir primeiro log",
-    icon: <ArrowRight className="h-4 w-4" />,
-    intent: "log",
-    onClick: async () => {
-      const token = existingToken ?? (await ensureShareTokenFn(...)).share_token;
-      ...
-      navigate({ to: "/log/$token", params: { token } });   // line 1952
-    },
-  };
+const dimPriority = ["load", "reps", "intensity_rpe", "sets"] as const;
+const used = new Set<string>();
+for (const dim of dimPriority) {
+  ...
+  if (used.size >= 2) break;     // ← hard cap of 2 dimensions per exercise
 }
 ```
 
-This is the only "Logbook"-flavoured CTA on the client page once the plan is fully approved. Target = `/log/$token` (mobile client surface). There is **no** trainer-facing "Open editor / Logbook PT" button anywhere on `/clients/$id` — the only `/plans/$planId` link in this file is the fallback `Abrir plano` at line 1959, which only appears when stages aren't all approved (`else if (heroPlan)`), so the moment a plan is finalized the trainer loses any path to the 5-tab editor from this page.
+For a compound exercise the per-week deltas from `deltaForExercise` are:
+- W2 (+volume): `reps +1`, `intensity_rpe +0.5`
+- W3 (+intensity): `load +2.5kg`, `intensity_rpe +0.5`
+- W4 (deload): `intensity_rpe −1.5`, `sets −1`
 
-## 2. Does `/plans/$planId` still expose the 5 tabs?
+Iteration: `load` (W3 only) → row, `reps` (W2 only) → row, used == 2 → BREAK. The `intensity_rpe` and `sets` rows are never written.
 
-Yes. `src/routes/plans.$planId.tsx` is intact:
-- Line 86: `type Mode = "view" | "edit" | "log" | "results" | "progress";`
-- Line 104: `useState<Mode>("view")`
-- Lines 864–896: 5 tab buttons (`view`, `edit`, `log`, `results`, `progress`) with `setMode(...)`
-- Auto-lands on `results` once enough sessions logged (line 264).
+DB confirms: progression_plan for `d1_goblet_squat` has exactly 2 rows (load, reps); zero `intensity_rpe`, zero `sets` rows. Across the whole plan, only 9/40 rows are `intensity_rpe` and 9/40 carry a non-empty W4 delta. The deload disappears.
 
-The route renders the trainer editor exactly as documented in `round-mvp-map.txt`. The `log` tab inside it is the trainer's desktop logging table (`LogMode`), distinct from `/log/$token`.
+### Confirmation in `workout_plan_days`
 
-## 3. Minimal proposed change
-
-Add a secondary action **next to** the existing "Abrir primeiro log" CTA (do not replace it — the mobile link is correct for handing to the client). Two viable shapes; recommend **A**:
-
-**A. Add `secondaryAction` on `<ThisWeekHero/>` `primaryAction`-sibling** in `clients_.$clientId.tsx` around lines 1938–1957:
-
-```tsx
-} else if (allApprovedLocal && heroPlan) {
-  primaryAction = {
-    label: "Abrir logbook do cliente",   // mobile link, unchanged behaviour
-    icon: <Smartphone className="h-4 w-4" />,
-    intent: "log",
-    onClick: async () => { ... navigate({ to: "/log/$token", params: { token } }); },
-  };
-  secondaryAction = {
-    label: "Abrir editor",
-    href: `/plans/${heroPlan.id}`,   // lands on view tab; auto-jumps to results when sessions exist
-    icon: <ArrowRight className="h-4 w-4" />,
-  };
-}
+```
+W1 rpe=7 reps=10-12 notes=… 
+W2 rpe=7 reps=10-13 notes=…                      ← +1rep applied (reps row)
+W3 rpe=7 reps=10-12 notes=… (+2.5kg)             ← load row appended to notes
+W4 rpe=7 reps=10-12 notes=…                      ← W4 has nothing to apply
 ```
 
-This requires:
-- a `secondaryAction?: HeroPrimaryAction` prop on `ThisWeekHero` (`src/components/ThisWeekHero.tsx`) rendered as a ghost/outline button to the right of the primary;
-- passing it through at line ~2008 in `clients_.$clientId.tsx`;
-- relabeling the existing CTA to "Abrir logbook do cliente" (or keep "Abrir primeiro log" until first session, then flip to "Abrir logbook do cliente" via `zeroState`).
+`MesocycleTableView.weekTotals` (lines 118–145) reads `ex.rpe` from `plan.weeks[wn]`. Since rpe is identical across all weeks the column header correctly renders "RPE 7" for every column — the header isn't lying, the underlying data is uniform.
 
-Navigation target: simple `/plans/${heroPlan.id}` href (matches the pattern already used at line 1959 and in ClientCockpit). No query/planId param needed — `planId` is the route param.
+A second smaller bug compounds it: even when an `intensity_rpe` row IS produced, `applyDelta` in `stage5-bulkfill.functions.ts` line 36 only mutates current rpe if it already contains the literal `"rpe"` substring. Stage-3 stores rpe as `"7"` (no unit), so the regex misses and the function falls through to the `(+0.5rpe)` append branch — giving us strings like `"7 (+0.5rpe)"` instead of `"7.5"`. That string then breaks `parseRpe` in the table.
 
-**B. Inline trainer link inside the protocol section** (lines 2002–2010): drop a small "Editor · 5 tabs" anchor under `<ThisWeekHero/>`, mirroring the ClientCockpit "Plan strip" (see §4). Lower visual priority but zero changes to ThisWeekHero's API.
+### Minimal fix (Problem A)
 
-Recommendation: **A** — it keeps the two surfaces visually paired (one button per audience), respects the "looks → function → ease" decision order, and matches the mental model the audit describes.
+1. `stage4-progressions.functions.ts` lines 139–156 — emit one row per dimension that has at least one non-empty delta across W2/W3/W4. Drop the `used.size >= 2` break; cap at 4 (one per dimension max). Keeps payload bounded but never silently drops the deload.
+2. `stage5-bulkfill.functions.ts` line 36 — when the unit is `rpe` and the current value is a bare number, increment numerically instead of falling through to the append branch. Same for `kg`/`lb` if `notes` is the load carrier (already works for notes via the `(+x)` append, but Mesocycle ▲/▼ heuristic may mis-read it).
 
-## 4. Does ClientCockpit already have an "Abrir editor" link, and why isn't the same pattern used here?
+No DB migration. Re-run progressions+bulkfill on existing plans to backfill (banner already wired in `MesocycleTableView` lines 251–267).
 
-Yes — `src/components/ClientCockpit.tsx` has it twice:
-- **Line 142** (`stagePanel.planLink`): pill-style `<Link to="/plans/$planId" params={{ planId: plan.id }}>` used for stage-action chips.
-- **Lines 252–266**: the "Plan strip" — full-width `<Link>` row under the ProtocolRail with title + "block N · week x/y · open plan".
+---
 
-This pattern was added in Round 54 specifically for the dashboard's expanded cockpit. It was **never ported to `/clients/$id`** because that page evolved independently around `<ThisWeekHero/>` + the inline 5-stage rail (`mem://principles/no-stage-redirects.md`). When the post-approval state added "Abrir primeiro log" (Round F-something — points to `/log/$token`), it overwrote the `Abrir plano → /plans/$planId` fallback for finalized plans without keeping a trainer-side link.
+## PROBLEM B — Week 1 set cap not applied
 
-Net effect: dashboard cockpit users get both the trainer editor link and the mobile share link; client-page users only get the mobile link once everything is approved. The fix in §3 closes that asymmetry by reintroducing the same `to="/plans/$planId"` link the cockpit already uses.
+### Root cause: tier was resolved differently on every per-day call AND the run that produced the persisted day didn't trigger the cap log
 
-## Files to touch (when implementation lands)
+`generation_log` for this plan:
 
-1. `src/components/ThisWeekHero.tsx` — add optional `secondaryAction?: HeroPrimaryAction` and render it next to `primaryAction`.
-2. `src/routes/clients_.$clientId.tsx` lines 1938–1957 + 2003–2009 — add `secondaryAction = { href: \`/plans/${heroPlan.id}\` }` and pass it through; consider the same secondary on the `else if (heroPlan)` branch at line 1958 for symmetry.
+```
+stage3:day1:rpe_floor  tier=conservative  appetite=conservador  floors{main:6.5,acc:5,carry:5}
+stage3:day2:rpe_floor  tier=conservative  appetite=padrao       floors{main:7,  acc:6,carry:5.5}
+stage3:day3:rpe_floor  tier=advanced      appetite=padrao       floors{main:8,  acc:7,carry:6.5}
+stage3:day5:rpe_floor  tier=advanced      appetite=padrao       floors{main:8,  acc:7,carry:6.5}
+```
 
-No DB / server changes. No i18n schema changes (one new key: `clients.cta.open_editor`).
+Three different tiers (and three different appetites) inside one plan generation. There is **zero** `stage3:dayX:set_cap` log line, so `enforceWeek1SetCap` either ran with `setsCapped == 0` or the eventually-persisted day came from a path that bypassed it.
+
+Per `programming-tier.server.ts`:
+- conservative cap: `{main:3, accessory:2, carry:1}`
+- advanced cap: `{main:3, accessory:3, carry:2}`
+
+DB shows every accessory at 3 sets, no `meta.week1_set_cap_applied` markers. For days 1–2 (conservative, accessory cap = 2) the persisted output is impossible if the cap had run. So the cap step was skipped on the run that won the upsert race, most likely because `resolveTierGuidelines` (line 722) returned `null` or a different tier on the second pass when it re-classified from scratch (no `meta.tier` and no `meta.tier_guidelines` were stamped from the first pass).
+
+User's expectation of "remedial" is also off: with `red_flags.length = 4`, `classifyTier` (line 98) lands on **conservative** — remedial only triggers on `movementFailures >= 5 || prepart.clearance_required`. The reported tier should be conservative.
+
+### Minimal fix (Problem B)
+
+1. `stage3-microcycle.functions.ts` — once `resolveTierGuidelines` returns successfully on the first `runDay` call, persist the result to `workout_plans.generation_meta.tier` + `tier_guidelines` BEFORE spawning the per-day workers. This makes the resolver short-circuit on line 728 for every subsequent day and every regen, killing the per-day drift.
+2. Inside `runDay` (lines 549–567) — log a `stage3:dayX:set_cap_inputs` row regardless of `setsCapped > 0`, so future debugging shows exactly what cap each day saw. Cheap.
+3. Backfill: re-run microcycle for plans where `generation_meta.tier` is missing. Optional one-shot script.
+
+No DB schema change.
+
+---
+
+## PROBLEM C — Card click goes to mobile logbook
+
+### Finding: not actually a bug, mis-attribution
+
+The plan card on `/clients/$id` has:
+- Title (`<Link to="/plans/$planId">` line 124–132 of `ThisWeekHero.tsx`) → trainer editor. Correct.
+- "Semana N · PDF" pill (line 139) → PDF download. Correct.
+- `primaryAction` button — when `allApprovedLocal && heroPlan` (line 1939–1958 of `clients_.$clientId.tsx`) → `/log/$token`. Intentional.
+- `secondaryAction` "Abrir editor" → `/plans/$planId`. Added last round.
+
+`rg "/log/$token"` across `src/` returns exactly one navigate call (line 1953). No card-wide `onClick`, no nested `<Link to="/log">`. The card body is not clickable; only the explicit primary button is.
+
+What the user is probably seeing: the big amber "Abrir logbook do cliente" CTA is the visually dominant element on the card, easy to read as "the card click". The click target is correct for its label.
+
+### Minimal fix (Problem C)
+
+Either:
+- **A. None** — re-label only. Confirm the secondary "Abrir editor" is rendered (line 1959–1963 already does so) and consider promoting it visually (e.g., side-by-side same-size on desktop) so the trainer never feels the only action is the client one.
+- **B. Swap intent** — make `/plans/$planId` the **primary** CTA on `/clients/$id` (trainer surface) and `/log/$token` the **secondary**, since this is the trainer's workspace. Keep the current order for the dashboard ClientCockpit if the audience is mixed.
+
+Recommend **B** — it's one swap of `primaryAction`/`secondaryAction` in lines 1940–1963 and aligns with `mem://principles/no-stage-redirects`: trainer page → trainer surface first.
+
+---
+
+## Files that change (when implementation lands)
+
+```
+src/server/phased/stage4-progressions.functions.ts   (lines 139-156)
+src/server/phased/stage5-bulkfill.functions.ts       (lines 36-49)
+src/server/phased/stage3-microcycle.functions.ts     (resolveTierGuidelines persist, lines ~722-760, 549-567)
+src/routes/clients_.$clientId.tsx                    (lines 1940-1963 — Problem C swap)
+```
+
+No DB migrations. No i18n changes. No breaking schema changes — all 3 fixes are additive on top of existing rows.
 
 ## Out of scope
 
-- Renaming routes or merging the two surfaces.
-- Adding a 6th tab or restructuring `/plans/$planId`.
-- Changing share-token logic.
+- Re-classifying Aspiringbaconeer to remedial (would require re-evaluating classifyTier thresholds, separate round).
+- Cockpit UI changes — the wave_model/preset values were correct; the bug is downstream.
+- Renaming `/log/$token` or merging trainer + client logbooks.

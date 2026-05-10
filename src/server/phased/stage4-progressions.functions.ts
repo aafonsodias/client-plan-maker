@@ -135,15 +135,17 @@ export const proposeProgressions = createServerFn({ method: "POST" })
       const w2 = get(2) ?? [];
       const w3 = get(3) ?? [];
       const w4 = get(4) ?? [];
-      // Collapse onto one row per primary dimension (load > reps > intensity_rpe > sets).
+      // Emit one row per dimension that has at least one non-empty delta
+      // across W2/W3/W4. Previous logic broke after 2 dimensions, which
+      // silently dropped the W4 deload (intensity_rpe + sets) for any
+      // exercise where load/reps had already filled W2/W3. Cap at 4 (one
+      // per dimension) keeps the payload bounded.
       const dimPriority = ["load", "reps", "intensity_rpe", "sets"] as const;
-      const used = new Set<string>();
       for (const dim of dimPriority) {
         const w2v = w2.find((d) => d.dimension === dim)?.value ?? "";
         const w3v = w3.find((d) => d.dimension === dim)?.value ?? "";
         const w4v = w4.find((d) => d.dimension === dim)?.value ?? "";
         if (!w2v && !w3v && !w4v) continue;
-        used.add(dim);
         rows.push({
           exercise_id: ex.id,
           dimension: dim,
@@ -152,7 +154,6 @@ export const proposeProgressions = createServerFn({ method: "POST" })
           week_4_delta: w4v,
           rationale: `${cat} · ${appetite}`,
         });
-        if (used.size >= 2) break;
       }
     }
     const progressionData = { rows };

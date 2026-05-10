@@ -549,23 +549,24 @@ Generate ONLY this single day's session.`;
   const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
     ? enforceWeek1SetCap(floored, guidelines.week1SetCap)
     : { day: floored, setsCapped: 0 };
-  if (setsCapped > 0) {
-    await logGeneration(supabase, {
-      trainer_id: userId,
-      plan_id: planId,
-      stage: `stage3:day${dayIndex}:set_cap`,
-      model_used: "deterministic",
-      input_tokens: 0,
-      output_tokens: 0,
-      cost_usd: 0,
-      zod_passed: true,
-      retry_count: 0,
-      duration_ms: 0,
-      error: null,
-      input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap },
-      output_snapshot: { setsCapped },
-    });
-  }
+  // Always log the set-cap decision (even when 0 sets needed capping) so we
+  // can debug "why is accessory still 3 sets?" without re-running. Records
+  // the resolved tier + cap that the persisted day actually saw.
+  await logGeneration(supabase, {
+    trainer_id: userId,
+    plan_id: planId,
+    stage: `stage3:day${dayIndex}:set_cap`,
+    model_used: "deterministic",
+    input_tokens: 0,
+    output_tokens: 0,
+    cost_usd: 0,
+    zod_passed: true,
+    retry_count: 0,
+    duration_ms: 0,
+    error: null,
+    input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap ?? null },
+    output_snapshot: { setsCapped },
+  });
   if (floorApplied > 0) {
     await logGeneration(supabase, {
       trainer_id: userId,
@@ -760,6 +761,32 @@ async function resolveTierGuidelines(
   return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
 }
 
+/**
+ * Resolve tier guidelines AND persist them to generation_meta on first call,
+ * so every subsequent per-day worker / regen short-circuits on
+ * `meta.tier_guidelines` (line ~728) and shares the SAME tier. Without this,
+ * concurrent days were re-classifying from scratch and the brief's
+ * `intensity_appetite` snapshot drifted between calls — producing the
+ * conservative/advanced split observed for plan 9e588c89 (R-debug).
+ */
+async function resolveAndPersistGuidelines(
+  supabase: any,
+  loadedPlan: LoadedPlan,
+  brief: any,
+  planId: string,
+): Promise<TierGuidelines | null> {
+  const guidelines = await resolveTierGuidelines(supabase, loadedPlan, brief);
+  if (!guidelines) return null;
+  const meta = (loadedPlan.generation_meta as any) ?? {};
+  if (meta.tier_guidelines && meta.tier) return guidelines;
+  const nextMeta = { ...meta, tier: guidelines.tier, tier_guidelines: guidelines };
+  await supabase
+    .from("workout_plans")
+    .update({ generation_meta: nextMeta as any })
+    .eq("id", planId);
+  return guidelines;
+}
+
 /** Generate a single day (used for Day 1 and per-day regen). */
 export const generateDay = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -775,7 +802,7 @@ export const generateDay = createServerFn({ method: "POST" })
     if (!briefP.success || !bpP.success) {
       return { ok: false as const, error: "Brief or blueprint missing/invalid" };
     }
-    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const guidelines = await resolveAndPersistGuidelines(supabase, loaded.plan, briefP.data, data.planId);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
@@ -828,7 +855,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
     const sessionsPerWeek = Math.max(1, Math.min(7, bpP.data.sessions_per_week ?? 0));
     const dayIndices = data.dayIndices ?? Array.from({ length: sessionsPerWeek }, (_, i) => i + 1);
-    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const guidelines = await resolveAndPersistGuidelines(supabase, loaded.plan, briefP.data, data.planId);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;

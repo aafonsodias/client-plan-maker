@@ -1937,7 +1937,13 @@ function ClientDetail() {
         } else if (microcycleApprovedLocal && !progressionsApprovedLocal) {
           primaryAction = { label: "Aprovar progressão", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("progressions"); scrollToStages(); } };
         } else if (allApprovedLocal && heroPlan) {
+          // Trainer surface — editor first, client logbook second.
           primaryAction = {
+            label: "Abrir editor",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
+          };
+          secondaryAction = {
             label: "Abrir logbook do cliente",
             icon: <ArrowRight className="h-4 w-4" />,
             intent: "log",
@@ -1955,11 +1961,6 @@ function ClientDetail() {
                 toast.error(e?.message ?? "Não foi possível abrir o logbook.");
               }
             },
-          };
-          secondaryAction = {
-            label: "Abrir editor",
-            icon: <ArrowRight className="h-4 w-4" />,
-            href: `/plans/${heroPlan.id}`,
           };
         } else if (heroPlan) {
           primaryAction = { label: "Abrir plano", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
