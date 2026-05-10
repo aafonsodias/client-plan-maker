@@ -541,7 +541,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             clientPhone={client?.phone ?? null}
             planTitle={plan.title}
           />
-          {client?.id && <PlanAssessmentSheet clientId={client.id} />}
           <Button
             size="sm"
             onClick={exportPdf}
