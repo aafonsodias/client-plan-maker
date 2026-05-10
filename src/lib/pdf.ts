@@ -5,7 +5,7 @@ import {
   distributeMissionsAcrossDays,
   missionsRemainingScore,
 } from "@/lib/assessment-missions";
-import { PATTERN_IDS, formScore, type PatternId } from "@/lib/movement-criteria";
+import { PATTERN_IDS, PATTERN_LABELS_PT, formScore, type PatternId } from "@/lib/movement-criteria";
 
 // ---------- Public types (kept compatible with existing callers) ----------
 export type Exercise = {
