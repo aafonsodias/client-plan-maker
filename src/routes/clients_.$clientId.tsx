@@ -101,6 +101,8 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
+import { ThisWeekHero } from "@/components/ThisWeekHero";
+import { ensureShareToken } from "@/server/sessions.functions";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Menu as MenuIcon } from "lucide-react";
 
@@ -457,6 +459,7 @@ function ClientDetail() {
   const generateBlueprintFn = useServerFn(generateBlueprint);
   const generateMicrocycleDaysFn = useServerFn(generateMicrocycleDays);
   const proposeProgressionsFn = useServerFn(proposeProgressions);
+  const ensureShareTokenFn = useServerFn(ensureShareToken);
   const [stageBusy, setStageBusy] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   const [phasedBusy, setPhasedBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -811,7 +814,7 @@ function ClientDetail() {
 
       const { data: p } = await supabase
         .from("workout_plans")
-        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, assessment_completion_pct")
+        .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, duration_weeks, share_token, share_token_expires_at, assessment_completion_pct")
         .eq("client_id", clientId)
         .order("updated_at", { ascending: false });
       setPlans(p ?? []);
@@ -1450,7 +1453,7 @@ function ClientDetail() {
   const refreshPlans = async () => {
     const { data: p } = await supabase
       .from("workout_plans")
-      .select("id, title, status, updated_at, brief, generation_state, generation_status, assessment_completion_pct")
+      .select("id, title, status, updated_at, created_at, brief, generation_state, generation_status, assessment_id, completion_state, block_number, duration_weeks, share_token, share_token_expires_at, assessment_completion_pct")
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false });
     setPlans(p ?? []);
@@ -1932,7 +1935,25 @@ function ClientDetail() {
         } else if (microcycleApprovedLocal && !progressionsApprovedLocal) {
           primaryAction = { label: "Aprovar progressão", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("progressions"); scrollToStages(); } };
         } else if (allApprovedLocal && heroPlan) {
-          primaryAction = { label: "Abrir treino de hoje", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
+          primaryAction = {
+            label: "Abrir primeiro log",
+            icon: <ArrowRight className="h-4 w-4" />,
+            intent: "log",
+            onClick: async () => {
+              try {
+                const existingToken =
+                  (heroPlan as any).share_token &&
+                  (!(heroPlan as any).share_token_expires_at || new Date((heroPlan as any).share_token_expires_at).getTime() > Date.now())
+                    ? (heroPlan as any).share_token
+                    : null;
+                const token = existingToken ?? (await ensureShareTokenFn({ data: { plan_id: heroPlan.id } })).share_token;
+                setPlans((prev) => prev.map((p) => (p.id === heroPlan.id ? { ...p, share_token: token } : p)));
+                navigate({ to: "/log/$token", params: { token } });
+              } catch (e: any) {
+                toast.error(e?.message ?? "Não foi possível abrir o logbook.");
+              }
+            },
+          };
         } else if (heroPlan) {
           primaryAction = { label: "Abrir plano", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
         } else {
@@ -1975,6 +1996,15 @@ function ClientDetail() {
                 stage1Expanded={!effectiveCollapsed}
                 onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
+              />
+            )}
+            {heroPlan && (
+              <ThisWeekHero
+                bare
+                plan={heroPlan}
+                defaultWeek={heroDefaultWeek}
+                zeroState={zeroState}
+                primaryAction={primaryAction}
               />
             )}
             <CapacityDeltasCard clientId={clientId} />
