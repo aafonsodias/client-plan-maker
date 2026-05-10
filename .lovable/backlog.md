@@ -525,3 +525,4 @@ Hidden behind `VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS` per assessment foundation
 | - | P0 | Motor | enforceWeek1SetCap determinístico após enforceRpeFloor (logado em generation_log com stage `set_cap`) |
 | - | P2 | Docs | .lovable/audits/round-mvp-map.md + .txt — mapa app + pontas soltas |
 | - | P1 | Briefing | Redesign editorial (t-1..t-4, tonal cards) — próxima round |
+| - | P1 | Brief / motor | Stage 1 Brief lê `assessment.injuries` (texto livre) via `section-map.ts`. Após F1/F1.1, treinador grava lesões estruturadas em `assessment_injuries`. Atualizar Brief para ler `assessment_injuries` e formatar `{zone} · sev N/5 · {label}{·note}`. Manter fallback para texto antigo. (Round F4 ou junto da Round E.) |
