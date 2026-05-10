@@ -31,6 +31,12 @@ export interface TierGuidelines {
   /** Soft total exercise band over a 4-week meso (sessions × 4 × ex/session) */
   totalExercisesMin: number;
   totalExercisesMax: number;
+  /**
+   * Hard cap on the number of working sets per exercise role in WEEK 1 only.
+   * Stage 4 progressively bumps sets in later weeks via the Bompa wave.
+   * Remedial Week 1 = introduction, low volume; advanced can start denser.
+   */
+  week1SetCap: { main: number; accessory: number; carry: number };
 }
 
 function countMovementScreenFailures(assessment: Record<string, any>): number {
