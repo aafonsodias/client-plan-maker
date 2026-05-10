@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Sparkles, Bookmark, CalendarRange, BookOpen, ShieldCheck } from "lucide-react";
+import { Home, Settings, LogOut, ArrowLeft, ExternalLink, CreditCard, AlertCircle, Menu, Globe, Check, Bookmark, CalendarRange, BookOpen, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { Logo } from "@/components/Logo";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -177,15 +177,6 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
                 Founder badge collapses to the verified tick on tighter widths. */}
             <BrandMark size="md" />
             <span className="hidden truncate 2xl:inline">{t("brand.name")}</span>
-            {isFounder && (
-              <span
-                title="Conta de fundador · acesso vitalício"
-                className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-amber-400/5 px-1.5 py-[3px] text-[9px] font-semibold uppercase tracking-widest leading-none text-amber-600 dark:text-amber-400"
-              >
-                <Sparkles className="h-[11px] w-[11px] shrink-0" strokeWidth={2.25} />
-                <span className="leading-none">Founder</span>
-              </span>
-            )}
           </Link>
 
           {/* Mobile-only quick controls — locale chip + theme toggle, always reachable without opening the hamburger */}

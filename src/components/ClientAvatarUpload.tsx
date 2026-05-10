@@ -20,7 +20,6 @@ export function ClientAvatarUpload({
   photoUrl,
   onChange,
   size = 56,
-  showFounderDot: _showFounderDot = false,
 }: {
   clientId: string;
   trainerId: string;
@@ -28,7 +27,6 @@ export function ClientAvatarUpload({
   photoUrl: string | null;
   onChange: (url: string | null) => void;
   size?: number;
-  showFounderDot?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
