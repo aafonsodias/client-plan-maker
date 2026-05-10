@@ -248,6 +248,33 @@
       "skill_first_pullup":{ "specific": "Achieve first full pullup over 12 weeks",                         "measurable": "Track deadhang reps and assistance progression" }
     }
   },
+  "aspirations": {
+    "builder": {
+      "open": "+ Specific skill (e.g. handstand, split, muscle-up)…",
+      "label": "Which specific skill?",
+      "hint": "Curated, deterministic lookup. No AI — only skills we already know how to prescribe.",
+      "placeholder": "e.g. I want to do a handstand",
+      "search": "Search",
+      "matched": "✓ Recognised",
+      "apply": "Apply to SMART",
+      "cancel": "Cancel",
+      "unmatched_title": "Not recognised",
+      "unmatched_body": "“{{text}}” isn't in our curated lookup yet. Rather than invent a prescription, we logged the suggestion for review.",
+      "logged": "Logged for curation. In the meantime, write the goal manually below."
+    },
+    "handstand":           { "specific": "Work toward handstand over 20 weeks",                          "measurable": "wall→free progression; measure hold time every 4 weeks",                  "note": "Prerequisites: shoulder strength and mobility. Assess overhead reach and shoulder press strength before starting." },
+    "split":               { "specific": "Work toward front split over 24 weeks",                        "measurable": "Measure floor-to-hip distance monthly",                                   "note": "Prerequisites: passive stretch tolerance. Sit-and-reach + hip abduction ROM as baseline." },
+    "pullup":              { "specific": "Achieve first full pullup over 12 weeks",                      "measurable": "Track deadhang reps and assisted-pullup progression",                     "note": "Prerequisites: deadhang time and base pulling strength. Measure pullup_max (assisted) and deadhang_max." },
+    "muscle_up":           { "specific": "Work toward muscle-up over 24 weeks",                          "measurable": "Track high explosive pullups + dips; monthly transition test",            "note": "Non-negotiable prerequisites: ≥10 strict pullups + ≥10 dips. Assess before starting." },
+    "planche":             { "specific": "Work toward planche over 36 weeks",                            "measurable": "tuck→straddle→full progression; measure hold every 4 weeks",              "note": "Prerequisites: extreme scapular protraction strength. Pseudo planche pushup + protraction ROM as baseline." },
+    "front_lever":         { "specific": "Work toward front lever over 32 weeks",                        "measurable": "tuck→advanced tuck→straddle progression; measure hold monthly",           "note": "Prerequisites: ≥8 pullups + anti-extension core strength. Tuck front lever hold as baseline." },
+    "back_lever":          { "specific": "Work toward back lever over 24 weeks",                         "measurable": "tuck→straddle→full progression; measure hold monthly",                    "note": "Prerequisites: shoulder extension mobility + pulling strength. Tuck back lever hold as baseline." },
+    "bridge":              { "specific": "Work toward full bridge over 12 weeks",                        "measurable": "Assess bridge quality and shoulder extension ROM every 2 weeks",          "note": "Prerequisites: thoracic and shoulder mobility. Without partial bridge — start at wall walk level." },
+    "pistol_squat":        { "specific": "Work toward pistol squat over 16 weeks",                       "measurable": "Single-leg reps every 4 weeks; measure depth",                            "note": "Prerequisites: unilateral strength, balance and ankle mobility. 1RM squat + single-leg balance as baseline." },
+    "human_flag":          { "specific": "Work toward human flag over 32 weeks",                         "measurable": "chamber→tucked→straddle progression; measure hold monthly",               "note": "Prerequisites: lateral core strength and unilateral pulling. Side plank max + pullup_max as baseline." },
+    "single_leg_deadlift": { "specific": "Work toward single-leg deadlift over 12 weeks",                "measurable": "Load × reps single-leg every 4 weeks",                                    "note": "Prerequisites: posterior chain dominance and balance. 1RM deadlift + single-leg balance as baseline." },
+    "first_pushup":        { "specific": "Achieve first full pushup over 8 weeks",                       "measurable": "Incline pushup reps every 2 weeks; lower incline progressively",          "note": "No strict prerequisites. Start at maximum incline pushup level." }
+  },
   "readiness_block": {
     "title": "Where are you right now?",
     "hint": "How they relate to training right now — calibrates the tone and pace of the first weeks.",

@@ -256,6 +256,33 @@
       "skill_first_pullup":{ "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",       "measurable": "Acompanhar reps em deadhang e progressão de assistência" }
     }
   },
+  "aspirations": {
+    "builder": {
+      "open": "+ Habilidade específica (ex.: pino, esparregata, muscle-up)…",
+      "label": "Que habilidade específica?",
+      "hint": "Lookup curado e determinístico. Sem AI — só habilidades que já sabemos prescrever.",
+      "placeholder": "ex.: quero fazer o pino",
+      "search": "Procurar",
+      "matched": "✓ Reconhecido",
+      "apply": "Aplicar ao SMART",
+      "cancel": "Cancelar",
+      "unmatched_title": "Não reconhecido",
+      "unmatched_body": "“{{text}}” ainda não está no nosso lookup curado. Em vez de inventar uma prescrição, registámos a sugestão para revisão.",
+      "logged": "Registado para curadoria. Entretanto, escreva o objetivo manualmente abaixo."
+    },
+    "handstand":           { "specific": "Trabalhar pino (handstand) ao longo de 20 semanas",                  "measurable": "Progressão wall→free; medir tempo de hold a cada 4 semanas",            "note": "Pré-requisitos: força e mobilidade de ombro. Avaliar overhead reach e shoulder press strength antes de começar." },
+    "split":               { "specific": "Trabalhar esparregata frontal ao longo de 24 semanas",               "measurable": "Medir distância chão-quadril mensalmente",                              "note": "Pré-requisitos: tolerância a stretch passivo. Sit-and-reach + ROM de abdução de anca como baseline." },
+    "pullup":              { "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",        "measurable": "Acompanhar reps em deadhang e progressão de assistência",               "note": "Pré-requisitos: tempo de deadhang e força base de tração. Medir pullup_max (assistido) e deadhang_max." },
+    "muscle_up":           { "specific": "Trabalhar muscle-up ao longo de 24 semanas",                         "measurable": "Acompanhar pullups explosivos altos + dips; teste mensal de transição",  "note": "Pré-requisitos não-negociáveis: ≥10 pullups estritos + ≥10 dips. Avaliar antes de começar." },
+    "planche":             { "specific": "Trabalhar planche ao longo de 36 semanas",                           "measurable": "Progressão tuck→straddle→full; medir tempo de hold a cada 4 semanas",   "note": "Pré-requisitos: força extrema de protração escapular. Pseudo planche pushup + protração ROM como baseline." },
+    "front_lever":         { "specific": "Trabalhar front lever ao longo de 32 semanas",                       "measurable": "Progressão tuck→advanced tuck→straddle; medir tempo de hold mensalmente","note": "Pré-requisitos: ≥8 pullups + força de core anti-extensão. Tuck front lever hold como baseline." },
+    "back_lever":          { "specific": "Trabalhar back lever ao longo de 24 semanas",                        "measurable": "Progressão tuck→straddle→full; medir tempo de hold mensalmente",        "note": "Pré-requisitos: mobilidade de ombro em extensão + força de tração. Tuck back lever hold como baseline." },
+    "bridge":              { "specific": "Trabalhar ponte (bridge) ao longo de 12 semanas",                    "measurable": "Avaliar qualidade de ponte e ROM de ombro em extensão a cada 2 semanas", "note": "Pré-requisitos: mobilidade torácica e de ombro. Sem ponte parcial = começar pelo nível wall walk." },
+    "pistol_squat":        { "specific": "Trabalhar pistol squat ao longo de 16 semanas",                      "measurable": "Reps numa perna a cada 4 semanas; medir profundidade",                  "note": "Pré-requisitos: força unilateral, equilíbrio e mobilidade de tornozelo. 1RM squat + balance unipodal como baseline." },
+    "human_flag":          { "specific": "Trabalhar human flag ao longo de 32 semanas",                        "measurable": "Progressão chamber→tucked→straddle; medir tempo de hold mensalmente",   "note": "Pré-requisitos: força lateral de core e tração unilateral. Side plank max + pullup_max como baseline." },
+    "single_leg_deadlift": { "specific": "Trabalhar peso-morto unilateral ao longo de 12 semanas",             "measurable": "Carga × reps numa perna a cada 4 semanas",                              "note": "Pré-requisitos: dominância de cadeia posterior e equilíbrio. 1RM deadlift + balance unipodal como baseline." },
+    "first_pushup":        { "specific": "Conseguir a primeira flexão completa ao longo de 8 semanas",         "measurable": "Reps em flexões inclinadas a cada 2 semanas; baixar inclinação progressiva","note": "Pré-requisitos: nenhum estritamente. Começar pelo nível incline pushup máximo." }
+  },
   "readiness_block": {
     "title": "Em que momento está?",
     "hint": "Onde está em relação a treinar — ajuda a calibrar o tom e o ritmo das primeiras semanas.",
