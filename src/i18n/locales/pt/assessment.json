@@ -536,6 +536,10 @@
       "title": "Snapshot do cliente",
       "last": "Última avaliação · {{when}}",
       "risk_acsm": "Risco ACSM",
+      "risk_acsm_help": "Estratificação do American College of Sports Medicine: combina factores de risco cardiovascular (idade, tabagismo, hipertensão, dislipidemia, pré-diabetes, obesidade, história familiar) e sintomas para definir até onde podemos puxar a intensidade.",
+      "risk_acsm_meaning_low": "Sem factores relevantes — prescrição livre dentro da régua ACSM, incluindo intensidades vigorosas.",
+      "risk_acsm_meaning_moderate": "≥2 factores ou sintomas leves — limitar intensidade alta sem screening clínico e monitorizar sinais cardiovasculares.",
+      "risk_acsm_meaning_high": "Doença conhecida ou sintomas — exigir parecer médico antes de progressões vigorosas.",
       "recovery": "Recuperação",
       "composition": "Composição"
     },
