@@ -293,21 +293,47 @@ export function MesocycleTableView({
               <th className="bg-muted/50 px-3 py-2 text-left font-semibold align-top">Exercise</th>
               {weekNumbers.map((wn) => {
                 const t = weekTotals.find((x) => x.wn === wn);
+                const w = wave?.find((x) => x.week === wn);
+                const tag = w?.tag ?? null;
+                const rpeRange =
+                  w && w.rpe_low != null && w.rpe_high != null
+                    ? `RPE ${formatRpe(w.rpe_low)}–${formatRpe(w.rpe_high)}`
+                    : null;
+                const tagLabel =
+                  tag === "+volume"
+                    ? "+volume"
+                    : tag === "+intensity"
+                    ? "+intensidade"
+                    : tag === "deload"
+                    ? "deload"
+                    : tag === "base"
+                    ? "base"
+                    : null;
                 return (
                   <th
                     key={wn}
                     className={`px-2 py-2 text-left font-semibold align-top ${
-                      isDeloadWeek(wn) ? "text-amber-300/80" : ""
+                      tag === "deload" || isDeloadWeek(wn) ? "text-amber-300/80" : ""
                     }`}
                   >
-                    <div>Week {wn}{isDeloadWeek(wn) ? " · deload" : ""}</div>
-                    {t?.rpe != null && (
+                    <div>
+                      Week {wn}
+                      {tagLabel ? ` · ${tagLabel}` : isDeloadWeek(wn) ? " · deload" : ""}
+                    </div>
+                    {rpeRange ? (
+                      <div className="mt-0.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground/70">
+                        {rpeRange}
+                        {t?.rpe != null && (
+                          <span className="opacity-70"> · obs. {formatRpe(t.rpe)}</span>
+                        )}
+                      </div>
+                    ) : t?.rpe != null ? (
                       <div className="mt-0.5 text-[9px] font-normal normal-case tracking-normal text-muted-foreground/70">
                         {t.rpeMin != null && t.rpeMax != null && t.rpeMin !== t.rpeMax
                           ? `RPE ${formatRpe(t.rpeMin)}–${formatRpe(t.rpeMax)} · med ${formatRpe(t.rpe)}`
                           : `RPE ${formatRpe(t.rpe)}`}
                       </div>
-                    )}
+                    ) : null}
                   </th>
                 );
               })}
