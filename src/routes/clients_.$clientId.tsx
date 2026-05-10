@@ -2197,6 +2197,11 @@ function ClientDetail() {
                 onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
               />
             </div>
+            <RxImplications
+              risk={assessment.risk}
+              parqFlags={parqFlagCount(assessment.parq)}
+              category={riskCategory}
+            />
           </SectionBlock>
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
@@ -4676,7 +4681,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
     <figure className="mt-3 animate-fade-in rounded-md bg-gradient-to-br from-muted/30 to-muted/10 px-4 py-3 ring-1 ring-inset ring-amber-500/15">
       <figcaption className="eyebrow mb-1.5 flex items-center gap-1.5 text-amber-700/80 dark:text-amber-300/70">
         <Sparkles className="h-3 w-3" aria-hidden />
-        <span>{t("insight_label")}</span>
+        <span>{t("detail.insight_label")}</span>
       </figcaption>
       <blockquote className="border-l-2 border-amber-500/40 pl-3 font-display text-[13px] italic leading-relaxed text-foreground/85">
         {insight}
@@ -5253,3 +5258,196 @@ function numScore(v: unknown): number | null {
  * Date picker for `assessments.performed_on`.
  * Stores ISO YYYY-MM-DD strings (matches Postgres `date` column).
  */
+
+// ----------------------------------------------------------------------------
+// RxImplications — deterministic "what this means for the prescription" panel.
+// Lives inside the Risk Stratification section. Pure derivation from the inputs
+// the trainer just filled in (risk factors + PAR-Q+ flag count + ACSM tier).
+// No AI. Purpose: turn raw flags into 2–5 actionable programming constraints.
+// ----------------------------------------------------------------------------
+function RxImplications({
+  risk,
+  parqFlags,
+  category,
+}: {
+  risk: any;
+  parqFlags: number;
+  category: string;
+}) {
+  type Item = {
+    key: string;
+    tone: "danger" | "warn" | "info" | "neutral";
+    icon: React.ReactNode;
+    title: string;
+    body: string;
+  };
+  const items: Item[] = [];
+
+  // 1) Clearance gate
+  if (parqFlags > 0 || category === "high") {
+    items.push({
+      key: "clearance",
+      tone: "danger",
+      icon: <Shield className="h-3.5 w-3.5" />,
+      title: "Clearance médico antes de subir intensidade",
+      body:
+        parqFlags > 0
+          ? `${parqFlags} alerta${parqFlags === 1 ? "" : "s"} no PAR-Q+ — pedir parecer médico antes de prescrever esforço moderado/vigoroso.`
+          : "Risco ACSM alto — requer parecer médico antes de progressões vigorosas.",
+    });
+  }
+
+  // 2) Intensity ceiling
+  if (category === "high") {
+    items.push({
+      key: "intensity-high",
+      tone: "warn",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "Tecto de intensidade: RPE ≤ 7",
+      body: "Manter zona moderada (≈40–60% HRR ou RPE 4–6/10). Evitar 1RM e séries até à falha.",
+    });
+  } else if (category === "moderate") {
+    items.push({
+      key: "intensity-mod",
+      tone: "info",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "Tecto de intensidade: RPE ≤ 8",
+      body: "Permitido moderado-a-vigoroso (≈40–75% HRR). Subir vigoroso só após 2–4 semanas com tolerância.",
+    });
+  }
+
+  // 3) Cardiovascular monitoring
+  if (risk.hypertension || risk.family_cvd || risk.dyslipidemia) {
+    const drivers = [
+      risk.hypertension ? "hipertensão" : null,
+      risk.family_cvd ? "história familiar" : null,
+      risk.dyslipidemia ? "dislipidemia" : null,
+    ].filter(Boolean).join(", ");
+    items.push({
+      key: "cv-monitor",
+      tone: "warn",
+      icon: <HeartPulse className="h-3.5 w-3.5" />,
+      title: "Monitorização cardiovascular",
+      body: `Por ${drivers}: medir TA pré-sessão, evitar Valsalva pesado, parar ao menor sinal de dor torácica, dispneia desproporcional ou tonturas.`,
+    });
+  }
+
+  // 4) Glycemic control
+  if (risk.prediabetes) {
+    items.push({
+      key: "glyc",
+      tone: "info",
+      icon: <Droplets className="h-3.5 w-3.5" />,
+      title: "Janela glicémica",
+      body: "Treinar 1–2h após refeição. Ter HC rápido disponível. Cardio steady-state pós-treino aumenta sensibilidade à insulina.",
+    });
+  }
+
+  // 5) Loading constraints by BMI
+  if (risk.bmi_category === "obese") {
+    items.push({
+      key: "load-obese",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Carga axial e impacto",
+      body: "Reduzir agachamento/peso morto pesados nas 1ªs 4 semanas. Preferir variantes apoiadas (hack, leg press) e cardio low-impact (bike, elíptica, água).",
+    });
+  } else if (risk.bmi_category === "underweight") {
+    items.push({
+      key: "load-under",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Disponibilidade energética",
+      body: "Volume conservador até resolver défice calórico. Confirmar ingestão proteica ≥1,6 g/kg antes de subir frequência.",
+    });
+  }
+
+  // 6) Smoking — aerobic capacity
+  if (risk.smoking === "current") {
+    items.push({
+      key: "smoke",
+      tone: "info",
+      icon: <Wind className="h-3.5 w-3.5" />,
+      title: "Capacidade aeróbia reduzida",
+      body: "Esperar VO₂máx ~10–15% abaixo do não-fumador. Recuperação inter-séries +30–60s no condicionamento.",
+    });
+  }
+
+  // 7) Sedentary onboarding
+  if (risk.sedentary && category !== "low") {
+    items.push({
+      key: "sed",
+      tone: "neutral",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: "Reactivação progressiva",
+      body: "Começar 2×/sem corpo inteiro, 4–6 semanas em RPE 5–6, antes de introduzir intensidade ou volume adicional.",
+    });
+  }
+
+  // All-clear path
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem condicionantes adicionais",
+      body: "Prescrição livre dentro da régua ACSM para risco baixo. Avançar direto para os parâmetros de programação.",
+    });
+  }
+
+  const TONE: Record<Item["tone"], { wrap: string; icon: string; title: string }> = {
+    danger: {
+      wrap: "border-red-500/25 bg-red-500/[0.04]",
+      icon: "bg-red-500/15 text-red-700 dark:text-red-300",
+      title: "text-red-800 dark:text-red-200",
+    },
+    warn: {
+      wrap: "border-amber-500/25 bg-amber-500/[0.04]",
+      icon: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+      title: "text-amber-800 dark:text-amber-200",
+    },
+    info: {
+      wrap: "border-sky-500/20 bg-sky-500/[0.04]",
+      icon: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+      title: "text-foreground",
+    },
+    neutral: {
+      wrap: "border-border bg-background/40",
+      icon: "bg-muted/60 text-muted-foreground",
+      title: "text-foreground",
+    },
+  };
+
+  return (
+    <section className="mt-4 space-y-2">
+      <header className="flex items-baseline justify-between">
+        <h4 className="eyebrow text-foreground/80">Implicações para a prescrição</h4>
+        <span className="text-[10px] text-muted-foreground tabular-nums">
+          {items.length} {items.length === 1 ? "regra" : "regras"}
+        </span>
+      </header>
+      <ul className="grid gap-1.5 sm:grid-cols-2">
+        {items.map((it) => {
+          const tone = TONE[it.tone];
+          return (
+            <li
+              key={it.key}
+              className={`flex items-start gap-2.5 rounded-md border px-2.5 py-2 ${tone.wrap}`}
+            >
+              <span
+                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${tone.icon}`}
+                aria-hidden
+              >
+                {it.icon}
+              </span>
+              <div className="min-w-0">
+                <div className={`text-[12px] font-medium leading-tight ${tone.title}`}>{it.title}</div>
+                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{it.body}</div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
