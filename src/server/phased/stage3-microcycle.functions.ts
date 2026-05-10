@@ -174,6 +174,36 @@ function enforceRpeFloor(
   return { day: { ...day, exercises }, floorApplied: applied };
 }
 
+/**
+ * Truncate per-exercise `sets` for WEEK 1 to the tier-specific cap. The AI
+ * defaults to 3× across the board which is dishonest for a remedial intro
+ * week (NSCA Essentials 3e §17 — beginners start at 1–2 sets/exercise to
+ * build neural pattern before adding volume). Stage 4 ramps sets up across
+ * Weeks 2-N via the deterministic Bompa wave.
+ */
+function enforceWeek1SetCap(
+  day: any,
+  cap: { main: number; accessory: number; carry: number },
+): { day: any; setsCapped: number } {
+  if (!day || !Array.isArray(day.exercises)) return { day, setsCapped: 0 };
+  let capped = 0;
+  const exercises = day.exercises.map((ex: any, idx: number) => {
+    const isMain = idx === 0;
+    const isCarry = isCarryLike(ex?.name);
+    const limit = isMain ? cap.main : isCarry ? cap.carry : cap.accessory;
+    const raw = String(ex?.sets ?? "").trim();
+    // Parse leading integer (handles "3", "3-4", "3 sets", "3x10").
+    const m = raw.match(/^(\d+)/);
+    if (!m) return ex;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n) || n <= limit) return ex;
+    capped++;
+    const meta = { ...(ex?.meta ?? {}), sets_original: ex?.sets ?? null, week1_set_cap_applied: true };
+    return { ...ex, sets: String(limit), meta };
+  });
+  return { day: { ...day, exercises }, setsCapped: capped };
+}
+
 // JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
 const SECTION_ITEM = {
   type: "object",
