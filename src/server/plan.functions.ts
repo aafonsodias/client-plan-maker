@@ -1540,3 +1540,146 @@ export const regeneratePlanSummary = createServerFn({ method: "POST" })
     if (updErr) return { ok: false as const, error: updErr.message };
     return { ok: true as const, summary: newSummary, changed: true as const };
   });
+
+/**
+ * R71 / Phase C1 — single canonical writer for a regenerated phased plan.
+ *
+ * Why this exists:
+ *   The legacy regenerate flow only wrote `workout_plans.plan_data` (JSON
+ *   blob). For phased-complete plans the SOURCE OF TRUTH is per-day rows in
+ *   `workout_plan_days` — `PlanEditorSurface` rebuilds the view from those
+ *   rows on every load and `MicrocyclePanel` keeps a realtime subscription on
+ *   them. Result: a fresh regen would render for a heartbeat, then snap back
+ *   to the stale day rows ("the workout suddenly reverted"). This fn fixes
+ *   the root cause by atomically rewriting day rows AND mirroring a snapshot
+ *   into `plan_data` + bumping `plan_data_version`.
+ *
+ * Behaviour:
+ *   - Deletes every existing `workout_plan_days` row for the plan.
+ *   - Inserts the supplied weeks/days as fresh rows (status="done").
+ *   - Updates `workout_plans.plan_data` (snapshot for legacy/PDF readers),
+ *     `title`, `summary`, and bumps `plan_data_version`.
+ *   - Optionally writes `programming_variables` overrides + a regen audit
+ *     entry into `generation_meta.regeneration_log[]`.
+ */
+const RegenWeekDayZ = z.object({
+  day_label: z.string().nullable().optional(),
+  focus: z.string().nullable().optional(),
+  rationale: z.string().nullable().optional(),
+  exercises: z.array(z.any()).optional(),
+  warmup: z.array(z.any()).optional(),
+  activation: z.array(z.any()).optional(),
+  dynamic_stretches: z.array(z.any()).optional(),
+  cooldown: z.array(z.any()).optional(),
+  finisher: z.array(z.any()).optional(),
+  finisher_enabled: z.boolean().optional(),
+  cardio: z.array(z.any()).optional(),
+}).passthrough();
+
+const RegenWeekZ = z.object({
+  week_number: z.number().int().min(1),
+  focus: z.string().nullable().optional(),
+  rationale: z.string().nullable().optional(),
+  days: z.array(RegenWeekDayZ),
+}).passthrough();
+
+export const persistRegeneratedPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      planId: z.string().uuid(),
+      title: z.string().nullable().optional(),
+      summary: z.string().nullable().optional(),
+      weeks: z.array(RegenWeekZ).min(1),
+      programming_variables: z.record(z.any()).nullable().optional(),
+      trainer_feedback: z.string().nullable().optional(),
+      override_summary: z.record(z.any()).nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: plan, error } = await supabase
+      .from("workout_plans")
+      .select("id, trainer_id, plan_data_version, generation_meta")
+      .eq("id", data.planId)
+      .maybeSingle();
+    if (error || !plan) return { ok: false as const, error: error?.message ?? "Not found" };
+    if ((plan as any).trainer_id !== userId) return { ok: false as const, error: "forbidden" };
+
+    const trainerId = (plan as any).trainer_id as string;
+
+    // 1. Wipe existing day rows for this plan — single source of truth reset.
+    const { error: delErr } = await supabase
+      .from("workout_plan_days")
+      .delete()
+      .eq("plan_id", data.planId);
+    if (delErr) return { ok: false as const, error: `delete days: ${delErr.message}` };
+
+    // 2. Insert fresh rows — one per (week, day).
+    const rows: any[] = [];
+    for (const w of data.weeks) {
+      const days = Array.isArray(w.days) ? w.days : [];
+      days.forEach((d, idx) => {
+        const dayNumber = idx + 1;
+        const content: Record<string, any> = {};
+        for (const k of [
+          "exercises", "warmup", "activation", "dynamic_stretches",
+          "cooldown", "finisher", "finisher_enabled", "cardio",
+        ] as const) {
+          if ((d as any)[k] !== undefined) content[k] = (d as any)[k];
+        }
+        rows.push({
+          plan_id: data.planId,
+          trainer_id: trainerId,
+          week_number: w.week_number,
+          day_number: dayNumber,
+          day_label: d.day_label ?? `Day ${dayNumber}`,
+          focus: d.focus ?? "",
+          rationale: d.rationale ?? "",
+          status: "done",
+          content,
+          validation_meta: {},
+        });
+      });
+    }
+    if (rows.length > 0) {
+      const { error: insErr } = await supabase.from("workout_plan_days").insert(rows);
+      if (insErr) return { ok: false as const, error: `insert days: ${insErr.message}` };
+    }
+
+    // 3. Update plan: snapshot + bump version + audit log.
+    const nextVersion = (((plan as any).plan_data_version as number | null) ?? 1) + 1;
+    const meta = ((plan as any).generation_meta ?? {}) as Record<string, any>;
+    const log = Array.isArray(meta.regeneration_log) ? meta.regeneration_log : [];
+    log.unshift({
+      at: new Date().toISOString(),
+      version: nextVersion,
+      trainer_feedback: data.trainer_feedback ?? null,
+      programming_variables: data.programming_variables ?? null,
+      summary: data.override_summary ?? null,
+      weeks: data.weeks.length,
+      total_days: rows.length,
+    });
+    const nextMeta = { ...meta, regeneration_log: log.slice(0, 20) };
+
+    const update: Record<string, any> = {
+      plan_data: { weeks: data.weeks },
+      plan_data_version: nextVersion,
+      generation_meta: nextMeta,
+    };
+    if (data.title) update.title = data.title;
+    if (data.summary) update.summary = data.summary;
+    if (data.programming_variables) update.programming_variables = data.programming_variables;
+
+    const { error: upErr } = await supabase
+      .from("workout_plans")
+      .update(update)
+      .eq("id", data.planId);
+    if (upErr) return { ok: false as const, error: `update plan: ${upErr.message}` };
+
+    return {
+      ok: true as const,
+      plan_data_version: nextVersion,
+      days_written: rows.length,
+    };
+  });
