@@ -125,6 +125,8 @@
   "anthro_block": {
     "title": "Antropometria",
     "hint": "Linha de base de composição corporal. O rácio cintura-anca é calculado automaticamente.",
+    "complete": "✓ Antropometria · {{summary}}",
+    "complete_meaning": "WHR e categoria de IMC alimentam regras de carga axial, escolha de cardio e alvos realistas de composição corporal.",
     "waist": "Cintura (cm)",
     "waist_hint": "Mede no ponto mais estreito acima da anca, expira.",
     "hip": "Anca (cm)",
@@ -254,6 +256,9 @@
     "action_sub": "Treina há menos de 6 meses",
     "maintenance": "Hábito instalado",
     "maintenance_sub": "Consistente há 6+ meses"
+    ,
+    "complete": "✓ Estágio: {{stage}}",
+    "complete_meaning": "O estágio comportamental define o tom das primeiras semanas — quanto educamos, quanta estrutura impomos e quão depressa subimos a fasquia."
   },
   "training_block": {
     "title": "Setup de treino",
@@ -302,7 +307,9 @@
     "job_type": "Tipo de trabalho",
     "job_placeholder": "escritório, manual, misto…",
     "energy": "Energia ao longo do dia",
-    "recovery": "Capacidade de recuperação"
+    "recovery": "Capacidade de recuperação",
+    "complete": "✓ Estilo de vida · {{summary}}",
+    "complete_meaning": "Sono, stress e atividade diária ajustam o autoreg strictness e a frequência de deload — não dá para ignorar a vida lá fora."
   },
   "nutrition_block": {
     "title": "Nutrição & hidratação",
@@ -314,7 +321,9 @@
     "processed_hint": "1 = raro · 5 = quase todas as refeições.",
     "water": "Água (L / dia)",
     "hydration_legacy": "Hidratação (copos, legado)",
-    "notes": "Notas (alergias, padrão alimentar)"
+    "notes": "Notas (alergias, padrão alimentar)",
+    "complete": "✓ Nutrição · {{summary}}",
+    "complete_meaning": "Refeições, álcool e hidratação são proxies de disponibilidade energética. Défice grave compromete adaptação por mais bom que seja o plano."
   },
   "mobility_block": {
     "title": "Mobilidade — anatómica (1–5)",
@@ -370,7 +379,9 @@
     "other": "Outro",
     "test_result": "Resultado do teste",
     "test_result_hint": "Distância, tempo, ou estimativa de VO₂.",
-    "cardio_legacy": "Contexto cardio (texto livre, legado)"
+    "cardio_legacy": "Contexto cardio (texto livre, legado)",
+    "complete": "✓ Performance · {{summary}}",
+    "complete_meaning": "FC repouso e teste cardio definem o tier de condicionamento (advanced / conservative / remedial) e a janela de zonas-alvo."
   },
   "resume": {
     "title": "Geração anterior em curso",
