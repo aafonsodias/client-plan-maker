@@ -615,10 +615,13 @@ Generate ONLY this single day's session.`;
       if (retry.ok) {
         const retrySanitized = sanitizePrepBlocks(retry.data);
         const { day: retryFloored } = enforceRpeFloor(retrySanitized, floors);
-        violationsAfter = validateDayAgainstFittVp(retryFloored, prescriptionParameters);
+        const retryCapped = guidelines?.week1SetCap
+          ? enforceWeek1SetCap(retryFloored, guidelines.week1SetCap).day
+          : retryFloored;
+        violationsAfter = validateDayAgainstFittVp(retryCapped, prescriptionParameters);
         // Use retry output if it strictly improves things; else keep original.
         if (violationsAfter.length < violationsInitial.length) {
-          finalDay = retryFloored;
+          finalDay = retryCapped;
         }
       }
       await logGeneration(supabase, {
