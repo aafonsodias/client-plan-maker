@@ -115,7 +115,10 @@
     "acsm_pill": "Risco ACSM: {{level}}",
     "level_low": "baixo",
     "level_moderate": "moderado",
-    "level_high": "alto"
+    "level_high": "alto",
+    "complete_meaning_low": "Sem factores cardiovasculares relevantes — pode prescrever intensidades vigorosas dentro da régua ACSM.",
+    "complete_meaning_moderate": "Dois ou mais factores ou sintomas leves — limite intensidades altas sem screening clínico e monitorize sinais cardiovasculares.",
+    "complete_meaning_high": "Doença conhecida ou sintomas — exija parecer médico antes de progressões vigorosas."
   },
   "anthro_block": {
     "title": "Antropometria",

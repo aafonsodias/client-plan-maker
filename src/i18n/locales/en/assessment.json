@@ -112,7 +112,10 @@
     "acsm_pill": "ACSM risk: {{level}}",
     "level_low": "low",
     "level_moderate": "moderate",
-    "level_high": "high"
+    "level_high": "high",
+    "complete_meaning_low": "No relevant cardiovascular factors — vigorous intensities are on the table within the ACSM ruler.",
+    "complete_meaning_moderate": "Two or more factors or mild symptoms — cap high intensity without clinical screening and monitor cardiovascular signs.",
+    "complete_meaning_high": "Known disease or symptoms — require medical clearance before vigorous progressions."
   },
   "anthro_block": {
     "title": "Anthropometry",
