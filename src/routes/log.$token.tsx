@@ -25,6 +25,8 @@ import { PreReadinessStep, type PreReadiness } from "@/components/log/PreReadine
 import { PostFeedbackStep, type PostFeedback } from "@/components/log/PostFeedbackStep";
 import { BlockGroup } from "@/components/log/BlockGroup";
 import { groupExercises } from "@/lib/exercise-grouping";
+import { TodayHero, type TodayState, weekdayShortPT } from "@/components/log/TodayHero";
+import { isoWeekday } from "@/lib/weekday-distribution";
 import RationaleChip from "@/components/ux/RationaleChip";
 import { inferLogbookModeFromDayFocus } from "@/lib/auto-infer";
 
@@ -106,6 +108,9 @@ function ClientLogPage() {
     weekTotal: 0,
     totalSessions: 0,
   });
+  const [todayState, setTodayState] = useState<TodayState>("ready");
+  const [suggestedNext, setSuggestedNext] = useState<{ week_number: number; day_label: string; weekday: number | null } | null>(null);
+  const [showDayPicker, setShowDayPicker] = useState(false);
 
   // Track whether the user has interacted yet (no autosave on read-only loads)
   const dirtyRef = useRef(false);
@@ -118,17 +123,20 @@ function ClientLogPage() {
         setInfo(res);
         // Auto-resolve "today" — defaults to next undone slot or the latest draft.
         try {
-          const today = await getTodayFn({ data: { token } });
+          const today: any = await getTodayFn({ data: { token } });
           if (today.day_label) {
             setWeekNum(today.week_number);
             setDayLabel(today.day_label);
             setDate(today.session_date);
+            if (today.state) setTodayState(today.state as TodayState);
+            setSuggestedNext(today.suggested_next ?? null);
           } else {
             const w0 = res.plan_data?.weeks?.[0];
             if (w0) {
               setWeekNum(w0.week_number);
               setDayLabel(w0.days?.[0]?.day_label ?? "");
             }
+            setTodayState("empty");
           }
         } catch {
           const w0 = res.plan_data?.weeks?.[0];
@@ -338,36 +346,45 @@ function ClientLogPage() {
         lastSavedAt={lastSavedAt}
       />
 
-      {/* Today hero */}
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Hoje · Semana {weekNum}
-            </span>
-            <h1 className="mt-0.5 text-lg font-semibold leading-tight">
-              {dayLabel}{day?.focus ? ` · ${day.focus}` : ""}
-            </h1>
-          </div>
-          <span className="text-sm font-semibold tabular-nums">
-            {doneSets}/{totalSets} · {sessionPct}%
-          </span>
+      {/* Today hero — state-aware (ready / done_today / rest / empty) */}
+      <TodayHero
+        state={todayState}
+        weekNumber={weekNum}
+        dayLabel={dayLabel}
+        focus={day?.focus}
+        weekday={(day as any)?.weekday ?? null}
+        todayWeekday={isoWeekday(new Date())}
+        doneSets={doneSets}
+        totalSets={totalSets}
+        sessionPct={sessionPct}
+        suggestedNextLabel={
+          suggestedNext
+            ? `${suggestedNext.day_label}${suggestedNext.weekday ? ` · ${weekdayShortPT(suggestedNext.weekday)}` : ""}`
+            : null
+        }
+        onChangeDay={() => setShowDayPicker((v) => !v)}
+        onSwitchToSuggested={
+          suggestedNext
+            ? () => {
+                setWeekNum(suggestedNext.week_number);
+                setDayLabel(suggestedNext.day_label);
+                setTodayState("ready");
+                setSuggestedNext(null);
+              }
+            : undefined
+        }
+      />
+      {showDayPicker && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card px-3 py-2">
+          <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+            {info.plan_data.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Semana {w.week_number}</option>)}
+          </select>
+          <select value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+            {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
+          </select>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
         </div>
-        <details className="mt-2">
-          <summary className="cursor-pointer text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground">
-            Mudar de dia
-          </summary>
-          <div className="mt-2 flex flex-wrap items-end gap-2">
-            <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
-              {info.plan_data.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Semana {w.week_number}</option>)}
-            </select>
-            <select value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
-              {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
-            </select>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
-          </div>
-        </details>
-      </div>
+      )}
 
       {/* Pre-readiness */}
       <PreReadinessStep
