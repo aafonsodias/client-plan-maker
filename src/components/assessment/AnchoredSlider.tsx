@@ -43,7 +43,7 @@ export function AnchoredSlider({
             {trailing}
           </div>
           <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-            {v}/{max}
+            {unit ? `${v}${unit}` : `${v}/${max}`}
           </span>
         </div>
       )}
