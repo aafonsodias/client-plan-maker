@@ -1,56 +1,81 @@
 ## Objetivo
 
-Tornar o bloco de Medicação mais útil: ao tocar num medicamento aparece campo para a dose; no fim há um "Outro" para adicionar medicação não listada; remove-se a caixa de texto livre que está no topo (já não faz sentido com os chips estruturados).
+Tornar a estética e o valor pedagógico das secções "completas" do assessment consistentes com o que já existe na secção Risco:
+1. **Strip verde rica** (título em Fraunces + frase explicativa) em todas as secções que façam sentido.
+2. **Painel "Implicações para a prescrição"** (deterministic rules, sem AI) nas secções de alto sinal programático.
 
-## Comportamento proposto (391px e desktop)
+PT primeiro; EN herda PT como fallback até round seguinte.
 
-1. **Remover** a `TextField` "Medicação (texto livre)" no topo do bloco (linha 2284).
-2. **Cada chip seleccionado expande** uma linha leve por baixo do nome+efeito com um input compacto de dose:
-   - Placeholder: `ex.: 5 mg/dia` (PT) / `e.g. 5 mg/day` (EN).
-   - Aparece só quando `aria-pressed=true`, com `mt-2 border-t border-amber-500/15 pt-2`.
-   - Click no input não dá toggle ao chip (`stopPropagation`).
-   - Vazio é válido — apenas marcar o medicamento já é informação útil.
-3. **Secção "Outro" no fim** da grelha (full-width, abaixo dos chips):
-   - Botão tonal `+ Adicionar outro medicamento` (rounded-full, `bg-muted/40`, ícone `Plus`).
-   - Cada entrada criada = card com mesmo aspecto dos chips amber, com 2 inputs (`Nome` + `Dose`) e um botão `×` para remover.
-   - Suporta múltiplos.
+## Escopo (decidido por mim)
 
-## Persistência (sem migração)
+### Strip rica — onde aplicar
+| Secção | Já tem strip? | Acção |
+|---|---|---|
+| PAR-Q+ | sim (simples) | + descrição |
+| Risco | feito | — |
+| Setup de treino | sim (simples) | + descrição |
+| Objetivo SMART | sim (simples) | + descrição |
+| Antropometria | não | + strip rica nova |
+| Readiness | não | + strip rica nova |
+| Estilo de vida | não | + strip rica nova |
+| Nutrição | não | + strip rica nova |
+| Screen movimento | não | + strip rica nova |
+| Performance | não | + strip rica nova |
+| Histórico, Meds, Mobilidade, Postura | não | **deixar como está** — secções descritivas/opcionais; strip seria ruído |
 
-Mantemos os dois campos existentes em `assessment`:
+### Implicações para a prescrição — onde aplicar
+9 secções (incluindo Risco, já feita):
 
-- **`med_flags: string[]`** — continua a guardar os canónicos (`"Beta-blocker"`, `"Statin"`, …). Inalterado, screening ACSM continua a funcionar.
-- **`medications: string`** — passa a ser **sintetizado** a partir do estado estruturado, no formato legível:
-  ```
-  Beta-blocker (5 mg/dia); Statin; Outro: Vitamina D 2000UI; Outro: Magnésio 400mg
-  ```
-  Isto preserva a coluna DB, mantém compatibilidade com qualquer leitura a jusante (PDF, AI brief), e permite re-parsear ao montar para reidratar doses/outros.
+- **PAR-Q+** — clearance gate, contraindicações específicas por bandeira
+- **Setup de treino** — frequência prescrita, dias preferidos, equipamento → restrições de selecção
+- **Objetivo SMART** — driver primário (hipertrofia/força/perda gordura/saúde) → preset de programação sugerido
+- **Antropometria** — WHR + IMC → carga axial, cardio low-impact, alvos de composição
+- **Readiness** — sono, stress, dor → autoreg strictness recomendada, deload frequency
+- **Estilo de vida** — álcool, tabaco, sedentarismo ocupacional → recuperação esperada
+- **Nutrição** — proteína g/kg, hidratação, refeições/dia → energy availability flag
+- **Screen movimento** — padrões com score baixo → exercícios remediais antes de progredir
+- **Performance** — capacidade aeróbia/força → tier de programação (advanced/conservative/remedial)
 
-Helper novo em `src/lib/meds-format.ts`:
-- `serializeMeds(flags, doses, others) → string`
-- `parseMeds(medications) → { doses: Record<canonical,string>, others: { name, dose }[] }`
+**Saltar**: Histórico (narrativa), Meds (já é flag-driven, RxImplications de Risco já consome), Mobilidade (descritiva), Postura (descritiva).
 
-## Ficheiros a tocar
+## Implementação
 
-- `src/routes/clients_.$clientId.tsx` — substituir o bloco linhas 2283-2319; remover a `TextField` de topo; novo subcomponente local `MedChip` com input de dose; nova secção "Outro" com lista local + botão adicionar.
-- `src/lib/meds-format.ts` — novo, com `serializeMeds`/`parseMeds`.
-- `src/i18n/locales/pt/assessment.json` e `en/assessment.json` — adicionar:
-  - `meds_block.dose_placeholder`
-  - `meds_block.add_other` ("Adicionar outro medicamento" / "Add another medication")
-  - `meds_block.other_name_placeholder` ("Nome" / "Name")
-  - `meds_block.other_dose_placeholder` ("Dose" / "Dose")
-  - `meds_block.other_remove_aria`
-  - **remover** `meds_block.free_text` (já não usado).
+### 1. Componente único `RxImplications` generalizado
+Hoje só faz Risco. Refactor:
+```ts
+function RxImplications({ sectionId, assessment, riskCategory }: Props)
+```
+Internamente, switch por `sectionId` para construir as `Item[]` deterministicamente. Mantém o mesmo wrap visual (header eyebrow + grid de cartões tonais) e a mesma palette TONE (danger/warn/info/neutral).
 
-## Estética (mantém o tom amber actual)
+Cada secção tem a sua função pura `buildItems_<section>(assessment) → Item[]`. Isolada, testável, sem AI.
 
-- Input de dose dentro do chip: `h-7 text-[11px] bg-background/60 border-amber-500/20 focus-visible:ring-amber-500/40`, `tabular-nums`.
-- Botão "Adicionar outro": `mt-2 w-full rounded-full bg-muted/40 hover:bg-muted/70 text-xs font-medium text-muted-foreground hover:text-foreground py-2 inline-flex items-center justify-center gap-1.5` com `<Plus className="h-3.5 w-3.5"/>`.
-- Cards "Outro": mesmo border amber dos seleccionados, com 2 inputs lado a lado (`grid-cols-[1fr_auto]` no mobile, `grid-cols-[1fr_120px_auto]` desktop) + botão `×` ghost.
+### 2. Strip rica
+`CompletionStrip` já aceita `description`. Para as secções novas adiciono o footer no `SectionBlock`. As 6 secções sem strip ganham:
+- Antropometria → "IMC X (categoria) · WHR Y" + meaning
+- Readiness → "Recuperação: <perfil>" + meaning
+- Estilo de vida → "<n> factores de estilo notáveis" + meaning
+- Nutrição → "Proteína Xg/kg · <ingestão hídrica>" + meaning
+- Screen → "<padrões cleared>/6" + meaning
+- Performance → "Tier: <advanced/conservative/remedial>" + meaning
 
-## Smoke test (391×844)
+### 3. i18n
+Tudo via `t()` em `risk_block.complete_meaning_*`-style keys, dentro do bloco respectivo (`anthro_block.complete`, `anthro_block.complete_meaning`, etc.). PT escrito; EN cai no PT por enquanto (i18next fallback) e marcamos com `// TODO: EN translation` no JSON EN.
 
-- Tocar Beta-blocker → aparece input de dose, escrever "5 mg" → guardar → recarregar → dose persiste e chip continua activo.
-- Adicionar 2 "Outros" → remover o do meio → o restante persiste.
-- Desmarcar um chip com dose preenchida → dose limpa silenciosamente.
-- `medications` final no DB lê-se como frase humana (verificar via Lovable Cloud).
+### 4. Voz
+Toda a copy em "você" formal (memo PT voice), sem exclamações, factual. Tom = manual de instrumento, não marketing.
+
+## Riscos & decisões
+
+- **Ruído visual em secções pouco preenchidas**: cada `buildItems_*` tem fallback "Sem condicionantes adicionais — passar à frente" só quando a secção está completa mas neutra. Não acumula 0-item panels.
+- **Volume de texto**: ~50-70 strings PT novas. Aceitável para 1 round, sem dependências externas.
+- **Mobile (375px)**: cartões mantêm `grid-cols-1 sm:grid-cols-2` como já é.
+- **Refactor risco**: `RxImplications` actual passa de 7 regras hard-coded a switch — mantenho 100% das 7 regras existentes na branch `case "risk"` para zero regressão.
+
+## Entregável
+
+- 1 componente `RxImplications` refactorizado + 8 funções `buildItems_*`
+- 6 novos footers `<CompletionStrip text=… description=…>` em SectionBlocks
+- 3 descriptions adicionadas a strips existentes (parq, training, goal)
+- ~60 chaves PT em `assessment.json`
+- EN: chaves vazias com `// TODO` ou simplesmente omitidas (fallback PT)
+- Smoke 375px na rota `/clients/$id` percorrendo as 9 secções alvo

@@ -1964,7 +1964,7 @@ function ClientDetail() {
         >
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
+          <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} description={t(parqFlagCount(assessment.parq) === 0 ? "parq_block.complete_meaning_clear" : "parq_block.complete_meaning_flagged")} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_KEYS.map((key, idx) => {
                 const value = (assessment.parq as any)[key];
@@ -1990,6 +1990,9 @@ function ClientDetail() {
                 );
               })}
             </ul>
+            {isSectionComplete("parq", assessment) && (
+              <RxImplications sectionId="parq" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Risk stratification */}
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} description={t(`risk_block.complete_meaning_${riskCategory}` as const)} /> : null}>
@@ -2197,14 +2200,10 @@ function ClientDetail() {
                 onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
               />
             </div>
-            <RxImplications
-              risk={assessment.risk}
-              parqFlags={parqFlagCount(assessment.parq)}
-              category={riskCategory}
-            />
+            <RxImplications sectionId="risk" assessment={assessment} riskCategory={riskCategory} />
           </SectionBlock>
           {/* Training setup (existing) */}
-          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
+          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} description={t("training_block.complete_meaning")} /> : null}>
             <div className="mb-3">
               <AnchoredSlider
                 label="Onde está face ao melhor que já conseguiu?"
@@ -2301,6 +2300,9 @@ function ClientDetail() {
               )}
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
+            {isSectionComplete("training", assessment) && (
+              <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
@@ -2324,7 +2326,7 @@ function ClientDetail() {
             </div>
           </SectionBlock>
           {/* SMART goal */}
-          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
+          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} description={t("goal_block.complete_meaning")} /> : null}>
             <SmartGoalSection
               value={{
                 smart_specific: assessment.smart_specific ?? null,
@@ -2338,6 +2340,9 @@ function ClientDetail() {
               <div className="mt-3">
                 <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
               </div>
+            )}
+            {isSectionComplete("goal", assessment) && (
+              <RxImplications sectionId="goal" assessment={assessment} riskCategory={riskCategory} />
             )}
           </SectionBlock>
           {/* Medications */}
@@ -2474,7 +2479,7 @@ function ClientDetail() {
             })()}
           </SectionBlock>
           {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
             {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
                 Vivem em `clients` (não na avaliação) mas pertencem
                 conceptualmente à antropometria: alimentam IMC, BMR e
@@ -2646,9 +2651,12 @@ function ClientDetail() {
                 </div>
               </div>
             </details>
+            {isSectionComplete("anthro", assessment) && (
+              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Readiness */}
-          <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("readiness", assessment) ? <CompletionStrip text={t("readiness_block.complete", { stage: t(`readiness_block.${assessment.readiness_stage}` as const, { defaultValue: assessment.readiness_stage }) })} description={t("readiness_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
               <HelpPopover label={t("readiness_block.help_title")} triggerLabel={t("readiness_block.help_title")}>
                 <p>{t("readiness_block.help_body")}</p>
@@ -2665,9 +2673,12 @@ function ClientDetail() {
                 sub: t(`readiness_block.${v}_sub` as const),
               }))}
             />
+            {isSectionComplete("readiness", assessment) && (
+              <RxImplications sectionId="readiness" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}/10 · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
             <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <AnchoredSlider
                 label="Como anda o sono?"
@@ -2749,9 +2760,12 @@ function ClientDetail() {
                 </>
               )}
             </div>
+            {isSectionComplete("lifestyle", assessment) && (
+              <RxImplications sectionId="lifestyle" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("nutrition", assessment) ? <CompletionStrip text={t("nutrition_block.complete", { summary: `${assessment.ext_meals_per_day ?? "—"} refeições · álcool ${assessment.ext_alcohol_units_week ?? "—"}u/sem` })} description={t("nutrition_block.complete_meaning")} /> : null}>
             <div className="space-y-3">
               <div>
                 <div className="mb-1 flex items-center gap-1">
@@ -2850,6 +2864,9 @@ function ClientDetail() {
             <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
+            {isSectionComplete("nutrition", assessment) && (
+              <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Mobility checklist */}
           <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
@@ -2899,7 +2916,7 @@ function ClientDetail() {
             </div>
           </SectionBlock>
           {/* Movement screen */}
-          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)} footer={isSectionComplete("screen", assessment) ? <CompletionStrip text={t("screen_block.complete", { cleared: PATTERN_IDS.filter((p) => { if (assessment.screen_not_assessed?.[p]) return false; const fc = assessment[`${p}_form_criteria`]; return fc && formScore(fc) >= 3; }).length, total: PATTERN_IDS.length })} description={t("screen_block.complete_meaning")} /> : null}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">
               Marca cada critério observado · adiciona dados de capacidade quando disponíveis.
             </p>
@@ -2929,9 +2946,12 @@ function ClientDetail() {
                 />
               ))}
             </div>
+            {isSectionComplete("screen", assessment) && (
+              <RxImplications sectionId="screen" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Performance */}
-          <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+          <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)} footer={isSectionComplete("performance", assessment) ? <CompletionStrip text={t("performance_block.complete", { summary: `FC ${assessment.resting_heart_rate ?? "—"} bpm · ${assessment.ext_cardio_test ?? "sem teste"}` })} description={t("performance_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
@@ -2971,6 +2991,9 @@ function ClientDetail() {
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               {showAdvancedPerformance ? t("hide_advanced") : t("show_advanced")}
             </button>
+            {isSectionComplete("performance", assessment) && (
+              <RxImplications sectionId="performance" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
 
           {!busy && resumablePlan && (
@@ -5287,29 +5310,23 @@ function numScore(v: unknown): number | null {
 
 // ----------------------------------------------------------------------------
 // RxImplications — deterministic "what this means for the prescription" panel.
-// Lives inside the Risk Stratification section. Pure derivation from the inputs
-// the trainer just filled in (risk factors + PAR-Q+ flag count + ACSM tier).
-// No AI. Purpose: turn raw flags into 2–5 actionable programming constraints.
+// Lives inside multiple assessment sections. Pure derivation from the inputs
+// the trainer just filled in. No AI. Each section has its own buildItems_*
+// function so the panel surfaces 1–4 actionable programming constraints per
+// section. Same visual shell across sections (eyebrow header + tonal cards).
 // ----------------------------------------------------------------------------
-function RxImplications({
-  risk,
-  parqFlags,
-  category,
-}: {
-  risk: any;
-  parqFlags: number;
-  category: string;
-}) {
-  type Item = {
-    key: string;
-    tone: "danger" | "warn" | "info" | "neutral";
-    icon: React.ReactNode;
-    title: string;
-    body: string;
-  };
-  const items: Item[] = [];
+type RxItem = {
+  key: string;
+  tone: "danger" | "warn" | "info" | "neutral";
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+};
 
-  // 1) Clearance gate
+function buildRxItems_risk(a: any, category: string): RxItem[] {
+  const risk = a?.risk ?? {};
+  const parqFlags = parqFlagCount(a?.parq ?? {});
+  const items: RxItem[] = [];
   if (parqFlags > 0 || category === "high") {
     items.push({
       key: "clearance",
@@ -5322,8 +5339,6 @@ function RxImplications({
           : "Risco ACSM alto — requer parecer médico antes de progressões vigorosas.",
     });
   }
-
-  // 2) Intensity ceiling
   if (category === "high") {
     items.push({
       key: "intensity-high",
@@ -5341,8 +5356,6 @@ function RxImplications({
       body: "Permitido moderado-a-vigoroso (≈40–75% HRR). Subir vigoroso só após 2–4 semanas com tolerância.",
     });
   }
-
-  // 3) Cardiovascular monitoring
   if (risk.hypertension || risk.family_cvd || risk.dyslipidemia) {
     const drivers = [
       risk.hypertension ? "hipertensão" : null,
@@ -5357,8 +5370,6 @@ function RxImplications({
       body: `Por ${drivers}: medir TA pré-sessão, evitar Valsalva pesado, parar ao menor sinal de dor torácica, dispneia desproporcional ou tonturas.`,
     });
   }
-
-  // 4) Glycemic control
   if (risk.prediabetes) {
     items.push({
       key: "glyc",
@@ -5368,8 +5379,6 @@ function RxImplications({
       body: "Treinar 1–2h após refeição. Ter HC rápido disponível. Cardio steady-state pós-treino aumenta sensibilidade à insulina.",
     });
   }
-
-  // 5) Loading constraints by BMI
   if (risk.bmi_category === "obese") {
     items.push({
       key: "load-obese",
@@ -5387,8 +5396,6 @@ function RxImplications({
       body: "Volume conservador até resolver défice calórico. Confirmar ingestão proteica ≥1,6 g/kg antes de subir frequência.",
     });
   }
-
-  // 6) Smoking — aerobic capacity
   if (risk.smoking === "current") {
     items.push({
       key: "smoke",
@@ -5398,8 +5405,6 @@ function RxImplications({
       body: "Esperar VO₂máx ~10–15% abaixo do não-fumador. Recuperação inter-séries +30–60s no condicionamento.",
     });
   }
-
-  // 7) Sedentary onboarding
   if (risk.sedentary && category !== "low") {
     items.push({
       key: "sed",
@@ -5409,8 +5414,6 @@ function RxImplications({
       body: "Começar 2×/sem corpo inteiro, 4–6 semanas em RPE 5–6, antes de introduzir intensidade ou volume adicional.",
     });
   }
-
-  // All-clear path
   if (items.length === 0) {
     items.push({
       key: "clear",
@@ -5420,8 +5423,543 @@ function RxImplications({
       body: "Prescrição livre dentro da régua ACSM para risco baixo. Avançar direto para os parâmetros de programação.",
     });
   }
+  return items;
+}
 
-  const TONE: Record<Item["tone"], { wrap: string; icon: string; title: string }> = {
+function buildRxItems_parq(a: any): RxItem[] {
+  const parq = a?.parq ?? {};
+  const flags = PARQ_KEYS.filter((k) => parq[k] === true);
+  if (flags.length === 0) {
+    return [{
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem bandeiras vermelhas",
+      body: "Pode avançar para a estratificação de risco e programação dentro da régua normal.",
+    }];
+  }
+  // Group flagged questions by rationale category for compact rules.
+  const cats = new Set(flags.map((k) => PARQ_RATIONALE_KEY[k]));
+  const items: RxItem[] = [];
+  items.push({
+    key: "clearance",
+    tone: "danger",
+    icon: <Shield className="h-3.5 w-3.5" />,
+    title: `${flags.length} alerta${flags.length === 1 ? "" : "s"} — clearance médico antes de progredir`,
+    body: "Não prescrever esforço moderado/vigoroso sem parecer médico. O PDF inclui disclaimer de revisão.",
+  });
+  if (cats.has("cardio")) items.push({
+    key: "cardio",
+    tone: "warn",
+    icon: <HeartPulse className="h-3.5 w-3.5" />,
+    title: "Tecto cardiovascular",
+    body: "Limitar a RPE ≤ 6 e zona aeróbia (40–60% HRR). Evitar Valsalva, parar ao menor sinal de dor torácica ou dispneia desproporcional.",
+  });
+  if (cats.has("balance")) items.push({
+    key: "balance",
+    tone: "warn",
+    icon: <Activity className="h-3.5 w-3.5" />,
+    title: "Equilíbrio comprometido",
+    body: "Sem overhead com pesos livres nem unipodal sem apoio. Preferir máquinas, cabos e variantes assistidas até validação.",
+  });
+  if (cats.has("msk")) items.push({
+    key: "msk",
+    tone: "info",
+    icon: <Gauge className="h-3.5 w-3.5" />,
+    title: "Carga e impacto controlados",
+    body: "Excluir saltos, sprint e cargas máximas. Programa mobility-first nas primeiras 2–4 semanas e progressões em micro-incrementos.",
+  });
+  if (cats.has("manual")) items.push({
+    key: "manual",
+    tone: "info",
+    icon: <Info className="h-3.5 w-3.5" />,
+    title: "Anotar contexto em medicação",
+    body: "Detalhar a razão do alerta no bloco de medicação para informar a estratificação ACSM e o plano.",
+  });
+  return items;
+}
+
+function buildRxItems_training(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const days = Number(a?.training_days_per_week);
+  const dur = Number(a?.session_duration_minutes);
+  const exp = String(a?.experience_level ?? "");
+  const eq: string[] = a?.available_equipment ?? [];
+  const cap = Number(a?.current_capacity_vs_pb);
+
+  if (Number.isFinite(days) && days > 0) {
+    items.push({
+      key: "freq",
+      tone: "info",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: `Frequência fixa: ${days}×/sem · ${Number.isFinite(dur) && dur > 0 ? `${dur} min` : "duração livre"}`,
+      body: days <= 2
+        ? "Dois treinos = corpo inteiro com padrões compostos. Não cabe split — priorizar dose mínima eficaz."
+        : days === 3
+        ? "Três treinos = full-body alternado ou Upper/Lower/Full. Boa dose para hipertrofia/força gerais."
+        : days >= 4
+        ? "Quatro ou mais = abre split (Upper/Lower, Push/Pull/Legs ou Bro). Atenção a volume semanal por grupo (10–20 séries efetivas)."
+        : "Setup definido — geração respeitará dias e duração.",
+    });
+  }
+  if (exp === "beginner") {
+    items.push({
+      key: "tier",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Tier iniciante: linear progression",
+      body: "Padrões compostos 2–3×/sem, 3 séries × 8–12 reps, +2,5 kg/semana. Sem RPE ainda — só técnica e consistência.",
+    });
+  } else if (exp === "advanced") {
+    items.push({
+      key: "tier",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Tier avançado: blocos ondulados",
+      body: "Acumulação → intensificação → realização (Bompa). RPE 6–9, deload obrigatório a cada 4 semanas. Especialização possível.",
+    });
+  }
+  if (Number.isFinite(cap) && cap <= 4) {
+    items.push({
+      key: "rebuild",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: "Modo reconstrução",
+      body: "Bem abaixo do pico — arrancar com 60–70% das cargas estimadas, RPE 5–7. Reintroduzir intensidade só após 3–4 semanas com adesão ≥80%.",
+    });
+  }
+  if (eq.length > 0 && eq.length <= 2) {
+    items.push({
+      key: "eq",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Equipamento limitado",
+      body: "Pool restrito de exercícios. Vamos compensar com unilaterais, tempo sob tensão e variantes de amplitude. Priorizar transferências para padrões base.",
+    });
+  }
+  if (a?.injuries && String(a.injuries).trim().length > 4) {
+    items.push({
+      key: "inj",
+      tone: "warn",
+      icon: <Shield className="h-3.5 w-3.5" />,
+      title: "Restrições por lesão",
+      body: "Substituições e ROM limitado registados. Verificar compatibilidade ao gerar — qualquer exercício contraindicado deve sair do pool.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Setup neutro",
+      body: "Sem restrições especiais — geração livre dentro do pool padrão.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_goal(a: any): RxItem[] {
+  const goal = String(a?.primary_goal ?? "").toLowerCase();
+  const items: RxItem[] = [];
+  if (goal.includes("hipertrofia") || goal.includes("massa") || goal.includes("hypertrophy") || goal.includes("muscle")) {
+    items.push({
+      key: "preset",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Preset: Hypertrophy classic",
+      body: "10–20 séries efetivas/grupo, 6–15 reps, RPE 7–9, descansos 60–120s. Volume é o driver — manter superávit calórico leve.",
+    });
+  } else if (goal.includes("força") || goal.includes("forca") || goal.includes("strength")) {
+    items.push({
+      key: "preset",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Preset: Strength base",
+      body: "Compostos 3–5×/sem, 3–6 reps, 75–90% 1RM, RPE 7–8, descansos 2–4 min. Wave model com deload a cada 4 semanas.",
+    });
+  } else if (goal.includes("perda") || goal.includes("gordura") || goal.includes("recomp") || goal.includes("loss") || goal.includes("fat")) {
+    items.push({
+      key: "preset",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Preset: Moderate recomp",
+      body: "Manter força (compostos 4–8 reps) + densidade (circuitos/supersets) + cardio NEAT. Défice calórico moderado (10–15%), proteína ≥1,8 g/kg.",
+    });
+  } else if (goal.includes("saúde") || goal.includes("saude") || goal.includes("health") || goal.includes("bem-estar")) {
+    items.push({
+      key: "preset",
+      tone: "info",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Preset: Conservative health",
+      body: "Full-body 2–3×/sem, RPE 5–7, padrões funcionais + condicionamento aeróbio (zona 2). Sem urgência de hipertrofia ou força máxima.",
+    });
+  } else if (goal) {
+    items.push({
+      key: "preset",
+      tone: "neutral",
+      icon: <Sparkles className="h-3.5 w-3.5" />,
+      title: "Driver definido",
+      body: "Vamos calibrar volume/intensidade/densidade conforme o objetivo registado. Reveja o preset no Intensity Cockpit antes de finalizar.",
+    });
+  }
+  if (a?.smart_deadline) {
+    const d = new Date(a.smart_deadline);
+    const weeks = Math.max(1, Math.round((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)));
+    items.push({
+      key: "horizon",
+      tone: weeks < 8 ? "warn" : "info",
+      icon: <CalendarIcon className="h-3.5 w-3.5" />,
+      title: weeks < 8 ? `Horizonte curto (~${weeks} sem)` : `Horizonte: ~${weeks} semanas`,
+      body: weeks < 8
+        ? "Janela apertada. Esperar ganhos visíveis modestos — gerir expectativas e priorizar 1–2 KPIs principais."
+        : "Tempo suficiente para ≥1 bloco completo (4–6 sem) + reavaliação. Marcar checkpoint a meio.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Falta driver primário",
+      body: "Sem driver definido o plano sai genérico. Preencha o objetivo SMART para ativar o preset adequado.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_anthro(a: any, riskCategory: string): RxItem[] {
+  const items: RxItem[] = [];
+  const waist = Number(a?.waist_cm);
+  const hip = Number(a?.hip_cm);
+  const whr = Number.isFinite(waist) && Number.isFinite(hip) && hip > 0 ? waist / hip : null;
+  const cat = a?.risk?.bmi_category;
+
+  if (whr != null && whr >= 0.95) {
+    items.push({
+      key: "whr",
+      tone: "warn",
+      icon: <HeartPulse className="h-3.5 w-3.5" />,
+      title: `WHR elevado (${whr.toFixed(2)}) — risco abdominal`,
+      body: "Adiposidade central correlaciona com risco cardiometabólico. Reforça o caso para cardio steady-state e défice calórico moderado.",
+    });
+  } else if (whr != null && whr >= 0.85) {
+    items.push({
+      key: "whr",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: `WHR a vigiar (${whr.toFixed(2)})`,
+      body: "Acima do limiar saudável (♂ 0,90 · ♀ 0,85). Incluir cardio Z2 30–45 min × 3/sem para acelerar mobilização visceral.",
+    });
+  }
+  if (cat === "obese") {
+    items.push({
+      key: "load",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Cardio low-impact + carga apoiada",
+      body: "Bike, elíptica, remo ou água. Squat/DL pesado entra só após 4 semanas de tolerância. Priorizar máquinas e variantes assistidas.",
+    });
+  } else if (cat === "underweight") {
+    items.push({
+      key: "load",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Volume conservador",
+      body: "Confirmar superávit calórico e proteína ≥1,6 g/kg antes de subir frequência. Foco em compostos pesados, baixa densidade.",
+    });
+  }
+  if (a?.body_fat_pct && Number(a.body_fat_pct) > 0) {
+    items.push({
+      key: "bf",
+      tone: "neutral",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Linha de base de %MG registada",
+      body: `Usar o mesmo método (${a.body_fat_method ?? "—"}) ao longo do tempo. Reavaliar a cada 4–6 semanas para validar trajetória.`,
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Antropometria sem alarmes",
+      body: "Composição dentro da régua. Programação livre quanto a carga axial e cardio.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_readiness(a: any): RxItem[] {
+  const stage = String(a?.readiness_stage ?? "");
+  switch (stage) {
+    case "precontemplation":
+      return [{
+        key: "tone",
+        tone: "warn",
+        icon: <Brain className="h-3.5 w-3.5" />,
+        title: "Estágio motivacional, não programático",
+        body: "Não prescrever programa estruturado. Foco em educação, entrevista motivacional e identificar barreiras antes de comprometer dias/semana.",
+      }];
+    case "contemplation":
+      return [{
+        key: "tone",
+        tone: "info",
+        icon: <Brain className="h-3.5 w-3.5" />,
+        title: "Wins de baixa fricção",
+        body: "2 sessões/semana de 30 min, padrões simples, vitórias rápidas. Construir hábito antes de subir volume ou complexidade.",
+      }];
+    case "preparation":
+      return [{
+        key: "tone",
+        tone: "info",
+        icon: <Brain className="h-3.5 w-3.5" />,
+        title: "Onboarding estruturado",
+        body: "3 sessões/semana, full-body, técnica antes de carga. Primeiras 4 semanas como microciclo de adaptação.",
+      }];
+    case "action":
+      return [{
+        key: "tone",
+        tone: "info",
+        icon: <Activity className="h-3.5 w-3.5" />,
+        title: "Reforço de hábito",
+        body: "Manter 3–4 sessões consistentes. Checkpoints semanais (adesão, RPE) e progressão linear até 6 meses.",
+      }];
+    case "maintenance":
+      return [{
+        key: "tone",
+        tone: "neutral",
+        icon: <Sparkles className="h-3.5 w-3.5" />,
+        title: "Modo progressão",
+        body: "Hábito instalado — pode prescrever blocos ondulados, especialização e introduzir variabilidade. Risco de tédio: rotacionar exercícios a cada bloco.",
+      }];
+    default:
+      return [{
+        key: "clear",
+        tone: "neutral",
+        icon: <Info className="h-3.5 w-3.5" />,
+        title: "Estágio por definir",
+        body: "Sem estágio definido o tom da prescrição fica neutro. Selecione um para calibrar pacing das primeiras semanas.",
+      }];
+  }
+}
+
+function buildRxItems_lifestyle(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const sleep = Number(a?.sleep_quality);
+  const stress = Number(a?.stress_level);
+  const seated = Number(a?.ext_hours_seated);
+  const steps = Number(a?.ext_daily_steps);
+
+  if (Number.isFinite(sleep) && sleep <= 4) {
+    items.push({
+      key: "sleep",
+      tone: "warn",
+      icon: <Brain className="h-3.5 w-3.5" />,
+      title: `Sono mau (${sleep}/10)`,
+      body: "Sono <6h prediz pior recuperação e +20% risco lesão. Subir autoreg para strict, baixar volume 10–15% e priorizar sono antes de intensidade.",
+    });
+  }
+  if (Number.isFinite(stress) && stress >= 7) {
+    items.push({
+      key: "stress",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: `Stress alto (${stress}/10)`,
+      body: "Cortisol crónico compromete recuperação e adesão. Capar RPE em 8, deload mais frequente (a cada 3 sem) e incluir cardio Z2 como regulador.",
+    });
+  }
+  if (Number.isFinite(seated) && seated >= 8) {
+    items.push({
+      key: "seated",
+      tone: "info",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "Trabalho sentado prolongado",
+      body: "Adicionar mobilidade de anca/torácica no aquecimento (5 min) e micro-pausas. Cuidado com flexores de anca encurtados em hinges.",
+    });
+  }
+  if (Number.isFinite(steps) && steps < 5000) {
+    items.push({
+      key: "neat",
+      tone: "info",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "NEAT baixo (<5k passos)",
+      body: "Subir gasto não-treino antes de adicionar cardio formal. Meta inicial: +2k passos/dia × 2 sem.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Estilo de vida favorável à recuperação",
+      body: "Sem flags de sono/stress/sedentarismo. Pode programar com autoreg suggested e deload padrão (4 sem).",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_nutrition(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const meals = Number(a?.ext_meals_per_day);
+  const alcohol = Number(a?.ext_alcohol_units_week);
+  const water = Number(a?.ext_water_l_per_day);
+
+  if (Number.isFinite(meals) && meals <= 2) {
+    items.push({
+      key: "meals",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: "Janela alimentar reduzida",
+      body: "Difícil atingir 1,6–2,2 g/kg de proteína em 2 refeições. Sugerir +1 snack proteico ou shake pós-treino antes de subir volume.",
+    });
+  }
+  if (Number.isFinite(alcohol) && alcohol >= 11) {
+    items.push({
+      key: "alcohol",
+      tone: "warn",
+      icon: <Droplet className="h-3.5 w-3.5" />,
+      title: `Álcool elevado (~${alcohol} u/sem)`,
+      body: "Acima de 14 u/sem corta síntese proteica e qualidade do sono. Esperar adaptação 30–40% mais lenta. Conversa de redução antes de prometer resultados.",
+    });
+  }
+  if (Number.isFinite(water) && water > 0 && water < 1.5) {
+    items.push({
+      key: "water",
+      tone: "info",
+      icon: <Droplets className="h-3.5 w-3.5" />,
+      title: "Hidratação abaixo do mínimo",
+      body: "ACSM: 30–40 ml/kg/dia. Desidratação >2% baixa força ~5% e cognição. Meta inicial: 2 L/dia + sal nas sessões longas.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Nutrição não bloqueia adaptação",
+      body: "Sem flags óbvias de disponibilidade energética. Reavaliar caso resultados estagnem 4+ semanas.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_screen(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const weak: string[] = [];
+  const skipped: string[] = [];
+  PATTERN_IDS.forEach((p) => {
+    if (a?.screen_not_assessed?.[p]) { skipped.push(p); return; }
+    const fc = a?.[`${p}_form_criteria`];
+    const score = fc ? formScore(fc) : 0;
+    if (score > 0 && score < 3) weak.push(p);
+  });
+  if (weak.length > 0) {
+    items.push({
+      key: "weak",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: `${weak.length} padr${weak.length === 1 ? "ão" : "ões"} a regredir`,
+      body: `${weak.join(", ").toUpperCase()}: começar com variantes regredidas (apoiadas, amplitude parcial) e drills de competência. Sem progressão de carga até score ≥3.`,
+    });
+  }
+  if (skipped.length > 0) {
+    items.push({
+      key: "skipped",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: `${skipped.length} não avaliad${skipped.length === 1 ? "o" : "os"}`,
+      body: "Incluir só com cautela. Avaliar na 1ª sessão antes de progredir carga.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Todos os padrões cleared",
+      body: "Pode progredir cargas em todos os movimentos compostos sem restrições de competência motora.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_performance(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const rhr = Number(a?.resting_heart_rate);
+  const test = String(a?.ext_cardio_test ?? "");
+
+  if (Number.isFinite(rhr) && rhr > 80) {
+    items.push({
+      key: "rhr-high",
+      tone: "warn",
+      icon: <HeartPulse className="h-3.5 w-3.5" />,
+      title: `FC repouso elevada (${rhr} bpm)`,
+      body: "Indicador de baixa base aeróbia ou stress acumulado. Tier remedial: 2–3× cardio Z2 (zona 2) por semana antes de progredir intensidade.",
+    });
+  } else if (Number.isFinite(rhr) && rhr < 55) {
+    items.push({
+      key: "rhr-low",
+      tone: "info",
+      icon: <HeartPulse className="h-3.5 w-3.5" />,
+      title: `Boa base aeróbia (FC ${rhr} bpm)`,
+      body: "Tier advanced: pode prescrever HIIT/intervalados desde a primeira semana. Manter Z2 como recuperação ativa.",
+    });
+  }
+  if (test === "untested" || !test) {
+    items.push({
+      key: "untested",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Sem teste cardio",
+      body: "Estimar zonas pela fórmula 220 − idade ± 10 bpm. Marcar Cooper ou Rockport nas primeiras 2 semanas para zonas reais.",
+    });
+  } else if (test) {
+    items.push({
+      key: "test",
+      tone: "neutral",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "Teste cardio registado",
+      body: "Zonas-alvo derivadas do resultado. Reavaliar no fim de cada bloco (4–6 sem) para confirmar adaptação.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Performance neutra",
+      body: "Programação cardio dentro da régua padrão.",
+    });
+  }
+  return items;
+}
+
+function RxImplications({
+  sectionId,
+  assessment,
+  riskCategory,
+}: {
+  sectionId: "risk" | "parq" | "training" | "goal" | "anthro" | "readiness" | "lifestyle" | "nutrition" | "screen" | "performance";
+  assessment: any;
+  riskCategory: string;
+}) {
+  const items: RxItem[] = (() => {
+    switch (sectionId) {
+      case "risk": return buildRxItems_risk(assessment, riskCategory);
+      case "parq": return buildRxItems_parq(assessment);
+      case "training": return buildRxItems_training(assessment);
+      case "goal": return buildRxItems_goal(assessment);
+      case "anthro": return buildRxItems_anthro(assessment, riskCategory);
+      case "readiness": return buildRxItems_readiness(assessment);
+      case "lifestyle": return buildRxItems_lifestyle(assessment);
+      case "nutrition": return buildRxItems_nutrition(assessment);
+      case "screen": return buildRxItems_screen(assessment);
+      case "performance": return buildRxItems_performance(assessment);
+      default: return [];
+    }
+  })();
+
+  const TONE: Record<RxItem["tone"], { wrap: string; icon: string; title: string }> = {
     danger: {
       wrap: "border-red-500/25 bg-red-500/[0.04]",
       icon: "bg-red-500/15 text-red-700 dark:text-red-300",
