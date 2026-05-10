@@ -4203,6 +4203,8 @@ function AssessmentSection({
   saveStatus,
   lastSavedAt,
   onActiveChange,
+  onConclude,
+  concludeBusy = false,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -4223,6 +4225,9 @@ function AssessmentSection({
   lastSavedAt?: number | null;
   /** Notifies parent when the focused section changes. */
   onActiveChange?: (id: string) => void;
+  /** Triggered when the user taps "Concluir" on the last section. */
+  onConclude?: () => void;
+  concludeBusy?: boolean;
 }) {
   const { t } = useTranslation("assessment");
   const isMobile = useIsMobile(1024);
