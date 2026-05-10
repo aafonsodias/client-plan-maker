@@ -1,69 +1,6 @@
-import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AutoTextarea } from "@/components/AutoTextarea";
-import { toast } from "sonner";
-import {
-  Download, Plus, Save, Trash2, CheckCircle2,
-  Settings as SettingsIcon, Lock, LockOpen, NotebookPen, Pencil,
-  Share2, Copy, RefreshCw, History, Eye, AlertTriangle, Sparkles,
-  ChevronDown, ChevronUp, Heart, Check, MinusCircle, XCircle, MessageCircle, PlayCircle, BarChart3, Loader2,
-  TrendingUp, Minus, RotateCcw,
-} from "lucide-react";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { PlanData, Week, Day, Exercise } from "@/lib/pdf";
-import { isLegacyPlan } from "@/lib/pdf-types";
-import { planStatusInfo } from "@/lib/plan-status";
-import { useTranslation } from "react-i18next";
-import { markOnboardingStep } from "@/components/OnboardingChecklist";
-import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft, regeneratePlanSummary } from "@/server/plan.functions";
-import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
-import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
-import { seedDemoSessions } from "@/server/demo-sessions.functions";
-import { SessionDayView } from "@/components/SessionDayView";
-import { MesocycleTableView } from "@/components/MesocycleTableView";
-import { VolumeSection } from "@/components/volume/VolumeSection";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { BlockAdaptationCard } from "@/components/BlockAdaptationCard";
-import { summarizeAdaptation } from "@/lib/block-adaptation";
-import { computeCapacityGain } from "@/lib/capacity-gain";
-import { CapacityGainCard } from "@/components/CapacityGainCard";
-import { LogbookTimeline } from "@/components/plan/LogbookTimeline";
-import { NextBlockCard } from "@/components/NextBlockCard";
-import { NextWeekCard } from "@/components/plan/NextWeekCard";
-import IntensityCockpit from "@/components/plan/IntensityCockpit";
-import type { ProgrammingVariables } from "@/server/phased/schemas";
-import { NextMealCue } from "@/components/NextMealCue";
-import { summarizeRotation } from "@/lib/rotation-audit";
-import type { BlockSummary } from "@/lib/block-feedback";
-import { ValidationReport } from "@/components/ValidationReport";
-import { HumanReviewBanner } from "@/components/HumanReviewBanner";
-import { PlanAssessmentSheet } from "@/components/PlanAssessmentSheet";
-import { ResultsPanel } from "@/components/ResultsPanel";
-import { ClientAvatar } from "@/components/ClientAvatar";
-import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
-import { markPlanFinished } from "@/server/blocks-manual.functions";
-import { ImportLogDialog } from "@/components/ImportLogDialog";
-import { ExerciseTrendChart } from "@/components/ExerciseTrendChart";
-import { fetchPlanLineageIds } from "@/lib/plan-lineage";
-import { isPlanFullyLogged, summaryLooksLeaked } from "@/lib/plan-status";
-import { SaveAsTemplateDialog } from "@/components/SaveAsTemplateDialog";
-// Trainer-side ops use the browser supabase client directly (RLS-protected).
-// Share-token mutations go through server fns so token + expiry stay in sync.
+import PlanEditorSurface from "@/components/PlanEditorSurface";
 
 export const Route = createFileRoute("/plans/$planId")({
   component: PlanRoute,
@@ -78,7 +15,7 @@ function PlanRoute() {
 
   return (
     <AppShell back={{ to: "/plans", label: "All plans" }}>
-      <PlanEditor />
+      <PlanEditorSurface planId={planId} />
     </AppShell>
   );
 }
