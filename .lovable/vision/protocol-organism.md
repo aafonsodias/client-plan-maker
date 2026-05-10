@@ -229,6 +229,22 @@ PT can override per mesocycle (global) or per capacity per client (granular). Re
 
 Implementation: stored in `client_measurement_cadence` per (client_id, domain_slug). Reads default from `capacity_domains.default_cadence_days` if no override exists.
 
+### Walkthrough triage (10 May 2026)
+
+After end-to-end assessment usage, founder + AI triaged ~50 surfaced items into 5 mini-rounds + parking lot. Captured in `.lovable/feedback/assessment-walkthrough-may-2026.md`. Four foundational decisions made:
+
+**AI in goal selector:** AI may *filter and order* existing curated templates based on assessment data, but never generates new content. Existing templates remain canonical truth; AI adds intelligence without hallucination risk.
+
+**Auto-decide technical choices (selective scope):** Following pattern "clinical basis → auto with visible override; personal circumstance → manual":
+
+- **Auto with override:** training days/week, plan duration, intensity preset, programming tier (beginner/intermediate/advanced inferred from years_training + recent pattern + metrics)
+
+- **Manual:** session duration (depends on personal time availability, no clinical formula)
+
+**Round F splittable:** Page-per-topic restructure breaks into 3 sub-rounds (1 area per round) instead of single 30-50c round. Reduces risk of half-built state.
+
+**SVG drawings hybrid:** Lovable inline SVG for MVP. Commissioned external art deferred until product-market validation. Acceptable visible quality compromise during pre-revenue phase.
+
 ---
 
 ## 5. Threads of thought (the founder's pending raciocínios)
