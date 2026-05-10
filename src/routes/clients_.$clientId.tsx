@@ -2197,6 +2197,11 @@ function ClientDetail() {
                 onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
               />
             </div>
+            <RxImplications
+              risk={assessment.risk}
+              parqFlags={parqFlagCount(assessment.parq)}
+              category={riskCategory}
+            />
           </SectionBlock>
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
