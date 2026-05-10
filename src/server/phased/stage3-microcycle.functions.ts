@@ -549,23 +549,24 @@ Generate ONLY this single day's session.`;
   const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
     ? enforceWeek1SetCap(floored, guidelines.week1SetCap)
     : { day: floored, setsCapped: 0 };
-  if (setsCapped > 0) {
-    await logGeneration(supabase, {
-      trainer_id: userId,
-      plan_id: planId,
-      stage: `stage3:day${dayIndex}:set_cap`,
-      model_used: "deterministic",
-      input_tokens: 0,
-      output_tokens: 0,
-      cost_usd: 0,
-      zod_passed: true,
-      retry_count: 0,
-      duration_ms: 0,
-      error: null,
-      input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap },
-      output_snapshot: { setsCapped },
-    });
-  }
+  // Always log the set-cap decision (even when 0 sets needed capping) so we
+  // can debug "why is accessory still 3 sets?" without re-running. Records
+  // the resolved tier + cap that the persisted day actually saw.
+  await logGeneration(supabase, {
+    trainer_id: userId,
+    plan_id: planId,
+    stage: `stage3:day${dayIndex}:set_cap`,
+    model_used: "deterministic",
+    input_tokens: 0,
+    output_tokens: 0,
+    cost_usd: 0,
+    zod_passed: true,
+    retry_count: 0,
+    duration_ms: 0,
+    error: null,
+    input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap ?? null },
+    output_snapshot: { setsCapped },
+  });
   if (floorApplied > 0) {
     await logGeneration(supabase, {
       trainer_id: userId,
