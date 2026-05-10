@@ -4878,10 +4878,16 @@ function SectionBlock({
           return (
             <>
               {transformed}
-              {!foldedRx && footer}
-              {!foldedRx && (analysing || analysis) && id !== "risk" && (
-                <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
+              {!foldedRx && (summary || insightText || analysing) && (
+                <UnifiedSectionFooter
+                  summary={summary}
+                  summaryDescription={summaryDescription}
+                  insight={insightText}
+                  insightLoading={id !== "risk" ? !!analysing : false}
+                />
               )}
+              {/* Fallback: if no summary/insight at all, render whatever footer was passed */}
+              {!foldedRx && !summary && !insightText && !analysing && footer}
             </>
           );
         })()
