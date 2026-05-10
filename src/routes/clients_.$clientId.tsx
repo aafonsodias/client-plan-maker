@@ -8,7 +8,7 @@ import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 const DemoOrchestrator = lazy(() =>
   import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
 );
@@ -1957,6 +1957,23 @@ function ClientDetail() {
           onActiveChange={setActiveSection}
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
+          concludeBusy={busy || phasedBusy}
+          onConclude={readyPlanForAssessment ? undefined : () => {
+            const isHigh = riskCategory === "high";
+            const blocked = parqYes || isHigh;
+            if (blocked) {
+              setSafetyDialogOpen(true);
+              return;
+            }
+            const run = () => {
+              if (phasedEnabled) void runPhasedStart();
+              else void generate();
+            };
+            const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
+            if (assessmentComplete) { run(); return; }
+            pendingGenerateRef.current = run;
+            setIncompleteWarnOpen(true);
+          }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
@@ -3161,7 +3178,7 @@ function ClientDetail() {
                 </Link>
               </div>
             </div>
-          ) : (
+          ) : isMobileStepper ? null : (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
             {(() => {
               const isHigh = riskCategory === "high";
@@ -4203,6 +4220,8 @@ function AssessmentSection({
   saveStatus,
   lastSavedAt,
   onActiveChange,
+  onConclude,
+  concludeBusy = false,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -4223,6 +4242,9 @@ function AssessmentSection({
   lastSavedAt?: number | null;
   /** Notifies parent when the focused section changes. */
   onActiveChange?: (id: string) => void;
+  /** Triggered when the user taps "Concluir" on the last section. */
+  onConclude?: () => void;
+  concludeBusy?: boolean;
 }) {
   const { t } = useTranslation("assessment");
   const isMobile = useIsMobile(1024);
@@ -4618,16 +4640,22 @@ function AssessmentSection({
                 <Button
                   key={pulseKey}
                   size="sm"
-                  onClick={goNext}
-                  disabled={isLast}
+                  onClick={isLast ? (onConclude ?? (() => {})) : goNext}
+                  disabled={concludeBusy || (isLast && !onConclude)}
                   className={cn(
                     "transition",
                     currentComplete && !isLast
                       ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
                       : "",
+                    isLast && onConclude
+                      ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+                      : "",
                     currentComplete ? "animate-pulse-once" : ""
                   )}
                 >
+                  {concludeBusy ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : null}
                   {isLast ? t("finish") : t("next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -4655,12 +4683,20 @@ function AssessmentSection({
                 {activeIdx + 1} / {sectionIds.length}
               </span>
               <Button
-                variant="outline"
+                variant={activeIdx === sectionIds.length - 1 && onConclude ? "default" : "outline"}
                 size="sm"
-                onClick={goNext}
-                disabled={activeIdx === sectionIds.length - 1}
+                onClick={
+                  activeIdx === sectionIds.length - 1 && onConclude
+                    ? onConclude
+                    : goNext
+                }
+                disabled={
+                  concludeBusy ||
+                  (activeIdx === sectionIds.length - 1 && !onConclude)
+                }
               >
-                {t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                {concludeBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                {activeIdx === sectionIds.length - 1 ? t("finish") : t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
             {extras.length > 0 && <div className="space-y-3">{extras}</div>}
@@ -4794,13 +4830,48 @@ function SectionBlock({
         )}
       </button>
       {open && (
-        <>
-          {children}
-          {footer}
-          {(analysing || analysis) && id !== "risk" && (
-            <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
-          )}
-        </>
+        (() => {
+          // Fold CompletionStrip (footer) + AI insight into a single trailing
+          // RxImplications card if present — collapses "3 títulos" per section
+          // into one (founder feedback May-2026).
+          const arr = Children.toArray(children);
+          let foldedRx: React.ReactNode | null = null;
+          let summary: string | undefined;
+          let summaryDescription: string | undefined;
+          if (isValidElement(footer) && (footer.type as any) === CompletionStrip) {
+            const fp = footer.props as { text: string; description?: string };
+            summary = fp.text;
+            summaryDescription = fp.description;
+          }
+          const insightText =
+            id !== "risk"
+              ? (analysis?.contraindication_notes ?? analysis?.notes_for_next_stage ?? "").trim() || null
+              : null;
+          const transformed = arr.map((child) => {
+            if (
+              isValidElement(child) &&
+              (child.type as any) === RxImplications
+            ) {
+              foldedRx = child;
+              return cloneElement(child as React.ReactElement<any>, {
+                summary,
+                summaryDescription,
+                insight: insightText,
+                insightLoading: id !== "risk" ? !!analysing : false,
+              });
+            }
+            return child;
+          });
+          return (
+            <>
+              {transformed}
+              {!foldedRx && footer}
+              {!foldedRx && (analysing || analysis) && id !== "risk" && (
+                <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
+              )}
+            </>
+          );
+        })()
       )}
     </div>
   );
@@ -6082,6 +6153,10 @@ function RxImplications({
   collapsible = false,
   riskChip,
   extra,
+  summary,
+  summaryDescription,
+  insight,
+  insightLoading = false,
 }: {
   sectionId: "risk" | "parq" | "training" | "goal" | "anthro" | "readiness" | "lifestyle" | "nutrition" | "screen" | "performance";
   assessment: any;
@@ -6089,6 +6164,12 @@ function RxImplications({
   collapsible?: boolean;
   riskChip?: { level: string; tone: string };
   extra?: React.ReactNode;
+  /** Section completion summary (was rendered separately as CompletionStrip). */
+  summary?: string;
+  summaryDescription?: string;
+  /** Per-section AI insight (was rendered separately as SectionAnalysisCard). */
+  insight?: string | null;
+  insightLoading?: boolean;
 }) {
   const items: RxItem[] = (() => {
     switch (sectionId) {
@@ -6154,6 +6235,43 @@ function RxImplications({
     </ul>
   );
 
+  // Top strip (was CompletionStrip) — folded inside the same panel so the
+  // section ends with ONE titled card (not 3 stacked).
+  const summaryStrip = summary ? (
+    <div className="flex items-start gap-2.5 rounded-md bg-emerald-500/[0.06] px-2.5 py-2 text-emerald-900/90 dark:text-emerald-100/90">
+      <span
+        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+        aria-hidden
+      >
+        <Check className="h-3 w-3" strokeWidth={2.75} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium leading-tight">{summary.replace(/^\s*✓\s*/, "")}</p>
+        {summaryDescription && (
+          <p className="mt-0.5 text-[11px] leading-snug text-emerald-900/65 dark:text-emerald-100/65">
+            {summaryDescription}
+          </p>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  // Insight (was SectionAnalysisCard) — second in gravity order.
+  const insightStrip = insightLoading ? (
+    <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      <span>A analisar…</span>
+    </div>
+  ) : insight && insight.trim() ? (
+    <figure className="rounded-md bg-muted/30 px-3 py-2">
+      <figcaption className="eyebrow mb-1 flex items-center gap-1.5 text-muted-foreground">
+        <Sparkles className="h-3 w-3 text-amber-500/80" aria-hidden />
+        <span>Insight</span>
+      </figcaption>
+      <blockquote className="text-[12px] leading-relaxed text-foreground/85">{insight}</blockquote>
+    </figure>
+  ) : null;
+
   if (collapsible) {
     const chipTone =
       riskChip?.tone === "high"
@@ -6176,6 +6294,8 @@ function RxImplications({
           </span>
         </summary>
         <div className="space-y-2 px-3 pb-3 pt-1">
+          {summaryStrip}
+          {insightStrip}
           {cards}
           {extra}
         </div>
@@ -6191,6 +6311,8 @@ function RxImplications({
           {items.length} {items.length === 1 ? "regra" : "regras"}
         </span>
       </header>
+      {summaryStrip}
+      {insightStrip}
       {cards}
     </section>
   );
