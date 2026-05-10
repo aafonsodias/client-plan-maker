@@ -1957,7 +1957,7 @@ function ClientDetail() {
             href: `/plans/${heroPlan.id}`,
           };
           secondaryAction = {
-            label: "Abrir logbook do cliente",
+            label: "Registar treino",
             icon: <ArrowRight className="h-4 w-4" />,
             intent: "log",
             onClick: async () => {

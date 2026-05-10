@@ -20,7 +20,24 @@ export type SetLog = {
   rpe?: string;
   done: boolean;
   ts?: string | null;
+  // Mode-specific (all optional)
+  duration_s?: number;
+  distance_m?: number;
+  avg_hr?: number;
+  rounds?: number;
+  work_s?: number;
+  rest_s?: number;
+  hold_s?: number;
 };
+
+export type LoggerMode =
+  | "strength"
+  | "hypertrophy"
+  | "cardio"
+  | "intervals"
+  | "mobility"
+  | "skill"
+  | "mixed";
 
 export type LogEntryV2 = {
   exercise_name: string;
@@ -73,6 +90,7 @@ export function ExerciseSetsCard({
   token,
   planId,
   onSetKeyDown,
+  mode = "strength",
 }: {
   entry: LogEntryV2;
   index: number;
@@ -84,6 +102,7 @@ export function ExerciseSetsCard({
     setIndex: number,
     field: "reps" | "weight" | "rpe",
   ) => void;
+  mode?: LoggerMode;
 }) {
   const fetchHistory = useServerFn(getExerciseHistory);
   const [history, setHistory] = useState<Awaited<ReturnType<typeof getExerciseHistory>>>([]);
@@ -263,49 +282,18 @@ export function ExerciseSetsCard({
       {/* sets */}
       <div className="mt-2 divide-y divide-border/40 px-3 pb-2">
         {entry.sets.map((s, si) => (
-          <div key={si} className="flex items-center gap-2 py-1.5">
-            <button
-              type="button"
-              onClick={() => toggleDone(si)}
-              aria-label={s.done ? "Desmarcar set" : "Marcar set como feito"}
-              className={
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition " +
-                (s.done
-                  ? "border-emerald-500 bg-emerald-500 text-white"
-                  : "border-border bg-background text-muted-foreground hover:border-emerald-500/60") +
-                (poppedSet === si ? " animate-set-tick" : "")
-              }
-            >
-              {s.done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <span className="text-[10px] font-bold">{si + 1}</span>}
-            </button>
-            <input
-              className="h-7 w-14 rounded border border-input bg-background px-1 text-center text-sm tabular-nums"
-              placeholder="reps"
-              value={s.reps}
-              onChange={(ev) => updateSet(si, { reps: ev.target.value })}
-              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "reps")}
-              data-set-input={`${index}:${si}:reps`}
-            />
-            <span className="text-[10px] text-muted-foreground">×</span>
-            <input
-              className="h-7 w-20 rounded border border-input bg-background px-1.5 text-sm"
-              placeholder="kg"
-              value={s.weight}
-              onChange={(ev) => updateSet(si, { weight: ev.target.value })}
-              onKeyDown={(ev) => onSetKeyDown?.(ev, si, "weight")}
-              data-set-input={`${index}:${si}:weight`}
-            />
-            {entry.planned.rpe && (
-              <input
-                className="h-7 w-12 rounded border border-input bg-background px-1 text-center text-sm tabular-nums"
-                placeholder="RPE"
-                value={s.rpe ?? ""}
-                onChange={(ev) => updateSet(si, { rpe: ev.target.value })}
-                onKeyDown={(ev) => onSetKeyDown?.(ev, si, "rpe")}
-                data-set-input={`${index}:${si}:rpe`}
-              />
-            )}
-          </div>
+          <SetRow
+            key={si}
+            mode={mode}
+            set={s}
+            setIndex={si}
+            entryIndex={index}
+            popped={poppedSet === si}
+            onToggleDone={() => toggleDone(si)}
+            onPatch={(patch) => updateSet(si, patch)}
+            onKey={onSetKeyDown}
+            showRpe={!!entry.planned.rpe || mode === "strength" || mode === "hypertrophy"}
+          />
         ))}
       </div>
 
@@ -342,6 +330,228 @@ export function ExerciseSetsCard({
           onChange={(ev) => onChange(index, { ...entry, notes: ev.target.value })}
         />
       </div>
+    </div>
+  );
+}
+
+/* ─────────── SetRow — branches by logger mode ─────────── */
+
+type NumPatch = Partial<SetLog>;
+
+function parseIntSafe(v: string): number | undefined {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+function parseFloatSafe(v: string): number | undefined {
+  const n = parseFloat(v.replace(",", "."));
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+function mmssToSeconds(v: string): number | undefined {
+  const t = v.trim();
+  if (!t) return undefined;
+  if (/^\d+$/.test(t)) return Number(t);
+  const m = t.match(/^(\d+):(\d{1,2})$/);
+  if (!m) return undefined;
+  const mm = Number(m[1]);
+  const ss = Number(m[2]);
+  if (!Number.isFinite(mm) || !Number.isFinite(ss) || ss >= 60) return undefined;
+  return mm * 60 + ss;
+}
+function secondsToMmss(s: number | undefined): string {
+  if (typeof s !== "number" || !Number.isFinite(s)) return "";
+  const mm = Math.floor(s / 60);
+  const ss = s % 60;
+  return `${mm}:${String(ss).padStart(2, "0")}`;
+}
+
+function DoneToggle({
+  done,
+  index,
+  popped,
+  onClick,
+}: {
+  done: boolean;
+  index: number;
+  popped: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={done ? "Desmarcar set" : "Marcar set como feito"}
+      className={
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition sm:h-7 sm:w-7 " +
+        (done
+          ? "border-emerald-500 bg-emerald-500 text-white"
+          : "border-border bg-background text-muted-foreground hover:border-emerald-500/60") +
+        (popped ? " animate-set-tick" : "")
+      }
+    >
+      {done ? <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5" strokeWidth={3} /> : <span className="text-xs font-bold sm:text-[10px]">{index + 1}</span>}
+    </button>
+  );
+}
+
+function SetRow({
+  mode,
+  set,
+  setIndex,
+  entryIndex,
+  popped,
+  onToggleDone,
+  onPatch,
+  onKey,
+  showRpe,
+}: {
+  mode: LoggerMode;
+  set: SetLog;
+  setIndex: number;
+  entryIndex: number;
+  popped: boolean;
+  onToggleDone: () => void;
+  onPatch: (patch: NumPatch) => void;
+  onKey?: (ev: React.KeyboardEvent<HTMLInputElement>, si: number, f: "reps" | "weight" | "rpe") => void;
+  showRpe: boolean;
+}) {
+  const inputCls =
+    "h-9 rounded border border-input bg-background px-2 text-sm tabular-nums sm:h-7";
+
+  // CARDIO — duração · distância (km) · FC
+  if (mode === "cardio") {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 py-1.5">
+        <DoneToggle done={set.done} index={setIndex} popped={popped} onClick={onToggleDone} />
+        <input
+          className={`${inputCls} w-20`}
+          placeholder="mm:ss"
+          inputMode="numeric"
+          value={secondsToMmss(set.duration_s)}
+          onChange={(ev) => onPatch({ duration_s: mmssToSeconds(ev.target.value) })}
+        />
+        <span className="text-[10px] text-muted-foreground">·</span>
+        <input
+          className={`${inputCls} w-20`}
+          placeholder="km"
+          inputMode="decimal"
+          value={typeof set.distance_m === "number" ? String(set.distance_m / 1000) : ""}
+          onChange={(ev) => {
+            const km = parseFloatSafe(ev.target.value);
+            onPatch({ distance_m: typeof km === "number" ? Math.round(km * 1000) : undefined });
+          }}
+        />
+        <span className="text-[10px] text-muted-foreground">·</span>
+        <input
+          className={`${inputCls} w-16`}
+          placeholder="bpm"
+          inputMode="numeric"
+          value={typeof set.avg_hr === "number" ? String(set.avg_hr) : ""}
+          onChange={(ev) => onPatch({ avg_hr: parseIntSafe(ev.target.value) })}
+        />
+        {showRpe && (
+          <input
+            className={`${inputCls} w-12 text-center`}
+            placeholder="RPE"
+            inputMode="decimal"
+            value={set.rpe ?? ""}
+            onChange={(ev) => onPatch({ rpe: ev.target.value })}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // INTERVALS — rondas × trabalho/descanso
+  if (mode === "intervals") {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 py-1.5">
+        <DoneToggle done={set.done} index={setIndex} popped={popped} onClick={onToggleDone} />
+        <input
+          className={`${inputCls} w-14 text-center`}
+          placeholder="rondas"
+          inputMode="numeric"
+          value={typeof set.rounds === "number" ? String(set.rounds) : ""}
+          onChange={(ev) => onPatch({ rounds: parseIntSafe(ev.target.value) })}
+        />
+        <span className="text-[10px] text-muted-foreground">×</span>
+        <input
+          className={`${inputCls} w-16`}
+          placeholder="trab s"
+          inputMode="numeric"
+          value={typeof set.work_s === "number" ? String(set.work_s) : ""}
+          onChange={(ev) => onPatch({ work_s: parseIntSafe(ev.target.value) })}
+        />
+        <span className="text-[10px] text-muted-foreground">/</span>
+        <input
+          className={`${inputCls} w-16`}
+          placeholder="desc s"
+          inputMode="numeric"
+          value={typeof set.rest_s === "number" ? String(set.rest_s) : ""}
+          onChange={(ev) => onPatch({ rest_s: parseIntSafe(ev.target.value) })}
+        />
+        {showRpe && (
+          <input
+            className={`${inputCls} w-12 text-center`}
+            placeholder="RPE"
+            inputMode="decimal"
+            value={set.rpe ?? ""}
+            onChange={(ev) => onPatch({ rpe: ev.target.value })}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // MOBILITY / SKILL — duração apenas
+  if (mode === "mobility" || mode === "skill") {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 py-1.5">
+        <DoneToggle done={set.done} index={setIndex} popped={popped} onClick={onToggleDone} />
+        <input
+          className={`${inputCls} w-24`}
+          placeholder="mm:ss · hold"
+          inputMode="numeric"
+          value={secondsToMmss(set.hold_s)}
+          onChange={(ev) => onPatch({ hold_s: mmssToSeconds(ev.target.value) })}
+        />
+      </div>
+    );
+  }
+
+  // STRENGTH / HYPERTROPHY / MIXED — reps × peso (+ RPE)
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <DoneToggle done={set.done} index={setIndex} popped={popped} onClick={onToggleDone} />
+      <input
+        className={`${inputCls} w-14 text-center`}
+        placeholder="reps"
+        inputMode="numeric"
+        value={set.reps}
+        onChange={(ev) => onPatch({ reps: ev.target.value })}
+        onKeyDown={(ev) => onKey?.(ev, setIndex, "reps")}
+        data-set-input={`${entryIndex}:${setIndex}:reps`}
+      />
+      <span className="text-[10px] text-muted-foreground">×</span>
+      <input
+        className={`${inputCls} w-20`}
+        placeholder="kg"
+        inputMode="decimal"
+        value={set.weight}
+        onChange={(ev) => onPatch({ weight: ev.target.value })}
+        onKeyDown={(ev) => onKey?.(ev, setIndex, "weight")}
+        data-set-input={`${entryIndex}:${setIndex}:weight`}
+      />
+      {showRpe && (
+        <input
+          className={`${inputCls} w-12 text-center`}
+          placeholder="RPE"
+          inputMode="decimal"
+          value={set.rpe ?? ""}
+          onChange={(ev) => onPatch({ rpe: ev.target.value })}
+          onKeyDown={(ev) => onKey?.(ev, setIndex, "rpe")}
+          data-set-input={`${entryIndex}:${setIndex}:rpe`}
+        />
+      )}
     </div>
   );
 }
