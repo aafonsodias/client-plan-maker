@@ -2021,7 +2021,7 @@ function ClientDetail() {
           clientId={clientId}
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
-          hideCollapsedStrip
+          hideCollapsedStrip={stripHidden}
           sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
           onActiveChange={setActiveSection}
           saveStatus={saveStatus}
