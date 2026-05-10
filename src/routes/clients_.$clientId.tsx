@@ -90,6 +90,7 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { isRequiredComplete } from "@/lib/client-phase";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { ClientStageOneHero } from "@/components/ClientStageOneHero";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
