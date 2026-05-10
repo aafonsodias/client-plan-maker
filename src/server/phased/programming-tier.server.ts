@@ -195,6 +195,7 @@ export function tierGuidelines(
       ].join("\n"),
       totalExercisesMin: 48,
       totalExercisesMax: 64,
+      week1SetCap: { main: 2, accessory: 1, carry: 1 },
     };
   }
   if (tier === "conservative") {
@@ -218,6 +219,7 @@ export function tierGuidelines(
       ].join("\n"),
       totalExercisesMin: sessions * 4 * 6,
       totalExercisesMax: sessions * 4 * 7,
+      week1SetCap: { main: 3, accessory: 2, carry: 1 },
     };
   }
   // advanced
@@ -234,6 +236,7 @@ export function tierGuidelines(
     requiredAlternatives: "All movement patterns available based on competency.",
     totalExercisesMin: Math.min(Math.max(briefSessions, 5), 6) * 4 * 7,
     totalExercisesMax: Math.min(Math.max(briefSessions, 5), 6) * 4 * 8,
+    week1SetCap: { main: 3, accessory: 3, carry: 2 },
   };
 }
 
