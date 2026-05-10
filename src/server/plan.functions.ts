@@ -1673,7 +1673,7 @@ export const persistRegeneratedPlan = createServerFn({ method: "POST" })
 
     const { error: upErr } = await supabase
       .from("workout_plans")
-      .update(update)
+      .update(update as any)
       .eq("id", data.planId);
     if (upErr) return { ok: false as const, error: `update plan: ${upErr.message}` };
 
