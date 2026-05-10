@@ -97,6 +97,9 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
   // In that case `plan_data.weeks` is empty by design — the source of truth is
   // `workout_plan_days`. We synthesize a PlanData for ViewMode + PDF export.
   const [isPhasedComplete, setIsPhasedComplete] = useState(false);
+  // C3 — assessment_injuries fed into the "Configurar mesociclo" panel so
+  // the trainer can see what's being honoured at regen time.
+  const [injuries, setInjuries] = useState<Array<{ id: string; body_zone: string; severity: number; injury_label: string | null; note: string | null }>>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -165,6 +168,12 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
       if (p?.client_id) {
         const { data: c } = await supabase.from("clients").select("*").eq("id", p.client_id).single();
         setClient(c);
+        const { data: inj } = await supabase
+          .from("assessment_injuries")
+          .select("id, body_zone, severity, injury_label, note")
+          .eq("client_id", p.client_id)
+          .order("severity", { ascending: false });
+        setInjuries((inj as any[]) ?? []);
       }
       const { data: pr } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
       setProfile(pr);
