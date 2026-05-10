@@ -8,7 +8,7 @@ import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
-import { Children, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 const DemoOrchestrator = lazy(() =>
   import("@/components/DemoOrchestrator").then((m) => ({ default: m.DemoOrchestrator }))
 );
