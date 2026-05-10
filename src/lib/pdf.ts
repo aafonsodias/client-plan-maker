@@ -51,6 +51,10 @@ export type Day = {
   finisher?: SectionItem[];
   finisher_enabled?: boolean;
   cardio?: SectionItem[];
+  /** ISO weekday 1=Mon … 7=Sun. Optional — when present, drives the
+   *  logbook's "today" auto-pick. Older plans without this field fall
+   *  back to sequential next-undone selection. */
+  weekday?: number | null;
 };
 export type Week = { week_number: number; focus: string; rationale?: string; days: Day[] };
 export type PlanData = { weeks: Week[] };
