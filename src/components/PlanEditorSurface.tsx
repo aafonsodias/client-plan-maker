@@ -1858,7 +1858,7 @@ function RegenerateWithFeedbackDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 text-xs">
-          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate with feedback
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate (Cockpit-aware)
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
