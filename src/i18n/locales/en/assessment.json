@@ -360,6 +360,12 @@
     "thoracic": "Thoracic spine",
     "wrist": "Wrist",
     "knee": "Knee",
+    "shoulder_hint": "Standing, raise both arms sideways to touch your ears. No pain and no trunk rotation = 5.",
+    "hip_hint": "Lying on your back, bring one knee to your chest. Thigh meets torso without lifting the opposite hip = 5.",
+    "ankle_hint": "Standing ~10 cm from a wall, bend your knee to touch the wall without lifting the heel = 5.",
+    "thoracic_hint": "Seated, hands behind head, rotate trunk to each side. ~45° symmetric without lumbar cheating = 5.",
+    "wrist_hint": "Palm up, use your other hand to pull fingers down. 90° flexion without pain = 5.",
+    "knee_hint": "Seated, fully extend the knee. Heel lifts without pain and no pulling behind the knee = 5.",
     "notes": "Notes (specific limitations, pain triggers)"
   },
   "posture_block": {

@@ -274,6 +274,12 @@
     "thoracic": "Thoracic spine",
     "wrist": "Wrist",
     "knee": "Knee",
+    "shoulder_hint": "De pie, levanta ambos brazos lateralmente hasta tocar las orejas. Sin dolor y sin rotar el tronco = 5.",
+    "hip_hint": "Tumbado boca arriba, lleva la rodilla al pecho. El muslo toca el tronco sin levantar la cadera opuesta = 5.",
+    "ankle_hint": "De pie a ~10 cm de la pared, dobla la rodilla hasta tocar la pared sin levantar el talón = 5.",
+    "thoracic_hint": "Sentado, manos detrás de la cabeza, rota el tronco a cada lado. ~45° simétrico sin compensación lumbar = 5.",
+    "wrist_hint": "Palma arriba, con la otra mano tira de los dedos hacia abajo. 90° de flexión sin dolor = 5.",
+    "knee_hint": "Sentado, extiende totalmente la rodilla. El talón se levanta sin dolor y sin tirar detrás de la rodilla = 5.",
     "notes": "Notes (specific limitations, pain triggers)"
   },
   "posture_block": {

@@ -376,6 +376,12 @@
     "thoracic": "Coluna torácica",
     "wrist": "Punho",
     "knee": "Joelho",
+    "shoulder_hint": "De pé, levanta ambos os braços lateralmente até tocar nas orelhas. Sem dor e sem rodar o tronco = 5.",
+    "hip_hint": "Deitado de costas, leva o joelho ao peito. Coxa encosta ao tronco sem levantar a anca oposta = 5.",
+    "ankle_hint": "Em pé a cerca de 10 cm de uma parede, dobra o joelho até tocar na parede sem levantar o calcanhar = 5.",
+    "thoracic_hint": "Sentado, mãos atrás da cabeça, roda o tronco para cada lado. ~45° simétrico, sem compensação lombar = 5.",
+    "wrist_hint": "Mão palma para cima, com a outra mão puxa os dedos para baixo. Punho a 90° sem dor = 5.",
+    "knee_hint": "Sentado, estende totalmente o joelho. Calcanhar levanta sem dor e atrás do joelho não puxa = 5.",
     "notes": "Notas (limitações específicas, gatilhos de dor)"
   },
   "posture_block": {

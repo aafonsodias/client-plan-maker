@@ -986,6 +986,19 @@ function ClientDetail() {
           delete next[section];
           return next;
         });
+        // Live update: refresh THIS section's analysis immediately so the
+        // user sees Implicações update per-section instead of waiting for
+        // the whole queue to drain.
+        if (assessment.id) {
+          try {
+            const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+            if (r?.ok) {
+              setBriefCoverage({ done: r.done, total: r.total });
+              const fresh = (r.analyses ?? {}) as Record<string, SectionAnalysis | null>;
+              setSectionAnalyses((prev) => ({ ...prev, [section]: fresh[section] ?? null }));
+            }
+          } catch {}
+        }
         await new Promise((r) => setTimeout(r, 600));
       }
       if (!assessment.id) return;
@@ -2998,7 +3011,13 @@ function ClientDetail() {
                 ["ext_mob_wrist", "wrist"],
                 ["ext_mob_knee", "knee"],
               ] as const).map(([key, labelKey]) => (
-                <ScoreRow key={key} label={t(`mobility_block.${labelKey}` as const)} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
+                <ScoreRow
+                  key={key}
+                  label={t(`mobility_block.${labelKey}` as const)}
+                  hint={t(`mobility_block.${labelKey}_hint` as never, { defaultValue: "" }) as string}
+                  value={assessment[key]}
+                  onChange={(v) => setAssessment({ ...assessment, [key]: v })}
+                />
               ))}
             </div>
             <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
@@ -4946,24 +4965,29 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boole
   );
 }
 
-function ScoreRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ScoreRow({ label, value, onChange, hint }: { label: string; value: string; onChange: (v: string) => void; hint?: string }) {
   const current = value ?? "";
   return (
-    <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background/40 p-2">
-      <Label className="text-xs">{label}</Label>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((n) => {
-          const active = current === String(n);
-          return (
-            <button
-              key={n}
-              type="button"
-              onClick={() => onChange(active ? "" : String(n))}
-              className={`h-6 w-6 rounded border text-[11px] font-medium transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
-            >{n}</button>
-          );
-        })}
+    <div className="rounded-md border border-border bg-background/40 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs">{label}</Label>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((n) => {
+            const active = current === String(n);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onChange(active ? "" : String(n))}
+                className={`h-6 w-6 rounded border text-[11px] font-medium transition ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-muted-foreground hover:text-foreground"}`}
+              >{n}</button>
+            );
+          })}
+        </div>
       </div>
+      {hint ? (
+        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
