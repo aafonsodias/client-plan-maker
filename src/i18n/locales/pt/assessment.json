@@ -614,7 +614,8 @@
       "stat_risk": "Risco ACSM",
       "stat_recovery": "Perfil de recuperação",
       "stat_body_comp": "Composição corporal",
-      "alerts": "Sinais de alerta · {{n}}"
+      "alerts": "Sinais de alerta · {{n}}",
+      "go_to_cockpit": "Ir para o cockpit"
     },
     "snapshot": {
       "title": "Snapshot do cliente",
