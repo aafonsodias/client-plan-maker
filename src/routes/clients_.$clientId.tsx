@@ -1957,6 +1957,23 @@ function ClientDetail() {
           onActiveChange={setActiveSection}
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
+          concludeBusy={busy || phasedBusy}
+          onConclude={readyPlanForAssessment ? undefined : () => {
+            const isHigh = riskCategory === "high";
+            const blocked = parqYes || isHigh;
+            if (blocked) {
+              setSafetyDialogOpen(true);
+              return;
+            }
+            const run = () => {
+              if (phasedEnabled) void runPhasedStart();
+              else void generate();
+            };
+            const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
+            if (assessmentComplete) { run(); return; }
+            pendingGenerateRef.current = run;
+            setIncompleteWarnOpen(true);
+          }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
               ? Math.round((briefCoverage.done / briefCoverage.total) * 100)
