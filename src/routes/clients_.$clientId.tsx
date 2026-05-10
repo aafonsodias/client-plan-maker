@@ -1721,7 +1721,7 @@ function ClientDetail() {
                       client,
                       plan: inlineBrief
                         ? {
-                            title: heroPlan?.title ?? null,
+                            title: null,
                             programming_variables: inlineBrief.programmingVariables,
                             red_flag_accommodations: inlineBrief.accommodations,
                           }
