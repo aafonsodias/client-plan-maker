@@ -203,6 +203,12 @@ export function validateExercises(
 }
 
 const WeekInputSchema = z.object({
+  // R74 — Optional plan/client refs so the regen path can fetch the stored
+  // brief + assessment_injuries server-side and apply the same tier guardrails
+  // (tierGuidelines, rpeFloors, injuryBans) as Stage 3. Both optional to keep
+  // legacy callers (initial draft fan-out) compatible.
+  plan_id: z.string().uuid().nullable().optional(),
+  client_id: z.string().uuid().nullable().optional(),
   client: z.object({
     full_name: z.string(),
     age: z.number().nullable().optional(),
