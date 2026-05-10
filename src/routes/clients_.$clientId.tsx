@@ -4793,6 +4793,8 @@ function UnifiedSectionFooter({
   insight: string | null;
   insightLoading: boolean;
 }) {
+  const { t } = useTranslation("assessment");
+  const [implicationsOpen, setImplicationsOpen] = useState(false);
   if (!summary && !insight && !insightLoading) return null;
   return (
     <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-background/30 p-3">
@@ -4820,13 +4822,27 @@ function UnifiedSectionFooter({
           <span>A analisar…</span>
         </div>
       ) : insight && insight.trim() ? (
-        <figure className="rounded-md bg-muted/30 px-3 py-2">
-          <figcaption className="eyebrow mb-1 flex items-center gap-1.5 text-muted-foreground">
+        <div className="rounded-md bg-muted/30">
+          <button
+            type="button"
+            onClick={() => setImplicationsOpen((o) => !o)}
+            className="flex w-full items-center gap-1.5 px-3 py-2 text-left"
+            aria-expanded={implicationsOpen}
+          >
+            {implicationsOpen ? (
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            )}
             <Sparkles className="h-3 w-3 text-amber-500/80" aria-hidden />
-            <span>Insight</span>
-          </figcaption>
-          <blockquote className="text-[12px] leading-relaxed text-foreground/85">{insight}</blockquote>
-        </figure>
+            <span className="eyebrow text-muted-foreground">{t("detail.implications_label")}</span>
+          </button>
+          {implicationsOpen && (
+            <blockquote className="px-3 pb-2 text-[12px] leading-relaxed text-foreground/85">
+              {insight}
+            </blockquote>
+          )}
+        </div>
       ) : null}
     </div>
   );
