@@ -2016,6 +2016,11 @@ function ClientDetail() {
                 secondaryAction={secondaryAction ?? undefined}
               />
             )}
+            {allApprovedLocal && heroPlan && (
+              <div className="mt-6">
+                <PlanEditorSurface planId={heroPlan.id} embedded />
+              </div>
+            )}
             <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && <ComplianceCard clientId={clientId} />}
           </section>
