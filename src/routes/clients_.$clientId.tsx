@@ -2015,6 +2015,16 @@ function ClientDetail() {
                 zeroState={zeroState}
                 primaryAction={primaryAction}
                 secondaryAction={secondaryAction ?? undefined}
+                assessmentPdf={
+                  assessment
+                    ? {
+                        onDownload: async () => {
+                          const { renderAssessmentPdf } = await import("@/lib/pdf");
+                          renderAssessmentPdf({ assessment, client, t: t as any });
+                        },
+                      }
+                    : undefined
+                }
               />
             )}
             {allApprovedLocal && heroPlan && (
