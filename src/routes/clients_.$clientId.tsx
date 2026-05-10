@@ -1601,7 +1601,6 @@ function ClientDetail() {
               photoUrl={client.photo_url ?? null}
               onChange={(url) => setClient((prev: any) => ({ ...prev, photo_url: url }))}
               size={44}
-              showFounderDot={(client.email ?? "").toLowerCase() === "aafonsodias@gmail.com"}
             />
           ) : <span />}
           <div className="min-w-0">
