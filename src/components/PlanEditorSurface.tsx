@@ -835,7 +835,13 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           <div className="animate-fade-in">
             <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           </div>
-          <ViewMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} />
+          <ViewMode
+            plan={data}
+            planId={planId}
+            sessions={sessions}
+            reload={reloadSessions}
+            wave={(plan as any)?.generation_meta?.wave_periodization?.weeks ?? null}
+          />
           {/* Around-the-workout nutrition windows — moved here from the client overview (R55). */}
           <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
@@ -881,7 +887,13 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
               if (error) toast.error(error.message);
             }}
           />
-          <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
+          <MesocycleTableView
+            plan={data}
+            planId={planId}
+            editable={true}
+            onUpdated={reloadSessions}
+            wave={(plan as any)?.generation_meta?.wave_periodization?.weeks ?? null}
+          />
         </>
       ) : mode === "results" ? (
         <>
@@ -910,11 +922,13 @@ function ViewMode({
   planId,
   sessions,
   reload,
+  wave,
 }: {
   plan: PlanData;
   planId: string;
   sessions: SessionRow[];
   reload: () => Promise<void>;
+  wave?: Array<{ week: number; rpe_low?: number | null; rpe_high?: number | null; tag?: string | null }> | null;
 }) {
   const [layout, setLayout] = useState<"cards" | "table">(() => {
     if (typeof window === "undefined") return "table";
@@ -949,7 +963,13 @@ function ViewMode({
         </div>
       </div>
       {layout === "table" ? (
-        <MesocycleTableView plan={plan} planId={planId} editable={true} onUpdated={() => void reload()} />
+        <MesocycleTableView
+          plan={plan}
+          planId={planId}
+          editable={true}
+          onUpdated={() => void reload()}
+          wave={wave ?? null}
+        />
       ) : (
         <div className="space-y-12">
       {plan.weeks.map((w, wi) => (
