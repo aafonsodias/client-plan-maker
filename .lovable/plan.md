@@ -1,80 +1,85 @@
-# Logger único, prático no telemóvel
+# Plano — Reconectar avaliação, plano e logging (com RPE/volume e concorrente)
 
-## Diagnóstico (o que já existe e o que falha)
+Objectivo: garantir que a avaliação de cada cliente passa a *governar* o plano (RPE inicial, volume inicial, modalidades concorrentes), que a regeneração funciona sem timeout, e que as 5 secções do app trabalham como um protocolo único.
 
-Hoje há **dois loggers paralelos**:
+## Fase 0 — Diagnóstico (sem editar código)
 
-1. **`/log/$token`** — surface do cliente (mobile-first). Já tem auto-save, restore de draft, streaks, pre-readiness, post-feedback, import por foto, histórico por exercício e confetti. **Mas só pede reps + weight + RPE**, mesmo quando o dia é cardio, intervalos ou mobilidade.
-2. **Tab "Log" do `PlanEditorSurface`** — UI separada dentro do editor do treinador, com a sua própria lógica de selecção de semana/dia. Sobreposição que confunde quem mantém: dois sítios para corrigir bugs, dois sítios para traduzir, dois sítios para evoluir.
+Antes de tocar em nada, faço um mapa real (escrito em `.lovable/audits/protocol-wiring-2026-05.md`) com 5 verificações:
 
-O botão `Abrir logbook do cliente` (em `clients_.$clientId.tsx:1960`) abre o link `/log/$token`. O nome é frio e ambíguo — "logbook" soa a leitura, não a acção.
+1. **Trace "RPE 6.5" pedido pelo utilizador**
+   - Lê `stage1-brief` → `stage2-blueprint` → `stage3-microcycle` → `stage4-progressions` e identifica onde `rpe_ceiling` / `rpe_floor` é definido, sobreposto, ou ignorado.
+   - Verifica se `programming_variables.rpe_ceiling` do Cockpit chega ao prompt do Stage 3 e ao wave-builder do Stage 4.
+   - Hipótese a confirmar: o feedback "regen com RPE 6.5" é tratado como texto livre mas o cockpit não é actualizado, por isso o wave-builder volta a impor 7-8.
 
-Outro problema fino: quando um plano não tem `weekday` em nenhum dia (typical demo), `getTodayForToken` devolve `state: "empty"` e o cliente vê o cartão "Este plano ainda não tem sessões agendadas" sem exercícios por baixo (printscreen 1). Vamos garantir que o picker manual abre por defeito nesse caso.
+2. **Trace "volume baixo / iniciante"**
+   - Avaliação → `pre-stage` → `programming-tier.server.ts` → escolha de tier (advanced/conservative/remedial) → `prescribe-volume.ts` / volume landmarks.
+   - Confirma que `training_age`, `red_flags`, `injuries` e níveis funcionais da avaliação reduzem MEV/MRV no Stage 3.
+   - Hipótese: o tier remedial/conservador existe mas o Stage 3 ignora-o no número de séries por padrão de movimento.
 
-## Decisões
+3. **Trace "treino concorrente"**
+   - O brief tem `goals` com agility/balance/coordination, mas `section-map.ts` e Stage 3 só geram secções de força/hipertrofia + cardio agregado.
+   - Hipótese: falta um arquetipo "concurrent_day" que combine 1 bloco de força curto + bloco de balance/agility/dual-task + bloco cardio, e o brief não o pede explicitamente quando a avaliação tem défices nessas dimensões.
 
-- **Um logger só**, partilhado: o trainer-side passa a re-usar exactamente os componentes de `/log/$token` (`TodayHero`, `BlockGroup`, `ExerciseSetsCard`, pre/post). O tab "Log" do `PlanEditorSurface` deixa de ter UI própria — passa a embeber o mesmo flow em modo "trainer" (que envia `?from=trainer&clientId=...`).
-- **Botão renomeado** para `Registar treino` (ícone `NotebookPen`). Mais directo, alinhado com a acção.
-- **Inputs adaptam-se ao modo do dia** via `inferLogbookModeFromDayFocus` (já existe e já mostramos o chip):
-  - `strength` / `hypertrophy` → reps · peso · RPE  *(comportamento actual)*
-  - `cardio` → duração (mm:ss) · distância (km) · FC média  · RPE
-  - `intervals` → rondas · trabalho (s) · descanso (s) · RPE
-  - `mobility` / `skill` → duração (mm:ss) · notas qualitativas
-  - `mixed` → fallback ao modo strength com toggle "passar a cardio" por exercício
-- **Empty plan** (sem semanas com weekday) → o `TodayHero` empty state passa a mostrar imediatamente o `WeekDayPicker` expandido + os exercícios da Semana 1 / Dia 1 por baixo, em vez de esconder tudo.
-- **Mobile-first**: inputs grandes (h-12), teclado numérico (`inputMode="decimal"`), placeholder com o plano (ex: "10–12"), tick "feito" como toggle gigante na linha do set, sticky CTA "Concluir sessão" no fundo no mobile.
+4. **Timeout na regeneração** (screenshot "upstream request timeout")
+   - `microcycle-edit.functions.ts` provavelmente re-roda Stage 3 inteiro com modelo Pro sem streaming. Cloudflare Worker = ~30s hard limit.
+   - Hipótese: precisa partir em (a) aplicar feedback ao cockpit/brief, (b) re-correr só Stage 3 com `gemini-3-flash-preview`, (c) Stage 4 determinístico já existe.
 
-## Mudanças
+5. **Mapa avaliação → PDF → plano**
+   - Confirma que o mesmo `assessment_snapshot` que entra no PDF de avaliação alimenta o brief. Hoje há duas fontes (snapshot + reload do cliente) e podem divergir.
 
-### Tipos (`src/components/log/ExerciseSetsCard.tsx`)
-Estender `SetLog` com campos opcionais sem partir o que já está gravado:
-```text
-SetLog = { reps, weight, rpe?, done, ts?,
-           duration_s?, distance_m?, avg_hr?,    // cardio
-           work_s?, rest_s?, rounds?,            // intervals
-           hold_s? }                              // mobility
-```
-Server schema (`saveClientSession`) — alargar `SetLogSchema` para aceitar os novos campos como opcionais. Sem migração de DB: tudo vive em `entries` JSONB.
+Entregável da Fase 0: tabela "campo da avaliação → onde é lido → onde é aplicado no plano → estado (OK / perdido / sobrescrito)".
 
-### Componente `SetRow` por modo
-Dentro de `ExerciseSetsCard`, escolher o renderer pelo `mode` recebido por prop:
-- `StrengthSetRow` (actual)
-- `CardioSetRow` (duração + distância + FC)
-- `IntervalSetRow` (rondas × trabalho/descanso)
-- `MobilitySetRow` (apenas duração)
+## Fase 1 — Correcções de ligação (sem mudar UX)
 
-Histórico ("Última vez: 12 reps × 60 kg") adapta-se ao modo (ex: "Última vez: 5 km em 28:14").
+Só depois do mapa, e em PRs pequenos:
 
-### Routing/header (`src/routes/log.$token.tsx`)
-- Passar `mode` ao `BlockGroup` → `ExerciseSetsCard`.
-- Quando `todayState === "empty"` e o plano tem dias prescritos → forçar `showDayPicker = true` na primeira render e popular weekNum/dayLabel com o primeiro dia disponível (já faz parte; afinar para mostrar a lista de exercícios).
-- Quando `search.from === "trainer"`, esconder o card "treinaste com folha impressa? tira foto…" (irrelevante para o PT).
-- CTA `Concluir sessão` torna-se **sticky bottom** no mobile (`sm:relative`).
+1. **RPE honrado end-to-end**
+   - Stage 3 prompt recebe `rpe_ceiling`/`rpe_floor` como *hard constraint* (não sugestão).
+   - Wave-builder do Stage 4 ancora em `rpe_floor` da Semana 1, nunca acima de `rpe_ceiling`.
+   - Feedback livre "começa em RPE 6.5" no diálogo de regen actualiza `programming_variables.rpe_ceiling/floor` antes de re-correr Stage 3 (parser determinístico simples para "rpe X" / "rpe X-Y").
 
-### Trainer surface (`src/components/PlanEditorSurface.tsx`)
-- Substituir o conteúdo do tab `log` por um `iframe`-less embed: importar `<ClientLogContent>` extraído de `log.$token.tsx` e passar `token` + `from="trainer"` + `clientId`.  *(Refactor: extrair o JSX do `ClientLogPage` para um componente exportado `ClientLogContent` recebendo `token` por prop; o route component fica como wrapper que lê o param.)*
-- Manter os outros tabs (View/Edit/Resultados/Progresso) intactos.
+2. **Volume inicial governado pela avaliação**
+   - `prescribe-volume.ts` lê `training_age`, `red_flags`, `recovery_capacity` da avaliação.
+   - Iniciante / red-flag amber → começa em MEV (não MAV). Documentar no `generation_log`.
+   - Stage 3 prompt recebe range "min-max séries por padrão" derivado, em vez de número livre.
 
-### Botão (`src/routes/clients_.$clientId.tsx`)
-- Linha 1960: `label: "Abrir logbook do cliente"` → `label: "Registar treino"`.
-- Manter o `intent: "log"` e a lógica de `ensureShareToken`.
+3. **Treino concorrente como arquétipo**
+   - Adicionar `concurrent_day` ao `section-map.ts`: blocos `strength_short` (15-20 min) + `motor_skills` (balance/agility/coord/dual-task, 10-15 min) + `cardio_zone2_or_intervals` (15-25 min).
+   - Stage 1 brief activa `concurrent_day` quando a avaliação tem défice em ≥1 dimensão motora OU goal contém endurance + força.
+   - Stage 3 prompt para esse dia usa biblioteca curta de drills (handstand-wall, single-leg-balance, ladder, dual-task walk-and-count, etc.).
 
-### i18n
-- Novas chaves em `src/i18n/locales/{en,pt}/common.json` sob `logbook.modes.*` para os labels de duração/distância/FC/rondas/trabalho/descanso, e `logbook.cta.finish`. ES/HI fallback ao EN.
+4. **Regeneração que não dá timeout**
+   - Partir `microcycle-edit` em duas server-fns: `applyFeedbackToBrief` (rápido) + `regenerateMicrocycle` (Stage 3 só, flash).
+   - UI do diálogo mostra 2 passos com indicador no `DemoRunsContext` (já existe).
+   - Fallback: se Stage 3 falhar/timeout, mantém plano antigo e mostra erro accionável.
 
-## Fora de scope (para outra ronda)
+5. **Avaliação ↔ PDF ↔ plano = uma única fonte**
+   - Snapshot canónico em `assessment_snapshot` JSONB. PDF e brief lêem dali. Garantir que regenerar plano não usa dados frescos do cliente sem snapshot novo (ou cria snapshot novo automaticamente).
 
-- Migração de DB ou nova tabela.
-- Re-treinar `inferLogbookModeFromDayFocus` ou abrir um seletor de modo manual ao cliente.
-- Notificações push / lembretes de treino.
-- Replicar tudo isto em `/me` (cliente final) — esta ronda é o link público `/log/$token` + o tab do PT.
-- Métricas avançadas (HRV, watts, splits) — adicionamos quando alguém pedir.
+## Fase 2 — Visualização de dados (5 secções actuais)
 
-## Plano de verificação
+As 5 secções (View / Edit / Log / Resultados / Progresso) ficam como estão estruturalmente, mas:
 
-1. `npm run build` limpo (sem novos imports a falhar).
-2. Abrir `/clients/$id` com plano finalizado → ver `Registar treino` no secondary action.
-3. Clicar → abre `/log/$token` no mesmo separador, exercícios visíveis mesmo em planos sem `weekday`.
-4. Mudar para um dia de cardio na demo → ver inputs de duração/distância/FC.
-5. No editor do plano, abrir tab `Log` → ver exactamente a mesma UI, com banner amber "estás a registar como treinador".
-6. Smoke 375×812 (Mobile Safari): inputs com teclado numérico, CTA sticky, sem overflow horizontal.
+- **Resultados**: garantir que mostra adesão real, RPE prescrito vs RPE actual, e volume por padrão semana-a-semana (não só "% sessões feitas").
+- **Progresso**: gráfico longitudinal de e1RM por padrão + capacidade motora (balance hold, agility test) quando há dia concorrente.
+- Reusar `<CapacityGainCard/>` e `computeCapacityGain` que já existem.
+
+Sem novas secções nesta ronda — o user disse "as 5 que temos chegam".
+
+## O que NÃO entra nesta ronda
+
+- Refazer UI das secções (a queixa é de ligação, não de UI).
+- Reescrever Stages 1-2-4-5 do zero — só *patching* cirúrgico nos pontos onde a auditoria mostrar quebra.
+- Notificações push, novos modelos de AI, novas tabelas (a menos que a Fase 0 prove que falta uma).
+
+## Verificação no fim
+
+1. Cliente novo com avaliação iniciante + red-flag amber + goal "endurance + força" → plano gerado começa em RPE 6-7, MEV, e tem 1 `concurrent_day` por semana com balance+agility+cardio.
+2. Botão "Regenerar com feedback: começa RPE 6.5" → Cockpit actualiza para 6.5, Stage 3 re-corre em <25s, sem timeout, plano novo respeita 6.5.
+3. PDF de avaliação e PDF do plano partilham os mesmos números (training_age, MEV inicial, foco motor).
+4. Após 1 semana logada, `programNextWeek` ajusta carga conforme `autoreg_strictness` (já existe — só validar end-to-end).
+5. Smoke 375×812 nas 5 secções continua limpo.
+
+## Pergunta de scoping antes de começar
+
+Quero confirmar a ordem: faço **Fase 0 (auditoria escrita) primeiro e mostro-te o mapa** antes de mexer em código? Ou queres que avance directo para Fase 1 nos pontos onde já tenho hipótese forte (RPE honrado + timeout da regen)?
