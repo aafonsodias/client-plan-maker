@@ -423,6 +423,24 @@
     "other": "Outro",
     "test_result": "Resultado do teste",
     "test_result_hint": "Distância, tempo, ou estimativa de VO₂.",
+    "rockport_title": "Rockport · cálculo de VO₂máx",
+    "rockport_protocol": "Caminhe 1 milha (1.6 km) o mais rápido possível, sem correr. Use cronómetro. Imediatamente ao chegar, meça pulso 15s × 4. Insira valores abaixo.",
+    "rockport_prereq": "Peso {{weight}} kg · Idade {{age}} · {{sex}}",
+    "rockport_missing_prereq": "Falta peso, idade ou sexo no perfil — preencha em Antropometria primeiro.",
+    "rockport_sex_male": "Masculino",
+    "rockport_sex_female": "Feminino",
+    "rockport_minutes": "Minutos",
+    "rockport_seconds": "Segundos",
+    "rockport_hr": "FC pós-caminhada (bpm)",
+    "rockport_result": "VO₂máx estimado",
+    "rockport_apply": "Guardar resultado",
+    "rockport_ignore": "Ignorar",
+    "rockport_band": {
+      "poor": "fraco",
+      "fair": "razoável",
+      "good": "bom",
+      "excellent": "excelente"
+    },
     "cardio_legacy": "Contexto cardio (texto livre, legado)",
     "complete": "✓ Performance · {{summary}}",
     "complete_meaning": "FC repouso e teste cardio definem o tier de condicionamento (advanced / conservative / remedial) e a janela de zonas-alvo."
@@ -453,7 +471,11 @@
     "safety_body": "O plano gerado será limitado a intensidades conservadoras e evitará padrões contra-indicados. Tu continuas a ser o profissional responsável — confirma para prosseguir.",
     "safety_confirm": "Confirmo que o cliente tem validação médica (ou aceita o risco por escrito) e assumo a responsabilidade profissional desta prescrição.",
     "safety_cancel": "Cancelar",
-    "safety_proceed": "Gerar rascunho conservador"
+    "safety_proceed": "Gerar rascunho conservador",
+    "incomplete_title": "Concluir avaliação parcial?",
+    "incomplete_body": "Avaliação incompleta ({{done}}/{{total}} secções). Pode concluir agora — secções em falta podem ser preenchidas mais tarde por si ou pelo seu treinador. A qualidade da prescrição inicial será reduzida.",
+    "incomplete_confirm": "Concluir mesmo assim",
+    "incomplete_cancel": "Voltar"
   },
   "progress_panel": {
     "header": "A gerar com Claude Haiku 4.5 (por dia)",
