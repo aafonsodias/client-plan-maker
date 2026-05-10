@@ -33,6 +33,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanWeek, regeneratePlanSummary, persistRegeneratedPlan } from "@/server/plan.functions";
 import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
+import { proposeProgressions } from "@/server/phased/stage4-progressions.functions";
+import { bulkFillRemainingWeeks } from "@/server/phased/stage5-bulkfill.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
