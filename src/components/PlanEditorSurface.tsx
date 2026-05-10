@@ -66,6 +66,12 @@ import { SaveAsTemplateDialog } from "@/components/SaveAsTemplateDialog";
 // Share-token mutations go through server fns so token + expiry stay in sync.
 
 
+type Mode = "view" | "edit" | "log" | "results" | "progress";
+type SessionRow = {
+  id: string; plan_id?: string; week_number: number; day_label: string; session_date: string;
+  logged_by: string; entries: any[]; session_notes: string | null;
+  status?: "done" | "partial" | "missed" | null;
+};
 type Props = { planId: string; embedded?: boolean };
 export default function PlanEditorSurface({ planId, embedded: _embedded }: Props) {
   const { user } = useAuth();
