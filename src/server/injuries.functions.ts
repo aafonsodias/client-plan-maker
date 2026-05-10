@@ -119,7 +119,7 @@ export const updateInjury = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: { severity?: number; injury_label?: string | null; note?: string | null } = {};
     if (data.severity !== undefined) patch.severity = data.severity;
     if (data.injuryLabel !== undefined) patch.injury_label = data.injuryLabel;
     if (data.note !== undefined) patch.note = data.note;
@@ -193,7 +193,7 @@ export const intakeUpdateInjury = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { client } = await resolveIntake(data.token);
-    const patch: Record<string, unknown> = {};
+    const patch: { severity?: number; injury_label?: string | null; note?: string | null } = {};
     if (data.severity !== undefined) patch.severity = data.severity;
     if (data.injuryLabel !== undefined) patch.injury_label = data.injuryLabel;
     if (data.note !== undefined) patch.note = data.note;
