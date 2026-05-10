@@ -1,65 +1,78 @@
-## What's already closed from the walkthrough doc
+## Goal
 
-D + E rounds delivered: CC5 (skip button), CC1 (collapsible Implicações everywhere), CC10 (single name), CC9 partial (per-section analyzer), 14.3 (Rockport wizard), CC2 first pass (amber budget on section header + analysis card).
+Continue the assessment work in two coordinated cuts: (1) low-credit cleanup of footer + per-section title bloat, (2) scaffolding for the post-conclude flow described in the founder doc (animation → client dashboard / trainer cockpit). Cut 1 ships fully; Cut 2 ships the smallest honest first slice and parks the heavy parts for dedicated rounds.
 
-## What's still pending — sorted by impact/credit ratio
+## Cut 1 — Conclude footer + 3-titles merge (low credits, high impact)
 
-### 🟢 High impact · Low credits (do these next)
+### 1.1 "Concluir" becomes the canonical action; kill "Gerar rascunho do plano"
 
-| # | Item | Effort | Why high impact |
-|---|---|---|---|
-| 5.1 | Goal templates: clear "selected vs available" state inside a category | small | P0, founder explicitly called it out; a few CSS classes |
-| 9.1 | Sleep: replace 1-10 scale with average hours slider (15-min steps) | small | P1, current scale is meaningless; pure UI swap |
-| 14.1 | Rename "Performance" → "Saúde cardiovascular" / "Cardiovascular health" | small | P2, i18n-only, removes the misleading label founder flagged |
-| 14.2 | Hide grip strength under "Avançado" / trainer-only | small | P2, removes noise for 95% of clients; one collapsible |
-| 14.7 + 7.x | Equipment-agnostic naming sweep ("dinamómetro" not "Jamar", "bioimpedância" not "Tanita") | small | P2, i18n-only, principle-aligned |
-| 3.2 + 3.3 | Days/week as 1-7 chips + session duration as time chips (30/45/60/75 + custom) | small | P2, replaces sliders with chips — better mobile, founder asked |
+In `src/routes/clients_.$clientId.tsx`:
 
-**Estimated total effort**: one focused round. Almost all of it is i18n + small JSX swaps in `src/routes/clients_.$clientId.tsx`. Very low credit cost.
+- **Mobile sticky stepper footer** (line 4618–4632): on the last section `Concluir` is currently `disabled={isLast}` and does nothing useful. Wire it to the same `guard(...)` path used by `showGenerateCta` (lines 3264–3297): if the assessment is incomplete, opens the existing `incompleteWarnOpen` dialog; if PARQ-yes / ACSM-high, opens the existing safety dialog; otherwise calls `runPhasedStart()` (or `generate()` when `phasedEnabled` is false). On non-last sections, `Concluir` keeps being `goNext`.
+- Remove the standalone `<Button>{t("generate.button")}</Button>` CTA block on mobile. The whole `showGenerateCta` block (lines 3141–3303) should only render on desktop (or behind `!isMobileStepper`). The "Plano pronto · ver" success state stays visible everywhere — it's not noise, it's a status link.
+- Reuse `t("finish")` label as-is. No copy change.
 
-### 🟡 Medium impact · Medium credits (next round candidates)
+### 1.2 Merge "3 títulos" per section into one card
 
-- **CC8** — Implicações update live on field blur (wire onBlur to `analyzeAssessmentSection` per section). Already 70% wired; needs the blur trigger.
-- **13.3** — Replace 1RM with submax + Epley regression (formula already exists in `capacity-gain.ts`).
-- **8.2** — Explain what each Prochaska stage changes in the plan (i18n + tooltip).
+Today every completed section can render up to three stacked blocks:
+1. `CompletionStrip` ("Concluído · summary")
+2. `SectionAnalysisCard` ("Insight" header with Sparkles)
+3. `RxImplications` ("Implicações para a prescrição" + ACSM chip)
 
-### 🔴 High impact · High credits (deserve dedicated rounds — don't bundle)
+Collapse them into a single `<details>` block titled **"Implicações para a prescrição"** with the ACSM chip on the right and ordered by gravity (founder's words: "ordenado por gravidade de informação com os detalhes por último"):
 
-- **CC3 drawings everywhere** — large, needs SVG library + style discipline. Real Round F.
-- **CC4 page-per-topic restructure** — foundational; rewires assessment shell.
-- **CC6 PDF "livro de bons costumes"** — large, needs PDF templating layer.
-- **3.7 body map for injuries** + **11.2 mobility limitations body map** + **12.x posture observation system** — each is large, drawing-heavy.
-- **7.1 measurements page redesign** — large.
-- **5.5 multi-goal backlog** + **5.7 AI goal suggestion** — foundational, principle decision already taken (D1).
+```text
+[chevron] Implicações para a prescrição           [ACSM: low/mod/high]   N regras
+  ├─ summary line (was CompletionStrip)
+  ├─ AI insight (was SectionAnalysisCard, when present)
+  └─ rule cards (was RxImplications)
+```
 
-## Recommended next round (this is the actual plan)
+Implementation:
+- Extend `RxImplications` to accept optional `summary` (string) and `insight` (string + analysing flag) props and render them inside the same `<details>` as a subtle top strip + insight blockquote, before the rule cards.
+- In `SectionBlock`, stop rendering `footer` (CompletionStrip) and `SectionAnalysisCard` automatically. Pass that data into the per-section `<RxImplications>` call instead.
+- Touch every `SectionBlock` call (parq, risk, training, history, goal, meds, anthro, readiness, lifestyle, nutrition, mobility, posture, screen, performance) to move the existing `CompletionStrip` text + `analysingSections[id]` + `sectionAnalyses[id]` into the new `RxImplications` props. Sections that don't have an `RxImplications` today (history, meds, mobility, posture) get one stubbed (just summary + insight, no rule cards) so the pattern is uniform.
 
-**Round F-light — 6 small fixes, one round.** Deliverables:
+i18n: title key already exists implicitly (hardcoded "Implicações para a prescrição"). No new strings; we reuse `summary`, `insight`, `acsm` chips that are already in `assessment.json`.
 
-1. Goal templates: add `aria-pressed` + `ring-2 ring-primary bg-primary/5` for the actively selected template inside a category.
-2. Sleep: replace `sleep_quality` (1-10) with `sleep_hours_avg` (slider 4h–10h, 15-min steps). Migration adds nullable column; legacy field stays read-only for old assessments. Pre-stage analyzer reads `hours ?? quality`.
-3. i18n rename `performance_block.title` → "Saúde cardiovascular" (PT) / "Cardiovascular health" (EN). Add same key in ES/HI fallback to EN.
-4. Grip strength fields move behind existing `showAdvancedPerformance` toggle (already exists at line 3050).
-5. i18n sweep: search/replace "Jamar" → "dinamómetro", "Tanita" → "bioimpedância" across `assessment.json` (4 locales).
-6. Days/week: replace AnchoredSlider with 7 chips (1–7); session duration: replace input with chips (30/45/60/75 + "Outro" → free input).
+## Cut 2 — Post-conclude flow, first honest slice
 
-### Out of scope for this round (be honest)
+### 2.1 Conclude animation → route split
 
-- Drawings (Round F proper)
-- Page-per-topic restructure (Round F proper)
-- Body maps (Round F proper or G)
-- PDF synthesis (Round H)
-- Live blur on Implicações (next round; it's medium-effort and deserves QA)
-- Posture/movement-screen overhaul (Round F proper)
-- Multi-goal backlog (Round G+)
+After successful `runPhasedStart()` (or `generate()`), instead of dropping the trainer back into the same dense client page, navigate to a new lightweight route that plays the "what we learned" reveal:
 
-### Files touched (estimated)
+- New route `src/routes/clients_.$clientId.synthesis.tsx`. It loads the most recent assessment + `sectionAnalyses` (already saved server-side) and renders the existing `AssessmentSynthesisDashboard` inside a staged reveal (3 framer-motion fades: red flags → goal + capacities → next step). Bottom CTA: **"Ir para o cockpit"** (trainer) which routes to `/plans/$planId`.
+- Reuse the existing `AssessmentSynthesisDashboard` component verbatim — no new dashboard yet. The animation is the only new layer.
 
-- `src/routes/clients_.$clientId.tsx` — 6 small JSX edits
-- `src/i18n/locales/{en,pt,es,hi}/assessment.json` — copy updates
-- One small migration: `clients.sleep_hours_avg numeric null`
-- `src/server/phased/pre-stage.functions.ts` — 1 line to read new field with fallback
+### 2.2 Client-side dashboard already exists
 
-### Why this is the right pick
+`/me` (`src/routes/me.tsx`) is the client dashboard per the Core memory rule. After conclude, when the trigger comes from a client-token intake (not the trainer-on-PT path), redirect to `/me` instead of `/clients/$id/synthesis`. Detection: `interface_mode === "client"` (already in `src/lib/interface-mode.ts`).
 
-You explicitly asked for **highest impact per credit**. These 6 are all P0/P1 small-effort items the founder doc flagged. Each is independently verifiable in one mobile screenshot. No large refactor, no migration risk, no i18n drift, no aesthetic debate. The expensive items (drawings, body maps, page-per-topic, PDF) deserve their own rounds and shouldn't be diluted by sharing a turn with these quick wins.
+### 2.3 Trainer cockpit (microciclo + mesociclo table with side controls)
+
+The full cockpit described in the founder doc (live table + paint-bucket setting copy + circuit grouping + lock-and-print) is a multi-round build. Out of scope for this round. We only ship the navigation entry point: the `Ir para o cockpit` CTA above lands on the existing `/plans/$planId/microcycle` route, which already has the table and progressions — it's the closest existing surface and gives the user a real continuation.
+
+A dedicated **Round J — Trainer Cockpit** is the natural home for the live-edit table, paint-bucket, circuit grouping, and lock-and-print PDF. We park it explicitly in `.lovable/backlog.md` so the work isn't lost.
+
+## Out of scope (deferred, parked in backlog)
+
+- Live in-cell edit of microcycle table + side-rail sliders for sets/reps/RPE per micro/session/exercise — Round J.
+- Paint-bucket "copy settings between exercises" tool — Round J.
+- Lock & print microcycle PDF as commit — Round J.
+- Logbook upgraded view with graphs and metric fusion — Round K.
+- Body maps for injuries / mobility limitations — Round F proper.
+- Drawings everywhere — Round F proper.
+- PDF "livro de bons costumes" — Round H.
+
+## Files touched (estimated)
+
+- `src/routes/clients_.$clientId.tsx` — wire Concluir to guard + generation; hide standalone CTA on mobile; rewire all `SectionBlock` calls to pass `summary` + `insight` into `RxImplications`; remove `footer` + `SectionAnalysisCard` auto-render in `SectionBlock`.
+- New `src/routes/clients_.$clientId.synthesis.tsx` — staged reveal of `AssessmentSynthesisDashboard`.
+- Light edit to `runPhasedStart` callsite in `clients_.$clientId.tsx` to navigate to synthesis (or `/me` for client mode) on success.
+- `.lovable/backlog.md` — append Round J / Round K parking notes.
+
+No DB migrations. No new server functions. No i18n drift in this round (Cut 1 reuses existing strings; Cut 2 adds 3 short keys to `assessment.json` for the reveal copy).
+
+## Why this is the right pick
+
+You asked to keep doing assessment work cheaply but to also unblock the post-conclude direction. Cut 1 closes two visible regressions (broken Concluir + 3-title clutter) using only file-local refactors — minimal credit cost, immediately verifiable on mobile 390px. Cut 2 builds the cheapest scaffolding that makes the founder vision navigable end-to-end without faking the cockpit; it also forces an honest backlog entry for Rounds J/K so the heavy work has a home.
