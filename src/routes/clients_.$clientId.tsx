@@ -229,7 +229,7 @@ const SECTIONS = [
   { id: "mobility", label: "Mobility" },
   { id: "posture", label: "Posture" },
   { id: "screen", label: "Movement screen" },
-  { id: "performance", label: "Performance" },
+  { id: "performance", label: "Cardio health" },
 ];
 
 // Optional sections render collapsed by default and count as complete
