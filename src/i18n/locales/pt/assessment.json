@@ -352,7 +352,9 @@
     "squat": "Profundidade de agachamento",
     "overhead": "Alcance overhead",
     "hinge": "Hip hinge",
-    "single_leg": "Equilíbrio unipodal"
+    "single_leg": "Equilíbrio unipodal",
+    "complete": "✓ Screen · {{cleared}}/{{total}} padrões cleared",
+    "complete_meaning": "Padrões com score baixo entram com variantes regredidas e drills remediais antes de progressões de carga. Os outros seguem em ritmo normal."
   },
   "history_block": {
     "title": "Histórico de treino",
