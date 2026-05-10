@@ -502,3 +502,75 @@ export const markSessionsCelebrated = createServerFn({ method: "POST" })
     if (error) fail(error, "Could not mark PR celebration.");
     return { ok: true };
   });
+/**
+ * PUBLIC (token-gated): resolve "today's" session for the mobile logbook.
+ * Heuristic:
+ *   1. If there's an in_progress draft for any (week,day) → resume that.
+ *   2. Else: pick the next (week,day) in plan order that is NOT done yet.
+ *   3. Else (everything done): last finalized (week,day) so the user can
+ *      still review / log a make-up.
+ */
+export const getTodayForToken = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ token: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    rateLimit(`today:${data.token}`, 60, 60_000);
+    const { data: plan, error } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, plan_data, share_token_expires_at")
+      .eq("share_token", data.token)
+      .maybeSingle();
+    if (error || !plan) throw new Error("Invalid or expired link.");
+    if (plan.share_token_expires_at && new Date(plan.share_token_expires_at).getTime() < Date.now()) {
+      throw new Error("This share link has expired.");
+    }
+
+    const weeks: any[] = (plan.plan_data as any)?.weeks ?? [];
+    const slots: Array<{ week_number: number; day_label: string }> = [];
+    for (const w of weeks) {
+      for (const d of w?.days ?? []) {
+        slots.push({ week_number: w.week_number, day_label: d.day_label });
+      }
+    }
+    if (slots.length === 0) {
+      throw new Error("This plan has no scheduled sessions yet.");
+    }
+
+    const { data: rows } = await supabaseAdmin
+      .from("workout_sessions")
+      .select("week_number, day_label, status, session_date")
+      .eq("plan_id", plan.id)
+      .eq("logged_by", "client")
+      .order("session_date", { ascending: false });
+
+    const all = (rows ?? []) as Array<{
+      week_number: number;
+      day_label: string;
+      status: string;
+      session_date: string;
+    }>;
+
+    const draft = all.find((r) => r.status === "in_progress");
+    if (draft) {
+      return {
+        plan_id: plan.id,
+        week_number: draft.week_number,
+        day_label: draft.day_label,
+        session_date: draft.session_date,
+        resumed_draft: true,
+      };
+    }
+
+    const doneKey = (s: { week_number: number; day_label: string }) =>
+      `${s.week_number}:${s.day_label}`;
+    const doneSet = new Set(
+      all.filter((r) => r.status !== "in_progress" && r.status !== "missed").map(doneKey),
+    );
+    const next = slots.find((s) => !doneSet.has(doneKey(s)));
+    const today = new Date().toISOString().slice(0, 10);
+    if (next) {
+      return { plan_id: plan.id, ...next, session_date: today, resumed_draft: false };
+    }
+    // Plan complete — fall back to the last slot.
+    const last = slots[slots.length - 1];
+    return { plan_id: plan.id, ...last, session_date: today, resumed_draft: false };
+  });
