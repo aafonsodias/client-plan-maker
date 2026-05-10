@@ -90,6 +90,7 @@ import { useClientPhases } from "@/hooks/use-client-phases";
 import { isRequiredComplete } from "@/lib/client-phase";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
+import { ClientStageOneHero } from "@/components/ClientStageOneHero";
 import { ComplianceDashboard } from "@/components/ComplianceDashboard";
 import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
@@ -1813,30 +1814,75 @@ function ClientDetail() {
         </div>
       </div>
 
-      {!(client.intake_status === "submitted" ||
-        client.intake_status === "reviewed" ||
-        lastSavedAt) && (
-        <IntakeLinkPanel
-          clientId={client.id}
-          clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-          clientPhone={client.phone}
-          intake={{
-            intake_token: client.intake_token ?? null,
-            intake_token_expires_at: client.intake_token_expires_at ?? null,
-            intake_status: client.intake_status ?? "not_sent",
-            intake_submitted_at: client.intake_submitted_at ?? null,
-          }}
-          onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-        />
-      )}
+      {(() => {
+        const intakeDoneTop =
+          client.intake_status === "submitted" ||
+          client.intake_status === "reviewed";
+        const noPlanYet = plans.length === 0 && !readyPlanForAssessment;
+        const showStageOne = noPlanYet && !inlineBrief?.approved;
+        if (!showStageOne) return null;
+        return (
+          <>
+            <ClientStageOneHero
+              clientId={client.id}
+              intakeStatus={(client.intake_status ?? "not_sent") as any}
+              intakeExpiresAt={client.intake_token_expires_at ?? null}
+              hasDraft={!!lastSavedAt || intakeDoneTop}
+              draftDoneSections={completedCount}
+              draftTotalSections={totalSections}
+              onPrimary={() => {
+                document
+                  .getElementById("assessment-section")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              onResend={() => {
+                document
+                  .querySelector<HTMLElement>("[data-intake-link-panel]")
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+            />
+            {!intakeDoneTop && (
+              <details className="mb-3 rounded-xl border border-border/60 bg-[var(--surface)]/60">
+                <summary className="cursor-pointer list-none px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:text-foreground">
+                  Detalhes do envio do questionário
+                </summary>
+                <div className="px-4 pb-4" data-intake-link-panel>
+                  <IntakeLinkPanel
+                    clientId={client.id}
+                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                    clientPhone={client.phone}
+                    intake={{
+                      intake_token: client.intake_token ?? null,
+                      intake_token_expires_at: client.intake_token_expires_at ?? null,
+                      intake_status: client.intake_status ?? "not_sent",
+                      intake_submitted_at: client.intake_submitted_at ?? null,
+                    }}
+                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                  />
+                </div>
+              </details>
+            )}
+          </>
+        );
+      })()}
 
       {/* R68 — Readiness strip removed: ACSM + Recovery already render inside
           ClientCockpit/ProtocolRail below. Single source of truth. */}
 
       {(() => {
         const briefApproved = !!inlineBrief?.approved;
-        const effectiveCollapsed =
+        const heroPlanExists = plans.some(
+          (p) => ((p as any).generation_state?.stage ?? null) === "complete",
+        );
+        // P0 fix: when no toggle exists elsewhere (no plan, no plans, rail
+        // closed), force the assessment to be visible — otherwise the page
+        // becomes a blank rectangle below the header.
+        const noToggleAvailable =
+          !heroPlanExists && plans.length === 0 && !protocolRailOpen;
+        const persistedCollapsed =
           assessmentCollapsed ?? (briefApproved || !!readyPlanForAssessment);
+        const effectiveCollapsed = noToggleAvailable ? false : persistedCollapsed;
+        const stripHidden = !noToggleAvailable;
         // Section navigation sidebar removed — the assessment form on the right keeps all functionality.
         const showSidebar = false;
         return (
@@ -1975,7 +2021,7 @@ function ClientDetail() {
           clientId={clientId}
           collapsed={effectiveCollapsed}
           onCollapsedChange={setAssessmentCollapsedPersist}
-          hideCollapsedStrip
+          hideCollapsedStrip={stripHidden}
           sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
           onActiveChange={setActiveSection}
           saveStatus={saveStatus}

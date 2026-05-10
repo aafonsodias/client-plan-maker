@@ -220,32 +220,110 @@
       "resolved": "→ reassess by {{date}}"
     },
     "tpl": {
-      "cv_rhr_lower":      { "specific": "Lower resting heart rate over 12 weeks",                          "measurable": "Track morning RHR every 2 weeks; exploratory target: −5 to −10 bpm" },
-      "cv_bp_systolic":    { "specific": "Lower systolic blood pressure over 16 weeks",                     "measurable": "Measure BP weekly; exploratory target: −5 to −10 mmHg" },
-      "cv_cooper_2400":    { "specific": "Build aerobic capacity over 8 weeks",                             "measurable": "Re-run Cooper 12 min every 4 weeks; exploratory target: ≥ 2400 m" },
-      "str_squat_1bw_5":   { "specific": "Build squat strength over 12 weeks",                              "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1×BW × 5 reps" },
-      "str_squat_15bw_5":  { "specific": "Build squat strength over 16 weeks",                              "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1.5×BW × 5 reps" },
-      "str_bench_75bw_5":  { "specific": "Build horizontal pressing strength over 16 weeks",                "measurable": "Track 1RM/5RM on bench; exploratory target: 0.75×BW × 5 reps" },
-      "str_dl_15bw_5":     { "specific": "Build pulling and posterior chain strength over 16 weeks",        "measurable": "Track 1RM/5RM on the deadlift; exploratory target: 1.5×BW × 5 reps" },
-      "hyp_arm":           { "specific": "Work upper-arm hypertrophy for 12 weeks",                         "measurable": "Measure arm circumference every 4 weeks; observe trend" },
-      "hyp_thigh":         { "specific": "Work thigh hypertrophy for 12 weeks",                             "measurable": "Measure thigh circumference every 4 weeks; observe trend" },
-      "hyp_glutes":        { "specific": "Work glute hypertrophy for 16 weeks",                             "measurable": "Measure hip circumference every 4 weeks; observe trend" },
-      "comp_fatloss":      { "specific": "Reduce fat mass over 16 weeks, preserving lean mass",             "measurable": "Track composition (DEXA/BIA) every 4-6 weeks; adjust by trajectory" },
-      "comp_recomp":       { "specific": "Body recomposition over 20 weeks (lose fat, gain lean mass)",     "measurable": "Track composition and strength in parallel; adjust by response" },
-      "comp_waist":        { "specific": "Reduce waist circumference over 12 weeks",                        "measurable": "Measure waist every 2 weeks; observe trend" },
-      "end_5k_continuous": { "specific": "Run 5 km continuously over 8 weeks",                              "measurable": "Progressively extend continuous run time; reassess every 2 weeks" },
-      "end_5k_25min":      { "specific": "Build 5 km running endurance over 10 weeks",                      "measurable": "Track 5 km time every 3-4 weeks; exploratory target: ≤ 25:00" },
-      "end_cooper":        { "specific": "Build aerobic capacity over 8 weeks",                             "measurable": "Re-run Cooper 12 min every 4 weeks; observe progress" },
-      "mob_toes":          { "specific": "Work lumbar and hamstring mobility over 6 weeks",                 "measurable": "Sit-and-reach every 2 weeks; observe progress" },
-      "mob_overhead":      { "specific": "Work thoracic and shoulder mobility over 8 weeks",                "measurable": "Overhead wall test every 2 weeks" },
-      "mob_squat_deep":    { "specific": "Achieve pain-free deep squat over 8 weeks",                       "measurable": "Assess depth and quality every 2 weeks" },
-      "mob_cervical":      { "specific": "Work cervical mobility over 4 weeks",                             "measurable": "Measure bilateral cervical rotation every 2 weeks" },
-      "fn_floor_rise":     { "specific": "Rise from floor unaided over 6 weeks",                            "measurable": "Assess floor-rise test monthly" },
-      "fn_stairs_unaided": { "specific": "Climb stairs without handrail over 4 weeks",                      "measurable": "Assess stair-climb test every 2 weeks" },
-      "fn_carry":          { "specific": "Work functional carry strength over 8 weeks",                     "measurable": "Time on farmer's carry with progressive load; reassess every 2 weeks" },
-      "skill_handstand":   { "specific": "Work toward handstand over 20 weeks",                             "measurable": "Track wall→free handstand progression; measure hold time" },
-      "skill_split":       { "specific": "Work toward split flexibility over 24 weeks",                     "measurable": "Measure floor-to-hip distance monthly" },
-      "skill_first_pullup":{ "specific": "Achieve first full pullup over 12 weeks",                         "measurable": "Track deadhang reps and assistance progression" }
+      "cv_rhr_lower": {
+        "specific": "Lower resting heart rate over 12 weeks",
+        "measurable": "Track morning RHR every 2 weeks; exploratory target: −5 to −10 bpm"
+      },
+      "cv_bp_systolic": {
+        "specific": "Lower systolic blood pressure over 16 weeks",
+        "measurable": "Measure BP weekly; exploratory target: −5 to −10 mmHg"
+      },
+      "cv_cooper_2400": {
+        "specific": "Build aerobic capacity over 8 weeks",
+        "measurable": "Re-run Cooper 12 min every 4 weeks; exploratory target: ≥ 2400 m"
+      },
+      "str_squat_1bw_5": {
+        "specific": "Build squat strength over 12 weeks",
+        "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1×BW × 5 reps"
+      },
+      "str_squat_15bw_5": {
+        "specific": "Build squat strength over 16 weeks",
+        "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1.5×BW × 5 reps"
+      },
+      "str_bench_75bw_5": {
+        "specific": "Build horizontal pressing strength over 16 weeks",
+        "measurable": "Track 1RM/5RM on bench; exploratory target: 0.75×BW × 5 reps"
+      },
+      "str_dl_15bw_5": {
+        "specific": "Build pulling and posterior chain strength over 16 weeks",
+        "measurable": "Track 1RM/5RM on the deadlift; exploratory target: 1.5×BW × 5 reps"
+      },
+      "hyp_arm": {
+        "specific": "Work upper-arm hypertrophy for 12 weeks",
+        "measurable": "Measure arm circumference every 4 weeks; observe trend"
+      },
+      "hyp_thigh": {
+        "specific": "Work thigh hypertrophy for 12 weeks",
+        "measurable": "Measure thigh circumference every 4 weeks; observe trend"
+      },
+      "hyp_glutes": {
+        "specific": "Work glute hypertrophy for 16 weeks",
+        "measurable": "Measure hip circumference every 4 weeks; observe trend"
+      },
+      "comp_fatloss": {
+        "specific": "Reduce fat mass over 16 weeks, preserving lean mass",
+        "measurable": "Track composition (DEXA/BIA) every 4-6 weeks; adjust by trajectory"
+      },
+      "comp_recomp": {
+        "specific": "Body recomposition over 20 weeks (lose fat, gain lean mass)",
+        "measurable": "Track composition and strength in parallel; adjust by response"
+      },
+      "comp_waist": {
+        "specific": "Reduce waist circumference over 12 weeks",
+        "measurable": "Measure waist every 2 weeks; observe trend"
+      },
+      "end_5k_continuous": {
+        "specific": "Run 5 km continuously over 8 weeks",
+        "measurable": "Progressively extend continuous run time; reassess every 2 weeks"
+      },
+      "end_5k_25min": {
+        "specific": "Build 5 km running endurance over 10 weeks",
+        "measurable": "Track 5 km time every 3-4 weeks; exploratory target: ≤ 25:00"
+      },
+      "end_cooper": {
+        "specific": "Build aerobic capacity over 8 weeks",
+        "measurable": "Re-run Cooper 12 min every 4 weeks; observe progress"
+      },
+      "mob_toes": {
+        "specific": "Work lumbar and hamstring mobility over 6 weeks",
+        "measurable": "Sit-and-reach every 2 weeks; observe progress"
+      },
+      "mob_overhead": {
+        "specific": "Work thoracic and shoulder mobility over 8 weeks",
+        "measurable": "Overhead wall test every 2 weeks"
+      },
+      "mob_squat_deep": {
+        "specific": "Achieve pain-free deep squat over 8 weeks",
+        "measurable": "Assess depth and quality every 2 weeks"
+      },
+      "mob_cervical": {
+        "specific": "Work cervical mobility over 4 weeks",
+        "measurable": "Measure bilateral cervical rotation every 2 weeks"
+      },
+      "fn_floor_rise": {
+        "specific": "Rise from floor unaided over 6 weeks",
+        "measurable": "Assess floor-rise test monthly"
+      },
+      "fn_stairs_unaided": {
+        "specific": "Climb stairs without handrail over 4 weeks",
+        "measurable": "Assess stair-climb test every 2 weeks"
+      },
+      "fn_carry": {
+        "specific": "Work functional carry strength over 8 weeks",
+        "measurable": "Time on farmer's carry with progressive load; reassess every 2 weeks"
+      },
+      "skill_handstand": {
+        "specific": "Work toward handstand over 20 weeks",
+        "measurable": "Track wall→free handstand progression; measure hold time"
+      },
+      "skill_split": {
+        "specific": "Work toward split flexibility over 24 weeks",
+        "measurable": "Measure floor-to-hip distance monthly"
+      },
+      "skill_first_pullup": {
+        "specific": "Achieve first full pullup over 12 weeks",
+        "measurable": "Track deadhang reps and assistance progression"
+      }
     }
   },
   "aspirations": {
@@ -262,18 +340,66 @@
       "unmatched_body": "“{{text}}” isn't in our curated lookup yet. Rather than invent a prescription, we logged the suggestion for review.",
       "logged": "Logged for curation. In the meantime, write the goal manually below."
     },
-    "handstand":           { "specific": "Work toward handstand over 20 weeks",                          "measurable": "wall→free progression; measure hold time every 4 weeks",                  "note": "Prerequisites: shoulder strength and mobility. Assess overhead reach and shoulder press strength before starting." },
-    "split":               { "specific": "Work toward front split over 24 weeks",                        "measurable": "Measure floor-to-hip distance monthly",                                   "note": "Prerequisites: passive stretch tolerance. Sit-and-reach + hip abduction ROM as baseline." },
-    "pullup":              { "specific": "Achieve first full pullup over 12 weeks",                      "measurable": "Track deadhang reps and assisted-pullup progression",                     "note": "Prerequisites: deadhang time and base pulling strength. Measure pullup_max (assisted) and deadhang_max." },
-    "muscle_up":           { "specific": "Work toward muscle-up over 24 weeks",                          "measurable": "Track high explosive pullups + dips; monthly transition test",            "note": "Non-negotiable prerequisites: ≥10 strict pullups + ≥10 dips. Assess before starting." },
-    "planche":             { "specific": "Work toward planche over 36 weeks",                            "measurable": "tuck→straddle→full progression; measure hold every 4 weeks",              "note": "Prerequisites: extreme scapular protraction strength. Pseudo planche pushup + protraction ROM as baseline." },
-    "front_lever":         { "specific": "Work toward front lever over 32 weeks",                        "measurable": "tuck→advanced tuck→straddle progression; measure hold monthly",           "note": "Prerequisites: ≥8 pullups + anti-extension core strength. Tuck front lever hold as baseline." },
-    "back_lever":          { "specific": "Work toward back lever over 24 weeks",                         "measurable": "tuck→straddle→full progression; measure hold monthly",                    "note": "Prerequisites: shoulder extension mobility + pulling strength. Tuck back lever hold as baseline." },
-    "bridge":              { "specific": "Work toward full bridge over 12 weeks",                        "measurable": "Assess bridge quality and shoulder extension ROM every 2 weeks",          "note": "Prerequisites: thoracic and shoulder mobility. Without partial bridge — start at wall walk level." },
-    "pistol_squat":        { "specific": "Work toward pistol squat over 16 weeks",                       "measurable": "Single-leg reps every 4 weeks; measure depth",                            "note": "Prerequisites: unilateral strength, balance and ankle mobility. 1RM squat + single-leg balance as baseline." },
-    "human_flag":          { "specific": "Work toward human flag over 32 weeks",                         "measurable": "chamber→tucked→straddle progression; measure hold monthly",               "note": "Prerequisites: lateral core strength and unilateral pulling. Side plank max + pullup_max as baseline." },
-    "single_leg_deadlift": { "specific": "Work toward single-leg deadlift over 12 weeks",                "measurable": "Load × reps single-leg every 4 weeks",                                    "note": "Prerequisites: posterior chain dominance and balance. 1RM deadlift + single-leg balance as baseline." },
-    "first_pushup":        { "specific": "Achieve first full pushup over 8 weeks",                       "measurable": "Incline pushup reps every 2 weeks; lower incline progressively",          "note": "No strict prerequisites. Start at maximum incline pushup level." }
+    "handstand": {
+      "specific": "Work toward handstand over 20 weeks",
+      "measurable": "wall→free progression; measure hold time every 4 weeks",
+      "note": "Prerequisites: shoulder strength and mobility. Assess overhead reach and shoulder press strength before starting."
+    },
+    "split": {
+      "specific": "Work toward front split over 24 weeks",
+      "measurable": "Measure floor-to-hip distance monthly",
+      "note": "Prerequisites: passive stretch tolerance. Sit-and-reach + hip abduction ROM as baseline."
+    },
+    "pullup": {
+      "specific": "Achieve first full pullup over 12 weeks",
+      "measurable": "Track deadhang reps and assisted-pullup progression",
+      "note": "Prerequisites: deadhang time and base pulling strength. Measure pullup_max (assisted) and deadhang_max."
+    },
+    "muscle_up": {
+      "specific": "Work toward muscle-up over 24 weeks",
+      "measurable": "Track high explosive pullups + dips; monthly transition test",
+      "note": "Non-negotiable prerequisites: ≥10 strict pullups + ≥10 dips. Assess before starting."
+    },
+    "planche": {
+      "specific": "Work toward planche over 36 weeks",
+      "measurable": "tuck→straddle→full progression; measure hold every 4 weeks",
+      "note": "Prerequisites: extreme scapular protraction strength. Pseudo planche pushup + protraction ROM as baseline."
+    },
+    "front_lever": {
+      "specific": "Work toward front lever over 32 weeks",
+      "measurable": "tuck→advanced tuck→straddle progression; measure hold monthly",
+      "note": "Prerequisites: ≥8 pullups + anti-extension core strength. Tuck front lever hold as baseline."
+    },
+    "back_lever": {
+      "specific": "Work toward back lever over 24 weeks",
+      "measurable": "tuck→straddle→full progression; measure hold monthly",
+      "note": "Prerequisites: shoulder extension mobility + pulling strength. Tuck back lever hold as baseline."
+    },
+    "bridge": {
+      "specific": "Work toward full bridge over 12 weeks",
+      "measurable": "Assess bridge quality and shoulder extension ROM every 2 weeks",
+      "note": "Prerequisites: thoracic and shoulder mobility. Without partial bridge — start at wall walk level."
+    },
+    "pistol_squat": {
+      "specific": "Work toward pistol squat over 16 weeks",
+      "measurable": "Single-leg reps every 4 weeks; measure depth",
+      "note": "Prerequisites: unilateral strength, balance and ankle mobility. 1RM squat + single-leg balance as baseline."
+    },
+    "human_flag": {
+      "specific": "Work toward human flag over 32 weeks",
+      "measurable": "chamber→tucked→straddle progression; measure hold monthly",
+      "note": "Prerequisites: lateral core strength and unilateral pulling. Side plank max + pullup_max as baseline."
+    },
+    "single_leg_deadlift": {
+      "specific": "Work toward single-leg deadlift over 12 weeks",
+      "measurable": "Load × reps single-leg every 4 weeks",
+      "note": "Prerequisites: posterior chain dominance and balance. 1RM deadlift + single-leg balance as baseline."
+    },
+    "first_pushup": {
+      "specific": "Achieve first full pushup over 8 weeks",
+      "measurable": "Incline pushup reps every 2 weeks; lower incline progressively",
+      "note": "No strict prerequisites. Start at maximum incline pushup level."
+    }
   },
   "readiness_block": {
     "title": "Where are you right now?",
@@ -311,7 +437,11 @@
     "summary": {
       "x_per_week": "{{n}}×/week",
       "min": "{{n}} min"
-    }
+    },
+    "loc_home": "Home",
+    "loc_gym": "Gym",
+    "loc_outdoor": "Outdoor",
+    "loc_hybrid": "Hybrid"
   },
   "equipment": {
     "barbell": "Barbell",
@@ -337,7 +467,11 @@
     "job_type": "Job type",
     "job_placeholder": "desk, manual, mixed…",
     "energy": "Energy through day",
-    "recovery": "Recovery capacity"
+    "recovery": "Recovery capacity",
+    "job_sedentary": "Seated",
+    "job_standing": "Standing",
+    "job_physical": "Physical",
+    "job_mixed": "Mixed"
   },
   "nutrition_block": {
     "title": "Nutrition & hydration",
@@ -643,5 +777,27 @@
       "unavailable": "Section unavailable."
     },
     "analysing_section": "Analysing this section…"
+  },
+  "stage_one_hero": {
+    "eyebrow": "Assessment · Step 1 of 5",
+    "steps_assessment": "Assessment",
+    "steps_briefing": "Briefing",
+    "steps_blueprint": "Blueprint",
+    "steps_microcycle": "Microcycle",
+    "steps_progressions": "Progressions",
+    "cta_request": "Request assessment",
+    "cta_continue": "Continue assessment",
+    "cta_resend": "Resend assessment link",
+    "cta_preview": "Preview as client",
+    "link_status_label": "Link status",
+    "link_not_sent": "not sent yet",
+    "link_sent": "sent · not opened",
+    "link_opened": "opened by client",
+    "link_submitted": "returned by client",
+    "link_reviewed": "reviewed",
+    "link_expired": "expired",
+    "link_expires_in": "{{days}}d remaining",
+    "draft_status": "Local draft · {{count}} of {{total}} sections",
+    "subtitle": "Collect the inputs the plan will rely on. Send it to the client or fill it in together."
   }
 }

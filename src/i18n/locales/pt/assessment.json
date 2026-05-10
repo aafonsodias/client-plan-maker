@@ -228,32 +228,110 @@
       "resolved": "→ reavaliar a {{date}}"
     },
     "tpl": {
-      "cv_rhr_lower":      { "specific": "Reduzir frequência cardíaca de repouso ao longo de 12 semanas",      "measurable": "Acompanhar FCR matinal a cada 2 semanas; meta exploratória: −5 a −10 bpm" },
-      "cv_bp_systolic":    { "specific": "Reduzir tensão arterial sistólica ao longo de 16 semanas",          "measurable": "Medir TA semanalmente; meta exploratória: −5 a −10 mmHg" },
-      "cv_cooper_2400":    { "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",                "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; meta exploratória: ≥ 2400 m" },
-      "str_squat_1bw_5":   { "specific": "Trabalhar força de agachamento ao longo de 12 semanas",             "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1×PC × 5 reps" },
-      "str_squat_15bw_5":  { "specific": "Trabalhar força de agachamento ao longo de 16 semanas",             "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1,5×PC × 5 reps" },
-      "str_bench_75bw_5":  { "specific": "Trabalhar força de empurre horizontal ao longo de 16 semanas",      "measurable": "Acompanhar 1RM/5RM no supino; meta exploratória: 0,75×PC × 5 reps" },
-      "str_dl_15bw_5":     { "specific": "Trabalhar força de tração e cadeia posterior ao longo de 16 semanas","measurable": "Acompanhar 1RM/5RM no peso-morto; meta exploratória: 1,5×PC × 5 reps" },
-      "hyp_arm":           { "specific": "Trabalhar hipertrofia de braço ao longo de 12 semanas",             "measurable": "Medir perímetro de braço a cada 4 semanas; observar tendência" },
-      "hyp_thigh":         { "specific": "Trabalhar hipertrofia de coxa ao longo de 12 semanas",              "measurable": "Medir perímetro de coxa a cada 4 semanas; observar tendência" },
-      "hyp_glutes":        { "specific": "Trabalhar hipertrofia de glúteos ao longo de 16 semanas",           "measurable": "Medir perímetro de anca a cada 4 semanas; observar tendência" },
-      "comp_fatloss":      { "specific": "Reduzir massa gorda ao longo de 16 semanas, mantendo massa magra",  "measurable": "Acompanhar composição (DEXA/BIA) a cada 4-6 semanas; ajustar pelo trajeto" },
-      "comp_recomp":       { "specific": "Recomposição corporal ao longo de 20 semanas (perder gordura, ganhar massa magra)", "measurable": "Acompanhar composição e força em paralelo; ajustar conforme resposta" },
-      "comp_waist":        { "specific": "Reduzir perímetro abdominal ao longo de 12 semanas",                "measurable": "Medir perímetro de cintura a cada 2 semanas; observar tendência" },
-      "end_5k_continuous": { "specific": "Conseguir correr 5 km contínuos ao longo de 8 semanas",             "measurable": "Aumentar progressivamente tempo em corrida contínua; reavaliar a cada 2 semanas" },
-      "end_5k_25min":      { "specific": "Trabalhar resistência de corrida em 5 km ao longo de 10 semanas",   "measurable": "Acompanhar tempo nos 5 km a cada 3-4 semanas; meta exploratória: ≤ 25:00" },
-      "end_cooper":        { "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",                "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; observar progresso" },
-      "mob_toes":          { "specific": "Trabalhar mobilidade lombar e isquiotibiais ao longo de 6 semanas", "measurable": "Sentar-e-alcançar a cada 2 semanas; observar progresso" },
-      "mob_overhead":      { "specific": "Trabalhar mobilidade torácica e de ombros ao longo de 8 semanas",   "measurable": "Teste de overhead contra parede a cada 2 semanas" },
-      "mob_squat_deep":    { "specific": "Trabalhar agachamento profundo livre de dor ao longo de 8 semanas", "measurable": "Avaliar profundidade e qualidade a cada 2 semanas" },
-      "mob_cervical":      { "specific": "Trabalhar mobilidade cervical ao longo de 4 semanas",               "measurable": "Medir rotação cervical bilateral a cada 2 semanas" },
-      "fn_floor_rise":     { "specific": "Conseguir levantar do chão sem apoio ao longo de 6 semanas",        "measurable": "Avaliar floor-rise test mensalmente" },
-      "fn_stairs_unaided": { "specific": "Subir escadas sem corrimão ao longo de 4 semanas",                  "measurable": "Avaliar stair-climb test a cada 2 semanas" },
-      "fn_carry":          { "specific": "Trabalhar força funcional de transporte (carry) ao longo de 8 semanas", "measurable": "Tempo em farmer's carry com carga progressiva; reavaliar a cada 2 semanas" },
-      "skill_handstand":   { "specific": "Trabalhar handstand (pino) ao longo de 20 semanas",                 "measurable": "Acompanhar progressão wall→free handstand; medir tempo de hold" },
-      "skill_split":       { "specific": "Trabalhar mobilidade extrema para esparregata ao longo de 24 semanas", "measurable": "Medir distância chão-quadril mensalmente" },
-      "skill_first_pullup":{ "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",       "measurable": "Acompanhar reps em deadhang e progressão de assistência" }
+      "cv_rhr_lower": {
+        "specific": "Reduzir frequência cardíaca de repouso ao longo de 12 semanas",
+        "measurable": "Acompanhar FCR matinal a cada 2 semanas; meta exploratória: −5 a −10 bpm"
+      },
+      "cv_bp_systolic": {
+        "specific": "Reduzir tensão arterial sistólica ao longo de 16 semanas",
+        "measurable": "Medir TA semanalmente; meta exploratória: −5 a −10 mmHg"
+      },
+      "cv_cooper_2400": {
+        "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",
+        "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; meta exploratória: ≥ 2400 m"
+      },
+      "str_squat_1bw_5": {
+        "specific": "Trabalhar força de agachamento ao longo de 12 semanas",
+        "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1×PC × 5 reps"
+      },
+      "str_squat_15bw_5": {
+        "specific": "Trabalhar força de agachamento ao longo de 16 semanas",
+        "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1,5×PC × 5 reps"
+      },
+      "str_bench_75bw_5": {
+        "specific": "Trabalhar força de empurre horizontal ao longo de 16 semanas",
+        "measurable": "Acompanhar 1RM/5RM no supino; meta exploratória: 0,75×PC × 5 reps"
+      },
+      "str_dl_15bw_5": {
+        "specific": "Trabalhar força de tração e cadeia posterior ao longo de 16 semanas",
+        "measurable": "Acompanhar 1RM/5RM no peso-morto; meta exploratória: 1,5×PC × 5 reps"
+      },
+      "hyp_arm": {
+        "specific": "Trabalhar hipertrofia de braço ao longo de 12 semanas",
+        "measurable": "Medir perímetro de braço a cada 4 semanas; observar tendência"
+      },
+      "hyp_thigh": {
+        "specific": "Trabalhar hipertrofia de coxa ao longo de 12 semanas",
+        "measurable": "Medir perímetro de coxa a cada 4 semanas; observar tendência"
+      },
+      "hyp_glutes": {
+        "specific": "Trabalhar hipertrofia de glúteos ao longo de 16 semanas",
+        "measurable": "Medir perímetro de anca a cada 4 semanas; observar tendência"
+      },
+      "comp_fatloss": {
+        "specific": "Reduzir massa gorda ao longo de 16 semanas, mantendo massa magra",
+        "measurable": "Acompanhar composição (DEXA/BIA) a cada 4-6 semanas; ajustar pelo trajeto"
+      },
+      "comp_recomp": {
+        "specific": "Recomposição corporal ao longo de 20 semanas (perder gordura, ganhar massa magra)",
+        "measurable": "Acompanhar composição e força em paralelo; ajustar conforme resposta"
+      },
+      "comp_waist": {
+        "specific": "Reduzir perímetro abdominal ao longo de 12 semanas",
+        "measurable": "Medir perímetro de cintura a cada 2 semanas; observar tendência"
+      },
+      "end_5k_continuous": {
+        "specific": "Conseguir correr 5 km contínuos ao longo de 8 semanas",
+        "measurable": "Aumentar progressivamente tempo em corrida contínua; reavaliar a cada 2 semanas"
+      },
+      "end_5k_25min": {
+        "specific": "Trabalhar resistência de corrida em 5 km ao longo de 10 semanas",
+        "measurable": "Acompanhar tempo nos 5 km a cada 3-4 semanas; meta exploratória: ≤ 25:00"
+      },
+      "end_cooper": {
+        "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",
+        "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; observar progresso"
+      },
+      "mob_toes": {
+        "specific": "Trabalhar mobilidade lombar e isquiotibiais ao longo de 6 semanas",
+        "measurable": "Sentar-e-alcançar a cada 2 semanas; observar progresso"
+      },
+      "mob_overhead": {
+        "specific": "Trabalhar mobilidade torácica e de ombros ao longo de 8 semanas",
+        "measurable": "Teste de overhead contra parede a cada 2 semanas"
+      },
+      "mob_squat_deep": {
+        "specific": "Trabalhar agachamento profundo livre de dor ao longo de 8 semanas",
+        "measurable": "Avaliar profundidade e qualidade a cada 2 semanas"
+      },
+      "mob_cervical": {
+        "specific": "Trabalhar mobilidade cervical ao longo de 4 semanas",
+        "measurable": "Medir rotação cervical bilateral a cada 2 semanas"
+      },
+      "fn_floor_rise": {
+        "specific": "Conseguir levantar do chão sem apoio ao longo de 6 semanas",
+        "measurable": "Avaliar floor-rise test mensalmente"
+      },
+      "fn_stairs_unaided": {
+        "specific": "Subir escadas sem corrimão ao longo de 4 semanas",
+        "measurable": "Avaliar stair-climb test a cada 2 semanas"
+      },
+      "fn_carry": {
+        "specific": "Trabalhar força funcional de transporte (carry) ao longo de 8 semanas",
+        "measurable": "Tempo em farmer's carry com carga progressiva; reavaliar a cada 2 semanas"
+      },
+      "skill_handstand": {
+        "specific": "Trabalhar handstand (pino) ao longo de 20 semanas",
+        "measurable": "Acompanhar progressão wall→free handstand; medir tempo de hold"
+      },
+      "skill_split": {
+        "specific": "Trabalhar mobilidade extrema para esparregata ao longo de 24 semanas",
+        "measurable": "Medir distância chão-quadril mensalmente"
+      },
+      "skill_first_pullup": {
+        "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",
+        "measurable": "Acompanhar reps em deadhang e progressão de assistência"
+      }
     }
   },
   "aspirations": {
@@ -270,18 +348,66 @@
       "unmatched_body": "“{{text}}” ainda não está no nosso lookup curado. Em vez de inventar uma prescrição, registámos a sugestão para revisão.",
       "logged": "Registado para curadoria. Entretanto, escreva o objetivo manualmente abaixo."
     },
-    "handstand":           { "specific": "Trabalhar pino (handstand) ao longo de 20 semanas",                  "measurable": "Progressão wall→free; medir tempo de hold a cada 4 semanas",            "note": "Pré-requisitos: força e mobilidade de ombro. Avaliar overhead reach e shoulder press strength antes de começar." },
-    "split":               { "specific": "Trabalhar esparregata frontal ao longo de 24 semanas",               "measurable": "Medir distância chão-quadril mensalmente",                              "note": "Pré-requisitos: tolerância a stretch passivo. Sit-and-reach + ROM de abdução de anca como baseline." },
-    "pullup":              { "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",        "measurable": "Acompanhar reps em deadhang e progressão de assistência",               "note": "Pré-requisitos: tempo de deadhang e força base de tração. Medir pullup_max (assistido) e deadhang_max." },
-    "muscle_up":           { "specific": "Trabalhar muscle-up ao longo de 24 semanas",                         "measurable": "Acompanhar pullups explosivos altos + dips; teste mensal de transição",  "note": "Pré-requisitos não-negociáveis: ≥10 pullups estritos + ≥10 dips. Avaliar antes de começar." },
-    "planche":             { "specific": "Trabalhar planche ao longo de 36 semanas",                           "measurable": "Progressão tuck→straddle→full; medir tempo de hold a cada 4 semanas",   "note": "Pré-requisitos: força extrema de protração escapular. Pseudo planche pushup + protração ROM como baseline." },
-    "front_lever":         { "specific": "Trabalhar front lever ao longo de 32 semanas",                       "measurable": "Progressão tuck→advanced tuck→straddle; medir tempo de hold mensalmente","note": "Pré-requisitos: ≥8 pullups + força de core anti-extensão. Tuck front lever hold como baseline." },
-    "back_lever":          { "specific": "Trabalhar back lever ao longo de 24 semanas",                        "measurable": "Progressão tuck→straddle→full; medir tempo de hold mensalmente",        "note": "Pré-requisitos: mobilidade de ombro em extensão + força de tração. Tuck back lever hold como baseline." },
-    "bridge":              { "specific": "Trabalhar ponte (bridge) ao longo de 12 semanas",                    "measurable": "Avaliar qualidade de ponte e ROM de ombro em extensão a cada 2 semanas", "note": "Pré-requisitos: mobilidade torácica e de ombro. Sem ponte parcial = começar pelo nível wall walk." },
-    "pistol_squat":        { "specific": "Trabalhar pistol squat ao longo de 16 semanas",                      "measurable": "Reps numa perna a cada 4 semanas; medir profundidade",                  "note": "Pré-requisitos: força unilateral, equilíbrio e mobilidade de tornozelo. 1RM squat + balance unipodal como baseline." },
-    "human_flag":          { "specific": "Trabalhar human flag ao longo de 32 semanas",                        "measurable": "Progressão chamber→tucked→straddle; medir tempo de hold mensalmente",   "note": "Pré-requisitos: força lateral de core e tração unilateral. Side plank max + pullup_max como baseline." },
-    "single_leg_deadlift": { "specific": "Trabalhar peso-morto unilateral ao longo de 12 semanas",             "measurable": "Carga × reps numa perna a cada 4 semanas",                              "note": "Pré-requisitos: dominância de cadeia posterior e equilíbrio. 1RM deadlift + balance unipodal como baseline." },
-    "first_pushup":        { "specific": "Conseguir a primeira flexão completa ao longo de 8 semanas",         "measurable": "Reps em flexões inclinadas a cada 2 semanas; baixar inclinação progressiva","note": "Pré-requisitos: nenhum estritamente. Começar pelo nível incline pushup máximo." }
+    "handstand": {
+      "specific": "Trabalhar pino (handstand) ao longo de 20 semanas",
+      "measurable": "Progressão wall→free; medir tempo de hold a cada 4 semanas",
+      "note": "Pré-requisitos: força e mobilidade de ombro. Avaliar overhead reach e shoulder press strength antes de começar."
+    },
+    "split": {
+      "specific": "Trabalhar esparregata frontal ao longo de 24 semanas",
+      "measurable": "Medir distância chão-quadril mensalmente",
+      "note": "Pré-requisitos: tolerância a stretch passivo. Sit-and-reach + ROM de abdução de anca como baseline."
+    },
+    "pullup": {
+      "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",
+      "measurable": "Acompanhar reps em deadhang e progressão de assistência",
+      "note": "Pré-requisitos: tempo de deadhang e força base de tração. Medir pullup_max (assistido) e deadhang_max."
+    },
+    "muscle_up": {
+      "specific": "Trabalhar muscle-up ao longo de 24 semanas",
+      "measurable": "Acompanhar pullups explosivos altos + dips; teste mensal de transição",
+      "note": "Pré-requisitos não-negociáveis: ≥10 pullups estritos + ≥10 dips. Avaliar antes de começar."
+    },
+    "planche": {
+      "specific": "Trabalhar planche ao longo de 36 semanas",
+      "measurable": "Progressão tuck→straddle→full; medir tempo de hold a cada 4 semanas",
+      "note": "Pré-requisitos: força extrema de protração escapular. Pseudo planche pushup + protração ROM como baseline."
+    },
+    "front_lever": {
+      "specific": "Trabalhar front lever ao longo de 32 semanas",
+      "measurable": "Progressão tuck→advanced tuck→straddle; medir tempo de hold mensalmente",
+      "note": "Pré-requisitos: ≥8 pullups + força de core anti-extensão. Tuck front lever hold como baseline."
+    },
+    "back_lever": {
+      "specific": "Trabalhar back lever ao longo de 24 semanas",
+      "measurable": "Progressão tuck→straddle→full; medir tempo de hold mensalmente",
+      "note": "Pré-requisitos: mobilidade de ombro em extensão + força de tração. Tuck back lever hold como baseline."
+    },
+    "bridge": {
+      "specific": "Trabalhar ponte (bridge) ao longo de 12 semanas",
+      "measurable": "Avaliar qualidade de ponte e ROM de ombro em extensão a cada 2 semanas",
+      "note": "Pré-requisitos: mobilidade torácica e de ombro. Sem ponte parcial = começar pelo nível wall walk."
+    },
+    "pistol_squat": {
+      "specific": "Trabalhar pistol squat ao longo de 16 semanas",
+      "measurable": "Reps numa perna a cada 4 semanas; medir profundidade",
+      "note": "Pré-requisitos: força unilateral, equilíbrio e mobilidade de tornozelo. 1RM squat + balance unipodal como baseline."
+    },
+    "human_flag": {
+      "specific": "Trabalhar human flag ao longo de 32 semanas",
+      "measurable": "Progressão chamber→tucked→straddle; medir tempo de hold mensalmente",
+      "note": "Pré-requisitos: força lateral de core e tração unilateral. Side plank max + pullup_max como baseline."
+    },
+    "single_leg_deadlift": {
+      "specific": "Trabalhar peso-morto unilateral ao longo de 12 semanas",
+      "measurable": "Carga × reps numa perna a cada 4 semanas",
+      "note": "Pré-requisitos: dominância de cadeia posterior e equilíbrio. 1RM deadlift + balance unipodal como baseline."
+    },
+    "first_pushup": {
+      "specific": "Conseguir a primeira flexão completa ao longo de 8 semanas",
+      "measurable": "Reps em flexões inclinadas a cada 2 semanas; baixar inclinação progressiva",
+      "note": "Pré-requisitos: nenhum estritamente. Começar pelo nível incline pushup máximo."
+    }
   },
   "readiness_block": {
     "title": "Em que momento está?",
@@ -297,8 +423,7 @@
     "action": "Já começou",
     "action_sub": "Treina há menos de 6 meses",
     "maintenance": "Hábito instalado",
-    "maintenance_sub": "Consistente há 6+ meses"
-    ,
+    "maintenance_sub": "Consistente há 6+ meses",
     "complete": "✓ Estágio: {{stage}}",
     "complete_meaning": "O estágio comportamental define o tom das primeiras semanas — quanto educamos, quanta estrutura impomos e quão depressa subimos a fasquia."
   },
@@ -323,7 +448,11 @@
     "summary": {
       "x_per_week": "{{n}}×/semana",
       "min": "{{n}} min"
-    }
+    },
+    "loc_home": "Casa",
+    "loc_gym": "Ginásio",
+    "loc_outdoor": "Ar livre",
+    "loc_hybrid": "Híbrido"
   },
   "equipment": {
     "barbell": "Barra",
@@ -351,7 +480,11 @@
     "energy": "Energia ao longo do dia",
     "recovery": "Capacidade de recuperação",
     "complete": "✓ Estilo de vida · {{summary}}",
-    "complete_meaning": "Sono, stress e atividade diária ajustam o autoreg strictness e a frequência de deload — não dá para ignorar a vida lá fora."
+    "complete_meaning": "Sono, stress e atividade diária ajustam o autoreg strictness e a frequência de deload — não dá para ignorar a vida lá fora.",
+    "job_sedentary": "Sentado",
+    "job_standing": "Em pé",
+    "job_physical": "Físico",
+    "job_mixed": "Misto"
   },
   "nutrition_block": {
     "title": "Nutrição & hidratação",
@@ -664,5 +797,27 @@
     },
     "analysing_section": "A analisar esta secção…",
     "insight_label": "Análise"
+  },
+  "stage_one_hero": {
+    "eyebrow": "Avaliação · Etapa 1 de 5",
+    "steps_assessment": "Avaliação",
+    "steps_briefing": "Briefing",
+    "steps_blueprint": "Plano-mestre",
+    "steps_microcycle": "Semana-tipo",
+    "steps_progressions": "Progressões",
+    "cta_request": "Pedir avaliação",
+    "cta_continue": "Continuar avaliação",
+    "cta_resend": "Pedir nova avaliação",
+    "cta_preview": "Ver como o cliente vê",
+    "link_status_label": "Estado do link",
+    "link_not_sent": "ainda não enviado",
+    "link_sent": "enviado · sem abertura",
+    "link_opened": "aberto pelo cliente",
+    "link_submitted": "devolvido pelo cliente",
+    "link_reviewed": "revisto",
+    "link_expired": "caducado",
+    "link_expires_in": "válido durante mais {{days}}d",
+    "draft_status": "Rascunho local · {{count}} de {{total}} secções",
+    "subtitle": "Recolhe os dados que vão alimentar o plano. Pode pedir ao cliente ou preencher consigo."
   }
 }
