@@ -552,36 +552,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           </Button>
           <ImportLogDialog planId={planId} plan={data} />
           <SaveAsTemplateDialog planId={planId} defaultName={plan.title} />
-          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8"
-              disabled={regenSummaryBusy}
-              title={tCommon("plan.rewrite_summary_title")}
-              onClick={async () => {
-                setRegenSummaryBusy(true);
-                try {
-                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
-                  if (r?.ok && r?.summary) {
-                    setPlan({ ...plan, summary: r.summary });
-                    toast.success("Resumo regenerado a partir do brief.");
-                  } else {
-                    toast.error(r?.error ?? "Falhou regenerar resumo.");
-                  }
-                } finally {
-                  setRegenSummaryBusy(false);
-                }
-              }}
-            >
-              {regenSummaryBusy ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Re-gerar resumo
-            </Button>
-          )}
           {isPhasedComplete && (
             <Button
               size="sm"
