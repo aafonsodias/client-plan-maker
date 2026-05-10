@@ -272,6 +272,20 @@ function ClientLogPage() {
     return groupExercises(day.exercises ?? []);
   }, [day]);
 
+  // Logger mode inferred from day focus — drives which inputs SetRow renders.
+  const loggerMode = useMemo(() => {
+    return inferLogbookModeFromDayFocus(day?.focus).value;
+  }, [day?.focus]);
+
+  // Empty plan UX: when getTodayForToken returns "empty" but the plan actually
+  // has prescribed days, auto-open the day picker so the client can pick one
+  // and see exercises immediately instead of a dead-end "no sessions" card.
+  useEffect(() => {
+    if (todayState === "empty" && info?.plan_data?.weeks?.[0]?.days?.length) {
+      setShowDayPicker(true);
+    }
+  }, [todayState, info]);
+
   const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
   const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
   const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
@@ -374,6 +388,11 @@ function ClientLogPage() {
             : undefined
         }
       />
+      {todayState === "empty" && entries.length > 0 && (
+        <p className="px-1 text-xs text-muted-foreground">
+          Sem dia agendado para hoje — escolhe a sessão que vais registar:
+        </p>
+      )}
       {showDayPicker && (
         <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border bg-card px-3 py-2">
           <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
@@ -405,7 +424,7 @@ function ClientLogPage() {
       ) : null}
 
       <div className="space-y-3">
-        {entries.length > 0 && (
+        {entries.length > 0 && search.from !== "trainer" && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
             <span>
               Treinaste com a folha impressa? Tira foto e a IA importa os valores.
@@ -442,6 +461,7 @@ function ClientLogPage() {
                 onChange={(idx, next) => updateEntry(idx, next)}
                 token={token}
                 planId={info.id}
+                mode={loggerMode}
               />
             );
           });
@@ -469,9 +489,16 @@ function ClientLogPage() {
         }}
       />
 
-      <Button onClick={submit} disabled={saving || entries.length === 0} className="w-full">
-        <Save className="mr-2 h-4 w-4" /> Concluir sessão
-      </Button>
+      {/* CTA — sticky no telemóvel para estar sempre ao pulgar. */}
+      <div className="sticky bottom-2 z-20 sm:static sm:bottom-auto">
+        <Button
+          onClick={submit}
+          disabled={saving || entries.length === 0}
+          className="h-12 w-full text-base shadow-lg shadow-background/50 sm:h-10 sm:text-sm"
+        >
+          <Save className="mr-2 h-4 w-4" /> Concluir sessão
+        </Button>
+      </div>
     </div>
   );
 }
