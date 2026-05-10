@@ -27,11 +27,24 @@ export function MesocycleTableView({
   planId,
   editable = true,
   onUpdated,
+  wave,
 }: {
   plan: PlanData;
   planId?: string;
   editable?: boolean;
   onUpdated?: () => void;
+  /**
+   * Optional canonical wave plan from generation_meta.wave_periodization.weeks.
+   * When present, the per-week header shows the *intended* tag + RPE range
+   * (Bompa wave) instead of the empirical median, which barely shifts with
+   * +0.5 RPE bumps and reads as flat to the trainer.
+   */
+  wave?: Array<{
+    week: number;
+    rpe_low?: number | null;
+    rpe_high?: number | null;
+    tag?: "base" | "+volume" | "+intensity" | "deload" | string | null;
+  }> | null;
 }) {
   const [compact, setCompact] = useState(true);
   const updateFn = useServerFn(updateExerciseInWeek);
