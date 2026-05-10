@@ -30,6 +30,7 @@ These are the constitution of the organism. Any feature, copy, or decision that 
 9. **AI never generates more than 1 microcycle. AI never prescribes more than 1 mesocycle.** Beyond that, AI may *intend* a macrocycle but not prescribe it. Determinism takes over.
 10. **Simple by default, depth by choice.** Beginner PTs and clients see one clear action. Advanced users can drill into FITT-VP, periodization knobs, multi-block lineage, capacity maps. The progression from simple to advanced happens through user interaction, not modes or toggles.
 11. **Assessment before prescription, no shortcuts.** Every plan flows from completed assessment. Speed comes from clarity at each stage, not from skipping stages. (See §4 — No quick-plans.)
+12. **Clinical decisions auto, personal decisions manual.** Where evidence dictates a default (training frequency, intensity preset, programming tier), the system pre-selects with visible override. Where personal circumstance dictates (time available, environment), the user inputs without prefill.
 
 ---
 
