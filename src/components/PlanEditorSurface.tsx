@@ -916,11 +916,13 @@ function ViewMode({
   planId,
   sessions,
   reload,
+  wave,
 }: {
   plan: PlanData;
   planId: string;
   sessions: SessionRow[];
   reload: () => Promise<void>;
+  wave?: Array<{ week: number; rpe_low?: number | null; rpe_high?: number | null; tag?: string | null }> | null;
 }) {
   const [layout, setLayout] = useState<"cards" | "table">(() => {
     if (typeof window === "undefined") return "table";
@@ -955,7 +957,13 @@ function ViewMode({
         </div>
       </div>
       {layout === "table" ? (
-        <MesocycleTableView plan={plan} planId={planId} editable={true} onUpdated={() => void reload()} />
+        <MesocycleTableView
+          plan={plan}
+          planId={planId}
+          editable={true}
+          onUpdated={() => void reload()}
+          wave={wave ?? null}
+        />
       ) : (
         <div className="space-y-12">
       {plan.weeks.map((w, wi) => (
