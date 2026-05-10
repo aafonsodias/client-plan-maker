@@ -516,3 +516,12 @@ Hidden behind `VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS` per assessment foundation
 | 111 | P0 | clients/$id | Rockport wizard — pulls weight/age/sex, asks mm:ss + post-walk HR, computes VO₂max via fórmula ACSM, classifica poor/fair/good/excellent | R D ✅ |
 | 112 | P0 | RxImplications | Live update por secção em Mobility/Movement/Nutrition — RxImplications já recomputa por re-render (passa assessment); o que falta é **per-section analysis function** (CC9). Adiar para Round E (arquitetura pre-stage por secção). | deferred → Round E |
 | 113 | P0 | clients/$id | Verificar persistência de estado parcial — autosave já corre via `flushPendingSave`/debounce (lines 1140+); upsert em `assessments` ocorre em qualquer % de preenchimento. Sem regressão observada. | R D ✅ verified |
+
+## Round actual (post-prompt-D)
+
+| # | P | Área | Item |
+|---|---|---|---|
+| - | P0 | Motor | Stage 3: regra intra-week uniqueness no prompt + week1SetCap por tier (remedial 2/1/1, conservative 3/2/1, advanced 3/3/2) |
+| - | P0 | Motor | enforceWeek1SetCap determinístico após enforceRpeFloor (logado em generation_log com stage `set_cap`) |
+| - | P2 | Docs | .lovable/audits/round-mvp-map.md + .txt — mapa app + pontas soltas |
+| - | P1 | Briefing | Redesign editorial (t-1..t-4, tonal cards) — próxima round |

@@ -31,6 +31,12 @@ export interface TierGuidelines {
   /** Soft total exercise band over a 4-week meso (sessions × 4 × ex/session) */
   totalExercisesMin: number;
   totalExercisesMax: number;
+  /**
+   * Hard cap on the number of working sets per exercise role in WEEK 1 only.
+   * Stage 4 progressively bumps sets in later weeks via the Bompa wave.
+   * Remedial Week 1 = introduction, low volume; advanced can start denser.
+   */
+  week1SetCap: { main: number; accessory: number; carry: number };
 }
 
 function countMovementScreenFailures(assessment: Record<string, any>): number {
@@ -189,6 +195,7 @@ export function tierGuidelines(
       ].join("\n"),
       totalExercisesMin: 48,
       totalExercisesMax: 64,
+      week1SetCap: { main: 2, accessory: 1, carry: 1 },
     };
   }
   if (tier === "conservative") {
@@ -212,6 +219,7 @@ export function tierGuidelines(
       ].join("\n"),
       totalExercisesMin: sessions * 4 * 6,
       totalExercisesMax: sessions * 4 * 7,
+      week1SetCap: { main: 3, accessory: 2, carry: 1 },
     };
   }
   // advanced
@@ -228,6 +236,7 @@ export function tierGuidelines(
     requiredAlternatives: "All movement patterns available based on competency.",
     totalExercisesMin: Math.min(Math.max(briefSessions, 5), 6) * 4 * 7,
     totalExercisesMax: Math.min(Math.max(briefSessions, 5), 6) * 4 * 8,
+    week1SetCap: { main: 3, accessory: 3, carry: 2 },
   };
 }
 

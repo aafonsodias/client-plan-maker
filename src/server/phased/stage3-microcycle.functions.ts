@@ -174,6 +174,36 @@ function enforceRpeFloor(
   return { day: { ...day, exercises }, floorApplied: applied };
 }
 
+/**
+ * Truncate per-exercise `sets` for WEEK 1 to the tier-specific cap. The AI
+ * defaults to 3× across the board which is dishonest for a remedial intro
+ * week (NSCA Essentials 3e §17 — beginners start at 1–2 sets/exercise to
+ * build neural pattern before adding volume). Stage 4 ramps sets up across
+ * Weeks 2-N via the deterministic Bompa wave.
+ */
+function enforceWeek1SetCap(
+  day: any,
+  cap: { main: number; accessory: number; carry: number },
+): { day: any; setsCapped: number } {
+  if (!day || !Array.isArray(day.exercises)) return { day, setsCapped: 0 };
+  let capped = 0;
+  const exercises = day.exercises.map((ex: any, idx: number) => {
+    const isMain = idx === 0;
+    const isCarry = isCarryLike(ex?.name);
+    const limit = isMain ? cap.main : isCarry ? cap.carry : cap.accessory;
+    const raw = String(ex?.sets ?? "").trim();
+    // Parse leading integer (handles "3", "3-4", "3 sets", "3x10").
+    const m = raw.match(/^(\d+)/);
+    if (!m) return ex;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n) || n <= limit) return ex;
+    capped++;
+    const meta = { ...(ex?.meta ?? {}), sets_original: ex?.sets ?? null, week1_set_cap_applied: true };
+    return { ...ex, sets: String(limit), meta };
+  });
+  return { day: { ...day, exercises }, setsCapped: capped };
+}
+
 // JSON-Schema for the day tool. Mirrors PhasedDaySchema/WeekDaySchema.
 const SECTION_ITEM = {
   type: "object",
@@ -403,6 +433,23 @@ WEEK 1 RPE FLOORS (intensity_appetite = ${appetite.toUpperCase()}):
 RPE 5 is reserved for warm-up / activation / cooldown — NEVER for the main block.
 If a movement is genuinely "supported" or rehab-style, prefer reducing load and KEEPING RPE at the floor (the goal is honest effort, not artificially low numbers).`;
 
+  const setCap = guidelines?.week1SetCap ?? null;
+  const setCapBlock = setCap
+    ? `
+
+WEEK 1 SET CAPS (HARD — Week 1 is an introduction; Stage 4 ramps sets up via Bompa wave):
+- Main lift (the FIRST exercise): max ${setCap.main} working sets.
+- Secondary / accessory exercises: max ${setCap.accessory} working set${setCap.accessory === 1 ? "" : "s"}.
+- Carry / Pallof / plank / suitcase / farmer: max ${setCap.carry} working set${setCap.carry === 1 ? "" : "s"}.
+Use the EXACT integer (e.g. "${setCap.accessory}" not "${setCap.accessory}-${setCap.accessory + 1}"). Never write "3 sets" for an accessory in a remedial/conservative Week 1.`
+    : "";
+
+  const intraWeekBlock = `
+
+INTRA-WEEK EXERCISE UNIQUENESS (HARD):
+- Each ACCESSORY exercise should appear at most ONCE across the whole microcycle (you only see one day, but pick variants that fit THIS archetype's focus uniquely — avoid the obvious "goblet squat" / "leg press" picks if a different archetype likely already owns that pattern).
+- The MAIN LIFT may repeat in at most 2 sessions per week.
+- Variants count as different exercises (goblet squat ≠ box squat ≠ leg press ≠ Bulgarian split squat). Prefer the variant that best matches THIS archetype's focus (${arch.focus}).`;
   const rotationBlock = priorExercisePool.length > 0
     ? `\n\nEXERCISE ROTATION (block N>1) — SAID variation rule:\nThe prior block already exhausted these exercises: ${priorExercisePool.slice(0, 40).join(", ")}.\nAt least 60% of the accessories you pick for THIS day must NOT be in that list (substitute with same movement pattern + same intent — e.g. replace 'leg press' with 'hack squat' or 'belt squat'). The 1–2 main lifts may repeat if they are the driver of progression. Isolators MUST rotate. Variation is what creates new adaptation; clones stall.`
     : "";
@@ -449,7 +496,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -498,6 +545,27 @@ Generate ONLY this single day's session.`;
   // Deterministic post-validation: lift any RPE that came in below the floor.
   const sanitized = sanitizePrepBlocks(result.data);
   const { day: floored, floorApplied } = enforceRpeFloor(sanitized, floors);
+  // Deterministic post-validation: truncate sets to Week-1 tier cap.
+  const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
+    ? enforceWeek1SetCap(floored, guidelines.week1SetCap)
+    : { day: floored, setsCapped: 0 };
+  if (setsCapped > 0) {
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      stage: `stage3:day${dayIndex}:set_cap`,
+      model_used: "deterministic",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: true,
+      retry_count: 0,
+      duration_ms: 0,
+      error: null,
+      input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap },
+      output_snapshot: { setsCapped },
+    });
+  }
   if (floorApplied > 0) {
     await logGeneration(supabase, {
       trainer_id: userId,
@@ -519,7 +587,7 @@ Generate ONLY this single day's session.`;
   // ---- FITT-VP validator + 1× retry (R2.2 Phase C.3) ---------------------
   // Only run the expensive retry on block N≥2 (where prior pool exists) — for
   // block 1 we accept first-pass output to keep generation snappy.
-  let finalDay = floored;
+  let finalDay = setsCappedDay;
   if (prescriptionParameters && priorExercisePool.length > 0) {
     const violationsInitial: FittVpViolation[] = validateDayAgainstFittVp(
       finalDay,
@@ -547,10 +615,13 @@ Generate ONLY this single day's session.`;
       if (retry.ok) {
         const retrySanitized = sanitizePrepBlocks(retry.data);
         const { day: retryFloored } = enforceRpeFloor(retrySanitized, floors);
-        violationsAfter = validateDayAgainstFittVp(retryFloored, prescriptionParameters);
+        const retryCapped = guidelines?.week1SetCap
+          ? enforceWeek1SetCap(retryFloored, guidelines.week1SetCap).day
+          : retryFloored;
+        violationsAfter = validateDayAgainstFittVp(retryCapped, prescriptionParameters);
         // Use retry output if it strictly improves things; else keep original.
         if (violationsAfter.length < violationsInitial.length) {
-          finalDay = retryFloored;
+          finalDay = retryCapped;
         }
       }
       await logGeneration(supabase, {
