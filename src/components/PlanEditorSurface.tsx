@@ -825,25 +825,15 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             );
           })}
         </div>
-        {plan?.status !== "finalized" && client && (
-          <RegenerateWithFeedbackDialog
-            planId={planId}
-            clientId={client.id}
-            assessmentId={plan.assessment_id}
-            durationWeeks={plan.duration_weeks ?? 4}
-            isPhasedComplete={isPhasedComplete}
-            previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
-            onRegenerated={async (newPlan) => {
-              setData({ weeks: newPlan.weeks ?? [] });
-              setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
-              // Phased plans rebuild from workout_plan_days on every reload —
-              // refetch immediately so the realtime channel can't snap us back
-              // to stale rows.
-              if (isPhasedComplete) {
-                await reloadPlanDays();
-              }
-            }}
-          />
+        {mode !== "edit" && plan?.status !== "finalized" && client && (
+          <button
+            type="button"
+            onClick={() => setMode("edit")}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+            title="Configurar e regenerar este mesociclo"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Configurar mesociclo
+          </button>
         )}
       </div>
 
