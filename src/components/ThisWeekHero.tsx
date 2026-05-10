@@ -29,6 +29,7 @@ export function ThisWeekHero({
   defaultWeek,
   zeroState,
   primaryAction,
+  secondaryAction,
   bare = false,
 }: {
   plan: {
@@ -42,6 +43,8 @@ export function ThisWeekHero({
   zeroState: boolean;
   /** The ONE next thing the trainer should do for this client. */
   primaryAction: HeroPrimaryAction;
+  /** Optional secondary action shown next to the primary (ghost style). */
+  secondaryAction?: HeroPrimaryAction;
   /** When true, omit the outer card chrome (used when embedded in the Protocolo card). */
   bare?: boolean;
 }) {
@@ -53,7 +56,10 @@ export function ThisWeekHero({
       return (
         <div className="pt-2">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">Próximo passo</p>
-          <div className="mt-2"><PrimaryCta action={primaryAction} /></div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <PrimaryCta action={primaryAction} />
+            {secondaryAction && <PrimaryCta action={secondaryAction} variant="ghost" />}
+          </div>
         </div>
       );
     }
@@ -69,7 +75,10 @@ export function ThisWeekHero({
           O que fazer agora
         </h2>
         <div className="mt-4">
-          <PrimaryCta action={primaryAction} large />
+          <div className="flex flex-wrap items-center gap-2">
+            <PrimaryCta action={primaryAction} large />
+            {secondaryAction && <PrimaryCta action={secondaryAction} large variant="ghost" />}
+          </div>
         </div>
       </section>
     );
@@ -138,6 +147,7 @@ export function ThisWeekHero({
               Semana {selectedWeek} · PDF
             </button>
             {!ctaIsOpenPlan && <PrimaryCta action={primaryAction} />}
+            {secondaryAction && <PrimaryCta action={secondaryAction} variant="ghost" />}
           </div>
         </div>
 
@@ -155,7 +165,7 @@ export function ThisWeekHero({
   );
 }
 
-function PrimaryCta({ action, large = false }: { action: HeroPrimaryAction; large?: boolean }) {
+function PrimaryCta({ action, large = false, variant = "default" }: { action: HeroPrimaryAction; large?: boolean; variant?: "default" | "ghost" }) {
   const sizeCls = large ? "h-11 px-5 text-sm" : "h-9 px-4 text-sm";
   const Icon = action.busy ? Loader2 : null;
   const inner = (
@@ -167,14 +177,14 @@ function PrimaryCta({ action, large = false }: { action: HeroPrimaryAction; larg
   );
   if (action.href) {
     return (
-      <Button asChild className={sizeCls} disabled={action.busy}>
+      <Button asChild variant={variant === "ghost" ? "outline" : "default"} className={sizeCls} disabled={action.busy}>
         {/* href is an internal path; cast to satisfy typed router */}
         <Link to={action.href as any}>{inner}</Link>
       </Button>
     );
   }
   return (
-    <Button className={sizeCls} disabled={action.busy} onClick={() => void action.onClick?.()}>
+    <Button variant={variant === "ghost" ? "outline" : "default"} className={sizeCls} disabled={action.busy} onClick={() => void action.onClick?.()}>
       {inner}
     </Button>
   );
