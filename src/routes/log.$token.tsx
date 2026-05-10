@@ -119,9 +119,17 @@ function ClientLogPage() {
         // Auto-resolve "today" — defaults to next undone slot or the latest draft.
         try {
           const today = await getTodayFn({ data: { token } });
-          setWeekNum(today.week_number);
-          setDayLabel(today.day_label);
-          setDate(today.session_date);
+          if (today.day_label) {
+            setWeekNum(today.week_number);
+            setDayLabel(today.day_label);
+            setDate(today.session_date);
+          } else {
+            const w0 = res.plan_data?.weeks?.[0];
+            if (w0) {
+              setWeekNum(w0.week_number);
+              setDayLabel(w0.days?.[0]?.day_label ?? "");
+            }
+          }
         } catch {
           const w0 = res.plan_data?.weeks?.[0];
           if (w0) {
