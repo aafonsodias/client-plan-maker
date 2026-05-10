@@ -1918,6 +1918,7 @@ function ClientDetail() {
           document.getElementById("protocol-stages-lane")?.scrollIntoView({ behavior: "smooth", block: "start" });
         };
         let primaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction | null = null;
+        let secondaryAction: import("@/components/ThisWeekHero").HeroPrimaryAction | null = null;
         if (!intakeDone && !lastSavedAt) {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
@@ -1937,7 +1938,7 @@ function ClientDetail() {
           primaryAction = { label: "Aprovar progressão", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("progressions"); scrollToStages(); } };
         } else if (allApprovedLocal && heroPlan) {
           primaryAction = {
-            label: "Abrir primeiro log",
+            label: "Abrir logbook do cliente",
             icon: <ArrowRight className="h-4 w-4" />,
             intent: "log",
             onClick: async () => {
@@ -1954,6 +1955,11 @@ function ClientDetail() {
                 toast.error(e?.message ?? "Não foi possível abrir o logbook.");
               }
             },
+          };
+          secondaryAction = {
+            label: "Abrir editor",
+            icon: <ArrowRight className="h-4 w-4" />,
+            href: `/plans/${heroPlan.id}`,
           };
         } else if (heroPlan) {
           primaryAction = { label: "Abrir plano", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
@@ -2006,6 +2012,7 @@ function ClientDetail() {
                 defaultWeek={heroDefaultWeek}
                 zeroState={zeroState}
                 primaryAction={primaryAction}
+                secondaryAction={secondaryAction ?? undefined}
               />
             )}
             <CapacityDeltasCard clientId={clientId} />
