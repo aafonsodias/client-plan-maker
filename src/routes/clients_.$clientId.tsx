@@ -103,6 +103,7 @@ import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
+import PlanEditorSurface from "@/components/PlanEditorSurface";
 import { ensureShareToken } from "@/server/sessions.functions";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Menu as MenuIcon } from "lucide-react";
@@ -2015,6 +2016,11 @@ function ClientDetail() {
                 primaryAction={primaryAction}
                 secondaryAction={secondaryAction ?? undefined}
               />
+            )}
+            {allApprovedLocal && heroPlan && (
+              <div className="mt-6">
+                <PlanEditorSurface planId={heroPlan.id} embedded />
+              </div>
             )}
             <CapacityDeltasCard clientId={clientId} />
             {plans.length > 0 && <ComplianceCard clientId={clientId} />}
