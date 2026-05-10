@@ -408,6 +408,16 @@
     "title": "Histórico de treino",
     "hint": "Exposição prévia molda cargas iniciais e ritmo de progressão.",
     "years": "Anos a treinar",
+    "tier_label": "Faixa de experiência",
+    "tier_hint": "Agrupado por anos de prática regular. Ajusta cargas iniciais e progressão.",
+    "tier": {
+      "none": "Sem treino",
+      "seedling": "Iniciante (<1 ano)",
+      "base": "Base (1–3 anos)",
+      "intermediate": "Intermédio (3–6 anos)",
+      "advanced": "Avançado (6–10 anos)",
+      "veteran": "Veterano (10+ anos)"
+    },
     "previous": "Estilo de programa anterior",
     "previous_placeholder": "PPL, 5/3/1…",
     "max_lifts": "Máximos (se conhecidos)",
