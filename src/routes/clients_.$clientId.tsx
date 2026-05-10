@@ -4213,6 +4213,20 @@ function AssessmentSynthesisDashboard({
           </ul>
         </div>
       )}
+
+      {planId && (
+        <div className="flex justify-end pt-1 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:280ms] fill-mode-both">
+          <Link
+            to="/plans/$planId/microcycle"
+            params={{ planId }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-90 transition"
+          >
+            <Sparkles className="h-4 w-4" />
+            Ir para o cockpit
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
