@@ -30,7 +30,8 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanDraft, regeneratePlanSummary } from "@/server/plan.functions";
+import { generatePlanWeek, regeneratePlanSummary } from "@/server/plan.functions";
+import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
@@ -1692,8 +1693,10 @@ function RegenerateWithFeedbackDialog({
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [busy, setBusy] = useState(false);
-  const [stage, setStage] = useState<"idle" | "context" | "ai" | "saving" | "done">("idle");
-  const generateFn = useServerFn(generatePlanDraft);
+  const [progress, setProgress] = useState<{ done: number; total: number; phase: "idle" | "context" | "weeks" | "saving" | "done" }>(
+    { done: 0, total: 0, phase: "idle" },
+  );
+  const generateWeekFn = useServerFn(generatePlanWeek);
 
   const submit = async () => {
     if (!feedback.trim()) {
@@ -1701,9 +1704,9 @@ function RegenerateWithFeedbackDialog({
       return;
     }
     setBusy(true);
-    setStage("context");
+    setProgress({ done: 0, total: durationWeeks, phase: "context" });
     try {
-      // Pull client + assessment for context
+      // Pull client + assessment + stored programming_variables for context.
       const { data: client, error: clientErr } = await supabase
         .from("clients").select("*").eq("id", clientId).single();
       if (clientErr || !client) throw new Error(clientErr?.message ?? "Client not found");
@@ -1720,6 +1723,21 @@ function RegenerateWithFeedbackDialog({
       }
       if (!assessment) throw new Error("No assessment found for this client.");
 
+      // Read stored programming_variables (Cockpit) so the regen honours the
+      // ceiling the trainer set. Free-text feedback overrides ("rpe 6.5") are
+      // parsed deterministically and pisam o stored.
+      const { data: planRow } = await supabase
+        .from("workout_plans")
+        .select("programming_variables")
+        .eq("id", planId)
+        .maybeSingle();
+      const storedPv = (planRow?.programming_variables ?? null) as Record<string, any> | null;
+      const override = parseRpeOverrideFromFeedback(feedback);
+      const resolvedPv = {
+        ...(storedPv ?? {}),
+        ...(override ?? {}),
+      };
+
       const skeleton = {
         title: previousPlan.title ?? null,
         summary: previousPlan.summary ?? null,
@@ -1735,34 +1753,64 @@ function RegenerateWithFeedbackDialog({
         })),
       };
 
-      setStage("ai");
-      const result = await generateFn({
-        data: {
-          client: {
-            full_name: client?.full_name ?? "Client",
-            age: client.age,
-            sex: client.sex,
-            height_cm: client.height_cm ? Number(client.height_cm) : null,
-            weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
-          },
-          assessment: { ...assessment, secondary_goals: null },
-          duration_weeks: durationWeeks,
-          trainer_feedback: feedback.trim(),
-          previous_plan: skeleton,
-        },
-      });
-      if (!result.ok) {
-        if ((result as any).billingRequired) {
-          toast.error(result.error);
-          window.location.href = "/billing";
-          return;
-        }
-        throw new Error(result.error);
-      }
+      setProgress({ done: 0, total: durationWeeks, phase: "weeks" });
+      const clientPayload = {
+        full_name: client?.full_name ?? "Client",
+        age: client.age,
+        sex: client.sex,
+        height_cm: client.height_cm ? Number(client.height_cm) : null,
+        weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
+      };
 
-      setStage("saving");
-      // Persist new plan_data + title/summary
-      const newWeeks = result.plan.weeks ?? [];
+      // Concurrency-3 pool: avoids upstream rate-limit while keeping a 6-week
+      // regen under ~25s.
+      const POOL = 3;
+      const indices = Array.from({ length: durationWeeks }, (_, i) => i + 1);
+      const results: any[] = new Array(durationWeeks);
+      let cursor = 0;
+      let firstError: string | null = null;
+      const workers = Array.from({ length: Math.min(POOL, durationWeeks) }, async () => {
+        while (true) {
+          const i = cursor++;
+          if (i >= indices.length) return;
+          const week_number = indices[i];
+          const r = await generateWeekFn({
+            data: {
+              client: clientPayload,
+              assessment: { ...assessment, secondary_goals: null },
+              duration_weeks: durationWeeks,
+              week_number,
+              trainer_feedback: feedback.trim(),
+              previous_plan: skeleton,
+              programming_variables: resolvedPv,
+            },
+          });
+          if (!r.ok) {
+            if ((r as any).billingRequired) {
+              firstError = r.error;
+              window.location.href = "/billing";
+              return;
+            }
+            firstError = firstError ?? `Week ${week_number}: ${r.error}`;
+            return;
+          }
+          results[week_number - 1] = r;
+          setProgress((p) => ({ ...p, done: p.done + 1 }));
+        }
+      });
+      await Promise.all(workers);
+      if (firstError) throw new Error(firstError);
+
+      // Merge: title/summary from week 1; weeks ordered.
+      const week1 = results[0];
+      const newWeeks = results
+        .filter(Boolean)
+        .map((r) => r.week)
+        .sort((a, b) => a.week_number - b.week_number);
+      const newTitle = week1?.title || previousPlan.title;
+      const newSummary = week1?.summary || previousPlan.summary;
+
+      setProgress((p) => ({ ...p, phase: "saving" }));
       // Read current version so we can bump it (stale-session detection).
       const { data: cur } = await supabase
         .from("workout_plans")
@@ -1773,23 +1821,28 @@ function RegenerateWithFeedbackDialog({
       const { error: upErr } = await supabase
         .from("workout_plans")
         .update({
-          title: result.plan.title || previousPlan.title,
-          summary: result.plan.summary || previousPlan.summary,
+          title: newTitle,
+          summary: newSummary,
           plan_data: { weeks: newWeeks },
           plan_data_version: nextVersion,
         })
         .eq("id", planId);
       if (upErr) throw upErr;
 
-      onRegenerated({ title: result.plan.title, summary: result.plan.summary, weeks: newWeeks });
-      setStage("done");
+      onRegenerated({ title: newTitle, summary: newSummary, weeks: newWeeks });
+      setProgress((p) => ({ ...p, phase: "done" }));
       const totalEx = newWeeks.reduce(
         (acc: number, w: any) =>
           acc + (w.days ?? []).reduce((a: number, d: any) => a + (d.exercises ?? []).length, 0),
         0,
       );
+      const cockpitNote = override?.rpe_ceiling
+        ? ` · RPE cap ${override.rpe_ceiling} (do feedback)`
+        : storedPv?.rpe_ceiling
+          ? ` · RPE cap ${storedPv.rpe_ceiling} (Cockpit)`
+          : "";
       toast.success("Plan regenerated", {
-        description: `Wave-RPE applied · ${newWeeks.length} weeks · ${totalEx} exercises. Older sessions moved to "Archived".`,
+        description: `${newWeeks.length} weeks · ${totalEx} exercises${cockpitNote}. Older sessions moved to "Archived".`,
       });
       setFeedback("");
       setOpen(false);
@@ -1797,7 +1850,7 @@ function RegenerateWithFeedbackDialog({
       toast.error(e.message ?? "Regeneration failed");
     } finally {
       setBusy(false);
-      setStage("idle");
+      setProgress({ done: 0, total: 0, phase: "idle" });
     }
   };
 
@@ -1805,7 +1858,7 @@ function RegenerateWithFeedbackDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 text-xs">
-          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate with feedback
+          <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Regenerate (Cockpit-aware)
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -1838,10 +1891,10 @@ function RegenerateWithFeedbackDialog({
             <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-200">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               <span>
-                {stage === "context" && "Reading client + assessment context…"}
-                {stage === "ai" && "Asking the AI to redesign with wave-RPE (~30s)…"}
-                {stage === "saving" && "Saving new plan + archiving old sessions…"}
-                {stage === "done" && "Done."}
+                {progress.phase === "context" && "Reading client + assessment + Cockpit…"}
+                {progress.phase === "weeks" && `Generating weeks ${progress.done}/${progress.total} (parallel)…`}
+                {progress.phase === "saving" && "Saving new plan + archiving old sessions…"}
+                {progress.phase === "done" && "Done."}
               </span>
             </div>
           )}

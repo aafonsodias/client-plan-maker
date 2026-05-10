@@ -6,6 +6,7 @@ import {
   buildClientContextBlock,
   buildFeedbackBlock,
   SHARED_PROGRAM_RULES,
+  buildCockpitConstraintBlock,
 } from "./plan.server";
 import { criticDay, shouldRepair } from "./plan-critic.server";
 import { repairDay } from "./plan-repair.server";
@@ -212,6 +213,19 @@ const WeekInputSchema = z.object({
   week_number: z.number().min(1).max(16),
   trainer_feedback: z.string().max(4000).nullable().optional(),
   previous_plan: z.any().nullable().optional(),
+  // R70 Fase B — Cockpit overrides resolved client-side (stored pv merged
+  // with parseRpeOverrideFromFeedback). Optional + permissive so legacy
+  // callers (initial draft fan-out) keep working unchanged.
+  programming_variables: z
+    .object({
+      rpe_ceiling: z.number().min(5).max(10).nullable().optional(),
+      rpe_floor: z.number().min(5).max(10).nullable().optional(),
+      wave_model: z.string().nullable().optional(),
+      deload_frequency: z.string().nullable().optional(),
+      autoreg_strictness: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 const DayInputSchema = z.object({
@@ -822,7 +836,8 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
     const isFirstWeek = week_number === 1;
 
     const safetyBlock = buildSafetyBlock(data.assessment);
-    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}
+    const cockpitBlock = buildCockpitConstraintBlock(data.programming_variables ?? null);
+    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}${cockpitBlock}
 
 ${SHARED_PROGRAM_RULES}
 
