@@ -310,6 +310,24 @@
     "other": "Other",
     "test_result": "Test result",
     "test_result_hint": "Distance, time, or VO₂ estimate.",
+    "rockport_title": "Rockport · VO₂max अनुमान",
+    "rockport_protocol": "1 मील (1.6 km) यथासंभव तेज़ चलें, दौड़ें नहीं। स्टॉपवॉच का उपयोग करें। पहुँचते ही 15s × 4 तक नाड़ी मापें। नीचे मान दर्ज करें।",
+    "rockport_prereq": "वज़न {{weight}} kg · आयु {{age}} · {{sex}}",
+    "rockport_missing_prereq": "प्रोफ़ाइल में वज़न, आयु या लिंग गायब — पहले एंथ्रोपोमेट्री भरें।",
+    "rockport_sex_male": "पुरुष",
+    "rockport_sex_female": "स्त्री",
+    "rockport_minutes": "मिनट",
+    "rockport_seconds": "सेकंड",
+    "rockport_hr": "चलने के बाद HR (bpm)",
+    "rockport_result": "अनुमानित VO₂max",
+    "rockport_apply": "परिणाम सहेजें",
+    "rockport_ignore": "छोड़ें",
+    "rockport_band": {
+      "poor": "कमज़ोर",
+      "fair": "औसत",
+      "good": "अच्छा",
+      "excellent": "उत्कृष्ट"
+    },
     "cardio_legacy": "Cardio context (legacy free text)"
   },
   "resume": {
@@ -338,7 +356,11 @@
     "safety_body": "The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.",
     "safety_confirm": "I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.",
     "safety_cancel": "Cancel",
-    "safety_proceed": "Generate conservative draft"
+    "safety_proceed": "Generate conservative draft",
+    "incomplete_title": "अधूरा मूल्यांकन समाप्त करें?",
+    "incomplete_body": "मूल्यांकन अधूरा है ({{done}}/{{total}} खंड)। आप अभी समाप्त कर सकते हैं — गायब खंड बाद में आप या आपके ट्रेनर द्वारा भरे जा सकते हैं। प्रारंभिक प्रिस्क्रिप्शन की गुणवत्ता कम होगी।",
+    "incomplete_confirm": "फिर भी समाप्त करें",
+    "incomplete_cancel": "वापस"
   },
   "progress_panel": {
     "header": "Generating with Claude Haiku 4.5 (per day)",

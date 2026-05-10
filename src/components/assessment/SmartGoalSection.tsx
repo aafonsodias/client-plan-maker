@@ -198,13 +198,18 @@ export function SmartGoalSection({
               onClick={() => handleTemplateClick(tpl)}
               className={cn(
                 "flex w-full items-start justify-between rounded-md px-3 py-2 text-left transition",
-                isActive ? "bg-muted/55 ring-1 ring-inset ring-border" : "bg-muted/30 hover:bg-muted/45"
+                isActive
+                  ? "bg-foreground/10 ring-1 ring-foreground/30 hover:bg-foreground/15"
+                  : "bg-muted/30 hover:bg-muted/45"
               )}
             >
               <p className="body-prose flex-1 text-[13px] leading-snug text-foreground">
                 {t(tpl.specific_key as never) as string}
               </p>
-              <span className="label-caps ml-3 shrink-0 tabular-nums text-muted-foreground">
+              <span className={cn(
+                "label-caps ml-3 shrink-0 tabular-nums",
+                isActive ? "text-foreground font-semibold" : "text-muted-foreground"
+              )}>
                 {tpl.default_weeks}w
               </span>
             </button>

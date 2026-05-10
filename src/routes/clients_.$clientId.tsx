@@ -39,6 +39,7 @@ import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { MeasureField } from "@/components/assessment/MeasureField";
 import { ChipGroup } from "@/components/assessment/ChipGroup";
+import { RockportWizard } from "@/components/assessment/RockportWizard";
 import { VisualChipGroup } from "@/components/ui/visual-chip-group";
 import {
   FemaleSilhouette, MaleSilhouette,
@@ -701,6 +702,11 @@ function ClientDetail() {
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
+
+  // Round D · Bug 1 — Concluir always enabled, with confirmation when
+  // the assessment is incomplete. The pending action is run on confirm.
+  const [incompleteWarnOpen, setIncompleteWarnOpen] = useState(false);
+  const pendingGenerateRef = useRef<null | (() => void)>(null);
 
   /**
    * Latest plan that was already finalized for the *current* assessment.
@@ -1750,6 +1756,33 @@ function ClientDetail() {
                 <AlertDialogCancel>{t("discard.cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={() => { discardDraft(); setDiscardDialogOpen(false); }}>
                   {t("discard.confirm")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          {/* Round D · Bug 1 — Confirmation when generating from a partial assessment. */}
+          <AlertDialog open={incompleteWarnOpen} onOpenChange={setIncompleteWarnOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("generate.incomplete_title")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("generate.incomplete_body", {
+                    done: briefCoverage?.done ?? 0,
+                    total: briefCoverage?.total ?? 14,
+                  })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("generate.incomplete_cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    const run = pendingGenerateRef.current;
+                    pendingGenerateRef.current = null;
+                    setIncompleteWarnOpen(false);
+                    if (run) run();
+                  }}
+                >
+                  {t("generate.incomplete_confirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -2999,9 +3032,17 @@ function ClientDetail() {
                   ]}
                 />
               </div>
-              {assessment.ext_cardio_test !== "untested" && (
+              {assessment.ext_cardio_test === "rockport" ? (
+                <RockportWizard
+                  weightKg={(assessment.weight_kg ?? client?.weight_kg) ?? null}
+                  age={client?.age ?? null}
+                  sex={client?.sex ?? null}
+                  value={assessment.ext_cardio_value}
+                  onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })}
+                />
+              ) : assessment.ext_cardio_test && assessment.ext_cardio_test !== "untested" ? (
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
-              )}
+              ) : null}
               {showAdvancedPerformance && (
                 <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
               )}
@@ -3158,44 +3199,42 @@ function ClientDetail() {
                     );
                   })() : (() => {
                     const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
-                    const remaining = briefCoverage ? Math.max(0, briefCoverage.total - briefCoverage.done) : 0;
-                    const tooltip = assessmentComplete
-                      ? undefined
-                      : `Faltam ${remaining} ${remaining === 1 ? "campo" : "campos"} da avaliação`;
-                    const lockedClass = !assessmentComplete
-                      ? "w-full sm:w-auto cursor-not-allowed border border-dashed border-amber-500/40 bg-muted/30 hover:bg-muted/30 text-muted-foreground/90"
-                      : "w-full sm:w-auto";
+                    // Round D · Bug 1 — never disable from incompleteness;
+                    // gate via warning dialog instead. Visual hint kept
+                    // (amber dashed border) so trainer sees the state.
+                    const cls = assessmentComplete
+                      ? "w-full sm:w-auto"
+                      : "w-full sm:w-auto border border-dashed border-amber-500/50";
+                    const guard = (run: () => void) => {
+                      if (assessmentComplete) { run(); return; }
+                      pendingGenerateRef.current = run;
+                      setIncompleteWarnOpen(true);
+                    };
                     return phasedEnabled ? (
                       <Button
-                        onClick={() => void runPhasedStart()}
-                        disabled={busy || phasedBusy || !assessmentComplete}
+                        onClick={() => guard(() => void runPhasedStart())}
+                        disabled={busy || phasedBusy}
                         size="lg"
-                        className={lockedClass}
-                        title={tooltip}
+                        className={cls}
                       >
                         {phasedBusy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : assessmentComplete ? (
-                          <Sparkles className="mr-2 h-4 w-4" />
                         ) : (
-                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                          <Sparkles className="mr-2 h-4 w-4" />
                         )}
                         {t("generate.button")}
                       </Button>
                     ) : (
                       <Button
-                        onClick={() => void generate()}
-                        disabled={busy || !assessmentComplete}
+                        onClick={() => guard(() => void generate())}
+                        disabled={busy}
                         size="lg"
-                        className={lockedClass}
-                        title={tooltip}
+                        className={cls}
                       >
                         {busy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : assessmentComplete ? (
-                          <Sparkles className="mr-2 h-4 w-4" />
                         ) : (
-                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                          <Sparkles className="mr-2 h-4 w-4" />
                         )}
                         {t("generate.button")}
                       </Button>
