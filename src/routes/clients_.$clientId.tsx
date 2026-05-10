@@ -4107,6 +4107,7 @@ function AssessmentSynthesisDashboard({
   riskCategory,
   whr,
   redFlagAccommodations,
+  planId,
 }: {
   assessment: any;
   sectionAnalyses: Record<string, SectionAnalysis | null>;
@@ -4114,6 +4115,7 @@ function AssessmentSynthesisDashboard({
   riskCategory: string;
   whr: string;
   redFlagAccommodations: RedFlagAccommodation[] | null;
+  planId?: string | null;
 }) {
   const analysedCount = Object.values(sectionAnalyses).filter(Boolean).length;
   if (analysedCount < Math.ceil(totalSections * 0.5)) return null;
@@ -4155,13 +4157,13 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4">
-      <div className="flex items-center justify-between">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-1 duration-500">
         <p className="eyebrow text-muted-foreground">{t("detail.synthesis.title")}</p>
         <span className="body-data text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:120ms] fill-mode-both">
         <StatCard
           label={t("detail.synthesis.stat_risk")}
           value={riskLabel}
