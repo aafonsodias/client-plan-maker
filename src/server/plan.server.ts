@@ -26,6 +26,42 @@ export type PreviousPlan = {
   }>;
 } | null | undefined;
 
+/**
+ * Cockpit constraint block — injected into the system prompt as a HARD rule.
+ * Called from buildClientContextBlock when programming_variables are passed
+ * (regen path). The model must respect rpe_ceiling as a non-negotiable cap on
+ * main-lift RPE; accessories sit one notch below; carries two notches.
+ */
+export function buildCockpitConstraintBlock(pv: {
+  rpe_ceiling?: number | null;
+  rpe_floor?: number | null;
+  wave_model?: string | null;
+  deload_frequency?: string | null;
+  autoreg_strictness?: string | null;
+} | null | undefined): string {
+  if (!pv) return "";
+  const lines: string[] = [];
+  if (typeof pv.rpe_ceiling === "number") {
+    const ceiling = pv.rpe_ceiling;
+    const acc = Math.max(5.5, ceiling - 1);
+    const car = Math.max(5, ceiling - 2);
+    lines.push(
+      `RPE CEILING (HARD): main-lift sets RPE ≤ ${ceiling}. Accessories RPE ≤ ${acc}. Carries / core / mobility RPE ≤ ${car}. Do NOT exceed under any circumstance, even if the trainer feedback below seems to ask for more intensity.`,
+    );
+  }
+  if (typeof pv.rpe_floor === "number") {
+    lines.push(`RPE FLOOR: do not prescribe main lifts below RPE ${pv.rpe_floor} (under-stimulus risk).`);
+  }
+  if (pv.wave_model) {
+    lines.push(`Wave model: ${pv.wave_model} (the orchestrator handles week-to-week wave; you only design THIS week's anchor RPE).`);
+  }
+  if (pv.deload_frequency) {
+    lines.push(`Deload frequency: ${pv.deload_frequency}.`);
+  }
+  if (!lines.length) return "";
+  return `\n\nCOCKPIT CONSTRAINTS (trainer locked these via the Intensity Cockpit — apply BEFORE the trainer's free-text feedback):\n- ${lines.join("\n- ")}`;
+}
+
 export function buildSafetyBlock(assessment: PlanAssessment): string {
   const parqYes = assessment?.parq_passed === false;
   const risk = String(assessment?.acsm_risk_category ?? "low").toLowerCase();
