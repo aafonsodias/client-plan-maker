@@ -2479,7 +2479,7 @@ function ClientDetail() {
             })()}
           </SectionBlock>
           {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)}>
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
             {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
                 Vivem em `clients` (não na avaliação) mas pertencem
                 conceptualmente à antropometria: alimentam IMC, BMR e
@@ -2651,9 +2651,12 @@ function ClientDetail() {
                 </div>
               </div>
             </details>
+            {isSectionComplete("anthro", assessment) && (
+              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Readiness */}
-          <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("readiness", assessment) ? <CompletionStrip text={t("readiness_block.complete", { stage: t(`readiness_block.${assessment.readiness_stage}` as const, { defaultValue: assessment.readiness_stage }) })} description={t("readiness_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
               <HelpPopover label={t("readiness_block.help_title")} triggerLabel={t("readiness_block.help_title")}>
                 <p>{t("readiness_block.help_body")}</p>
@@ -2670,9 +2673,12 @@ function ClientDetail() {
                 sub: t(`readiness_block.${v}_sub` as const),
               }))}
             />
+            {isSectionComplete("readiness", assessment) && (
+              <RxImplications sectionId="readiness" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}/10 · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
             <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <AnchoredSlider
                 label="Como anda o sono?"
@@ -2754,9 +2760,12 @@ function ClientDetail() {
                 </>
               )}
             </div>
+            {isSectionComplete("lifestyle", assessment) && (
+              <RxImplications sectionId="lifestyle" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Nutrition (rebuilt) */}
-          <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"}>
+          <SectionBlock id="nutrition" analysing={analysingSections["nutrition"]} analysis={sectionAnalyses["nutrition"]} title={t("nutrition_block.title")} hint={t("nutrition_block.hint")} defaultCollapsed complete={isSectionComplete("nutrition", assessment)} provenance={assessment.provenance?.nutrition} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("nutrition", assessment) ? <CompletionStrip text={t("nutrition_block.complete", { summary: `${assessment.ext_meals_per_day ?? "—"} refeições · álcool ${assessment.ext_alcohol_units_week ?? "—"}u/sem` })} description={t("nutrition_block.complete_meaning")} /> : null}>
             <div className="space-y-3">
               <div>
                 <div className="mb-1 flex items-center gap-1">
@@ -2855,6 +2864,9 @@ function ClientDetail() {
             <button type="button" onClick={() => setShowAdvancedNutrition((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
+            {isSectionComplete("nutrition", assessment) && (
+              <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Mobility checklist */}
           <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
@@ -2904,7 +2916,7 @@ function ClientDetail() {
             </div>
           </SectionBlock>
           {/* Movement screen */}
-          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)}>
+          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)} footer={isSectionComplete("screen", assessment) ? <CompletionStrip text={t("screen_block.complete", { cleared: PATTERN_IDS.filter((p) => { if (assessment.screen_not_assessed?.[p]) return false; const fc = assessment[`${p}_form_criteria`]; return fc && formScore(fc) >= 3; }).length, total: PATTERN_IDS.length })} description={t("screen_block.complete_meaning")} /> : null}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">
               Marca cada critério observado · adiciona dados de capacidade quando disponíveis.
             </p>
@@ -2934,9 +2946,12 @@ function ClientDetail() {
                 />
               ))}
             </div>
+            {isSectionComplete("screen", assessment) && (
+              <RxImplications sectionId="screen" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Performance */}
-          <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)}>
+          <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)} footer={isSectionComplete("performance", assessment) ? <CompletionStrip text={t("performance_block.complete", { summary: `FC ${assessment.resting_heart_rate ?? "—"} bpm · ${assessment.ext_cardio_test ?? "sem teste"}` })} description={t("performance_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
