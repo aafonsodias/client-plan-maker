@@ -1,77 +1,129 @@
+## Resumo da investigação
 
-# Próximo passo — investigação concluída
+Há **dois pipelines paralelos** a gerar planos. Um respeita as regras (Stage 3 + 4 + 5). O outro — o **Regenerate** — viola-as. Foi este que produziu o ecrã com "(SWAPPED → TRAP BAR DEADLIFT)" em W2/W3/W4.
 
-## O que investiguei
+---
 
-- **Stage 3** (`stage3-microcycle.functions.ts`) já recebe `tierGuidelines().forbiddenExercises` + `red_flags` flat no prompt. Não há filtro por zona de lesão.
-- **`programming-tier.server.ts`** já lê o assessment completo (tem `forbiddenExercises` por tier remedial/conservative + `requiredAlternatives`). É o ponto de injecção natural.
-- **`assessment_injuries`** é recolhido com `body_zone` + `severity` + `injury_label` mas só chega ao Stage 3 como string em `red_flags`. Desperdício total.
-- **Regen** (`PlanEditorSurface` linha 819) está como botão solto fora dos tabs (`Regenerate (Cockpit-aware)`). C1 estabilizou a persistência mas o botão continua desligado do edit mode.
-- **Edit mode** já tem a tab; o painel de detalhes (`DETALHES & ACÇÕES DO PLANO`) acima dos tabs é o sítio óbvio para condensar inputs.
+## 1. Porque é que aparecem "novos microciclos" todas as semanas
 
-## Recomendação: avançar **C2-lite + C3 juntos no mesmo round**
+### Pipeline correcto (criação inicial — phased generator)
 
-Razão: separados, o utilizador faz duas voltas (regen → ver mesmas escolhas → reabrir → regen). Juntos, o painel de edit expõe os toggles de lesão que o C2 acabou de criar — valor visível à primeira tentativa. Mantém-se 1 concern por round porque é tudo "tornar o regen consciente do assessment".
+```text
+Stage 3 (AI)         → gera apenas Semana 1
+Stage 4 (determ.)    → calcula deltas de carga/reps/RPE por categoria (Bompa+NSCA)
+Stage 5 (determ.)    → CLONA W1 para W2..Wn e aplica os deltas, sem tocar em ex.name
+```
 
-Sem páginas novas. Sem schema novo. Sem refactor da exercise DB.
+Confirmado em `src/server/phased/stage5-bulkfill.functions.ts:144-157`: percorre `baseExercises` (W1) e só aplica `applyDelta` a `notes/reps/sets/rpe`. **O nome do exercício nunca muda.**
 
-## Escopo concreto
+### Pipeline partido (Regenerate — botão "Regenerar este mesociclo")
 
-### C2-lite — filtros de lesão (server)
+`src/components/PlanEditorSurface.tsx:1781-1810` faz fan-out de **uma chamada AI por semana** (`POOL=3`):
 
-Novo: `src/server/phased/exercise-filters.server.ts`
+```text
+generatePlanWeek(week=1) ─┐
+generatePlanWeek(week=2) ─┼─► persistRegeneratedPlan() ─► workout_plan_days (wipe + insert)
+generatePlanWeek(week=3) ─┤
+generatePlanWeek(week=4) ─┘
+```
 
-Input: `(brief, assessment, assessment_injuries[])`
-Output: extensão de `tierGuidelines()` com:
-- `injuryForbidden[]` — denylist por zona (apenas 6 zonas + 3 flags médicas no v1):
-  - `low_back ≥3` → no conventional DL, good morning, behind-neck press, jefferson curl
-  - `knee ≥3` → no deep box jump, pistol squat, jump lunge, sissy squat
-  - `shoulder` → no upright row, behind-neck press, kipping pull-up
-  - `neck` → no behind-neck press, heavy shrug, weighted sit-up
-  - `hip` → no deep ATG squat sem aquecimento, jefferson curl
-  - `wrist` → no front rack pesado, handstand push-up
-  - `hypertension` → no Valsalva-heavy 1RM, inverted, breath-hold > 3s
-  - `pregnancy` (>16w) → no prone, no supine after T2, no breath-hold
-  - `recent_surgery (<12w)` → no compound máximo na zona afectada
-- `injuryAlternatives` — mapa "se proibido X, sugere Y" por padrão de movimento
-- Cada regra com `citation` (ACSM/NASM/Bompa cap.) escrita em `generation_log.injury_filters_applied`
+E o system prompt (`plan.functions.ts:840-854`) diz literalmente ao AI:
 
-Wire-up:
-- `tierGuidelines()` aceita `assessment_injuries[]` opcional, faz merge.
-- Stage 3 prompt ganha bloco `INJURY-DRIVEN BANS` separado dos tier bans (audit-friendly).
-- Stage 3 retry loop: se output contiver banido por lesão → reject com motivo específico.
+> WEEK FOCUS — Early weeks: introduce patterns, slightly lower RPE… Middle weeks: accumulation, higher volume. Final week of a 4-week block: deload OR peak.
 
-Sem novas tabelas. Sem alteração ao schema do brief.
+→ O AI escolhe livremente exercícios diferentes por semana porque cada chamada é independente e a instrução pede variação.
 
-### C3 — consolidar regen no edit (mesma página)
+`persistRegeneratedPlan` (`plan.functions.ts:1611-1647`) faz wipe total dos `workout_plan_days` e insere os exercícios verbatim que o AI devolveu — **sem clonar W1, sem aplicar a wave determinística, sem o tier guardrail**.
 
-No `PlanEditorSurface`:
-1. **Remover** o botão `RegenerateWithFeedbackDialog` solto (linha 819-838).
-2. **Edit mode** ganha um header novo "Configurar mesociclo" (collapsible, fechado por defeito) com 6 grupos pre-preenchidos:
-   - **Goal & timing** — primary_goal, duration_weeks, sessions_per_week (já existe no BriefEditor; reutilizar)
-   - **Intensity Cockpit** — `<IntensityCockpit/>` existente
-   - **Tier & screening** — chip read-only "Conservative · 1 falha screen · PAR-Q+ ok" + popover "porquê?" com regras citadas
-   - **Lesões honradas** — lista de `assessment_injuries`, cada uma com toggle `honour_in_plan` + slider severity (override apenas para esta regen, não mexe na tabela `assessment_injuries`)
-   - **Equipamento & local** — multi-select existente
-   - **Nota livre p/ AI** — campo actual de feedback
-3. **Footer do header**: única CTA `↻ Regenerar este mesociclo` que chama `persistRegeneratedPlan` (já existe, do C1) com `overrides` mergidos no brief + programming_variables.
-4. Tabs (View/Edit/Log/Resultados/Progresso) intactos; só desaparece o botão flutuante do canto.
+`MesocycleTableView` (linha 80-83 + 584) alinha linhas por `name` (com fallback ao índice) → quando o nome em W2 difere de W1 mostra **"(swapped → X)"**. Não é um bug visual, é a tabela a refletir honestamente que o AI gerou exercícios diferentes em cada semana.
 
-Resultado visual: o utilizador entra em **Edit**, abre "Configurar mesociclo", vê tudo o que afecta a geração, ajusta o que quer, carrega Regenerar, fica no mesmo sítio e vê o plano novo a hidratar. Sem navegação, sem dialog modal, sem dois sítios para a mesma acção.
+**Conclusão:** Regenerate viola a regra "AI nunca gera mais que 1 microciclo" registada em `mem://index.md`. Toda a regen está a destruir a periodização Bompa que o Stage 4 tinha calculado.
 
-## O que fica de fora deste round (deliberadamente)
+---
 
-- Estrutura de exercise DB com IDs canónicos (deferido — round próprio, ver `mem/features/exercise-intelligence-layer.md`)
-- NASM OPT phase classification (entra num C2-fase-2 quando o pack base estiver provado)
-- Impact ceiling derivado de VO₂max/BP (entra com OPT phase)
-- Zonas de lesão #7+ (cotovelo, tornozelo, etc.) — adicionadas iterativamente conforme aparecem
+## 2. Como é estabelecido o volume/intensidade inicial
 
-## Risco / verificação
+### O que JÁ é puxado da avaliação (path phased)
 
-- **Risco principal**: regra de lesão demasiado agressiva proíbe um exercício que o trainer queria. Mitigação: toggle "honour_in_plan" no painel C3 dá escape hatch por mesociclo.
-- **Smoke**: cliente com `low_back severity 4` regenerar → confirmar que conventional DL desaparece e que `generation_log` mostra `injury_filters_applied` com a citação ACSM.
-- **Mobile 375px**: o painel collapsible tem de empilhar bem — único item de UX a verificar.
+| Sinal da avaliação | Onde é usado |
+|---|---|
+| `training_age_band` + `red_flags.length` | `deriveStartingFloor` → `rpe_floor`/`rpe_ceiling`/volume_tier |
+| Movement screen (squat/hinge/push/pull/carry/lunge form_criteria) | `countMovementScreenFailures` → ≥5 = remedial, ≥2 = conservative |
+| `parq_passed`, `acsm_risk_category`, BP, `med_flags` | `runPreparticipationAlgorithm` → clearance gate |
+| `stress_level`, `sleep_quality`, `extended.sleep_hours`, `cannabis_use` | `isRecoveryCompromised` → força conservative |
+| `intensity_appetite` | `rpeFloors(tier, appetite)` matriz 3×3 com floors por papel (main/accessory/carry) |
+| `assessment_injuries` zona+severidade | `injuryBans` injectados no Stage 3 (C2-lite) |
+| Equipamento, sessões/semana | `tierGuidelines` |
 
-## Próximo passo
+### O que NÃO está a ser usado (gaps)
 
-Aprovar este plano e arranco já com C2-lite (server) + C3 (UI) numa só sessão. Estimativa: ~1 round.
+- `current_capacity_vs_pb` (1-10) — o sinal mais óbvio para anchor de carga inicial. Recolhido, **ignorado**.
+- `max_lifts` — passado como texto livre, nunca parseado para fixar carga absoluta.
+- `resting_heart_rate`, `cardio_capacity`, VO₂max — recolhidos, nunca tocam volume/RPE.
+- BP (sistólica/diastólica) — só serve para clearance binário, não modula tecto.
+- Notas qualitativas dos screens (`squat_depth_note` etc.) — vão como string ao prompt mas não influenciam tier nem floors.
+- `years_training` — apenas o band importa.
+
+### Buracos ESPECÍFICOS no path de Regenerate
+
+`generatePlanWeek` aceita `assessment` mas:
+- **NÃO chama `classifyTier`** → nenhum tier remedial/conservative/advanced é injectado
+- **NÃO chama `tierGuidelines`** → nenhuma `forbiddenExercises`, nenhum `week1SetCap`
+- **NÃO chama `rpeFloors`** → AI só recebe um RPE ceiling solto via `buildCockpitConstraintBlock`
+- **NÃO injecta `injuryBans` estruturados** — apenas o texto livre `assessment.injuries`
+- Resultado: cliente conservative com lesão lombar pode receber conventional deadlift no Regenerate, mesmo que o phased generator nunca o faça
+
+Isto explica porque é que o ecrã do utilizador mostra Trap Bar Deadlift como swap em W2/W3 — o regen é mais permissivo que a geração inicial.
+
+---
+
+## Plano de correcção (3 mudanças cirúrgicas, 1 round)
+
+### A. Regenerate passa a respeitar "1 microciclo só"
+
+Reescrever `RegenerateWithFeedbackDialog.submit()` (`PlanEditorSurface.tsx:1711-1864`) para:
+
+1. Chamar `generatePlanWeek(week=1)` **uma única vez** com toda a context (cockpit, tier, lesões, feedback livre).
+2. Após persistir W1, invocar a pipeline determinística existente: `proposeProgressions(planId)` → `bulkFillRemainingWeeks(planId)`.
+3. `persistRegeneratedPlan` deixa de receber N semanas — passa a receber 1 semana + flag `apply_deterministic_progressions=true`.
+
+Isto reaproveita Stage 4+5 sem código novo no servidor. Os "swaps" desaparecem porque W2-Wn passam a ser cópias de W1 com deltas.
+
+### B. Regenerate ganha os mesmos guardrails que o phased generator
+
+Antes de chamar AI, no `generatePlanWeek`, adicionar:
+
+```ts
+const tier = classifyTier(brief, assessment);
+const guidelines = tierGuidelines(tier, sessions, primaryGoal);
+const floors = rpeFloors(tier, brief.intensity_appetite);
+const injuryBans = await deriveInjuryBans(supabase, clientId);
+```
+
+E injectar `tierPromptBlock(guidelines)` + bloco `INJURY-DRIVEN BANS` no system prompt — igual ao Stage 3. Sem isto, o regen continua a poder propor exercícios proibidos.
+
+### C. Painel "Configurar mesociclo" ganha 2 linhas honestas
+
+No painel C3 já criado (`PlanEditorSurface.tsx`), adicionar acima da CTA:
+
+- **Tier classificado:** chip com tier (remedial/conservative/advanced) + razão ("2 falhas movement screen · stress 8/10")
+- **RPE floors aplicados:** `Main ≥ {floors.main} · Acessórios ≥ {floors.accessory} · Carries ≥ {floors.carry}`
+
+Para o treinador ver, antes de carregar Regenerar, exactamente que constraints o motor vai aplicar — decisão "looks → function" (transparente bate opaco).
+
+---
+
+## Fora do âmbito (próximos rounds)
+
+- Usar `current_capacity_vs_pb` (1-10) para anchor de RPE/load real — Fase B do starting floor (nova memória)
+- Parsear `max_lifts` para % de 1RM em compostos
+- Ler VO₂max para impact ceiling em saltos/sprints (NASM OPT)
+- Day-tagging max-effort/dynamic-effort (Conjugate)
+
+---
+
+## Verificação após implementação
+
+1. Em cliente conservative com lesão lombar (sev ≥3): regenerar e confirmar que (a) os 4 weeks têm o **mesmo nome de exercício** em cada linha, (b) só sets/reps/rpe variam, (c) `generation_log` mostra `injury_filters_applied` no path de regen (hoje só aparece no Stage 3 inicial).
+2. Cliente beginner + 2 red_flags: confirmar que regen não permite barbell deadlift nem back squat (hoje permite).
+3. Mobile 375px: o painel "Configurar mesociclo" empilha bem com as duas novas linhas (tier + floors).

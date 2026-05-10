@@ -33,6 +33,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { generatePlanWeek, regeneratePlanSummary, persistRegeneratedPlan } from "@/server/plan.functions";
 import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
+import { proposeProgressions } from "@/server/phased/stage4-progressions.functions";
+import { bulkFillRemainingWeeks } from "@/server/phased/stage5-bulkfill.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { SessionDayView } from "@/components/SessionDayView";
@@ -1780,6 +1782,8 @@ function RegenerateWithFeedbackDialog({
   );
   const generateWeekFn = useServerFn(generatePlanWeek);
   const persistFn = useServerFn(persistRegeneratedPlan);
+  const proposeProgressionsFn = useServerFn(proposeProgressions);
+  const bulkFillFn = useServerFn(bulkFillRemainingWeeks);
 
   const submit = async () => {
     if (!feedback.trim()) {
@@ -1845,53 +1849,35 @@ function RegenerateWithFeedbackDialog({
         weight_kg: client.weight_kg ? Number(client.weight_kg) : null,
       };
 
-      // Concurrency-3 pool: avoids upstream rate-limit while keeping a 6-week
-      // regen under ~25s.
-      const POOL = 3;
-      const indices = Array.from({ length: durationWeeks }, (_, i) => i + 1);
-      const results: any[] = new Array(durationWeeks);
-      let cursor = 0;
-      let firstError: string | null = null;
-      const workers = Array.from({ length: Math.min(POOL, durationWeeks) }, async () => {
-        while (true) {
-          const i = cursor++;
-          if (i >= indices.length) return;
-          const week_number = indices[i];
-          const r = await generateWeekFn({
-            data: {
-              client: clientPayload,
-              assessment: { ...assessment, secondary_goals: null },
-              duration_weeks: durationWeeks,
-              week_number,
-              trainer_feedback: feedback.trim(),
-              previous_plan: skeleton,
-              programming_variables: resolvedPv,
-            },
-          });
-          if (!r.ok) {
-            if ((r as any).billingRequired) {
-              firstError = r.error;
-              window.location.href = "/billing";
-              return;
-            }
-            firstError = firstError ?? `Week ${week_number}: ${r.error}`;
-            return;
-          }
-          results[week_number - 1] = r;
-          setProgress((p) => ({ ...p, done: p.done + 1 }));
-        }
+      // R74 — Honour the rule "AI gera no máximo 1 microciclo". Generate ONLY
+      // Week 1 with the AI; weeks 2..N are produced deterministically by
+      // Stage 4 (Bompa wave + NSCA increments) + Stage 5 (clone W1 + apply
+      // deltas). The previous parallel POOL=3 fan-out let the model pick
+      // different exercises per week, which the table flagged as "(swapped)".
+      const w1 = await generateWeekFn({
+        data: {
+          plan_id: planId,
+          client_id: clientId,
+          client: clientPayload,
+          assessment: { ...assessment, secondary_goals: null },
+          duration_weeks: durationWeeks,
+          week_number: 1,
+          trainer_feedback: feedback.trim(),
+          previous_plan: skeleton,
+          programming_variables: resolvedPv,
+        },
       });
-      await Promise.all(workers);
-      if (firstError) throw new Error(firstError);
-
-      // Merge: title/summary from week 1; weeks ordered.
-      const week1 = results[0];
-      const newWeeks = results
-        .filter(Boolean)
-        .map((r) => r.week)
-        .sort((a, b) => a.week_number - b.week_number);
-      const newTitle = week1?.title || previousPlan.title;
-      const newSummary = week1?.summary || previousPlan.summary;
+      if (!w1.ok) {
+        if ((w1 as any).billingRequired) {
+          window.location.href = "/billing";
+          return;
+        }
+        throw new Error(`Week 1: ${(w1 as any).error}`);
+      }
+      setProgress((p) => ({ ...p, done: 1 }));
+      const newWeeks = [w1.week];
+      const newTitle = w1.title || previousPlan.title;
+      const newSummary = w1.summary || previousPlan.summary;
 
       setProgress((p) => ({ ...p, phase: "saving" }));
       // C1 — call the canonical writer. For phased-complete plans this
@@ -1911,6 +1897,22 @@ function RegenerateWithFeedbackDialog({
       });
       if (!persistRes.ok) throw new Error(persistRes.error);
 
+      // R74 — Stage 4 + Stage 5: deterministic progression + bulk-fill of
+      // weeks 2..N from the freshly inserted Week 1. Skipped when the plan is
+      // a single week (nothing to fill). Failures are surfaced as warnings
+      // because Week 1 is already persisted and usable on its own.
+      if (durationWeeks > 1) {
+        const prog = await proposeProgressionsFn({ data: { planId } });
+        if (!prog.ok) {
+          toast.warning(`Week 1 saved, but progression failed: ${(prog as any).error ?? "unknown"}`);
+        } else {
+          const bulk = await bulkFillFn({ data: { planId } });
+          if (!bulk.ok) {
+            toast.warning(`Week 1 saved, but bulk-fill failed: ${(bulk as any).error ?? "unknown"}`);
+          }
+        }
+      }
+
       onRegenerated({ title: newTitle, summary: newSummary, weeks: newWeeks });
       setProgress((p) => ({ ...p, phase: "done" }));
       const totalEx = newWeeks.reduce(
@@ -1924,7 +1926,7 @@ function RegenerateWithFeedbackDialog({
           ? ` · RPE cap ${storedPv.rpe_ceiling} (Cockpit)`
           : "";
       toast.success("Plan regenerated", {
-        description: `${newWeeks.length} weeks · ${totalEx} exercises${cockpitNote}. Older sessions moved to "Archived".`,
+        description: `Semana 1 (AI) + ${Math.max(0, durationWeeks - 1)} semanas determinísticas (Bompa wave) · ${totalEx} exercícios em W1${cockpitNote}.`,
       });
       setFeedback("");
       setOpen(false);

@@ -14,6 +14,8 @@ import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTele
 import { anthropicCompatFetch } from "./anthropic-compat.server";
 import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
 import { pickWaveTier, buildWavePlan } from "./phased/programming-defaults";
+import { classifyTier, tierGuidelines, rpeFloors, tierPromptBlock } from "./phased/programming-tier.server";
+import { deriveInjuryBans, injuryBansPromptBlock } from "./phased/exercise-filters.server";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
@@ -201,6 +203,12 @@ export function validateExercises(
 }
 
 const WeekInputSchema = z.object({
+  // R74 — Optional plan/client refs so the regen path can fetch the stored
+  // brief + assessment_injuries server-side and apply the same tier guardrails
+  // (tierGuidelines, rpeFloors, injuryBans) as Stage 3. Both optional to keep
+  // legacy callers (initial draft fan-out) compatible.
+  plan_id: z.string().uuid().nullable().optional(),
+  client_id: z.string().uuid().nullable().optional(),
   client: z.object({
     full_name: z.string(),
     age: z.number().nullable().optional(),
@@ -837,7 +845,55 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
 
     const safetyBlock = buildSafetyBlock(data.assessment);
     const cockpitBlock = buildCockpitConstraintBlock(data.programming_variables ?? null);
-    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}${cockpitBlock}
+
+    // R74 — Pull stored brief + injuries server-side so the regen path applies
+    // the same hard guardrails as the phased generator (Stage 3): tier-based
+    // forbidden exercises, week-1 RPE floors, and structured injury bans.
+    let storedBrief: any = null;
+    if (data.plan_id) {
+      const { data: planRow } = await supabaseAdmin
+        .from("workout_plans")
+        .select("brief")
+        .eq("id", data.plan_id)
+        .maybeSingle();
+      storedBrief = (planRow as any)?.brief ?? null;
+    }
+    const briefForTier = storedBrief ?? {
+      red_flags: [] as string[],
+      training_age_band: ((): "beginner" | "intermediate" | "advanced" => {
+        const x = String((data.assessment as any)?.experience_level ?? "").toLowerCase();
+        if (/advanc|exper/.test(x)) return "advanced";
+        if (/begin|new|novice/.test(x)) return "beginner";
+        return "intermediate";
+      })(),
+      intensity_appetite: "padrao" as const,
+    };
+    const tier = classifyTier(briefForTier as any, (data.assessment as any) ?? {});
+    const sessions = Number((data.assessment as any)?.training_days_per_week ?? 3);
+    const primaryGoal = String((data.assessment as any)?.primary_goal ?? "");
+    const guidelines = tierGuidelines(tier, sessions, primaryGoal);
+    const floors = rpeFloors(tier, (briefForTier as any).intensity_appetite);
+
+    let injuries: Array<{ body_zone: string | null; severity: number | null; injury_label?: string | null }> = [];
+    if (data.client_id) {
+      const { data: rows } = await supabaseAdmin
+        .from("assessment_injuries")
+        .select("body_zone, severity, injury_label")
+        .eq("client_id", data.client_id)
+        .eq("trainer_id", userId);
+      injuries = (rows ?? []) as any;
+    }
+    const injuryBans = deriveInjuryBans(injuries as any, (briefForTier as any).red_flags ?? []);
+    const injuryBlock = injuryBansPromptBlock(injuryBans);
+
+    const tierBlock = `\n\n${tierPromptBlock(guidelines)}`;
+    const floorBlock = `\n\nWEEK 1 RPE FLOORS (intensity_appetite = ${(briefForTier as any).intensity_appetite ?? "padrao"}):\n- Main lift (FIRST exercise of each day): RPE >= ${floors.main}.\n- Secondary / accessory exercises: RPE >= ${floors.accessory}.\n- Carries / Pallof / dead-bug / planks / suitcase / farmer: RPE >= ${floors.carry}.\nRPE 5 is reserved for warm-up / activation / cooldown — NEVER for the main block.`;
+    const setCap = guidelines.week1SetCap;
+    const setCapBlock = isFirstWeek
+      ? `\n\nWEEK 1 SET CAPS (HARD — Week 1 introduces; Stage 4 ramps via Bompa wave):\n- Main lift (FIRST exercise): max ${setCap.main} working sets.\n- Accessories: max ${setCap.accessory} working set${setCap.accessory === 1 ? "" : "s"}.\n- Carries / planks / Pallof: max ${setCap.carry} working set${setCap.carry === 1 ? "" : "s"}.\nUse the EXACT integer (e.g. "${setCap.accessory}" not "${setCap.accessory}-${setCap.accessory + 1}").`
+      : "";
+
+    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}${cockpitBlock}${tierBlock}${floorBlock}${setCapBlock}${injuryBlock}
 
 ${SHARED_PROGRAM_RULES}
 
