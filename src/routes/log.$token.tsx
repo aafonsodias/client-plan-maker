@@ -324,12 +324,6 @@ function ClientLogPage() {
   const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
   const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
 
-  // Group exercises into single / superset / circuit blocks for the body.
-  const blocks = useMemo(() => {
-    if (!day) return [];
-    return groupExercises(day.exercises ?? []);
-  }, [day]);
-
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
       {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
