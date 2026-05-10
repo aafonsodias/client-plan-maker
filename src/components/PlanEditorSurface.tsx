@@ -30,7 +30,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanWeek, regeneratePlanSummary } from "@/server/plan.functions";
+import { generatePlanWeek, regeneratePlanSummary, persistRegeneratedPlan } from "@/server/plan.functions";
 import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
 import { ensureShareToken, revokeShareToken } from "@/server/sessions.functions";
@@ -822,10 +822,17 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             clientId={client.id}
             assessmentId={plan.assessment_id}
             durationWeeks={plan.duration_weeks ?? 4}
+            isPhasedComplete={isPhasedComplete}
             previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
-            onRegenerated={(newPlan) => {
+            onRegenerated={async (newPlan) => {
               setData({ weeks: newPlan.weeks ?? [] });
               setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
+              // Phased plans rebuild from workout_plan_days on every reload —
+              // refetch immediately so the realtime channel can't snap us back
+              // to stale rows.
+              if (isPhasedComplete) {
+                await reloadPlanDays();
+              }
             }}
           />
         )}
@@ -1682,6 +1689,7 @@ function RegenerateWithFeedbackDialog({
   durationWeeks,
   previousPlan,
   onRegenerated,
+  isPhasedComplete,
 }: {
   planId: string;
   clientId: string;
@@ -1689,6 +1697,7 @@ function RegenerateWithFeedbackDialog({
   durationWeeks: number;
   previousPlan: { title: string; summary: string | null; weeks: Week[] };
   onRegenerated: (plan: { title?: string; summary?: string; weeks?: Week[] }) => void;
+  isPhasedComplete: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -1697,6 +1706,7 @@ function RegenerateWithFeedbackDialog({
     { done: 0, total: 0, phase: "idle" },
   );
   const generateWeekFn = useServerFn(generatePlanWeek);
+  const persistFn = useServerFn(persistRegeneratedPlan);
 
   const submit = async () => {
     if (!feedback.trim()) {
@@ -1811,23 +1821,22 @@ function RegenerateWithFeedbackDialog({
       const newSummary = week1?.summary || previousPlan.summary;
 
       setProgress((p) => ({ ...p, phase: "saving" }));
-      // Read current version so we can bump it (stale-session detection).
-      const { data: cur } = await supabase
-        .from("workout_plans")
-        .select("plan_data_version")
-        .eq("id", planId)
-        .maybeSingle();
-      const nextVersion = ((cur?.plan_data_version as number | null) ?? 1) + 1;
-      const { error: upErr } = await supabase
-        .from("workout_plans")
-        .update({
+      // C1 — call the canonical writer. For phased-complete plans this
+      // wipes + re-inserts every workout_plan_days row (the real source of
+      // truth) so the realtime subscription cannot snap us back to stale
+      // content. For legacy plans (no day rows) the write of plan_data still
+      // takes effect via the same RPC.
+      const persistRes = await persistFn({
+        data: {
+          planId,
           title: newTitle,
           summary: newSummary,
-          plan_data: { weeks: newWeeks },
-          plan_data_version: nextVersion,
-        })
-        .eq("id", planId);
-      if (upErr) throw upErr;
+          weeks: newWeeks as any,
+          programming_variables: resolvedPv as any,
+          trainer_feedback: feedback.trim(),
+        },
+      });
+      if (!persistRes.ok) throw new Error(persistRes.error);
 
       onRegenerated({ title: newTitle, summary: newSummary, weeks: newWeeks });
       setProgress((p) => ({ ...p, phase: "done" }));
