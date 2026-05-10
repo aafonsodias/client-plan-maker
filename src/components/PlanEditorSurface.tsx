@@ -881,7 +881,13 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
               if (error) toast.error(error.message);
             }}
           />
-          <MesocycleTableView plan={data} planId={planId} editable={true} onUpdated={reloadSessions} />
+          <MesocycleTableView
+            plan={data}
+            planId={planId}
+            editable={true}
+            onUpdated={reloadSessions}
+            wave={(plan as any)?.generation_meta?.wave_periodization?.weeks ?? null}
+          />
         </>
       ) : mode === "results" ? (
         <>
