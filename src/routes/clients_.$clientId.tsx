@@ -3222,17 +3222,22 @@ function ClientDetail() {
             && (inlineBrief.approvedStages ?? []).includes("blueprint")
             && (inlineBrief.approvedStages ?? []).includes("microcycle")
             && (inlineBrief.approvedStages ?? []).includes("progressions")
-          ) && (
+          ) && (() => {
+            // Capture narrowed non-null references so closures (async callbacks)
+            // don't lose the type narrowing across function boundaries.
+            const ib = inlineBrief;
+            const bc = briefCoverage;
+            return (
             <div id="protocol-stages-lane" className="space-y-3 scroll-mt-24">
-              <FounderAiTelemetryPanel planId={inlineBrief.planId} variant="dock" />
+              <FounderAiTelemetryPanel planId={ib.planId} variant="dock" />
               <StageCard
                 stageNumber={2}
                 title={t("plan:stage.label.2", "Briefing")}
                 tone="brief"
-                status={inlineBrief.approved ? "approved" : "ready"}
+                status={ib.approved ? "approved" : "ready"}
                 busy={briefStageBusy}
                 onApprove={
-                  inlineBrief.approved
+                  ib.approved
                     ? undefined
                     : async () => {
                         if (briefStageBusy) return;
@@ -3241,14 +3246,14 @@ function ClientDetail() {
                         try {
                           const res: any = await approveBriefFn({
                             data: {
-                              planId: inlineBrief.planId,
-                              brief: inlineBrief.brief,
-                              programmingVariables: inlineBrief.programmingVariables,
-                              redFlagAccommodations: inlineBrief.accommodations,
+                              planId: ib.planId,
+                              brief: ib.brief,
+                              programmingVariables: ib.programmingVariables,
+                              redFlagAccommodations: ib.accommodations,
                               assessmentCompletionPct:
-                                briefCoverage && briefCoverage.total > 0
+                                bc && bc.total > 0
                                   ? Math.round(
-                                      (briefCoverage.done / briefCoverage.total) * 100,
+                                      (bc.done / bc.total) * 100,
                                     )
                                   : undefined,
                             },
@@ -3258,10 +3263,10 @@ function ClientDetail() {
                             return;
                           }
                           setInlineBrief({
-                            ...inlineBrief,
+                            ...ib,
                             approved: true,
                             approvedStages: Array.from(
-                              new Set([...(inlineBrief.approvedStages ?? []), "brief"])
+                              new Set([...(ib.approvedStages ?? []), "brief"])
                             ),
                           });
                           void refreshPlans();
