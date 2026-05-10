@@ -4471,10 +4471,10 @@ function AssessmentSection({
                   />
                 </div>
                 <div className="flex items-center gap-2.5 px-3 py-2">
-                  <span className="inline-flex shrink-0 items-center rounded-full bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-medium tabular-nums tracking-tight text-amber-700 ring-1 ring-inset ring-amber-500/20 dark:text-amber-300/90">
+                  <span className="inline-flex shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-medium tabular-nums tracking-tight text-muted-foreground">
                     {String(activeIdx + 1).padStart(2, "0")}/{String(totalCount).padStart(2, "0")}
                   </span>
-                  <h2 className="min-w-0 flex-1 truncate font-display text-base leading-tight tracking-tight">
+                  <h2 className="t-3 min-w-0 flex-1 truncate leading-tight">
                     {t(`sections.${activeId}` as const, {
                       defaultValue:
                         (sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId,
@@ -4767,12 +4767,12 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
   const insight = (analysis.contraindication_notes ?? analysis.notes_for_next_stage ?? "").trim();
   if (!insight) return null;
   return (
-    <figure className="mt-3 animate-fade-in rounded-md bg-gradient-to-br from-muted/30 to-muted/10 px-4 py-3 ring-1 ring-inset ring-amber-500/15">
-      <figcaption className="eyebrow mb-1.5 flex items-center gap-1.5 text-amber-700/80 dark:text-amber-300/70">
-        <Sparkles className="h-3 w-3" aria-hidden />
+    <figure className="mt-3 animate-fade-in rounded-md bg-muted/30 px-4 py-3">
+      <figcaption className="eyebrow mb-1.5 flex items-center gap-1.5 text-muted-foreground">
+        <Sparkles className="h-3 w-3 text-amber-500/80" aria-hidden />
         <span>{t("detail.insight_label")}</span>
       </figcaption>
-      <blockquote className="border-l-2 border-amber-500/40 pl-3 font-display text-[13px] italic leading-relaxed text-foreground/85">
+      <blockquote className="body-prose pl-3 text-[13px] leading-relaxed text-foreground/85">
         {insight}
       </blockquote>
     </figure>
