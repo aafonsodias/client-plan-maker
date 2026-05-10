@@ -27,6 +27,13 @@ import {
   type PrescriptionParameters,
   type FittVpViolation,
 } from "@/server/fitt-vp/derive.server";
+import {
+  deriveInjuryBans,
+  injuryBansPromptBlock,
+  findBannedExercisesInDay,
+  type InjuryBan,
+  type InjuryRow,
+} from "./exercise-filters.server";
 
 /**
  * Lowercase / strip variant suffix to compare exercise names across blocks.
@@ -424,6 +431,11 @@ ${guidelines.requiredAlternatives}`
 }`
     : "";
 
+  // INJURY-DRIVEN BANS — derived from assessment_injuries + brief.red_flags.
+  // Rendered separately from tier bans so audit logs can attribute correctly.
+  const injuryBans: InjuryBan[] = guidelines?.injuryBans ?? [];
+  const injuryBlock = injuryBansPromptBlock(injuryBans);
+
   const rpeFloorBlock = `
 
 WEEK 1 RPE FLOORS (intensity_appetite = ${appetite.toUpperCase()}):
@@ -497,6 +509,7 @@ RULES:
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
 Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
+  const systemWithInjuries = `${system}${injuryBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -517,7 +530,7 @@ Generate ONLY this single day's session.`;
   const model = resolveModel("FORGE_MODEL_STAGE_3", "google/gemini-2.5-flash");
   const result = await callAnthropicWithSchema({
     model,
-    system,
+    system: systemWithInjuries,
     userMessage: user,
     toolName: "record_day",
     toolDescription: "Record one training session as a structured day.",
@@ -544,6 +557,30 @@ Generate ONLY this single day's session.`;
   if (!result.ok) return { ok: false, error: result.error };
   // Deterministic post-validation: lift any RPE that came in below the floor.
   const sanitized = sanitizePrepBlocks(result.data);
+
+  // Injury bans — log every violation that slipped past the prompt. We don't
+  // auto-rewrite (would mangle the day's structure) but the trainer sees the
+  // ban list in the regen panel and can re-roll. Also stamps
+  // `generation_log.injury_filters_applied` for audit.
+  if (injuryBans.length > 0) {
+    const violations = findBannedExercisesInDay(sanitized, injuryBans);
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      stage: `stage3:day${dayIndex}:injury_filters_applied`,
+      model_used: "deterministic",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: violations.length === 0,
+      retry_count: 0,
+      duration_ms: 0,
+      error: violations.length > 0 ? `${violations.length} banned exercises slipped through` : null,
+      input_snapshot: { bans: injuryBans.map((b) => ({ exercise: b.exercise, citation: b.citation })) },
+      output_snapshot: { violations: violations.map((v) => ({ name: v.name, ban: v.ban.exercise })) },
+    });
+  }
+
   const { day: floored, floorApplied } = enforceRpeFloor(sanitized, floors);
   // Deterministic post-validation: truncate sets to Week-1 tier cap.
   const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
@@ -726,9 +763,16 @@ async function resolveTierGuidelines(
   brief: any,
 ): Promise<TierGuidelines | null> {
   const meta = loadedPlan.generation_meta as any;
-  if (meta?.tier_guidelines) return meta.tier_guidelines as TierGuidelines;
+  // Always recompute injury bans (cheap; assessment_injuries is small per
+  // client and may have been edited since the meta was first written).
+  const injuryBans = await fetchInjuryBansForPlan(supabase, loadedPlan, brief);
+
+  if (meta?.tier_guidelines) {
+    return { ...(meta.tier_guidelines as TierGuidelines), injuryBans };
+  }
   if (meta?.tier && brief) {
-    return tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+    const g = tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+    return { ...g, injuryBans };
   }
   // Fallback: classify from assessment now.
   let assessment: Record<string, any> | null = null;
@@ -758,7 +802,40 @@ async function resolveTierGuidelines(
     }
   }
   const tier = classifyTier(brief, assessment ?? {});
-  return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  const g = tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  return { ...g, injuryBans };
+}
+
+/**
+ * Pull the relevant assessment_injuries rows for this plan and convert them
+ * into structured InjuryBans. Falls back to brief.red_flags substring rules
+ * when no rows exist (older plans / quick assessments).
+ */
+async function fetchInjuryBansForPlan(
+  supabase: any,
+  loadedPlan: LoadedPlan,
+  brief: any,
+): Promise<InjuryBan[]> {
+  let injuryRows: InjuryRow[] = [];
+  try {
+    if (loadedPlan.assessment_id) {
+      const { data } = await supabase
+        .from("assessment_injuries")
+        .select("body_zone, severity, injury_label")
+        .eq("assessment_id", loadedPlan.assessment_id);
+      injuryRows = ((data ?? []) as any[]) as InjuryRow[];
+    }
+    if (injuryRows.length === 0 && loadedPlan.client_id) {
+      const { data } = await supabase
+        .from("assessment_injuries")
+        .select("body_zone, severity, injury_label")
+        .eq("client_id", loadedPlan.client_id);
+      injuryRows = ((data ?? []) as any[]) as InjuryRow[];
+    }
+  } catch {
+    injuryRows = [];
+  }
+  return deriveInjuryBans(injuryRows, (brief?.red_flags ?? []) as string[]);
 }
 
 /**
