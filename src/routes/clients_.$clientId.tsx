@@ -4889,6 +4889,38 @@ function _SectionAnalysisCardLegacy({ analysing, analysis }: { analysing: boolea
   );
 }
 
+function TrainingTierChips({
+  years,
+  onChange,
+}: {
+  years: number | null;
+  onChange: (years: number | null) => void;
+}) {
+  const { t } = useTranslation("assessment");
+  const active = getTierFromYears(years).id;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {TRAINING_TIERS.map((tier) => {
+        const selected = active === tier.id;
+        return (
+          <button
+            key={tier.id}
+            type="button"
+            onClick={() => onChange(tierToYears(tier.id as TrainingTier))}
+            aria-pressed={selected}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${tier.chipClass} ${
+              selected ? `ring-2 ring-offset-1 ring-offset-background ${tier.ringClass}` : "opacity-70 hover:opacity-100"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${tier.dotClass}`} aria-hidden />
+            <span>{t(`history_block.tier.${tier.key}`)}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function LabelWithHelp({ label, hint }: { label: string; hint?: string }) {
   return (
     <div className="flex items-center gap-1">
