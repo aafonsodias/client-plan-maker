@@ -2292,8 +2292,57 @@ function ClientDetail() {
                   ]}
                 />
               </div>
-              <Field label={t("training_block.days_per_week")} type="number" placeholder="3" value={String(assessment.training_days_per_week ?? "")} onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })} />
-              <Field label={t("training_block.session_length")} type="number" placeholder="60" value={String(assessment.session_duration_minutes ?? "")} onChange={(v) => setAssessment({ ...assessment, session_duration_minutes: v })} />
+              {/* R-F: days/week as 1–7 chips (replaces free-number input). */}
+              <div className="space-y-1">
+                <Label className="text-xs">{t("training_block.days_per_week")}</Label>
+                <ChipGroup
+                  size="sm"
+                  value={assessment.training_days_per_week ? Number(assessment.training_days_per_week) : null}
+                  onChange={(v) => setAssessment({ ...assessment, training_days_per_week: v })}
+                  options={[1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: n, label: String(n) }))}
+                />
+              </div>
+              {/* R-F: session length as canonical chips + "Outro" → free input fallback. */}
+              {(() => {
+                const canonical = [30, 45, 60, 75];
+                const cur = assessment.session_duration_minutes ? Number(assessment.session_duration_minutes) : null;
+                const isOther = cur != null && !canonical.includes(cur);
+                return (
+                  <div className="space-y-1">
+                    <Label className="text-xs">{t("training_block.session_length")}</Label>
+                    <ChipGroup
+                      size="sm"
+                      value={isOther ? "other" : (cur != null ? String(cur) : null)}
+                      onChange={(v) => {
+                        if (v === "other") {
+                          // keep current value if any, else empty for input
+                          if (!isOther) setAssessment({ ...assessment, session_duration_minutes: null });
+                        } else {
+                          setAssessment({ ...assessment, session_duration_minutes: Number(v) });
+                        }
+                      }}
+                      options={[
+                        { value: "30", label: "30 min" },
+                        { value: "45", label: "45 min" },
+                        { value: "60", label: "60 min" },
+                        { value: "75", label: "75 min" },
+                        { value: "other", label: t("training_block.session_other", { defaultValue: "Outro" }) },
+                      ]}
+                    />
+                    {isOther && (
+                      <Input
+                        type="number"
+                        min={10}
+                        max={240}
+                        value={String(cur ?? "")}
+                        onChange={(e) => setAssessment({ ...assessment, session_duration_minutes: e.target.value ? Number(e.target.value) : null })}
+                        className="h-8 w-24 text-xs tabular-nums"
+                        placeholder="min"
+                      />
+                    )}
+                  </div>
+                );
+              })()}
               {(() => {
                 // R-X · Lote 2: training_location was free text. Now canonical chips.
                 // Legacy non-canonical values are preserved as a "outro" chip.

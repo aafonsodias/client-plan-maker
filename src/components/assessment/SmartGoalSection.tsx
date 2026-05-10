@@ -190,25 +190,31 @@ export function SmartGoalSection({
       {/* Template list for active category */}
       <div className="space-y-1.5">
         {filtered.map((tpl) => {
-          const isActive = lastApplied?.id === tpl.id;
+          // R-F: derive selected state from current value (survives reload),
+          // falling back to lastApplied for the in-memory case.
+          const tplSpecific = t(tpl.specific_key as never) as string;
+          const isActive =
+            lastApplied?.id === tpl.id ||
+            (Boolean(value.smart_specific) && value.smart_specific === tplSpecific);
           return (
             <button
               key={tpl.id}
               type="button"
               onClick={() => handleTemplateClick(tpl)}
+              aria-pressed={isActive}
               className={cn(
                 "flex w-full items-start justify-between rounded-md px-3 py-2 text-left transition",
                 isActive
-                  ? "bg-foreground/10 ring-1 ring-foreground/30 hover:bg-foreground/15"
+                  ? "bg-primary/5 ring-2 ring-primary hover:bg-primary/10"
                   : "bg-muted/30 hover:bg-muted/45"
               )}
             >
               <p className="body-prose flex-1 text-[13px] leading-snug text-foreground">
-                {t(tpl.specific_key as never) as string}
+                {tplSpecific}
               </p>
               <span className={cn(
                 "label-caps ml-3 shrink-0 tabular-nums",
-                isActive ? "text-foreground font-semibold" : "text-muted-foreground"
+                isActive ? "text-primary font-semibold" : "text-muted-foreground"
               )}>
                 {tpl.default_weeks}w
               </span>
