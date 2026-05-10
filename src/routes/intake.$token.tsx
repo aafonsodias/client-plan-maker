@@ -1377,7 +1377,7 @@ function buildSlides(
       subtitle: t("optional"),
       body: (
         <div className="space-y-4">
-          <InjuriesSlide token={token} />
+          {token ? <InjuriesSlide token={token} /> : null}
           {SHOW_DEPRECATED_FIELDS ? (
             <div className="rounded-lg border border-dashed border-border/40 p-3">
               <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
