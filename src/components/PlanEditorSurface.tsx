@@ -879,21 +879,95 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
               sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
             />
           )}
-          {/* R67: Intensity Cockpit also editable post-finalisation. Saves
-              directly into workout_plans.programming_variables. New microcycles
-              created via NextWeekCard pick this up immediately. */}
-          <IntensityCockpit
-            value={(plan?.programming_variables ?? {}) as ProgrammingVariables}
-            primaryGoal={(plan as any)?.training_brief?.primary_goal}
-            onChange={async (next) => {
-              setPlan({ ...plan, programming_variables: next });
-              const { error } = await supabase
-                .from("workout_plans")
-                .update({ programming_variables: next as any })
-                .eq("id", planId);
-              if (error) toast.error(error.message);
-            }}
-          />
+          {/* C3 — "Configurar mesociclo" condensa Cockpit + lesões honradas +
+              CTA Regenerar num único painel dentro do edit. Substitui o botão
+              flutuante anterior. R67: Cockpit grava em programming_variables;
+              novas microciclos via NextWeekCard apanham logo. */}
+          <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] p-4 space-y-4">
+            <header className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">
+                  Configurar mesociclo
+                </h2>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Ajusta o motor de progressão, vê as lesões honradas e regenera — tudo no mesmo sítio.
+              </p>
+            </header>
+
+            <IntensityCockpit
+              value={(plan?.programming_variables ?? {}) as ProgrammingVariables}
+              primaryGoal={(plan as any)?.training_brief?.primary_goal}
+              onChange={async (next) => {
+                setPlan({ ...plan, programming_variables: next });
+                const { error } = await supabase
+                  .from("workout_plans")
+                  .update({ programming_variables: next as any })
+                  .eq("id", planId);
+                if (error) toast.error(error.message);
+              }}
+            />
+
+            <div className="rounded-xl border border-border bg-card p-4">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-foreground">
+                Lesões honradas pelo motor
+              </h3>
+              {injuries.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Nenhuma lesão registada na avaliação. O motor não aplica filtros por zona.
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {injuries.map((inj) => {
+                    const tone =
+                      inj.severity >= 4
+                        ? "border-red-500/40 bg-red-500/10 text-red-300"
+                        : inj.severity >= 3
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                          : "border-border bg-muted/40 text-muted-foreground";
+                    return (
+                      <li
+                        key={inj.id}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${tone}`}
+                        title={inj.note ?? undefined}
+                      >
+                        <span className="font-medium">{inj.body_zone.replace(/_/g, " ")}</span>
+                        <span className="opacity-70">· sev {inj.severity}</span>
+                        {inj.injury_label && <span className="opacity-70">· {inj.injury_label}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Filtros aplicados automaticamente a cada regen — auditados em <code>generation_log.injury_filters_applied</code>.
+              </p>
+            </div>
+
+            {plan?.status !== "finalized" && client && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card/60 p-3">
+                <div className="text-[11px] text-muted-foreground">
+                  Pronto a regenerar com estes valores? A versão actual é arquivada — sem perda de logs.
+                </div>
+                <RegenerateWithFeedbackDialog
+                  planId={planId}
+                  clientId={client.id}
+                  assessmentId={plan.assessment_id}
+                  durationWeeks={plan.duration_weeks ?? 4}
+                  isPhasedComplete={isPhasedComplete}
+                  previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
+                  onRegenerated={async (newPlan) => {
+                    setData({ weeks: newPlan.weeks ?? [] });
+                    setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
+                    if (isPhasedComplete) {
+                      await reloadPlanDays();
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </section>
           <MesocycleTableView
             plan={data}
             planId={planId}
