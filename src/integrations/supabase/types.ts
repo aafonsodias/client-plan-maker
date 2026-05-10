@@ -1884,7 +1884,9 @@ export type Database = {
           logged_by: string
           plan_data_version: number
           plan_id: string
+          post_feedback: Json | null
           pr_celebrated_at: string | null
+          pre_readiness: Json | null
           session_date: string
           session_notes: string | null
           status: Database["public"]["Enums"]["session_status"]
@@ -1901,7 +1903,9 @@ export type Database = {
           logged_by?: string
           plan_data_version?: number
           plan_id: string
+          post_feedback?: Json | null
           pr_celebrated_at?: string | null
+          pre_readiness?: Json | null
           session_date?: string
           session_notes?: string | null
           status?: Database["public"]["Enums"]["session_status"]
@@ -1918,7 +1922,9 @@ export type Database = {
           logged_by?: string
           plan_data_version?: number
           plan_id?: string
+          post_feedback?: Json | null
           pr_celebrated_at?: string | null
+          pre_readiness?: Json | null
           session_date?: string
           session_notes?: string | null
           status?: Database["public"]["Enums"]["session_status"]
