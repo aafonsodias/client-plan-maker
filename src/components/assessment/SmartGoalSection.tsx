@@ -13,6 +13,7 @@ import { matchAspiration, type SkillAspiration } from "@/lib/skill-aspirations";
 import { logUnmatchedAspiration } from "@/server/aspirations.functions";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Check } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
