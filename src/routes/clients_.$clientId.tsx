@@ -4794,13 +4794,48 @@ function SectionBlock({
         )}
       </button>
       {open && (
-        <>
-          {children}
-          {footer}
-          {(analysing || analysis) && id !== "risk" && (
-            <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
-          )}
-        </>
+        (() => {
+          // Fold CompletionStrip (footer) + AI insight into a single trailing
+          // RxImplications card if present — collapses "3 títulos" per section
+          // into one (founder feedback May-2026).
+          const arr = Children.toArray(children);
+          let foldedRx: React.ReactNode | null = null;
+          let summary: string | undefined;
+          let summaryDescription: string | undefined;
+          if (isValidElement(footer) && (footer.type as any) === CompletionStrip) {
+            const fp = footer.props as { text: string; description?: string };
+            summary = fp.text;
+            summaryDescription = fp.description;
+          }
+          const insightText =
+            id !== "risk"
+              ? (analysis?.contraindication_notes ?? analysis?.notes_for_next_stage ?? "").trim() || null
+              : null;
+          const transformed = arr.map((child) => {
+            if (
+              isValidElement(child) &&
+              (child.type as any) === RxImplications
+            ) {
+              foldedRx = child;
+              return cloneElement(child as React.ReactElement<any>, {
+                summary,
+                summaryDescription,
+                insight: insightText,
+                insightLoading: id !== "risk" ? !!analysing : false,
+              });
+            }
+            return child;
+          });
+          return (
+            <>
+              {transformed}
+              {!foldedRx && footer}
+              {!foldedRx && (analysing || analysis) && id !== "risk" && (
+                <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
+              )}
+            </>
+          );
+        })()
       )}
     </div>
   );
