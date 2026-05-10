@@ -2626,7 +2626,7 @@ function ClientDetail() {
             </div>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar Tanita
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
