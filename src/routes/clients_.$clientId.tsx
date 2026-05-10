@@ -91,7 +91,7 @@ import { isRequiredComplete } from "@/lib/client-phase";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { IntakeLinkPanel } from "@/components/IntakeLinkPanel";
 import { ClientStageOneHero } from "@/components/ClientStageOneHero";
-import { ComplianceDashboard } from "@/components/ComplianceDashboard";
+import { ComplianceCard } from "@/components/ComplianceCard";
 import MovementPatternCard from "@/components/MovementPatternCard";
 import { PATTERN_IDS, formScore, derivePatternScore, type PatternId } from "@/lib/movement-criteria";
 import { Slider } from "@/components/ui/slider";
@@ -1978,20 +1978,7 @@ function ClientDetail() {
               />
             )}
             <CapacityDeltasCard clientId={clientId} />
-            {plans.length > 0 && (
-              <details className="group mt-2 border-t border-border/60 pt-2">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-1 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-                    Compliance &amp; estatísticas
-                  </span>
-                  <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
-                </summary>
-                <div className="px-1 pb-1 pt-2">
-                  <ComplianceDashboard clientId={clientId} />
-                </div>
-              </details>
-            )}
+            {plans.length > 0 && <ComplianceCard clientId={clientId} />}
           </section>
           )}
           </>
