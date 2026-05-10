@@ -1995,7 +1995,7 @@ function ClientDetail() {
             )}
           </SectionBlock>
           {/* Risk stratification */}
-          <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} description={t(`risk_block.complete_meaning_${riskCategory}` as const)} /> : null}>
+          <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle
@@ -2200,7 +2200,24 @@ function ClientDetail() {
                 onChange={(v) => setAssessment({ ...assessment, risk: { ...assessment.risk, hypertension: v } })}
               />
             </div>
-            <RxImplications sectionId="risk" assessment={assessment} riskCategory={riskCategory} />
+            <RxImplications
+              sectionId="risk"
+              assessment={assessment}
+              riskCategory={riskCategory}
+              collapsible
+              riskChip={{
+                level: t(`risk_block.level_${riskCategory}` as const).toUpperCase(),
+                tone: riskCategory,
+              }}
+              extra={
+                isSectionComplete("risk", assessment) ? (
+                  <CompletionStrip
+                    text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })}
+                    description={t(`risk_block.complete_meaning_${riskCategory}` as const)}
+                  />
+                ) : null
+              }
+            />
           </SectionBlock>
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} description={t("training_block.complete_meaning")} /> : null}>
