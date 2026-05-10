@@ -525,14 +525,39 @@ export const getTodayForToken = createServerFn({ method: "POST" })
     }
 
     const weeks: any[] = (plan.plan_data as any)?.weeks ?? [];
-    const slots: Array<{ week_number: number; day_label: string }> = [];
+    const slots: Array<{ week_number: number; day_label: string; weekday: number | null }> = [];
     for (const w of weeks) {
       for (const d of w?.days ?? []) {
-        slots.push({ week_number: w.week_number, day_label: d.day_label });
+        slots.push({
+          week_number: w.week_number,
+          day_label: d.day_label,
+          weekday: typeof d.weekday === "number" ? d.weekday : null,
+        });
       }
     }
     if (slots.length === 0) {
-      return { plan_id: plan.id, week_number: 1, day_label: "", session_date: new Date().toISOString().slice(0, 10), resumed_draft: false, empty: true as const };
+      return { plan_id: plan.id, state: "empty" as const, week_number: 1, day_label: "", session_date: new Date().toISOString().slice(0, 10), resumed_draft: false };
+    }
+
+    // Auto-distribute weekdays for the FIRST week if none are set yet.
+    // This is read-only inference — does not mutate plan_data. It mirrors
+    // what distributeWeekdays() in src/lib/weekday-distribution.ts does so
+    // the logbook always has something to anchor "today" to.
+    const firstWeekDays = (weeks[0]?.days ?? []) as Array<{ weekday?: number | null }>;
+    const anyWeekday = firstWeekDays.some((d) => typeof d?.weekday === "number");
+    if (!anyWeekday && firstWeekDays.length > 0) {
+      const TABLE: Record<number, number[]> = {
+        1: [3], 2: [2, 5], 3: [1, 3, 5], 4: [1, 2, 4, 5],
+        5: [1, 2, 3, 5, 6], 6: [1, 2, 3, 4, 5, 6], 7: [1, 2, 3, 4, 5, 6, 7],
+      };
+      const wd = TABLE[Math.min(7, firstWeekDays.length)] ?? [];
+      let idx = 0;
+      for (const s of slots) {
+        if (s.week_number === weeks[0].week_number) {
+          s.weekday = wd[idx] ?? null;
+          idx++;
+        }
+      }
     }
 
     const { data: rows } = await supabaseAdmin
@@ -553,6 +578,7 @@ export const getTodayForToken = createServerFn({ method: "POST" })
     if (draft) {
       return {
         plan_id: plan.id,
+        state: "ready" as const,
         week_number: draft.week_number,
         day_label: draft.day_label,
         session_date: draft.session_date,
@@ -565,12 +591,83 @@ export const getTodayForToken = createServerFn({ method: "POST" })
     const doneSet = new Set(
       all.filter((r) => r.status !== "in_progress" && r.status !== "missed").map(doneKey),
     );
-    const next = slots.find((s) => !doneSet.has(doneKey(s)));
     const today = new Date().toISOString().slice(0, 10);
-    if (next) {
-      return { plan_id: plan.id, ...next, session_date: today, resumed_draft: false };
+    const todayWeekday = (() => {
+      const dow = new Date().getDay();
+      return dow === 0 ? 7 : dow;
+    })();
+
+    // 1) Today matches a scheduled training day that's still pending → pick it.
+    const todaySlot = slots.find(
+      (s) => s.weekday === todayWeekday && !doneSet.has(doneKey(s)),
+    );
+    if (todaySlot) {
+      return {
+        plan_id: plan.id,
+        state: "ready" as const,
+        week_number: todaySlot.week_number,
+        day_label: todaySlot.day_label,
+        session_date: today,
+        resumed_draft: false,
+        weekday: todayWeekday,
+      };
     }
-    // Plan complete — fall back to the last slot.
+
+    // 2) Today's scheduled session is already done → done_today (with next suggestion).
+    const todayDone = slots.find(
+      (s) => s.weekday === todayWeekday && doneSet.has(doneKey(s)),
+    );
+    const nextPending = slots.find((s) => !doneSet.has(doneKey(s)));
+    if (todayDone) {
+      return {
+        plan_id: plan.id,
+        state: "done_today" as const,
+        week_number: todayDone.week_number,
+        day_label: todayDone.day_label,
+        session_date: today,
+        resumed_draft: false,
+        weekday: todayWeekday,
+        suggested_next: nextPending
+          ? { week_number: nextPending.week_number, day_label: nextPending.day_label, weekday: nextPending.weekday }
+          : null,
+      };
+    }
+
+    // 3) No scheduled training today → rest day, but suggest next pending.
+    if (nextPending && slots.some((s) => s.weekday !== null)) {
+      return {
+        plan_id: plan.id,
+        state: "rest" as const,
+        week_number: nextPending.week_number,
+        day_label: nextPending.day_label,
+        session_date: today,
+        resumed_draft: false,
+        weekday: todayWeekday,
+        suggested_next: { week_number: nextPending.week_number, day_label: nextPending.day_label, weekday: nextPending.weekday },
+      };
+    }
+
+    // 4) No weekday info at all → legacy sequential behaviour.
+    const next = nextPending;
+    if (next) {
+      return {
+        plan_id: plan.id,
+        state: "ready" as const,
+        week_number: next.week_number,
+        day_label: next.day_label,
+        session_date: today,
+        resumed_draft: false,
+      };
+    }
+
+    // 5) Plan complete — fall back to the last slot.
     const last = slots[slots.length - 1];
-    return { plan_id: plan.id, ...last, session_date: today, resumed_draft: false };
+    return {
+      plan_id: plan.id,
+      state: "done_today" as const,
+      week_number: last.week_number,
+      day_label: last.day_label,
+      session_date: today,
+      resumed_draft: false,
+    };
   });
