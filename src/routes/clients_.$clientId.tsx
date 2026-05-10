@@ -3178,7 +3178,7 @@ function ClientDetail() {
                 </Link>
               </div>
             </div>
-          ) : (
+          ) : isMobileStepper ? null : (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
             {(() => {
               const isHigh = riskCategory === "high";
