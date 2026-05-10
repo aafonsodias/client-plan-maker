@@ -1988,7 +1988,7 @@ function ClientDetail() {
               if (phasedEnabled) void runPhasedStart();
               else void generate();
             };
-            const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
+            const assessmentComplete = completedCount >= totalSections;
             if (assessmentComplete) { run(); return; }
             pendingGenerateRef.current = run;
             setIncompleteWarnOpen(true);
