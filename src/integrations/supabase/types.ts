@@ -280,6 +280,30 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_unmatched_aspirations: {
+        Row: {
+          aspiration_text: string
+          client_id: string
+          created_at: string
+          id: string
+          trainer_id: string
+        }
+        Insert: {
+          aspiration_text: string
+          client_id: string
+          created_at?: string
+          id?: string
+          trainer_id: string
+        }
+        Update: {
+          aspiration_text?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          trainer_id?: string
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           acsm_risk_category: string | null

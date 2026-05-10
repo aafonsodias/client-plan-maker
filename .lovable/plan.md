@@ -1,81 +1,60 @@
-## Objetivo
+# Round C — SMART Goal: Bugs + Templates + Aspiration Builder
 
-Tornar a estética e o valor pedagógico das secções "completas" do assessment consistentes com o que já existe na secção Risco:
-1. **Strip verde rica** (título em Fraunces + frase explicativa) em todas as secções que façam sentido.
-2. **Painel "Implicações para a prescrição"** (deterministic rules, sem AI) nas secções de alto sinal programático.
+Tightly scoped to assessment §5 (SMART goal). Zero AI; all deterministic.
 
-PT primeiro; EN herda PT como fallback até round seguinte.
+## Part 1 — Bug fixes
 
-## Escopo (decidido por mim)
+**1a. Chip affordance** (`SmartGoalSection.tsx`): selected = `bg-foreground/10 ring-1 ring-foreground/30 text-foreground font-medium`; deselected = `bg-muted/20 text-muted-foreground hover:bg-muted/40`. Apply to both category chips and duration chips.
 
-### Strip rica — onde aplicar
-| Secção | Já tem strip? | Acção |
-|---|---|---|
-| PAR-Q+ | sim (simples) | + descrição |
-| Risco | feito | — |
-| Setup de treino | sim (simples) | + descrição |
-| Objetivo SMART | sim (simples) | + descrição |
-| Antropometria | não | + strip rica nova |
-| Readiness | não | + strip rica nova |
-| Estilo de vida | não | + strip rica nova |
-| Nutrição | não | + strip rica nova |
-| Screen movimento | não | + strip rica nova |
-| Performance | não | + strip rica nova |
-| Histórico, Meds, Mobilidade, Postura | não | **deixar como está** — secções descritivas/opcionais; strip seria ruído |
+**1b. Progress strip dynamic** (`clients_.$clientId.tsx` sticky header): replace static text with computed `Section ${idx+1}/${SECTIONS.length} · ${pct}% · ~${remainingMin} min`. `idx` from `activeId`; `pct = completeCount/total*100`; `remainingMin = Math.max(1, Math.round((total-completeCount)*0.5))`.
 
-### Implicações para a prescrição — onde aplicar
-9 secções (incluindo Risco, já feita):
+**1c. Stale "Goal logged" banner**: only render when `value.smart_specific` non-empty AND >2s since last template click. Track `lastTemplateClickAt` state; banner reads current `value.smart_specific` (no cached string).
 
-- **PAR-Q+** — clearance gate, contraindicações específicas por bandeira
-- **Setup de treino** — frequência prescrita, dias preferidos, equipamento → restrições de selecção
-- **Objetivo SMART** — driver primário (hipertrofia/força/perda gordura/saúde) → preset de programação sugerido
-- **Antropometria** — WHR + IMC → carga axial, cardio low-impact, alvos de composição
-- **Readiness** — sono, stress, dor → autoreg strictness recomendada, deload frequency
-- **Estilo de vida** — álcool, tabaco, sedentarismo ocupacional → recuperação esperada
-- **Nutrição** — proteína g/kg, hidratação, refeições/dia → energy availability flag
-- **Screen movimento** — padrões com score baixo → exercícios remediais antes de progredir
-- **Performance** — capacidade aeróbia/força → tier de programação (advanced/conservative/remedial)
+**1d. Microcopy**: fix `goals.implications.horizon_*` keys (or wherever "12 semanas dá para 1 bloco" lives — likely `RxImplications` goal builder or `goal_block.complete_meaning`). Audit and correct: 6w≈1 short block, 8-10w≈2, 12-16w≈2-3, 20+w≈3-4. Apply in pt/en/es/hi.
 
-**Saltar**: Histórico (narrativa), Meds (já é flag-driven, RxImplications de Risco já consome), Mobilidade (descritiva), Postura (descritiva).
+## Part 2 — 26 curated templates
 
-## Implementação
+Rewrite `src/lib/goal-templates.ts`:
+- Add `cardiovascular_health` to `GoalCategory` union
+- Replace `GOAL_TEMPLATES` with 26 entries (3 cv, 4 str, 3 hyp, 3 comp, 3 end, 4 mob, 3 fn, 3 skill)
+- Add `requires?: string[]` field on `GoalTemplate` (capacity/measurement slugs; future Round E hook)
+- Append to `GOAL_CATEGORIES` array
 
-### 1. Componente único `RxImplications` generalizado
-Hoje só faz Risco. Refactor:
-```ts
-function RxImplications({ sectionId, assessment, riskCategory }: Props)
-```
-Internamente, switch por `sectionId` para construir as `Item[]` deterministicamente. Mantém o mesmo wrap visual (header eyebrow + grid de cartões tonais) e a mesma palette TONE (danger/warn/info/neutral).
+PT canonical specific/measurable strings for all 26 in honest commitment-to-work framing. EN mirror. ES/HI fall back to PT via i18next.
 
-Cada secção tem a sua função pura `buildItems_<section>(assessment) → Item[]`. Isolada, testável, sem AI.
+## Part 3 — Custom skill aspiration builder
 
-### 2. Strip rica
-`CompletionStrip` já aceita `description`. Para as secções novas adiciono o footer no `SectionBlock`. As 6 secções sem strip ganham:
-- Antropometria → "IMC X (categoria) · WHR Y" + meaning
-- Readiness → "Recuperação: <perfil>" + meaning
-- Estilo de vida → "<n> factores de estilo notáveis" + meaning
-- Nutrição → "Proteína Xg/kg · <ingestão hídrica>" + meaning
-- Screen → "<padrões cleared>/6" + meaning
-- Performance → "Tier: <advanced/conservative/remedial>" + meaning
+**3a.** New file `src/lib/skill-aspirations.ts` with `SkillAspiration` interface, `SKILL_ASPIRATIONS` array (12 entries: handstand, split, pullup, muscle_up, planche, front_lever, back_lever, bridge, pistol_squat, human_flag, single_leg_deadlift, first_pushup), and `matchAspiration(input)` substring matcher.
 
-### 3. i18n
-Tudo via `t()` em `risk_block.complete_meaning_*`-style keys, dentro do bloco respectivo (`anthro_block.complete`, `anthro_block.complete_meaning`, etc.). PT escrito; EN cai no PT por enquanto (i18next fallback) e marcamos com `// TODO: EN translation` no JSON EN.
+**3b.** Server fn + DB:
+- Migration: `assessment_unmatched_aspirations` table with RLS (trainer manages own).
+- New `src/lib/aspirations.functions.ts` with `logUnmatchedAspiration({ clientId, aspirationText })` using `requireSupabaseAuth`.
 
-### 4. Voz
-Toda a copy em "você" formal (memo PT voice), sem exclamações, factual. Tom = manual de instrumento, não marketing.
+**3c.** UI in `SmartGoalSection.tsx`: collapsible section below template list — input + "Procurar" button → matched (shows scaffold preview + Apply button) or unmatched (honest message + logs to DB).
 
-## Riscos & decisões
+**3d.** Apply matched → `onChange` fills smart_specific/measurable/deadline (today + default_weeks*7), sets `primary_goal = "skill"`.
 
-- **Ruído visual em secções pouco preenchidas**: cada `buildItems_*` tem fallback "Sem condicionantes adicionais — passar à frente" só quando a secção está completa mas neutra. Não acumula 0-item panels.
-- **Volume de texto**: ~50-70 strings PT novas. Aceitável para 1 round, sem dependências externas.
-- **Mobile (375px)**: cartões mantêm `grid-cols-1 sm:grid-cols-2` como já é.
-- **Refactor risco**: `RxImplications` actual passa de 7 regras hard-coded a switch — mantenho 100% das 7 regras existentes na branch `case "risk"` para zero regressão.
+## Part 4 — i18n (~95 new keys)
 
-## Entregável
+In `pt/assessment.json` (canonical), `en/assessment.json` (mirror), `es/assessment.json` + `hi/assessment.json` (minimal — fall back to PT/EN):
+- 2 new category labels
+- 26 × specific + 26 × measurable
+- 12 × specific + 12 × measurable + 12 × note
+- ~11 builder UI strings
 
-- 1 componente `RxImplications` refactorizado + 8 funções `buildItems_*`
-- 6 novos footers `<CompletionStrip text=… description=…>` em SectionBlocks
-- 3 descriptions adicionadas a strips existentes (parq, training, goal)
-- ~60 chaves PT em `assessment.json`
-- EN: chaves vazias com `// TODO` ou simplesmente omitidas (fallback PT)
-- Smoke 375px na rota `/clients/$id` percorrendo as 9 secções alvo
+## Files touched
+
+- `src/components/assessment/SmartGoalSection.tsx` (chip styles, banner debounce, custom builder UI)
+- `src/routes/clients_.$clientId.tsx` (dynamic progress strip + microcopy audit)
+- `src/lib/goal-templates.ts` (rewrite to 26)
+- `src/lib/skill-aspirations.ts` (new)
+- `src/lib/aspirations.functions.ts` (new server fn)
+- `supabase/migrations/<ts>_assessment_unmatched_aspirations.sql` (new table)
+- `src/i18n/locales/{pt,en,es,hi}/assessment.json`
+
+## Verification
+
+- `bun scripts/verify-capacity-i18n.ts` (must pass — capacity scope unchanged but sanity)
+- Visual smoke at 375px and 1920px in light/medium/dark
+- Screenshots → `.lovable/design/round-c-goal-builder/`
+- Acceptance: 17 criteria from spec

@@ -213,7 +213,9 @@
       "composition": "Composição",
       "endurance": "Resistência",
       "mobility": "Mobilidade",
-      "function": "Função"
+      "function": "Função",
+      "cardiovascular_health": "Saúde cardiovascular",
+      "skill": "Skill / Habilidade"
     },
     "duration": {
       "4w": "4 sem",
@@ -226,19 +228,32 @@
       "resolved": "→ reavaliar a {{date}}"
     },
     "tpl": {
-      "str_squat_15bw_5":  { "specific": "Trabalhar força de agachamento durante 16 semanas, medir progresso", "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1,5×PC × 5 reps" },
-      "str_bench_bw_5":    { "specific": "Trabalhar força de empurre horizontal durante 16 semanas",           "measurable": "Acompanhar 1RM/5RM no supino; meta exploratória: 1×PC × 5 reps" },
-      "str_dl_2bw_3":      { "specific": "Trabalhar força de tração e cadeia posterior durante 20 semanas",    "measurable": "Acompanhar 1RM/3RM no peso-morto; meta exploratória: 2×PC × 3 reps" },
-      "hyp_arm_3cm":       { "specific": "Trabalhar hipertrofia de braço durante 12 semanas, medir progresso", "measurable": "Medir perímetro de braço a cada 4 semanas; observar tendência" },
-      "hyp_thigh_4cm":     { "specific": "Trabalhar hipertrofia de coxa durante 12 semanas, medir progresso",  "measurable": "Medir perímetro de coxa a cada 4 semanas; observar tendência" },
-      "comp_fatloss_5":    { "specific": "Reduzir massa gorda durante 16 semanas, mantendo massa magra",       "measurable": "Acompanhar composição (DEXA/BIA) a cada 4-6 semanas; ajustar pelo trajeto" },
-      "comp_recomp":       { "specific": "Recomposição corporal durante 20 semanas (perder gordura, ganhar massa magra)", "measurable": "Acompanhar composição e força em paralelo; ajustar conforme resposta" },
-      "end_5k_25":         { "specific": "Trabalhar resistência de corrida em 5 km durante 10 semanas",        "measurable": "Acompanhar tempo nos 5 km a cada 3-4 semanas; meta exploratória: ≤ 25:00" },
-      "end_cooper_2400":   { "specific": "Trabalhar capacidade aeróbia durante 8 semanas",                     "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; meta exploratória: ≥ 2400 m" },
-      "mob_toes_painfree": { "specific": "Trabalhar mobilidade lombar e isquiotibiais durante 6 semanas",      "measurable": "Sentar-e-alcançar e percepção de dor; medir a cada 2 semanas" },
-      "mob_overhead_full": { "specific": "Trabalhar mobilidade torácica e de ombros durante 8 semanas",        "measurable": "Teste de overhead contra parede; medir a cada 2 semanas" },
-      "fn_carry_30s":      { "specific": "Trabalhar força funcional de transporte (carry) durante 12 semanas", "measurable": "Tempo em farmer's carry com carga progressiva; reavaliar a cada 4 semanas" },
-      "fn_get_up_floor":   { "specific": "Trabalhar mobilidade integrada solo-pé durante 8 semanas",           "measurable": "Avaliar Turkish get-up sem mãos a cada 2 semanas; observar limpeza do padrão" }
+      "cv_rhr_lower":      { "specific": "Reduzir frequência cardíaca de repouso ao longo de 12 semanas",      "measurable": "Acompanhar FCR matinal a cada 2 semanas; meta exploratória: −5 a −10 bpm" },
+      "cv_bp_systolic":    { "specific": "Reduzir tensão arterial sistólica ao longo de 16 semanas",          "measurable": "Medir TA semanalmente; meta exploratória: −5 a −10 mmHg" },
+      "cv_cooper_2400":    { "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",                "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; meta exploratória: ≥ 2400 m" },
+      "str_squat_1bw_5":   { "specific": "Trabalhar força de agachamento ao longo de 12 semanas",             "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1×PC × 5 reps" },
+      "str_squat_15bw_5":  { "specific": "Trabalhar força de agachamento ao longo de 16 semanas",             "measurable": "Acompanhar 1RM/5RM no agachamento; meta exploratória: 1,5×PC × 5 reps" },
+      "str_bench_75bw_5":  { "specific": "Trabalhar força de empurre horizontal ao longo de 16 semanas",      "measurable": "Acompanhar 1RM/5RM no supino; meta exploratória: 0,75×PC × 5 reps" },
+      "str_dl_15bw_5":     { "specific": "Trabalhar força de tração e cadeia posterior ao longo de 16 semanas","measurable": "Acompanhar 1RM/5RM no peso-morto; meta exploratória: 1,5×PC × 5 reps" },
+      "hyp_arm":           { "specific": "Trabalhar hipertrofia de braço ao longo de 12 semanas",             "measurable": "Medir perímetro de braço a cada 4 semanas; observar tendência" },
+      "hyp_thigh":         { "specific": "Trabalhar hipertrofia de coxa ao longo de 12 semanas",              "measurable": "Medir perímetro de coxa a cada 4 semanas; observar tendência" },
+      "hyp_glutes":        { "specific": "Trabalhar hipertrofia de glúteos ao longo de 16 semanas",           "measurable": "Medir perímetro de anca a cada 4 semanas; observar tendência" },
+      "comp_fatloss":      { "specific": "Reduzir massa gorda ao longo de 16 semanas, mantendo massa magra",  "measurable": "Acompanhar composição (DEXA/BIA) a cada 4-6 semanas; ajustar pelo trajeto" },
+      "comp_recomp":       { "specific": "Recomposição corporal ao longo de 20 semanas (perder gordura, ganhar massa magra)", "measurable": "Acompanhar composição e força em paralelo; ajustar conforme resposta" },
+      "comp_waist":        { "specific": "Reduzir perímetro abdominal ao longo de 12 semanas",                "measurable": "Medir perímetro de cintura a cada 2 semanas; observar tendência" },
+      "end_5k_continuous": { "specific": "Conseguir correr 5 km contínuos ao longo de 8 semanas",             "measurable": "Aumentar progressivamente tempo em corrida contínua; reavaliar a cada 2 semanas" },
+      "end_5k_25min":      { "specific": "Trabalhar resistência de corrida em 5 km ao longo de 10 semanas",   "measurable": "Acompanhar tempo nos 5 km a cada 3-4 semanas; meta exploratória: ≤ 25:00" },
+      "end_cooper":        { "specific": "Trabalhar capacidade aeróbia ao longo de 8 semanas",                "measurable": "Reaplicar Cooper 12 min a cada 4 semanas; observar progresso" },
+      "mob_toes":          { "specific": "Trabalhar mobilidade lombar e isquiotibiais ao longo de 6 semanas", "measurable": "Sentar-e-alcançar a cada 2 semanas; observar progresso" },
+      "mob_overhead":      { "specific": "Trabalhar mobilidade torácica e de ombros ao longo de 8 semanas",   "measurable": "Teste de overhead contra parede a cada 2 semanas" },
+      "mob_squat_deep":    { "specific": "Trabalhar agachamento profundo livre de dor ao longo de 8 semanas", "measurable": "Avaliar profundidade e qualidade a cada 2 semanas" },
+      "mob_cervical":      { "specific": "Trabalhar mobilidade cervical ao longo de 4 semanas",               "measurable": "Medir rotação cervical bilateral a cada 2 semanas" },
+      "fn_floor_rise":     { "specific": "Conseguir levantar do chão sem apoio ao longo de 6 semanas",        "measurable": "Avaliar floor-rise test mensalmente" },
+      "fn_stairs_unaided": { "specific": "Subir escadas sem corrimão ao longo de 4 semanas",                  "measurable": "Avaliar stair-climb test a cada 2 semanas" },
+      "fn_carry":          { "specific": "Trabalhar força funcional de transporte (carry) ao longo de 8 semanas", "measurable": "Tempo em farmer's carry com carga progressiva; reavaliar a cada 2 semanas" },
+      "skill_handstand":   { "specific": "Trabalhar handstand (pino) ao longo de 20 semanas",                 "measurable": "Acompanhar progressão wall→free handstand; medir tempo de hold" },
+      "skill_split":       { "specific": "Trabalhar mobilidade extrema para esparregata ao longo de 24 semanas", "measurable": "Medir distância chão-quadril mensalmente" },
+      "skill_first_pullup":{ "specific": "Conseguir a primeira pullup completa ao longo de 12 semanas",       "measurable": "Acompanhar reps em deadhang e progressão de assistência" }
     }
   },
   "readiness_block": {
