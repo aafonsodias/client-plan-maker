@@ -1992,7 +1992,7 @@ function ClientDetail() {
             </ul>
           </SectionBlock>
           {/* Risk stratification */}
-          <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} /> : null}>
+          <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} description={t(`risk_block.complete_meaning_${riskCategory}` as const)} /> : null}>
             <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle
@@ -5039,9 +5039,32 @@ function ParqFlagSummary({ count }: { count: number }) {
   );
 }
 
-function CompletionStrip({ text }: { text: string }) {
+function CompletionStrip({ text, description }: { text: string; description?: string }) {
   // Strip the leading "✓ " (legacy) — the icon now carries that signal.
   const cleaned = text.replace(/^\s*✓\s*/, "");
+  if (description) {
+    return (
+      <div className="mt-3 flex animate-fade-in items-start gap-3 rounded-xl bg-emerald-500/[0.05] px-3 py-2.5 text-emerald-900/90 dark:text-emerald-100/90">
+        <span
+          className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+          aria-hidden
+        >
+          <Check className="h-3 w-3" strokeWidth={2.75} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-[15px] leading-tight tracking-tight"
+            style={{ fontFamily: "var(--font-display-v2)", fontWeight: 500 }}
+          >
+            {cleaned}
+          </p>
+          <p className="mt-1 text-[12px] leading-snug text-emerald-900/65 dark:text-emerald-100/65">
+            {description}
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="mt-3 flex animate-fade-in items-center gap-2.5 rounded-full bg-emerald-500/[0.05] py-1 pl-1 pr-3 text-[12px] text-emerald-900/85 dark:text-emerald-100/85">
       <span
