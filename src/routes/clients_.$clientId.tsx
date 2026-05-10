@@ -1776,8 +1776,8 @@ function ClientDetail() {
                 <AlertDialogTitle>{t("generate.incomplete_title")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {t("generate.incomplete_body", {
-                    done: briefCoverage?.done ?? 0,
-                    total: briefCoverage?.total ?? 14,
+                    done: progressTotals.done,
+                    total: progressTotals.total || 14,
                   })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
