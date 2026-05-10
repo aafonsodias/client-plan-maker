@@ -1,6 +1,6 @@
 import type { ExerciseBlock } from "@/lib/exercise-grouping";
 import { blockLabel } from "@/lib/exercise-grouping";
-import { ExerciseSetsCard, type LogEntryV2 } from "@/components/log/ExerciseSetsCard";
+import { ExerciseSetsCard, type LogEntryV2, type LoggerMode } from "@/components/log/ExerciseSetsCard";
 import { Repeat } from "lucide-react";
 
 /**
@@ -17,6 +17,7 @@ export function BlockGroup({
   token,
   planId,
   onSetKeyDown,
+  mode = "strength",
 }: {
   block: ExerciseBlock;
   blockIndex: number;
@@ -28,6 +29,7 @@ export function BlockGroup({
   token: string;
   planId: string;
   onSetKeyDown?: React.ComponentProps<typeof ExerciseSetsCard>["onSetKeyDown"];
+  mode?: LoggerMode;
 }) {
   const label = blockLabel(block, blockIndex);
   const tone =
@@ -69,6 +71,7 @@ export function BlockGroup({
             token={token}
             planId={planId}
             onSetKeyDown={onSetKeyDown}
+            mode={mode}
           />
         ))}
       </div>
