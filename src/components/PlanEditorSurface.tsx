@@ -602,12 +602,6 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           >
             <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
           </Button>
-          <Link to="/settings" className="group flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-xs hover:border-accent">
-            <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded border border-dashed border-border bg-background">
-              {logoUrl ? <img src={logoUrl} alt="Logo" className="max-h-full max-w-full object-contain" /> : <SettingsIcon className="h-3.5 w-3.5 text-muted-foreground" />}
-            </div>
-            <span className="text-muted-foreground group-hover:text-foreground">Branding</span>
-          </Link>
         </div>
       </div>
 
