@@ -854,7 +854,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     }
     const sessionsPerWeek = Math.max(1, Math.min(7, bpP.data.sessions_per_week ?? 0));
     const dayIndices = data.dayIndices ?? Array.from({ length: sessionsPerWeek }, (_, i) => i + 1);
-    const guidelines = await resolveTierGuidelines(supabase, loaded.plan, briefP.data);
+    const guidelines = await resolveAndPersistGuidelines(supabase, loaded.plan, briefP.data, data.planId);
     const priorBlockSummary = (loaded.plan.generation_meta as any)?.block_feedback ?? null;
     const priorPool = ((loaded.plan.generation_meta as any)?.prior_exercise_pool ?? []) as string[];
     const swapMainLift = !!(loaded.plan.generation_meta as any)?.suggest_main_lift_swap;
