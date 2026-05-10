@@ -4623,16 +4623,22 @@ function AssessmentSection({
                 <Button
                   key={pulseKey}
                   size="sm"
-                  onClick={goNext}
-                  disabled={isLast}
+                  onClick={isLast ? (onConclude ?? (() => {})) : goNext}
+                  disabled={concludeBusy || (isLast && !onConclude)}
                   className={cn(
                     "transition",
                     currentComplete && !isLast
                       ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
                       : "",
+                    isLast && onConclude
+                      ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+                      : "",
                     currentComplete ? "animate-pulse-once" : ""
                   )}
                 >
+                  {concludeBusy ? (
+                    <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  ) : null}
                   {isLast ? t("finish") : t("next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Button>
               </div>
