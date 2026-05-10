@@ -2328,6 +2328,7 @@ function ClientDetail() {
           {/* SMART goal */}
           <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} description={t("goal_block.complete_meaning")} /> : null}>
             <SmartGoalSection
+              clientId={clientId}
               value={{
                 smart_specific: assessment.smart_specific ?? null,
                 smart_measurable: assessment.smart_measurable ?? null,
