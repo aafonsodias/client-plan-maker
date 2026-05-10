@@ -123,6 +123,7 @@ These are the constitution of the organism. Any feature, copy, or decision that 
 - `programNextWeek` is the only path to Week N+1.
 - Intensity Cockpit (R64) is the single modulation surface (5 knobs, 6 presets).
 - Every AI call writes `generation_log`.
+- AI in goal selector = suggestion with visible rationale, never silent selection (D1, see `assessment-organism.md`).
 
 ### Capacity system (Rounds 1-3, May 2026)
 - 12 capacity domains (3 tiers): cardiorespiratory, muscular_strength, muscular_endurance, flexibility, body_composition (health-related); power, balance, coordination, agility (skill-related); cognitive_motor, movement_quality, autonomic_regulation (integrative).
