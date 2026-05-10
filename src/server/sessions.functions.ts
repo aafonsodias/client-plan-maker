@@ -37,6 +37,17 @@ const SetLogSchema = z.object({
   rpe: z.string().max(10).optional().default(""),
   done: z.boolean().optional().default(false),
   ts: z.string().max(40).optional().nullable(),
+  // Mode-specific fields — all optional so legacy strength sets still parse.
+  // cardio
+  duration_s: z.number().int().min(0).max(36_000).optional(),
+  distance_m: z.number().min(0).max(1_000_000).optional(),
+  avg_hr: z.number().int().min(20).max(250).optional(),
+  // intervals
+  rounds: z.number().int().min(0).max(200).optional(),
+  work_s: z.number().int().min(0).max(36_000).optional(),
+  rest_s: z.number().int().min(0).max(36_000).optional(),
+  // mobility / skill
+  hold_s: z.number().int().min(0).max(36_000).optional(),
 });
 
 const EntrySchema = z.object({
