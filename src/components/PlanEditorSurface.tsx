@@ -358,10 +358,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
           <span className="inline-flex items-center gap-2 normal-case tracking-normal">
             <SettingsIcon className="h-3.5 w-3.5" />
-            <span className="font-semibold uppercase tracking-widest">Detalhes & ações do plano</span>
-            {plan?.title && (
-              <span className="ml-1 truncate text-[11px] font-normal text-muted-foreground/80">— {plan.title}</span>
-            )}
+            <span className="font-semibold uppercase tracking-widest">Detalhes & acções do plano</span>
           </span>
           <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
         </summary>
