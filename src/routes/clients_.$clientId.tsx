@@ -5984,10 +5984,16 @@ function RxImplications({
   sectionId,
   assessment,
   riskCategory,
+  collapsible = false,
+  riskChip,
+  extra,
 }: {
   sectionId: "risk" | "parq" | "training" | "goal" | "anthro" | "readiness" | "lifestyle" | "nutrition" | "screen" | "performance";
   assessment: any;
   riskCategory: string;
+  collapsible?: boolean;
+  riskChip?: { level: string; tone: string };
+  extra?: React.ReactNode;
 }) {
   const items: RxItem[] = (() => {
     switch (sectionId) {
@@ -6028,6 +6034,60 @@ function RxImplications({
     },
   };
 
+  const cards = (
+    <ul className="grid gap-1.5 sm:grid-cols-2">
+      {items.map((it) => {
+        const tone = TONE[it.tone];
+        return (
+          <li
+            key={it.key}
+            className={`flex items-start gap-2.5 rounded-md border px-2.5 py-2 ${tone.wrap}`}
+          >
+            <span
+              className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${tone.icon}`}
+              aria-hidden
+            >
+              {it.icon}
+            </span>
+            <div className="min-w-0">
+              <div className={`text-[12px] font-medium leading-tight ${tone.title}`}>{it.title}</div>
+              <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{it.body}</div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  if (collapsible) {
+    const chipTone =
+      riskChip?.tone === "high"
+        ? "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300"
+        : riskChip?.tone === "moderate"
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          : "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    return (
+      <details className="group mt-4 rounded-lg border border-border/60 bg-background/30">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2">
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-open:rotate-90" />
+          <h4 className="eyebrow text-foreground/80">Análise & prescrição</h4>
+          {riskChip && (
+            <span className={`rounded-full border px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wider ${chipTone}`}>
+              ACSM: {riskChip.level}
+            </span>
+          )}
+          <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
+            {items.length} {items.length === 1 ? "regra" : "regras"}
+          </span>
+        </summary>
+        <div className="space-y-2 px-3 pb-3 pt-1">
+          {cards}
+          {extra}
+        </div>
+      </details>
+    );
+  }
+
   return (
     <section className="mt-4 space-y-2">
       <header className="flex items-baseline justify-between">
@@ -6036,28 +6096,7 @@ function RxImplications({
           {items.length} {items.length === 1 ? "regra" : "regras"}
         </span>
       </header>
-      <ul className="grid gap-1.5 sm:grid-cols-2">
-        {items.map((it) => {
-          const tone = TONE[it.tone];
-          return (
-            <li
-              key={it.key}
-              className={`flex items-start gap-2.5 rounded-md border px-2.5 py-2 ${tone.wrap}`}
-            >
-              <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${tone.icon}`}
-                aria-hidden
-              >
-                {it.icon}
-              </span>
-              <div className="min-w-0">
-                <div className={`text-[12px] font-medium leading-tight ${tone.title}`}>{it.title}</div>
-                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{it.body}</div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      {cards}
     </section>
   );
 }
