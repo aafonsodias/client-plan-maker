@@ -1759,6 +1759,33 @@ function ClientDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          {/* Round D · Bug 1 — Confirmation when generating from a partial assessment. */}
+          <AlertDialog open={incompleteWarnOpen} onOpenChange={setIncompleteWarnOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("generate.incomplete_title")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("generate.incomplete_body", {
+                    done: briefCoverage?.done ?? 0,
+                    total: briefCoverage?.total ?? 14,
+                  })}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("generate.incomplete_cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    const run = pendingGenerateRef.current;
+                    pendingGenerateRef.current = null;
+                    setIncompleteWarnOpen(false);
+                    if (run) run();
+                  }}
+                >
+                  {t("generate.incomplete_confirm")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
