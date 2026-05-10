@@ -532,7 +532,7 @@ export const getTodayForToken = createServerFn({ method: "POST" })
       }
     }
     if (slots.length === 0) {
-      throw new Error("This plan has no scheduled sessions yet.");
+      return { plan_id: plan.id, week_number: 1, day_label: "", session_date: new Date().toISOString().slice(0, 10), resumed_draft: false, empty: true as const };
     }
 
     const { data: rows } = await supabaseAdmin
