@@ -4652,7 +4652,7 @@ function SectionBlock({
         <>
           {children}
           {footer}
-          {(analysing || analysis) && (
+          {(analysing || analysis) && id !== "risk" && (
             <SectionAnalysisCard analysing={analysing} analysis={analysis ?? null} />
           )}
         </>
@@ -5105,6 +5105,9 @@ function ClientSnapshotCard({
         <div>
           <p className="eyebrow text-muted-foreground">{t("detail.snapshot.risk_acsm")}</p>
           <p className={`mt-0.5 text-lg font-light tracking-tight ${riskTone}`}>{riskLabel}</p>
+          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+            {t(`detail.snapshot.risk_acsm_meaning_${riskCategory}`, { defaultValue: t("detail.snapshot.risk_acsm_help") })}
+          </p>
         </div>
         <div>
           <p className="eyebrow text-muted-foreground">{t("detail.snapshot.recovery")}</p>

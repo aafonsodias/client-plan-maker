@@ -533,6 +533,10 @@
       "title": "Client snapshot",
       "last": "Last assessment · {{when}}",
       "risk_acsm": "ACSM risk",
+      "risk_acsm_help": "American College of Sports Medicine risk stratification: combines cardiovascular risk factors (age, smoking, hypertension, dyslipidemia, pre-diabetes, obesity, family history) and symptoms to set how hard we can push intensity.",
+      "risk_acsm_meaning_low": "No relevant factors — free prescription within the ACSM ruler, including vigorous intensities.",
+      "risk_acsm_meaning_moderate": "≥2 factors or mild symptoms — cap high intensity without clinical screening and monitor cardiovascular signs.",
+      "risk_acsm_meaning_high": "Known disease or symptoms — require medical clearance before vigorous progressions.",
       "recovery": "Recovery",
       "composition": "Composition"
     },
