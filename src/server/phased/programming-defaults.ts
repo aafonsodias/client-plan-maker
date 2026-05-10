@@ -3,6 +3,74 @@ import type { ProgrammingVariables, RedFlagAccommodation } from "./schemas";
 import type { KnowledgeRules } from "@/server/knowledge/schema";
 
 /**
+ * Fase A — "começar por baixo" determinístico.
+ *
+ * Decide a janela de RPE inicial e o tier de volume da Semana 1 a partir
+ * dos sinais que o brief já carrega (training_age_band + red_flags).
+ * Usado para alimentar `defaultProgrammingVariables` (Cockpit) e — futuramente
+ * — para sobrepor o anchor da wave no path legacy de regen.
+ *
+ * Convenção:
+ * - rpe_floor é o piso da Semana 1 (input para Stage 3, que já tem matriz por tier).
+ * - rpe_ceiling é o tecto que o Cockpit mostra ao treinador (pode ser baixado).
+ * - volume_tier mapeia 1:1 para o tier do `programming-tier.server.ts` (remedial /
+ *   conservative / advanced) — usamos a heurística do brief só (sem assessment),
+ *   que é "menos completa mas honesta": fica conservador quando em dúvida.
+ */
+export type StartingFloor = {
+  rpe_floor: number;
+  rpe_ceiling: number;
+  volume_tier: "MEV" | "MAV" | "MRV";
+  weeks_to_progress: 2 | 3 | 4;
+  reason: string[];
+};
+
+export function deriveStartingFloor(brief: Brief): StartingFloor {
+  const age = brief.training_age_band;
+  const redFlagsCount = (brief.red_flags ?? []).length;
+  const reason: string[] = [];
+
+  // Default = intermediate baseline.
+  let rpe_floor = 6.5;
+  let rpe_ceiling = 9.0;
+  let volume_tier: StartingFloor["volume_tier"] = "MAV";
+  let weeks_to_progress: StartingFloor["weeks_to_progress"] = 3;
+
+  if (age === "advanced") {
+    rpe_floor = 7.0;
+    rpe_ceiling = 9.5;
+    volume_tier = "MAV";
+    weeks_to_progress = 2;
+    reason.push("training_age=advanced");
+  } else if (age === "beginner") {
+    rpe_floor = 5.5;
+    rpe_ceiling = 8.0;
+    volume_tier = "MEV";
+    weeks_to_progress = 4;
+    reason.push("training_age=beginner → MEV start");
+  } else {
+    reason.push("training_age=intermediate");
+  }
+
+  // Any structural red flag → drop a notch on both ends and start at MEV.
+  // Schema mínimo do ceiling é 7.5, por isso clampamos.
+  if (redFlagsCount >= 2) {
+    rpe_floor = Math.min(rpe_floor, 5.5);
+    rpe_ceiling = Math.max(7.5, Math.min(rpe_ceiling, 8.0));
+    volume_tier = "MEV";
+    weeks_to_progress = 4;
+    reason.push(`red_flags=${redFlagsCount} → conservative start`);
+  } else if (redFlagsCount === 1) {
+    rpe_floor = Math.min(rpe_floor, 6.0);
+    rpe_ceiling = Math.max(7.5, Math.min(rpe_ceiling, 8.5));
+    if (volume_tier === "MAV") volume_tier = "MEV";
+    reason.push("red_flags=1 → MEV start");
+  }
+
+  return { rpe_floor, rpe_ceiling, volume_tier, weeks_to_progress, reason };
+}
+
+/**
  * Smart defaults for the coach-facing PROGRAMMING SETUP card.
  * Derived from the brief — coach can override every field.
  */
@@ -15,8 +83,14 @@ export function defaultProgrammingVariables(brief: Brief): ProgrammingVariables 
   else if (sessions === 6) training_split = "ppl";
   else training_split = "ppl_x2";
 
-  const age = brief.training_age_band;
-  const rpe_ceiling = age === "beginner" ? 8.0 : age === "intermediate" ? 9.0 : 9.5;
+  // Fase A — derive RPE ceiling from BOTH training age and red flags.
+  // Antes: tabela age-only → 8/9/9.5. Resultado: clientes iniciantes com
+  // red_flags apareciam com tecto 9.0 no Cockpit. Agora o tecto cai
+  // automaticamente quando o intake mostra estrutura comprometida.
+  const floor = deriveStartingFloor(brief);
+  const rpe_ceiling = floor.rpe_ceiling;
+  const cockpit_preset: ProgrammingVariables["cockpit_preset"] =
+    floor.volume_tier === "MEV" ? "conservative" : "custom";
 
   return {
     training_split,
@@ -27,7 +101,7 @@ export function defaultProgrammingVariables(brief: Brief): ProgrammingVariables 
     intensity_volume_tradeoff: "moderate_moderate",
     wave_model: "undulating",
     autoreg_strictness: "suggested",
-    cockpit_preset: "custom",
+    cockpit_preset,
   };
 }
 
