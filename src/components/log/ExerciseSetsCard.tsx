@@ -20,7 +20,24 @@ export type SetLog = {
   rpe?: string;
   done: boolean;
   ts?: string | null;
+  // Mode-specific (all optional)
+  duration_s?: number;
+  distance_m?: number;
+  avg_hr?: number;
+  rounds?: number;
+  work_s?: number;
+  rest_s?: number;
+  hold_s?: number;
 };
+
+export type LoggerMode =
+  | "strength"
+  | "hypertrophy"
+  | "cardio"
+  | "intervals"
+  | "mobility"
+  | "skill"
+  | "mixed";
 
 export type LogEntryV2 = {
   exercise_name: string;
@@ -73,6 +90,7 @@ export function ExerciseSetsCard({
   token,
   planId,
   onSetKeyDown,
+  mode = "strength",
 }: {
   entry: LogEntryV2;
   index: number;
@@ -84,6 +102,7 @@ export function ExerciseSetsCard({
     setIndex: number,
     field: "reps" | "weight" | "rpe",
   ) => void;
+  mode?: LoggerMode;
 }) {
   const fetchHistory = useServerFn(getExerciseHistory);
   const [history, setHistory] = useState<Awaited<ReturnType<typeof getExerciseHistory>>>([]);
