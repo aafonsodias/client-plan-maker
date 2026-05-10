@@ -506,3 +506,13 @@ Hidden behind `VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS` per assessment foundation
 | `nutrition.ext_processed_food_freq` | §9 Nutrition (clients_.$clientId.tsx) | No documented downstream consumer per audit |
 | `nutrition.ext_water_l_per_day` | §9 Nutrition (clients_.$clientId.tsx) | No documented downstream consumer per audit |
 | `posture.standing_posture_notes` | §11 Posture (clients_.$clientId.tsx) | No documented downstream consumer per audit |
+
+### Round D — Walkthrough P0 fixes (10 May 2026)
+
+| # | P | Área | Item | Status |
+|---|---|---|---|---|
+| 109 | P0 | clients/$id | Concluir avaliação sempre habilitado; AlertDialog confirma quando parcial (`generate.incomplete_*` em pt/en/es/hi) | R D ✅ |
+| 110 | P0 | SmartGoalSection | Template selecionado dentro da categoria com estado visual claro (`bg-foreground/10 ring-foreground/30`, badge em foreground) | R D ✅ |
+| 111 | P0 | clients/$id | Rockport wizard — pulls weight/age/sex, asks mm:ss + post-walk HR, computes VO₂max via fórmula ACSM, classifica poor/fair/good/excellent | R D ✅ |
+| 112 | P0 | RxImplications | Live update por secção em Mobility/Movement/Nutrition — RxImplications já recomputa por re-render (passa assessment); o que falta é **per-section analysis function** (CC9). Adiar para Round E (arquitetura pre-stage por secção). | deferred → Round E |
+| 113 | P0 | clients/$id | Verificar persistência de estado parcial — autosave já corre via `flushPendingSave`/debounce (lines 1140+); upsert em `assessments` ocorre em qualquer % de preenchimento. Sem regressão observada. | R D ✅ verified |
