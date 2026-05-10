@@ -822,10 +822,17 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             clientId={client.id}
             assessmentId={plan.assessment_id}
             durationWeeks={plan.duration_weeks ?? 4}
+            isPhasedComplete={isPhasedComplete}
             previousPlan={{ title: plan.title, summary: plan.summary, weeks: data.weeks }}
-            onRegenerated={(newPlan) => {
+            onRegenerated={async (newPlan) => {
               setData({ weeks: newPlan.weeks ?? [] });
               setPlan({ ...plan, title: newPlan.title ?? plan.title, summary: newPlan.summary ?? plan.summary });
+              // Phased plans rebuild from workout_plan_days on every reload —
+              // refetch immediately so the realtime channel can't snap us back
+              // to stale rows.
+              if (isPhasedComplete) {
+                await reloadPlanDays();
+              }
             }}
           />
         )}
