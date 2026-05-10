@@ -3163,44 +3163,42 @@ function ClientDetail() {
                     );
                   })() : (() => {
                     const assessmentComplete = !!briefCoverage && briefCoverage.total > 0 && briefCoverage.done >= briefCoverage.total;
-                    const remaining = briefCoverage ? Math.max(0, briefCoverage.total - briefCoverage.done) : 0;
-                    const tooltip = assessmentComplete
-                      ? undefined
-                      : `Faltam ${remaining} ${remaining === 1 ? "campo" : "campos"} da avaliação`;
-                    const lockedClass = !assessmentComplete
-                      ? "w-full sm:w-auto cursor-not-allowed border border-dashed border-amber-500/40 bg-muted/30 hover:bg-muted/30 text-muted-foreground/90"
-                      : "w-full sm:w-auto";
+                    // Round D · Bug 1 — never disable from incompleteness;
+                    // gate via warning dialog instead. Visual hint kept
+                    // (amber dashed border) so trainer sees the state.
+                    const cls = assessmentComplete
+                      ? "w-full sm:w-auto"
+                      : "w-full sm:w-auto border border-dashed border-amber-500/50";
+                    const guard = (run: () => void) => {
+                      if (assessmentComplete) { run(); return; }
+                      pendingGenerateRef.current = run;
+                      setIncompleteWarnOpen(true);
+                    };
                     return phasedEnabled ? (
                       <Button
-                        onClick={() => void runPhasedStart()}
-                        disabled={busy || phasedBusy || !assessmentComplete}
+                        onClick={() => guard(() => void runPhasedStart())}
+                        disabled={busy || phasedBusy}
                         size="lg"
-                        className={lockedClass}
-                        title={tooltip}
+                        className={cls}
                       >
                         {phasedBusy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : assessmentComplete ? (
-                          <Sparkles className="mr-2 h-4 w-4" />
                         ) : (
-                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                          <Sparkles className="mr-2 h-4 w-4" />
                         )}
                         {t("generate.button")}
                       </Button>
                     ) : (
                       <Button
-                        onClick={() => void generate()}
-                        disabled={busy || !assessmentComplete}
+                        onClick={() => guard(() => void generate())}
+                        disabled={busy}
                         size="lg"
-                        className={lockedClass}
-                        title={tooltip}
+                        className={cls}
                       >
                         {busy ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : assessmentComplete ? (
-                          <Sparkles className="mr-2 h-4 w-4" />
                         ) : (
-                          <Lock className="mr-2 h-4 w-4 text-amber-400" />
+                          <Sparkles className="mr-2 h-4 w-4" />
                         )}
                         {t("generate.button")}
                       </Button>
