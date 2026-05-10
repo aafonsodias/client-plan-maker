@@ -1689,6 +1689,7 @@ function RegenerateWithFeedbackDialog({
   durationWeeks,
   previousPlan,
   onRegenerated,
+  isPhasedComplete,
 }: {
   planId: string;
   clientId: string;
@@ -1696,6 +1697,7 @@ function RegenerateWithFeedbackDialog({
   durationWeeks: number;
   previousPlan: { title: string; summary: string | null; weeks: Week[] };
   onRegenerated: (plan: { title?: string; summary?: string; weeks?: Week[] }) => void;
+  isPhasedComplete: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -1704,6 +1706,7 @@ function RegenerateWithFeedbackDialog({
     { done: 0, total: 0, phase: "idle" },
   );
   const generateWeekFn = useServerFn(generatePlanWeek);
+  const persistFn = useServerFn(persistRegeneratedPlan);
 
   const submit = async () => {
     if (!feedback.trim()) {
