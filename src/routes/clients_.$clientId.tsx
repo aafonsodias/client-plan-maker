@@ -4161,6 +4161,12 @@ function AssessmentSection({
     try { window.localStorage.setItem(activeKey, activeId); } catch { /* ignore */ }
   }, [activeId, activeKey]);
 
+  // Notify parent so the page-level progress strip ("Section N/14 · X%")
+  // can reflect the focused section instead of staying stuck on PAR-Q.
+  useEffect(() => {
+    onActiveChange?.(activeId);
+  }, [activeId, onActiveChange]);
+
   // In focused mode, the active section is always open (never collapsed
   // inside its own card — the toggle exists for "see all" mode only).
   useEffect(() => {
