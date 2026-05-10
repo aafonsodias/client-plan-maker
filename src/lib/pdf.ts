@@ -1279,16 +1279,6 @@ function tradeoffReason(t: string | undefined): string {
   }
 }
 
-const PATTERN_LABEL: Record<PatternId, string> = {
-  squat: "Agachamento",
-  hinge: "Hip hinge",
-  push: "Empurrar",
-  pull: "Puxar",
-  lunge: "Avanço",
-  rotation: "Rotação",
-  carry: "Transporte",
-};
-
 const STRATEGY_COLOR: Record<string, [number, number, number]> = {
   AVOID: [220, 38, 38],       // red-600
   MODIFY: [217, 119, 6],      // amber-600
