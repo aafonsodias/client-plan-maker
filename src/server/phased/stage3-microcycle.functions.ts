@@ -27,6 +27,13 @@ import {
   type PrescriptionParameters,
   type FittVpViolation,
 } from "@/server/fitt-vp/derive.server";
+import {
+  deriveInjuryBans,
+  injuryBansPromptBlock,
+  findBannedExercisesInDay,
+  type InjuryBan,
+  type InjuryRow,
+} from "./exercise-filters.server";
 
 /**
  * Lowercase / strip variant suffix to compare exercise names across blocks.
