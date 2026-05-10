@@ -2998,7 +2998,13 @@ function ClientDetail() {
                 ["ext_mob_wrist", "wrist"],
                 ["ext_mob_knee", "knee"],
               ] as const).map(([key, labelKey]) => (
-                <ScoreRow key={key} label={t(`mobility_block.${labelKey}` as const)} value={assessment[key]} onChange={(v) => setAssessment({ ...assessment, [key]: v })} />
+                <ScoreRow
+                  key={key}
+                  label={t(`mobility_block.${labelKey}` as const)}
+                  hint={t(`mobility_block.${labelKey}_hint` as never, { defaultValue: "" }) as string}
+                  value={assessment[key]}
+                  onChange={(v) => setAssessment({ ...assessment, [key]: v })}
+                />
               ))}
             </div>
             <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
