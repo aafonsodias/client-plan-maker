@@ -6082,6 +6082,10 @@ function RxImplications({
   collapsible = false,
   riskChip,
   extra,
+  summary,
+  summaryDescription,
+  insight,
+  insightLoading = false,
 }: {
   sectionId: "risk" | "parq" | "training" | "goal" | "anthro" | "readiness" | "lifestyle" | "nutrition" | "screen" | "performance";
   assessment: any;
@@ -6089,6 +6093,12 @@ function RxImplications({
   collapsible?: boolean;
   riskChip?: { level: string; tone: string };
   extra?: React.ReactNode;
+  /** Section completion summary (was rendered separately as CompletionStrip). */
+  summary?: string;
+  summaryDescription?: string;
+  /** Per-section AI insight (was rendered separately as SectionAnalysisCard). */
+  insight?: string | null;
+  insightLoading?: boolean;
 }) {
   const items: RxItem[] = (() => {
     switch (sectionId) {
@@ -6154,6 +6164,43 @@ function RxImplications({
     </ul>
   );
 
+  // Top strip (was CompletionStrip) — folded inside the same panel so the
+  // section ends with ONE titled card (not 3 stacked).
+  const summaryStrip = summary ? (
+    <div className="flex items-start gap-2.5 rounded-md bg-emerald-500/[0.06] px-2.5 py-2 text-emerald-900/90 dark:text-emerald-100/90">
+      <span
+        className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+        aria-hidden
+      >
+        <Check className="h-3 w-3" strokeWidth={2.75} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium leading-tight">{summary.replace(/^\s*✓\s*/, "")}</p>
+        {summaryDescription && (
+          <p className="mt-0.5 text-[11px] leading-snug text-emerald-900/65 dark:text-emerald-100/65">
+            {summaryDescription}
+          </p>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  // Insight (was SectionAnalysisCard) — second in gravity order.
+  const insightStrip = insightLoading ? (
+    <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      <span>A analisar…</span>
+    </div>
+  ) : insight && insight.trim() ? (
+    <figure className="rounded-md bg-muted/30 px-3 py-2">
+      <figcaption className="eyebrow mb-1 flex items-center gap-1.5 text-muted-foreground">
+        <Sparkles className="h-3 w-3 text-amber-500/80" aria-hidden />
+        <span>Insight</span>
+      </figcaption>
+      <blockquote className="text-[12px] leading-relaxed text-foreground/85">{insight}</blockquote>
+    </figure>
+  ) : null;
+
   if (collapsible) {
     const chipTone =
       riskChip?.tone === "high"
@@ -6176,6 +6223,8 @@ function RxImplications({
           </span>
         </summary>
         <div className="space-y-2 px-3 pb-3 pt-1">
+          {summaryStrip}
+          {insightStrip}
           {cards}
           {extra}
         </div>
@@ -6191,6 +6240,8 @@ function RxImplications({
           {items.length} {items.length === 1 ? "regra" : "regras"}
         </span>
       </header>
+      {summaryStrip}
+      {insightStrip}
       {cards}
     </section>
   );
