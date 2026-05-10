@@ -1,160 +1,87 @@
-## Goal
+## Objectivo
 
-Turn `assessment-{client}.pdf` from a flat field dump into the **single document a trainer can hand the client** that explains both:
+Limpar o topo de `/plans/$id` (acima da tabela) eliminando duplicação sem remover funcionalidade. Hoje há 7 surfaces empilhadas + título repetido 3× + 5 entradas de PDF dispersas. Resultado-alvo: 3 surfaces, 1 título, 1 menu de exportação.
 
-1. **What we found** (synthesis: risk class, recovery, body comp, movement readouts, red flags)
-2. **What it means for your training** (programming impact: RPE ceiling, wave model, deload frequency, exercise accommodations — each line tied back to the finding that drove it)
+## Regra de "zero perda"
 
-## Why now
+Toda acção que existe hoje continua acessível em ≤ 2 cliques. Nada removido — apenas reorganizado, agrupado ou movido para o sítio mais correcto.
 
-Today's PDF (per the screenshot) shows ~10 labels with "—" values, garbled SMART text (`f r o m   c u r r e n t   7 2 ! '   d   5 8`) and zero interpretation. The synthesis dashboard already exists in-app (`AssessmentSynthesisDashboard`); the PDF just isn't using any of it.
+## Mudanças
 
-## Plan
+### 1. Título: 3× → 1×
+- Header da `AppShell` deixa de incluir o título do plano. Mostra: avatar+nome do cliente · chip "Bloco N · Sem X/Y" · status chip.
+- Label do `<summary>` do `<details>` deixa de repetir o título — fica só "Detalhes & acções do plano ▾".
+- O `<Input>` editável dentro do `<details>` continua a ser a única fonte de verdade para o título.
 
-### 1. Extend `renderAssessmentPdf` signature
+### 2. PDF: 5 entradas → 1 menu "Exportar ▾"
+Consolidar num único `DropdownMenu` no header (sempre visível, fora do `<details>`):
+- **Plano completo** (todas as semanas) — actual botão amber `exportPdf`
+- **Semana actual** — actual "PDF · Sem. N" do hero
+- **Avaliação do cliente** — actual `PlanAssessmentSheet`
 
-`src/lib/pdf.ts`:
+Remover:
+- Botão amber "PDF" duplicado dentro da barra de acções do `<details>` (fica só no menu)
+- Sticky `Export PDF` do modo Edit (linha 946) — redundante com header
 
-```ts
-type RenderAssessmentArgs = {
-  assessment: any;
-  client: { full_name?: string | null; email?: string | null } | null;
-  plan?: {                                  // NEW
-    title?: string | null;
-    programming_variables?: any | null;
-    red_flag_accommodations?: Array<{ flag: string; strategy: string; rationale?: string; substitution?: string }> | null;
-  } | null;
-  sectionAnalyses?: Record<string, { summary?: string | null; red_flags?: string[] } | null>;  // NEW
-  t?: (key: string, opts?: any) => string;
-};
-```
+### 3. CTAs de "fechar bloco": 2 → 1
+- Manter `<NextBlockCard>` (linha 741) que é o componente canónico.
+- Remover o painel inline "Bloco N · pronto para fechar" + `BlockTransitionDialog` (linhas 753–812, ~60 LoC).
+- Garantir que `NextBlockCard` expõe ambas as acções: "Marcar como concluído" e "Iniciar Bloco N+1" (verificar antes de remover; se faltar a primeira, portá-la para lá).
 
-### 2. Add a tiny ASCII sanitiser (fixes the garbled SMART text)
-
-```ts
-function ascii(s: string): string {
-  return s
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/\u2192/g, "->")
-    .replace(/\u2191/g, "↑→up").replace(/\u2191/g, "up")
-    .replace(/[^\x00-\xFF]/g, "");
-}
-```
-
-Wrap every `doc.text(...)` value through `ascii()` (or do it inside a thin `text()` helper used everywhere in this function). Future-proofs against any Unicode the trainer types.
-
-### 3. New page structure
+### 4. Banners empilhados: 7 → 1 "Acções pendentes"
+Criar `<PlanPendingActions>` que mostra **só o item de maior prioridade**:
 
 ```
-┌─────────────────────────────────────────────┐
-│ PAGE 1 — SÍNTESE                            │
-│  Header (existing, kept)                    │
-│  ─ 3 tiles: ACSM Risk · Recovery · BodyComp │
-│  ─ Triagem de movimento (radar-as-list):    │
-│     Agachamento  4/5 ✓ cleared              │
-│     Hip hinge    2/5 ⚠ needs work           │
-│     ...                                     │
-│  ─ Sinais de alerta (red flags):            │
-│     • Lombalgia recorrente   [MODIFY]       │
-│     • PA elevada              [MONITOR]     │
-├─────────────────────────────────────────────┤
-│ PAGE 2 — IMPACTO NA PRESCRIÇÃO              │
-│  ─ Variáveis programadas (5 knobs):         │
-│     RPE máx        7   "porque sono 5/10 +  │
-│                         lombalgia"          │
-│     Modelo de onda step  "estabilizar antes │
-│                           de wave clássica" │
-│     Deload         a cada 4 sem             │
-│     Vol↔Int        volume-leaning           │
-│  ─ Acomodações por red flag:                │
-│     Lombalgia → MODIFY · evitar agachamento │
-│       de costas; usar hex-bar; RPE máx 7    │
-│     Hipertensão → MONITOR · pausar isométr. │
-│  ─ Intenção programática (notes_for_next_…) │
-│  ─ Objetivo SMART                           │
-├─────────────────────────────────────────────┤
-│ PAGE 3 — DADOS BRUTOS (only if not empty)   │
-│  Demographics · Lifestyle · Anthropometrics │
-│  (existing kv tables, but skip rows with —) │
-└─────────────────────────────────────────────┘
+prioridade:  human-review > demo-seed > legacy-plan
+             > next-week > next-block > validation
 ```
 
-Footer (existing) kept.
+Os restantes ficam acessíveis num "▾ Mais (N)" dentro do mesmo cartão. Validation report e legacy banner continuam acessíveis — apenas não competem por atenção visual.
 
-### 4. Helper additions inside `renderAssessmentPdf`
+### 5. "Branding" → fora desta página
+O link inline para `/settings` (linha 639) sai do header de acções. Já existe acesso a Settings na nav principal. Sem perda — só limpeza.
 
-- `tile(label, value, caption, tone)` — renders one of the three synthesis tiles in a row (3-col grid spanning content width)
-- `flagRow(flag, strategy, rationale)` — bullet + AVOID/MODIFY/MONITOR/ACCOMMODATE pill (reuse the colour map from `AssessmentSynthesisDashboard`: AVOID=red, MODIFY=amber, MONITOR=teal, ACCOMMODATE=muted)
-- `kvWithReason(label, value, reason)` — programming variable + small italic muted "porque …" line below
-- `skipIfEmpty(rows)` — only render kv rows where value is not "—" / null
+### 6. "Re-gerar resumo" → dentro do Summary
+O botão (linhas 558–587) move-se para dentro do header colapsável do Summary, à direita do "Summary (empty)". Só aparece quando `summaryLooksLeaked()` — comportamento idêntico, posição mais lógica.
 
-### 5. Movement screen → readout
+## Layout final
 
-Pull from `assessment.{pattern}_form_criteria` for each of the 7 patterns and compute `formScore()` (helper already in the route file — extract to a shared `src/lib/assessment-scoring.ts` to use from both places). Render as a 2-column list with `n/5` and a ✓ (≥3) or ⚠ (<3) marker. No actual radar SVG — keeps it simple and readable in print.
+```
+┌─ AppShell header ──────────────────────────────────────────┐
+│  ← All plans  │ [avatar] Cliente → · Bloco 1 · Sem 1/4    │
+│               │ [Pronto] [Exportar ▾] [Logbook]            │
+└────────────────────────────────────────────────────────────┘
 
-### 6. Programming-impact narrative
+[ ▸ Detalhes & acções do plano ]                  ← colapsado
+   └── Título editável + chips (block-evolved, rotation, lift)
+   └── Acções: Share · Importar registo · Template
+              · Re-ancorar RPE · Delete
+   └── Summary (com "Re-gerar" inline)
 
-For each of the 5 knobs in `programming_variables`, render the value plus a short rationale. The rationale comes from a small static lookup (NOT another AI call):
+[ Acções pendentes ]                              ← 1 cartão
+   (mostra a prioridade mais alta; resto em "▾ Mais")
 
-```ts
-function rpeReason(pv, a): string {
-  if (pv.rpe_ceiling <= 7 && (a.sleep_quality ?? 10) <= 5) return "sono baixo limita intensidade";
-  if (pv.rpe_ceiling <= 7 && (a.stress_level ?? 0) >= 7)    return "stress elevado limita intensidade";
-  if (pv.rpe_ceiling <= 7) return "primeiro bloco — margem de segurança";
-  return "atleta tolera carga próxima do máximo";
-}
-// similar pure helpers for wave_model, deload_frequency, intensity_volume_tradeoff
+[ Tabs: View · Edit · Log · Resultados · Progresso ] [Regen]
+
+[ TABELA ]
 ```
 
-This keeps the document deterministic and auditable.
+## Ficheiros tocados
 
-### 7. Wire data through at call site
+- `src/components/PlanEditorSurface.tsx` — refactor principal, ~150 LoC removidas
+- `src/components/AppShell.tsx` (ou wrapper de header do plano) — adicionar slot para chip+menu Exportar
+- `src/components/PlanPendingActions.tsx` — **novo**, agrega os 6 banners com prioridade
+- `src/components/PlanExportMenu.tsx` — **novo**, dropdown unificado dos 3 PDFs
 
-`src/routes/clients_.$clientId.tsx` — both call sites of `renderAssessmentPdf` (the dropdown `Documentos → Download PDF` and the new `Avaliação · PDF` chip) need to pass:
+## Validação
 
-```ts
-renderAssessmentPdf({
-  assessment,
-  client,
-  plan: heroPlan
-    ? {
-        title: heroPlan.title,
-        programming_variables: planRow?.programming_variables ?? null,
-        red_flag_accommodations: inlineBrief?.accommodations ?? null,
-      }
-    : null,
-  sectionAnalyses,
-  t: t as any,
-});
-```
+- Mobile 375px smoke (i18n PT-PT)
+- Cada acção que existe hoje tem de continuar alcançável em ≤ 2 cliques
+- Tour anchors (`data-tour="plan-header|plan-block-chip"`) preservados
+- Sem alteração de lógica de negócio, sem migração de DB, sem mudança de copy fora dos 2 sítios renomeados
 
-### 8. Skip-if-empty everywhere
+## Fora de âmbito
 
-The current PDF prints `—` in every empty cell, which is what made the screenshot look broken. Change `kv()` to filter out rows whose value is empty before deciding row count. If a whole section has no non-empty values, skip the section title too.
-
-## Files touched
-
-- `src/lib/pdf.ts` — bulk of the work (≈250 LoC added in `renderAssessmentPdf`, plus `ascii()` helper).
-- `src/lib/assessment-scoring.ts` (NEW, ≈30 LoC) — extracted `formScore` + `PATTERN_IDS` + `parqFlagCount` so both PDF and route share one source of truth.
-- `src/routes/clients_.$clientId.tsx` — update both `renderAssessmentPdf(...)` call sites with the extended args; replace local `formScore`/`PATTERN_IDS` imports with the shared module.
-
-No DB migration. No new translations required (PDF text already goes through `tr(key, fallback)`); new keys default-fallback to PT-PT strings.
-
-## Out of scope
-
-- A separate PDF for the plan (already exists via `generatePlanPdf`).
-- Real radar SVG in PDF (list readout is enough; can revisit if a trainer asks).
-- Re-running stage1 to backfill missing fields — this is a presentation fix, not a generation fix.
-- Adding a header logo / white-label (PDF spec already kept logo-less per memory).
-
-## QA checklist before declaring done
-
-1. Render with the same client from the screenshot (Aspiringbaconeer) — confirm SMART measurable shows correctly (`from current 72 -> 58`).
-2. Render with a client that has no plan yet — Page 2 must gracefully say "Plano ainda não gerado" instead of crashing.
-3. Render with a client with 0 red flags — Red-flags block hidden, not "0 alerts".
-4. PDF stays ≤ 3 pages for the typical trainer.
-5. Convert to image with `pdftoppm` and visually confirm no overflow / clipping (mandatory PDF-skill QA).
-
-Estimate: ~10–12 credits.
+- Redesenhar `NextBlockCard` / `NextWeekCard` / `ValidationReport` internamente
+- Mexer na tabela ou modos (View/Edit/Log/etc.)
+- Tradução de novas strings (reutilizamos as existentes)
