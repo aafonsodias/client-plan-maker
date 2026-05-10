@@ -2729,24 +2729,29 @@ function ClientDetail() {
             )}
           </SectionBlock>
           {/* Lifestyle (rebuilt) */}
-          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}/10 · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
+          <SectionBlock id="lifestyle" analysing={analysingSections["lifestyle"]} analysis={sectionAnalyses["lifestyle"]} title={t("lifestyle_block.title")} hint={t("lifestyle_block.hint")} defaultCollapsed complete={isSectionComplete("lifestyle", assessment)} provenance={assessment.provenance?.lifestyle} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("lifestyle", assessment) ? <CompletionStrip text={t("lifestyle_block.complete", { summary: `sono ${assessment.sleep_quality ?? "—"}h · stress ${assessment.stress_level ?? "—"}/10` })} description={t("lifestyle_block.complete_meaning")} /> : null}>
             <div className="mb-3 grid gap-3 sm:grid-cols-2">
               <AnchoredSlider
-                label="Como anda o sono?"
-                value={Number(assessment.sleep_quality) || 5}
+                label="Horas de sono médias por noite"
+                value={Number(assessment.sleep_quality) || 7}
                 onChange={(v) => setAssessment({ ...assessment, sleep_quality: v as any })}
+                min={4}
+                max={10}
+                step={1}
+                unit="h"
                 trailing={
                   <HelpPopover label="Sono">
-                    <p>Avalia a qualidade média das últimas 4 semanas (PSQI item global).
-                    Sono mau prediz pior recuperação e maior risco de lesão.</p>
+                    <p>Média de horas dormidas por noite nas últimas 4 semanas.
+                    Menos de 6h prediz pior recuperação e maior risco de lesão.</p>
                   </HelpPopover>
                 }
                 anchors={[
-                  { upTo: 2, label: "Mau — acorda exausto, várias noites por semana" },
-                  { upTo: 4, label: "Irregular — custa adormecer ou acorda a meio" },
-                  { upTo: 6, label: "Razoável — algumas noites boas, outras nem por isso" },
-                  { upTo: 8, label: "Bom — dorme bem na maioria das noites" },
-                  { upTo: 10, label: "Excelente — descansa profundamente todas as noites" },
+                  { upTo: 4, label: "≤4h — privação severa, recuperação muito comprometida" },
+                  { upTo: 5, label: "5h — défice marcado, ajustar volume em baixa" },
+                  { upTo: 6, label: "6h — limite mínimo, recuperação parcial" },
+                  { upTo: 7, label: "7h — adequado para a maioria dos adultos" },
+                  { upTo: 8, label: "8h — óptimo, boa janela de recuperação" },
+                  { upTo: 10, label: "9h+ — descanso amplo" },
                 ]}
               />
               <AnchoredSlider
