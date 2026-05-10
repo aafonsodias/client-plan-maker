@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { ClientPhasePill } from "@/components/ClientPhasePill";
 import { ClientPhase } from "@/lib/client-phase";
+import { getTierFromYears, type TierMeta } from "@/lib/training-tier";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -36,7 +37,7 @@ type Props = {
 export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged = false }: Props) {
   const { t, i18n } = useTranslation("common");
   const lang = i18n.language === "pt" ? "pt" : "en";
-  const [signals, setSignals] = useState<{ risk: string | null; readiness: number | null }>({ risk: null, readiness: null });
+  const [signals, setSignals] = useState<{ risk: string | null; readiness: number | null; tier: TierMeta | null }>({ risk: null, readiness: null, tier: null });
 
   // Tiny lightweight fetch for the inline ACSM/Recovery chips. Single row, cheap.
   useEffect(() => {
@@ -44,7 +45,7 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
     void (async () => {
       const { data } = await supabase
         .from("assessments")
-        .select("acsm_risk_category, sleep_quality, stress_level")
+        .select("acsm_risk_category, sleep_quality, stress_level, years_training")
         .eq("client_id", client.id)
         .order("updated_at", { ascending: false })
         .limit(1)
@@ -59,7 +60,10 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         const stressPart = Number.isFinite(stress) && stress > 0 ? ((11 - stress) / 10) * 30 : 15;
         readiness = Math.round(sleepPart + stressPart + 10);
       }
-      setSignals({ risk: (data as any).acsm_risk_category ?? null, readiness });
+      const yearsRaw = (data as any).years_training;
+      const years = yearsRaw == null ? null : Number(yearsRaw);
+      const tier = years != null && Number.isFinite(years) ? getTierFromYears(years) : null;
+      setSignals({ risk: (data as any).acsm_risk_category ?? null, readiness, tier });
     })();
     return () => { cancelled = true; };
   }, [client.id]);
@@ -150,6 +154,15 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="break-words text-sm font-semibold sm:text-base">{client.full_name}</p>
+            {signals.tier && signals.tier.id !== "none" && (
+              <span
+                className="inline-flex items-center"
+                title={t(`assessment:history_block.tier.${signals.tier.key}`, { defaultValue: signals.tier.id })}
+                aria-label={`tier ${signals.tier.id}`}
+              >
+                <span className={`h-2 w-2 rounded-full ${signals.tier.dotClass}`} />
+              </span>
+            )}
             {phase && (
               <span className="inline-flex">
                 <ClientPhasePill phase={phase} />

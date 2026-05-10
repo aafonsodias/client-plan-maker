@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseMeds, serializeMeds, type OtherMed } from "@/lib/meds-format";
+import { TRAINING_TIERS, getTierFromYears, tierToYears, type TrainingTier } from "@/lib/training-tier";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -2432,7 +2433,13 @@ function ClientDetail() {
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <div className="sm:col-span-2 space-y-1.5">
+                <LabelWithHelp label={t("history_block.tier_label")} hint={t("history_block.tier_hint")} />
+                <TrainingTierChips
+                  years={assessment.years_training === "" || assessment.years_training == null ? null : Number(assessment.years_training)}
+                  onChange={(years) => setAssessment({ ...assessment, years_training: years == null ? "" : String(years) })}
+                />
+              </div>
               <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
               <div className="sm:col-span-2 space-y-1">
                 <div className="flex items-center justify-between gap-1">
@@ -4879,6 +4886,38 @@ function _SectionAnalysisCardLegacy({ analysing, analysis }: { analysing: boolea
         {insight}
       </blockquote>
     </figure>
+  );
+}
+
+function TrainingTierChips({
+  years,
+  onChange,
+}: {
+  years: number | null;
+  onChange: (years: number | null) => void;
+}) {
+  const { t } = useTranslation("assessment");
+  const active = getTierFromYears(years).id;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {TRAINING_TIERS.map((tier) => {
+        const selected = active === tier.id;
+        return (
+          <button
+            key={tier.id}
+            type="button"
+            onClick={() => onChange(tierToYears(tier.id as TrainingTier))}
+            aria-pressed={selected}
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition ${tier.chipClass} ${
+              selected ? `ring-2 ring-offset-1 ring-offset-background ${tier.ringClass}` : "opacity-70 hover:opacity-100"
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${tier.dotClass}`} aria-hidden />
+            <span>{t(`history_block.tier.${tier.key}`)}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
