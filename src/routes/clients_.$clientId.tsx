@@ -702,6 +702,11 @@ function ClientDetail() {
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
+  // Round D · Bug 1 — Concluir always enabled, with confirmation when
+  // the assessment is incomplete. The pending action is run on confirm.
+  const [incompleteWarnOpen, setIncompleteWarnOpen] = useState(false);
+  const pendingGenerateRef = useRef<null | (() => void)>(null);
+
   /**
    * Latest plan that was already finalized for the *current* assessment.
    * Heuristic: matching `assessment_id` OR (no link) created_at ≥ assessment.performed_on.
