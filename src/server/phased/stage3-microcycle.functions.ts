@@ -433,6 +433,23 @@ WEEK 1 RPE FLOORS (intensity_appetite = ${appetite.toUpperCase()}):
 RPE 5 is reserved for warm-up / activation / cooldown — NEVER for the main block.
 If a movement is genuinely "supported" or rehab-style, prefer reducing load and KEEPING RPE at the floor (the goal is honest effort, not artificially low numbers).`;
 
+  const setCap = guidelines?.week1SetCap ?? null;
+  const setCapBlock = setCap
+    ? `
+
+WEEK 1 SET CAPS (HARD — Week 1 is an introduction; Stage 4 ramps sets up via Bompa wave):
+- Main lift (the FIRST exercise): max ${setCap.main} working sets.
+- Secondary / accessory exercises: max ${setCap.accessory} working set${setCap.accessory === 1 ? "" : "s"}.
+- Carry / Pallof / plank / suitcase / farmer: max ${setCap.carry} working set${setCap.carry === 1 ? "" : "s"}.
+Use the EXACT integer (e.g. "${setCap.accessory}" not "${setCap.accessory}-${setCap.accessory + 1}"). Never write "3 sets" for an accessory in a remedial/conservative Week 1.`
+    : "";
+
+  const intraWeekBlock = `
+
+INTRA-WEEK EXERCISE UNIQUENESS (HARD):
+- Each ACCESSORY exercise should appear at most ONCE across the whole microcycle (you only see one day, but pick variants that fit THIS archetype's focus uniquely — avoid the obvious "goblet squat" / "leg press" picks if a different archetype likely already owns that pattern).
+- The MAIN LIFT may repeat in at most 2 sessions per week.
+- Variants count as different exercises (goblet squat ≠ box squat ≠ leg press ≠ Bulgarian split squat). Prefer the variant that best matches THIS archetype's focus (${arch.focus}).`;
   const rotationBlock = priorExercisePool.length > 0
     ? `\n\nEXERCISE ROTATION (block N>1) — SAID variation rule:\nThe prior block already exhausted these exercises: ${priorExercisePool.slice(0, 40).join(", ")}.\nAt least 60% of the accessories you pick for THIS day must NOT be in that list (substitute with same movement pattern + same intent — e.g. replace 'leg press' with 'hack squat' or 'belt squat'). The 1–2 main lifts may repeat if they are the driver of progression. Isolators MUST rotate. Variation is what creates new adaptation; clones stall.`
     : "";
@@ -479,7 +496,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
