@@ -431,6 +431,11 @@ ${guidelines.requiredAlternatives}`
 }`
     : "";
 
+  // INJURY-DRIVEN BANS — derived from assessment_injuries + brief.red_flags.
+  // Rendered separately from tier bans so audit logs can attribute correctly.
+  const injuryBans: InjuryBan[] = guidelines?.injuryBans ?? [];
+  const injuryBlock = injuryBansPromptBlock(injuryBans);
+
   const rpeFloorBlock = `
 
 WEEK 1 RPE FLOORS (intensity_appetite = ${appetite.toUpperCase()}):
@@ -504,6 +509,7 @@ RULES:
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
 Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
+  const systemWithInjuries = `${system}${injuryBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -524,7 +530,7 @@ Generate ONLY this single day's session.`;
   const model = resolveModel("FORGE_MODEL_STAGE_3", "google/gemini-2.5-flash");
   const result = await callAnthropicWithSchema({
     model,
-    system,
+    system: systemWithInjuries,
     userMessage: user,
     toolName: "record_day",
     toolDescription: "Record one training session as a structured day.",
