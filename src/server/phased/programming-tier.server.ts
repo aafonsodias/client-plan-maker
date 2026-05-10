@@ -12,6 +12,7 @@ import {
   type PreparticipationResult,
   type DesiredIntensity,
 } from "../screening/preparticipation.server";
+import type { InjuryBan } from "./exercise-filters.server";
 
 export type Tier = "remedial" | "conservative" | "advanced";
 
@@ -37,6 +38,13 @@ export interface TierGuidelines {
    * Remedial Week 1 = introduction, low volume; advanced can start denser.
    */
   week1SetCap: { main: number; accessory: number; carry: number };
+  /**
+   * Optional injury-driven exercise bans, attached by
+   * `resolveAndPersistGuidelines` after fetching `assessment_injuries`. Kept
+   * separate from `forbiddenExercises` (tier-driven) so audit logs in
+   * `generation_log.injury_filters_applied` can attribute the right source.
+   */
+  injuryBans?: InjuryBan[];
 }
 
 function countMovementScreenFailures(assessment: Record<string, any>): number {
