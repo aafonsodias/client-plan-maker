@@ -154,6 +154,15 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <p className="break-words text-sm font-semibold sm:text-base">{client.full_name}</p>
+            {signals.tier && signals.tier.id !== "none" && (
+              <span
+                className="inline-flex items-center"
+                title={t(`assessment:history_block.tier.${signals.tier.key}`, { defaultValue: signals.tier.id })}
+                aria-label={`tier ${signals.tier.id}`}
+              >
+                <span className={`h-2 w-2 rounded-full ${signals.tier.dotClass}`} />
+              </span>
+            )}
             {phase && (
               <span className="inline-flex">
                 <ClientPhasePill phase={phase} />
