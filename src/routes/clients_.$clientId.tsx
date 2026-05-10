@@ -6,6 +6,7 @@ import { ProgressionsPanel } from "@/components/ProgressionsPanel";
 import { CapacityMap } from "@/components/CapacityMap";
 import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
+import { InjuriesBodyMapBlock } from "@/components/InjuriesBodyMapBlock";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -2483,12 +2484,15 @@ function ClientDetail() {
               </div>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
+                <TextField label={t("training_block.injuries")} value={assessment.injuries} onChange={(v) => setAssessment({ ...assessment, injuries: v })} />
+              )}
               {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
                 <TextField label={t("training_block.medical_conditions")} value={assessment.medical_conditions} onChange={(v) => setAssessment({ ...assessment, medical_conditions: v })} />
               )}
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
+            <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
             {isSectionComplete("training", assessment) && (
               <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}

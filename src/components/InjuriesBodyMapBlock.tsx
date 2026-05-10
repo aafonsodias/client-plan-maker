@@ -8,33 +8,48 @@ import { BodyMap, getZone } from "@/components/BodyMap";
 import { findLabel } from "@/lib/injury-labels";
 import { InjuryEditor } from "@/components/InjuryEditor";
 import {
-  intakeAddInjury,
-  intakeListInjuries,
-  intakeRemoveInjury,
-  intakeUpdateInjury,
+  addInjury,
+  listInjuries,
+  removeInjury,
+  updateInjury,
   type InjuryRow,
 } from "@/server/injuries.functions";
 
 /**
- * Round F1 — public intake injury slider page.
- * Self-contained: loads/saves via token-bearing server functions.
+ * Round F1.1 — trainer-side injuries body map.
+ * Mirrors the public intake slide but uses auth-protected server fns.
  */
-export function InjuriesSlide({ token }: { token: string }) {
+export function InjuriesBodyMapBlock({
+  clientId,
+  assessmentId,
+}: {
+  clientId: string;
+  assessmentId: string | null | undefined;
+}) {
   const { t } = useTranslation("common");
-  const list = useServerFn(intakeListInjuries);
-  const add = useServerFn(intakeAddInjury);
-  const update = useServerFn(intakeUpdateInjury);
-  const remove = useServerFn(intakeRemoveInjury);
+  const list = useServerFn(listInjuries);
+  const add = useServerFn(addInjury);
+  const update = useServerFn(updateInjury);
+  const remove = useServerFn(removeInjury);
 
   const [view, setView] = useState<"front" | "back">("front");
   const [rows, setRows] = useState<InjuryRow[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<{ row?: InjuryRow; zoneId: string; view: "front" | "back" } | null>(null);
+  const [editing, setEditing] = useState<{
+    row?: InjuryRow;
+    zoneId: string;
+    view: "front" | "back";
+  } | null>(null);
 
   useEffect(() => {
+    if (!assessmentId) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     let on = true;
     setLoading(true);
-    list({ data: { token } })
+    list({ data: { assessmentId } })
       .then((r) => {
         if (on) setRows(r);
       })
@@ -43,7 +58,7 @@ export function InjuriesSlide({ token }: { token: string }) {
     return () => {
       on = false;
     };
-  }, [list, token]);
+  }, [list, assessmentId]);
 
   const selectedZones = useMemo(() => (rows ?? []).map((r) => r.body_zone), [rows]);
   const badges = useMemo(() => {
@@ -53,17 +68,30 @@ export function InjuriesSlide({ token }: { token: string }) {
   }, [rows]);
 
   const handleZoneTap = (zoneId: string, v: "front" | "back") => {
+    if (!assessmentId) {
+      toast.error(t("injuries.requires_assessment", { defaultValue: "Save the assessment first." }));
+      return;
+    }
     const existing = (rows ?? []).find((r) => r.body_zone === zoneId);
     setEditing({ row: existing, zoneId, view: v });
   };
 
   return (
-    <div className="space-y-5">
-      <p className="body-prose text-sm text-muted-foreground">{t("injuries.page_subtitle")}</p>
+    <div className="mt-4 space-y-4 rounded-xl border border-border/60 bg-card/30 p-4">
+      <header className="space-y-1">
+        <p className="eyebrow text-[10px] uppercase tracking-widest text-muted-foreground">
+          {t("injuries.page_title")}
+        </p>
+        <p className="text-xs text-muted-foreground">{t("injuries.page_subtitle")}</p>
+      </header>
 
-      {loading ? (
-        <div className="flex justify-center py-10 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
+      {!assessmentId ? (
+        <p className="text-xs text-muted-foreground">
+          {t("injuries.requires_assessment", { defaultValue: "Save the assessment first to register injuries." })}
+        </p>
+      ) : loading ? (
+        <div className="flex justify-center py-6 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
         </div>
       ) : (
         <BodyMap
@@ -89,7 +117,7 @@ export function InjuriesSlide({ token }: { token: string }) {
               return (
                 <li
                   key={r.id}
-                  className="flex items-start justify-between gap-3 rounded-lg bg-card/40 px-3 py-2"
+                  className="flex items-start justify-between gap-3 rounded-lg bg-card/60 px-3 py-2"
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-medium">
@@ -100,6 +128,7 @@ export function InjuriesSlide({ token }: { token: string }) {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {lbl ? t(lbl.name_key) : t("injuries.no_label")}
+                      {r.note ? ` · ${r.note}` : ""}
                     </p>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -116,7 +145,7 @@ export function InjuriesSlide({ token }: { token: string }) {
                       onClick={async () => {
                         if (!confirm(t("injuries.remove_confirm_body"))) return;
                         try {
-                          await remove({ data: { token, injuryId: r.id } });
+                          await remove({ data: { injuryId: r.id } });
                           setRows((cur) => (cur ?? []).filter((x) => x.id !== r.id));
                         } catch (e: any) {
                           toast.error(e?.message ?? "Failed");
@@ -135,14 +164,20 @@ export function InjuriesSlide({ token }: { token: string }) {
         )}
       </section>
 
-      <section className="space-y-2 border-t border-border/40 pt-4">
+      <section className="space-y-2 border-t border-border/40 pt-3">
         <p className="text-xs text-muted-foreground">{t("injuries.medical_doc_question")}</p>
-        <Button type="button" variant="outline" size="sm" disabled title={t("injuries.medical_doc_disabled_tooltip")}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled
+          title={t("injuries.medical_doc_disabled_tooltip")}
+        >
           {t("injuries.medical_doc_cta")}
         </Button>
       </section>
 
-      {editing ? (
+      {editing && assessmentId ? (
         <InjuryEditor
           zoneId={editing.zoneId}
           row={editing.row}
@@ -151,7 +186,6 @@ export function InjuriesSlide({ token }: { token: string }) {
             const saved = editing.row
               ? await update({
                   data: {
-                    token,
                     injuryId: editing.row.id,
                     severity: payload.severity,
                     injuryLabel: payload.injuryLabel,
@@ -160,18 +194,19 @@ export function InjuriesSlide({ token }: { token: string }) {
                 })
               : await add({
                   data: {
-                    token,
+                    clientId,
+                    assessmentId,
                     bodyZone: editing.zoneId,
                     bodyView: editing.view,
                     severity: payload.severity,
                     injuryLabel: payload.injuryLabel,
                     note: payload.note,
-                    source: "self_reported",
+                    source: "trainer_observed",
                   },
                 });
             setRows((cur) => {
               const list = cur ?? [];
-              const idx = list.findIndex((r) => r.id === saved.id);
+              const idx = list.findIndex((x) => x.id === saved.id);
               if (idx >= 0) {
                 const next = list.slice();
                 next[idx] = saved;
