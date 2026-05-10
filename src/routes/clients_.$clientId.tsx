@@ -1495,6 +1495,15 @@ function ClientDetail() {
         res.reused ? "Brief already ready" : "Brief ready",
         { id: tId, duration: 4000 }
       );
+      // Cut 2 — staged reveal: open synthesis + scroll into view so the
+      // trainer immediately sees what we learned before going to the cockpit.
+      setSynthesisOpen(true);
+      if (typeof window !== "undefined") {
+        requestAnimationFrame(() => {
+          const el = document.getElementById("sintese-da-avaliacao");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
     } finally {
