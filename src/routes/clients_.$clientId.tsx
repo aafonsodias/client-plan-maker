@@ -1716,7 +1716,19 @@ function ClientDetail() {
                   e.preventDefault();
                   try {
                     const { renderAssessmentPdf } = await import("@/lib/pdf");
-                    renderAssessmentPdf({ assessment, client, t: t as any });
+                    renderAssessmentPdf({
+                      assessment,
+                      client,
+                      plan: inlineBrief
+                        ? {
+                            title: heroPlan?.title ?? null,
+                            programming_variables: inlineBrief.programmingVariables,
+                            red_flag_accommodations: inlineBrief.accommodations,
+                          }
+                        : null,
+                      sectionAnalyses,
+                      t: t as any,
+                    });
                   } catch (err: any) {
                     toast.error(err?.message ?? "PDF error");
                   }
