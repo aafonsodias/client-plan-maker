@@ -14,6 +14,8 @@ import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTele
 import { anthropicCompatFetch } from "./anthropic-compat.server";
 import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.server";
 import { pickWaveTier, buildWavePlan } from "./phased/programming-defaults";
+import { classifyTier, tierGuidelines, rpeFloors, tierPromptBlock } from "./phased/programming-tier.server";
+import { deriveInjuryBans, injuryBansPromptBlock } from "./phased/exercise-filters.server";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
