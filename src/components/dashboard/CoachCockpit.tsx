@@ -275,10 +275,12 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
 
   return (
     <section className="space-y-4">
-      {/* Today + This week — golden-ratio split on desktop, stacked on mobile */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
+      {/* Today + This week — golden-ratio split on desktop, stacked on mobile.
+          grid-cols-1 + min-w-0 on the items prevents long content from blowing
+          out the row width on mobile (was pushing both panels past px-4). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
       {/* Today / Needs attention */}
-      <div className="rounded-2xl bg-muted/40 p-3">
+      <div className="min-w-0 rounded-2xl bg-muted/40 p-3">
         <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           <span>{t("dashboard.today.title")}</span>
           <Sparkles className="h-3 w-3 text-amber-500" />
@@ -329,7 +331,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
 
       {/* Hero strip — tonal separation, content left-anchored to match Today panel */}
-      <div className="rounded-2xl bg-muted/40 p-3">
+      <div className="min-w-0 rounded-2xl bg-muted/40 p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
           {/* Left · week */}
           <div className="min-w-0">
@@ -381,7 +383,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
         {/* Mini timetable */}
         <button
           type="button"
