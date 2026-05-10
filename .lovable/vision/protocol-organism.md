@@ -97,6 +97,10 @@ These are the constitution of the organism. Any feature, copy, or decision that 
                  └─────────────────────────┘
 ```
 
+### Assessment-organism (zoom-in)
+
+The sensory layer of this organism — the only place where the outside world (the client) becomes legible to the inside world (the protocol) — has its own dedicated document: [`assessment-organism.md`](./assessment-organism.md). It defines the page-per-topic architecture, the Signal → Decision map, and the 3 decisions closed in May 2026 (D1: AI in goal selector, D2: MVP auto-decision scope, D3: drawings strategy).
+
 ---
 
 ## 4. Decisions closed (do not re-discuss)
