@@ -557,6 +557,30 @@ Generate ONLY this single day's session.`;
   if (!result.ok) return { ok: false, error: result.error };
   // Deterministic post-validation: lift any RPE that came in below the floor.
   const sanitized = sanitizePrepBlocks(result.data);
+
+  // Injury bans — log every violation that slipped past the prompt. We don't
+  // auto-rewrite (would mangle the day's structure) but the trainer sees the
+  // ban list in the regen panel and can re-roll. Also stamps
+  // `generation_log.injury_filters_applied` for audit.
+  if (injuryBans.length > 0) {
+    const violations = findBannedExercisesInDay(sanitized, injuryBans);
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      stage: `stage3:day${dayIndex}:injury_filters_applied`,
+      model_used: "deterministic",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: violations.length === 0,
+      retry_count: 0,
+      duration_ms: 0,
+      error: violations.length > 0 ? `${violations.length} banned exercises slipped through` : null,
+      input_snapshot: { bans: injuryBans.map((b) => ({ exercise: b.exercise, citation: b.citation })) },
+      output_snapshot: { violations: violations.map((v) => ({ name: v.name, ban: v.ban.exercise })) },
+    });
+  }
+
   const { day: floored, floorApplied } = enforceRpeFloor(sanitized, floors);
   // Deterministic post-validation: truncate sets to Week-1 tier cap.
   const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
