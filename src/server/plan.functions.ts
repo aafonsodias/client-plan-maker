@@ -7,6 +7,7 @@ import {
   buildFeedbackBlock,
   SHARED_PROGRAM_RULES,
 } from "./plan.server";
+import { buildCockpitConstraintBlock } from "./plan.server";
 import { criticDay, shouldRepair } from "./plan-critic.server";
 import { repairDay } from "./plan-repair.server";
 import { computeCallCostUsd, type AnthropicModelId, type CallTelemetry, makeTelemetry } from "./plan-cost.server";
@@ -212,6 +213,19 @@ const WeekInputSchema = z.object({
   week_number: z.number().min(1).max(16),
   trainer_feedback: z.string().max(4000).nullable().optional(),
   previous_plan: z.any().nullable().optional(),
+  // R70 Fase B — Cockpit overrides resolved client-side (stored pv merged
+  // with parseRpeOverrideFromFeedback). Optional + permissive so legacy
+  // callers (initial draft fan-out) keep working unchanged.
+  programming_variables: z
+    .object({
+      rpe_ceiling: z.number().min(5).max(10).nullable().optional(),
+      rpe_floor: z.number().min(5).max(10).nullable().optional(),
+      wave_model: z.string().nullable().optional(),
+      deload_frequency: z.string().nullable().optional(),
+      autoreg_strictness: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 const DayInputSchema = z.object({
