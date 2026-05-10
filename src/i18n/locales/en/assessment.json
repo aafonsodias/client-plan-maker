@@ -390,6 +390,16 @@
     "title": "Training history",
     "hint": "Prior exposure shapes starting loads and progression rates.",
     "years": "Years training",
+    "tier_label": "Experience tier",
+    "tier_hint": "Grouped by years of regular practice. Tunes starting loads and progression.",
+    "tier": {
+      "none": "No training",
+      "seedling": "Beginner (<1 yr)",
+      "base": "Base (1–3 yrs)",
+      "intermediate": "Intermediate (3–6 yrs)",
+      "advanced": "Advanced (6–10 yrs)",
+      "veteran": "Veteran (10+ yrs)"
+    },
     "previous": "Previous program style",
     "previous_placeholder": "PPL, 5/3/1…",
     "max_lifts": "Max lifts (if known)",
