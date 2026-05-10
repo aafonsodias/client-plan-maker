@@ -545,6 +545,27 @@ Generate ONLY this single day's session.`;
   // Deterministic post-validation: lift any RPE that came in below the floor.
   const sanitized = sanitizePrepBlocks(result.data);
   const { day: floored, floorApplied } = enforceRpeFloor(sanitized, floors);
+  // Deterministic post-validation: truncate sets to Week-1 tier cap.
+  const { day: setsCappedDay, setsCapped } = guidelines?.week1SetCap
+    ? enforceWeek1SetCap(floored, guidelines.week1SetCap)
+    : { day: floored, setsCapped: 0 };
+  if (setsCapped > 0) {
+    await logGeneration(supabase, {
+      trainer_id: userId,
+      plan_id: planId,
+      stage: `stage3:day${dayIndex}:set_cap`,
+      model_used: "deterministic",
+      input_tokens: 0,
+      output_tokens: 0,
+      cost_usd: 0,
+      zod_passed: true,
+      retry_count: 0,
+      duration_ms: 0,
+      error: null,
+      input_snapshot: { tier: tierForFloors, cap: guidelines?.week1SetCap },
+      output_snapshot: { setsCapped },
+    });
+  }
   if (floorApplied > 0) {
     await logGeneration(supabase, {
       trainer_id: userId,
@@ -566,7 +587,7 @@ Generate ONLY this single day's session.`;
   // ---- FITT-VP validator + 1× retry (R2.2 Phase C.3) ---------------------
   // Only run the expensive retry on block N≥2 (where prior pool exists) — for
   // block 1 we accept first-pass output to keep generation snappy.
-  let finalDay = floored;
+  let finalDay = setsCappedDay;
   if (prescriptionParameters && priorExercisePool.length > 0) {
     const violationsInitial: FittVpViolation[] = validateDayAgainstFittVp(
       finalDay,
