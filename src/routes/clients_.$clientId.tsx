@@ -4209,7 +4209,7 @@ function AssessmentSynthesisDashboard({
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-90 transition"
           >
             <Sparkles className="h-4 w-4" />
-            Ir para o cockpit
+            {t("detail.synthesis.go_to_cockpit")}
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
