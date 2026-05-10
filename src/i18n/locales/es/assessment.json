@@ -315,6 +315,24 @@
     "other": "Other",
     "test_result": "Test result",
     "test_result_hint": "Distance, time, or VO₂ estimate.",
+    "rockport_title": "Rockport · estimación de VO₂máx",
+    "rockport_protocol": "Camine 1 milla (1.6 km) lo más rápido posible sin correr. Use cronómetro. Al llegar, mida el pulso 15s × 4. Introduzca los valores abajo.",
+    "rockport_prereq": "Peso {{weight}} kg · Edad {{age}} · {{sex}}",
+    "rockport_missing_prereq": "Faltan peso, edad o sexo en el perfil — complete Antropometría primero.",
+    "rockport_sex_male": "Masculino",
+    "rockport_sex_female": "Femenino",
+    "rockport_minutes": "Minutos",
+    "rockport_seconds": "Segundos",
+    "rockport_hr": "FC tras caminata (bpm)",
+    "rockport_result": "VO₂máx estimado",
+    "rockport_apply": "Guardar resultado",
+    "rockport_ignore": "Omitir",
+    "rockport_band": {
+      "poor": "bajo",
+      "fair": "regular",
+      "good": "bueno",
+      "excellent": "excelente"
+    },
     "cardio_legacy": "Cardio context (legacy free text)"
   },
   "resume": {
@@ -343,7 +361,11 @@
     "safety_body": "The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.",
     "safety_confirm": "I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.",
     "safety_cancel": "Cancel",
-    "safety_proceed": "Generate conservative draft"
+    "safety_proceed": "Generate conservative draft",
+    "incomplete_title": "¿Finalizar evaluación parcial?",
+    "incomplete_body": "Evaluación incompleta ({{done}}/{{total}} secciones). Puede finalizar ahora — las secciones faltantes pueden completarse más tarde por usted o por su entrenador. La calidad de la prescripción inicial será menor.",
+    "incomplete_confirm": "Finalizar igualmente",
+    "incomplete_cancel": "Volver"
   },
   "progress_panel": {
     "header": "Generating with Claude Haiku 4.5 (per day)",
