@@ -1,9 +1,8 @@
-import { TrendingUp, ArrowDown, Activity } from "lucide-react";
+import { TrendingUp, ArrowDown, Activity, CheckCircle2, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BlockTransitionDialog } from "@/components/BlockTransitionDialog";
 import { Button } from "@/components/ui/button";
 import { avgRpe } from "@/lib/capacity-gain";
-import type { BlockSummary } from "@/lib/block-feedback";
 
 /**
  * NextBlockCard — sugere deload / normal / push para o próximo bloco com
@@ -35,45 +34,79 @@ export function NextBlockCard({
   sessions,
   fullyLogged,
   allowAi,
+  completionState,
+  onMarkFinished,
+  markFinishedBusy,
 }: {
   planId: string;
   blockNumber: number;
   sessions: Array<{ status?: string | null; entries?: any[] }>;
   fullyLogged: boolean;
   allowAi: boolean;
+  completionState?: string | null;
+  onMarkFinished?: () => void | Promise<void>;
+  markFinishedBusy?: boolean;
 }) {
   const { t } = useTranslation("common");
-  if (sessions.length === 0) return null;
-  const completed = sessions.filter((s) => s.status === "done").length;
-  const adherence = Math.round((completed / sessions.length) * 100);
-  const rpe = avgRpe(sessions as any);
-  const rec = recommend(adherence, rpe);
+  const hasSessions = sessions.length > 0;
+  const completed = hasSessions ? sessions.filter((s) => s.status === "done").length : 0;
+  const adherence = hasSessions ? Math.round((completed / sessions.length) * 100) : 0;
+  const rpe = hasSessions ? avgRpe(sessions as any) : null;
+  const rec: Recommendation = hasSessions ? recommend(adherence, rpe) : "normal";
   const c = TONES[rec];
   const Icon = c.icon;
+  const finishedAlready = completionState === "finished_logging";
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 text-xs ${c.tone}`}>
       <div className="flex flex-1 items-start gap-2">
         <Icon className="mt-0.5 h-4 w-4 shrink-0" />
         <div className="min-w-0">
-          <p className="font-semibold">{t(`blocks.next.${rec}_title`)}</p>
-          <p className="mt-0.5 text-[11px] opacity-80">{t(`blocks.next.${rec}_sub`)}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest opacity-70">
-            {t("blocks.next.adherence")} <span className="tabular-nums">{adherence}%</span>
-            {rpe !== null && <> · {t("blocks.next.avg_rpe")} <span className="tabular-nums">{rpe.toFixed(1)}</span></>}
-            {" · "}{t("blocks.next.block")} {blockNumber}
+          <p className="font-semibold">
+            {hasSessions
+              ? t(`blocks.next.${rec}_title`)
+              : `Bloco ${blockNumber} · pronto para fechar`}
           </p>
+          <p className="mt-0.5 text-[11px] opacity-80">
+            {hasSessions
+              ? t(`blocks.next.${rec}_sub`)
+              : `Arquive este bloco e desenhe o Bloco ${blockNumber + 1}. Pré-preenchemos a nota de transição com adesão e variação de RPE — você assina.`}
+          </p>
+          {hasSessions && (
+            <p className="mt-1 text-[10px] uppercase tracking-widest opacity-70">
+              {t("blocks.next.adherence")} <span className="tabular-nums">{adherence}%</span>
+              {rpe !== null && <> · {t("blocks.next.avg_rpe")} <span className="tabular-nums">{rpe.toFixed(1)}</span></>}
+              {" · "}{t("blocks.next.block")} {blockNumber}
+            </p>
+          )}
         </div>
       </div>
-      <BlockTransitionDialog
-        priorPlanId={planId}
-        currentBlockNumber={blockNumber}
-        allowAi={allowAi}
-        trigger={
-          <Button size="sm" variant={fullyLogged ? "default" : "outline"} className="shrink-0">
-            {t("blocks.next.start_next", { n: blockNumber + 1 })}
+      <div className="flex shrink-0 items-center gap-2">
+        {!finishedAlready && onMarkFinished && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={markFinishedBusy}
+            onClick={() => void onMarkFinished()}
+          >
+            {markFinishedBusy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+            )}
+            Marcar como concluído
           </Button>
-        }
-      />
+        )}
+        <BlockTransitionDialog
+          priorPlanId={planId}
+          currentBlockNumber={blockNumber}
+          allowAi={allowAi}
+          trigger={
+            <Button size="sm" variant={fullyLogged ? "default" : "outline"}>
+              {t("blocks.next.start_next", { n: blockNumber + 1 })}
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 }
