@@ -205,7 +205,9 @@
       "composition": "Composition",
       "endurance": "Endurance",
       "mobility": "Mobility",
-      "function": "Function"
+      "function": "Function",
+      "cardiovascular_health": "Cardiovascular health",
+      "skill": "Skill"
     },
     "duration": {
       "4w": "4 wk",
@@ -218,19 +220,32 @@
       "resolved": "→ reassess by {{date}}"
     },
     "tpl": {
-      "str_squat_15bw_5":  { "specific": "Build squat strength over 16 weeks, measure progress",            "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1.5×BW × 5 reps" },
-      "str_bench_bw_5":    { "specific": "Build horizontal pressing strength over 16 weeks",                "measurable": "Track 1RM/5RM on bench; exploratory target: 1×BW × 5 reps" },
-      "str_dl_2bw_3":      { "specific": "Build pulling strength and posterior chain over 20 weeks",        "measurable": "Track 1RM/3RM on the deadlift; exploratory target: 2×BW × 3 reps" },
-      "hyp_arm_3cm":       { "specific": "Work upper-arm hypertrophy for 12 weeks, measure progress",       "measurable": "Measure arm circumference every 4 weeks; observe trend" },
-      "hyp_thigh_4cm":     { "specific": "Work thigh hypertrophy for 12 weeks, measure progress",           "measurable": "Measure thigh circumference every 4 weeks; observe trend" },
-      "comp_fatloss_5":    { "specific": "Reduce fat mass over 16 weeks, while preserving lean mass",       "measurable": "Track composition (DEXA/BIA) every 4-6 weeks; adjust by trajectory" },
+      "cv_rhr_lower":      { "specific": "Lower resting heart rate over 12 weeks",                          "measurable": "Track morning RHR every 2 weeks; exploratory target: −5 to −10 bpm" },
+      "cv_bp_systolic":    { "specific": "Lower systolic blood pressure over 16 weeks",                     "measurable": "Measure BP weekly; exploratory target: −5 to −10 mmHg" },
+      "cv_cooper_2400":    { "specific": "Build aerobic capacity over 8 weeks",                             "measurable": "Re-run Cooper 12 min every 4 weeks; exploratory target: ≥ 2400 m" },
+      "str_squat_1bw_5":   { "specific": "Build squat strength over 12 weeks",                              "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1×BW × 5 reps" },
+      "str_squat_15bw_5":  { "specific": "Build squat strength over 16 weeks",                              "measurable": "Track 1RM/5RM on the back-squat; exploratory target: 1.5×BW × 5 reps" },
+      "str_bench_75bw_5":  { "specific": "Build horizontal pressing strength over 16 weeks",                "measurable": "Track 1RM/5RM on bench; exploratory target: 0.75×BW × 5 reps" },
+      "str_dl_15bw_5":     { "specific": "Build pulling and posterior chain strength over 16 weeks",        "measurable": "Track 1RM/5RM on the deadlift; exploratory target: 1.5×BW × 5 reps" },
+      "hyp_arm":           { "specific": "Work upper-arm hypertrophy for 12 weeks",                         "measurable": "Measure arm circumference every 4 weeks; observe trend" },
+      "hyp_thigh":         { "specific": "Work thigh hypertrophy for 12 weeks",                             "measurable": "Measure thigh circumference every 4 weeks; observe trend" },
+      "hyp_glutes":        { "specific": "Work glute hypertrophy for 16 weeks",                             "measurable": "Measure hip circumference every 4 weeks; observe trend" },
+      "comp_fatloss":      { "specific": "Reduce fat mass over 16 weeks, preserving lean mass",             "measurable": "Track composition (DEXA/BIA) every 4-6 weeks; adjust by trajectory" },
       "comp_recomp":       { "specific": "Body recomposition over 20 weeks (lose fat, gain lean mass)",     "measurable": "Track composition and strength in parallel; adjust by response" },
-      "end_5k_25":         { "specific": "Build 5 km running endurance over 10 weeks",                      "measurable": "Track 5 km time every 3-4 weeks; exploratory target: ≤ 25:00" },
-      "end_cooper_2400":   { "specific": "Build aerobic capacity over 8 weeks",                             "measurable": "Re-run Cooper 12 min every 4 weeks; exploratory target: ≥ 2400 m" },
-      "mob_toes_painfree": { "specific": "Work lumbar and hamstring mobility over 6 weeks",                 "measurable": "Sit-and-reach and pain perception; measure every 2 weeks" },
-      "mob_overhead_full": { "specific": "Work thoracic and shoulder mobility over 8 weeks",                "measurable": "Overhead wall test; measure every 2 weeks" },
-      "fn_carry_30s":      { "specific": "Work functional carry strength over 12 weeks",                    "measurable": "Time on farmer's carry with progressive load; reassess every 4 weeks" },
-      "fn_get_up_floor":   { "specific": "Work integrated floor-to-stand mobility over 8 weeks",            "measurable": "Assess Turkish get-up without hands every 2 weeks; observe pattern cleanliness" }
+      "comp_waist":        { "specific": "Reduce waist circumference over 12 weeks",                        "measurable": "Measure waist every 2 weeks; observe trend" },
+      "end_5k_continuous": { "specific": "Run 5 km continuously over 8 weeks",                              "measurable": "Progressively extend continuous run time; reassess every 2 weeks" },
+      "end_5k_25min":      { "specific": "Build 5 km running endurance over 10 weeks",                      "measurable": "Track 5 km time every 3-4 weeks; exploratory target: ≤ 25:00" },
+      "end_cooper":        { "specific": "Build aerobic capacity over 8 weeks",                             "measurable": "Re-run Cooper 12 min every 4 weeks; observe progress" },
+      "mob_toes":          { "specific": "Work lumbar and hamstring mobility over 6 weeks",                 "measurable": "Sit-and-reach every 2 weeks; observe progress" },
+      "mob_overhead":      { "specific": "Work thoracic and shoulder mobility over 8 weeks",                "measurable": "Overhead wall test every 2 weeks" },
+      "mob_squat_deep":    { "specific": "Achieve pain-free deep squat over 8 weeks",                       "measurable": "Assess depth and quality every 2 weeks" },
+      "mob_cervical":      { "specific": "Work cervical mobility over 4 weeks",                             "measurable": "Measure bilateral cervical rotation every 2 weeks" },
+      "fn_floor_rise":     { "specific": "Rise from floor unaided over 6 weeks",                            "measurable": "Assess floor-rise test monthly" },
+      "fn_stairs_unaided": { "specific": "Climb stairs without handrail over 4 weeks",                      "measurable": "Assess stair-climb test every 2 weeks" },
+      "fn_carry":          { "specific": "Work functional carry strength over 8 weeks",                     "measurable": "Time on farmer's carry with progressive load; reassess every 2 weeks" },
+      "skill_handstand":   { "specific": "Work toward handstand over 20 weeks",                             "measurable": "Track wall→free handstand progression; measure hold time" },
+      "skill_split":       { "specific": "Work toward split flexibility over 24 weeks",                     "measurable": "Measure floor-to-hip distance monthly" },
+      "skill_first_pullup":{ "specific": "Achieve first full pullup over 12 weeks",                         "measurable": "Track deadhang reps and assistance progression" }
     }
   },
   "readiness_block": {
