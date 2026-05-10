@@ -1495,6 +1495,15 @@ function ClientDetail() {
         res.reused ? "Brief already ready" : "Brief ready",
         { id: tId, duration: 4000 }
       );
+      // Cut 2 — staged reveal: open synthesis + scroll into view so the
+      // trainer immediately sees what we learned before going to the cockpit.
+      setSynthesisOpen(true);
+      if (typeof window !== "undefined") {
+        requestAnimationFrame(() => {
+          const el = document.getElementById("sintese-da-avaliacao");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Brief synthesis failed.", { id: tId });
     } finally {
@@ -3347,6 +3356,7 @@ function ClientDetail() {
               riskCategory={riskCategory}
               whr={whr}
               redFlagAccommodations={inlineBrief?.accommodations ?? null}
+              planId={inlineBrief?.planId ?? null}
             />
             )}
               </>
@@ -4097,6 +4107,7 @@ function AssessmentSynthesisDashboard({
   riskCategory,
   whr,
   redFlagAccommodations,
+  planId,
 }: {
   assessment: any;
   sectionAnalyses: Record<string, SectionAnalysis | null>;
@@ -4104,6 +4115,7 @@ function AssessmentSynthesisDashboard({
   riskCategory: string;
   whr: string;
   redFlagAccommodations: RedFlagAccommodation[] | null;
+  planId?: string | null;
 }) {
   const analysedCount = Object.values(sectionAnalyses).filter(Boolean).length;
   if (analysedCount < Math.ceil(totalSections * 0.5)) return null;
@@ -4145,13 +4157,13 @@ function AssessmentSynthesisDashboard({
   });
 
   return (
-    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4">
-      <div className="flex items-center justify-between">
+    <div id="sintese-da-avaliacao" className="scroll-mt-24 space-y-3 rounded-xl bg-muted/30 p-4 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-1 duration-500">
         <p className="eyebrow text-muted-foreground">{t("detail.synthesis.title")}</p>
         <span className="body-data text-[10px] text-muted-foreground">{t("detail.synthesis.analysed", { n: analysedCount, total: totalSections })}</span>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:120ms] fill-mode-both">
         <StatCard
           label={t("detail.synthesis.stat_risk")}
           value={riskLabel}
@@ -4199,6 +4211,20 @@ function AssessmentSynthesisDashboard({
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {planId && (
+        <div className="flex justify-end pt-1 animate-in fade-in slide-in-from-bottom-2 duration-500 [animation-delay:280ms] fill-mode-both">
+          <Link
+            to="/plans/$planId/microcycle"
+            params={{ planId }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-90 transition"
+          >
+            <Sparkles className="h-4 w-4" />
+            Ir para o cockpit
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       )}
     </div>
