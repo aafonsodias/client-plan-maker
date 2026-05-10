@@ -303,7 +303,7 @@
     "max_lifts": "Max lifts (if known)"
   },
   "performance_block": {
-    "title": "Performance markers",
+    "title": "Cardiovascular health",
     "hint": "Cardiovascular and conditioning baseline.",
     "rhr": "Resting HR (bpm)",
     "rhr_hint": "Measured first thing AM, supine.",
