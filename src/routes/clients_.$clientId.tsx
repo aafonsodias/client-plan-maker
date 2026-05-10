@@ -4381,10 +4381,13 @@ function AssessmentSection({
                     {String(activeIdx + 1).padStart(2, "0")}/{String(totalCount).padStart(2, "0")}
                   </span>
                   <h2 className="min-w-0 flex-1 truncate font-display text-base leading-tight tracking-tight">
-                    {(sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId}
+                    {t(`sections.${activeId}` as const, {
+                      defaultValue:
+                        (sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId,
+                    })}
                   </h2>
                   {saveLabel && (
-                    <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70 [@media(min-width:360px)]:inline">
+                    <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70 sm:inline">
                       {saveLabel}
                     </span>
                   )}

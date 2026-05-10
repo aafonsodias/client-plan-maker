@@ -41,7 +41,7 @@
   "score_legend": "1 = limited · 5 = excellent",
   "sections": {
     "parq": "PAR-Q+",
-    "risk": "Risk strat.",
+    "risk": "Risk",
     "anthro": "Anthropometry",
     "meds": "Medications",
     "goal": "SMART goal",
