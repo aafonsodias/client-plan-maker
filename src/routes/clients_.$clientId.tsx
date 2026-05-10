@@ -4666,12 +4666,20 @@ function AssessmentSection({
                 {activeIdx + 1} / {sectionIds.length}
               </span>
               <Button
-                variant="outline"
+                variant={activeIdx === sectionIds.length - 1 && onConclude ? "default" : "outline"}
                 size="sm"
-                onClick={goNext}
-                disabled={activeIdx === sectionIds.length - 1}
+                onClick={
+                  activeIdx === sectionIds.length - 1 && onConclude
+                    ? onConclude
+                    : goNext
+                }
+                disabled={
+                  concludeBusy ||
+                  (activeIdx === sectionIds.length - 1 && !onConclude)
+                }
               >
-                {t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                {concludeBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
+                {activeIdx === sectionIds.length - 1 ? t("finish") : t("detail.section.next")} <ArrowRight className="ml-1 h-3.5 w-3.5" />
               </Button>
             </div>
             {extras.length > 0 && <div className="space-y-3">{extras}</div>}
