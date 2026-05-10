@@ -343,10 +343,9 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               </span>
             </p>
           </div>
-          {/* Right · revenue + CTA — pushed to the right edge only via auto-margin
-              so it can collapse next to the week info on narrower lg widths. */}
+          {/* Right · revenue + CTA — sits next to the week info, not flung to the edge. */}
           <div
-            className="flex flex-wrap items-center gap-x-5 gap-y-2 sm:ml-auto"
+            className="flex flex-wrap items-center gap-x-5 gap-y-2"
             title={t("dashboard.revenue_caption")}
           >
             <div className="flex items-center gap-2">
