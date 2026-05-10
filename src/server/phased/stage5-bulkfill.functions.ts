@@ -44,7 +44,16 @@ function applyDelta(currentRaw: string | undefined, delta: string): string {
       const newVal = +(base + inc).toFixed(2);
       return current.replace(m[0], `${newVal}${unit}`);
     }
-    // No matching unit — append
+    // No unit suffix in current value. For RPE/load fields we store bare
+    // numbers (e.g. ex.rpe = "7"), so increment the bare number numerically
+    // instead of appending an unparseable "(+0.5rpe)" tag. Falls back to
+    // append only when current has no leading number at all.
+    const bare = current.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*$/);
+    if (bare) {
+      const base = parseFloat(bare[1]);
+      const newVal = +(base + inc).toFixed(2);
+      return String(newVal);
+    }
     return current ? `${current} (${inc >= 0 ? "+" : ""}${inc}${unit})` : `${inc}${unit}`;
   }
   // Tempo or variant — replace verbatim
