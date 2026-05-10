@@ -101,6 +101,8 @@ import { PipelineStrip } from "@/components/PipelineStrip";
 import { ProtocolRail } from "@/components/ProtocolRail";
 import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
+import { ThisWeekHero } from "@/components/ThisWeekHero";
+import { ensureShareToken } from "@/server/sessions.functions";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Menu as MenuIcon } from "lucide-react";
 
@@ -457,6 +459,7 @@ function ClientDetail() {
   const generateBlueprintFn = useServerFn(generateBlueprint);
   const generateMicrocycleDaysFn = useServerFn(generateMicrocycleDays);
   const proposeProgressionsFn = useServerFn(proposeProgressions);
+  const ensureShareTokenFn = useServerFn(ensureShareToken);
   const [stageBusy, setStageBusy] = useState<null | "blueprint" | "microcycle" | "progressions">(null);
   const [phasedBusy, setPhasedBusy] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
