@@ -264,6 +264,10 @@ function ClientLogPage() {
     return groupExercises(day.exercises ?? []);
   }, [day]);
 
+  const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
+  const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
+  const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
+
   if (error) return <Centered><p className="text-destructive">{error}</p></Centered>;
   if (!info) return <Centered><p className="text-muted-foreground">Loading…</p></Centered>;
   if (done) return (
@@ -319,10 +323,6 @@ function ClientLogPage() {
       }, 1800);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
-
-  const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
-  const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
-  const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
