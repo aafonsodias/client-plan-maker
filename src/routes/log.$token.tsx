@@ -257,6 +257,13 @@ function ClientLogPage() {
     setEntries((prev) => prev.map((e, idx) => (idx === i ? next : e)));
   };
 
+  // Group exercises into single / superset / circuit blocks for the body.
+  // MUST be declared before any early returns to keep hook order stable.
+  const blocks = useMemo(() => {
+    if (!day) return [];
+    return groupExercises(day.exercises ?? []);
+  }, [day]);
+
   if (error) return <Centered><p className="text-destructive">{error}</p></Centered>;
   if (!info) return <Centered><p className="text-muted-foreground">Loading…</p></Centered>;
   if (done) return (
@@ -316,12 +323,6 @@ function ClientLogPage() {
   const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
   const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
   const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
-
-  // Group exercises into single / superset / circuit blocks for the body.
-  const blocks = useMemo(() => {
-    if (!day) return [];
-    return groupExercises(day.exercises ?? []);
-  }, [day]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
