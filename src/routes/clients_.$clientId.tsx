@@ -3003,11 +3003,6 @@ function ClientDetail() {
           </SectionBlock>
           {/* Performance */}
           <SectionBlock id="performance" analysing={analysingSections["performance"]} analysis={sectionAnalyses["performance"]} title={t("performance_block.title")} hint={t("performance_block.hint")} defaultCollapsed complete={isSectionComplete("performance", assessment)} footer={isSectionComplete("performance", assessment) ? <CompletionStrip text={t("performance_block.complete", { summary: `FC ${assessment.resting_heart_rate ?? "—"} bpm · ${assessment.ext_cardio_test ?? "sem teste"}` })} description={t("performance_block.complete_meaning")} /> : null}>
-            <div className="mb-2 flex justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Força de preensão (Jamar)
-              </Button>
-            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <MeasureField
                 label={t("performance_block.rhr")}
@@ -3044,7 +3039,14 @@ function ClientDetail() {
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
               ) : null}
               {showAdvancedPerformance && (
-                <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                <>
+                  <div className="sm:col-span-2 flex justify-end">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setJamarOpen(true)}>
+                      <Plus className="mr-1.5 h-3.5 w-3.5" /> Dinamómetro de preensão
+                    </Button>
+                  </div>
+                  <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
+                </>
               )}
             </div>
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
