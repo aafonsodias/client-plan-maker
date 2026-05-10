@@ -405,6 +405,24 @@
     "other": "Other",
     "test_result": "Test result",
     "test_result_hint": "Distance, time, or VO₂ estimate.",
+    "rockport_title": "Rockport · VO₂max estimate",
+    "rockport_protocol": "Walk 1 mile (1.6 km) as fast as possible without running. Use a stopwatch. Immediately on arrival, measure pulse for 15s × 4. Enter values below.",
+    "rockport_prereq": "Weight {{weight}} kg · Age {{age}} · {{sex}}",
+    "rockport_missing_prereq": "Missing weight, age or sex in profile — fill Anthropometry first.",
+    "rockport_sex_male": "Male",
+    "rockport_sex_female": "Female",
+    "rockport_minutes": "Minutes",
+    "rockport_seconds": "Seconds",
+    "rockport_hr": "Post-walk HR (bpm)",
+    "rockport_result": "Estimated VO₂max",
+    "rockport_apply": "Save result",
+    "rockport_ignore": "Skip",
+    "rockport_band": {
+      "poor": "poor",
+      "fair": "fair",
+      "good": "good",
+      "excellent": "excellent"
+    },
     "cardio_legacy": "Cardio context (legacy free text)"
   },
   "resume": {
@@ -433,7 +451,11 @@
     "safety_body": "The generated plan will be capped at conservative intensities and avoid contraindicated patterns. You remain the responsible professional — confirm to proceed.",
     "safety_confirm": "I confirm the client has medical clearance (or accepts the risk in writing) and I take professional responsibility for this prescription.",
     "safety_cancel": "Cancel",
-    "safety_proceed": "Generate conservative draft"
+    "safety_proceed": "Generate conservative draft",
+    "incomplete_title": "Finish partial assessment?",
+    "incomplete_body": "Assessment incomplete ({{done}}/{{total}} sections). You can finish now — missing sections can be filled later by you or your trainer. Initial prescription quality will be reduced.",
+    "incomplete_confirm": "Finish anyway",
+    "incomplete_cancel": "Go back"
   },
   "progress_panel": {
     "header": "Generating with Claude Haiku 4.5 (per day)",
