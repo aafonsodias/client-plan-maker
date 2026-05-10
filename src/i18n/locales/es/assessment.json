@@ -181,19 +181,58 @@
       "resolved": "→ reevaluar el {{date}}"
     },
     "tpl": {
-      "str_squat_15bw_5":  { "specific": "Trabajar fuerza de sentadilla durante 16 semanas, medir progreso", "measurable": "Seguir 1RM/5RM en sentadilla; meta exploratoria: 1,5×PC × 5 reps" },
-      "str_bench_bw_5":    { "specific": "Trabajar fuerza de empuje horizontal durante 16 semanas",          "measurable": "Seguir 1RM/5RM en banca; meta exploratoria: 1×PC × 5 reps" },
-      "str_dl_2bw_3":      { "specific": "Trabajar fuerza de tracción y cadena posterior durante 20 semanas","measurable": "Seguir 1RM/3RM en peso muerto; meta exploratoria: 2×PC × 3 reps" },
-      "hyp_arm_3cm":       { "specific": "Trabajar hipertrofia de brazo durante 12 semanas, medir progreso", "measurable": "Medir perímetro de brazo cada 4 semanas; observar tendencia" },
-      "hyp_thigh_4cm":     { "specific": "Trabajar hipertrofia de muslo durante 12 semanas, medir progreso", "measurable": "Medir perímetro de muslo cada 4 semanas; observar tendencia" },
-      "comp_fatloss_5":    { "specific": "Reducir grasa durante 16 semanas, manteniendo masa magra",         "measurable": "Seguir composición (DEXA/BIA) cada 4-6 semanas; ajustar por trayectoria" },
-      "comp_recomp":       { "specific": "Recomposición corporal durante 20 semanas (perder grasa, ganar masa magra)", "measurable": "Seguir composición y fuerza en paralelo; ajustar según respuesta" },
-      "end_5k_25":         { "specific": "Trabajar resistencia de carrera 5 km durante 10 semanas",          "measurable": "Seguir tiempo en 5 km cada 3-4 semanas; meta exploratoria: ≤ 25:00" },
-      "end_cooper_2400":   { "specific": "Trabajar capacidad aeróbica durante 8 semanas",                    "measurable": "Reaplicar Cooper 12 min cada 4 semanas; meta exploratoria: ≥ 2400 m" },
-      "mob_toes_painfree": { "specific": "Trabajar movilidad lumbar e isquiotibial durante 6 semanas",       "measurable": "Sit-and-reach y percepción de dolor; medir cada 2 semanas" },
-      "mob_overhead_full": { "specific": "Trabajar movilidad torácica y de hombros durante 8 semanas",       "measurable": "Test overhead contra pared; medir cada 2 semanas" },
-      "fn_carry_30s":      { "specific": "Trabajar fuerza funcional de transporte (carry) durante 12 semanas","measurable": "Tiempo en farmer's carry con carga progresiva; reevaluar cada 4 semanas" },
-      "fn_get_up_floor":   { "specific": "Trabajar movilidad integrada suelo-pie durante 8 semanas",         "measurable": "Evaluar Turkish get-up sin manos cada 2 semanas; observar limpieza del patrón" }
+      "str_squat_15bw_5": {
+        "specific": "Trabajar fuerza de sentadilla durante 16 semanas, medir progreso",
+        "measurable": "Seguir 1RM/5RM en sentadilla; meta exploratoria: 1,5×PC × 5 reps"
+      },
+      "str_bench_bw_5": {
+        "specific": "Trabajar fuerza de empuje horizontal durante 16 semanas",
+        "measurable": "Seguir 1RM/5RM en banca; meta exploratoria: 1×PC × 5 reps"
+      },
+      "str_dl_2bw_3": {
+        "specific": "Trabajar fuerza de tracción y cadena posterior durante 20 semanas",
+        "measurable": "Seguir 1RM/3RM en peso muerto; meta exploratoria: 2×PC × 3 reps"
+      },
+      "hyp_arm_3cm": {
+        "specific": "Trabajar hipertrofia de brazo durante 12 semanas, medir progreso",
+        "measurable": "Medir perímetro de brazo cada 4 semanas; observar tendencia"
+      },
+      "hyp_thigh_4cm": {
+        "specific": "Trabajar hipertrofia de muslo durante 12 semanas, medir progreso",
+        "measurable": "Medir perímetro de muslo cada 4 semanas; observar tendencia"
+      },
+      "comp_fatloss_5": {
+        "specific": "Reducir grasa durante 16 semanas, manteniendo masa magra",
+        "measurable": "Seguir composición (DEXA/BIA) cada 4-6 semanas; ajustar por trayectoria"
+      },
+      "comp_recomp": {
+        "specific": "Recomposición corporal durante 20 semanas (perder grasa, ganar masa magra)",
+        "measurable": "Seguir composición y fuerza en paralelo; ajustar según respuesta"
+      },
+      "end_5k_25": {
+        "specific": "Trabajar resistencia de carrera 5 km durante 10 semanas",
+        "measurable": "Seguir tiempo en 5 km cada 3-4 semanas; meta exploratoria: ≤ 25:00"
+      },
+      "end_cooper_2400": {
+        "specific": "Trabajar capacidad aeróbica durante 8 semanas",
+        "measurable": "Reaplicar Cooper 12 min cada 4 semanas; meta exploratoria: ≥ 2400 m"
+      },
+      "mob_toes_painfree": {
+        "specific": "Trabajar movilidad lumbar e isquiotibial durante 6 semanas",
+        "measurable": "Sit-and-reach y percepción de dolor; medir cada 2 semanas"
+      },
+      "mob_overhead_full": {
+        "specific": "Trabajar movilidad torácica y de hombros durante 8 semanas",
+        "measurable": "Test overhead contra pared; medir cada 2 semanas"
+      },
+      "fn_carry_30s": {
+        "specific": "Trabajar fuerza funcional de transporte (carry) durante 12 semanas",
+        "measurable": "Tiempo en farmer's carry con carga progresiva; reevaluar cada 4 semanas"
+      },
+      "fn_get_up_floor": {
+        "specific": "Trabajar movilidad integrada suelo-pie durante 8 semanas",
+        "measurable": "Evaluar Turkish get-up sin manos cada 2 semanas; observar limpieza del patrón"
+      }
     }
   },
   "readiness_block": {
@@ -225,7 +264,11 @@
     "summary": {
       "x_per_week": "{{n}}×/week",
       "min": "{{n}} min"
-    }
+    },
+    "loc_home": "Casa",
+    "loc_gym": "Gimnasio",
+    "loc_outdoor": "Aire libre",
+    "loc_hybrid": "Híbrido"
   },
   "equipment": {
     "barbell": "Barbell",
@@ -251,7 +294,11 @@
     "job_type": "Job type",
     "job_placeholder": "desk, manual, mixed…",
     "energy": "Energy through day",
-    "recovery": "Recovery capacity"
+    "recovery": "Recovery capacity",
+    "job_sedentary": "Sedentario",
+    "job_standing": "De pie",
+    "job_physical": "Físico",
+    "job_mixed": "Mixto"
   },
   "nutrition_block": {
     "title": "Nutrition & hydration",
@@ -539,5 +586,27 @@
       "unavailable": "Section unavailable."
     },
     "analysing_section": "Analysing this section…"
+  },
+  "stage_one_hero": {
+    "eyebrow": "Evaluación · Paso 1 de 5",
+    "steps_assessment": "Evaluación",
+    "steps_briefing": "Briefing",
+    "steps_blueprint": "Plan maestro",
+    "steps_microcycle": "Semana tipo",
+    "steps_progressions": "Progresiones",
+    "cta_request": "Solicitar evaluación",
+    "cta_continue": "Continuar evaluación",
+    "cta_resend": "Reenviar enlace",
+    "cta_preview": "Ver como el cliente",
+    "link_status_label": "Estado del enlace",
+    "link_not_sent": "sin enviar",
+    "link_sent": "enviado · sin abrir",
+    "link_opened": "abierto por el cliente",
+    "link_submitted": "devuelto por el cliente",
+    "link_reviewed": "revisado",
+    "link_expired": "caducado",
+    "link_expires_in": "válido {{days}}d más",
+    "draft_status": "Borrador local · {{count}} de {{total}} secciones",
+    "subtitle": "Recoge los datos que alimentarán el plan. Pide al cliente o rellena tú."
   }
 }
