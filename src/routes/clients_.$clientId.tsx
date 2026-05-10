@@ -3032,9 +3032,17 @@ function ClientDetail() {
                   ]}
                 />
               </div>
-              {assessment.ext_cardio_test !== "untested" && (
+              {assessment.ext_cardio_test === "rockport" ? (
+                <RockportWizard
+                  weightKg={(assessment.weight_kg ?? client?.weight_kg) ?? null}
+                  age={client?.age ?? null}
+                  sex={client?.sex ?? null}
+                  value={assessment.ext_cardio_value}
+                  onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })}
+                />
+              ) : assessment.ext_cardio_test && assessment.ext_cardio_test !== "untested" ? (
                 <Field label={t("performance_block.test_result")} value={assessment.ext_cardio_value} onChange={(v) => setAssessment({ ...assessment, ext_cardio_value: v })} className="sm:col-span-2" hint={t("performance_block.test_result_hint")} />
-              )}
+              ) : null}
               {showAdvancedPerformance && (
                 <TextField label={t("performance_block.cardio_legacy")} value={assessment.cardio_capacity} onChange={(v) => setAssessment({ ...assessment, cardio_capacity: v })} className="sm:col-span-2" />
               )}
