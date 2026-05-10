@@ -763,9 +763,16 @@ async function resolveTierGuidelines(
   brief: any,
 ): Promise<TierGuidelines | null> {
   const meta = loadedPlan.generation_meta as any;
-  if (meta?.tier_guidelines) return meta.tier_guidelines as TierGuidelines;
+  // Always recompute injury bans (cheap; assessment_injuries is small per
+  // client and may have been edited since the meta was first written).
+  const injuryBans = await fetchInjuryBansForPlan(supabase, loadedPlan, brief);
+
+  if (meta?.tier_guidelines) {
+    return { ...(meta.tier_guidelines as TierGuidelines), injuryBans };
+  }
   if (meta?.tier && brief) {
-    return tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+    const g = tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+    return { ...g, injuryBans };
   }
   // Fallback: classify from assessment now.
   let assessment: Record<string, any> | null = null;
@@ -795,7 +802,40 @@ async function resolveTierGuidelines(
     }
   }
   const tier = classifyTier(brief, assessment ?? {});
-  return tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  const g = tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
+  return { ...g, injuryBans };
+}
+
+/**
+ * Pull the relevant assessment_injuries rows for this plan and convert them
+ * into structured InjuryBans. Falls back to brief.red_flags substring rules
+ * when no rows exist (older plans / quick assessments).
+ */
+async function fetchInjuryBansForPlan(
+  supabase: any,
+  loadedPlan: LoadedPlan,
+  brief: any,
+): Promise<InjuryBan[]> {
+  let injuryRows: InjuryRow[] = [];
+  try {
+    if (loadedPlan.assessment_id) {
+      const { data } = await supabase
+        .from("assessment_injuries")
+        .select("body_zone, severity, injury_label")
+        .eq("assessment_id", loadedPlan.assessment_id);
+      injuryRows = ((data ?? []) as any[]) as InjuryRow[];
+    }
+    if (injuryRows.length === 0 && loadedPlan.client_id) {
+      const { data } = await supabase
+        .from("assessment_injuries")
+        .select("body_zone, severity, injury_label")
+        .eq("client_id", loadedPlan.client_id);
+      injuryRows = ((data ?? []) as any[]) as InjuryRow[];
+    }
+  } catch {
+    injuryRows = [];
+  }
+  return deriveInjuryBans(injuryRows, (brief?.red_flags ?? []) as string[]);
 }
 
 /**
