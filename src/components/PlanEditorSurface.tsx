@@ -1891,10 +1891,10 @@ function RegenerateWithFeedbackDialog({
             <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-200">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               <span>
-                {stage === "context" && "Reading client + assessment context…"}
-                {stage === "ai" && "Asking the AI to redesign with wave-RPE (~30s)…"}
-                {stage === "saving" && "Saving new plan + archiving old sessions…"}
-                {stage === "done" && "Done."}
+                {progress.phase === "context" && "Reading client + assessment + Cockpit…"}
+                {progress.phase === "weeks" && `Generating weeks ${progress.done}/${progress.total} (parallel)…`}
+                {progress.phase === "saving" && "Saving new plan + archiving old sessions…"}
+                {progress.phase === "done" && "Done."}
               </span>
             </div>
           )}
