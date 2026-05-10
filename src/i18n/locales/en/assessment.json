@@ -391,7 +391,7 @@
     "max_lifts_help": "1-rep max loads or recent estimate. Optional — leave blank if unknown. Shorthand: SQ = squat, BP = bench, DL = deadlift, OHP = overhead press."
   },
   "performance_block": {
-    "title": "Performance markers",
+    "title": "Cardiovascular health",
     "hint": "Cardiovascular and conditioning baseline.",
     "rhr": "Resting HR (bpm)",
     "rhr_hint": "Measured first thing AM, supine.",
