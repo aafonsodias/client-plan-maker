@@ -839,48 +839,41 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
         </div>
       </details>
 
-      {/* Mode tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex w-full max-w-full overflow-x-auto rounded-lg border border-border bg-card p-0.5 text-xs sm:w-auto">
-        <button
-          onClick={() => setMode("view")}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "view" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <Eye className="h-3.5 w-3.5" /> View
-        </button>
-        <button
-          onClick={() => {
-            setMode("edit");
-          }}
-          title={isPhasedComplete ? "Edit values inline — no re-approval needed" : undefined}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "edit" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <Pencil className="h-3.5 w-3.5" /> Edit
-        </button>
-        <button
-          onClick={() => setMode("log")}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "log" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <NotebookPen className="h-3.5 w-3.5" /> Log
-        </button>
-        <button
-          onClick={() => setMode("results")}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "results" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-        >
-          <BarChart3 className="h-3.5 w-3.5" /> Resultados
-          {sessions.length > 0 && (
-            <span className="rounded-full bg-emerald-500/20 px-1.5 py-px text-[9px] font-semibold text-emerald-300">
-              {sessions.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setMode("progress")}
-          className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold transition ${mode === "progress" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-          title={tCommon("plan.trend_chart_title")}
-        >
-          <TrendingUp className="h-3.5 w-3.5" /> Progresso
-        </button>
+      {/* Mode tabs — editorial underline row, tonal hover, no card-soup */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border/60">
+        <div role="tablist" className="-mb-px flex w-full max-w-full items-center gap-0.5 overflow-x-auto text-[11px] font-semibold uppercase tracking-widest sm:w-auto sm:gap-1">
+          {(
+            [
+              { key: "view", label: "View", Icon: Eye },
+              { key: "edit", label: "Edit", Icon: Pencil, title: isPhasedComplete ? "Edit values inline — no re-approval needed" : undefined },
+              { key: "log", label: "Log", Icon: NotebookPen },
+              { key: "results", label: "Resultados", Icon: BarChart3, badge: sessions.length > 0 ? sessions.length : undefined },
+              { key: "progress", label: "Progresso", Icon: TrendingUp, title: tCommon("plan.trend_chart_title") },
+            ] as Array<{ key: Mode; label: string; Icon: typeof Eye; title?: string; badge?: number }>
+          ).map(({ key, label, Icon, title, badge }) => {
+            const active = mode === key;
+            return (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setMode(key as Mode)}
+                title={title}
+                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-2 transition ${
+                  active
+                    ? "text-foreground after:absolute after:inset-x-2 after:-bottom-px after:h-px after:bg-amber-400"
+                    : "text-muted-foreground/80 hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" /> {label}
+                {badge !== undefined && (
+                  <span className="ml-0.5 rounded-full bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold normal-case tracking-normal text-emerald-300">
+                    {badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
         {plan?.status !== "finalized" && client && (
           <RegenerateWithFeedbackDialog

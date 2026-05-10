@@ -108,43 +108,43 @@ export function ThisWeekHero({
 
   const Wrapper: any = bare ? "div" : "section";
   const wrapperCls = bare
-    ? "relative pt-2"
+    ? "relative"
     : "relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/[0.08] via-card to-card p-5 shadow-[0_8px_32px_-12px_rgba(245,158,11,0.22)]";
   return (
     <Wrapper aria-label={bare ? undefined : "Esta semana"} className={wrapperCls}>
       <div className="relative">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0 flex-1">
             {!bare && (
               <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/80">
                 Protocolo · esta semana
               </p>
             )}
-            <h2 className="mt-1 text-base font-semibold text-foreground">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <Link
                 to="/plans/$planId"
                 params={{ planId: plan.id }}
-                className="group inline-flex items-center gap-2 hover:text-amber-400"
+                className="group inline-flex items-baseline gap-2 truncate text-[15px] font-semibold tracking-tight text-foreground hover:text-amber-400"
                 title="Abrir plano"
               >
-                <FileText className="h-4 w-4 text-muted-foreground group-hover:text-amber-400" />
+                <FileText className="h-3.5 w-3.5 self-center text-muted-foreground/70 group-hover:text-amber-400" />
                 <span className="truncate underline-offset-4 group-hover:underline">{plan.title}</span>
               </Link>
-            </h2>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              Bloco {blockN} · Semana {selectedWeek} de {totalWeeks} · <span className="uppercase tracking-wider text-foreground/80">{tag}</span>
-            </p>
+              <p className="text-[11px] text-muted-foreground">
+                Bloco {blockN} · Sem. {selectedWeek}/{totalWeeks} · <span className="uppercase tracking-wider text-foreground/70">{tag}</span>
+              </p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
               onClick={handleDownload}
               disabled={downloading}
-              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/[0.07] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90 hover:bg-emerald-500/15 disabled:opacity-60"
               title={`Descarregar PDF da Semana ${selectedWeek}`}
             >
               {downloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-              Semana {selectedWeek} · PDF
+              PDF · Sem. {selectedWeek}
             </button>
             {!ctaIsOpenPlan && <PrimaryCta action={primaryAction} />}
             {secondaryAction && <PrimaryCta action={secondaryAction} variant="ghost" />}
@@ -152,7 +152,7 @@ export function ThisWeekHero({
         </div>
 
         {totalWeeks > 1 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <MacroIndexStrip
               totalWeeks={totalWeeks}
               selectedWeek={selectedWeek}
