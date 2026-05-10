@@ -2991,6 +2991,9 @@ function ClientDetail() {
             <button type="button" onClick={() => setShowAdvancedPerformance((s) => !s)} className="mt-2 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
               {showAdvancedPerformance ? t("hide_advanced") : t("show_advanced")}
             </button>
+            {isSectionComplete("performance", assessment) && (
+              <RxImplications sectionId="performance" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
 
           {!busy && resumablePlan && (
