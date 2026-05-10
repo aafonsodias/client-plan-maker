@@ -2432,7 +2432,13 @@ function ClientDetail() {
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Field label={t("history_block.years")} type="number" value={String(assessment.years_training ?? "")} onChange={(v) => setAssessment({ ...assessment, years_training: v })} />
+              <div className="sm:col-span-2 space-y-1.5">
+                <LabelWithHelp label={t("history_block.tier_label")} hint={t("history_block.tier_hint")} />
+                <TrainingTierChips
+                  years={assessment.years_training === "" || assessment.years_training == null ? null : Number(assessment.years_training)}
+                  onChange={(years) => setAssessment({ ...assessment, years_training: years == null ? "" : String(years) })}
+                />
+              </div>
               <Field label={t("history_block.previous")} placeholder={t("history_block.previous_placeholder")} value={assessment.previous_program_style} onChange={(v) => setAssessment({ ...assessment, previous_program_style: v })} />
               <div className="sm:col-span-2 space-y-1">
                 <div className="flex items-center justify-between gap-1">
