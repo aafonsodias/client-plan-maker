@@ -1935,7 +1935,25 @@ function ClientDetail() {
         } else if (microcycleApprovedLocal && !progressionsApprovedLocal) {
           primaryAction = { label: "Aprovar progressão", icon: <ArrowRight className="h-4 w-4" />, onClick: () => { setExpandedStage("progressions"); scrollToStages(); } };
         } else if (allApprovedLocal && heroPlan) {
-          primaryAction = { label: "Abrir treino de hoje", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
+          primaryAction = {
+            label: "Abrir primeiro log",
+            icon: <ArrowRight className="h-4 w-4" />,
+            intent: "log",
+            onClick: async () => {
+              try {
+                const existingToken =
+                  (heroPlan as any).share_token &&
+                  (!(heroPlan as any).share_token_expires_at || new Date((heroPlan as any).share_token_expires_at).getTime() > Date.now())
+                    ? (heroPlan as any).share_token
+                    : null;
+                const token = existingToken ?? (await ensureShareTokenFn({ data: { plan_id: heroPlan.id } })).share_token;
+                setPlans((prev) => prev.map((p) => (p.id === heroPlan.id ? { ...p, share_token: token } : p)));
+                navigate({ to: "/log/$token", params: { token } });
+              } catch (e: any) {
+                toast.error(e?.message ?? "Não foi possível abrir o logbook.");
+              }
+            },
+          };
         } else if (heroPlan) {
           primaryAction = { label: "Abrir plano", icon: <ArrowRight className="h-4 w-4" />, href: `/plans/${heroPlan.id}` };
         } else {
@@ -1978,6 +1996,15 @@ function ClientDetail() {
                 stage1Expanded={!effectiveCollapsed}
                 onStage1Click={() => setAssessmentCollapsedPersist(!effectiveCollapsed)}
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
+              />
+            )}
+            {heroPlan && (
+              <ThisWeekHero
+                bare
+                plan={heroPlan}
+                defaultWeek={heroDefaultWeek}
+                zeroState={zeroState}
+                primaryAction={primaryAction}
               />
             )}
             <CapacityDeltasCard clientId={clientId} />
