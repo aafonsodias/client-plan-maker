@@ -435,6 +435,9 @@
   "detail": {
     "acsm_chip_title": "ACSM risk category (Pre-participation)",
     "acsm_label": "ACSM",
+    "implications_label": "Implicaciones para la prescripción",
+    "implications_show": "Ver implicaciones",
+    "implications_hide": "Ocultar implicaciones",
     "recovery_label": "Recovery",
     "recovery_chip_tooltip": "Sleep {{sleep}}/10 · Stress {{stress}}/10 · Soreness {{sore}}/10",
     "year_view_title": "View longitudinal evolution across all blocks",
