@@ -5616,14 +5616,33 @@ function buildRxItems_goal(a: any): RxItem[] {
   if (a?.smart_deadline) {
     const d = new Date(a.smart_deadline);
     const weeks = Math.max(1, Math.round((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7)));
+    // Block-aware horizon: 1 bloco ≈ 6 semanas (NSCA mesocycle convention).
+    let title: string;
+    let body: string;
+    let tone: RxItem["tone"];
+    if (weeks <= 6) {
+      tone = "warn";
+      title = `Horizonte ~${weeks} sem · ≈ 1 bloco`;
+      body = "Janela curta — só dá para 1 microcycle + 1 mesocycle. Priorizar 1–2 KPIs e gerir expectativas; ganhos visíveis serão modestos.";
+    } else if (weeks <= 10) {
+      tone = "info";
+      title = `Horizonte ~${weeks} sem · ≈ 2 blocos`;
+      body = "Espaço para 2 blocos com deload entre eles. Reavaliar e ajustar foco a meio (~sem 5).";
+    } else if (weeks <= 16) {
+      tone = "info";
+      title = `Horizonte ~${weeks} sem · ≈ 2–3 blocos`;
+      body = "Janela típica de programação. 2–3 blocos com checkpoints a cada 4–6 semanas; espaço para uma onda de carga + descarga.";
+    } else {
+      tone = "info";
+      title = `Horizonte ~${weeks} sem · ≈ 3–4 blocos`;
+      body = "Horizonte longo. Planear 3–4 blocos com mudança de ênfase entre eles (acumulação → intensificação → realização) e checkpoints mensais.";
+    }
     items.push({
       key: "horizon",
-      tone: weeks < 8 ? "warn" : "info",
+      tone,
       icon: <CalendarIcon className="h-3.5 w-3.5" />,
-      title: weeks < 8 ? `Horizonte curto (~${weeks} sem)` : `Horizonte: ~${weeks} semanas`,
-      body: weeks < 8
-        ? "Janela apertada. Esperar ganhos visíveis modestos — gerir expectativas e priorizar 1–2 KPIs principais."
-        : "Tempo suficiente para ≥1 bloco completo (4–6 sem) + reavaliação. Marcar checkpoint a meio.",
+      title,
+      body,
     });
   }
   if (items.length === 0) {
