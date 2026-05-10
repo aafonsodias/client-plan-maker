@@ -1922,6 +1922,7 @@ function ClientDetail() {
           onCollapsedChange={setAssessmentCollapsedPersist}
           hideCollapsedStrip
           sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
+          onActiveChange={setActiveSection}
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
           completionPct={
