@@ -280,6 +280,69 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_injuries: {
+        Row: {
+          assessment_id: string
+          body_view: string
+          body_zone: string
+          client_id: string
+          created_at: string
+          id: string
+          injury_label: string | null
+          medical_document_url: string | null
+          note: string | null
+          severity: number
+          source: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          body_view: string
+          body_zone: string
+          client_id: string
+          created_at?: string
+          id?: string
+          injury_label?: string | null
+          medical_document_url?: string | null
+          note?: string | null
+          severity: number
+          source?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          body_view?: string
+          body_zone?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          injury_label?: string | null
+          medical_document_url?: string | null
+          note?: string | null
+          severity?: number
+          source?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_injuries_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_injuries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_unmatched_aspirations: {
         Row: {
           aspiration_text: string

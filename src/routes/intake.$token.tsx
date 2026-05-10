@@ -17,6 +17,9 @@ import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
 import { EQUIPMENT_CATALOG, CATEGORY_LABEL_PT, CATEGORY_LABEL_EN, type EquipmentCategory, searchEquipment } from "@/lib/equipment-catalog";
+import { InjuriesSlide } from "@/components/intake/InjuriesSlide";
+
+const SHOW_DEPRECATED_FIELDS = import.meta.env.VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS === "1";
 
 function TrainerLogo({ url }: { url?: string | null }) {
   const [failed, setFailed] = useState(false);
@@ -1370,10 +1373,20 @@ function buildSlides(
     },
     // 9. Injuries (optional)
     {
-      title: t("sections.training_injuries"),
+      title: t("injuries.page_title"),
       subtitle: t("optional"),
       body: (
-        <Textarea autoFocus rows={3} value={form.injuries} onChange={(e) => set("injuries", e.target.value)} />
+        <div className="space-y-4">
+          {token ? <InjuriesSlide token={token} /> : null}
+          {SHOW_DEPRECATED_FIELDS ? (
+            <div className="rounded-lg border border-dashed border-border/40 p-3">
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                deprecated · {t("sections.training_injuries")}
+              </p>
+              <Textarea rows={3} value={form.injuries} onChange={(e) => set("injuries", e.target.value)} />
+            </div>
+          ) : null}
+        </div>
       ),
     },
     // 10. PAR-Q
