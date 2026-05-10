@@ -4676,7 +4676,7 @@ function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; anal
     <figure className="mt-3 animate-fade-in rounded-md bg-gradient-to-br from-muted/30 to-muted/10 px-4 py-3 ring-1 ring-inset ring-amber-500/15">
       <figcaption className="eyebrow mb-1.5 flex items-center gap-1.5 text-amber-700/80 dark:text-amber-300/70">
         <Sparkles className="h-3 w-3" aria-hidden />
-        <span>{t("insight_label")}</span>
+        <span>{t("detail.insight_label")}</span>
       </figcaption>
       <blockquote className="border-l-2 border-amber-500/40 pl-3 font-display text-[13px] italic leading-relaxed text-foreground/85">
         {insight}
