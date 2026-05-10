@@ -378,7 +378,9 @@ export function SmartGoalSection({
                     aria-pressed={selected}
                     className={cn(
                       "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-                      selected ? "bg-muted/60 text-foreground" : "bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                      selected
+                        ? "bg-foreground/10 ring-1 ring-foreground/30 text-foreground"
+                        : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
                     )}
                   >
                     {t(`goals.duration.${p.id}` as never) as string}
@@ -391,7 +393,9 @@ export function SmartGoalSection({
                 aria-pressed={durationMode === "custom"}
                 className={cn(
                   "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
-                  durationMode === "custom" ? "bg-muted/60 text-foreground" : "bg-muted/25 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                  durationMode === "custom"
+                    ? "bg-foreground/10 ring-1 ring-foreground/30 text-foreground"
+                    : "bg-muted/20 text-muted-foreground hover:bg-muted/40"
                 )}
               >
                 {t("goals.duration.custom")}
