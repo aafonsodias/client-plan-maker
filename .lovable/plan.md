@@ -1,30 +1,14 @@
-## Fix: hooks-order crash on `/log/$token`
+Vou corrigir a abertura do “Abrir logbook do cliente” com um ajuste pequeno e focado.
 
-### Root cause
-In `src/routes/log.$token.tsx`, `const blocks = useMemo(...)` is declared at line 321 — **after** the three early returns at lines 260–274 (`error`, `!info`, `done`). React's Rules of Hooks require every hook to run on every render. On the first render the loading guard short-circuits and the `useMemo` never executes; on the next render it does, so React throws *"Rendered more hooks than during the previous render"* and the route boundary shows the generic error screen.
+Problema encontrado:
+- O erro atual ainda aponta para `src/routes/log.$token.tsx` e para a variável `blocks`.
+- A página tem `useMemo` antes dos primeiros retornos condicionais, mas ainda calcula valores normais (`totalSets`, `doneSets`, `sessionPct`) depois de um retorno condicional (`if (done) return ...`).
+- Para eliminar definitivamente o erro de ordem de renderização, a página deve deixar de ter retornos condicionais antes de terminar todos os cálculos usados no render.
 
-### Change
-Move the `blocks` `useMemo` (and any other hooks that may have slipped below) **above** the `if (error) … if (!info) … if (done) …` block, alongside the other hooks (`useEffect`s, `useState`s, `useRef`s).
+Plano:
+1. Em `src/routes/log.$token.tsx`, mover os cálculos derivados (`totalSets`, `doneSets`, `sessionPct`) para junto do `blocks`, antes de qualquer `return` condicional.
+2. Transformar o estado `done` num ramo dentro do `return` principal, em vez de retornar cedo antes de todos os cálculos do componente.
+3. Manter o comportamento existente: confetti, mensagem de sessão registada, botão “Registar outra sessão” e redireção para `/me` ou `/clients/$clientId` continuam iguais.
+4. Validar depois com uma verificação leve dos logs/runtime para confirmar que o erro de hooks deixou de aparecer.
 
-```text
-function ClientLogPage() {
-  // … all useState / useRef / useEffect …
-  const blocks = useMemo(() => (day ? groupExercises(day.exercises ?? []) : []), [day]);
-
-  if (error) return …
-  if (!info) return …
-  if (done) return …
-
-  // submit handler + JSX
-}
-```
-
-Note: `useMemo` already handles `!day` internally, so moving it up is safe.
-
-### Verification
-1. Open `/log/<valid token>` — page should mount without the red error screen.
-2. Console should be free of the *"change in the order of Hooks"* warning.
-3. Submit + week selector still work; `blocks` still drives the rendered exercise groups.
-
-### Out of scope
-No behaviour, styling, server-fn, or schema changes. Pure hook-ordering fix.
+Sem alterações de base de dados, sem mudanças ao botão no detalhe do cliente e sem mexer na lógica de geração do plano.
