@@ -4897,6 +4897,10 @@ function SectionBlock({
 }
 
 function SectionAnalysisCard({ analysing, analysis }: { analysing: boolean; analysis: SectionAnalysis | null }) {
+  return null;
+}
+
+function _SectionAnalysisCardLegacy({ analysing, analysis }: { analysing: boolean; analysis: SectionAnalysis | null }) {
   // (kept for potential future use; UnifiedSectionFooter is the new path)
   const { t } = useTranslation("assessment");
   if (analysing) {
