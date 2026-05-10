@@ -2024,7 +2024,7 @@ function ClientDetail() {
               })}
             </ul>
             {isSectionComplete("parq", assessment) && (
-              <RxImplications sectionId="parq" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="parq" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Risk stratification */}
@@ -2351,7 +2351,7 @@ function ClientDetail() {
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
             {isSectionComplete("training", assessment) && (
-              <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Training history */}
@@ -2393,7 +2393,7 @@ function ClientDetail() {
               </div>
             )}
             {isSectionComplete("goal", assessment) && (
-              <RxImplications sectionId="goal" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="goal" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Medications */}
@@ -2703,7 +2703,7 @@ function ClientDetail() {
               </div>
             </details>
             {isSectionComplete("anthro", assessment) && (
-              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Readiness */}
@@ -2725,7 +2725,7 @@ function ClientDetail() {
               }))}
             />
             {isSectionComplete("readiness", assessment) && (
-              <RxImplications sectionId="readiness" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="readiness" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Lifestyle (rebuilt) */}
@@ -2812,7 +2812,7 @@ function ClientDetail() {
               )}
             </div>
             {isSectionComplete("lifestyle", assessment) && (
-              <RxImplications sectionId="lifestyle" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="lifestyle" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Nutrition (rebuilt) */}
@@ -2916,7 +2916,7 @@ function ClientDetail() {
               {showAdvancedNutrition ? t("hide_advanced") : t("show_advanced")}
             </button>
             {isSectionComplete("nutrition", assessment) && (
-              <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Mobility checklist */}
@@ -2998,7 +2998,7 @@ function ClientDetail() {
               ))}
             </div>
             {isSectionComplete("screen", assessment) && (
-              <RxImplications sectionId="screen" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="screen" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Performance */}
@@ -3051,7 +3051,7 @@ function ClientDetail() {
               {showAdvancedPerformance ? t("hide_advanced") : t("show_advanced")}
             </button>
             {isSectionComplete("performance", assessment) && (
-              <RxImplications sectionId="performance" assessment={assessment} riskCategory={riskCategory} />
+              <RxImplications sectionId="performance" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
 
@@ -6109,7 +6109,7 @@ function RxImplications({
       <details className="group mt-4 rounded-lg border border-border/60 bg-background/30">
         <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2">
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-open:rotate-90" />
-          <h4 className="eyebrow text-foreground/80">Análise & prescrição</h4>
+          <h4 className="eyebrow text-foreground/80">Implicações para a prescrição</h4>
           {riskChip && (
             <span className={`rounded-full border px-1.5 py-[1px] text-[10px] font-medium uppercase tracking-wider ${chipTone}`}>
               ACSM: {riskChip.level}
