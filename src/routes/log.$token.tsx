@@ -257,6 +257,13 @@ function ClientLogPage() {
     setEntries((prev) => prev.map((e, idx) => (idx === i ? next : e)));
   };
 
+  // Group exercises into single / superset / circuit blocks for the body.
+  // MUST be declared before any early returns to keep hook order stable.
+  const blocks = useMemo(() => {
+    if (!day) return [];
+    return groupExercises(day.exercises ?? []);
+  }, [day]);
+
   if (error) return <Centered><p className="text-destructive">{error}</p></Centered>;
   if (!info) return <Centered><p className="text-muted-foreground">Loading…</p></Centered>;
   if (done) return (
