@@ -39,6 +39,7 @@ import { HelpPopover } from "@/components/assessment/HelpPopover";
 import { AnchoredSlider } from "@/components/assessment/AnchoredSlider";
 import { MeasureField } from "@/components/assessment/MeasureField";
 import { ChipGroup } from "@/components/assessment/ChipGroup";
+import { RockportWizard } from "@/components/assessment/RockportWizard";
 import { VisualChipGroup } from "@/components/ui/visual-chip-group";
 import {
   FemaleSilhouette, MaleSilhouette,
