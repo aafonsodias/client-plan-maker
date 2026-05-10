@@ -504,7 +504,8 @@
       "stat_risk": "ACSM risk",
       "stat_recovery": "Recovery profile",
       "stat_body_comp": "Body composition",
-      "alerts": "Warning signs · {{n}}"
+      "alerts": "Warning signs · {{n}}",
+      "go_to_cockpit": "Ir al cockpit"
     },
     "snapshot": {
       "title": "Client snapshot",
