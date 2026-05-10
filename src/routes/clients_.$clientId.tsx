@@ -3151,7 +3151,7 @@ function ClientDetail() {
             />
           )}
 
-          {showGenerateCta && (readyPlanForAssessment ? (
+          {showGenerateCta && readyPlanForAssessment && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-xs">
               <span className="text-muted-foreground">
                 Plano pronto para esta avaliação. Edita a avaliação para mostrar de novo as ações de geração.
@@ -3174,7 +3174,9 @@ function ClientDetail() {
                 </Link>
               </div>
             </div>
-          ) : isMobileStepper ? null : (
+          )}
+          {/* Round E · CTA "Gerar rascunho do plano" removido — Concluir é o único caminho. */}
+          {false && (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end">
             {(() => {
               const isHigh = riskCategory === "high";
