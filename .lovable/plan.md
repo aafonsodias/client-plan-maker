@@ -1,87 +1,137 @@
-## Objectivo
+# Mobile Logbook → "Today's Workout" v2
 
-Limpar o topo de `/plans/$id` (acima da tabela) eliminando duplicação sem remover funcionalidade. Hoje há 7 surfaces empilhadas + título repetido 3× + 5 entradas de PDF dispersas. Resultado-alvo: 3 surfaces, 1 título, 1 menu de exportação.
+Sim, percebi. Hoje `/log/$token` é uma tabela editável com selectors de Semana/Dia/Data e um botão "Concluir sessão". Falta-lhe três coisas que pediste:
 
-## Regra de "zero perda"
+1. Abrir já no **treino de hoje** (sem o utilizador escolher semana/dia).
+2. **Pre‑readiness** no início + **agrupamento** de exercícios (single / superset A1‑A2 / circuito) + **feedback final**.
+3. Ao guardar: animação → **voltar à vista anterior** (cliente em `/me`, PT em `/clients/$clientId`).
 
-Toda acção que existe hoje continua acessível em ≤ 2 cliques. Nada removido — apenas reorganizado, agrupado ou movido para o sítio mais correcto.
+Ponto 4 (progresso/results/fusion) já existe parcialmente em `ResultsPanel`, `LogbookTimeline`, `ExerciseTrendChart`, `CapacityGainCard` — esta plano garante que o novo schema os alimenta sem partir nada.
 
-## Mudanças
+---
 
-### 1. Título: 3× → 1×
-- Header da `AppShell` deixa de incluir o título do plano. Mostra: avatar+nome do cliente · chip "Bloco N · Sem X/Y" · status chip.
-- Label do `<summary>` do `<details>` deixa de repetir o título — fica só "Detalhes & acções do plano ▾".
-- O `<Input>` editável dentro do `<details>` continua a ser a única fonte de verdade para o título.
+## 1. Fluxo (mobile, 1 ecrã = 1 etapa)
 
-### 2. PDF: 5 entradas → 1 menu "Exportar ▾"
-Consolidar num único `DropdownMenu` no header (sempre visível, fora do `<details>`):
-- **Plano completo** (todas as semanas) — actual botão amber `exportPdf`
-- **Semana actual** — actual "PDF · Sem. N" do hero
-- **Avaliação do cliente** — actual `PlanAssessmentSheet`
-
-Remover:
-- Botão amber "PDF" duplicado dentro da barra de acções do `<details>` (fica só no menu)
-- Sticky `Export PDF` do modo Edit (linha 946) — redundante com header
-
-### 3. CTAs de "fechar bloco": 2 → 1
-- Manter `<NextBlockCard>` (linha 741) que é o componente canónico.
-- Remover o painel inline "Bloco N · pronto para fechar" + `BlockTransitionDialog` (linhas 753–812, ~60 LoC).
-- Garantir que `NextBlockCard` expõe ambas as acções: "Marcar como concluído" e "Iniciar Bloco N+1" (verificar antes de remover; se faltar a primeira, portá-la para lá).
-
-### 4. Banners empilhados: 7 → 1 "Acções pendentes"
-Criar `<PlanPendingActions>` que mostra **só o item de maior prioridade**:
-
-```
-prioridade:  human-review > demo-seed > legacy-plan
-             > next-week > next-block > validation
-```
-
-Os restantes ficam acessíveis num "▾ Mais (N)" dentro do mesmo cartão. Validation report e legacy banner continuam acessíveis — apenas não competem por atenção visual.
-
-### 5. "Branding" → fora desta página
-O link inline para `/settings` (linha 639) sai do header de acções. Já existe acesso a Settings na nav principal. Sem perda — só limpeza.
-
-### 6. "Re-gerar resumo" → dentro do Summary
-O botão (linhas 558–587) move-se para dentro do header colapsável do Summary, à direita do "Summary (empty)". Só aparece quando `summaryLooksLeaked()` — comportamento idêntico, posição mais lógica.
-
-## Layout final
-
-```
-┌─ AppShell header ──────────────────────────────────────────┐
-│  ← All plans  │ [avatar] Cliente → · Bloco 1 · Sem 1/4    │
-│               │ [Pronto] [Exportar ▾] [Logbook]            │
-└────────────────────────────────────────────────────────────┘
-
-[ ▸ Detalhes & acções do plano ]                  ← colapsado
-   └── Título editável + chips (block-evolved, rotation, lift)
-   └── Acções: Share · Importar registo · Template
-              · Re-ancorar RPE · Delete
-   └── Summary (com "Re-gerar" inline)
-
-[ Acções pendentes ]                              ← 1 cartão
-   (mostra a prioridade mais alta; resto em "▾ Mais")
-
-[ Tabs: View · Edit · Log · Resultados · Progresso ] [Regen]
-
-[ TABELA ]
+```text
+/log/$token  (entry, no params)
+  │
+  ├─ resolve "hoje" ─► (week N, day D) baseado em última sessão + frequência semanal
+  │
+  ▼
+[Step 0 · Hoje]      Hero: "Sessão 3 · Empurrar"  ·  duração est.  ·  Iniciar
+  ▼
+[Step 1 · Pré]       Sono 1‑5 · Energia 1‑5 · Dores 0‑10 · Notas curtas
+  ▼
+[Step 2 · Treino]    Lista AGRUPADA por bloco
+                       ▸ A.  Bench Press            3×6  (single)
+                       ▸ B1. DB Row        ╮ superset
+                       ▸ B2. Push‑up       ╯ 3 rounds
+                       ▸ C.  Circuit (4 ex × 3 rounds)
+                       Cada exercício: cards de set como já existem
+                       Timer de descanso por bloco
+  ▼
+[Step 3 · Pós]       RPE global 1‑10 · Como te sentiste? (chips) · Notas
+  ▼
+[Salvar]             Confetti + "Sessão guardada" → redirect inteligente
 ```
 
-## Ficheiros tocados
+**Redirect inteligente** (`returnTo`):
+- `?from=me` ou cliente autenticado → `/me`
+- `?from=trainer&clientId=…` → `/clients/$clientId`
+- fallback → ecrã "Sessão registada" actual
 
-- `src/components/PlanEditorSurface.tsx` — refactor principal, ~150 LoC removidas
-- `src/components/AppShell.tsx` (ou wrapper de header do plano) — adicionar slot para chip+menu Exportar
-- `src/components/PlanPendingActions.tsx` — **novo**, agrega os 6 banners com prioridade
-- `src/components/PlanExportMenu.tsx` — **novo**, dropdown unificado dos 3 PDFs
+---
 
-## Validação
+## 2. Modelo de dados
 
-- Mobile 375px smoke (i18n PT-PT)
-- Cada acção que existe hoje tem de continuar alcançável em ≤ 2 cliques
-- Tour anchors (`data-tour="plan-header|plan-block-chip"`) preservados
-- Sem alteração de lógica de negócio, sem migração de DB, sem mudança de copy fora dos 2 sítios renomeados
+### 2a. Agrupamento (superset / circuito)
+Hoje `PlanData.days[].exercises[]` é uma lista plana. Adicionar campos opcionais por exercício (zero migração de dados, retro‑compat):
 
-## Fora de âmbito
+```ts
+// src/lib/pdf-types.ts
+type Exercise = {
+  …existing…
+  group_id?: string;          // "A","B","C" — exercícios com mesmo id = mesmo bloco
+  group_kind?: "single" | "superset" | "circuit" | "giant_set";
+  group_order?: number;       // posição dentro do bloco (1,2,3)
+  group_rounds?: number;      // override de rondas para circuitos (senão = sets)
+};
+```
+Ausência destes campos = `single`. Stage 3 (`stage3-microcycle.functions.ts`) ganha um pós‑agrupador determinístico que infere supersets/circuitos a partir do `notes` actual ("A1 / A2 / circuit"), e o prompt da AI passa a marcar explícitamente.
 
-- Redesenhar `NextBlockCard` / `NextWeekCard` / `ValidationReport` internamente
-- Mexer na tabela ou modos (View/Edit/Log/etc.)
-- Tradução de novas strings (reutilizamos as existentes)
+### 2b. Pre/Post readiness (coluna nova em `workout_sessions`)
+
+Migração: adicionar duas colunas JSONB nullable (não toca em tabelas reservadas, sem CHECK constraint — usar trigger se quisermos validar mais à frente):
+
+```sql
+ALTER TABLE public.workout_sessions
+  ADD COLUMN IF NOT EXISTS pre_readiness  jsonb,
+  ADD COLUMN IF NOT EXISTS post_feedback  jsonb;
+```
+
+Forma:
+```ts
+pre_readiness  = { sleep:1‑5, energy:1‑5, soreness:0‑10, notes?:string }
+post_feedback  = { session_rpe:1‑10, mood:"strong"|"ok"|"flat"|"crushed", notes?:string }
+```
+
+Bonus: ao gravar `pre_readiness`, fazemos UPSERT espelhado em `client_checkins` (`checked_on = session_date`) — assim o autoreg do `programNextWeek` (R65) já consome estes sinais sem outra UI.
+
+### 2c. Server fn
+- `saveClientSession` (já existe) recebe os dois campos novos no Zod schema; retorna `next_session_hint` (semana/dia + ETA) para o ecrã de sucesso.
+- `getTodayForToken({token})` novo — devolve `{week_number, day_label, group_layout, last_session_at}`. Heurística: maior (`week_number`,`day_label`) com sessão `done` → próximo dia do plano que ainda não foi feito esta semana.
+
+---
+
+## 3. UI mobile (391×844 = nosso baseline)
+
+Ficheiros novos em `src/components/log/`:
+- `TodayHero.tsx` — card grande "Sessão de hoje" + Iniciar
+- `PreReadinessStep.tsx` — 3 sliders + textarea (1 ecrã, scroll mínimo)
+- `BlockGroup.tsx` — wrapper para superset/circuito (chip A1/A2, timer de descanso partilhado, contador de rounds)
+- `PostFeedbackStep.tsx` — RPE + mood chips + notas
+- `LogStepper.tsx` — controla 4 passos com swipe + barra de progresso fina
+
+Reutiliza: `ExerciseSetsCard`, `LogHeader`, `Confetti`, `ImportFromPhotoButton`.
+
+Refactor de `src/routes/log.$token.tsx`:
+- Remover selectores de Semana/Dia da UI principal (movem‑se para um `<details>` "Mudar de dia" para casos edge — PT a fazer make‑up, etc.).
+- Default = resultado de `getTodayForToken`.
+- `searchParams` `?from=me|trainer&clientId=…` controla o redirect pós‑save.
+
+---
+
+## 4. Progresso, resultados e fusão (sem trabalho novo de UI)
+
+Como mantemos `entries[]` no mesmo formato, **tudo isto continua a funcionar** e ganha contexto extra:
+
+- `ResultsPanel` + `LogbookTimeline` (`/plans/$id` tab `results`) — mostra adesão e RPE drift; passa a poder pintar barra "como te sentiste" por sessão (`post_feedback.mood`).
+- `ExerciseTrendChart` — inalterado (lê pesos × reps).
+- `CapacityGainCard` — inalterado.
+- `programNextWeek` (R65) — passa a ler `pre_readiness.soreness` + `post_feedback.session_rpe` além do RPE por exercício; autoreg fica mais honesto sem mexer no algoritmo.
+- `/me` — nova mini‑secção "Como me senti esta semana" alimentada por `post_feedback.mood`.
+
+---
+
+## 5. Plano de execução (ordem)
+
+1. **Schema** — migration: 2 colunas em `workout_sessions` + trigger leve para validar ranges (sleep 1‑5 etc.).
+2. **Types & grouping infer** — `pdf-types.ts` + util `group-from-notes.ts` + pós‑agrupador no Stage 3 (sem novo prompt; só inferência determinística para já).
+3. **Server** — `getTodayForToken` + extender `saveClientSession` (Zod + UPSERT em `client_checkins`).
+4. **UI mobile** — `LogStepper` + 4 passos; refactor de `log.$token.tsx` com `?from=` redirect.
+5. **PT entry** — botão "Treinar agora" em `/me` e em `/clients/$id` (passa `from` correcto).
+6. **Polish** — confetti + toast + smoke 391×844 + i18n PT/EN das strings novas em `common.json`.
+
+## 6. Fora do âmbito desta round
+- Editor de supersets para o PT (drag‑and‑drop de A1/A2). Para já o agrupamento vem do plano AI / inferência.
+- Voice notes / cronómetro flutuante avançado.
+- Comparativo "Hoje vs última vez que fizeste isto" no card do exercício — fácil de adicionar depois (já temos `entries` históricas).
+
+---
+
+## 7. Risco / mitigação
+- **Retro‑compat de planos antigos** sem `group_id` → defaultam a `single`, UI inalterada.
+- **PT que precisa de logar dia diferente do "hoje"** → `<details>` "Mudar de dia" mantém os selectores actuais.
+- **Sessão em curso** → `getOpenSession` continua a hidratar; o stepper pula para o passo onde ficou (se já tem entries, vai para Step 2).
+
+Confirma se queres que eu avance assim, ou se queres ajustar a ordem (ex.: começar pela UI sem mexer no agrupamento, ou inverter).

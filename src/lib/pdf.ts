@@ -26,6 +26,11 @@ export type Exercise = {
   superset_id?: string | null;
   variant?: string | null;
   optional?: boolean;
+  // R-mobile-logbook: explicit grouping (optional, retro-compat)
+  group_id?: string;          // e.g. "A","B","C" — same id ⇒ same block
+  group_kind?: "single" | "superset" | "circuit" | "giant_set";
+  group_order?: number;       // 1-based order inside the block
+  group_rounds?: number;      // override of rounds for circuits
 };
 
 export type SectionItem = {

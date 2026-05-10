@@ -72,6 +72,25 @@ const SessionInput = z.object({
   session_notes: z.string().max(2000).optional().default(""),
   entries: z.array(EntrySchema).max(80),
   status: z.enum(["done", "partial", "missed", "in_progress"]).optional().default("done"),
+  pre_readiness: z
+    .object({
+      sleep: z.number().int().min(1).max(5).optional(),
+      energy: z.number().int().min(1).max(5).optional(),
+      soreness: z.number().int().min(0).max(10).optional(),
+      notes: z.string().max(500).optional(),
+    })
+    .partial()
+    .optional()
+    .nullable(),
+  post_feedback: z
+    .object({
+      session_rpe: z.number().min(1).max(10).optional(),
+      mood: z.enum(["strong", "ok", "flat", "crushed"]).optional(),
+      notes: z.string().max(500).optional(),
+    })
+    .partial()
+    .optional()
+    .nullable(),
 });
 
 /** Trainer: list sessions for a plan */
@@ -207,7 +226,7 @@ export const saveClientSession = createServerFn({ method: "POST" })
     rateLimit(`saveClient:${data.token}`, 30, 60_000);
     const { data: plan, error: planErr } = await supabaseAdmin
       .from("workout_plans")
-      .select("id, trainer_id, plan_data, share_token_expires_at")
+      .select("id, trainer_id, client_id, plan_data, share_token_expires_at")
       .eq("share_token", data.token)
       .eq("id", data.plan_id)
       .maybeSingle();
@@ -233,6 +252,8 @@ export const saveClientSession = createServerFn({ method: "POST" })
       entries: data.entries,
       logged_by: "client" as const,
       status: data.status,
+      pre_readiness: data.pre_readiness ?? null,
+      post_feedback: data.post_feedback ?? null,
     };
 
     // For drafts (in_progress) we upsert on the partial unique index so we
@@ -269,6 +290,30 @@ export const saveClientSession = createServerFn({ method: "POST" })
       .select("id, status")
       .single();
     if (error) fail(error, "Could not save session.");
+
+    // Best-effort mirror of pre-readiness into client_checkins so autoreg
+    // (programNextWeek) can read sleep/soreness without another UI.
+    if (data.pre_readiness && plan.client_id) {
+      const checkedOn = data.session_date;
+      try {
+        await supabaseAdmin
+          .from("client_checkins")
+          .upsert(
+            {
+              client_id: plan.client_id,
+              trainer_id: plan.trainer_id,
+              checked_on: checkedOn,
+              sleep_quality: data.pre_readiness.sleep ?? null,
+              soreness_level: data.pre_readiness.soreness ?? null,
+              energy_level: data.pre_readiness.energy ?? null,
+            },
+            { onConflict: "client_id,checked_on", ignoreDuplicates: false },
+          );
+      } catch (e) {
+        console.warn("[sessions] client_checkins mirror failed (non-fatal)", e);
+      }
+    }
+
     return { ok: true as const, id: row.id, status: row.status };
   });
 
@@ -305,7 +350,7 @@ export const getOpenSession = createServerFn({ method: "POST" })
     }
     const { data: row } = await supabaseAdmin
       .from("workout_sessions")
-      .select("entries, session_notes, updated_at")
+      .select("entries, session_notes, pre_readiness, post_feedback, updated_at")
       .eq("plan_id", data.plan_id)
       .eq("week_number", data.week_number)
       .eq("day_label", data.day_label)
@@ -456,4 +501,76 @@ export const markSessionsCelebrated = createServerFn({ method: "POST" })
       .is("pr_celebrated_at", null);
     if (error) fail(error, "Could not mark PR celebration.");
     return { ok: true };
+  });
+/**
+ * PUBLIC (token-gated): resolve "today's" session for the mobile logbook.
+ * Heuristic:
+ *   1. If there's an in_progress draft for any (week,day) → resume that.
+ *   2. Else: pick the next (week,day) in plan order that is NOT done yet.
+ *   3. Else (everything done): last finalized (week,day) so the user can
+ *      still review / log a make-up.
+ */
+export const getTodayForToken = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ token: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    rateLimit(`today:${data.token}`, 60, 60_000);
+    const { data: plan, error } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, plan_data, share_token_expires_at")
+      .eq("share_token", data.token)
+      .maybeSingle();
+    if (error || !plan) throw new Error("Invalid or expired link.");
+    if (plan.share_token_expires_at && new Date(plan.share_token_expires_at).getTime() < Date.now()) {
+      throw new Error("This share link has expired.");
+    }
+
+    const weeks: any[] = (plan.plan_data as any)?.weeks ?? [];
+    const slots: Array<{ week_number: number; day_label: string }> = [];
+    for (const w of weeks) {
+      for (const d of w?.days ?? []) {
+        slots.push({ week_number: w.week_number, day_label: d.day_label });
+      }
+    }
+    if (slots.length === 0) {
+      throw new Error("This plan has no scheduled sessions yet.");
+    }
+
+    const { data: rows } = await supabaseAdmin
+      .from("workout_sessions")
+      .select("week_number, day_label, status, session_date")
+      .eq("plan_id", plan.id)
+      .eq("logged_by", "client")
+      .order("session_date", { ascending: false });
+
+    const all = (rows ?? []) as Array<{
+      week_number: number;
+      day_label: string;
+      status: string;
+      session_date: string;
+    }>;
+
+    const draft = all.find((r) => r.status === "in_progress");
+    if (draft) {
+      return {
+        plan_id: plan.id,
+        week_number: draft.week_number,
+        day_label: draft.day_label,
+        session_date: draft.session_date,
+        resumed_draft: true,
+      };
+    }
+
+    const doneKey = (s: { week_number: number; day_label: string }) =>
+      `${s.week_number}:${s.day_label}`;
+    const doneSet = new Set(
+      all.filter((r) => r.status !== "in_progress" && r.status !== "missed").map(doneKey),
+    );
+    const next = slots.find((s) => !doneSet.has(doneKey(s)));
+    const today = new Date().toISOString().slice(0, 10);
+    if (next) {
+      return { plan_id: plan.id, ...next, session_date: today, resumed_draft: false };
+    }
+    // Plan complete — fall back to the last slot.
+    const last = slots[slots.length - 1];
+    return { plan_id: plan.id, ...last, session_date: today, resumed_draft: false };
   });

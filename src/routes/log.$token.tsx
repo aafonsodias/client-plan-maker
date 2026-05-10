@@ -8,17 +8,23 @@ import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   getSharedPlan,
   saveClientSession,
   getOpenSession,
   getSessionStreak,
+  getTodayForToken,
 } from "@/server/sessions.functions";
 import type { PlanData } from "@/lib/pdf";
 import { ExerciseSetsCard, type LogEntryV2, type SetLog } from "@/components/log/ExerciseSetsCard";
 import { LogHeader, type SaveState } from "@/components/log/LogHeader";
 import { Confetti } from "@/components/log/Confetti";
 import { ImportFromPhotoButton } from "@/components/log/ImportFromPhotoButton";
+import { PreReadinessStep, type PreReadiness } from "@/components/log/PreReadinessStep";
+import { PostFeedbackStep, type PostFeedback } from "@/components/log/PostFeedbackStep";
+import { BlockGroup } from "@/components/log/BlockGroup";
+import { groupExercises } from "@/lib/exercise-grouping";
 import RationaleChip from "@/components/ux/RationaleChip";
 import { inferLogbookModeFromDayFocus } from "@/lib/auto-infer";
 
@@ -34,6 +40,13 @@ const LOGBOOK_MODE_LABELS_PT: Record<string, string> = {
 
 export const Route = createFileRoute("/log/$token")({
   component: ClientLogPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: (search.from === "me" || search.from === "trainer" ? search.from : undefined) as
+      | "me"
+      | "trainer"
+      | undefined,
+    clientId: typeof search.clientId === "string" ? search.clientId : undefined,
+  }),
 });
 
 /* Parse a "3" / "3-4" sets string into an integer count, default 3. */
@@ -65,10 +78,13 @@ function emptyEntriesForDay(day: PlanData["weeks"][number]["days"][number]): Log
 
 function ClientLogPage() {
   const { token } = Route.useParams();
+  const search = useSearch({ from: "/log/$token" });
+  const navigate = useNavigate();
   const getSharedPlanFn = useServerFn(getSharedPlan);
   const saveFn = useServerFn(saveClientSession);
   const getOpenSessionFn = useServerFn(getOpenSession);
   const getStreakFn = useServerFn(getSessionStreak);
+  const getTodayFn = useServerFn(getTodayForToken);
 
   const [info, setInfo] = useState<{ id: string; title: string; summary: string | null; plan_data: PlanData; client_name: string | null; trainer_name: string | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +98,8 @@ function ClientLogPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [preReadiness, setPreReadiness] = useState<PreReadiness>({});
+  const [postFeedback, setPostFeedback] = useState<PostFeedback>({});
   const [streak, setStreak] = useState<{ currentStreak: number; weekDone: number; weekTotal: number; totalSessions: number }>({
     currentStreak: 0,
     weekDone: 0,
@@ -98,16 +116,24 @@ function ClientLogPage() {
       try {
         const res = (await getSharedPlanFn({ data: { token } })) as any;
         setInfo(res);
-        const w0 = res.plan_data?.weeks?.[0];
-        if (w0) {
-          setWeekNum(w0.week_number);
-          setDayLabel(w0.days?.[0]?.day_label ?? "");
+        // Auto-resolve "today" — defaults to next undone slot or the latest draft.
+        try {
+          const today = await getTodayFn({ data: { token } });
+          setWeekNum(today.week_number);
+          setDayLabel(today.day_label);
+          setDate(today.session_date);
+        } catch {
+          const w0 = res.plan_data?.weeks?.[0];
+          if (w0) {
+            setWeekNum(w0.week_number);
+            setDayLabel(w0.days?.[0]?.day_label ?? "");
+          }
         }
       } catch (e: any) {
         setError(e.message || "Invalid link");
       }
     })();
-  }, [token, getSharedPlanFn]);
+  }, [token, getSharedPlanFn, getTodayFn]);
 
   const week = info?.plan_data.weeks.find((w) => w.week_number === weekNum) ?? info?.plan_data.weeks[0];
   const day = week?.days.find((d) => d.day_label === dayLabel) ?? week?.days[0];
@@ -160,6 +186,8 @@ function ClientLogPage() {
         if (typeof (draft as any).session_notes === "string") {
           setNotes((draft as any).session_notes);
         }
+        if ((draft as any).pre_readiness) setPreReadiness((draft as any).pre_readiness);
+        if ((draft as any).post_feedback) setPostFeedback((draft as any).post_feedback);
         setSaveState("saved");
         setLastSavedAt(new Date((draft as any).updated_at ?? Date.now()).getTime());
         toast.success("Continuámos de onde paraste.");
@@ -201,6 +229,8 @@ function ClientLogPage() {
             session_notes: notes,
             entries,
             status: "in_progress",
+            pre_readiness: Object.keys(preReadiness).length ? preReadiness : null,
+            post_feedback: Object.keys(postFeedback).length ? postFeedback : null,
           },
         });
         setSaveState("saved");
@@ -212,7 +242,7 @@ function ClientLogPage() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [entries, notes, info, day, weekNum, dayLabel, date, token, saveFn]);
+  }, [entries, notes, preReadiness, postFeedback, info, day, weekNum, dayLabel, date, token, saveFn]);
 
   const updateEntry = (i: number, next: LogEntryV2) => {
     dirtyRef.current = true;
@@ -248,6 +278,8 @@ function ClientLogPage() {
           session_notes: notes,
           entries,
           status: "done",
+          pre_readiness: Object.keys(preReadiness).length ? preReadiness : null,
+          post_feedback: Object.keys(postFeedback).length ? postFeedback : null,
         },
       });
       // Re-pull streak to know if we just closed the week
@@ -262,12 +294,26 @@ function ClientLogPage() {
         }
       } catch { /* ignore */ }
       setDone(true);
+      // Smart return based on ?from=
+      setTimeout(() => {
+        if (search.from === "me") {
+          navigate({ to: "/me" });
+        } else if (search.from === "trainer" && search.clientId) {
+          navigate({ to: "/clients/$clientId", params: { clientId: search.clientId } });
+        }
+      }, 1800);
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const totalSets = entries.reduce((acc, e) => acc + e.sets.length, 0);
   const doneSets = entries.reduce((acc, e) => acc + e.sets.filter((s) => s.done).length, 0);
   const sessionPct = totalSets ? Math.round((doneSets / totalSets) * 100) : 0;
+
+  // Group exercises into single / superset / circuit blocks for the body.
+  const blocks = useMemo(() => {
+    if (!day) return [];
+    return groupExercises(day.exercises ?? []);
+  }, [day]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
@@ -283,30 +329,45 @@ function ClientLogPage() {
         lastSavedAt={lastSavedAt}
       />
 
-      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-muted/70 p-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Semana</span>
-          <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
-            {info.plan_data.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Week {w.week_number}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Dia</span>
-          <select value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
-            {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Data</span>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
-        </div>
-        <div className="ml-auto flex flex-col gap-1">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Progresso</span>
+      {/* Today hero */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Hoje · Semana {weekNum}
+            </span>
+            <h1 className="mt-0.5 text-lg font-semibold leading-tight">
+              {dayLabel}{day?.focus ? ` · ${day.focus}` : ""}
+            </h1>
+          </div>
           <span className="text-sm font-semibold tabular-nums">
-            {doneSets}/{totalSets} sets · {sessionPct}%
+            {doneSets}/{totalSets} · {sessionPct}%
           </span>
         </div>
+        <details className="mt-2">
+          <summary className="cursor-pointer text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground">
+            Mudar de dia
+          </summary>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <select value={weekNum} onChange={(e) => setWeekNum(Number(e.target.value))} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+              {info.plan_data.weeks.map((w) => <option key={w.week_number} value={w.week_number}>Semana {w.week_number}</option>)}
+            </select>
+            <select value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+              {(week?.days ?? []).map((d) => <option key={d.day_label} value={d.day_label}>{d.day_label}{d.focus ? ` · ${d.focus}` : ""}</option>)}
+            </select>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-8 w-40 text-sm" />
+          </div>
+        </details>
       </div>
+
+      {/* Pre-readiness */}
+      <PreReadinessStep
+        value={preReadiness}
+        onChange={(next) => {
+          dirtyRef.current = true;
+          setPreReadiness(next);
+        }}
+      />
 
       {day?.focus ? (
         <div className="flex flex-wrap items-center gap-2 px-1">
@@ -339,32 +400,26 @@ function ClientLogPage() {
             />
           </div>
         )}
-        {entries.map((e, i) => (
-          <ExerciseSetsCard
-            key={`${e.exercise_name}-${i}`}
-            entry={e}
-            index={i}
-            onChange={(idx, next) => updateEntry(idx, next)}
-            token={token}
-            planId={info.id}
-            onSetKeyDown={(ev, si, field) => {
-              // ↓/↑ jump to the same field on the next/prev set; Enter behaves like ↓.
-              const isDown = ev.key === "ArrowDown" || ev.key === "Enter";
-              const isUp = ev.key === "ArrowUp";
-              if (!isDown && !isUp) return;
-              ev.preventDefault();
-              const total = e.sets.length;
-              let nextIdx = i;
-              let nextSi = si + (isDown ? 1 : -1);
-              if (nextSi >= total) { nextIdx = i + 1; nextSi = 0; }
-              if (nextSi < 0) { nextIdx = i - 1; nextSi = entries[nextIdx]?.sets.length ? entries[nextIdx].sets.length - 1 : 0; }
-              const sel = `[data-set-input="${nextIdx}:${nextSi}:${field}"]`;
-              const target = document.querySelector(sel) as HTMLInputElement | null;
-              target?.focus();
-              target?.select?.();
-            }}
-          />
-        ))}
+        {(() => {
+          let cursor = 0;
+          return blocks.map((block, bi) => {
+            const slice = entries.slice(cursor, cursor + block.exercises.length);
+            const base = cursor;
+            cursor += block.exercises.length;
+            return (
+              <BlockGroup
+                key={`${block.group_id}-${bi}`}
+                block={block}
+                blockIndex={bi}
+                entries={slice}
+                baseEntryIndex={base}
+                onChange={(idx, next) => updateEntry(idx, next)}
+                token={token}
+                planId={info.id}
+              />
+            );
+          });
+        })()}
       </div>
 
       <div className="space-y-1">
@@ -378,6 +433,15 @@ function ClientLogPage() {
           }}
         />
       </div>
+
+      {/* Post-feedback */}
+      <PostFeedbackStep
+        value={postFeedback}
+        onChange={(next) => {
+          dirtyRef.current = true;
+          setPostFeedback(next);
+        }}
+      />
 
       <Button onClick={submit} disabled={saving || entries.length === 0} className="w-full">
         <Save className="mr-2 h-4 w-4" /> Concluir sessão
