@@ -229,7 +229,7 @@ const SECTIONS = [
   { id: "mobility", label: "Mobility" },
   { id: "posture", label: "Posture" },
   { id: "screen", label: "Movement screen" },
-  { id: "performance", label: "Performance" },
+  { id: "performance", label: "Cardio health" },
 ];
 
 // Optional sections render collapsed by default and count as complete
@@ -1967,7 +1967,17 @@ function ClientDetail() {
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
           concludeBusy={busy || phasedBusy}
-          onConclude={readyPlanForAssessment ? undefined : () => {
+          onConclude={readyPlanForAssessment ? () => {
+            // Plano já existe — Concluir leva à síntese (não regenera).
+            setSynthesisOpen(true);
+            if (typeof window !== "undefined") {
+              requestAnimationFrame(() => {
+                document
+                  .getElementById("sintese-da-avaliacao")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }
+          } : () => {
             const isHigh = riskCategory === "high";
             const blocked = parqYes || isHigh;
             if (blocked) {
@@ -2280,29 +2290,6 @@ function ClientDetail() {
           </SectionBlock>
           {/* Training setup (existing) */}
           <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} description={t("training_block.complete_meaning")} /> : null}>
-            <div className="mb-3">
-              <AnchoredSlider
-                label="Onde está face ao melhor que já conseguiu?"
-                value={assessment.current_capacity_vs_pb ?? 5}
-                onChange={(v) => setAssessment({ ...assessment, current_capacity_vs_pb: v })}
-                trailing={
-                  <HelpPopover label="Capacidade vs pico">
-                    <p>
-                      Compare a forma actual com o melhor pico de treino que já teve. Vamos usar isto
-                      para decidir se começamos em modo reconstrução (mais volume, cargas leves) ou
-                      em modo progressão (intensidade mais alta).
-                    </p>
-                  </HelpPopover>
-                }
-                anchors={[
-                  { upTo: 2, label: "Muito longe do pico — modo reconstrução total" },
-                  { upTo: 4, label: "Bastante abaixo — recuperar base primeiro" },
-                  { upTo: 6, label: "A meio caminho — progressão controlada" },
-                  { upTo: 8, label: "Quase no pico — pronto para empurrar" },
-                  { upTo: 10, label: "No pico ou acima — modo progressão agressiva" },
-                ]}
-              />
-            </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 <LabelWithHelp label={t("training_block.experience")} hint={t("training_block.experience_hint")} />

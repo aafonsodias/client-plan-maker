@@ -1,78 +1,119 @@
-## Goal
+## Reading of your feedback
 
-Continue the assessment work in two coordinated cuts: (1) low-credit cleanup of footer + per-section title bloat, (2) scaffolding for the post-conclude flow described in the founder doc (animation → client dashboard / trainer cockpit). Cut 1 ships fully; Cut 2 ships the smallest honest first slice and parks the heavy parts for dedicated rounds.
+Tudo o que descreveste já está mapeado em `.lovable/vision/assessment-organism.md` (rounds D-I). O que falta é executar — vou propor uma sequência de 5 rounds que fecham todas as queixas, do crítico ao polish, sem inflar uma única round.
 
-## Cut 1 — Conclude footer + 3-titles merge (low credits, high impact)
+A tese (PDF) fica como referência interna; nada vai ser citado/copiado no produto.
 
-### 1.1 "Concluir" becomes the canonical action; kill "Gerar rascunho do plano"
+---
 
-In `src/routes/clients_.$clientId.tsx`:
+## Round E — Coerência nervosa (agora, esta sessão)
 
-- **Mobile sticky stepper footer** (line 4618–4632): on the last section `Concluir` is currently `disabled={isLast}` and does nothing useful. Wire it to the same `guard(...)` path used by `showGenerateCta` (lines 3264–3297): if the assessment is incomplete, opens the existing `incompleteWarnOpen` dialog; if PARQ-yes / ACSM-high, opens the existing safety dialog; otherwise calls `runPhasedStart()` (or `generate()` when `phasedEnabled` is false). On non-last sections, `Concluir` keeps being `goNext`.
-- Remove the standalone `<Button>{t("generate.button")}</Button>` CTA block on mobile. The whole `showGenerateCta` block (lines 3141–3303) should only render on desktop (or behind `!isMobileStepper`). The "Plano pronto · ver" success state stays visible everywhere — it's not noise, it's a status link.
-- Reuse `t("finish")` label as-is. No copy change.
+Fechar regressões visíveis. Sem migrations, sem novos sliders, sem desenhos. Só "todas as páginas do assessment respeitam o mesmo padrão e não bloqueiam".
 
-### 1.2 Merge "3 títulos" per section into one card
+1. **`Concluir` desbloqueado sempre.** Mesmo com 14/14 incompleto — guarda parcial, navega para a síntese, regista `completion_pct < 100` no log. O aviso atual ("avaliação parcial · X%") já existe; só precisa de não desactivar o botão.
+2. **Fundir "Análise" + "Implicações" em todas as 14 secções.** Nome único: **"Implicações para a prescrição"**. Colapsado por default em todas (não só nas que já o fazem). Hoje §3, §6, §7, §9, §10, §11, §12, §13, §14 ainda mostram blocos antigos paralelos — apaga-os, passa o conteúdo para o `RxImplications` que já existe.
+3. **Live refresh da síntese local.** §13 diz "nenhum padrão avaliado" mesmo com dados — bug. Passa a ler o estado actual em vez do snapshot inicial.
+4. **Remover "Onde está face ao melhor que já conseguiu?"** (viés subjectivo) de §4.
+5. **Renomear §14 "Performance" → "Saúde cardiorrespiratória"**, esconde dinamómetro/Jamar atrás de "Mostrar campos avançados (PT)".
+6. **Aestética sweep das páginas mais broken.** §5 (SMART) e §13 (movement screen): aplicar `t-1`/`t-2`/`t-3`, eyebrow nos rótulos, separação tonal em vez de borders, hierarquia clara entre "objectivo seleccionado" vs "catálogo de opções". Sem novos componentes.
 
-Today every completed section can render up to three stacked blocks:
-1. `CompletionStrip` ("Concluído · summary")
-2. `SectionAnalysisCard` ("Insight" header with Sparkles)
-3. `RxImplications` ("Implicações para a prescrição" + ACSM chip)
+Deliverable: assessment completável e visualmente coerente. Sem desenhos novos, sem nova arquitectura.
 
-Collapse them into a single `<details>` block titled **"Implicações para a prescrição"** with the ACSM chip on the right and ordered by gravity (founder's words: "ordenado por gravidade de informação com os detalhes por último"):
+---
 
-```text
-[chevron] Implicações para a prescrição           [ACSM: low/mod/high]   N regras
-  ├─ summary line (was CompletionStrip)
-  ├─ AI insight (was SectionAnalysisCard, when present)
-  └─ rule cards (was RxImplications)
-```
+## Round F — Diferenciação sensorial (slider-por-tópico + desenhos)
 
-Implementation:
-- Extend `RxImplications` to accept optional `summary` (string) and `insight` (string + analysing flag) props and render them inside the same `<details>` as a subtle top strip + insight blockquote, before the rule cards.
-- In `SectionBlock`, stop rendering `footer` (CompletionStrip) and `SectionAnalysisCard` automatically. Pass that data into the per-section `<RxImplications>` call instead.
-- Touch every `SectionBlock` call (parq, risk, training, history, goal, meds, anthro, readiness, lifestyle, nutrition, mobility, posture, screen, performance) to move the existing `CompletionStrip` text + `analysingSections[id]` + `sectionAnalyses[id]` into the new `RxImplications` props. Sections that don't have an `RxImplications` today (history, meds, mobility, posture) get one stubbed (just summary + insight, no rule cards) so the pattern is uniform.
+Cada tópico que pediste como slider próprio passa a sê-lo. Aqui entram os desenhos line-art (`currentColor`, sem características sexuais, sem cintos) gerados in-repo conforme `assessment-organism.md §8.D3`.
 
-i18n: title key already exists implicitly (hardcoded "Implicações para a prescrição"). No new strings; we reuse `summary`, `insight`, `acsm` chips that are already in `assessment.json`.
+| Slider novo / repensado | O que muda | Desenhos |
+|---|---|---|
+| **Lesões** (mapa do corpo) | corpo neutro rotável, toque numa zona → sugestões de lesões comuns + nota livre + upload opcional de doc médico. Apaga/refaz. | corpo frente/costas/lateral |
+| **Limitações de mobilidade** | reaproveita o mapa, foco em ROM | partes individuais |
+| **Equipamento** | catálogo visual, multi-selecção rápida | item por item |
+| **Preferências de treino** | circuitos / superséries / single / dupla / desafios de reps/tempo | bonecos de cada formato |
+| **Hidratação** | separa de nutrição. Cor da urina (subjectivo) + meta calculada (peso/género/actividade) renderizada como N×1.5L garrafas, última parcial | escala de urina + garrafas |
+| **Nutrição** | guia de mãos (polegar=gordura / punho=legume / cupped hand=carb / palm=proteína) + alergias com chips de comuns | desenhos de mãos |
+| **Postura estática** | passo-a-passo por região (cabeça → tornozelo) + Adam's test com toque no desenho | silhueta lateral + frontal |
+| **Movement screen** | um padrão por slide (squat, hinge, push, pull, carry, lunge), desenhos do critério, alternativas para populações especiais (escoliose → variante sem KB swing) | um por padrão |
+| **Sono** | horas dormidas em slider 15-min (em vez de 1-10 subjectivo). Educa em 2 linhas. | — |
+| **FCR + PA** | wizard de 5 min calmo, palpação radial/carotídea, mostra como pôr a manga | desenhos de palpação + manga |
+| **Rockport** | wizard step-by-step (peso, idade, tempo, FC chegada → calcula VO₂max) | — |
 
-## Cut 2 — Post-conclude flow, first honest slice
+Botão **"Saltar com aviso"** universal (ainda não bloqueia — só comunica perda de qualidade).
 
-### 2.1 Conclude animation → route split
+Tudo o que é slider novo herda o padrão da Round E (1 título único, implicações colapsadas, micro-educação inline).
 
-After successful `runPhasedStart()` (or `generate()`), instead of dropping the trainer back into the same dense client page, navigate to a new lightweight route that plays the "what we learned" reveal:
+---
 
-- New route `src/routes/clients_.$clientId.synthesis.tsx`. It loads the most recent assessment + `sectionAnalyses` (already saved server-side) and renders the existing `AssessmentSynthesisDashboard` inside a staged reveal (3 framer-motion fades: red flags → goal + capacities → next step). Bottom CTA: **"Ir para o cockpit"** (trainer) which routes to `/plans/$planId`.
-- Reuse the existing `AssessmentSynthesisDashboard` component verbatim — no new dashboard yet. The animation is the only new layer.
+## Round G — Mapa Sinal → Decisão (auto com override)
 
-### 2.2 Client-side dashboard already exists
+Onde a app deixa de pedir decisões técnicas ao cliente. Implementa o §4 da vision com o cut MVP do D2:
 
-`/me` (`src/routes/me.tsx`) is the client dashboard per the Core memory rule. After conclude, when the trigger comes from a client-token intake (not the trainer-on-PT path), redirect to `/me` instead of `/clients/$id/synthesis`. Detection: `interface_mode === "client"` (already in `src/lib/interface-mode.ts`).
+- **Anos a treinar → faixa** (branca/azul/roxa/coral/vermelha — só cor, ponto pequeno no client card; nunca a palavra "jiu-jitsu" em código, copy, commits ou tradução).
+- **Faixa + dados anteriores → dias/semana recomendados** (1-7 chip line). Pré-selecciona Semana 1 baixo, sobe nos micros seguintes; explicação "porquê este número" inline.
+- **Duração da sessão → 5 chips** (30/45/60/75/custom).
+- **Duração do plano → cartões gamificados** com explicação por horizonte (4/8/12/16/6m/1a). Pré-seleccionado pela AI com rationale; alterável.
+- **SMART goal: AI sugere com rationale**, cliente escolhe explicitamente (nunca silencioso). Suporta 2-3 objectivos activos + backlog (tabela `client_goal_backlog`). Cada objectivo editável via chips de variável + manual. Data-alvo recomendada com rationale baseado em literatura.
+- **Máximos → submáximos com regressão Epley/Brzycki**. 1RM directo só atrás de toggle "atleta avançado".
+- **Estilo de programa anterior → bonecos de splits comuns** (full-body / upper-lower / PPL / bro-split / GVT).
 
-### 2.3 Trainer cockpit (microciclo + mesociclo table with side controls)
+Cada decisão escreve em `assessment_signals` + log de override em `generation_log` (já existe).
 
-The full cockpit described in the founder doc (live table + paint-bucket setting copy + circuit grouping + lock-and-print) is a multi-round build. Out of scope for this round. We only ship the navigation entry point: the `Ir para o cockpit` CTA above lands on the existing `/plans/$planId/microcycle` route, which already has the table and progressions — it's the closest existing surface and gives the user a real continuation.
+---
 
-A dedicated **Round J — Trainer Cockpit** is the natural home for the live-edit table, paint-bucket, circuit grouping, and lock-and-print PDF. We park it explicitly in `.lovable/backlog.md` so the work isn't lost.
+## Round H — Síntese educacional (PDF "livro de bons costumes")
 
-## Out of scope (deferred, parked in backlog)
+PDF entregue ao cliente no fim do assessment, gerado server-side, design partilhado com FORGE.
 
-- Live in-cell edit of microcycle table + side-rail sliders for sets/reps/RPE per micro/session/exercise — Round J.
-- Paint-bucket "copy settings between exercises" tool — Round J.
-- Lock & print microcycle PDF as commit — Round J.
-- Logbook upgraded view with graphs and metric fusion — Round K.
-- Body maps for injuries / mobility limitations — Round F proper.
-- Drawings everywhere — Round F proper.
-- PDF "livro de bons costumes" — Round H.
+Capítulos profile-aware:
+- Síntese clínica (red flags, faixa, objectivo, target).
+- Hidratação personalizada (litros/dia, ritmo, hábitos).
+- Sono e stress.
+- Prato ideal + porções pela mão.
+- Postura: 3 awareness cues do que foi observado.
+- Mobilidade: 2-3 drills para limitações encontradas.
+- Treino: porquê este volume/intensidade nesta fase.
+- Disclaimer (não substitui médico).
 
-## Files touched (estimated)
+Server fn `generateClientBook(clientId)` → PDF em `client-documents`. Link do PDF aparece no `/me` e na síntese pós-assessment.
 
-- `src/routes/clients_.$clientId.tsx` — wire Concluir to guard + generation; hide standalone CTA on mobile; rewire all `SectionBlock` calls to pass `summary` + `insight` into `RxImplications`; remove `footer` + `SectionAnalysisCard` auto-render in `SectionBlock`.
-- New `src/routes/clients_.$clientId.synthesis.tsx` — staged reveal of `AssessmentSynthesisDashboard`.
-- Light edit to `runPhasedStart` callsite in `clients_.$clientId.tsx` to navigate to synthesis (or `/me` for client mode) on success.
-- `.lovable/backlog.md` — append Round J / Round K parking notes.
+---
 
-No DB migrations. No new server functions. No i18n drift in this round (Cut 1 reuses existing strings; Cut 2 adds 3 short keys to `assessment.json` for the reveal copy).
+## Round I — Cockpit handoff (PT desktop)
 
-## Why this is the right pick
+Substitui a navegação actual "ir para o cockpit → microcycle". Surface:
 
-You asked to keep doing assessment work cheaply but to also unblock the post-conclude direction. Cut 1 closes two visible regressions (broken Concluir + 3-title clutter) using only file-local refactors — minimal credit cost, immediately verifiable on mobile 390px. Cut 2 builds the cheapest scaffolding that makes the founder vision navigable end-to-end without faking the cockpit; it also forces an honest backlog entry for Rounds J/K so the heavy work has a home.
+- **Centro:** tabela do microciclo (semana 1) e mesociclo (semanas 2-N) lado a lado. Edição in-cell.
+- **Cima:** controlos globais — wave model, RPE ceiling, deload, autoreg.
+- **Direita:** controlos por sessão e por exercício — sets, reps, RPE, tempo, variant.
+- **Baixo:** **paint-bucket** (apanha definições de um exercício, cola noutros), reorder, agrupar em série/superset/circuito.
+- **Live recompute** dos números à medida que mexes.
+- **Save / Lock & Print** → PDF como commit do bloco; logbook abre com gráficos.
+- **Mobile:** cockpit colapsado em accordions verticais — mesmas acções, ergonomia diferente.
+
+Cliente nunca vê esta vista; vai sempre para `/me`.
+
+---
+
+## Out of scope (parqueado, com home explícito)
+
+- App de comida integrada (sugeriste tu próprio que não vale o credit) → P3.
+- Cockpit logbook live (gráficos a actualizar em sessão) → Round J.
+- Foto de postura (cliente tira, app analisa) → Round F.5 quando houver vision API barata.
+- Reassessment cadence (o que expira quando) → Round H.5.
+- Lista de "exercícios autorizados" sem mesociclo → fora; mesociclo continua a ser a unidade.
+- Fonte de dados externa para doses de medicação → Round G.5 (precisa fonte clínica licenciada).
+
+---
+
+## Sequência prática
+
+Esta é a próxima round (E). Depois pergunto-te se queres F, G, H ou I a seguir — não vou fazer tudo numa sessão. Cada round respeita o non-negotiable: 1 concern, backup antes de SQL, smoke 375px, i18n, generation_log.
+
+## Files prováveis na Round E
+
+- `src/routes/clients_.$clientId.tsx` (concluir desbloqueado, fundir blocos antigos das 9 secções, live refresh §13, remover capacity-vs-pb, rename §14)
+- `src/components/assessment/RxImplications.tsx` (já preparado para `summary` + `insight`; só precisa que todas as secções o usem)
+- `src/i18n/locales/{pt,en,es,hi}/assessment.json` (rename §14, "Ir para o cockpit", remover string "vs melhor")
+- `.lovable/backlog.md` (rounds F-I parqueadas com este detalhe)
+- Sem migration nesta round.
