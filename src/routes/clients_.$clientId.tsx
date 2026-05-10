@@ -3356,6 +3356,7 @@ function ClientDetail() {
               riskCategory={riskCategory}
               whr={whr}
               redFlagAccommodations={inlineBrief?.accommodations ?? null}
+              planId={inlineBrief?.planId ?? null}
             />
             )}
               </>
