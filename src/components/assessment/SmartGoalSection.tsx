@@ -204,17 +204,33 @@ export function SmartGoalSection({
               onClick={() => handleTemplateClick(tpl)}
               aria-pressed={isActive}
               className={cn(
-                "flex w-full items-start justify-between rounded-md px-3 py-2 text-left transition",
+                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition",
                 isActive
-                  ? "bg-primary/5 ring-2 ring-primary hover:bg-primary/10"
+                  ? "bg-primary/10 ring-2 ring-primary shadow-sm hover:bg-primary/15"
                   : "bg-muted/30 hover:bg-muted/45"
               )}
             >
-              <p className="body-prose flex-1 text-[13px] leading-snug text-foreground">
+              <span
+                aria-hidden
+                className={cn(
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-transparent"
+                )}
+              >
+                <Check className="h-3 w-3" strokeWidth={3} />
+              </span>
+              <p
+                className={cn(
+                  "body-prose flex-1 text-[13px] leading-snug",
+                  isActive ? "text-foreground font-medium" : "text-foreground"
+                )}
+              >
                 {tplSpecific}
               </p>
               <span className={cn(
-                "label-caps ml-3 shrink-0 tabular-nums",
+                "label-caps shrink-0 tabular-nums",
                 isActive ? "text-primary font-semibold" : "text-muted-foreground"
               )}>
                 {tpl.default_weeks}w
