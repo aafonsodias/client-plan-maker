@@ -11,12 +11,44 @@ export function MacroIndexStrip({
   totalWeeks,
   selectedWeek,
   onSelect,
+  compact = false,
 }: {
   totalWeeks: number;
   selectedWeek: number;
   onSelect?: (wn: number) => void;
+  /** Inline pill row — tiny chips for placement next to PDF/CTA controls. */
+  compact?: boolean;
 }) {
   const weeks = Array.from({ length: Math.max(1, totalWeeks) }, (_, i) => i + 1);
+  if (compact) {
+    return (
+      <div role="tablist" aria-label="Semanas do bloco" className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-card/40 p-0.5">
+        {weeks.map((wn) => {
+          const tag = weekTagFor(wn, totalWeeks);
+          const active = wn === selectedWeek;
+          return (
+            <button
+              key={wn}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSelect?.(wn)}
+              title={`Semana ${wn} · ${tag}`}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] tabular-nums transition",
+                active
+                  ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/40"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", tagDotClass(tag, active))} />
+              W{wn}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
   return (
     <div
       role="tablist"
@@ -47,6 +79,19 @@ export function MacroIndexStrip({
       })}
     </div>
   );
+}
+
+function tagDotClass(tag: WeekTag, active: boolean): string {
+  switch (tag) {
+    case "deload":
+      return active ? "bg-blue-300" : "bg-blue-400/60";
+    case "+load":
+      return active ? "bg-amber-300" : "bg-amber-400/60";
+    case "+reps":
+      return active ? "bg-emerald-300" : "bg-emerald-400/60";
+    default:
+      return "bg-muted-foreground/40";
+  }
 }
 
 function tagToneClass(tag: WeekTag, active: boolean): string {

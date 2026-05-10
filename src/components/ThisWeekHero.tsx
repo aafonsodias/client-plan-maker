@@ -136,6 +136,14 @@ export function ThisWeekHero({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
+            {totalWeeks > 1 && (
+              <MacroIndexStrip
+                totalWeeks={totalWeeks}
+                selectedWeek={selectedWeek}
+                onSelect={setSelectedWeek}
+                compact
+              />
+            )}
             <button
               type="button"
               onClick={handleDownload}
@@ -151,15 +159,6 @@ export function ThisWeekHero({
           </div>
         </div>
 
-        {totalWeeks > 1 && (
-          <div className="mt-3">
-            <MacroIndexStrip
-              totalWeeks={totalWeeks}
-              selectedWeek={selectedWeek}
-              onSelect={setSelectedWeek}
-            />
-          </div>
-        )}
       </div>
     </Wrapper>
   );
