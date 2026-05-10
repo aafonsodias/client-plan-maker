@@ -607,20 +607,52 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
 
       {/* Summary — collapsible */}
       <div className="rounded-lg border border-border bg-card/50">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen((o) => !o)}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
-        >
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            Summary {plan.summary?.trim() ? "" : "(empty)"}
-          </span>
-          {summaryOpen ? (
-            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <div className="flex w-full items-center justify-between gap-2 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setSummaryOpen((o) => !o)}
+            className="flex flex-1 items-center justify-between gap-2 text-left"
+          >
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Summary {plan.summary?.trim() ? "" : "(empty)"}
+            </span>
+            {summaryOpen ? (
+              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+          </button>
+          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[10px]"
+              disabled={regenSummaryBusy}
+              title={tCommon("plan.rewrite_summary_title")}
+              onClick={async () => {
+                setRegenSummaryBusy(true);
+                try {
+                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
+                  if (r?.ok && r?.summary) {
+                    setPlan({ ...plan, summary: r.summary });
+                    toast.success("Resumo regenerado a partir do brief.");
+                  } else {
+                    toast.error(r?.error ?? "Falhou regenerar resumo.");
+                  }
+                } finally {
+                  setRegenSummaryBusy(false);
+                }
+              }}
+            >
+              {regenSummaryBusy ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1 h-3 w-3" />
+              )}
+              Re-gerar
+            </Button>
           )}
-        </button>
+        </div>
         {summaryOpen && (
           <div className="border-t border-border px-3 pb-3 pt-2 animate-fade-in">
             {client && (
