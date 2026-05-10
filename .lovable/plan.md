@@ -1,57 +1,58 @@
-# Intake → Plano: garantir que arranca por baixo e que o regen é suficiente
+# Fase B — Unificar regen e honrar Cockpit/RPE
 
-## Resposta directa à pergunta operacional
-**Não precisas de criar uma pessoa nova de cada vez.** O regen já existe e re-corre a pipeline com o mesmo `assessment_snapshot` — o problema é que hoje há **dois caminhos de regen** e só um deles respeita o Cockpit/RPE. Vamos unificar para que **editar a avaliação + clicar "Regenerar"** seja sempre suficiente. Cliente novo só para validar o "primeiro disparo".
+## Problema concreto a fechar
+Hoje o botão "Regenerar com feedback" chama `generatePlanDraft` (single-shot, ~12k tokens, todas as semanas). Resultado:
+- **Timeout** em planos de 4+ semanas (Worker corta a ~30s).
+- **Cockpit ignorado**: `programming_variables.rpe_ceiling` nem sequer é passado ao handler. O prompt só vê `experience_level` + safety counts.
+- **Feedback livre é dump verbatim**: "começa em rpe 6.5" é texto solto na prompt — o modelo decide se honra.
 
-## O que o audit de Maio já provou
-- **Pipeline phased (1→5)** lê `programming_variables.rpe_ceiling` e `training_age_band` correctamente. Stage 4 wave honra o tecto.
-- **Pipeline legacy (`generatePlanDraft`)** — usado pelo botão "Regenerar com feedback" — **ignora o Cockpit** e estoura timeout em 12k tokens single-shot.
-- Sinais motores (`single_leg_balance_score≤2`, `cardio_capacity` baixo, `secondary_goals: balance/agility/coordination`) chegam ao prompt mas **não geram bloco concorrente** — são apenas dump de contexto.
-- `experience_level` é o único driver real do "começar baixo". Se vier vazio, anchor cai em intermediate (RPE 7) em vez de beginner (RPE 5.5).
+## O que vai mudar (3 PRs encadeados, mesmo round)
 
-## Plano de 3 fases (pequenas, verificáveis)
+### B1 — Parser determinístico do feedback `(novo helper, zero risco)`
+- Criar `src/lib/feedback-parser.ts` com `parseRpeOverrideFromFeedback(text)`.
+- Reconhece (case-insensitive, PT+EN):
+  - `rpe 6.5`, `rpe 6-7`, `rpe até 7`, `começa em rpe 6.5`, `start at rpe 6.5`, `cap rpe at 7.5`, `tecto 7`.
+- Devolve `{ rpe_ceiling?: number, rpe_floor?: number }` ou `null`.
+- Testes inline (vitest) para cobrir as 8 frases-tipo.
 
-### Fase A — Fechar o gap "começar por baixo" (deterministic, sem AI)
-1. **`deriveStartingFloor(assessment)`** novo helper em `src/server/phased/programming-defaults.ts`:
-   - Lê `experience_level`, `years_training`, `med_flags`, `injuries`, `parq_passed`, `acsm_risk_category`, `single_leg_balance_score`, `recovery_capacity`.
-   - Retorna `{ rpe_floor, rpe_ceiling, volume_tier: "MEV"|"MAV"|"MRV", weeks_to_progress: 2|3|4 }`.
-   - Regra: qualquer 1 de {iniciante, red_flag amber, lesão activa, balance≤2, recovery="poor"} → MEV + RPE 5.5–7 + 3 semanas antes de subir volume.
-2. **Stage 1 (brief)** passa a popular `programming_variables.rpe_ceiling/floor` com este resultado, em vez de usar só a tabela `age → ceiling`.
-3. **Stage 3 (microcycle)** já tem `rpe_floor_applied`; passa a receber `volume_tier` e instruir o modelo "máximo N séries por padrão na Semana 1" (lookup `prescribeWeek(tier)`).
-4. **Stage 4 (wave)** anchor = `rpe_floor` da Semana 1 (já existe a infra; falta o input correcto).
+### B2 — `generatePlanWeek` aceita `programming_variables` e injecta no prompt como HARD CONSTRAINT
+- Adicionar `programming_variables: ProgrammingVariablesSchema.partial().nullable().optional()` ao `WeekInputSchema` em `src/server/plan.functions.ts`.
+- No prompt builder (`buildClientContextBlock` ou novo `buildCockpitConstraintBlock`):
+  - Quando `pv.rpe_ceiling` definido: linha "RPE CEILING (HARD): main lift RPE ≤ X. Accessories ≤ X−1. Carries ≤ X−2."
+  - Quando `pv.wave_model`/`deload_frequency` definidos: passar para o brief textual.
+- Sem mudança de schema DB; é só plumbing.
 
-### Fase B — Unificar regen (matar o legacy path)
-1. **`RegenerateWithFeedbackDialog`** deixa de chamar `generatePlanDraft`.
-2. Passa a chamar `regenerateMicrocycle(planId, { feedback, overrides })`:
-   - Reaplica `parseRpeOverrideFromFeedback` (já existe).
-   - Re-corre **só Stage 3 + Stage 4** (Stage 1/2 só re-corre se a avaliação mudou desde a última geração — comparar `updated_at`).
-   - Fan-out per-week com `generatePlanWeek` → sem timeout.
-3. **UX**: o botão passa a chamar-se "Regenerar com a avaliação actual" + linha pequena "última avaliação: há 2 dias". Se editaste a avaliação depois do plano, mostra chip amber "avaliação alterada — rebrief vai correr".
+### B3 — `RegenerateWithFeedbackDialog` muda de single-shot para fan-out
+Em `src/components/PlanEditorSurface.tsx`:
+1. Carrega `programming_variables` do `workout_plans` (já existe na select).
+2. Aplica `parseRpeOverrideFromFeedback(feedback)` por cima do `pv` carregado (override prevalece sobre o stored).
+3. `Promise.all` de `generatePlanWeek` × `duration_weeks`, cada call recebe `pv` resolvido. Concorrência limitada a 3 (Promise pool simples) para não bater em rate-limit do gateway.
+4. Merge: title/summary vêm da Semana 1; weeks ordenados por `week_number`.
+5. Persistência idêntica à actual (`plan_data_version` bump, mesmo update).
+6. UX: progress mostra `Semana X/N` em vez de `idle/context/ai/saving`. Sticky cancel button.
+7. Se 1 semana falhar → toast "Semana X falhou — tenta de novo só essa semana?" + botão de retry isolado (versão simples: oferece reabrir o dialog).
 
-### Fase C — Bloco concorrente quando o intake o pede
-1. `motorCapacityNeeds(assessment)` + `buildConcurrentTrainingBlock(needs)` (já desenhado no audit) entram em Stage 2 (blueprint) — adiciona `concurrent_day` archetype quando há sinais.
-2. Stage 3 recebe instruções explícitas de drills (single-leg, agility ladder, dual-task walk-and-count, Z2 8–12min) com volume cap.
-3. Visível no PDF e na Casa do cliente.
+## Verificação (manual, mesmo cliente)
+1. Abrir plano de 4 semanas → editar Cockpit para `rpe_ceiling=7.5` → guardar → "Regenerar com feedback" sem texto.
+   - **Esperado**: 4 calls em paralelo, conclusão <25s, todas as semanas com main RPE ≤ 7.5.
+2. Cockpit ceiling=8.5, feedback = "começa em rpe 6.5".
+   - **Esperado**: parser detecta, override pisa o stored, plano sai com main RPE 6–7.
+3. Plano de 6 semanas, intencionalmente apertado (`max_tokens=8000` por semana, suficiente).
+   - **Esperado**: zero timeout. Logs mostram 6 entradas em `generation_log` com stage=`regen:weekN`.
+4. Feedback contraditório ("rpe 9 mas cap em 7") → parser usa o último número como ceiling. Documentado no helper.
 
-## Workflow de teste que vais usar
-1. **Cliente demo seedado** (não precisas criar) → abre avaliação → muda `experience_level=beginner`, `single_leg_balance_score=2`, `recovery_capacity=poor` → **Guarda**.
-2. Clica "Regenerar com a avaliação actual" no plano existente.
-3. Verifica em <25s: Semana 1 RPE 5.5–7, MEV séries, 1 dia com bloco motor/concorrente.
-4. Repete sem mudar nada → resultado idêntico (determinístico onde deve ser).
+## O que NÃO entra (intencional)
+- Refactor para **phased pipeline** no regen. O caminho legacy fica, mas passa a ser honesto sobre o Cockpit. A unificação total (regen → re-correr Stage 1+3+4) precisa do seu próprio round porque o brief regenerado pode invalidar approvals de stage anteriores.
+- Bloco concorrente (Fase C — `motorCapacityNeeds`/`buildConcurrentTrainingBlock`). Fica para o round seguinte para podermos verificar B isoladamente.
+- Mudar copy/i18n de UI fora do dialog do regen.
 
-## O que NÃO entra
-- Refactor visual da avaliação ou do PDF.
-- Novas tabelas (tudo cabe em `assessments` + `programming_variables`).
-- Tocar no `program-next-week` (já funciona com base nas sessões logged — fora deste round).
+## Ficheiros tocados (esperado)
+- `src/lib/feedback-parser.ts` *(novo)*
+- `src/lib/feedback-parser.test.ts` *(novo, vitest)*
+- `src/server/plan.functions.ts` — `WeekInputSchema` + handler de `generatePlanWeek` lê pv.
+- `src/server/plan.server.ts` — `buildCockpitConstraintBlock(pv)` novo, chamado por `buildClientContextBlock`.
+- `src/components/PlanEditorSurface.tsx` — `RegenerateWithFeedbackDialog` reescrito (mesmo prop signature).
+- `mem://index.md` — actualizar a entrada R70 com Fase B.
 
-## Detalhe técnico (ficheiros tocados)
-- `src/server/phased/programming-defaults.ts` — `deriveStartingFloor()`, expor `volume_tier`.
-- `src/server/phased/stage1-brief.functions.ts` — popular pv via helper acima.
-- `src/server/phased/stage3-microcycle.functions.ts` — passar `volume_tier` ao prompt + cap de séries.
-- `src/server/phased/stage2-blueprint.functions.ts` — injectar `concurrent_day` quando `motorCapacityNeeds` ≠ ∅.
-- `src/server/phased/microcycle-edit.functions.ts` — novo `regenerateMicrocycle` que decide se re-corre Stage 1/2.
-- `src/components/plan/RegenerateWithFeedbackDialog.tsx` — apontar para o novo handler + copy.
-- `src/lib/prescribe-volume.ts` — confirmar lookup MEV/MAV/MRV por padrão de movimento.
-
-## Pergunta para ti antes de implementar
-Queres que eu **arranque pela Fase A sozinha** (maior impacto no "começar baixo", risco baixo, ~1 ronda) e só depois ataque a Fase B (unificar regen, médio risco), ou as duas no mesmo PR?
+## Pergunta antes de implementar
+**Concorrência por defeito**: 3 calls em paralelo é o sweet-spot que tenho visto noutros sítios do projecto (`programNextWeek`). Confirmas, ou queres 2 (mais conservador, +5–8s em planos de 6 semanas) ou 6 (sem pool, máximo paralelo, risco de 429)?
