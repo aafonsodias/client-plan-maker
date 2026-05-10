@@ -1964,7 +1964,7 @@ function ClientDetail() {
         >
 
           {/* PAR-Q+ */}
-          <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} /> : null}>
+          <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} description={t(parqFlagCount(assessment.parq) === 0 ? "parq_block.complete_meaning_clear" : "parq_block.complete_meaning_flagged")} /> : null}>
             <ul className="space-y-1.5">
               {PARQ_KEYS.map((key, idx) => {
                 const value = (assessment.parq as any)[key];
@@ -1990,6 +1990,9 @@ function ClientDetail() {
                 );
               })}
             </ul>
+            {isSectionComplete("parq", assessment) && (
+              <RxImplications sectionId="parq" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Risk stratification */}
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)} footer={isSectionComplete("risk", assessment) ? <CompletionStrip text={t("risk_block.complete", { level: t(`risk_block.level_${riskCategory}` as const).toUpperCase() })} description={t(`risk_block.complete_meaning_${riskCategory}` as const)} /> : null}>
@@ -2200,7 +2203,7 @@ function ClientDetail() {
             <RxImplications sectionId="risk" assessment={assessment} riskCategory={riskCategory} />
           </SectionBlock>
           {/* Training setup (existing) */}
-          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} /> : null}>
+          <SectionBlock id="training" analysing={analysingSections["training"]} analysis={sectionAnalyses["training"]} title={t("training_block.title")} hint={t("training_block.hint")} complete={isSectionComplete("training", assessment)} provenance={assessment.provenance?.training} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("training", assessment) ? <CompletionStrip text={t("training_block.complete", { summary: trainingSummary })} description={t("training_block.complete_meaning")} /> : null}>
             <div className="mb-3">
               <AnchoredSlider
                 label="Onde está face ao melhor que já conseguiu?"
@@ -2297,6 +2300,9 @@ function ClientDetail() {
               )}
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
+            {isSectionComplete("training", assessment) && (
+              <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} />
+            )}
           </SectionBlock>
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
@@ -2320,7 +2326,7 @@ function ClientDetail() {
             </div>
           </SectionBlock>
           {/* SMART goal */}
-          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} /> : null}>
+          <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} description={t("goal_block.complete_meaning")} /> : null}>
             <SmartGoalSection
               value={{
                 smart_specific: assessment.smart_specific ?? null,
@@ -2334,6 +2340,9 @@ function ClientDetail() {
               <div className="mt-3">
                 <TextField label={t("goal_block.context")} value={assessment.primary_goal} onChange={(v) => setAssessment({ ...assessment, primary_goal: v })} />
               </div>
+            )}
+            {isSectionComplete("goal", assessment) && (
+              <RxImplications sectionId="goal" assessment={assessment} riskCategory={riskCategory} />
             )}
           </SectionBlock>
           {/* Medications */}
