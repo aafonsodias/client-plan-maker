@@ -836,7 +836,8 @@ export const generatePlanWeek = createServerFn({ method: "POST" })
     const isFirstWeek = week_number === 1;
 
     const safetyBlock = buildSafetyBlock(data.assessment);
-    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}
+    const cockpitBlock = buildCockpitConstraintBlock(data.programming_variables ?? null);
+    const sys = `You are an expert strength coach designing PROFESSIONAL-GRADE, periodized programs. You are generating ONE WEEK (week ${week_number} of ${duration_weeks}) of a larger periodized block. Be HOLISTIC and STRUCTURED.${safetyBlock}${cockpitBlock}
 
 ${SHARED_PROGRAM_RULES}
 
