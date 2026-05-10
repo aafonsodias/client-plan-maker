@@ -986,6 +986,19 @@ function ClientDetail() {
           delete next[section];
           return next;
         });
+        // Live update: refresh THIS section's analysis immediately so the
+        // user sees Implicações update per-section instead of waiting for
+        // the whole queue to drain.
+        if (assessment.id) {
+          try {
+            const r: any = await getCoverageFn({ data: { assessmentId: assessment.id } });
+            if (r?.ok) {
+              setBriefCoverage({ done: r.done, total: r.total });
+              const fresh = (r.analyses ?? {}) as Record<string, SectionAnalysis | null>;
+              setSectionAnalyses((prev) => ({ ...prev, [section]: fresh[section] ?? null }));
+            }
+          } catch {}
+        }
         await new Promise((r) => setTimeout(r, 600));
       }
       if (!assessment.id) return;
