@@ -67,7 +67,7 @@ import { SaveAsTemplateDialog } from "@/components/SaveAsTemplateDialog";
 
 
 type Props = { planId: string; embedded?: boolean };
-export default function PlanEditorSurface({ planId, embedded }: Props) {
+export default function PlanEditorSurface({ planId, embedded: _embedded }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t: tCommon, i18n } = useTranslation("common");
