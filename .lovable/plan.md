@@ -1,57 +1,80 @@
-A página de logbook já existe e abre. O que falta é tornar o "qual sessão é a de hoje?" óbvio, automático e à prova de erro humano. A solução mais elegante é ligar cada sessão do mesociclo a um dia da semana fixo e usar isso para mostrar de imediato o treino certo quando o cliente abre o link.
+# Logger único, prático no telemóvel
 
-## Como vai funcionar (linguagem do utilizador)
+## Diagnóstico (o que já existe e o que falha)
 
-1. **No plano, cada sessão ganha um dia da semana** (ex.: Sessão 1 → Segunda, Sessão 2 → Quarta, Sessão 3 → Sexta). O treinador define isto uma única vez quando aprova o plano, ou aceita a sugestão automática (distribuída a partir de "dias/semana" da avaliação).
+Hoje há **dois loggers paralelos**:
 
-2. **Quando o cliente abre o link de logbook**, o sistema olha para o dia da semana de hoje:
-   - **É dia de treino?** Mostra logo a sessão correspondente, pronta a registar — sem cliques.
-   - **Já foi feita hoje?** Mostra "Treino de hoje já registado ✅" e oferece rever ou fazer um treino de recuperação.
-   - **É dia de descanso?** Mostra "Hoje é descanso" e um botão discreto "Quero treinar à mesma — abrir próxima sessão".
-   - **Faltou um dia anterior?** Banner amber: "Faltou Quarta. Recuperar agora ou marcar como falhada?"
-   - **Semana terminou?** Salta para a Semana 2 automaticamente.
+1. **`/log/$token`** — surface do cliente (mobile-first). Já tem auto-save, restore de draft, streaks, pre-readiness, post-feedback, import por foto, histórico por exercício e confetti. **Mas só pede reps + weight + RPE**, mesmo quando o dia é cardio, intervalos ou mobilidade.
+2. **Tab "Log" do `PlanEditorSurface`** — UI separada dentro do editor do treinador, com a sua própria lógica de selecção de semana/dia. Sobreposição que confunde quem mantém: dois sítios para corrigir bugs, dois sítios para traduzir, dois sítios para evoluir.
 
-3. **Botão único e grande no topo: "Começar sessão"**. Ao tocar, expande os exercícios. Não há ecrã intermédio.
+O botão `Abrir logbook do cliente` (em `clients_.$clientId.tsx:1960`) abre o link `/log/$token`. O nome é frio e ambíguo — "logbook" soa a leitura, não a acção.
 
-4. **Registo rápido por bloco**: cada exercício/superset/circuito tem checkboxes grandes por série + carga/reps inline. Como já está, mas com foco automático na próxima série por preencher (uma série de cada vez, scroll automático).
+Outro problema fino: quando um plano não tem `weekday` em nenhum dia (typical demo), `getTodayForToken` devolve `state: "empty"` e o cliente vê o cartão "Este plano ainda não tem sessões agendadas" sem exercícios por baixo (printscreen 1). Vamos garantir que o picker manual abre por defeito nesse caso.
 
-5. **Guardar = animação curta + redireção** para /me (cliente) ou /clients/{id} (treinador), conforme `?from=`. Já está.
+## Decisões
 
-6. **No /me e no detalhe do cliente**, a "Próxima sessão" passa a dizer "Hoje, Quarta · Sessão 2 · Push" em vez de só "Sessão 2", confirmando ao cliente que sabe o que vai fazer antes de tocar.
+- **Um logger só**, partilhado: o trainer-side passa a re-usar exactamente os componentes de `/log/$token` (`TodayHero`, `BlockGroup`, `ExerciseSetsCard`, pre/post). O tab "Log" do `PlanEditorSurface` deixa de ter UI própria — passa a embeber o mesmo flow em modo "trainer" (que envia `?from=trainer&clientId=...`).
+- **Botão renomeado** para `Registar treino` (ícone `NotebookPen`). Mais directo, alinhado com a acção.
+- **Inputs adaptam-se ao modo do dia** via `inferLogbookModeFromDayFocus` (já existe e já mostramos o chip):
+  - `strength` / `hypertrophy` → reps · peso · RPE  *(comportamento actual)*
+  - `cardio` → duração (mm:ss) · distância (km) · FC média  · RPE
+  - `intervals` → rondas · trabalho (s) · descanso (s) · RPE
+  - `mobility` / `skill` → duração (mm:ss) · notas qualitativas
+  - `mixed` → fallback ao modo strength com toggle "passar a cardio" por exercício
+- **Empty plan** (sem semanas com weekday) → o `TodayHero` empty state passa a mostrar imediatamente o `WeekDayPicker` expandido + os exercícios da Semana 1 / Dia 1 por baixo, em vez de esconder tudo.
+- **Mobile-first**: inputs grandes (h-12), teclado numérico (`inputMode="decimal"`), placeholder com o plano (ex: "10–12"), tick "feito" como toggle gigante na linha do set, sticky CTA "Concluir sessão" no fundo no mobile.
 
-## O que muda em concreto
+## Mudanças
 
-- **Modelo do plano**: cada `Day` ganha um campo opcional `weekday` (1-7 ou null). Plans antigos continuam a funcionar (fallback = ordem sequencial, comportamento actual).
-- **Distribuição automática**: ao aprovar microciclo, se nenhum dia tem weekday, distribuímos por dias úteis preferidos (ex.: 3×/sem → Seg/Qua/Sex; 4×/sem → Seg/Ter/Qui/Sex). Usa `assessments.training_days_per_week` como base.
-- **Editor do plano**: pequeno seletor "Dia da semana" por sessão no editor do treinador, com presets rápidos ("3×/sem MQS", "4×/sem", "Definir manualmente").
-- **`getTodayForToken`** (server fn já existe): nova ordem de prioridade →
-  1. Draft em curso (resume).
-  2. Hoje é training day **e** ainda não registado → essa sessão.
-  3. Hoje é rest day → devolve marker `rest_day` + próxima sessão sugerida.
-  4. Faltou alguma sessão dos últimos 2 dias → devolve marker `missed_recent` + essa sessão.
-  5. Tudo ok mas sem treino hoje → próxima sessão futura.
-- **Hero da página /log/$token**: passa a ter 3 estados visuais (treino-hoje, descanso, em falta) com cores do design system (emerald/muted/amber). Botão "Começar sessão" centralizado.
-- **/me e /clients/$id**: o badge "Próxima sessão" passa a mostrar dia da semana + nome do treino.
+### Tipos (`src/components/log/ExerciseSetsCard.tsx`)
+Estender `SetLog` com campos opcionais sem partir o que já está gravado:
+```text
+SetLog = { reps, weight, rpe?, done, ts?,
+           duration_s?, distance_m?, avg_hr?,    // cardio
+           work_s?, rest_s?, rounds?,            // intervals
+           hold_s? }                              // mobility
+```
+Server schema (`saveClientSession`) — alargar `SetLogSchema` para aceitar os novos campos como opcionais. Sem migração de DB: tudo vive em `entries` JSONB.
 
-## Decisões de UX (para validar antes de construir)
+### Componente `SetRow` por modo
+Dentro de `ExerciseSetsCard`, escolher o renderer pelo `mode` recebido por prop:
+- `StrengthSetRow` (actual)
+- `CardioSetRow` (duração + distância + FC)
+- `IntervalSetRow` (rondas × trabalho/descanso)
+- `MobilitySetRow` (apenas duração)
 
-- **Fixo vs. flexível**: a atribuição de dia da semana é uma sugestão amigável, não uma prisão. Se o cliente abrir num dia "errado", continua a poder escolher manualmente em "Mudar de dia". Sem culpas, sem fricção.
-- **Sem notificações nesta ronda**: emails/push ficam para depois — o objectivo agora é "abro o link → sei o que fazer".
-- **Sem novos ecrãs**: tudo dentro da `/log/$token` actual; só muda o hero e o `getTodayForToken`.
+Histórico ("Última vez: 12 reps × 60 kg") adapta-se ao modo (ex: "Última vez: 5 km em 28:14").
 
-## Detalhes técnicos (referência)
+### Routing/header (`src/routes/log.$token.tsx`)
+- Passar `mode` ao `BlockGroup` → `ExerciseSetsCard`.
+- Quando `todayState === "empty"` e o plano tem dias prescritos → forçar `showDayPicker = true` na primeira render e popular weekNum/dayLabel com o primeiro dia disponível (já faz parte; afinar para mostrar a lista de exercícios).
+- Quando `search.from === "trainer"`, esconder o card "treinaste com folha impressa? tira foto…" (irrelevante para o PT).
+- CTA `Concluir sessão` torna-se **sticky bottom** no mobile (`sm:relative`).
 
-- Schema: `plan_data.weeks[].days[].weekday: number | null` (1=segunda … 7=domingo).
-- Migração: nenhuma alteração de tabela necessária — `plan_data` é JSONB.
-- Distribuição automática: helper puro `src/lib/weekday-distribution.ts` (input: `{ trainingDaysPerWeek, sessionCount }`, output: `number[]` com weekdays).
-- `getTodayForToken` em `src/server/sessions.functions.ts`: estender o tipo de retorno com `state: "ready" | "rest" | "missed" | "done_today" | "empty"` + `suggested_next` opcional.
-- Hero: novo componente `<TodayHero state=… day=… onStart=… />` em `src/components/log/`.
-- Editor de plano: `<WeekdayPicker />` por sessão, integrado no `BriefEditor`/microcycle approval step.
-- i18n: chaves novas em `src/i18n/locales/pt/common.json` sob `logbook.today.*`.
+### Trainer surface (`src/components/PlanEditorSurface.tsx`)
+- Substituir o conteúdo do tab `log` por um `iframe`-less embed: importar `<ClientLogContent>` extraído de `log.$token.tsx` e passar `token` + `from="trainer"` + `clientId`.  *(Refactor: extrair o JSX do `ClientLogPage` para um componente exportado `ClientLogContent` recebendo `token` por prop; o route component fica como wrapper que lê o param.)*
+- Manter os outros tabs (View/Edit/Resultados/Progresso) intactos.
 
-## O que **não** muda
+### Botão (`src/routes/clients_.$clientId.tsx`)
+- Linha 1960: `label: "Abrir logbook do cliente"` → `label: "Registar treino"`.
+- Manter o `intent: "log"` e a lógica de `ensureShareToken`.
 
-- Estrutura de tabelas (nenhuma migração).
-- Geração AI (fora deste scope).
-- Lógica de progressão semana N→N+1.
-- Botão "Abrir logbook do cliente" no detalhe do cliente.
+### i18n
+- Novas chaves em `src/i18n/locales/{en,pt}/common.json` sob `logbook.modes.*` para os labels de duração/distância/FC/rondas/trabalho/descanso, e `logbook.cta.finish`. ES/HI fallback ao EN.
+
+## Fora de scope (para outra ronda)
+
+- Migração de DB ou nova tabela.
+- Re-treinar `inferLogbookModeFromDayFocus` ou abrir um seletor de modo manual ao cliente.
+- Notificações push / lembretes de treino.
+- Replicar tudo isto em `/me` (cliente final) — esta ronda é o link público `/log/$token` + o tab do PT.
+- Métricas avançadas (HRV, watts, splits) — adicionamos quando alguém pedir.
+
+## Plano de verificação
+
+1. `npm run build` limpo (sem novos imports a falhar).
+2. Abrir `/clients/$id` com plano finalizado → ver `Registar treino` no secondary action.
+3. Clicar → abre `/log/$token` no mesmo separador, exercícios visíveis mesmo em planos sem `weekday`.
+4. Mudar para um dia de cardio na demo → ver inputs de duração/distância/FC.
+5. No editor do plano, abrir tab `Log` → ver exactamente a mesma UI, com banner amber "estás a registar como treinador".
+6. Smoke 375×812 (Mobile Safari): inputs com teclado numérico, CTA sticky, sem overflow horizontal.
