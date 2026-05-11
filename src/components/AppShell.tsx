@@ -9,7 +9,6 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AtlasDock } from "@/components/AtlasDock";
-import { AtlasGenie } from "@/components/AtlasGenie";
 import { AtlasOrb } from "@/components/AtlasOrb";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
