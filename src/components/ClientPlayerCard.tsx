@@ -148,11 +148,11 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
       <Link
         to="/clients/$clientId"
         params={{ clientId: client.id }}
-        className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left sm:gap-4 sm:px-5 sm:py-3"
+        className="flex flex-1 items-center gap-3.5 px-4 py-3.5 text-left sm:gap-4 sm:px-5 sm:py-3.5"
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <p className="break-words text-sm font-semibold sm:text-base">{client.full_name}</p>
             {signals.tier && signals.tier.id !== "none" && (
               <span
