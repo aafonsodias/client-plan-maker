@@ -840,5 +840,59 @@
     "helper_self_intake": "O cliente ainda precisa de terminar a auto-avaliação antes de gerar o plano.",
     "helper_assessment_session": "Complete a sessão de avaliação (antropometria, mobilidade, postura, screen de movimento, cardio)."
   },
-  "assessment_complete_chip": "Avaliação completa"
+  "assessment_complete_chip": "Avaliação completa",
+  "pre_plan_review": {
+    "cta": "Rever definições do plano",
+    "title": "Revisão pré-plano",
+    "subtitle": "Pré-visualização das definições. As variáveis finais são confirmadas no editor de briefing.",
+    "section": {
+      "safety": "Segurança",
+      "summary": "Resumo da avaliação",
+      "starting_floor": "Ponto de partida estimado",
+      "duration": "Duração do bloco",
+      "advanced": "Variáveis avançadas"
+    },
+    "fields": {
+      "goal": "Objetivo",
+      "experience": "Experiência",
+      "frequency": "Frequência",
+      "frequency_value_one": "{{count}} sessão/sem",
+      "frequency_value_other": "{{count}} sessões/sem",
+      "session_minutes": "Duração da sessão",
+      "location": "Local",
+      "equipment": "Equipamento",
+      "equipment_value_one": "{{count}} item",
+      "equipment_value_other": "{{count}} itens"
+    },
+    "starting_floor_estimated": "Estimativa preflight · não é prescrição final",
+    "starting_floor_note": "Os valores definitivos (RPE, volume, deload) são confirmados no editor de briefing após o IA gerar a proposta.",
+    "weeks_to_progress_one": "Progredir em {{count}} semana",
+    "weeks_to_progress_other": "Progredir em {{count}} semanas",
+    "duration_value_one": "{{count}} semana",
+    "duration_value_other": "{{count}} semanas",
+    "duration_hint": "Default 4 semanas. O IA vai gerar a Semana 1; as restantes são determinísticas.",
+    "future": {
+      "intensity_volume_tradeoff": "Trade-off intensidade ↔ volume",
+      "deload_frequency": "Frequência de deload",
+      "autoreg_strictness": "Autoregulação",
+      "wave_model": "Modelo de wave",
+      "exercise_bias": "Viés de exercício",
+      "cardio_emphasis": "Ênfase de cardio",
+      "mobility_emphasis": "Ênfase de mobilidade"
+    },
+    "future_hint": "Definidos depois, no editor de briefing.",
+    "coming_soon": "Em breve",
+    "warnings": {
+      "parq_one": "{{count}} sinal PAR-Q reportado. Reveja antes de gerar.",
+      "parq_other": "{{count}} sinais PAR-Q reportados. Reveja antes de gerar.",
+      "beta_blocker": "Beta-bloqueador detectado — frequência cardíaca não é fiável. Use RPE/talk-test.",
+      "anticoagulant": "Anticoagulante detectado — risco de hematoma/queda. Evitar contacto e plyo de impacto.",
+      "low_recovery": "Sinais de baixa recuperação (sono/stress/prontidão). Considere preset conservador no Cockpit.",
+      "injury_one": "{{count}} lesão reportada — estratégias específicas serão definidas no briefing.",
+      "injury_other": "{{count}} lesões reportadas — estratégias específicas serão definidas no briefing."
+    },
+    "legal": "Estas definições alimentam um motor de prescrição; não substituem avaliação clínica.",
+    "cancel": "Cancelar",
+    "confirm": "Criar briefing inicial"
+  }
 }

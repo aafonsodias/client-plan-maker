@@ -53,6 +53,7 @@ import {
 } from "@/components/assessment/svg/icons";
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
+import { PrePlanReviewSheet } from "@/components/plan/PrePlanReviewSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
@@ -685,6 +686,11 @@ function ClientDetail() {
 
   // Phased generation feature-flag + brief preview coverage.
   const [phasedEnabled, setPhasedEnabled] = useState(false);
+  // Round 2 — Pre-Plan Review (zero-AI preflight). Opening this sheet must
+  // never trigger a server call. The only AI/network call lives behind the
+  // sheet's "Criar briefing inicial" primary action, which calls
+  // `runPhasedStart()` with the duration the trainer picked inside the sheet.
+  const [prePlanReviewOpen, setPrePlanReviewOpen] = useState(false);
   const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
@@ -1445,12 +1451,13 @@ function ClientDetail() {
   // button and by the safety-gate confirmation, so the safety override stays
   // on the new pipeline instead of falling back to the legacy day-by-day
   // generator.
-  const runPhasedStart = useCallback(async () => {
+  const runPhasedStart = useCallback(async (weeksOverride?: number) => {
     if (phasedBusy) return;
     setPhasedBusy(true);
     const tId = toast.loading("Synthesizing brief…");
     try {
-      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: duration } });
+      const weeks = typeof weeksOverride === "number" ? weeksOverride : duration;
+      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: weeks } });
       if (!res.ok) {
         if (res.error === "quota_exceeded") {
           toast.dismiss(tId);
@@ -1495,12 +1502,17 @@ function ClientDetail() {
         res.reused ? "Brief already ready" : "Brief ready",
         { id: tId, duration: 4000 }
       );
-      // Cut 2 — staged reveal: open synthesis + scroll into view so the
-      // trainer immediately sees what we learned before going to the cockpit.
+      // Round 2 — close the pre-plan review sheet (if open) and let the
+      // existing BriefEditor / protocol stages lane handle review +
+      // approval. We still surface the synthesis section as today.
+      setPrePlanReviewOpen(false);
+      setPhasedEnabled(true);
       setSynthesisOpen(true);
       if (typeof window !== "undefined") {
         requestAnimationFrame(() => {
-          const el = document.getElementById("sintese-da-avaliacao");
+          const el =
+            document.getElementById("protocol-stages-lane") ??
+            document.getElementById("sintese-da-avaliacao");
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       }
@@ -1509,7 +1521,7 @@ function ClientDetail() {
     } finally {
       setPhasedBusy(false);
     }
-  }, [clientId, phasedBusy, startPhasedPlanFn]);
+  }, [clientId, duration, phasedBusy, startPhasedPlanFn]);
 
   // Delete a single plan (with confirm) from the Plans list.
   const deletePlan = async (planId: string) => {
@@ -1925,7 +1937,14 @@ function ClientDetail() {
               onClick: () => setSafetyDialogOpen(true),
             };
           } else {
-            primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+            // Round 2 — open the zero-AI Pre-Plan Review sheet instead of
+            // calling startPhasedPlanDraft directly. The sheet's primary
+            // button is the only path that spends AI credits.
+            primaryAction = {
+              label: t("pre_plan_review.cta"),
+              icon: <Sparkles className="h-4 w-4" />,
+              onClick: () => setPrePlanReviewOpen(true),
+            };
           }
         } else if (briefReadyLocal) {
           primaryAction = { label: "Rever briefing", icon: <ArrowRight className="h-4 w-4" />, onClick: scrollToStages };
@@ -2117,8 +2136,10 @@ function ClientDetail() {
               toast.error(t("assessment_gate.session_incomplete"));
               return;
             }
-            if (phasedEnabled) void runPhasedStart();
-            else void generate();
+            // Round 2 — never call generation directly from the conclude CTA.
+            // Open the Pre-Plan Review sheet (zero AI). Generation only fires
+            // when the trainer clicks "Criar briefing inicial" inside it.
+            setPrePlanReviewOpen(true);
           }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
@@ -4020,14 +4041,19 @@ function ClientDetail() {
             window.dispatchEvent(new CustomEvent("assessment:jump", { detail: { sectionId: sid } }));
           }
         }}
-        onStartBrief={async () => {
-          try {
-            setPhasedBusy(true);
-            const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
-            if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); }
-            else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
-          } finally { setPhasedBusy(false); }
+        onStartBrief={() => {
+          // Round 2 — route through the Pre-Plan Review sheet so opening
+          // never spends AI credits. The sheet's primary action calls
+          // startPhasedPlanDraft via runPhasedStart().
+          setPrePlanReviewOpen(true);
         }}
+      />
+      <PrePlanReviewSheet
+        open={prePlanReviewOpen}
+        onOpenChange={setPrePlanReviewOpen}
+        assessment={assessment}
+        busy={phasedBusy}
+        onConfirm={(weeks) => { void runPhasedStart(weeks); }}
       />
     </div>
     </TooltipProvider>
