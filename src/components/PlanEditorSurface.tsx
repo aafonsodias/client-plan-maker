@@ -30,7 +30,8 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { useTranslation } from "react-i18next";
 import { markOnboardingStep } from "@/components/OnboardingChecklist";
 import { useServerFn } from "@tanstack/react-start";
-import { generatePlanWeek, regeneratePlanSummary, persistRegeneratedPlan } from "@/server/plan.functions";
+import { generatePlanWeek, regeneratePlanSummary, persistRegeneratedPlan, getPlanConstraints } from "@/server/plan.functions";
+import { useQuery } from "@tanstack/react-query";
 import { parseRpeOverrideFromFeedback } from "@/lib/feedback-parser";
 import { reanchorPlanRpe } from "@/server/phased/stage3-microcycle.functions";
 import { proposeProgressions } from "@/server/phased/stage4-progressions.functions";
@@ -1784,6 +1785,24 @@ function RegenerateWithFeedbackDialog({
   const persistFn = useServerFn(persistRegeneratedPlan);
   const proposeProgressionsFn = useServerFn(proposeProgressions);
   const bulkFillFn = useServerFn(bulkFillRemainingWeeks);
+  const constraintsFn = useServerFn(getPlanConstraints);
+  const constraintsQ = useQuery({
+    queryKey: ["plan-constraints", planId],
+    queryFn: () => constraintsFn({ data: { plan_id: planId } }),
+    enabled: open,
+    staleTime: 60_000,
+  });
+  const constraints = constraintsQ.data?.ok ? constraintsQ.data : null;
+  const tierTone = constraints?.tier === "advanced"
+    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+    : constraints?.tier === "remedial"
+      ? "border-blue-500/40 bg-blue-500/10 text-blue-200"
+      : "border-amber-500/40 bg-amber-500/10 text-amber-200";
+  const tierLabel = constraints?.tier === "advanced"
+    ? "🟢 Avançado"
+    : constraints?.tier === "remedial"
+      ? "🔵 Remedial"
+      : "🟡 Conservador";
 
   const submit = async () => {
     if (!feedback.trim()) {
