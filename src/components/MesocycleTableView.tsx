@@ -374,6 +374,7 @@ export function MesocycleTableView({
 
 function DayBlock({
   day,
+  sessionIndex,
   rows,
   weekCount,
   compact,
@@ -389,6 +390,7 @@ function DayBlock({
   isFirstGroup,
 }: {
   day: Day;
+  sessionIndex: number;
   rows: { exercise: Exercise; cells: { ex: Exercise | null; weekNumber: number; dayLabel: string; exIdx: number }[] }[];
   weekCount: number;
   compact: boolean;
@@ -403,6 +405,9 @@ function DayBlock({
   deletingName: string | null;
   isFirstGroup: boolean;
 }) {
+  const { i18n } = useTranslation();
+  const { sessionLabel, focus } = formatSessionLabel(day.day_label, sessionIndex, i18n?.language);
+  const focusFromDay = focus || (day.focus ?? null);
   return (
     <>
       {!isFirstGroup && (
@@ -415,9 +420,9 @@ function DayBlock({
           colSpan={weekCount + 1}
           className="rounded-t border-t-2 border-accent/40 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground"
         >
-          {day.day_label}
-          {day.focus && (
-            <span className="ml-2 normal-case text-muted-foreground">· {day.focus}</span>
+          {sessionLabel}
+          {focusFromDay && (
+            <span className="ml-2 normal-case text-muted-foreground">· {focusFromDay}</span>
           )}
         </td>
       </tr>
