@@ -874,5 +874,63 @@
     "legal": "These settings feed a prescription engine; they don't replace clinical assessment.",
     "cancel": "Cancel",
     "confirm": "Create initial brief"
+  },
+  "summary_pdf": {
+    "cta": "Assessment summary (PDF)",
+    "cta_short": "Export summary (PDF)",
+    "brand": "PROTOCOL",
+    "eyebrow": "Assessment summary · prescription support",
+    "title": "Assessment summary",
+    "no_name": "Client",
+    "phase": {
+      "self_intake_pending": "Self intake in progress",
+      "session_pending": "Assessment session pending",
+      "complete": "Assessment complete"
+    },
+    "status": {
+      "self_intake": "Self intake",
+      "session": "Session"
+    },
+    "sections": {
+      "profile": "Profile",
+      "training": "Training setup",
+      "implications": "Prescription implications",
+      "session_checklist": "Assessment session"
+    },
+    "fields": {
+      "goal": "Goal",
+      "goal_measure": "Measure",
+      "experience": "Experience",
+      "years": "Years training",
+      "frequency": "Frequency",
+      "frequency_value": "{{count}} sessions/wk",
+      "session_minutes": "Session length",
+      "location": "Location",
+      "equipment": "Equipment",
+      "equipment_none": "No equipment listed"
+    },
+    "implications_intro": "Deterministic list derived from the assessment. Each item is guidance for the trainer — not a diagnosis.",
+    "implications": {
+      "parq": "{{count}} positive PAR-Q answer(s) reported. Confirm clearance before progressing intensity.",
+      "risk_obese": "Start with a conservative tier (MEV) and a gradual progression curve.",
+      "beta_blocker": "Heart-rate response may be blunted — prefer RPE / talk test over HR zones.",
+      "anticoagulant": "Caution with falls, contact and impact. Avoid risky exercises.",
+      "hypoglycemia": "Watch for hypoglycemia in long sessions; plan fueling and shorter blocks.",
+      "injuries": "Modify and monitor affected patterns ({{count}}: {{regions}}).",
+      "pain_notes": "Active pain reported — review before loading the affected pattern.",
+      "low_recovery": "Reduced recovery signals — start with a conservative RPE ceiling (≤7.5) and delay progressions.",
+      "readiness": "Low behavioural readiness — prioritise adherence over load.",
+      "beginner": "Starting RPE 6.5–7.5, focus on technique and base patterns.",
+      "no_equipment": "No equipment — restrict selection to bodyweight movements.",
+      "low_frequency": "Low frequency — prefer full-body sessions.",
+      "short_session": "Short sessions — limit accessories, keep main patterns.",
+      "none": "No specific cautions identified. Apply standard initiation parameters."
+    },
+    "session_complete": "Assessment session complete.",
+    "session_complete_note": "All practical items (anthropometry, mobility, posture, screen, performance) are recorded.",
+    "session_checklist_intro": "Complete these items in the next in-person session before generating the plan.",
+    "intake_pending": "Self intake pending",
+    "disclaimer": "Document supports exercise prescription and trainer review. It is not a diagnosis or medical clearance.",
+    "footer_page": "Page {{page}} of {{total}}"
   }
 }
