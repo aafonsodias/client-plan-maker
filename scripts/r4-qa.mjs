@@ -1,34 +1,26 @@
-import jsPDF from "jspdf";
+import OrigJsPDF from "jspdf";
 import fs from "node:fs";
 
 let lastBuf = null;
-jsPDF.prototype.save = function (filename) {
-  lastBuf = { filename, buf: Buffer.from(this.output("arraybuffer")) };
-  return this;
-};
+const Wrapped = new Proxy(OrigJsPDF, {
+  construct(target, args) {
+    const inst = new target(...args);
+    inst.save = function (filename) {
+      lastBuf = { filename, buf: Buffer.from(this.output("arraybuffer")) };
+      return this;
+    };
+    return inst;
+  },
+});
 
-const { generateAssessmentSessionHelperPDF } = await import("/dev-server/src/lib/pdf-assessment-session-helper.ts");
-const t = (k, opts) => (opts && typeof opts.defaultValue === "string" ? opts.defaultValue : k);
+// Replace module export so dynamic import sees wrapped class
+import { Module } from "node:module";
+// Bun: rely on import alias instead — patch the loaded module cache
+import jspdfMod from "jspdf";
+jspdfMod.default = Wrapped;
 
-const fixtures = {
-  full: { client: { full_name: "Maria Silva" }, assessment: { id: "x" } },
-  partial: { client: { full_name: "João Costa" }, assessment: { id: "x", waist_cm: 82 } },
-  empty: { client: null, assessment: null },
-};
-
-const countPages = (buf) => {
-  const s = buf.toString("latin1");
-  return (s.match(/\/Type\s*\/Page[^s]/g) || []).length;
-};
-
-for (const [name, fx] of Object.entries(fixtures)) {
-  lastBuf = null;
-  await generateAssessmentSessionHelperPDF({ ...fx, locale: "pt-PT", t });
-  fs.writeFileSync(`/tmp/r4qa/${name}.pdf`, lastBuf.buf);
-  console.log("PT", name, "file=", lastBuf.filename, "pages=", countPages(lastBuf.buf), "bytes=", lastBuf.buf.length);
-}
-
-lastBuf = null;
-await generateAssessmentSessionHelperPDF({ ...fixtures.full, locale: "en", t });
-fs.writeFileSync("/tmp/r4qa/full_en.pdf", lastBuf.buf);
-console.log("EN full", "file=", lastBuf.filename, "pages=", countPages(lastBuf.buf));
+// Instead: monkey-patch by replacing the export getter via a side import indirection.
+// Simpler: write a tiny shim that re-exports Wrapped, and have the helper import jspdf normally.
+// But helper already imports jspdf. So: patch every newly constructed instance via OrigJsPDF prototype "after construct" hook — there is none. Use a setter on `save` via defineProperty in constructor? Not possible without modifying lib.
+// Best path: use bun's preload to swap.
+console.log("approach: shim");
