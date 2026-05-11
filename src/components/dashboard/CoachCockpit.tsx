@@ -277,8 +277,8 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
     <section className="space-y-2">
       {/* Compact cockpit strip + slim week — one bordered surface */}
       <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
-        {/* Stat strip */}
-        <div className="flex flex-wrap items-stretch divide-x divide-border/50 text-xs">
+        {/* Stat strip — 2-col grid on mobile, single horizontal row on sm+ */}
+        <div className="grid grid-cols-2 divide-x divide-y divide-border/50 text-xs sm:flex sm:flex-nowrap sm:items-stretch sm:divide-y-0 sm:overflow-x-auto">
           <Stat
             label={t("dashboard.today.title")}
             value={todayRows.length || 0}
@@ -293,7 +293,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             label={lang === "pt" ? "Sessões" : "Sessions"}
             value={sessionsCount}
           />
-          <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
+          <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5 sm:px-4">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               <span>{lang === "pt" ? "Receita" : "Revenue"}</span>
               <button
