@@ -298,13 +298,13 @@
   color-scheme: dark;
 
   --bg: #3E3A33;
-  --surface: #34302A;
-  --surface-warm: #4D4840;
-  --surface-2: #3A362F;
-  --surface-3: #443F37;
-  --border: #5A5448;
+  --surface: #463F37;
+  --surface-warm: #524C42;
+  --surface-2: #423D35;
+  --surface-3: #4D4740;
+  --border: #635C4F;
   --text-1: #EDE6D4;
-  --text-2: #B5AE9F;
+  --text-2: #C2BBAA;
   --text-3: #857F73;
   --accent: #DD9A60;
   --accent-strong: #C97D4A;
@@ -316,6 +316,41 @@
   --danger: #D17560;
   --cta-bg: var(--accent);
   --cta-text: #2A2622;
+
+  /* R76 semantic aliases — Medium */
+  --surface-elevated: #4F4840;
+  --surface-subtle: #423D35;
+  --border-strong: #7A7363;
+  --brand: var(--accent);
+  --brand-foreground: var(--cta-text);
+  --brand-soft: color-mix(in oklab, var(--accent) 16%, transparent);
+  --brand-border: color-mix(in oklab, var(--accent) 40%, transparent);
+  --brand-glow: color-mix(in oklab, var(--accent) 22%, transparent);
+  --hover: color-mix(in oklab, var(--text-1) 7%, transparent);
+  --active: color-mix(in oklab, var(--text-1) 11%, transparent);
+  --selected: color-mix(in oklab, var(--accent) 14%, transparent);
+  --focus-ring: color-mix(in oklab, var(--accent) 55%, transparent);
+  --disabled: color-mix(in oklab, var(--text-1) 8%, transparent);
+  --disabled-foreground: var(--text-3);
+  --success-foreground: var(--success);
+  --success-soft: color-mix(in oklab, var(--success) 22%, transparent);
+  --warn-foreground: var(--warn);
+  --warn-soft: color-mix(in oklab, var(--warn) 18%, transparent);
+  --warning: var(--warn);
+  --danger-foreground: #2A2622;
+  --danger-soft: color-mix(in oklab, var(--danger) 18%, transparent);
+  --neutral: var(--text-3);
+  --neutral-soft: var(--surface-warm);
+  --table-header: var(--surface-warm);
+  --table-row: var(--surface);
+  --table-row-hover: color-mix(in oklab, var(--accent) 8%, transparent);
+  --chip: var(--surface-warm);
+  --chip-active: var(--surface-3);
+  --badge: var(--surface-warm);
+  --badge-active: color-mix(in oklab, var(--accent) 22%, transparent);
+  --filter-active: var(--surface-3);
+  --footer: transparent;
+  --footer-foreground: var(--text-3);
 
   --background: var(--bg);
   --foreground: var(--text-1);
