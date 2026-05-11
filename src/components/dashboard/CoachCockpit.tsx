@@ -485,19 +485,21 @@ function MiniWeek({
         return (
           <div
             key={dow}
-            className={`flex min-h-[96px] flex-col rounded-lg border bg-background/40 p-1.5 ${
-              isToday ? "border-amber-500/50 ring-1 ring-amber-500/20" : "border-border"
+            className={`flex min-h-[56px] flex-col rounded-md border p-1.5 ${
+              isToday
+                ? "border-amber-500/40 bg-amber-500/[0.04]"
+                : "border-border/50 bg-background/30"
             }`}
           >
-            <div className="mb-1 flex flex-col items-start leading-tight">
-              <span className={`text-[9px] font-bold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground"}`}>
+            <div className="flex items-baseline justify-between leading-none">
+              <span className={`text-[9px] font-semibold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground/70"}`}>
                 {dayLabels[dow]}
               </span>
-              <span className={`font-mono text-[11px] ${isToday ? "text-foreground" : "text-muted-foreground"}`}>
+              <span className={`font-mono text-[10px] ${isToday ? "text-foreground" : "text-muted-foreground/70"}`}>
                 {String(date.getDate()).padStart(2, "0")}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {dayBookings.slice(0, 4).map((b) => {
                 const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
                 const cls = packBlockClasses(color);
