@@ -272,12 +272,34 @@ export const saveClientSession = createServerFn({ method: "POST" })
     // (done/partial/missed) we ALSO try to graduate any existing draft for
     // this slot — preventing the "ghost draft" left behind problem.
     if (data.status === "in_progress") {
+      // Partial unique index (WHERE status='in_progress') can't be used by
+      // PostgREST's onConflict inference, so emulate upsert manually.
+      const { data: existing, error: findErr } = await supabaseAdmin
+        .from("workout_sessions")
+        .select("id")
+        .eq("plan_id", plan.id)
+        .eq("week_number", data.week_number)
+        .eq("day_label", data.day_label)
+        .eq("session_date", data.session_date)
+        .eq("logged_by", "client")
+        .eq("status", "in_progress")
+        .maybeSingle();
+      if (findErr) fail(findErr, "Could not save draft.");
+
+      if (existing?.id) {
+        const { data: row, error } = await supabaseAdmin
+          .from("workout_sessions")
+          .update(baseRow)
+          .eq("id", existing.id)
+          .select("id, status")
+          .single();
+        if (error) fail(error, "Could not save draft.");
+        return { ok: true as const, id: row.id, status: row.status };
+      }
+
       const { data: row, error } = await supabaseAdmin
         .from("workout_sessions")
-        .upsert(baseRow, {
-          onConflict: "plan_id,week_number,day_label,session_date,logged_by",
-          ignoreDuplicates: false,
-        })
+        .insert(baseRow)
         .select("id, status")
         .single();
       if (error) fail(error, "Could not save draft.");
