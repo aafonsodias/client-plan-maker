@@ -104,6 +104,7 @@ import { ReassessmentSheet } from "@/components/ReassessmentSheet";
 import { CapacityDeltasCard } from "@/components/CapacityDeltasCard";
 import { ThisWeekHero } from "@/components/ThisWeekHero";
 import PlanEditorSurface from "@/components/PlanEditorSurface";
+import { PlanWithDeck } from "@/components/PlanWithDeck";
 import { ensureShareToken } from "@/server/sessions.functions";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Menu as MenuIcon } from "lucide-react";
@@ -2041,7 +2042,20 @@ function ClientDetail() {
             )}
             {allApprovedLocal && heroPlan && (
               <div className="mt-6">
-                <PlanEditorSurface planId={heroPlan.id} embedded />
+                <PlanWithDeck
+                  plan={heroPlan as any}
+                  currentWeek={planLatestWeek[heroPlan.id] ?? null}
+                  onRegister={secondaryAction?.onClick}
+                  registerBusy={secondaryAction?.busy}
+                  onAssessmentPdf={
+                    assessment
+                      ? async () => {
+                          const { renderAssessmentPdf } = await import("@/lib/pdf");
+                          renderAssessmentPdf({ assessment, client, t: t as any });
+                        }
+                      : undefined
+                  }
+                />
               </div>
             )}
             <CapacityDeltasCard clientId={clientId} />

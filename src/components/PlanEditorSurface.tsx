@@ -74,8 +74,25 @@ type SessionRow = {
   logged_by: string; entries: any[]; session_notes: string | null;
   status?: "done" | "partial" | "missed" | null;
 };
-type Props = { planId: string; embedded?: boolean };
-export default function PlanEditorSurface({ planId, embedded: _embedded }: Props) {
+type Props = {
+  planId: string;
+  embedded?: boolean;
+  /** When provided, the deck above owns the mode — we hide our own tab strip + Configurar button. */
+  mode?: Mode;
+  onModeChange?: (m: Mode) => void;
+  /** Filter the table/cards to a single week (null = show all). */
+  selectedWeek?: number | null;
+  /** Hide the duplicated plan-chrome (title row, summary, mode tabs) when a parent deck owns it. */
+  hideOwnChrome?: boolean;
+};
+export default function PlanEditorSurface({
+  planId,
+  embedded: _embedded,
+  mode: modeProp,
+  onModeChange,
+  selectedWeek = null,
+  hideOwnChrome = false,
+}: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t: tCommon, i18n } = useTranslation("common");
@@ -85,7 +102,12 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [data, setData] = useState<PlanData>({ weeks: [] });
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<Mode>("view");
+  const [modeState, setModeState] = useState<Mode>("view");
+  const mode = modeProp ?? modeState;
+  const setMode = (m: Mode) => {
+    if (onModeChange) onModeChange(m);
+    else setModeState(m);
+  };
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
@@ -95,6 +117,13 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
   const [regenSummaryBusy, setRegenSummaryBusy] = useState(false);
   const reanchorRpeFn = useServerFn(reanchorPlanRpe);
   const [reanchorBusy, setReanchorBusy] = useState(false);
+
+  // Week filter applied by the parent deck. When selectedWeek is set we hand
+  // the children a narrowed PlanData so the table only shows that week.
+  const filteredData = useMemo<PlanData>(() => {
+    if (selectedWeek == null) return data;
+    return { ...data, weeks: data.weeks.filter((w) => w.week_number === selectedWeek) };
+  }, [data, selectedWeek]);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
@@ -792,7 +821,9 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
         </div>
       </details>
 
-      {/* Mode tabs — editorial underline row, tonal hover, no card-soup */}
+      {/* Mode tabs — editorial underline row, tonal hover, no card-soup.
+          Hidden when a parent deck owns `mode`. */}
+      {!hideOwnChrome && (
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border/60">
         <div role="tablist" className="-mb-px flex w-full max-w-full items-center gap-0.5 overflow-x-auto text-[11px] font-semibold uppercase tracking-widest sm:w-auto sm:gap-1">
           {(
@@ -839,6 +870,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           </button>
         )}
       </div>
+      )}
 
       {mode === "view" ? (
         <>
@@ -846,7 +878,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           </div>
           <ViewMode
-            plan={data}
+            plan={filteredData}
             planId={planId}
             sessions={sessions}
             reload={reloadSessions}
@@ -972,7 +1004,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
             )}
           </section>
           <MesocycleTableView
-            plan={data}
+            plan={filteredData}
             planId={planId}
             editable={true}
             onUpdated={reloadSessions}
@@ -982,7 +1014,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
       ) : mode === "results" ? (
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
-          <ResultsPanel plan={data} sessions={sessions as any} />
+          <ResultsPanel plan={filteredData} sessions={sessions as any} />
           <LogbookTimeline
             sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
             currentPlanVersion={(plan as any)?.plan_data_version ?? 1}
@@ -994,7 +1026,7 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
           blockNumber={(plan as any).block_number ?? 1}
         />
       ) : (
-        <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
+        <LogMode plan={filteredData} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
     </div>
   );
