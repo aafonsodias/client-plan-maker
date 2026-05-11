@@ -151,7 +151,7 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
         className="flex flex-1 items-center gap-3.5 px-4 py-3.5 text-left sm:gap-4 sm:px-5 sm:py-3.5"
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-1.5 pr-2">
           <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-1">
             <div className="flex min-w-0 items-center gap-2">
               <p className="min-w-0 truncate text-sm font-semibold sm:text-base">{client.full_name}</p>
@@ -172,10 +172,12 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
             )}
           </div>
           {blockLine && (
-            <p className="truncate text-xs text-muted-foreground sm:text-sm">{blockLine}</p>
+            <p className="overflow-hidden text-ellipsis text-xs text-muted-foreground sm:text-sm [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
+              {blockLine}
+            </p>
           )}
           {(signals.risk || signals.readiness != null) && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
               {signals.risk && (
                 <span
                   className="inline-flex items-center gap-1.5"
@@ -217,9 +219,9 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
             </div>
           )}
           {statusText && (
-            <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
               <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${toneDot(statusTone)}`} />
-              {statusText}
+              <span className="truncate">{statusText}</span>
             </p>
           )}
           {!blockLine && !statusText && (
