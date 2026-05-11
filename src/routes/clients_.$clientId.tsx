@@ -4077,6 +4077,7 @@ function ClientDetail() {
         open={prePlanReviewOpen}
         onOpenChange={setPrePlanReviewOpen}
         assessment={assessment}
+        client={client}
         busy={phasedBusy}
         onConfirm={(weeks) => { void runPhasedStart(weeks); }}
       />
