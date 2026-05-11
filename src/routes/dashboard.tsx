@@ -493,7 +493,7 @@ function Dashboard() {
           </div>
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap gap-0.5 text-[11px] uppercase tracking-widest">
+            <div className="mb-3 inline-flex flex-wrap gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-[11px] uppercase tracking-[0.16em]">
               {[
                 { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
                 { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
@@ -507,24 +507,20 @@ function Dashboard() {
                     key={f.id}
                     to="/dashboard"
                     search={{ filter: f.id }}
-                    className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition ${
+                    className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
                       isActive
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {isActive && (
-                      <span aria-hidden className="h-1 w-1 rounded-full bg-amber-500" />
-                    )}
                     <span>{f.label}</span>
-                    <span className={isActive ? "text-foreground/50" : "text-foreground/30"}>·</span>
-                    <span className={isActive ? "text-foreground/70 tabular-nums" : "text-foreground/40 tabular-nums"}>{f.count}</span>
+                    <span className={`tabular-nums ${isActive ? "text-foreground/60" : "text-foreground/35"}`}>{f.count}</span>
                   </Link>
                 );
               })}
             </div>
 
-            <div className="overflow-hidden rounded-2xl bg-muted/40">
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
               {filteredClients.map((c) => {
                 const d = daysUntilBirthday(c.date_of_birth);
                 const isBday = d !== null && d <= 7;
