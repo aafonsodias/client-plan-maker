@@ -1793,33 +1793,9 @@ function ClientDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          {/* Round D · Bug 1 — Confirmation when generating from a partial assessment. */}
-          <AlertDialog open={incompleteWarnOpen} onOpenChange={setIncompleteWarnOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("generate.incomplete_title")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("generate.incomplete_body", {
-                    done: completedCount,
-                    total: totalSections,
-                  })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("generate.incomplete_cancel")}</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    const run = pendingGenerateRef.current;
-                    pendingGenerateRef.current = null;
-                    setIncompleteWarnOpen(false);
-                    if (run) run();
-                  }}
-                >
-                  {t("generate.incomplete_confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Round 1 — IncompleteWarn dialog removed. Generation is now hard-gated
+              by `canGeneratePlan` (Self Intake + Assessment Session both complete
+              and no PAR-Q / high-risk block). No more "gerar mesmo assim". */}
         </div>
       </div>
 
