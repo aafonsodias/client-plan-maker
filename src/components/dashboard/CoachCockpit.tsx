@@ -469,7 +469,7 @@ function SlimWeek({
             key={dow}
             className={`flex items-center justify-between gap-1.5 rounded-md px-2 py-1 text-[11px] ${
               isToday
-                ? "bg-amber-500/10 text-amber-500"
+                ? "bg-selected text-brand"
                 : "text-muted-foreground/80"
             }`}
           >
