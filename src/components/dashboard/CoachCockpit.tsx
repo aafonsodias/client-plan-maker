@@ -326,7 +326,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
           type="button"
           onClick={() => navigate({ to: "/schedule" })}
           className="group flex w-full items-stretch gap-1 border-t border-border/50 bg-background/20 px-2 py-2 text-left transition hover:bg-muted/30"
-          aria-label={lang === "pt" ? "Abrir agenda da semana" : "Open this week's schedule"}
+          aria-label={t("dashboard.open_week_schedule_aria")}
         >
           <SlimWeek
             monday={monday}
