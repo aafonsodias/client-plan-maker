@@ -231,21 +231,26 @@ function sectionSignature(assessment: any, section: string): string {
   return JSON.stringify(fields.map((f) => assessment?.[f] ?? null));
 }
 
+// Round 1 — reorder to match the new MVP grouping: Self Intake first
+// (9 sections), then Assessment Session (5 sections). Drives the mobile
+// focused flow + prev/next + tab order. Ids are unchanged.
 const SECTIONS = [
-  { id: "parq", label: "PAR-Q+" },
-  { id: "risk", label: "Risk strat." },
-  { id: "training", label: "Training setup" },
-  { id: "history", label: "Training history" },
-  { id: "goal", label: "SMART goal" },
-  { id: "meds", label: "Medications" },
-  { id: "anthro", label: "Anthropometry" },
-  { id: "readiness", label: "Readiness" },
-  { id: "lifestyle", label: "Lifestyle" },
-  { id: "nutrition", label: "Nutrition" },
-  { id: "mobility", label: "Mobility" },
-  { id: "posture", label: "Posture" },
-  { id: "screen", label: "Movement screen" },
-  { id: "performance", label: "Cardio health" },
+  // Self Intake / Auto-Avaliação
+  { id: "parq", label: "PAR-Q+", group: "self_intake" as const },
+  { id: "risk", label: "Risk strat.", group: "self_intake" as const },
+  { id: "training", label: "Training setup", group: "self_intake" as const },
+  { id: "history", label: "Training history", group: "self_intake" as const },
+  { id: "goal", label: "SMART goal", group: "self_intake" as const },
+  { id: "meds", label: "Medications", group: "self_intake" as const },
+  { id: "readiness", label: "Readiness", group: "self_intake" as const },
+  { id: "lifestyle", label: "Lifestyle", group: "self_intake" as const },
+  { id: "nutrition", label: "Nutrition", group: "self_intake" as const },
+  // Assessment Session / Sessão de Avaliação
+  { id: "anthro", label: "Anthropometry", group: "assessment_session" as const },
+  { id: "mobility", label: "Mobility", group: "assessment_session" as const },
+  { id: "posture", label: "Posture", group: "assessment_session" as const },
+  { id: "screen", label: "Movement screen", group: "assessment_session" as const },
+  { id: "performance", label: "Cardio health", group: "assessment_session" as const },
 ];
 
 // Optional sections render collapsed by default and count as complete
@@ -262,47 +267,14 @@ function hasVal(v: any): boolean {
   return true;
 }
 
+/**
+ * Per-section completion check. Round 1 — delegates to the canonical
+ * `isSectionCompleteForPhase` helper in `src/lib/assessment-phase.ts` so
+ * cockpit badges, the phase pill (`client-phase.ts`) and the Generate
+ * Plan gate never drift apart.
+ */
 function isSectionComplete(id: string, a: any): boolean {
-  switch (id) {
-    case "parq":
-      return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
-    case "risk":
-      return hasVal(a.risk?.bmi_category);
-    case "anthro":
-      return hasVal(a.waist_cm) || hasVal(a.hip_cm) || hasVal(a.body_fat_pct) || hasVal(a.body_fat_method);
-    case "meds":
-      return hasVal(a.medications) || (a.med_flags?.length ?? 0) > 0;
-    case "goal":
-      return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
-    case "readiness":
-      return hasVal(a.readiness_stage);
-    case "training":
-      return hasVal(a.experience_level) && hasVal(a.training_days_per_week) &&
-             hasVal(a.session_duration_minutes) && (a.available_equipment?.length ?? 0) > 0;
-    case "lifestyle":
-      return hasVal(a.sleep_quality) || hasVal(a.stress_level) || hasVal(a.ext_hours_seated) ||
-             hasVal(a.ext_daily_steps) || hasVal(a.ext_job_type);
-    case "nutrition":
-      return hasVal(a.ext_meals_per_day) || hasVal(a.ext_water_l_per_day) ||
-             hasVal(a.ext_alcohol_units_week) || hasVal(a.nutrition_habits);
-    case "mobility":
-      return ["ext_mob_shoulder","ext_mob_hip","ext_mob_ankle","ext_mob_thoracic","ext_mob_wrist","ext_mob_knee"]
-        .every((k) => hasVal(a[k]));
-    case "posture":
-      return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
-    case "screen":
-      return PATTERN_IDS.every((p) => {
-        if (a.screen_not_assessed?.[p] === true) return true;
-        const fc = a[`${p}_form_criteria`];
-        return fc && formScore(fc) >= 3;
-      });
-    case "history":
-      return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
-    case "performance":
-      return hasVal(a.resting_heart_rate) || a.ext_cardio_test !== "untested";
-    default:
-      return false;
-  }
+  return isSectionCompleteForPhase(id, a);
 }
 
 function parqHasYes(parq: Record<string, boolean | null>): boolean {
