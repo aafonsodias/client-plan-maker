@@ -1589,6 +1589,16 @@ function ClientDetail() {
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
 
+  // Round 1 — derived assessment phase + group counts. No schema changes;
+  // everything is computed from the existing assessment payload.
+  const phase = assessmentPhase(assessment);
+  const groupCounts = assessmentGroupCounts(assessment);
+  const selfIntakeDone = isSelfIntakeComplete(assessment);
+  const sessionDone = isAssessmentSessionComplete(assessment);
+  const safetyBlocked = parqYes || riskCategory === "high";
+  /** Hard gate for any "Generate plan" path. */
+  const canGeneratePlan = phase === "complete" && !safetyBlocked;
+
   const expLabelById: Record<string, string> = {
     beginner: t("training_block.beginner"),
     intermediate: t("training_block.intermediate"),
