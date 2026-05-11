@@ -315,7 +315,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             </span>
           </div>
           <Stat
-            label={lang === "pt" ? "Lembretes" : "Reminders"}
+            label={t("dashboard.reminders")}
             value={nudges.length}
             tone={nudges.length > 0 ? "amber" : "muted"}
           />
