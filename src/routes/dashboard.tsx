@@ -58,7 +58,7 @@ type ClientRow = {
 
 function Dashboard() {
   const { user } = useAuth();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const search = Route.useSearch();
   const filter = search.filter ?? "all";
   const navigate = useNavigate();
@@ -434,6 +434,17 @@ function Dashboard() {
           </DialogContent>
         </Dialog>
         <ViewAsClientPicker variant="ghost" className="w-full text-muted-foreground hover:text-foreground sm:w-auto" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+          className="w-full text-muted-foreground hover:text-foreground sm:w-auto"
+          title={i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
+        >
+          <Download className="mr-2 h-3.5 w-3.5" />
+          {i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
+        </Button>
         </div>
       </div>
 
