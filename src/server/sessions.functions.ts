@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildSessionSummary, type SessionSummary } from "@/lib/session-summary";
 
 /* ─── Generic error helper — never leak DB internals to clients ─── */
 function fail(internal: unknown, userMessage: string): never {
@@ -513,6 +514,122 @@ export const getSessionStreak = createServerFn({ method: "POST" })
     }
 
     return { currentStreak, weekDone, weekTotal, totalSessions };
+  });
+
+/**
+ * PUBLIC (token-gated): post-session summary card data.
+ *
+ * Loads the just-finalized session by id, finds the homologous session
+ * from the previous week (same plan_id + day_label, week_number - 1),
+ * builds the deterministic delta summary, and returns plus
+ * "next session" pointer derived from plan_data.
+ *
+ * Returns null when the session does not match the share token's plan.
+ */
+export const getSessionSummary = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        token: z.string().uuid(),
+        session_id: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    rateLimit(`sumSession:${data.token}`, 60, 60_000);
+    const { data: plan } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, plan_data, share_token_expires_at")
+      .eq("share_token", data.token)
+      .maybeSingle();
+    if (!plan) return null;
+    if (
+      plan.share_token_expires_at &&
+      new Date(plan.share_token_expires_at).getTime() < Date.now()
+    ) {
+      return null;
+    }
+
+    const { data: session } = await supabaseAdmin
+      .from("workout_sessions")
+      .select(
+        "id, plan_id, week_number, day_label, session_date, entries, post_feedback, pre_readiness, pr_celebrated_at",
+      )
+      .eq("id", data.session_id)
+      .eq("plan_id", plan.id)
+      .neq("status", "in_progress")
+      .maybeSingle();
+    if (!session) return null;
+
+    // Prior session = same slot, week_number - 1, finalized.
+    let prior: { entries: unknown } | null = null;
+    if (session.week_number > 1) {
+      const { data: pr } = await supabaseAdmin
+        .from("workout_sessions")
+        .select("entries")
+        .eq("plan_id", plan.id)
+        .eq("week_number", session.week_number - 1)
+        .eq("day_label", session.day_label)
+        .neq("status", "in_progress")
+        .order("session_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      prior = pr ?? null;
+    }
+
+    const summary: SessionSummary = buildSessionSummary(
+      Array.isArray(session.entries) ? (session.entries as any[]) : [],
+      Array.isArray((prior as any)?.entries) ? ((prior as any).entries as any[]) : [],
+    );
+
+    // "Next session" pointer = next undone day this week, else first day of next week.
+    const weeks: any[] = (plan.plan_data as any)?.weeks ?? [];
+    const thisWeek = weeks.find((w) => w?.week_number === session.week_number);
+    const allDays: Array<{ week_number: number; day_label: string; focus: string | null }> = [];
+    for (const w of weeks) {
+      for (const d of (w?.days ?? []) as any[]) {
+        allDays.push({
+          week_number: w.week_number,
+          day_label: d?.day_label ?? "",
+          focus: d?.focus ?? null,
+        });
+      }
+    }
+    const currentIdx = allDays.findIndex(
+      (d) => d.week_number === session.week_number && d.day_label === session.day_label,
+    );
+    const next = currentIdx >= 0 ? allDays[currentIdx + 1] ?? null : null;
+    const thisWeekFocus =
+      thisWeek?.days?.find((d: any) => d?.day_label === session.day_label)?.focus ?? null;
+
+    // Session number across the plan (ordinal of finalized days up to this session).
+    const { data: orderRows } = await supabaseAdmin
+      .from("workout_sessions")
+      .select("week_number, day_label, session_date")
+      .eq("plan_id", plan.id)
+      .neq("status", "in_progress")
+      .order("week_number", { ascending: true })
+      .order("session_date", { ascending: true });
+    const seen = new Set<string>();
+    let ordinal = 0;
+    for (const r of (orderRows ?? []) as any[]) {
+      const key = `${r.week_number}|${r.day_label}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      ordinal += 1;
+      if (r.week_number === session.week_number && r.day_label === session.day_label) break;
+    }
+
+    return {
+      session_id: session.id,
+      week_number: session.week_number,
+      day_label: session.day_label,
+      session_date: session.session_date,
+      session_ordinal: ordinal,
+      focus: thisWeekFocus as string | null,
+      summary,
+      next_session: next,
+    };
   });
 
 /**
