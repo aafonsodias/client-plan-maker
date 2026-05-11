@@ -433,7 +433,7 @@ function Stat({
       </span>
       <span
         className={`mt-0.5 truncate text-sm tabular-nums ${mono ? "font-mono" : "font-display font-light"} ${
-          tone === "amber" ? "text-amber-500" : "text-foreground"
+          tone === "amber" ? "text-brand" : "text-foreground"
         }`}
       >
         {value}
