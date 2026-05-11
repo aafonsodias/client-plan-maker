@@ -74,8 +74,25 @@ type SessionRow = {
   logged_by: string; entries: any[]; session_notes: string | null;
   status?: "done" | "partial" | "missed" | null;
 };
-type Props = { planId: string; embedded?: boolean };
-export default function PlanEditorSurface({ planId, embedded: _embedded }: Props) {
+type Props = {
+  planId: string;
+  embedded?: boolean;
+  /** When provided, the deck above owns the mode — we hide our own tab strip + Configurar button. */
+  mode?: Mode;
+  onModeChange?: (m: Mode) => void;
+  /** Filter the table/cards to a single week (null = show all). */
+  selectedWeek?: number | null;
+  /** Hide the duplicated plan-chrome (title row, summary, mode tabs) when a parent deck owns it. */
+  hideOwnChrome?: boolean;
+};
+export default function PlanEditorSurface({
+  planId,
+  embedded: _embedded,
+  mode: modeProp,
+  onModeChange,
+  selectedWeek = null,
+  hideOwnChrome = false,
+}: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { t: tCommon, i18n } = useTranslation("common");
@@ -85,7 +102,12 @@ export default function PlanEditorSurface({ planId, embedded: _embedded }: Props
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [data, setData] = useState<PlanData>({ weeks: [] });
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState<Mode>("view");
+  const [modeState, setModeState] = useState<Mode>("view");
+  const mode = modeProp ?? modeState;
+  const setMode = (m: Mode) => {
+    if (onModeChange) onModeChange(m);
+    else setModeState(m);
+  };
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [summaryOpen, setSummaryOpen] = useState(true);
   const seedFn = useServerFn(seedDemoSessions);
