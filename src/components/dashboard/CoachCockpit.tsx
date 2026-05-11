@@ -285,21 +285,21 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             tone={todayRows.some((r) => r.tone === "amber" || r.tone === "rose") ? "amber" : "muted"}
           />
           <Stat
-            label={lang === "pt" ? "Esta semana" : "This week"}
+            label={t("dashboard.this_week")}
             value={fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
             mono={false}
           />
           <Stat
-            label={lang === "pt" ? "Sessões" : "Sessions"}
+            label={t("dashboard.sessions")}
             value={sessionsCount}
           />
           <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5 sm:px-4">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <span>{lang === "pt" ? "Receita" : "Revenue"}</span>
+              <span>{t("dashboard.revenue")}</span>
               <button
                 type="button"
                 onClick={toggleRevenue}
-                aria-label={revealRevenue ? (lang === "pt" ? "Ocultar" : "Hide") : (lang === "pt" ? "Mostrar" : "Show")}
+                aria-label={revealRevenue ? t("dashboard.hide") : t("dashboard.show")}
                 className="rounded p-0.5 text-muted-foreground/70 transition hover:text-foreground"
               >
                 {revealRevenue ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
