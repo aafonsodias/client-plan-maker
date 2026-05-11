@@ -10,6 +10,8 @@ import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatSessionLabel } from "@/lib/session-label";
+import { useTranslation } from "react-i18next";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -344,6 +346,7 @@ export function MesocycleTableView({
               <DayBlock
                 key={`${day.day_label}-${gi}`}
                 day={day}
+                sessionIndex={gi}
                 rows={rows}
                 weekCount={weekNumbers.length}
                 compact={compact}
