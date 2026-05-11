@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Link2, PlayCircle } from "lucide-react";
 import type { Day, Exercise, SectionItem, Week } from "@/lib/pdf";
+import { formatSessionLabel } from "@/lib/session-label";
+import { useTranslation } from "react-i18next";
 
 /* ─────────────────── helpers ─────────────────── */
 
@@ -82,6 +84,9 @@ export function SessionDayView({
   /** Optional content rendered at the top-right of the header (e.g. quick-mark) */
   rightSlot?: React.ReactNode;
 }) {
+  const { i18n } = useTranslation();
+  const { sessionLabel, focus: parsedFocus } = formatSessionLabel(day.day_label, index, i18n?.language);
+  const displayFocus = parsedFocus || day.focus || "";
   const dayNumber = String(index + 1).padStart(2, "0");
   const supersetMap = useMemo(() => buildSupersetMap(day.exercises), [day.exercises]);
   const [contextOpen, setContextOpen] = useState(true);
@@ -117,15 +122,15 @@ export function SessionDayView({
                   backgroundColor: `color-mix(in oklab, ${accent} 14%, transparent)`,
                 }}
               >
-                Day {index + 1}
+                {sessionLabel}
               </span>
               <h2 className="text-xl font-semibold tracking-tight text-foreground">
-                {day.day_label}
+                {displayFocus || sessionLabel}
               </h2>
             </div>
-            {day.focus && (
+            {displayFocus && (
               <p className="mt-0.5 text-sm italic text-muted-foreground">
-                {day.focus}
+                {displayFocus}
                 {week.focus ? <span className="not-italic text-muted-foreground/60"> · {week.focus}</span> : null}
               </p>
             )}
