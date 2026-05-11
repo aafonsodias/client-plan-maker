@@ -299,7 +299,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-5">
       <OnboardingChecklist />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -492,35 +492,42 @@ function Dashboard() {
             </Button>
           </div>
         ) : (
-          <>
-            <div className="mb-3 inline-flex flex-wrap gap-1 rounded-full border border-border/60 bg-muted/30 p-1 text-[11px] uppercase tracking-[0.16em]">
-              {[
-                { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
-                { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
-                { id: "active", label: t("clients.filter_active_label", { defaultValue: "Ativos" }), count: counts.active },
-                { id: "idle", label: t("clients.filter_idle_label", { defaultValue: "Inativos" }), count: counts.idle },
-                { id: "ready", label: t("clients.filter_ready_label", { defaultValue: "Prontos para plano" }), count: counts.ready },
-              ].map((f) => {
-                const isActive = filter === f.id;
-                return (
-                  <Link
-                    key={f.id}
-                    to="/dashboard"
-                    search={{ filter: f.id }}
-                    className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1 transition ${
-                      isActive
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <span>{f.label}</span>
-                    <span className={`tabular-nums ${isActive ? "text-foreground/60" : "text-foreground/35"}`}>{f.count}</span>
-                  </Link>
-                );
-              })}
+          <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 px-4 py-2.5">
+              <div className="flex items-baseline gap-2">
+                <h2 className="font-display text-sm font-medium tracking-tight text-foreground">
+                  {t("dashboard.title")}
+                </h2>
+                <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
+              </div>
+              <div className="inline-flex flex-wrap gap-0.5 rounded-full border border-border/50 bg-background/40 p-0.5 text-[11px] uppercase tracking-[0.14em]">
+                {[
+                  { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
+                  { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
+                  { id: "active", label: t("clients.filter_active_label", { defaultValue: "Ativos" }), count: counts.active },
+                  { id: "idle", label: t("clients.filter_idle_label", { defaultValue: "Inativos" }), count: counts.idle },
+                  { id: "ready", label: t("clients.filter_ready_label", { defaultValue: "Prontos" }), count: counts.ready },
+                ].map((f) => {
+                  const isActive = filter === f.id;
+                  return (
+                    <Link
+                      key={f.id}
+                      to="/dashboard"
+                      search={{ filter: f.id }}
+                      className={`group inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 transition ${
+                        isActive
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>{f.label}</span>
+                      <span className={`tabular-nums ${isActive ? "text-foreground/60" : "text-foreground/35"}`}>{f.count}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-
-            <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
+            <div>
               {filteredClients.map((c) => {
                 const d = daysUntilBirthday(c.date_of_birth);
                 const isBday = d !== null && d <= 7;
@@ -538,7 +545,7 @@ function Dashboard() {
                 );
               })}
             </div>
-          </>
+          </div>
         )}
       </section>
 
