@@ -4230,6 +4230,8 @@ function AssessmentSynthesisDashboard({
 }
 
 function AssessmentSection({
+  // placeholder marker — see component above
+}: any): any { return null as any; }
   clientId,
   headerProgress,
   children,
