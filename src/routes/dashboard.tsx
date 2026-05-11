@@ -316,8 +316,48 @@ function Dashboard() {
                 : t("dashboard.eyebrow");
             })()}
           </p>
-          <h1 className="mt-0.5 font-display text-2xl font-light tracking-tight sm:text-3xl">
+          <h1 className="mt-0.5 flex items-center gap-2 font-display text-2xl font-light tracking-tight sm:text-3xl">
             <span className="break-words">{t("dashboard.title")}</span>
+            {counts.all > 0 && (
+              <span className="text-base font-normal tabular-nums text-muted-foreground sm:text-lg">
+                {counts.all}
+              </span>
+            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  title={t("dashboard.trainer_tools_acquisition_pdf")}
+                  aria-label={t("dashboard.trainer_tools_acquisition_pdf")}
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-chip-active hover:text-foreground"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 space-y-3 p-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("dashboard.trainer_tools_acquisition_pdf")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("dashboard.trainer_tools_acquisition_pdf_hint", {
+                      defaultValue:
+                        "Guia prático para captar e reter clientes. Descarrega em PDF para ler offline ou partilhar com a equipa.",
+                    })}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+                >
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                  {t("dashboard.trainer_tools_acquisition_pdf_download", {
+                    defaultValue: "Descarregar PDF",
+                  })}
+                </Button>
+              </PopoverContent>
+            </Popover>
           </h1>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-row-reverse">
@@ -498,48 +538,7 @@ function Dashboard() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
-            <div className="flex flex-col gap-2 border-b border-border/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2.5">
-              <div className="flex items-baseline gap-2">
-                <h2 className="font-display text-sm font-medium tracking-tight text-foreground">
-                  {t("dashboard.title")}
-                </h2>
-                <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      title={t("dashboard.trainer_tools_acquisition_pdf")}
-                      aria-label={t("dashboard.trainer_tools_acquisition_pdf")}
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-chip-active hover:text-foreground"
-                    >
-                      <Info className="h-3.5 w-3.5" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-72 space-y-3 p-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        {t("dashboard.trainer_tools_acquisition_pdf")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("dashboard.trainer_tools_acquisition_pdf_hint", {
-                          defaultValue:
-                            "Guia prático para captar e reter clientes. Descarrega em PDF para ler offline ou partilhar com a equipa.",
-                        })}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-                    >
-                      <Download className="mr-1.5 h-3.5 w-3.5" />
-                      {t("dashboard.trainer_tools_acquisition_pdf_download", {
-                        defaultValue: "Descarregar PDF",
-                      })}
-                    </Button>
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="flex flex-col gap-2 border-b border-border/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:py-2.5">
               <div className="scrollbar-hide flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:w-auto">
                 {[
                   { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
