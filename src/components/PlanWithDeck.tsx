@@ -41,7 +41,7 @@ export function PlanWithDeck({
         registerBusy={primaryAction?.busy}
         onAssessmentPdf={onAssessmentPdf}
       />
-      <div className="p-2.5 sm:p-3">
+      <div className="px-2.5 pb-3 pt-2 sm:px-3">
         <PlanEditorSurface
           planId={plan.id}
           embedded
