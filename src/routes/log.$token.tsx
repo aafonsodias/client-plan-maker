@@ -7,6 +7,7 @@ import { AutoTextarea } from "@/components/AutoTextarea";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { SessionSummaryCard } from "@/components/log/SessionSummaryCard";
 import { useServerFn } from "@tanstack/react-start";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -98,6 +99,7 @@ function ClientLogPage() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [completedSessionId, setCompletedSessionId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [preReadiness, setPreReadiness] = useState<PreReadiness>({});
@@ -292,24 +294,39 @@ function ClientLogPage() {
 
   if (error) return <Centered><p className="text-destructive">{error}</p></Centered>;
   if (!info) return <Centered><p className="text-muted-foreground">Loading…</p></Centered>;
-  if (done) return (
-    <>
-      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
-      <Centered>
-        <div className="space-y-3 text-center">
-          <Logo className="mx-auto h-12 w-12" />
-          <h1 className="text-2xl font-bold">Sessão registada 💪</h1>
-          <p className="text-muted-foreground">Obrigado — o teu treinador já vê.</p>
-          <Button onClick={() => { setDone(false); setShowConfetti(false); }}>Registar outra sessão</Button>
-        </div>
-      </Centered>
-    </>
-  );
+  if (done && completedSessionId) {
+    return (
+      <SessionSummaryCard
+        token={token}
+        sessionId={completedSessionId}
+        withConfetti={showConfetti}
+        onLogAnother={() => {
+          setDone(false);
+          setShowConfetti(false);
+          setCompletedSessionId(null);
+        }}
+        secondaryCta={
+          search.from === "me"
+            ? { label: "Voltar ao painel", onClick: () => navigate({ to: "/me" }) }
+            : search.from === "trainer" && search.clientId
+              ? {
+                  label: "Voltar ao cliente",
+                  onClick: () =>
+                    navigate({
+                      to: "/clients/$clientId",
+                      params: { clientId: search.clientId! },
+                    }),
+                }
+              : undefined
+        }
+      />
+    );
+  }
 
   const submit = async () => {
     setSaving(true);
     try {
-      await saveFn({
+      const res = await saveFn({
         data: {
           token,
           plan_id: info.id,
@@ -323,6 +340,7 @@ function ClientLogPage() {
           post_feedback: Object.keys(postFeedback).length ? postFeedback : null,
         },
       });
+      if (res?.id) setCompletedSessionId(res.id);
       // Re-pull streak to know if we just closed the week
       try {
         const s = await getStreakFn({
@@ -335,14 +353,8 @@ function ClientLogPage() {
         }
       } catch { /* ignore */ }
       setDone(true);
-      // Smart return based on ?from=
-      setTimeout(() => {
-        if (search.from === "me") {
-          navigate({ to: "/me" });
-        } else if (search.from === "trainer" && search.clientId) {
-          navigate({ to: "/clients/$clientId", params: { clientId: search.clientId } });
-        }
-      }, 1800);
+      // Auto-return removed: the SessionSummaryCard now exposes a secondary CTA
+      // so the client can read the summary at their own pace before navigating.
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
