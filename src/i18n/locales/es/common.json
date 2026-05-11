@@ -107,7 +107,21 @@
       "s3_b": "Genere el plan",
       "s3_s": "Revise, ajuste, exporte el PDF.",
       "full_manual": "Abrir el manual"
-    }
+    },
+    "trainer_tools_label": "Trainer tools",
+    "trainer_tools_acquisition_pdf": "Acquisition & Retention PDF",
+    "trainer_tools_acquisition_pdf_aria": "Download Acquisition & Retention PDF",
+    "trainer_tools_manual": "Manual",
+    "trainer_tools_how_it_works": "How it works",
+    "priorities": "Priorities",
+    "this_week": "This week",
+    "sessions": "Sessions",
+    "revenue": "Revenue",
+    "reminders": "Reminders",
+    "show": "Show",
+    "hide": "Hide",
+    "open_week_schedule_aria": "Open this week's schedule",
+    "compose_message": "Compose message"
   },
   "missions": {
     "title": "Misiones de evaluación",

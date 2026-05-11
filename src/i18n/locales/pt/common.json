@@ -154,7 +154,21 @@
       "s3_b": "Gere o plano",
       "s3_s": "Reveja, ajuste, exporte em PDF.",
       "full_manual": "Manual completo"
-    }
+    },
+    "trainer_tools_label": "Ferramentas do PT",
+    "trainer_tools_acquisition_pdf": "PDF · Aquisição e Retenção",
+    "trainer_tools_acquisition_pdf_aria": "Descarregar PDF Aquisição e Retenção",
+    "trainer_tools_manual": "Manual",
+    "trainer_tools_how_it_works": "Como funciona",
+    "priorities": "Prioridades",
+    "this_week": "Esta semana",
+    "sessions": "Sessões",
+    "revenue": "Receita",
+    "reminders": "Lembretes",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "open_week_schedule_aria": "Abrir agenda da semana",
+    "compose_message": "Compor mensagem"
   },
   "missions": {
     "title": "Missões de avaliação",
