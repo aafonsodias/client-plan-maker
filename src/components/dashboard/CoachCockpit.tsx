@@ -343,26 +343,26 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       {(todayRows.length > 0 || nudges.length > 0) && (
         <div className="flex flex-wrap items-center gap-2 px-1 text-[12px]">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {lang === "pt" ? "Prioridades" : "Priorities"}
+            {t("dashboard.priorities")}
           </span>
           <ul className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             {todayRows.slice(0, 3).map((r) => {
               const dot =
-                r.tone === "amber" ? "bg-amber-500"
-                : r.tone === "emerald" ? "bg-emerald-500"
-                : r.tone === "rose" ? "bg-rose-500"
+                r.tone === "amber" ? "bg-brand"
+                : r.tone === "emerald" ? "bg-success"
+                : r.tone === "rose" ? "bg-warn"
                 : "bg-muted-foreground/40";
               const statusText =
-                r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
-                : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
-                : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+                r.tone === "amber" ? "text-brand"
+                : r.tone === "emerald" ? "text-success-foreground"
+                : r.tone === "rose" ? "text-warn-foreground"
                 : "text-muted-foreground";
               return (
                 <li key={r.key} className="inline-flex">
                   <Link
                     to={r.to as any}
                     params={r.params as any}
-                    className="group/pri inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
+                    className="group/pri inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 transition hover:border-border-strong hover:bg-chip-active"
                   >
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
                     {r.name && r.status ? (
