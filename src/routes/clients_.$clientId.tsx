@@ -2154,6 +2154,11 @@ function ClientDetail() {
                   {t("progress_minutes", { minutes: minutesLeft })}
                 </span>
                 <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+                {phase === "complete" && (
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-500/30">
+                    {t("assessment_complete_chip")} ✓
+                  </span>
+                )}
               </div>
             </div>
           }
