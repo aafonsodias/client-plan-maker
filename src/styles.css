@@ -112,6 +112,48 @@
   --color-warning: var(--protocol-warning);
   --color-cue: var(--protocol-ink-secondary);
 
+  /* ── Round R76 — semantic role aliases (additive, backed by spec tokens).
+   * One semantic system, three modes. Tokens listed below are defined per
+   * theme block (Light/Medium/Dark) and exposed here so Tailwind v4 utilities
+   * resolve them (e.g. bg-surface-elevated, text-success-foreground,
+   * bg-brand-soft). Existing tokens are left in place for backwards compat. */
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-border-strong: var(--border-strong);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-border: var(--brand-border);
+  --color-brand-glow: var(--brand-glow);
+
+  --color-hover: var(--hover);
+  --color-active: var(--active);
+  --color-selected: var(--selected);
+  --color-focus-ring: var(--focus-ring);
+  --color-disabled: var(--disabled);
+  --color-disabled-foreground: var(--disabled-foreground);
+
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-soft: var(--danger-soft);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+
+  --color-table-header: var(--table-header);
+  --color-table-row: var(--table-row);
+  --color-table-row-hover: var(--table-row-hover);
+  --color-chip: var(--chip);
+  --color-chip-active: var(--chip-active);
+  --color-badge: var(--badge);
+  --color-badge-active: var(--badge-active);
+  --color-filter-active: var(--filter-active);
+  --color-footer: var(--footer);
+  --color-footer-foreground: var(--footer-foreground);
+
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Inter Tight", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
