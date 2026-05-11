@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, AlertTriangle, Info, Shield, HeartPulse, Pill } from "lucide-react";
+import { Sparkles, Loader2, AlertTriangle, Info, Shield, HeartPulse, Pill, FileText } from "lucide-react";
 import { deriveStartingFloor } from "@/server/phased/programming-defaults";
 import type { Brief } from "@/server/phased/schemas";
+import { downloadAssessmentSummary } from "@/lib/pdf-assessment-summary";
 import { cn } from "@/lib/utils";
 
 /**
@@ -69,12 +70,14 @@ export function PrePlanReviewSheet({
   open,
   onOpenChange,
   assessment,
+  client,
   busy,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   assessment: any;
+  client?: any;
   busy: boolean;
   /**
    * Called when the PT explicitly clicks "Criar briefing inicial".
@@ -83,7 +86,7 @@ export function PrePlanReviewSheet({
    */
   onConfirm: (durationWeeks: number) => void;
 }) {
-  const { t } = useTranslation("assessment");
+  const { t, i18n } = useTranslation("assessment");
   const [duration, setDuration] = useState<number>(4);
 
   const summary = useMemo(() => {
@@ -314,7 +317,29 @@ export function PrePlanReviewSheet({
         </div>
 
         {/* Sticky footer */}
-        <footer className="sticky bottom-0 z-10 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <footer className="sticky bottom-0 z-10 flex items-center gap-2 border-t border-border bg-background/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+            onClick={async () => {
+              try {
+                await downloadAssessmentSummary({
+                  assessment,
+                  client: client ?? {},
+                  locale: i18n.language,
+                  t: t as any,
+                });
+              } catch {
+                /* swallow — download is non-critical */
+              }
+            }}
+            disabled={!assessment}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            {t("summary_pdf.cta_short", { defaultValue: "Exportar resumo (PDF)" })}
+          </Button>
+          <div className="flex-1" />
           <Button
             variant="ghost"
             size="sm"
