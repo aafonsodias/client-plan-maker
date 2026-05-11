@@ -117,6 +117,13 @@ export default function PlanEditorSurface({
   const [regenSummaryBusy, setRegenSummaryBusy] = useState(false);
   const reanchorRpeFn = useServerFn(reanchorPlanRpe);
   const [reanchorBusy, setReanchorBusy] = useState(false);
+
+  // Week filter applied by the parent deck. When selectedWeek is set we hand
+  // the children a narrowed PlanData so the table only shows that week.
+  const filteredData = useMemo<PlanData>(() => {
+    if (selectedWeek == null) return data;
+    return { ...data, weeks: data.weeks.filter((w) => w.week_number === selectedWeek) };
+  }, [data, selectedWeek]);
   // Block transition (manual + IA) is wrapped inside <BlockTransitionDialog />.
   // True when this plan was built by the phased generator and is now complete.
   // In that case `plan_data.weeks` is empty by design — the source of truth is
