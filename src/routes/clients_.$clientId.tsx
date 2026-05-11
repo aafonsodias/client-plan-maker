@@ -2078,20 +2078,27 @@ function ClientDetail() {
               });
             }
           } : () => {
-            const isHigh = riskCategory === "high";
-            const blocked = parqYes || isHigh;
-            if (blocked) {
+            // Round 1 — hard gate. PAR-Q / high-risk safety preserved; if
+            // either group is incomplete, scroll the user to the first
+            // missing section instead of silently generating.
+            if (safetyBlocked) {
               setSafetyDialogOpen(true);
               return;
             }
-            const run = () => {
-              if (phasedEnabled) void runPhasedStart();
-              else void generate();
-            };
-            const assessmentComplete = completedCount >= totalSections;
-            if (assessmentComplete) { run(); return; }
-            pendingGenerateRef.current = run;
-            setIncompleteWarnOpen(true);
+            if (!selfIntakeDone) {
+              const firstMissing = SELF_INTAKE_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+              if (firstMissing) setActiveSection(firstMissing);
+              toast.error(t("assessment_gate.self_intake_incomplete"));
+              return;
+            }
+            if (!sessionDone) {
+              const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+              if (firstMissing) setActiveSection(firstMissing);
+              toast.error(t("assessment_gate.session_incomplete"));
+              return;
+            }
+            if (phasedEnabled) void runPhasedStart();
+            else void generate();
           }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
