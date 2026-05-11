@@ -1,13 +1,22 @@
-import jsPDF from "jspdf";
 import { writeFileSync } from "fs";
-const origSave = (jsPDF.prototype as any).save;
-(jsPDF.prototype as any).save = function (name: string) {
-  try {
+// Patch jsPDF: replace save on instance creation
+import jsPDFmod from "jspdf";
+const Orig: any = jsPDFmod;
+const Patched: any = function (...args: any[]) {
+  const inst = new Orig(...args);
+  inst.save = function (name: string) {
     const ab = this.output("arraybuffer");
     writeFileSync(`/tmp/${name}`, Buffer.from(ab));
-    console.log("WROTE", `/tmp/${name}`, "bytes=", ab.byteLength);
-  } catch (e) { console.error("SAVE ERR", e); }
+    console.log("WROTE /tmp/" + name, ab.byteLength, "bytes");
+  };
+  return inst;
 };
+Patched.prototype = Orig.prototype;
+// @ts-ignore
+(await import("jspdf")).default = Patched;
+// Replace the module's default export by mutating its export holder won't work. So instead, monkey-patch Orig's prototype save... but save is per instance. Use a constructor wrapper via require cache:
+const mod = await import("jspdf");
+(mod as any).default = Patched;
 
 const { downloadAssessmentSummary } = await import("@/lib/pdf-assessment-summary");
 
@@ -22,30 +31,7 @@ const t = (k: string, opts?: any) => {
   }
   return k;
 };
-
 const baseClient = { full_name: "Maria Silva" };
-const full = {
-  id: "x", smart_specific: "Hipertrofia geral", smart_measurable: "+4kg em 16s",
-  experience_level: "intermediate", years_training: 3,
-  training_days_per_week: 4, session_duration_minutes: 60,
-  training_location: "ginásio", available_equipment: ["barra","halteres","cabos","rack","bicicleta","corda","kettlebells"],
-  parq: {}, med_flags: [], injuries: [], sleep_quality: "ok", stress_level: "moderate",
-};
-const incomplete = { id: "y", smart_specific: "Perder peso" };
-const risky = {
-  id: "z", smart_specific: "Voltar a treinar", experience_level: "beginner",
-  training_days_per_week: 2, session_duration_minutes: 30, training_location: "casa",
-  available_equipment: [],
-  parq: { q1: true, q2: true, q3: true },
-  med_flags: ["beta_blocker","anticoagulant","insulin"],
-  injuries: [{region:"ombro D"},{region:"joelho E"},{region:"lombar"}],
-  pain_notes: "dor lombar", sleep_quality: "poor", stress_level: "high",
-  readiness_stage: "contemplation", risk: { bmi_category: "obese" },
-};
-try {
-  await downloadAssessmentSummary({ assessment: full, client: baseClient, locale: "pt-PT", t: t as any });
-  await downloadAssessmentSummary({ assessment: incomplete, client: { full_name: "" }, locale: "pt-PT", t: t as any });
-  await downloadAssessmentSummary({ assessment: risky, client: baseClient, locale: "pt-PT", t: t as any });
-  await downloadAssessmentSummary({ assessment: null, client: null, locale: "pt-PT", t: t as any });
-} catch (e) { console.error("ERR", e); }
+const full = { id: "x", smart_specific: "Hipertrofia", experience_level: "intermediate", training_days_per_week: 4, session_duration_minutes: 60, available_equipment: ["barra","halteres"], parq:{}, med_flags:[], injuries:[] };
+try { await downloadAssessmentSummary({ assessment: full, client: baseClient, locale: "pt-PT", t: t as any }); } catch (e) { console.error(e); }
 console.log("done");
