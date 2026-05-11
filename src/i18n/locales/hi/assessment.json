@@ -176,19 +176,58 @@
       "resolved": "→ {{date}} को पुनर्मूल्यांकन करें"
     },
     "tpl": {
-      "str_squat_15bw_5":  { "specific": "16 हफ्तों तक स्क्वाट की ताकत पर काम करें, प्रगति मापें",          "measurable": "स्क्वाट पर 1RM/5RM ट्रैक करें; खोजी लक्ष्य: 1.5×BW × 5 रेप्स" },
-      "str_bench_bw_5":    { "specific": "16 हफ्तों तक क्षैतिज पुश ताकत पर काम करें",                       "measurable": "बेंच पर 1RM/5RM ट्रैक करें; खोजी लक्ष्य: 1×BW × 5 रेप्स" },
-      "str_dl_2bw_3":      { "specific": "20 हफ्तों तक खींचने की ताकत और पोस्टीरियर चेन पर काम करें",        "measurable": "डेडलिफ्ट पर 1RM/3RM ट्रैक करें; खोजी लक्ष्य: 2×BW × 3 रेप्स" },
-      "hyp_arm_3cm":       { "specific": "12 हफ्तों तक बांह हाइपरट्रॉफी पर काम करें, प्रगति मापें",          "measurable": "हर 4 हफ्तों में बांह की परिधि मापें; प्रवृत्ति देखें" },
-      "hyp_thigh_4cm":     { "specific": "12 हफ्तों तक जांघ हाइपरट्रॉफी पर काम करें, प्रगति मापें",          "measurable": "हर 4 हफ्तों में जांघ की परिधि मापें; प्रवृत्ति देखें" },
-      "comp_fatloss_5":    { "specific": "16 हफ्तों में लीन मास बनाए रखते हुए वसा कम करें",                  "measurable": "हर 4-6 हफ्तों में संरचना (DEXA/BIA) ट्रैक करें; मार्ग के अनुसार समायोजित करें" },
-      "comp_recomp":       { "specific": "20 हफ्तों तक शरीर पुनर्संरचना (वसा कम, लीन मास बढ़ाएं)",            "measurable": "संरचना और ताकत समानांतर ट्रैक करें; प्रतिक्रिया के अनुसार समायोजित करें" },
-      "end_5k_25":         { "specific": "10 हफ्तों तक 5 किमी दौड़ सहनशक्ति पर काम करें",                    "measurable": "हर 3-4 हफ्तों में 5 किमी समय ट्रैक करें; खोजी लक्ष्य: ≤ 25:00" },
-      "end_cooper_2400":   { "specific": "8 हफ्तों तक एरोबिक क्षमता पर काम करें",                            "measurable": "हर 4 हफ्तों में Cooper 12 मिनट दोहराएं; खोजी लक्ष्य: ≥ 2400 मीटर" },
-      "mob_toes_painfree": { "specific": "6 हफ्तों तक कमर और हैमस्ट्रिंग गतिशीलता पर काम करें",               "measurable": "Sit-and-reach और दर्द धारणा; हर 2 हफ्तों में मापें" },
-      "mob_overhead_full": { "specific": "8 हफ्तों तक थोरैसिक और कंधे की गतिशीलता पर काम करें",                "measurable": "दीवार पर overhead टेस्ट; हर 2 हफ्तों में मापें" },
-      "fn_carry_30s":      { "specific": "12 हफ्तों तक कार्यात्मक कैरी ताकत पर काम करें",                     "measurable": "प्रगतिशील भार के साथ farmer's carry का समय; हर 4 हफ्तों में पुनर्मूल्यांकन करें" },
-      "fn_get_up_floor":   { "specific": "8 हफ्तों तक एकीकृत फर्श-से-खड़े गतिशीलता पर काम करें",               "measurable": "हर 2 हफ्तों में बिना हाथ Turkish get-up का मूल्यांकन करें; पैटर्न की सफाई देखें" }
+      "str_squat_15bw_5": {
+        "specific": "16 हफ्तों तक स्क्वाट की ताकत पर काम करें, प्रगति मापें",
+        "measurable": "स्क्वाट पर 1RM/5RM ट्रैक करें; खोजी लक्ष्य: 1.5×BW × 5 रेप्स"
+      },
+      "str_bench_bw_5": {
+        "specific": "16 हफ्तों तक क्षैतिज पुश ताकत पर काम करें",
+        "measurable": "बेंच पर 1RM/5RM ट्रैक करें; खोजी लक्ष्य: 1×BW × 5 रेप्स"
+      },
+      "str_dl_2bw_3": {
+        "specific": "20 हफ्तों तक खींचने की ताकत और पोस्टीरियर चेन पर काम करें",
+        "measurable": "डेडलिफ्ट पर 1RM/3RM ट्रैक करें; खोजी लक्ष्य: 2×BW × 3 रेप्स"
+      },
+      "hyp_arm_3cm": {
+        "specific": "12 हफ्तों तक बांह हाइपरट्रॉफी पर काम करें, प्रगति मापें",
+        "measurable": "हर 4 हफ्तों में बांह की परिधि मापें; प्रवृत्ति देखें"
+      },
+      "hyp_thigh_4cm": {
+        "specific": "12 हफ्तों तक जांघ हाइपरट्रॉफी पर काम करें, प्रगति मापें",
+        "measurable": "हर 4 हफ्तों में जांघ की परिधि मापें; प्रवृत्ति देखें"
+      },
+      "comp_fatloss_5": {
+        "specific": "16 हफ्तों में लीन मास बनाए रखते हुए वसा कम करें",
+        "measurable": "हर 4-6 हफ्तों में संरचना (DEXA/BIA) ट्रैक करें; मार्ग के अनुसार समायोजित करें"
+      },
+      "comp_recomp": {
+        "specific": "20 हफ्तों तक शरीर पुनर्संरचना (वसा कम, लीन मास बढ़ाएं)",
+        "measurable": "संरचना और ताकत समानांतर ट्रैक करें; प्रतिक्रिया के अनुसार समायोजित करें"
+      },
+      "end_5k_25": {
+        "specific": "10 हफ्तों तक 5 किमी दौड़ सहनशक्ति पर काम करें",
+        "measurable": "हर 3-4 हफ्तों में 5 किमी समय ट्रैक करें; खोजी लक्ष्य: ≤ 25:00"
+      },
+      "end_cooper_2400": {
+        "specific": "8 हफ्तों तक एरोबिक क्षमता पर काम करें",
+        "measurable": "हर 4 हफ्तों में Cooper 12 मिनट दोहराएं; खोजी लक्ष्य: ≥ 2400 मीटर"
+      },
+      "mob_toes_painfree": {
+        "specific": "6 हफ्तों तक कमर और हैमस्ट्रिंग गतिशीलता पर काम करें",
+        "measurable": "Sit-and-reach और दर्द धारणा; हर 2 हफ्तों में मापें"
+      },
+      "mob_overhead_full": {
+        "specific": "8 हफ्तों तक थोरैसिक और कंधे की गतिशीलता पर काम करें",
+        "measurable": "दीवार पर overhead टेस्ट; हर 2 हफ्तों में मापें"
+      },
+      "fn_carry_30s": {
+        "specific": "12 हफ्तों तक कार्यात्मक कैरी ताकत पर काम करें",
+        "measurable": "प्रगतिशील भार के साथ farmer's carry का समय; हर 4 हफ्तों में पुनर्मूल्यांकन करें"
+      },
+      "fn_get_up_floor": {
+        "specific": "8 हफ्तों तक एकीकृत फर्श-से-खड़े गतिशीलता पर काम करें",
+        "measurable": "हर 2 हफ्तों में बिना हाथ Turkish get-up का मूल्यांकन करें; पैटर्न की सफाई देखें"
+      }
     }
   },
   "readiness_block": {
@@ -524,5 +563,26 @@
       "unavailable": "Section unavailable."
     },
     "analysing_section": "Analysing this section…"
-  }
+  },
+  "self_intake": {
+    "title": "Client Self Intake",
+    "subtitle": "Information the client can complete before the first session."
+  },
+  "assessment_session": {
+    "title": "Assessment Session",
+    "subtitle": "Practical observations and tests to complete with a trainer or guided instructions."
+  },
+  "assessment_phase": {
+    "self_intake_pending": "Self intake pending",
+    "session_pending": "Assessment session pending",
+    "complete": "Assessment complete"
+  },
+  "assessment_gate": {
+    "self_intake_incomplete": "Self intake incomplete",
+    "session_incomplete": "Assessment session incomplete",
+    "generate_plan": "Generate plan",
+    "helper_self_intake": "The client still needs to finish the self intake before the plan can be generated.",
+    "helper_assessment_session": "Complete the assessment session items (anthropometry, mobility, posture, movement screen, cardio)."
+  },
+  "assessment_complete_chip": "Assessment complete"
 }

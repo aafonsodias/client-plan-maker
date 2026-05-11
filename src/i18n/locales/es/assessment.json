@@ -608,5 +608,26 @@
     "link_expires_in": "válido {{days}}d más",
     "draft_status": "Borrador local · {{count}} de {{total}} secciones",
     "subtitle": "Recoge los datos que alimentarán el plan. Pide al cliente o rellena tú."
-  }
+  },
+  "self_intake": {
+    "title": "Client Self Intake",
+    "subtitle": "Information the client can complete before the first session."
+  },
+  "assessment_session": {
+    "title": "Assessment Session",
+    "subtitle": "Practical observations and tests to complete with a trainer or guided instructions."
+  },
+  "assessment_phase": {
+    "self_intake_pending": "Self intake pending",
+    "session_pending": "Assessment session pending",
+    "complete": "Assessment complete"
+  },
+  "assessment_gate": {
+    "self_intake_incomplete": "Self intake incomplete",
+    "session_incomplete": "Assessment session incomplete",
+    "generate_plan": "Generate plan",
+    "helper_self_intake": "The client still needs to finish the self intake before the plan can be generated.",
+    "helper_assessment_session": "Complete the assessment session items (anthropometry, mobility, posture, movement screen, cardio)."
+  },
+  "assessment_complete_chip": "Assessment complete"
 }

@@ -819,5 +819,26 @@
     "link_expires_in": "válido durante mais {{days}}d",
     "draft_status": "Rascunho local · {{count}} de {{total}} secções",
     "subtitle": "Recolhe os dados que vão alimentar o plano. Pode pedir ao cliente ou preencher consigo."
-  }
+  },
+  "self_intake": {
+    "title": "Auto-Avaliação do Cliente",
+    "subtitle": "Dados que o cliente pode preencher sozinho antes da primeira sessão."
+  },
+  "assessment_session": {
+    "title": "Sessão de Avaliação",
+    "subtitle": "Observações e testes práticos para completar com o PT ou seguindo instruções guiadas."
+  },
+  "assessment_phase": {
+    "self_intake_pending": "Falta auto-avaliação",
+    "session_pending": "Falta sessão de avaliação",
+    "complete": "Avaliação completa"
+  },
+  "assessment_gate": {
+    "self_intake_incomplete": "Falta auto-avaliação",
+    "session_incomplete": "Falta sessão de avaliação",
+    "generate_plan": "Gerar plano",
+    "helper_self_intake": "O cliente ainda precisa de terminar a auto-avaliação antes de gerar o plano.",
+    "helper_assessment_session": "Complete a sessão de avaliação (antropometria, mobilidade, postura, screen de movimento, cardio)."
+  },
+  "assessment_complete_chip": "Avaliação completa"
 }

@@ -56,6 +56,15 @@ import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
+import {
+  SELF_INTAKE_SECTION_IDS,
+  ASSESSMENT_SESSION_SECTION_IDS,
+  isSectionCompleteForPhase,
+  isSelfIntakeComplete,
+  isAssessmentSessionComplete,
+  assessmentPhase,
+  assessmentGroupCounts,
+} from "@/lib/assessment-phase";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -222,21 +231,26 @@ function sectionSignature(assessment: any, section: string): string {
   return JSON.stringify(fields.map((f) => assessment?.[f] ?? null));
 }
 
+// Round 1 — reorder to match the new MVP grouping: Self Intake first
+// (9 sections), then Assessment Session (5 sections). Drives the mobile
+// focused flow + prev/next + tab order. Ids are unchanged.
 const SECTIONS = [
-  { id: "parq", label: "PAR-Q+" },
-  { id: "risk", label: "Risk strat." },
-  { id: "training", label: "Training setup" },
-  { id: "history", label: "Training history" },
-  { id: "goal", label: "SMART goal" },
-  { id: "meds", label: "Medications" },
-  { id: "anthro", label: "Anthropometry" },
-  { id: "readiness", label: "Readiness" },
-  { id: "lifestyle", label: "Lifestyle" },
-  { id: "nutrition", label: "Nutrition" },
-  { id: "mobility", label: "Mobility" },
-  { id: "posture", label: "Posture" },
-  { id: "screen", label: "Movement screen" },
-  { id: "performance", label: "Cardio health" },
+  // Self Intake / Auto-Avaliação
+  { id: "parq", label: "PAR-Q+", group: "self_intake" as const },
+  { id: "risk", label: "Risk strat.", group: "self_intake" as const },
+  { id: "training", label: "Training setup", group: "self_intake" as const },
+  { id: "history", label: "Training history", group: "self_intake" as const },
+  { id: "goal", label: "SMART goal", group: "self_intake" as const },
+  { id: "meds", label: "Medications", group: "self_intake" as const },
+  { id: "readiness", label: "Readiness", group: "self_intake" as const },
+  { id: "lifestyle", label: "Lifestyle", group: "self_intake" as const },
+  { id: "nutrition", label: "Nutrition", group: "self_intake" as const },
+  // Assessment Session / Sessão de Avaliação
+  { id: "anthro", label: "Anthropometry", group: "assessment_session" as const },
+  { id: "mobility", label: "Mobility", group: "assessment_session" as const },
+  { id: "posture", label: "Posture", group: "assessment_session" as const },
+  { id: "screen", label: "Movement screen", group: "assessment_session" as const },
+  { id: "performance", label: "Cardio health", group: "assessment_session" as const },
 ];
 
 // Optional sections render collapsed by default and count as complete
@@ -253,47 +267,14 @@ function hasVal(v: any): boolean {
   return true;
 }
 
+/**
+ * Per-section completion check. Round 1 — delegates to the canonical
+ * `isSectionCompleteForPhase` helper in `src/lib/assessment-phase.ts` so
+ * cockpit badges, the phase pill (`client-phase.ts`) and the Generate
+ * Plan gate never drift apart.
+ */
 function isSectionComplete(id: string, a: any): boolean {
-  switch (id) {
-    case "parq":
-      return Object.values(a.parq ?? {}).every((v) => v === true || v === false);
-    case "risk":
-      return hasVal(a.risk?.bmi_category);
-    case "anthro":
-      return hasVal(a.waist_cm) || hasVal(a.hip_cm) || hasVal(a.body_fat_pct) || hasVal(a.body_fat_method);
-    case "meds":
-      return hasVal(a.medications) || (a.med_flags?.length ?? 0) > 0;
-    case "goal":
-      return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
-    case "readiness":
-      return hasVal(a.readiness_stage);
-    case "training":
-      return hasVal(a.experience_level) && hasVal(a.training_days_per_week) &&
-             hasVal(a.session_duration_minutes) && (a.available_equipment?.length ?? 0) > 0;
-    case "lifestyle":
-      return hasVal(a.sleep_quality) || hasVal(a.stress_level) || hasVal(a.ext_hours_seated) ||
-             hasVal(a.ext_daily_steps) || hasVal(a.ext_job_type);
-    case "nutrition":
-      return hasVal(a.ext_meals_per_day) || hasVal(a.ext_water_l_per_day) ||
-             hasVal(a.ext_alcohol_units_week) || hasVal(a.nutrition_habits);
-    case "mobility":
-      return ["ext_mob_shoulder","ext_mob_hip","ext_mob_ankle","ext_mob_thoracic","ext_mob_wrist","ext_mob_knee"]
-        .every((k) => hasVal(a[k]));
-    case "posture":
-      return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
-    case "screen":
-      return PATTERN_IDS.every((p) => {
-        if (a.screen_not_assessed?.[p] === true) return true;
-        const fc = a[`${p}_form_criteria`];
-        return fc && formScore(fc) >= 3;
-      });
-    case "history":
-      return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
-    case "performance":
-      return hasVal(a.resting_heart_rate) || a.ext_cardio_test !== "untested";
-    default:
-      return false;
-  }
+  return isSectionCompleteForPhase(id, a);
 }
 
 function parqHasYes(parq: Record<string, boolean | null>): boolean {
@@ -711,10 +692,8 @@ function ClientDetail() {
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
-  // Round D · Bug 1 — Concluir always enabled, with confirmation when
-  // the assessment is incomplete. The pending action is run on confirm.
-  const [incompleteWarnOpen, setIncompleteWarnOpen] = useState(false);
-  const pendingGenerateRef = useRef<null | (() => void)>(null);
+  // Round 1 — Generate Plan is now hard-gated; no incomplete shortcut.
+  // The previous `incompleteWarnOpen` AlertDialog has been removed.
 
   /**
    * Latest plan that was already finalized for the *current* assessment.
@@ -1608,6 +1587,16 @@ function ClientDetail() {
   const currentIdx = sectionStatus.findIndex((s) => s.id === activeSection);
   const sectionNumber = currentIdx >= 0 ? currentIdx + 1 : 1;
 
+  // Round 1 — derived assessment phase + group counts. No schema changes;
+  // everything is computed from the existing assessment payload.
+  const phase = assessmentPhase(assessment);
+  const groupCounts = assessmentGroupCounts(assessment);
+  const selfIntakeDone = isSelfIntakeComplete(assessment);
+  const sessionDone = isAssessmentSessionComplete(assessment);
+  const safetyBlocked = parqYes || riskCategory === "high";
+  /** Hard gate for any "Generate plan" path. */
+  const canGeneratePlan = phase === "complete" && !safetyBlocked;
+
   const expLabelById: Record<string, string> = {
     beginner: t("training_block.beginner"),
     intermediate: t("training_block.intermediate"),
@@ -1802,33 +1791,9 @@ function ClientDetail() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          {/* Round D · Bug 1 — Confirmation when generating from a partial assessment. */}
-          <AlertDialog open={incompleteWarnOpen} onOpenChange={setIncompleteWarnOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{t("generate.incomplete_title")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("generate.incomplete_body", {
-                    done: completedCount,
-                    total: totalSections,
-                  })}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>{t("generate.incomplete_cancel")}</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    const run = pendingGenerateRef.current;
-                    pendingGenerateRef.current = null;
-                    setIncompleteWarnOpen(false);
-                    if (run) run();
-                  }}
-                >
-                  {t("generate.incomplete_confirm")}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Round 1 — IncompleteWarn dialog removed. Generation is now hard-gated
+              by `canGeneratePlan` (Self Intake + Assessment Session both complete
+              and no PAR-Q / high-risk block). No more "gerar mesmo assim". */}
         </div>
       </div>
 
@@ -1937,8 +1902,28 @@ function ClientDetail() {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
           const bmvNow = computeBmv({ client, assessment, snapshots: bmvSnapshots });
-          if (!bmvNow.ready) {
+          // Round 1 — assessment phase is the canonical gate. We still keep
+          // the BMV "missing data" CTA as the secondary nudge for partial
+          // Self Intake; once Self Intake is done we then ask for the
+          // Assessment Session before unlocking AI generation.
+          if (!selfIntakeDone || !bmvNow.ready) {
             primaryAction = { label: `Faltam ${bmvNow.missingRequired} dados — ver`, icon: <AlertTriangle className="h-4 w-4" />, onClick: () => setBmvOpen(true) };
+          } else if (!sessionDone) {
+            primaryAction = {
+              label: t("assessment_gate.session_incomplete"),
+              icon: <AlertTriangle className="h-4 w-4" />,
+              onClick: () => {
+                const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+                if (firstMissing) setActiveSection(firstMissing);
+                document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              },
+            };
+          } else if (safetyBlocked) {
+            primaryAction = {
+              label: "Revisão de segurança necessária",
+              icon: <AlertTriangle className="h-4 w-4" />,
+              onClick: () => setSafetyDialogOpen(true),
+            };
           } else {
             primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
           }
@@ -2113,20 +2098,27 @@ function ClientDetail() {
               });
             }
           } : () => {
-            const isHigh = riskCategory === "high";
-            const blocked = parqYes || isHigh;
-            if (blocked) {
+            // Round 1 — hard gate. PAR-Q / high-risk safety preserved; if
+            // either group is incomplete, scroll the user to the first
+            // missing section instead of silently generating.
+            if (safetyBlocked) {
               setSafetyDialogOpen(true);
               return;
             }
-            const run = () => {
-              if (phasedEnabled) void runPhasedStart();
-              else void generate();
-            };
-            const assessmentComplete = completedCount >= totalSections;
-            if (assessmentComplete) { run(); return; }
-            pendingGenerateRef.current = run;
-            setIncompleteWarnOpen(true);
+            if (!selfIntakeDone) {
+              const firstMissing = SELF_INTAKE_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+              if (firstMissing) setActiveSection(firstMissing);
+              toast.error(t("assessment_gate.self_intake_incomplete"));
+              return;
+            }
+            if (!sessionDone) {
+              const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+              if (firstMissing) setActiveSection(firstMissing);
+              toast.error(t("assessment_gate.session_incomplete"));
+              return;
+            }
+            if (phasedEnabled) void runPhasedStart();
+            else void generate();
           }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
@@ -2162,11 +2154,17 @@ function ClientDetail() {
                   {t("progress_minutes", { minutes: minutesLeft })}
                 </span>
                 <SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
+                {phase === "complete" && (
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-emerald-300 ring-1 ring-emerald-500/30">
+                    {t("assessment_complete_chip")} ✓
+                  </span>
+                )}
               </div>
             </div>
           }
         >
 
+          <AssessmentGroupHeader id="self_intake" counts={groupCounts.selfIntake} />
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} description={t(parqFlagCount(assessment.parq) === 0 ? "parq_block.complete_meaning_clear" : "parq_block.complete_meaning_flagged")} /> : null}>
             <ul className="space-y-1.5">
@@ -2735,183 +2733,6 @@ function ClientDetail() {
               );
             })()}
           </SectionBlock>
-          {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
-            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
-                Vivem em `clients` (não na avaliação) mas pertencem
-                conceptualmente à antropometria: alimentam IMC, BMR e
-                estimativas de %GC. Posicionados em cima por serem o
-                primeiro input clínico que qualquer ficha pede. */}
-            <div
-              id="anthro-base"
-              className={
-                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
-                (flashAnthroBase
-                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
-                  : "border-border/60")
-              }
-            >
-              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <span>Dados base</span>
-                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
-                  usados em IMC, BMR e %GC
-                </span>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-4">
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
-                  <VisualChipGroup
-                    size="sm"
-                    columns={2}
-                    value={(client?.sex as "female" | "male") ?? null}
-                    onChange={async (v) => {
-                      setClient((prev: any) => ({ ...prev, sex: v }));
-                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
-                    }}
-                    options={[
-                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
-                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
-                    ]}
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
-                  <input
-                    type="date"
-                    defaultValue={client?.date_of_birth ?? ""}
-                    onBlur={async (e) => {
-                      const v = e.target.value || null;
-                      if (v === (client?.date_of_birth ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
-                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={80}
-                    max={250}
-                    step={1}
-                    defaultValue={client?.height_cm ?? ""}
-                    placeholder="ex. 175"
-                    onBlur={async (e) => {
-                      const n = Number(e.target.value);
-                      const v = Number.isFinite(n) && n > 0 ? n : null;
-                      if (v === (client?.height_cm ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, height_cm: v }));
-                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={20}
-                    max={400}
-                    step={0.1}
-                    defaultValue={client?.weight_kg ?? ""}
-                    placeholder="ex. 78.4"
-                    onBlur={async (e) => {
-                      const n = Number(e.target.value);
-                      const v = Number.isFinite(n) && n > 0 ? n : null;
-                      if (v === (client?.weight_kg ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
-                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-              </div>
-            </div>
-            <div className="mb-2 flex justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
-              </Button>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <MeasureField
-                label="Cintura"
-                unit="cm"
-                value={assessment.waist_cm}
-                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
-                imageNode={<GuideWaist />}
-                placeholder="ex. 82"
-                helpBody={
-                  <>
-                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
-                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
-                  </>
-                }
-              />
-              <MeasureField
-                label="Anca"
-                unit="cm"
-                value={assessment.hip_cm}
-                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
-                imageNode={<GuideHip />}
-                placeholder="ex. 98"
-                helpBody={
-                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
-                }
-              />
-              <div className="space-y-1">
-                <Label className="text-xs">{t("anthro_block.whr")}</Label>
-                <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
-              </div>
-            </div>
-            {/* Avançado — requer equipamento (calipers / BIA / DEXA / BodPod).
-                Não faz parte da avaliação default; fica colapsado mas
-                acessível e ligado ao mesmo `assessment` state. */}
-            <details className="group mt-3 rounded-md border border-dashed border-border/60 bg-muted/10 open:bg-muted/20">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground">
-                <span>Avançado · requer equipamento</span>
-                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground/80 group-open:hidden">
-                  {assessment.body_fat_pct ? `%MG ${assessment.body_fat_pct}` : "opcional"}
-                </span>
-              </summary>
-              <div className="grid gap-2 px-2.5 pb-2.5 pt-1 sm:grid-cols-3">
-                <MeasureField
-                  label="Gordura corporal"
-                  unit="%"
-                  value={assessment.body_fat_pct}
-                  onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
-                  placeholder="opcional"
-                  helpBody={
-                    <>
-                      <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
-                      <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
-                    </>
-                  }
-                />
-                <div className="space-y-1 sm:col-span-2">
-                  <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <VisualChipGroup
-                    columns={5}
-                    size="sm"
-                    value={assessment.body_fat_method ?? null}
-                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
-                    options={[
-                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
-                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
-                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
-                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
-                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
-                    ]}
-                  />
-                </div>
-              </div>
-            </details>
-            {isSectionComplete("anthro", assessment) && (
-              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} collapsible />
-            )}
-          </SectionBlock>
           {/* Readiness */}
           <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("readiness", assessment) ? <CompletionStrip text={t("readiness_block.complete", { stage: t(`readiness_block.${assessment.readiness_stage}` as const, { defaultValue: assessment.readiness_stage }) })} description={t("readiness_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
@@ -3128,6 +2949,184 @@ function ClientDetail() {
             </button>
             {isSectionComplete("nutrition", assessment) && (
               <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} collapsible />
+            )}
+          </SectionBlock>
+          <AssessmentGroupHeader id="assessment_session" counts={groupCounts.session} />
+          {/* Anthropometry */}
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
+            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
+                Vivem em `clients` (não na avaliação) mas pertencem
+                conceptualmente à antropometria: alimentam IMC, BMR e
+                estimativas de %GC. Posicionados em cima por serem o
+                primeiro input clínico que qualquer ficha pede. */}
+            <div
+              id="anthro-base"
+              className={
+                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
+                (flashAnthroBase
+                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
+                  : "border-border/60")
+              }
+            >
+              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>Dados base</span>
+                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
+                  usados em IMC, BMR e %GC
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-4">
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
+                  <VisualChipGroup
+                    size="sm"
+                    columns={2}
+                    value={(client?.sex as "female" | "male") ?? null}
+                    onChange={async (v) => {
+                      setClient((prev: any) => ({ ...prev, sex: v }));
+                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+                    }}
+                    options={[
+                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
+                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
+                    ]}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+                  <input
+                    type="date"
+                    defaultValue={client?.date_of_birth ?? ""}
+                    onBlur={async (e) => {
+                      const v = e.target.value || null;
+                      if (v === (client?.date_of_birth ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={80}
+                    max={250}
+                    step={1}
+                    defaultValue={client?.height_cm ?? ""}
+                    placeholder="ex. 175"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.height_cm ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, height_cm: v }));
+                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={20}
+                    max={400}
+                    step={0.1}
+                    defaultValue={client?.weight_kg ?? ""}
+                    placeholder="ex. 78.4"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.weight_kg ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <MeasureField
+                label="Cintura"
+                unit="cm"
+                value={assessment.waist_cm}
+                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
+                imageNode={<GuideWaist />}
+                placeholder="ex. 82"
+                helpBody={
+                  <>
+                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
+                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
+                  </>
+                }
+              />
+              <MeasureField
+                label="Anca"
+                unit="cm"
+                value={assessment.hip_cm}
+                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
+                imageNode={<GuideHip />}
+                placeholder="ex. 98"
+                helpBody={
+                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
+                }
+              />
+              <div className="space-y-1">
+                <Label className="text-xs">{t("anthro_block.whr")}</Label>
+                <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
+              </div>
+            </div>
+            {/* Avançado — requer equipamento (calipers / BIA / DEXA / BodPod).
+                Não faz parte da avaliação default; fica colapsado mas
+                acessível e ligado ao mesmo `assessment` state. */}
+            <details className="group mt-3 rounded-md border border-dashed border-border/60 bg-muted/10 open:bg-muted/20">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground">
+                <span>Avançado · requer equipamento</span>
+                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground/80 group-open:hidden">
+                  {assessment.body_fat_pct ? `%MG ${assessment.body_fat_pct}` : "opcional"}
+                </span>
+              </summary>
+              <div className="grid gap-2 px-2.5 pb-2.5 pt-1 sm:grid-cols-3">
+                <MeasureField
+                  label="Gordura corporal"
+                  unit="%"
+                  value={assessment.body_fat_pct}
+                  onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
+                  placeholder="opcional"
+                  helpBody={
+                    <>
+                      <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
+                      <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
+                    </>
+                  }
+                />
+                <div className="space-y-1 sm:col-span-2">
+                  <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
+                  <VisualChipGroup
+                    columns={5}
+                    size="sm"
+                    value={assessment.body_fat_method ?? null}
+                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
+                    options={[
+                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
+                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
+                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
+                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
+                    ]}
+                  />
+                </div>
+              </div>
+            </details>
+            {isSectionComplete("anthro", assessment) && (
+              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Mobility checklist */}
@@ -4235,6 +4234,26 @@ function AssessmentSynthesisDashboard({
   );
 }
 
+function AssessmentGroupHeader({ id, counts }: { id: "self_intake" | "assessment_session"; counts: { done: number; total: number } }) {
+  const { t } = useTranslation("assessment");
+  const complete = counts.done >= counts.total;
+  return (
+    <div className="mt-4 mb-1 flex items-center gap-3 border-t border-border/60 pt-4 first:mt-0 first:border-t-0 first:pt-0">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-foreground/90">
+          {t(id === "self_intake" ? "self_intake.title" : "assessment_session.title")}
+        </h3>
+        <p className="text-[11px] text-muted-foreground">
+          {t(id === "self_intake" ? "self_intake.subtitle" : "assessment_session.subtitle")}
+        </p>
+      </div>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] tabular-nums ${complete ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30" : "bg-muted/60 text-muted-foreground"}`}>
+        {counts.done}/{counts.total}{complete ? " ✓" : ""}
+      </span>
+    </div>
+  );
+}
+
 function AssessmentSection({
   clientId,
   headerProgress,
@@ -4366,6 +4385,12 @@ function AssessmentSection({
   for (const child of childArray) {
     if (isValidElement(child) && typeof (child.props as any)?.id === "string" && sectionIds.includes((child.props as any).id)) {
       sectionChildren.set((child.props as any).id, child);
+    } else if (isValidElement(child) && (child.type as any) === AssessmentGroupHeader) {
+      // Round 1 — Self Intake / Assessment Session group banners. Render
+      // inline in non-focused desktop mode (children pass-through). In
+      // focused/mobile mode the group context lives in the sticky header,
+      // so we drop the banner from `extras` to avoid duplicate visuals.
+      continue;
     } else {
       extras.push(child);
     }
