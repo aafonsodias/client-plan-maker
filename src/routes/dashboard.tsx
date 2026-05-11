@@ -532,7 +532,7 @@ function Dashboard() {
                 </h2>
                 <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
               </div>
-              <div className="inline-flex flex-wrap gap-0.5 rounded-full border border-border/50 bg-background/40 p-0.5 text-[11px] uppercase tracking-[0.14em]">
+              <div className="scrollbar-hide -mx-1 flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:mx-0 sm:w-auto">
                 {[
                   { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
                   { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
@@ -546,14 +546,17 @@ function Dashboard() {
                       key={f.id}
                       to="/dashboard"
                       search={{ filter: f.id }}
-                      className={`group inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 transition ${
+                      title={f.label}
+                      aria-label={f.label}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`group inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 transition ${
                         isActive
-                          ? "bg-card text-foreground shadow-sm"
+                          ? "bg-chip-active text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       <span>{f.label}</span>
-                      <span className={`tabular-nums ${isActive ? "text-foreground/60" : "text-foreground/35"}`}>{f.count}</span>
+                      <span className={`tabular-nums text-[10px] ${isActive ? "text-muted-foreground" : "text-muted-foreground/60"}`}>{f.count}</span>
                     </Link>
                   );
                 })}
