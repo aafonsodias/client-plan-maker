@@ -434,7 +434,88 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   );
 }
 
-function MiniWeek({
+function Stat({
+  label,
+  value,
+  tone = "muted",
+  mono = true,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "muted" | "amber";
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={`mt-0.5 truncate text-sm tabular-nums ${mono ? "font-mono" : "font-display font-light"} ${
+          tone === "amber" ? "text-amber-500" : "text-foreground"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function SlimWeek({
+  monday,
+  bookingsByDay,
+  packColorById,
+  lang,
+}: {
+  monday: Date;
+  bookingsByDay: Booking[][];
+  packColorById: Map<string, string>;
+  lang: "pt" | "en";
+}) {
+  const dayLabels = lang === "pt"
+    ? ["S", "T", "Q", "Q", "S", "S", "D"]
+    : ["M", "T", "W", "T", "F", "S", "S"];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return (
+    <div className="grid flex-1 grid-cols-7 gap-1">
+      {Array.from({ length: 7 }).map((_, dow) => {
+        const date = addDays(monday, dow);
+        const isToday = date.getTime() === today.getTime();
+        const dayBookings = bookingsByDay[dow] ?? [];
+        return (
+          <div
+            key={dow}
+            className={`flex items-center justify-between gap-1.5 rounded-md px-2 py-1 text-[11px] ${
+              isToday
+                ? "bg-amber-500/10 text-amber-500"
+                : "text-muted-foreground/80"
+            }`}
+          >
+            <span className="flex items-baseline gap-1">
+              <span className="font-semibold uppercase tracking-widest">{dayLabels[dow]}</span>
+              <span className="font-mono">{String(date.getDate()).padStart(2, "0")}</span>
+            </span>
+            <span className="flex items-center gap-0.5">
+              {dayBookings.slice(0, 3).map((b) => {
+                const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
+                const cls = packBlockClasses(color);
+                return <span key={b.id} className={`inline-block h-1.5 w-1.5 rounded-full ${cls.dot}`} />;
+              })}
+              {dayBookings.length > 3 && (
+                <span className="text-[9px] text-muted-foreground">+{dayBookings.length - 3}</span>
+              )}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Legacy MiniWeek kept for parity (no longer used in cockpit, but exported
+// implicitly via the file). Inline here as dead-code-eliminated stub.
+function _MiniWeek_unused({
   monday,
   bookingsByDay,
   clientById,
