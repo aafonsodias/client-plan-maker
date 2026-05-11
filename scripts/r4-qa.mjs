@@ -1,26 +1,16 @@
-import OrigJsPDF from "jspdf";
+// Inline a copy of helper, but call doc.output directly instead of save.
+// Simpler: replicate just enough — actually call the real helper but override
+// by replacing jsPDF default with a Proxy via bun preload.
+// Cleanest: just patch the prototype method `output` to capture before save runs.
+// jsPDF.save calls this.output("save", filename) internally — we wrap output.
+import jsPDF from "jspdf";
 import fs from "node:fs";
 
 let lastBuf = null;
-const Wrapped = new Proxy(OrigJsPDF, {
-  construct(target, args) {
-    const inst = new target(...args);
-    inst.save = function (filename) {
-      lastBuf = { filename, buf: Buffer.from(this.output("arraybuffer")) };
-      return this;
-    };
-    return inst;
-  },
-});
+let lastFilename = null;
+const origOutput = jsPDF.API ? jsPDF.API.output : null;
+console.log("API?", !!jsPDF.API, "API.output?", typeof origOutput);
 
-// Replace module export so dynamic import sees wrapped class
-import { Module } from "node:module";
-// Bun: rely on import alias instead — patch the loaded module cache
-import jspdfMod from "jspdf";
-jspdfMod.default = Wrapped;
-
-// Instead: monkey-patch by replacing the export getter via a side import indirection.
-// Simpler: write a tiny shim that re-exports Wrapped, and have the helper import jspdf normally.
-// But helper already imports jspdf. So: patch every newly constructed instance via OrigJsPDF prototype "after construct" hook — there is none. Use a setter on `save` via defineProperty in constructor? Not possible without modifying lib.
-// Best path: use bun's preload to swap.
-console.log("approach: shim");
+// Wrap save by patching the constructor via subclass; helper imports default
+// which is the same class, so subclassing won't help unless we replace export.
+// Final path: register a bun-preload that swaps the default export.
