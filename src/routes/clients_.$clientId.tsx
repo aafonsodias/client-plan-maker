@@ -4607,12 +4607,23 @@ function AssessmentSection({
                   <span className="inline-flex shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-medium tabular-nums tracking-tight text-muted-foreground">
                     {String(activeIdx + 1).padStart(2, "0")}/{String(totalCount).padStart(2, "0")}
                   </span>
-                  <h2 className="t-3 min-w-0 flex-1 truncate leading-tight">
-                    {t(`sections.${activeId}` as const, {
-                      defaultValue:
-                        (sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId,
-                    })}
-                  </h2>
+                  <div className="flex min-w-0 flex-1 flex-col leading-tight">
+                    {(() => {
+                      const grp = SECTIONS.find((s) => s.id === activeId)?.group;
+                      if (!grp) return null;
+                      return (
+                        <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                          {t(grp === "self_intake" ? "self_intake.title" : "assessment_session.title")}
+                        </span>
+                      );
+                    })()}
+                    <h2 className="t-3 min-w-0 truncate leading-tight">
+                      {t(`sections.${activeId}` as const, {
+                        defaultValue:
+                          (sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId,
+                      })}
+                    </h2>
+                  </div>
                   {saveLabel && (
                     <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70 sm:inline">
                       {saveLabel}
