@@ -1,0 +1,11 @@
+console.log('start');
+const j = await import('jspdf');
+console.log('jspdf loaded', typeof j.default);
+const doc = new j.default({ unit: 'pt', format: 'a4' });
+doc.text('hi', 50, 50);
+doc.addPage();
+doc.text('hi2', 50, 50);
+console.log('pages', doc.getNumberOfPages());
+const fs = await import('fs');
+fs.writeFileSync('/tmp/pdfqa/test.pdf', Buffer.from(doc.output('arraybuffer')));
+console.log('done');
