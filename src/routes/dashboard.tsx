@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
-  TrendingUp, TrendingDown, Minus, Loader2,
+  TrendingUp, TrendingDown, Minus, Loader2, Download,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
@@ -29,6 +29,7 @@ import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
+import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -57,7 +58,7 @@ type ClientRow = {
 
 function Dashboard() {
   const { user } = useAuth();
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const search = Route.useSearch();
   const filter = search.filter ?? "all";
   const navigate = useNavigate();
@@ -433,6 +434,17 @@ function Dashboard() {
           </DialogContent>
         </Dialog>
         <ViewAsClientPicker variant="ghost" className="w-full text-muted-foreground hover:text-foreground sm:w-auto" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+          className="w-full text-muted-foreground hover:text-foreground sm:w-auto"
+          title={i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
+        >
+          <Download className="mr-2 h-3.5 w-3.5" />
+          {i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
+        </Button>
         </div>
       </div>
 
