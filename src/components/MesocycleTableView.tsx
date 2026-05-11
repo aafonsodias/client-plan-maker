@@ -10,6 +10,8 @@ import { AddExerciseDialog } from "@/components/AddExerciseDialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatSessionLabel } from "@/lib/session-label";
+import { useTranslation } from "react-i18next";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -344,6 +346,7 @@ export function MesocycleTableView({
               <DayBlock
                 key={`${day.day_label}-${gi}`}
                 day={day}
+                sessionIndex={gi}
                 rows={rows}
                 weekCount={weekNumbers.length}
                 compact={compact}
@@ -371,6 +374,7 @@ export function MesocycleTableView({
 
 function DayBlock({
   day,
+  sessionIndex,
   rows,
   weekCount,
   compact,
@@ -386,6 +390,7 @@ function DayBlock({
   isFirstGroup,
 }: {
   day: Day;
+  sessionIndex: number;
   rows: { exercise: Exercise; cells: { ex: Exercise | null; weekNumber: number; dayLabel: string; exIdx: number }[] }[];
   weekCount: number;
   compact: boolean;
@@ -400,6 +405,9 @@ function DayBlock({
   deletingName: string | null;
   isFirstGroup: boolean;
 }) {
+  const { i18n } = useTranslation();
+  const { sessionLabel, focus } = formatSessionLabel(day.day_label, sessionIndex, i18n?.language);
+  const focusFromDay = focus || (day.focus ?? null);
   return (
     <>
       {!isFirstGroup && (
@@ -412,9 +420,9 @@ function DayBlock({
           colSpan={weekCount + 1}
           className="rounded-t border-t-2 border-accent/40 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground"
         >
-          {day.day_label}
-          {day.focus && (
-            <span className="ml-2 normal-case text-muted-foreground">· {day.focus}</span>
+          {sessionLabel}
+          {focusFromDay && (
+            <span className="ml-2 normal-case text-muted-foreground">· {focusFromDay}</span>
           )}
         </td>
       </tr>
