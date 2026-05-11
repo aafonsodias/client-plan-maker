@@ -189,7 +189,19 @@ export function ExerciseSetsCard({
   const progressPct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   const updateSet = (si: number, patch: Partial<SetLog>) => {
-    const sets = entry.sets.map((s, i) => (i === si ? { ...s, ...patch } : s));
+    const sets = entry.sets.map((s, i) => {
+      if (i !== si) return s;
+      const merged = { ...s, ...patch } as SetLog;
+      // Auto-mark done when all required cells for the current mode are filled.
+      // Never auto-uncheck — the trainer can still toggle manually.
+      if (!merged.done && isRowComplete(mode, merged)) {
+        merged.done = true;
+        merged.ts = new Date().toISOString();
+        setPoppedSet(si);
+        setTimeout(() => setPoppedSet(null), 260);
+      }
+      return merged;
+    });
     onChange(index, { ...entry, sets });
   };
 
