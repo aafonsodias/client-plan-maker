@@ -394,7 +394,7 @@ export default function PlanEditorSurface({
       {/* Plan chrome — collapsed by default so the workout table is the first
           thing on the page. Trainer expands when they need title, actions,
           summary, block transition, etc. */}
-      <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
+      <details id="plan-details-actions" className="group rounded-2xl border border-border bg-card/40 open:bg-card">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
           <span className="inline-flex items-center gap-2 normal-case tracking-normal">
             <SettingsIcon className="h-3.5 w-3.5" />

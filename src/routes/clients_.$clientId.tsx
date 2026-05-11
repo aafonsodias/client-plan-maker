@@ -2020,7 +2020,7 @@ function ClientDetail() {
                 onShowSynthesis={() => setSynthesisOpen((o) => !o)}
               />
             )}
-            {heroPlan && (
+            {heroPlan && !allApprovedLocal && (
               <ThisWeekHero
                 bare
                 plan={heroPlan}
@@ -2045,8 +2045,15 @@ function ClientDetail() {
                 <PlanWithDeck
                   plan={heroPlan as any}
                   currentWeek={planLatestWeek[heroPlan.id] ?? null}
-                  onRegister={secondaryAction?.onClick}
-                  registerBusy={secondaryAction?.busy}
+                  primaryAction={
+                    secondaryAction
+                      ? {
+                          label: secondaryAction.label,
+                          onClick: secondaryAction.onClick,
+                          busy: secondaryAction.busy,
+                        }
+                      : undefined
+                  }
                   onAssessmentPdf={
                     assessment
                       ? async () => {

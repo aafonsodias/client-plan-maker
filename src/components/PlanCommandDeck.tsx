@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   FileText, Loader2, Download, MoreHorizontal, Eye, Pencil, NotebookPen,
-  BarChart3, TrendingUp, Sparkles,
+  BarChart3, TrendingUp, Sparkles, Settings as SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,7 +122,7 @@ export function PlanCommandDeck({
   return (
     <section
       aria-label="Comandos do plano"
-      className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.06] via-card to-card p-3 shadow-[0_8px_32px_-12px_rgba(245,158,11,0.18)] sm:p-4"
+      className="rounded-2xl border border-border/70 bg-card p-2.5 shadow-sm sm:p-3"
     >
       {/* Row 1 — identity */}
       <div className="flex items-start gap-2">
@@ -164,8 +164,24 @@ export function PlanCommandDeck({
                 Avaliação · PDF
               </DropdownMenuItem>
             )}
+            {mode !== "edit" && (
+              <DropdownMenuItem onSelect={() => onModeChange("edit")}>
+                <Sparkles className="mr-2 h-4 w-4" /> Configurar mesociclo
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={() => onModeChange("progress")}>
               <TrendingUp className="mr-2 h-4 w-4" /> Progresso
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                const el = document.getElementById("plan-details-actions") as HTMLDetailsElement | null;
+                if (el) {
+                  el.open = true;
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+            >
+              <SettingsIcon className="mr-2 h-4 w-4" /> Detalhes & acções do plano
             </DropdownMenuItem>
             {menuItems && menuItems.length > 0 && (
               <>
@@ -187,7 +203,7 @@ export function PlanCommandDeck({
       </div>
 
       {/* Row 2 — primary action + weekly PDF */}
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-2 flex items-center gap-2">
         {onRegister && (
           <Button
             onClick={() => void onRegister()}
@@ -206,19 +222,18 @@ export function PlanCommandDeck({
           type="button"
           onClick={handleWeeklyPdf}
           disabled={downloading}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/[0.07] px-3 text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90 hover:bg-emerald-500/15 disabled:opacity-60"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary/40 px-3 text-[11px] font-semibold uppercase tracking-wider text-foreground/80 hover:bg-secondary disabled:opacity-60"
           title={selectedWeek == null
             ? "Descarregar PDF do mesociclo"
             : `Descarregar PDF da Semana ${selectedWeek}`}
         >
           {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">{pdfChipLabel}</span>
-          <span className="sm:hidden">{selectedWeek == null ? "PDF" : `PDF S${selectedWeek}`}</span>
+          <span>{selectedWeek == null ? "PDF · MESO" : `PDF S${selectedWeek}`}</span>
         </button>
       </div>
 
       {/* Row 3 — week selector */}
-      <div className="mt-3 flex flex-wrap items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5">
+      <div className="mt-2 flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5">
         {weekChips.map((c) => {
           const active = selectedWeek === c.value;
           const isCurrent = c.value !== null && c.value === currentWeek;
@@ -227,7 +242,7 @@ export function PlanCommandDeck({
               key={c.label}
               type="button"
               onClick={() => onSelectWeek(c.value)}
-              className={`relative flex-1 rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wider transition ${
+              className={`relative flex-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition ${
                 active
                   ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
                   : "text-muted-foreground hover:text-foreground"
@@ -246,7 +261,7 @@ export function PlanCommandDeck({
       {/* Row 4 — mode segmented */}
       <div
         role="tablist"
-        className="mt-2 grid grid-cols-4 gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5 text-[11px] font-semibold uppercase tracking-wider"
+        className="mt-1.5 grid grid-cols-4 gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5 text-[11px] font-semibold uppercase tracking-wider"
       >
         {modes.map(({ key, label, Icon }) => {
           const active = mode === key;
@@ -256,7 +271,7 @@ export function PlanCommandDeck({
               role="tab"
               aria-selected={active}
               onClick={() => onModeChange(key)}
-              className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-full px-2 py-1.5 transition ${
+              className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-full px-2 py-1 transition ${
                 active
                   ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
                   : "text-muted-foreground hover:text-foreground"
@@ -268,17 +283,6 @@ export function PlanCommandDeck({
           );
         })}
       </div>
-
-      {/* Row 5 — quiet "Configurar mesociclo" link, only outside edit */}
-      {mode !== "edit" && (
-        <button
-          type="button"
-          onClick={() => onModeChange("edit")}
-          className="mt-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-        >
-          <Sparkles className="h-3 w-3" /> Configurar mesociclo
-        </button>
-      )}
     </section>
   );
 }
