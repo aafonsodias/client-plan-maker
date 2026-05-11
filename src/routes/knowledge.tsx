@@ -25,9 +25,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { BookOpen, Loader2, Save, Pencil } from "lucide-react";
+import { BookOpen, Loader2, Save, Pencil, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import RationaleChip from "@/components/ux/RationaleChip";
+import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
 import type { Inference } from "@/lib/auto-infer";
 import {
   getActiveKnowledgeProfile,
