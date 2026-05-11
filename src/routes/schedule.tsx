@@ -1058,16 +1058,45 @@ function DayStrip({
           // and clip to 3 chars so every pill stays the same width.
           const wdRaw = new Intl.DateTimeFormat(locale, { weekday: "short" }).format(d);
           const wd = wdRaw.replace(/[.\s]/g, "").slice(0, 3).toUpperCase();
+          const dayList = bookings.filter((b) => {
+            if (b.status === "cancelled") return false;
+            return new Date(b.starts_at).toDateString() === d.toDateString();
+          });
+          const dotMax = 5;
+          const dots = dayList.slice(0, dotMax);
+          const extra = dayList.length - dots.length;
           return (
             <button
               key={i}
               type="button"
               onClick={() => setActive(i)}
-              className={`flex min-h-12 flex-col items-center justify-center rounded-lg border px-0.5 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
+              className={`flex min-h-20 flex-col items-center justify-start gap-1 rounded-lg border px-0.5 py-2 text-center leading-tight ${isActive ? "border-foreground bg-secondary" : "border-border text-muted-foreground"}`}
             >
               <span className="text-[10px] font-medium uppercase tracking-wider">{wd}</span>
-              <span className={`mt-0.5 text-sm font-medium ${isToday ? "underline underline-offset-4" : ""}`}>
+              <span className={`text-sm font-medium ${isToday ? "underline underline-offset-4" : ""}`}>
                 {new Intl.DateTimeFormat(locale, { day: "2-digit" }).format(d)}
+              </span>
+              <span
+                className="mt-0.5 flex min-h-[28px] flex-col items-center gap-0.5"
+                aria-label={dayList.length ? `${dayList.length} sessões` : undefined}
+              >
+                {dots.map((b) => {
+                  const c = clientById.get(b.client_id);
+                  const pack = b.pack_id ? packById.get(b.pack_id) : undefined;
+                  const cls = packBlockClasses(clientColor(c, pack?.color));
+                  return (
+                    <span
+                      key={b.id}
+                      className={`h-1.5 w-1.5 rounded-full ${cls.dot}`}
+                      aria-hidden
+                    />
+                  );
+                })}
+                {extra > 0 && (
+                  <span className="text-[8px] font-semibold leading-none text-muted-foreground">
+                    +{extra}
+                  </span>
+                )}
               </span>
             </button>
           );
