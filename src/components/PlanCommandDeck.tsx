@@ -122,7 +122,7 @@ export function PlanCommandDeck({
   return (
     <section
       aria-label="Comandos do plano"
-      className="rounded-2xl border border-border/70 bg-card p-2.5 shadow-sm sm:p-3"
+      className="border-b border-border/60 bg-card/60 p-2.5 sm:p-3"
     >
       {/* Row 1 — identity */}
       <div className="flex items-start gap-2">
