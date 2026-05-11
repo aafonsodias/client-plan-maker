@@ -2159,6 +2159,7 @@ function ClientDetail() {
           }
         >
 
+          <AssessmentGroupHeader id="self_intake" counts={groupCounts.selfIntake} />
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} description={t(parqFlagCount(assessment.parq) === 0 ? "parq_block.complete_meaning_clear" : "parq_block.complete_meaning_flagged")} /> : null}>
             <ul className="space-y-1.5">
@@ -2727,183 +2728,6 @@ function ClientDetail() {
               );
             })()}
           </SectionBlock>
-          {/* Anthropometry */}
-          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
-            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
-                Vivem em `clients` (não na avaliação) mas pertencem
-                conceptualmente à antropometria: alimentam IMC, BMR e
-                estimativas de %GC. Posicionados em cima por serem o
-                primeiro input clínico que qualquer ficha pede. */}
-            <div
-              id="anthro-base"
-              className={
-                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
-                (flashAnthroBase
-                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
-                  : "border-border/60")
-              }
-            >
-              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                <span>Dados base</span>
-                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
-                  usados em IMC, BMR e %GC
-                </span>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-4">
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
-                  <VisualChipGroup
-                    size="sm"
-                    columns={2}
-                    value={(client?.sex as "female" | "male") ?? null}
-                    onChange={async (v) => {
-                      setClient((prev: any) => ({ ...prev, sex: v }));
-                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
-                    }}
-                    options={[
-                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
-                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
-                    ]}
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
-                  <input
-                    type="date"
-                    defaultValue={client?.date_of_birth ?? ""}
-                    onBlur={async (e) => {
-                      const v = e.target.value || null;
-                      if (v === (client?.date_of_birth ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
-                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={80}
-                    max={250}
-                    step={1}
-                    defaultValue={client?.height_cm ?? ""}
-                    placeholder="ex. 175"
-                    onBlur={async (e) => {
-                      const n = Number(e.target.value);
-                      const v = Number.isFinite(n) && n > 0 ? n : null;
-                      if (v === (client?.height_cm ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, height_cm: v }));
-                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={20}
-                    max={400}
-                    step={0.1}
-                    defaultValue={client?.weight_kg ?? ""}
-                    placeholder="ex. 78.4"
-                    onBlur={async (e) => {
-                      const n = Number(e.target.value);
-                      const v = Number.isFinite(n) && n > 0 ? n : null;
-                      if (v === (client?.weight_kg ?? null)) return;
-                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
-                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
-                    }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-              </div>
-            </div>
-            <div className="mb-2 flex justify-end">
-              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
-              </Button>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <MeasureField
-                label="Cintura"
-                unit="cm"
-                value={assessment.waist_cm}
-                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
-                imageNode={<GuideWaist />}
-                placeholder="ex. 82"
-                helpBody={
-                  <>
-                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
-                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
-                  </>
-                }
-              />
-              <MeasureField
-                label="Anca"
-                unit="cm"
-                value={assessment.hip_cm}
-                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
-                imageNode={<GuideHip />}
-                placeholder="ex. 98"
-                helpBody={
-                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
-                }
-              />
-              <div className="space-y-1">
-                <Label className="text-xs">{t("anthro_block.whr")}</Label>
-                <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
-              </div>
-            </div>
-            {/* Avançado — requer equipamento (calipers / BIA / DEXA / BodPod).
-                Não faz parte da avaliação default; fica colapsado mas
-                acessível e ligado ao mesmo `assessment` state. */}
-            <details className="group mt-3 rounded-md border border-dashed border-border/60 bg-muted/10 open:bg-muted/20">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground">
-                <span>Avançado · requer equipamento</span>
-                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground/80 group-open:hidden">
-                  {assessment.body_fat_pct ? `%MG ${assessment.body_fat_pct}` : "opcional"}
-                </span>
-              </summary>
-              <div className="grid gap-2 px-2.5 pb-2.5 pt-1 sm:grid-cols-3">
-                <MeasureField
-                  label="Gordura corporal"
-                  unit="%"
-                  value={assessment.body_fat_pct}
-                  onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
-                  placeholder="opcional"
-                  helpBody={
-                    <>
-                      <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
-                      <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
-                    </>
-                  }
-                />
-                <div className="space-y-1 sm:col-span-2">
-                  <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
-                  <VisualChipGroup
-                    columns={5}
-                    size="sm"
-                    value={assessment.body_fat_method ?? null}
-                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
-                    options={[
-                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
-                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
-                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
-                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
-                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
-                    ]}
-                  />
-                </div>
-              </div>
-            </details>
-            {isSectionComplete("anthro", assessment) && (
-              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} collapsible />
-            )}
-          </SectionBlock>
           {/* Readiness */}
           <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("readiness", assessment) ? <CompletionStrip text={t("readiness_block.complete", { stage: t(`readiness_block.${assessment.readiness_stage}` as const, { defaultValue: assessment.readiness_stage }) })} description={t("readiness_block.complete_meaning")} /> : null}>
             <div className="mb-2 flex justify-end">
@@ -3120,6 +2944,184 @@ function ClientDetail() {
             </button>
             {isSectionComplete("nutrition", assessment) && (
               <RxImplications sectionId="nutrition" assessment={assessment} riskCategory={riskCategory} collapsible />
+            )}
+          </SectionBlock>
+          <AssessmentGroupHeader id="assessment_session" counts={groupCounts.session} />
+          {/* Anthropometry */}
+          <SectionBlock id="anthro" analysing={analysingSections["anthro"]} analysis={sectionAnalyses["anthro"]} title={t("anthro_block.title")} hint={t("anthro_block.hint")} complete={isSectionComplete("anthro", assessment)} footer={isSectionComplete("anthro", assessment) ? <CompletionStrip text={t("anthro_block.complete", { summary: `WHR ${whr}${assessment.risk?.bmi_category ? ` · IMC ${assessment.risk.bmi_category}` : ""}` })} description={t("anthro_block.complete_meaning")} /> : null}>
+            {/* Dados base do cliente — sexo, data de nascimento, altura e peso.
+                Vivem em `clients` (não na avaliação) mas pertencem
+                conceptualmente à antropometria: alimentam IMC, BMR e
+                estimativas de %GC. Posicionados em cima por serem o
+                primeiro input clínico que qualquer ficha pede. */}
+            <div
+              id="anthro-base"
+              className={
+                "mb-3 rounded-md border bg-muted/20 p-2.5 transition-all duration-500 " +
+                (flashAnthroBase
+                  ? "border-amber-500/60 ring-2 ring-amber-500/30"
+                  : "border-border/60")
+              }
+            >
+              <div className="mb-2 flex items-baseline justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <span>Dados base</span>
+                <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">
+                  usados em IMC, BMR e %GC
+                </span>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-4">
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">{t("anthro_block.sex_label", { defaultValue: "Sexo biológico" })}</span>
+                  <VisualChipGroup
+                    size="sm"
+                    columns={2}
+                    value={(client?.sex as "female" | "male") ?? null}
+                    onChange={async (v) => {
+                      setClient((prev: any) => ({ ...prev, sex: v }));
+                      await supabase.from("clients").update({ sex: v }).eq("id", clientId);
+                    }}
+                    options={[
+                      { value: "female", label: t("anthro_block.sex_female", { defaultValue: "Feminino" }), icon: <FemaleSilhouette /> },
+                      { value: "male", label: t("anthro_block.sex_male", { defaultValue: "Masculino" }), icon: <MaleSilhouette /> },
+                    ]}
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
+                  <input
+                    type="date"
+                    defaultValue={client?.date_of_birth ?? ""}
+                    onBlur={async (e) => {
+                      const v = e.target.value || null;
+                      if (v === (client?.date_of_birth ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, date_of_birth: v }));
+                      await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Altura (cm)</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={80}
+                    max={250}
+                    step={1}
+                    defaultValue={client?.height_cm ?? ""}
+                    placeholder="ex. 175"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.height_cm ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, height_cm: v }));
+                      await supabase.from("clients").update({ height_cm: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Peso (kg)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={20}
+                    max={400}
+                    step={0.1}
+                    defaultValue={client?.weight_kg ?? ""}
+                    placeholder="ex. 78.4"
+                    onBlur={async (e) => {
+                      const n = Number(e.target.value);
+                      const v = Number.isFinite(n) && n > 0 ? n : null;
+                      if (v === (client?.weight_kg ?? null)) return;
+                      setClient((prev: any) => ({ ...prev, weight_kg: v }));
+                      await supabase.from("clients").update({ weight_kg: v }).eq("id", clientId);
+                    }}
+                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="mb-2 flex justify-end">
+              <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
+              </Button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <MeasureField
+                label="Cintura"
+                unit="cm"
+                value={assessment.waist_cm}
+                onChange={(v) => setAssessment({ ...assessment, waist_cm: v })}
+                imageNode={<GuideWaist />}
+                placeholder="ex. 82"
+                helpBody={
+                  <>
+                    <p>Medida no <b>ponto mais estreito</b> entre as costelas e a anca, normalmente um dedo acima do umbigo.</p>
+                    <p className="mt-1">Pessoa em pé, relaxada, a expirar normalmente. Fita justa mas sem comprimir a pele.</p>
+                  </>
+                }
+              />
+              <MeasureField
+                label="Anca"
+                unit="cm"
+                value={assessment.hip_cm}
+                onChange={(v) => setAssessment({ ...assessment, hip_cm: v })}
+                imageNode={<GuideHip />}
+                placeholder="ex. 98"
+                helpBody={
+                  <p>Medida na <b>maior circunferência das nádegas</b>. Pessoa em pé, pés juntos, fita paralela ao chão.</p>
+                }
+              />
+              <div className="space-y-1">
+                <Label className="text-xs">{t("anthro_block.whr")}</Label>
+                <div className="flex h-8 items-center rounded-md border border-border bg-background/50 px-3 text-sm font-medium">{whr}</div>
+              </div>
+            </div>
+            {/* Avançado — requer equipamento (calipers / BIA / DEXA / BodPod).
+                Não faz parte da avaliação default; fica colapsado mas
+                acessível e ligado ao mesmo `assessment` state. */}
+            <details className="group mt-3 rounded-md border border-dashed border-border/60 bg-muted/10 open:bg-muted/20">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2.5 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground">
+                <span>Avançado · requer equipamento</span>
+                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground/80 group-open:hidden">
+                  {assessment.body_fat_pct ? `%MG ${assessment.body_fat_pct}` : "opcional"}
+                </span>
+              </summary>
+              <div className="grid gap-2 px-2.5 pb-2.5 pt-1 sm:grid-cols-3">
+                <MeasureField
+                  label="Gordura corporal"
+                  unit="%"
+                  value={assessment.body_fat_pct}
+                  onChange={(v) => setAssessment({ ...assessment, body_fat_pct: v })}
+                  placeholder="opcional"
+                  helpBody={
+                    <>
+                      <p>Opcional. Para evolução faz sentido <b>usar sempre o mesmo método</b> (ex. lipocalibrador) — comparar BIA com DEXA dá ruído.</p>
+                      <p className="mt-1">Se não tiver medição fiável, deixa em branco e usa só o WHR.</p>
+                    </>
+                  }
+                />
+                <div className="space-y-1 sm:col-span-2">
+                  <LabelWithHelp label={t("anthro_block.bf_method")} hint={t("anthro_block.bf_method_hint")} />
+                  <VisualChipGroup
+                    columns={5}
+                    size="sm"
+                    value={assessment.body_fat_method ?? null}
+                    onChange={(v) => setAssessment({ ...assessment, body_fat_method: v })}
+                    options={[
+                      { value: "calipers", label: t("anthro_block.bf_calipers"), icon: <IconCalipers /> },
+                      { value: "bia", label: t("anthro_block.bf_bia"), icon: <IconBIA /> },
+                      { value: "dexa", label: t("anthro_block.bf_dexa"), icon: <IconDEXA /> },
+                      { value: "bodpod", label: t("anthro_block.bf_bodpod"), icon: <IconBodPod /> },
+                      { value: "visual", label: t("anthro_block.bf_visual"), icon: <IconVisualEstimate /> },
+                    ]}
+                  />
+                </div>
+              </div>
+            </details>
+            {isSectionComplete("anthro", assessment) && (
+              <RxImplications sectionId="anthro" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
           </SectionBlock>
           {/* Mobility checklist */}
