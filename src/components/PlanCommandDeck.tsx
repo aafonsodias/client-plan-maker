@@ -2,12 +2,12 @@ import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   FileText, Loader2, Download, MoreHorizontal, Eye, Pencil, NotebookPen,
-  BarChart3, TrendingUp, Sparkles, Trash2, Share2, Save, RefreshCw, Upload,
+  BarChart3, TrendingUp, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-  DropdownMenuSeparator, DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { downloadPlanById } from "@/lib/download-plan";
 import { weekTagFor } from "@/lib/macro-index";
