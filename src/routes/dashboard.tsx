@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
-  TrendingUp, TrendingDown, Minus, Loader2,
+  TrendingUp, TrendingDown, Minus, Loader2, Download,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
@@ -29,6 +29,7 @@ import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
+import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
