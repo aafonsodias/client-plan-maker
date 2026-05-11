@@ -28,7 +28,7 @@ export function PlanWithDeck({
   const [mode, setMode] = useState<DeckMode>("view");
 
   return (
-    <div className="space-y-3">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <PlanCommandDeck
         plan={plan}
         selectedWeek={selectedWeek}
@@ -41,14 +41,16 @@ export function PlanWithDeck({
         registerBusy={primaryAction?.busy}
         onAssessmentPdf={onAssessmentPdf}
       />
-      <PlanEditorSurface
-        planId={plan.id}
-        embedded
-        mode={mode}
-        onModeChange={setMode}
-        selectedWeek={selectedWeek}
-        hideOwnChrome
-      />
+      <div className="p-2.5 sm:p-3">
+        <PlanEditorSurface
+          planId={plan.id}
+          embedded
+          mode={mode}
+          onModeChange={setMode}
+          selectedWeek={selectedWeek}
+          hideOwnChrome
+        />
+      </div>
     </div>
   );
 }
