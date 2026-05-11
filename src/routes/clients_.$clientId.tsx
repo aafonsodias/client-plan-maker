@@ -2136,8 +2136,10 @@ function ClientDetail() {
               toast.error(t("assessment_gate.session_incomplete"));
               return;
             }
-            if (phasedEnabled) void runPhasedStart();
-            else void generate();
+            // Round 2 — never call generation directly from the conclude CTA.
+            // Open the Pre-Plan Review sheet (zero AI). Generation only fires
+            // when the trainer clicks "Criar briefing inicial" inside it.
+            setPrePlanReviewOpen(true);
           }}
           completionPct={
             briefCoverage && briefCoverage.total > 0
