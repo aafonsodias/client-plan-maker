@@ -319,12 +319,12 @@ function Dashboard() {
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
-        <div className="flex items-center gap-2 sm:flex-row-reverse">
+        <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-row-reverse">
           {/* AtlasGenie pill removed — icon version lives in AppShell header. */}
           <Dialog open={inviteOpen} onOpenChange={(o) => (o ? setInviteOpen(true) : closeAndReset())}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" /> {t("dashboard.new_client")}
+            <Button size="sm" className="h-9 flex-1 rounded-full px-4 sm:flex-none">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> {t("dashboard.new_client")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-lg">
@@ -433,7 +433,10 @@ function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
-        <ViewAsClientPicker variant="ghost" className="w-full text-muted-foreground hover:text-foreground sm:w-auto" />
+        <ViewAsClientPicker
+          variant="ghost"
+          className="h-9 shrink-0 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+        />
         </div>
       </div>
 
@@ -455,14 +458,15 @@ function Dashboard() {
       )}
 
       {!isEmpty && (
-        <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
+        <div className="flex items-center gap-2 px-1 text-[11px]">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {t("dashboard.trainer_tools_label")}
           </span>
+          <div className="scrollbar-hide -mx-1 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-1">
           <button
             type="button"
             onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
             aria-label={t("dashboard.trainer_tools_acquisition_pdf_aria")}
           >
             <Download className="h-3 w-3" />
@@ -470,18 +474,19 @@ function Dashboard() {
           </button>
           <Link
             to="/manual"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
           >
             <BookOpen className="h-3 w-3" />
             <span>{t("dashboard.trainer_tools_manual")}</span>
           </Link>
           <Link
             to="/knowledge"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
           >
             <Sparkles className="h-3 w-3" />
             <span>{t("dashboard.trainer_tools_how_it_works")}</span>
           </Link>
+          </div>
         </div>
       )}
 
@@ -525,14 +530,14 @@ function Dashboard() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 px-4 py-2.5">
+            <div className="flex flex-col gap-2 border-b border-border/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-2.5">
               <div className="flex items-baseline gap-2">
                 <h2 className="font-display text-sm font-medium tracking-tight text-foreground">
                   {t("dashboard.title")}
                 </h2>
                 <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
               </div>
-              <div className="scrollbar-hide -mx-1 flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:mx-0 sm:w-auto">
+              <div className="scrollbar-hide flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:w-auto">
                 {[
                   { id: "all", label: t("clients.filter_all_label", { defaultValue: "Todos" }), count: counts.all },
                   { id: "onboarding", label: t("clients.filter_onboarding_label", { defaultValue: "Onboarding" }), count: counts.onboarding },
