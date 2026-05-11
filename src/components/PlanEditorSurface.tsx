@@ -24,6 +24,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet";
 import type { PlanData, Week, Day, Exercise } from "@/lib/pdf";
 import { isLegacyPlan } from "@/lib/pdf-types";
 import { planStatusInfo } from "@/lib/plan-status";
@@ -109,7 +112,8 @@ export default function PlanEditorSurface({
     else setModeState(m);
   };
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [mgmtOpen, setMgmtOpen] = useState(false);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
   const markFinishedFn = useServerFn(markPlanFinished);
@@ -286,6 +290,13 @@ export default function PlanEditorSurface({
     setMode("results");
   }, [sessions.length, planId]);
 
+  // Open the "Gestão do Plano" sheet from the PlanCommandDeck More menu.
+  useEffect(() => {
+    const handler = () => setMgmtOpen(true);
+    window.addEventListener("plan:open-management", handler);
+    return () => window.removeEventListener("plan:open-management", handler);
+  }, []);
+
   const save = async (extra: Partial<{ status: string }> = {}) => {
     setSaving(true);
     const { error } = await supabase
@@ -391,441 +402,336 @@ export default function PlanEditorSurface({
       {/* Round 63 — "Needs human review" lives on its own surface, above
           the collapsed plan chrome. Discreet amber, not error red. */}
       <HumanReviewBanner generationMeta={plan.generation_meta} />
-      {/* Plan chrome — collapsed by default so the workout table is the first
-          thing on the page. Trainer expands when they need title, actions,
-          summary, block transition, etc. */}
-      <details
-        id="plan-details-actions"
-        className={
-          "group rounded-2xl border border-border bg-card/40 open:bg-card" +
-          (hideOwnChrome ? " order-last" : "")
-        }
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
-          <span className="inline-flex items-center gap-2 normal-case tracking-normal">
-            <SettingsIcon className="h-3.5 w-3.5" />
-            <span className="font-semibold uppercase tracking-widest">Detalhes & acções do plano</span>
-          </span>
-          <span className="text-muted-foreground/60 transition group-open:rotate-180">▾</span>
-        </summary>
-        <div className="space-y-4 border-t border-border px-3 pb-4 pt-3">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="relative z-0 min-w-0 flex-1">
-          {client && (
-            <Link
-              to="/clients/$clientId"
-              params={{ clientId: client.id }}
-              className="inline-flex max-w-full items-center gap-2 truncate text-xs text-muted-foreground hover:text-foreground"
-            >
-              <ClientAvatar
-                name={client.full_name}
-                photoUrl={client.photo_url ?? null}
-                size={20}
-              />
-              <span className="truncate">{client.full_name} →</span>
-            </Link>
-          )}
-          <div data-tour="plan-header" className="mt-1 flex flex-wrap items-center gap-2">
-            <Input
-              className="h-9 max-w-md border-0 bg-transparent px-0 !text-xl font-bold tracking-tight focus-visible:ring-0"
-              value={plan.title}
-              onChange={(e) => setPlan({ ...plan, title: e.target.value })}
-            />
-            {(() => {
-              const block = (plan as any).block_number ?? 1;
-              if (block <= 1) return null;
-              const fb = ((plan as any).generation_meta?.block_feedback ?? null) as BlockSummary | null;
-              const chip = (
-                <span
-                  data-tour="plan-block-chip"
-                  title={fb ? undefined : ((plan as any).block_transition_summary ?? undefined)}
-                  className="inline-flex cursor-help items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-amber-300"
-                >
-                  Bloco {block} · evoluiu de Bloco {block - 1}
-                </span>
-              );
-              if (!fb) return chip;
-              return (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button type="button" className="cursor-pointer">{chip}</button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[420px] p-3">
-                    <BlockAdaptationCard feedback={fb} variant="full" />
-                    {(plan as any).block_transition_summary && (
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        {(plan as any).block_transition_summary}
-                      </p>
+      {/* "Gestão do Plano" — moved out of the in-page accordion into a
+          right-side Sheet, opened from the PlanCommandDeck More menu. The
+          main table flow stays uninterrupted; admin/export/danger live here. */}
+      <Sheet open={mgmtOpen} onOpenChange={setMgmtOpen}>
+        <SheetContent
+          side="right"
+          className="w-full overflow-y-auto p-0 sm:max-w-lg"
+        >
+          <SheetHeader className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3">
+            <SheetTitle className="text-sm font-bold uppercase tracking-widest">
+              Gestão do Plano
+            </SheetTitle>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+              {(() => {
+                const s = planStatusInfo(plan, tCommon as any);
+                return (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${s.className}`}>
+                    {s.key === "finalized" && <CheckCircle2 className="h-3 w-3" />}
+                    {s.label}
+                  </span>
+                );
+              })()}
+              {client && <span className="truncate">{client.full_name}</span>}
+              <span>Bloco {(plan as any)?.block_number ?? 1}</span>
+              <span>Sem. {(selectedWeek ?? 1)}/{plan.duration_weeks ?? 1}</span>
+            </div>
+          </SheetHeader>
+          <div className="space-y-6 px-4 py-4">
+
+            {/* ── Section 1 — Resumo do plano ────────────────────────── */}
+            <section className="space-y-3">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Resumo do plano
+              </h3>
+              <div className="space-y-2">
+                {client && (
+                  <Link
+                    to="/clients/$clientId"
+                    params={{ clientId: client.id }}
+                    className="inline-flex max-w-full items-center gap-2 truncate text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <ClientAvatar
+                      name={client.full_name}
+                      photoUrl={client.photo_url ?? null}
+                      size={20}
+                    />
+                    <span className="truncate">{client.full_name} →</span>
+                  </Link>
+                )}
+                <Input
+                  className="h-9 max-w-full border border-border bg-card px-2 text-sm font-semibold tracking-tight"
+                  value={plan.title}
+                  onChange={(e) => setPlan({ ...plan, title: e.target.value })}
+                  placeholder="Título do plano"
+                />
+                {client && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    {client.age != null && <span><b className="text-foreground">{client.age}</b> anos</span>}
+                    {client.sex && <span className="capitalize">{client.sex}</span>}
+                    {plan.brief?.training_age_band && (
+                      <span>Exp.: <b className="text-foreground">{plan.brief.training_age_band}</b></span>
                     )}
-                  </PopoverContent>
-                </Popover>
-              );
-            })()}
-            {(() => {
-              const view = summarizeRotation((plan as any).generation_meta?.rotation_audit);
-              if (!view) return null;
-              const pool = ((plan as any).generation_meta?.prior_exercise_pool ?? []) as string[];
-              return (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${view.toneClass}`}
-                    >
-                      {tCommon("blocks.rotation.chip", { pct: Math.round(view.finalPct ?? 0) })}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
-                    <p className="font-semibold">{tCommon("blocks.rotation.popover_title")}</p>
-                    <p className="text-muted-foreground">
-                      {view.retried
-                        ? tCommon("blocks.rotation.after_retry", {
-                            first: Math.round(view.firstPct ?? 0),
-                            final: Math.round(view.finalPct ?? 0),
-                          })
-                        : tCommon("blocks.rotation.no_retry", {
-                            final: Math.round(view.finalPct ?? 0),
-                          })}
-                      {view.daysRegenerated.length > 0 && (
-                        <> {tCommon("blocks.rotation.days_regenerated", { days: view.daysRegenerated.join(", ") })}</>
+                    {plan.brief?.primary_goal && (
+                      <span>Obj.: <b className="text-foreground">{plan.brief.primary_goal}</b></span>
+                    )}
+                    {Array.isArray(plan.brief?.red_flags) && plan.brief.red_flags.length > 0 && (
+                      <span className="text-amber-300">⚠ {plan.brief.red_flags.slice(0, 3).join(" · ")}</span>
+                    )}
+                  </div>
+                )}
+                <div className="rounded-lg border border-border bg-card/50">
+                  <button
+                    type="button"
+                    onClick={() => setSummaryOpen((o) => !o)}
+                    className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Resumo {plan.summary?.trim() ? "" : "(vazio)"}
+                    </span>
+                    {summaryOpen ? (
+                      <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </button>
+                  {summaryOpen && (
+                    <div className="border-t border-border px-3 pb-3 pt-2">
+                      {summaryLooksLeaked(plan?.summary) && plan?.brief && (
+                        <div className="mb-2 flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-[10px]"
+                            disabled={regenSummaryBusy}
+                            onClick={async () => {
+                              setRegenSummaryBusy(true);
+                              try {
+                                const r: any = await regenSummaryFn({ data: { planId, force: true } });
+                                if (r?.ok && r?.summary) {
+                                  setPlan({ ...plan, summary: r.summary });
+                                  toast.success("Resumo regenerado a partir do brief.");
+                                } else {
+                                  toast.error(r?.error ?? "Falhou regenerar resumo.");
+                                }
+                              } finally {
+                                setRegenSummaryBusy(false);
+                              }
+                            }}
+                          >
+                            {regenSummaryBusy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Sparkles className="mr-1 h-3 w-3" />}
+                            Re-gerar
+                          </Button>
+                        </div>
                       )}
-                    </p>
-                    {pool.length > 0 && (
-                      <div>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {tCommon("blocks.rotation.pool_label")}
+                      {mode === "edit" ? (
+                        <AutoTextarea
+                          minRows={2}
+                          value={plan.summary ?? ""}
+                          onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
+                          placeholder="Resumo do programa…"
+                        />
+                      ) : (
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                          {plan.summary?.trim() ? plan.summary : <span className="italic text-muted-foreground">Sem resumo.</span>}
                         </p>
-                        <ul className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5">
-                          {pool.slice(0, 6).map((n) => (
-                            <li key={n} className="truncate text-foreground/80">{n}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              );
-            })()}
-            {(plan as any).generation_meta?.suggest_main_lift_swap && (() => {
-              const audit = (plan as any).generation_meta?.main_lift_audit;
-              const honored = !!audit?.honored;
-              const swapped: string[] = audit?.swappedNames ?? [];
-              const prior: string[] = audit?.priorMain ?? [];
-              const tone = honored
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                : "border-muted bg-muted/20 text-muted-foreground";
-              const label = honored
-                ? `${tCommon("blocks.main_lift.refreshed")}${audit?.swappedCount ? ` · ${audit.swappedCount}` : ""}`
-                : tCommon("blocks.main_lift.kept");
-              return (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className={`inline-flex cursor-help items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest ${tone}`}
-                    >
-                      {label}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[320px] space-y-2 p-3 text-xs">
-                    <p className="font-semibold">
-                      {honored ? tCommon("blocks.main_lift.refreshed") : tCommon("blocks.main_lift.kept")}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {honored
-                        ? tCommon("blocks.main_lift.refreshed_desc")
-                        : tCommon("blocks.main_lift.kept_desc")}
-                    </p>
-                    {swapped.length > 0 && (
-                      <div>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {tCommon("blocks.main_lift.new_label")}
-                        </p>
-                        <ul className="mt-1 space-y-0.5">
-                          {swapped.slice(0, 6).map((n) => (
-                            <li key={n} className="truncate text-foreground/80">{n}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {prior.length > 0 && (
-                      <div>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {tCommon("blocks.main_lift.prior_label")}
-                        </p>
-                        <ul className="mt-1 space-y-0.5">
-                          {prior.slice(0, 6).map((n) => (
-                            <li key={n} className="truncate text-foreground/60">{n}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              );
-            })()}
-            {(() => {
-              const s = planStatusInfo(plan, tCommon as any);
-              if (s.key === "draft") return null;
-              return (
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest ${s.className}`}
-                >
-                  {s.key === "finalized" && <CheckCircle2 className="h-3 w-3" />}
-                  {s.label}
-                </span>
-              );
-            })()}
-          </div>
-        </div>
-        <div className="relative z-10 flex shrink-0 items-center gap-2">
-          <ShareDialog
-            planId={planId}
-            initialToken={plan.share_token}
-            onChange={(t) => setPlan({ ...plan, share_token: t })}
-            clientFirstName={(client?.full_name ?? "there").split(" ")[0]}
-            clientPhone={client?.phone ?? null}
-            planTitle={plan.title}
-          />
-          <Button
-            size="sm"
-            onClick={exportPdf}
-            className="h-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm hover:from-amber-500 hover:to-amber-700 hover:shadow-md transition-all"
-            title={tCommon("plan.export_pdf_title")}
-          >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
-          </Button>
-          <ImportLogDialog planId={planId} plan={data} />
-          <SaveAsTemplateDialog planId={planId} defaultName={plan.title} />
-          {isPhasedComplete && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8"
-              disabled={reanchorBusy}
-              title={tCommon("plan.reanchor_rpe_title")}
-              onClick={async () => {
-                setReanchorBusy(true);
-                try {
-                  const r: any = await reanchorRpeFn({ data: { planId } });
-                  if (r?.ok) {
-                    if (r.exercisesBumped > 0) {
-                      toast.success(
-                        `Re-ancorado: ${r.exercisesBumped} exercício(s) em ${r.daysTouched} dia(s) — piso ${r.tier}/${r.appetite} aplicado.`,
-                      );
-                      // Force fresh load so the table re-reads the bumped RPEs.
-                      window.location.reload();
-                    } else {
-                      toast.info(tCommon("plan.reanchor_rpe_noop"));
-                    }
-                  } else {
-                    toast.error(r?.error ?? "Falhou re-ancorar RPE.");
-                  }
-                } finally {
-                  setReanchorBusy(false);
-                }
-              }}
-            >
-              {reanchorBusy ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Re-ancorar RPE
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-muted-foreground hover:text-destructive"
-            onClick={async () => {
-              if (!confirm("Delete this plan? This cannot be undone.")) return;
-              const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
-              if (error) return toast.error(error.message);
-              toast.success("Plan deleted");
-              navigate({ to: "/plans" });
-            }}
-          >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary — collapsible */}
-      <div className="rounded-lg border border-border bg-card/50">
-        <div className="flex w-full items-center justify-between gap-2 px-3 py-2">
-          <button
-            type="button"
-            onClick={() => setSummaryOpen((o) => !o)}
-            className="flex flex-1 items-center justify-between gap-2 text-left"
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Summary {plan.summary?.trim() ? "" : "(empty)"}
-            </span>
-            {summaryOpen ? (
-              <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            )}
-          </button>
-          {summaryLooksLeaked(plan?.summary) && plan?.brief && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-[10px]"
-              disabled={regenSummaryBusy}
-              title={tCommon("plan.rewrite_summary_title")}
-              onClick={async () => {
-                setRegenSummaryBusy(true);
-                try {
-                  const r: any = await regenSummaryFn({ data: { planId, force: true } });
-                  if (r?.ok && r?.summary) {
-                    setPlan({ ...plan, summary: r.summary });
-                    toast.success("Resumo regenerado a partir do brief.");
-                  } else {
-                    toast.error(r?.error ?? "Falhou regenerar resumo.");
-                  }
-                } finally {
-                  setRegenSummaryBusy(false);
-                }
-              }}
-            >
-              {regenSummaryBusy ? (
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              ) : (
-                <Sparkles className="mr-1 h-3 w-3" />
-              )}
-              Re-gerar
-            </Button>
-          )}
-        </div>
-        {summaryOpen && (
-          <div className="border-t border-border px-3 pb-3 pt-2 animate-fade-in">
-            {client && (
-              <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-                {client.age != null && <span><b className="text-foreground">{client.age}</b> anos</span>}
-                {client.sex && <span className="capitalize">{client.sex}</span>}
-                {client.height_cm && <span><b className="text-foreground">{client.height_cm}</b> cm</span>}
-                {client.weight_kg && <span><b className="text-foreground">{client.weight_kg}</b> kg</span>}
-                {plan.brief?.training_age_band && (
-                  <span>Experiência: <b className="text-foreground">{plan.brief.training_age_band}</b></span>
-                )}
-                {plan.brief?.primary_goal && (
-                  <span>Objectivo: <b className="text-foreground">{plan.brief.primary_goal}</b></span>
-                )}
-                {Array.isArray(plan.brief?.red_flags) && plan.brief.red_flags.length > 0 && (
-                  <span className="text-amber-300">⚠ {plan.brief.red_flags.slice(0, 3).join(" · ")}</span>
-                )}
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-            {mode === "edit" ? (
-              <AutoTextarea
-                minRows={2}
-                value={plan.summary ?? ""}
-                onChange={(e) => setPlan({ ...plan, summary: e.target.value })}
-                placeholder="High-level summary of this program…"
-              />
-            ) : (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {plan.summary?.trim() ? plan.summary : <span className="text-muted-foreground italic">No summary yet.</span>}
+            </section>
+
+            {/* ── Section 2 — Exportar e partilhar ──────────────────── */}
+            <section className="space-y-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Exportar e partilhar
+              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <ShareDialog
+                  planId={planId}
+                  initialToken={plan.share_token}
+                  onChange={(t) => setPlan({ ...plan, share_token: t })}
+                  clientFirstName={(client?.full_name ?? "there").split(" ")[0]}
+                  clientPhone={client?.phone ?? null}
+                  planTitle={plan.title}
+                />
+                <Button
+                  size="sm"
+                  onClick={exportPdf}
+                  className="h-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm hover:from-amber-500 hover:to-amber-700"
+                  title={tCommon("plan.export_pdf_title")}
+                >
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> PDF plano completo
+                </Button>
+                <SaveAsTemplateDialog planId={planId} defaultName={plan.title} />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                PDF semanal continua junto ao seletor de semanas.
               </p>
+            </section>
+
+            {/* ── Section 3 — Operações do bloco ────────────────────── */}
+            {plan?.generation_status === "complete" && plan?.status !== "archived" && (
+              <section className="space-y-2">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Operações do bloco
+                </h3>
+                <NextBlockCard
+                  planId={planId}
+                  blockNumber={(plan as any).block_number ?? 1}
+                  sessions={sessions as any}
+                  fullyLogged={isPlanFullyLogged(plan, sessions.length)}
+                  allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
+                  completionState={(plan as any).completion_state}
+                  onMarkFinished={async () => {
+                    const r: any = await markFinishedFn({ data: { planId, archive: false } });
+                    if (r?.ok) {
+                      toast.success(tCommon("plan.marked_complete"));
+                      setPlan({ ...plan, completion_state: "finished_logging" });
+                    } else {
+                      toast.error(r?.error ?? tCommon("plan.mark_complete_failed"));
+                    }
+                  }}
+                />
+                <NextWeekCard
+                  planId={planId}
+                  onCreated={async () => { await reloadPlanDays(); await reloadSessions(); }}
+                />
+                <ValidationReport generationMeta={plan.generation_meta} />
+                {data.weeks.length > 0 && isLegacyPlan(data) && client && (
+                  <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground">Plano com estrutura antiga.</p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        Regenere a partir da avaliação de {client?.full_name ?? "cliente"} para o arco completo da sessão.
+                      </p>
+                    </div>
+                    <Link
+                      to="/clients/$clientId"
+                      params={{ clientId: client.id }}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
+                    >
+                      <Sparkles className="h-3 w-3" /> Regenerar
+                    </Link>
+                  </div>
+                )}
+                {plan?.generation_status === "complete"
+                  && /\(demo\)$/i.test(client?.full_name ?? "")
+                  && sessions.length === 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground">Logbook vazio.</p>
+                      <p className="mt-0.5 text-muted-foreground">
+                        Cliente demo sem sessões. Gerar 2 semanas realistas.
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={seeding}
+                      onClick={async () => {
+                        setSeeding(true);
+                        try {
+                          const r: any = await seedFn({ data: { planId, weeksToSeed: 2 } });
+                          if (r?.ok) {
+                            toast.success(`${r.inserted ?? 0} sessões adicionadas.`);
+                            await reloadSessions();
+                            setMode("results");
+                            setMgmtOpen(false);
+                          } else {
+                            toast.error(r?.error ?? "Falhou ao popular logbook.");
+                          }
+                        } finally { setSeeding(false); }
+                      }}
+                    >
+                      {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                      Preencher logbook
+                    </Button>
+                  </div>
+                )}
+              </section>
             )}
+
+            {/* ── Section 4 — Ajustes técnicos ──────────────────────── */}
+            <section className="space-y-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Ajustes técnicos
+              </h3>
+              <div className="flex flex-wrap items-center gap-2">
+                {mode !== "edit" && plan?.status !== "finalized" && client && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={() => { setMode("edit"); setMgmtOpen(false); }}
+                    title="Configurar e regenerar este mesociclo"
+                  >
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Configurar mesociclo
+                  </Button>
+                )}
+                {isPhasedComplete && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    disabled={reanchorBusy}
+                    title={tCommon("plan.reanchor_rpe_title")}
+                    onClick={async () => {
+                      setReanchorBusy(true);
+                      try {
+                        const r: any = await reanchorRpeFn({ data: { planId } });
+                        if (r?.ok) {
+                          if (r.exercisesBumped > 0) {
+                            toast.success(
+                              `Re-ancorado: ${r.exercisesBumped} exercício(s) em ${r.daysTouched} dia(s) — piso ${r.tier}/${r.appetite} aplicado.`,
+                            );
+                            window.location.reload();
+                          } else {
+                            toast.info(tCommon("plan.reanchor_rpe_noop"));
+                          }
+                        } else {
+                          toast.error(r?.error ?? "Falhou re-ancorar RPE.");
+                        }
+                      } finally {
+                        setReanchorBusy(false);
+                      }
+                    }}
+                  >
+                    {reanchorBusy ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <TrendingUp className="mr-1.5 h-3.5 w-3.5" />}
+                    Re-ancorar RPE
+                  </Button>
+                )}
+                <ImportLogDialog planId={planId} plan={data} />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Acções avançadas. Validação/auditor está em Operações do bloco.
+              </p>
+            </section>
+
+            {/* ── Section 5 — Danger zone ───────────────────────────── */}
+            <section className="space-y-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-destructive">
+                Danger zone
+              </h3>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    Eliminar este plano é irreversível. Sessões registadas perdem-se.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={async () => {
+                      if (!confirm("Eliminar este plano? Esta acção não pode ser desfeita.")) return;
+                      const { error } = await supabase.from("workout_plans").delete().eq("id", planId);
+                      if (error) return toast.error(error.message);
+                      toast.success("Plano eliminado");
+                      navigate({ to: "/plans" });
+                    }}
+                  >
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Eliminar plano
+                  </Button>
+                </div>
+              </div>
+            </section>
+
           </div>
-        )}
-      </div>
-
-      {/* Demo recovery: if this is a demo client with a finalized plan and zero
-          logged sessions, offer one-click logbook seeding instead of forcing a
-          full demo recreation. */}
-      {plan?.generation_status === "complete"
-        && /\(demo\)$/i.test(client?.full_name ?? "")
-        && sessions.length === 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-          <div className="flex-1">
-            <p className="font-semibold text-foreground">Logbook vazio.</p>
-            <p className="mt-0.5 text-muted-foreground">
-              Este é um cliente demo mas o logbook não foi populado. Carrega para gerar 2 semanas de sessões realistas.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            disabled={seeding}
-            onClick={async () => {
-              setSeeding(true);
-              try {
-                const r: any = await seedFn({ data: { planId, weeksToSeed: 2 } });
-                if (r?.ok) {
-                  toast.success(`${r.inserted ?? 0} sessões adicionadas.`);
-                  await reloadSessions();
-                  setMode("results");
-                } else {
-                  toast.error(r?.error ?? "Falhou ao popular logbook.");
-                }
-              } finally { setSeeding(false); }
-            }}
-          >
-            {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            Preencher logbook agora
-          </Button>
-        </div>
-      )}
-
-      {/* Concluir bloco e iniciar o próximo. O caminho manual está sempre
-          disponível para qualquer plano finalizado; a opção IA só aparece
-          em planos de demonstração (mantém a IA como atalho honesto). */}
-      {plan?.generation_status === "complete"
-        && plan?.status !== "archived" && (
-        <>
-          <NextBlockCard
-            planId={planId}
-            blockNumber={(plan as any).block_number ?? 1}
-            sessions={sessions as any}
-            fullyLogged={isPlanFullyLogged(plan, sessions.length)}
-            allowAi={/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length > 0}
-            completionState={(plan as any).completion_state}
-            onMarkFinished={async () => {
-              const r: any = await markFinishedFn({ data: { planId, archive: false } });
-              if (r?.ok) {
-                toast.success(tCommon("plan.marked_complete"));
-                setPlan({ ...plan, completion_state: "finished_logging" });
-              } else {
-                toast.error(r?.error ?? tCommon("plan.mark_complete_failed"));
-              }
-            }}
-          />
-          {/* R66: deterministic next-week generator, gated by adherence ≥ 80%. */}
-          <NextWeekCard
-            planId={planId}
-            onCreated={async () => { await reloadPlanDays(); await reloadSessions(); }}
-          />
-        </>
-      )}
-
-      {/* AI Validation Report — always visible to the trainer */}
-      <ValidationReport generationMeta={plan.generation_meta} />
-
-      {/* Legacy plan: prompt regeneration */}
-      {data.weeks.length > 0 && isLegacyPlan(data) && client && (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-          <div className="flex-1">
-            <p className="font-semibold text-foreground">This plan uses the old Protocol structure.</p>
-            <p className="mt-0.5 text-muted-foreground">
-              Regenerate from {client?.full_name ?? "client"}'s assessment to get the full session arc — warmup, activation,
-              dynamic prep, main work, cooldown and an optional finisher — plus muscle tags, RPE and tempo on every exercise.
-            </p>
-          </div>
-          <Link
-            to="/clients/$clientId"
-            params={{ clientId: client.id }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
-          >
-            <Sparkles className="h-3 w-3" /> Regenerate
-          </Link>
-        </div>
-      )}
-        </div>
-      </details>
+        </SheetContent>
+      </Sheet>
 
       {/* Mode tabs — editorial underline row, tonal hover, no card-soup.
           Hidden when a parent deck owns `mode`. */}

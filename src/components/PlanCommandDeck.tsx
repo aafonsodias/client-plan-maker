@@ -171,24 +171,15 @@ export function PlanCommandDeck({
                 Avaliação · PDF
               </DropdownMenuItem>
             )}
-            {mode !== "edit" && (
-              <DropdownMenuItem onSelect={() => onModeChange("edit")}>
-                <Sparkles className="mr-2 h-4 w-4" /> Configurar mesociclo
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem onSelect={() => onModeChange("progress")}>
               <TrendingUp className="mr-2 h-4 w-4" /> Progresso
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
-                const el = document.getElementById("plan-details-actions") as HTMLDetailsElement | null;
-                if (el) {
-                  el.open = true;
-                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
+                window.dispatchEvent(new CustomEvent("plan:open-management"));
               }}
             >
-              <SettingsIcon className="mr-2 h-4 w-4" /> Detalhes & acções do plano
+              <SettingsIcon className="mr-2 h-4 w-4" /> Gestão do Plano
             </DropdownMenuItem>
             {menuItems && menuItems.length > 0 && (
               <>
