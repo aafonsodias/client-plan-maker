@@ -152,17 +152,19 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <p className="break-words text-sm font-semibold sm:text-base">{client.full_name}</p>
-            {signals.tier && signals.tier.id !== "none" && (
-              <span
-                className="inline-flex items-center"
-                title={t(`assessment:history_block.tier.${signals.tier.key}`, { defaultValue: signals.tier.id })}
-                aria-label={`tier ${signals.tier.id}`}
-              >
-                <span className={`h-2 w-2 rounded-full ${signals.tier.dotClass}`} />
-              </span>
-            )}
+          <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2.5 sm:gap-y-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <p className="min-w-0 truncate text-sm font-semibold sm:text-base">{client.full_name}</p>
+              {signals.tier && signals.tier.id !== "none" && (
+                <span
+                  className="inline-flex shrink-0 items-center"
+                  title={t(`assessment:history_block.tier.${signals.tier.key}`, { defaultValue: signals.tier.id })}
+                  aria-label={`tier ${signals.tier.id}`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${signals.tier.dotClass}`} />
+                </span>
+              )}
+            </div>
             {phase && (
               <span className="inline-flex">
                 <ClientPhasePill phase={phase} />
