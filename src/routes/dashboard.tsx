@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
-  TrendingUp, TrendingDown, Minus, Loader2, Download,
+  TrendingUp, TrendingDown, Minus, Loader2, Download, Info,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
 import { usePlanBlockEvolution } from "@/hooks/use-clients-block-evolution";
@@ -463,15 +463,6 @@ function Dashboard() {
             {t("dashboard.trainer_tools_label")}
           </span>
           <div className="scrollbar-hide -mx-1 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-1">
-          <button
-            type="button"
-            onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
-            aria-label={t("dashboard.trainer_tools_acquisition_pdf_aria")}
-          >
-            <Download className="h-3 w-3" />
-            <span>{t("dashboard.trainer_tools_acquisition_pdf")}</span>
-          </button>
           <Link
             to="/manual"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
@@ -536,6 +527,15 @@ function Dashboard() {
                   {t("dashboard.title")}
                 </h2>
                 <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
+                <button
+                  type="button"
+                  onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+                  title={t("dashboard.trainer_tools_acquisition_pdf")}
+                  aria-label={t("dashboard.trainer_tools_acquisition_pdf_aria")}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-chip-active hover:text-foreground"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="scrollbar-hide flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:w-auto">
                 {[
