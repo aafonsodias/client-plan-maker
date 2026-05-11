@@ -164,6 +164,39 @@ function KnowledgePage() {
         />
       </div>
 
+      <div className="mt-6 rounded-2xl border border-border/60 bg-card/40 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              Recursos para trainers
+            </p>
+            <h3 className="mt-1 font-display text-lg">
+              Boas Práticas de Aquisição e Retenção de Clientes
+            </h3>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Guia informado pela evidência, focado em aquisição e retenção. Documento
+              interno — não destinado ao cliente final.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadTrainerAcquisitionRetentionPdf("pt")}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" /> PT-PT
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadTrainerAcquisitionRetentionPdf("en")}
+            >
+              <Download className="mr-2 h-3.5 w-3.5" /> EN
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="sticky bottom-4 mt-6 flex justify-end">
         <Button size="lg" onClick={handleSave} disabled={saving}>
           {saving ? (
