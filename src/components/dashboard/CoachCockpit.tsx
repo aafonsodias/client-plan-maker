@@ -274,178 +274,155 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   }, [clients, latestPlanByClient, bookings, packs, clientById, t]);
 
   return (
-    <section className="space-y-3">
-      {/* Today + This week — golden-ratio split on desktop, stacked on mobile.
-          grid-cols-1 + min-w-0 on the items prevents long content from blowing
-          out the row width on mobile (was pushing both panels past px-4). */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
-      {/* Today / Needs attention */}
-      <div className="min-w-0 rounded-2xl border border-border/50 bg-card/40 p-3">
-        <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          <span>{t("dashboard.today.title")}</span>
-          <Sparkles className="h-3 w-3 text-muted-foreground/60" />
-        </div>
-        {todayRows.length === 0 ? (
-          <p className="px-1 py-3 text-xs text-muted-foreground">
-            {t("dashboard.today.empty")}
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {todayRows.map((r) => {
-              const dot =
-                r.tone === "amber" ? "bg-amber-500"
-                : r.tone === "emerald" ? "bg-emerald-500"
-                : r.tone === "rose" ? "bg-rose-500"
-                : "bg-muted-foreground/40";
-              const statusText =
-                r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
-                : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
-                : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
-                : "text-muted-foreground";
-              return (
-                <li key={r.key}>
-                  <Link
-                    to={r.to as any}
-                    params={r.params as any}
-                    className="group flex items-center gap-3 py-2 transition hover:text-foreground"
-                  >
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      {r.name && r.status ? (
-                        <>
-                          <span className="font-medium text-foreground">{r.name}</span>
-                          <span className="text-muted-foreground/60"> · </span>
-                          <span className={statusText}>{r.status}</span>
-                        </>
-                      ) : (
-                        <span className={statusText}>{r.text}</span>
-                      )}
-                    </span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      {/* Hero strip — tonal separation, content left-anchored to match Today panel */}
-      <div className="min-w-0 rounded-2xl border border-border/50 bg-card/40 p-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
-          {/* Left · week */}
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {lang === "pt" ? "Esta semana" : "This week"}
-            </p>
-            <p className="mt-0.5 font-display text-lg font-light tracking-tight text-foreground">
-              {fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
-              <span className="ml-2 font-sans text-sm font-normal text-muted-foreground">
-                · {sessionsCount} {lang === "pt" ? "sessões" : "sessions"}
-              </span>
-            </p>
-          </div>
-          {/* Right · revenue + CTA — sits next to the week info, not flung to the edge. */}
-          <div
-            className="flex flex-wrap items-center gap-x-5 gap-y-2"
-            title={t("dashboard.revenue_caption")}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {lang === "pt" ? "Receita" : "Revenue"}
-              </span>
+    <section className="space-y-2">
+      {/* Compact cockpit strip + slim week — one bordered surface */}
+      <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/40">
+        {/* Stat strip */}
+        <div className="flex flex-wrap items-stretch divide-x divide-border/50 text-xs">
+          <Stat
+            label={t("dashboard.today.title")}
+            value={todayRows.length || 0}
+            tone={todayRows.some((r) => r.tone === "amber" || r.tone === "rose") ? "amber" : "muted"}
+          />
+          <Stat
+            label={lang === "pt" ? "Esta semana" : "This week"}
+            value={fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
+            mono={false}
+          />
+          <Stat
+            label={lang === "pt" ? "Sessões" : "Sessions"}
+            value={sessionsCount}
+          />
+          <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <span>{lang === "pt" ? "Receita" : "Revenue"}</span>
               <button
                 type="button"
                 onClick={toggleRevenue}
-                aria-label={revealRevenue ? (lang === "pt" ? "Ocultar valores" : "Hide amounts") : (lang === "pt" ? "Mostrar valores" : "Show amounts")}
-                className="rounded p-0.5 text-muted-foreground transition hover:text-foreground"
+                aria-label={revealRevenue ? (lang === "pt" ? "Ocultar" : "Hide") : (lang === "pt" ? "Mostrar" : "Show")}
+                className="rounded p-0.5 text-muted-foreground/70 transition hover:text-foreground"
               >
                 {revealRevenue ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
               </button>
-              <span className="flex items-center gap-1 font-mono text-base tabular-nums">
-                <Coins className="h-3.5 w-3.5 text-amber-500" />
-                {revealRevenue ? (
-                  <PriceTag eur={expectedIncome} interactive={false} />
-                ) : (
-                  <span className="tracking-widest text-muted-foreground">•••€</span>
-                )}
-              </span>
             </div>
-            <Link
-              to="/schedule"
-              className="group inline-flex items-center gap-1 text-xs font-medium text-foreground/80 transition hover:text-foreground"
-            >
-              {lang === "pt" ? "Agenda" : "Schedule"}
-              <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
-            </Link>
+            <span className="mt-0.5 inline-flex items-center gap-1 font-mono text-sm tabular-nums">
+              <Coins className="h-3 w-3 text-amber-500/80" />
+              {revealRevenue ? (
+                <PriceTag eur={expectedIncome} interactive={false} />
+              ) : (
+                <span className="tracking-widest text-muted-foreground">•••€</span>
+              )}
+            </span>
           </div>
+          <Stat
+            label={lang === "pt" ? "Lembretes" : "Reminders"}
+            value={nudges.length}
+            tone={nudges.length > 0 ? "amber" : "muted"}
+          />
         </div>
-      </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
-        {/* Mini timetable */}
+        {/* Slim week strip — single row, click → /schedule */}
         <button
           type="button"
           onClick={() => navigate({ to: "/schedule" })}
-          className="group relative rounded-2xl border border-border/50 bg-card/40 p-3 text-left transition hover:bg-muted/40"
+          className="group flex w-full items-stretch gap-1 border-t border-border/50 bg-background/20 px-2 py-2 text-left transition hover:bg-muted/30"
           aria-label={lang === "pt" ? "Abrir agenda da semana" : "Open this week's schedule"}
         >
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <span>{lang === "pt" ? "Calendário da semana" : "Week timetable"}</span>
-            <span className="opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">→</span>
-          </div>
-          <MiniWeek
+          <SlimWeek
             monday={monday}
             bookingsByDay={bookingsByDay}
-            clientById={clientById}
             packColorById={packColorById}
             lang={lang}
           />
+          <ArrowRight className="ml-1 h-3.5 w-3.5 self-center text-muted-foreground/60 opacity-0 transition group-hover:opacity-100" />
         </button>
+      </div>
 
-        {/* Nudges */}
-        <div className="rounded-2xl border border-border/50 bg-card/40 p-3">
-          <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <span>{lang === "pt" ? "Lembretes para clientes" : "Client reminders"}</span>
-            <span className="text-muted-foreground/60">·</span>
-          </div>
-          {nudges.length === 0 ? (
-            <p className="px-2 py-6 text-center text-xs text-muted-foreground">
-              {lang === "pt" ? "Nada pendente. Boa semana." : "Nothing pending. Have a good week."}
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {nudges.map((n) => {
-                const tone =
-                  n.tone === "amber"
-                    ? "text-amber-600 dark:text-amber-400"
-                    : n.tone === "rose"
-                      ? "text-rose-600 dark:text-rose-400"
-                      : "text-muted-foreground";
-                return (
-                  <li key={n.key} className="flex items-center gap-3 py-2">
-                    <n.icon className={`h-4 w-4 shrink-0 ${tone}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{n.title}</p>
-                      {n.sub && <p className="truncate text-[11px] text-muted-foreground">{n.sub}</p>}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-1 text-[11px] font-medium hover:bg-secondary"
-                      title={lang === "pt" ? "Compor mensagem" : "Compose message"}
-                    >
-                      <MessageCircle className="h-3 w-3" />
-                      {lang === "pt" ? "Mensagem" : "Message"}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+      {/* Today + Reminders — only render when there is something to show. Two
+          tight columns on desktop, stacked on mobile. */}
+      {(todayRows.length > 0 || nudges.length > 0) && (
+        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+          {todayRows.length > 0 && (
+            <div className="min-w-0 rounded-xl border border-border/50 bg-card/40 px-3 py-2">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {t("dashboard.today.title")}
+              </div>
+              <ul className="divide-y divide-border/50">
+                {todayRows.slice(0, 4).map((r) => {
+                  const dot =
+                    r.tone === "amber" ? "bg-amber-500"
+                    : r.tone === "emerald" ? "bg-emerald-500"
+                    : r.tone === "rose" ? "bg-rose-500"
+                    : "bg-muted-foreground/40";
+                  const statusText =
+                    r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
+                    : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
+                    : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+                    : "text-muted-foreground";
+                  return (
+                    <li key={r.key}>
+                      <Link
+                        to={r.to as any}
+                        params={r.params as any}
+                        className="group flex items-center gap-2 py-1.5 transition hover:text-foreground"
+                      >
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                        <span className="min-w-0 flex-1 truncate text-[13px]">
+                          {r.name && r.status ? (
+                            <>
+                              <span className="font-medium text-foreground">{r.name}</span>
+                              <span className="text-muted-foreground/60"> · </span>
+                              <span className={statusText}>{r.status}</span>
+                            </>
+                          ) : (
+                            <span className={statusText}>{r.text}</span>
+                          )}
+                        </span>
+                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          {nudges.length > 0 && (
+            <div className="min-w-0 rounded-xl border border-border/50 bg-card/40 px-3 py-2">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {lang === "pt" ? "Lembretes" : "Reminders"}
+              </div>
+              <ul className="divide-y divide-border/50">
+                {nudges.slice(0, 4).map((n) => {
+                  const tone =
+                    n.tone === "amber"
+                      ? "text-amber-600 dark:text-amber-400"
+                      : n.tone === "rose"
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-muted-foreground";
+                  return (
+                    <li key={n.key} className="flex items-center gap-2 py-1.5">
+                      <n.icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-medium">{n.title}</p>
+                        {n.sub && <p className="truncate text-[11px] text-muted-foreground">{n.sub}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        title={lang === "pt" ? "Compor mensagem" : "Compose message"}
+                      >
+                        <MessageCircle className="h-3 w-3" />
+                        {lang === "pt" ? "Mensagem" : "Message"}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </div>
-      </div>
+      )}
 
       <MessageComposerSheet
         open={!!composer}
@@ -457,7 +434,88 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   );
 }
 
-function MiniWeek({
+function Stat({
+  label,
+  value,
+  tone = "muted",
+  mono = true,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "muted" | "amber";
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </span>
+      <span
+        className={`mt-0.5 truncate text-sm tabular-nums ${mono ? "font-mono" : "font-display font-light"} ${
+          tone === "amber" ? "text-amber-500" : "text-foreground"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function SlimWeek({
+  monday,
+  bookingsByDay,
+  packColorById,
+  lang,
+}: {
+  monday: Date;
+  bookingsByDay: Booking[][];
+  packColorById: Map<string, string>;
+  lang: "pt" | "en";
+}) {
+  const dayLabels = lang === "pt"
+    ? ["S", "T", "Q", "Q", "S", "S", "D"]
+    : ["M", "T", "W", "T", "F", "S", "S"];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return (
+    <div className="grid flex-1 grid-cols-7 gap-1">
+      {Array.from({ length: 7 }).map((_, dow) => {
+        const date = addDays(monday, dow);
+        const isToday = date.getTime() === today.getTime();
+        const dayBookings = bookingsByDay[dow] ?? [];
+        return (
+          <div
+            key={dow}
+            className={`flex items-center justify-between gap-1.5 rounded-md px-2 py-1 text-[11px] ${
+              isToday
+                ? "bg-amber-500/10 text-amber-500"
+                : "text-muted-foreground/80"
+            }`}
+          >
+            <span className="flex items-baseline gap-1">
+              <span className="font-semibold uppercase tracking-widest">{dayLabels[dow]}</span>
+              <span className="font-mono">{String(date.getDate()).padStart(2, "0")}</span>
+            </span>
+            <span className="flex items-center gap-0.5">
+              {dayBookings.slice(0, 3).map((b) => {
+                const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
+                const cls = packBlockClasses(color);
+                return <span key={b.id} className={`inline-block h-1.5 w-1.5 rounded-full ${cls.dot}`} />;
+              })}
+              {dayBookings.length > 3 && (
+                <span className="text-[9px] text-muted-foreground">+{dayBookings.length - 3}</span>
+              )}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Legacy MiniWeek kept for parity (no longer used in cockpit, but exported
+// implicitly via the file). Inline here as dead-code-eliminated stub.
+function _MiniWeek_unused({
   monday,
   bookingsByDay,
   clientById,
