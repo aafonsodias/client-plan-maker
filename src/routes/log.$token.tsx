@@ -157,7 +157,7 @@ function ClientLogPage() {
   // When week/day/date changes: rebuild entries from plan, then try to
   // restore an in-progress draft for this exact slot.
   useEffect(() => {
-    if (!day || !info) {
+    if (!day || !info || !dayLabel) {
       setEntries([]);
       return;
     }
