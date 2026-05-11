@@ -1739,3 +1739,99 @@ export const persistRegeneratedPlan = createServerFn({ method: "POST" })
       days_written: rows.length,
     };
   });
+
+// ---------------------------------------------------------------------------
+// getPlanConstraints — read-only inspection of the tier + RPE floors that
+// would be applied if the trainer regenerates this plan right now. Powers
+// the "Configurar mesociclo" panel chips so the trainer sees the réguas
+// before clicking Regenerar. Pure read; no AI call, no writes.
+// ---------------------------------------------------------------------------
+export const getPlanConstraints = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ plan_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.user.id;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: plan, error: planErr } = await supabaseAdmin
+      .from("workout_plans")
+      .select("id, trainer_id, brief, client_id, assessment_id")
+      .eq("id", data.plan_id)
+      .maybeSingle();
+    if (planErr || !plan) {
+      return { ok: false as const, error: planErr?.message ?? "Plan not found" };
+    }
+    if ((plan as any).trainer_id !== userId) {
+      return { ok: false as const, error: "Forbidden" };
+    }
+
+    // Resolve assessment (explicit id → fallback to latest for client).
+    let assessment: any = null;
+    const assessmentId = (plan as any).assessment_id as string | null;
+    const clientId = (plan as any).client_id as string | null;
+    if (assessmentId) {
+      const { data: a } = await supabaseAdmin
+        .from("assessments").select("*").eq("id", assessmentId).maybeSingle();
+      assessment = a;
+    } else if (clientId) {
+      const { data: a } = await supabaseAdmin
+        .from("assessments").select("*").eq("client_id", clientId)
+        .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      assessment = a;
+    }
+
+    const brief = ((plan as any).brief ?? {
+      red_flags: [] as string[],
+      training_age_band: "intermediate",
+      intensity_appetite: "padrao",
+    }) as any;
+
+    if (!assessment) {
+      return {
+        ok: true as const,
+        hasAssessment: false,
+        tier: "conservative" as const,
+        reasons: ["Sem assessment — defaults conservadores"],
+        rpeFloors: rpeFloors("conservative", brief.intensity_appetite),
+      };
+    }
+
+    const tier = classifyTier(brief, assessment);
+    const floors = rpeFloors(tier, brief.intensity_appetite);
+
+    // Re-derive lightweight reason chips. Mirrors classifyTier signals
+    // without exposing the full preparticipation result.
+    const reasons: string[] = [];
+    const PATTERNS = ["squat", "hinge", "push", "pull", "carry", "lunge"] as const;
+    const movementFailures = PATTERNS.filter((p) => {
+      const c = assessment?.[`${p}_form_criteria`];
+      if (!c || typeof c !== "object") return false;
+      return Object.values(c as Record<string, unknown>).filter((v) => v === false).length >= 3;
+    }).length;
+    if (movementFailures > 0) {
+      reasons.push(`${movementFailures} falha${movementFailures === 1 ? "" : "s"} no movement screen`);
+    }
+    const stress = typeof assessment?.stress_level === "number" ? assessment.stress_level : null;
+    if (stress !== null && stress >= 7) reasons.push(`stress ${stress}/10`);
+    const sleep = typeof assessment?.sleep_quality === "number" ? assessment.sleep_quality : null;
+    if (sleep !== null && sleep <= 4) reasons.push(`sono ${sleep}/10`);
+    const redFlagCount = (brief.red_flags ?? []).length;
+    if (redFlagCount > 0) reasons.push(`${redFlagCount} red flag${redFlagCount === 1 ? "" : "s"}`);
+    if (brief.training_age_band === "beginner") reasons.push("training age: beginner");
+    if (assessment?.parq_passed === false) reasons.push("PAR-Q failed");
+    const acsm = String(assessment?.acsm_risk_category ?? "").toLowerCase();
+    if (acsm === "high") reasons.push("ACSM risk: high");
+    if (reasons.length === 0) {
+      reasons.push(tier === "advanced" ? "sem flags activas" : "perfil padrão");
+    }
+
+    return {
+      ok: true as const,
+      hasAssessment: true,
+      tier,
+      reasons,
+      rpeFloors: floors,
+    };
+  });
