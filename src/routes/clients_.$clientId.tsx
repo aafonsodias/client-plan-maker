@@ -686,6 +686,11 @@ function ClientDetail() {
 
   // Phased generation feature-flag + brief preview coverage.
   const [phasedEnabled, setPhasedEnabled] = useState(false);
+  // Round 2 — Pre-Plan Review (zero-AI preflight). Opening this sheet must
+  // never trigger a server call. The only AI/network call lives behind the
+  // sheet's "Criar briefing inicial" primary action, which calls
+  // `runPhasedStart()` with the duration the trainer picked inside the sheet.
+  const [prePlanReviewOpen, setPrePlanReviewOpen] = useState(false);
   const [briefCoverage, setBriefCoverage] = useState<{ done: number; total: number } | null>(null);
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
