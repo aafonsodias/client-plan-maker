@@ -387,14 +387,20 @@ export default function PlanEditorSurface({
   if (!plan) return <p className="text-muted-foreground">{tCommon("actions.loading")}</p>;
 
   return (
-    <div className="space-y-4">
+    <div className={hideOwnChrome ? "flex flex-col gap-4" : "space-y-4"}>
       {/* Round 63 — "Needs human review" lives on its own surface, above
           the collapsed plan chrome. Discreet amber, not error red. */}
       <HumanReviewBanner generationMeta={plan.generation_meta} />
       {/* Plan chrome — collapsed by default so the workout table is the first
           thing on the page. Trainer expands when they need title, actions,
           summary, block transition, etc. */}
-      <details id="plan-details-actions" className="group rounded-2xl border border-border bg-card/40 open:bg-card">
+      <details
+        id="plan-details-actions"
+        className={
+          "group rounded-2xl border border-border bg-card/40 open:bg-card" +
+          (hideOwnChrome ? " order-last" : "")
+        }
+      >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
           <span className="inline-flex items-center gap-2 normal-case tracking-normal">
             <SettingsIcon className="h-3.5 w-3.5" />
