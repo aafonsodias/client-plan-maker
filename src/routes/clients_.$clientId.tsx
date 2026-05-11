@@ -4360,6 +4360,12 @@ function AssessmentSection({
   for (const child of childArray) {
     if (isValidElement(child) && typeof (child.props as any)?.id === "string" && sectionIds.includes((child.props as any).id)) {
       sectionChildren.set((child.props as any).id, child);
+    } else if (isValidElement(child) && (child.type as any) === AssessmentGroupHeader) {
+      // Round 1 — Self Intake / Assessment Session group banners. Render
+      // inline in non-focused desktop mode (children pass-through). In
+      // focused/mobile mode the group context lives in the sticky header,
+      // so we drop the banner from `extras` to avoid duplicate visuals.
+      continue;
     } else {
       extras.push(child);
     }
