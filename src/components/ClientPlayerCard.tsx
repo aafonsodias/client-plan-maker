@@ -140,15 +140,15 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
 
   return (
     <div
-      className={`group relative border-b border-border/50 last:border-b-0 ${
+      className={`group relative transition ${
         flagged ? "border-l-2 border-l-amber-500/60" : ""
       }`}
     >
-      <div className="flex items-stretch hover:bg-muted/60">
+      <div className="flex items-stretch transition group-hover:bg-muted/40">
       <Link
         to="/clients/$clientId"
         params={{ clientId: client.id }}
-        className="flex flex-1 items-center gap-3 px-3 py-3 text-left sm:gap-4 sm:px-5 sm:py-4"
+        className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left sm:gap-4 sm:px-5 sm:py-3"
       >
         <ClientAvatar name={client.full_name} photoUrl={client.photo_url} size={40} />
         <div className="min-w-0 flex-1 space-y-1">
@@ -224,53 +224,64 @@ export function ClientPlayerCard({ client, phase, plan, logs, onDelete, flagged 
             <p className="truncate text-xs text-muted-foreground">{client.email ?? t("clients.no_email")}</p>
           )}
         </div>
-        <span
-          className={[
-            "ml-2 hidden shrink-0 self-center items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium tabular-nums sm:inline-flex",
-            protocolStage.tone === "emerald"
-              ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
-              : protocolStage.tone === "amber"
-                ? "border-amber-500/25 bg-amber-500/[0.06] text-amber-300"
-                : "border-border bg-background text-muted-foreground",
-          ].join(" ")}
-          title={`Protocolo · ${protocolStage.label}`}
-        >
-          {protocolStage.n != null && <span className="opacity-70">{protocolStage.n}/5</span>}
-          <span>{protocolStage.label}</span>
-        </span>
+        {/* Right rail — protocol pill + last-log line, both visible */}
+        <div className="ml-2 hidden shrink-0 flex-col items-end justify-center gap-1 self-center sm:flex">
+          <span
+            className={[
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium tabular-nums",
+              protocolStage.tone === "emerald"
+                ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-400"
+                : protocolStage.tone === "amber"
+                  ? "border-amber-500/25 bg-amber-500/[0.06] text-amber-300"
+                  : "border-border bg-background text-muted-foreground",
+            ].join(" ")}
+            title={`Protocolo · ${protocolStage.label}`}
+          >
+            {protocolStage.n != null && <span className="opacity-70">{protocolStage.n}/5</span>}
+            <span>{protocolStage.label}</span>
+          </span>
+          {lastLog && (
+            <span className="text-[10px] tabular-nums text-muted-foreground">
+              {t("clients.card.last_log_short", {
+                defaultValue: "Último: {{when}}",
+                when: formatRelativeDays(days, lang),
+              })}
+            </span>
+          )}
+        </div>
       </Link>
       {nextAction && (
         nextAction.target.type === "client" ? (
           <Link
             to="/clients/$clientId"
             params={{ clientId: nextAction.target.clientId }}
-            className="hidden self-center mr-1 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-amber-700 opacity-0 transition hover:bg-amber-500/10 group-hover:opacity-100 focus:opacity-100 sm:inline-flex dark:text-amber-400"
+            className="mr-1 hidden items-center gap-1.5 self-center rounded-full border border-amber-500/30 bg-amber-500/[0.06] px-2.5 py-1 text-[11px] font-medium text-amber-700 transition hover:border-amber-500/60 hover:bg-amber-500/15 sm:inline-flex dark:text-amber-300"
             onClick={(e) => e.stopPropagation()}
           >
             {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
             <span>{t(nextAction.ctaKey)}</span>
-            <ArrowRight className="h-3 w-3" />
+            <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
           </Link>
         ) : (
           <Link
             to="/plans/new"
             search={{ clientId: nextAction.target.clientId }}
-            className="hidden self-center mr-1 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-amber-700 opacity-0 transition hover:bg-amber-500/10 group-hover:opacity-100 focus:opacity-100 sm:inline-flex dark:text-amber-400"
+            className="mr-1 hidden items-center gap-1.5 self-center rounded-full border border-amber-500/30 bg-amber-500/[0.06] px-2.5 py-1 text-[11px] font-medium text-amber-700 transition hover:border-amber-500/60 hover:bg-amber-500/15 sm:inline-flex dark:text-amber-300"
             onClick={(e) => e.stopPropagation()}
           >
             {ActionIcon && <ActionIcon className="h-3.5 w-3.5" />}
             <span>{t(nextAction.ctaKey)}</span>
-            <ArrowRight className="h-3 w-3" />
+            <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
           </Link>
         )
       )}
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
-            className="mr-3 self-center rounded-md p-2 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
+            className="mr-3 self-center rounded-md p-1.5 text-muted-foreground/40 opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus:opacity-100"
             aria-label={t("clients.delete_aria")}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </AlertDialogTrigger>
         <AlertDialogContent>

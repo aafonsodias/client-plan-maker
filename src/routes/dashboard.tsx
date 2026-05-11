@@ -299,7 +299,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
+    <div className="mx-auto w-full max-w-6xl space-y-4">
       <OnboardingChecklist />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -527,7 +527,7 @@ function Dashboard() {
                 })}
               </div>
             </div>
-            <div>
+            <div className="divide-y divide-border/40">
               {filteredClients.map((c) => {
                 const d = daysUntilBirthday(c.date_of_birth);
                 const isBday = d !== null && d <= 7;

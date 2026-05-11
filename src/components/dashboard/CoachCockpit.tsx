@@ -341,7 +341,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       {/* Priorities — compact single-line action feed. Today + reminders merged
           into one horizontal list, max 4 items. No second large card. */}
       {(todayRows.length > 0 || nudges.length > 0) && (
-        <div className="flex items-center gap-2 overflow-x-auto px-1 text-[12px]">
+        <div className="flex flex-wrap items-center gap-2 px-1 text-[12px]">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {lang === "pt" ? "Prioridades" : "Priorities"}
           </span>
@@ -362,7 +362,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
                   <Link
                     to={r.to as any}
                     params={r.params as any}
-                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
+                    className="group/pri inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
                   >
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
                     {r.name && r.status ? (
@@ -374,6 +374,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
                     ) : (
                       <span className={statusText}>{r.text}</span>
                     )}
+                    <ArrowRight className="h-3 w-3 text-muted-foreground/60 opacity-0 transition group-hover/pri:opacity-100" />
                   </Link>
                 </li>
               );
