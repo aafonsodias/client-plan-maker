@@ -1972,6 +1972,29 @@ function RegenerateWithFeedbackDialog({
           <p className="text-muted-foreground">
             Tell the AI what to change. Be specific — reference week, day, exercise or rationale. The current plan will be overwritten.
           </p>
+          {constraintsQ.isLoading && (
+            <div className="space-y-1.5">
+              <div className="h-6 animate-pulse rounded-md bg-muted/40" />
+              <div className="h-6 animate-pulse rounded-md bg-muted/40" />
+            </div>
+          )}
+          {constraints && (
+            <div className="space-y-1.5">
+              <div
+                className={`flex flex-wrap items-center gap-2 rounded-md border px-2.5 py-1.5 text-[11px] ${tierTone}`}
+                title={constraints.reasons.join(" · ")}
+              >
+                <span className="font-semibold uppercase tracking-widest">Tier</span>
+                <span>{tierLabel}</span>
+                <span className="text-foreground/70">· {constraints.reasons.join(" · ")}</span>
+              </div>
+              <div className="rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                <span className="font-semibold uppercase tracking-widest text-foreground/80">RPE mín</span>
+                {" — "}
+                Main {constraints.rpeFloors.main} · Acessórios {constraints.rpeFloors.accessory} · Carries {constraints.rpeFloors.carry}
+              </div>
+            </div>
+          )}
           <Label htmlFor="regen-fb" className="text-xs uppercase tracking-widest text-muted-foreground">
             Your corrections
           </Label>
