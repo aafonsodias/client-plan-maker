@@ -952,5 +952,40 @@
     "intake_pending": "Auto-avaliação por concluir",
     "disclaimer": "Documento de apoio à prescrição de exercício e revisão do treinador. Não constitui diagnóstico nem clearance médico.",
     "footer_page": "Página {{page}} de {{total}}"
+  },
+  "session_helper": {
+    "cta": "Guia da sessão (PDF)",
+    "brand": "PROTOCOL",
+    "eyebrow": "Guia da sessão de avaliação · apoio à observação",
+    "title": "Guia da Sessão de Avaliação",
+    "no_name": "Cliente",
+    "purpose": "Apoia a observação prática durante a sessão presencial. Use como guia rápido offline; introduza os valores na app a seguir.",
+    "app_primary": "Use a aplicação como fonte principal. Use este PDF apenas como apoio e introduza os resultados na app depois.",
+    "equipment_title": "Material necessário",
+    "equipment": {
+      "mirror": "Espelho",
+      "tape": "Fita métrica (se incluir antropometria)",
+      "space": "Cadeira / parede / ~2 m de chão livre",
+      "timer": "Cronómetro ou telemóvel",
+      "camera": "Câmara (opcional, para rever vídeo)"
+    },
+    "safety_title": "Segurança — pare imediatamente se:",
+    "safety": {
+      "pain": "Dor aguda ou a piorar (especialmente articular).",
+      "dizzy": "Tonturas ou pré-síncope.",
+      "chest": "Dor no peito ou pressão torácica.",
+      "breath": "Falta de ar desproporcional ao esforço.",
+      "neuro": "Sintomas neurológicos (dormência, fraqueza, alterações de visão).",
+      "swelling": "Inchaço súbito ou agudo.",
+      "trauma": "Sintomas após trauma recente.",
+      "refer": "Procure avaliação clínica qualificada se os sintomas persistirem ou forem invulgares.",
+      "not_diagnosis": "Não constitui diagnóstico nem aptidão médica."
+    },
+    "checklist_title": "Checklist prático por secção",
+    "checklist_note": "Os cartões nas páginas seguintes detalham cada teste suportado pela aplicação.",
+    "screen_intro": "Marque os critérios cumpridos. Anote a capacidade observada nos espaços. Pare se houver dor.",
+    "no_vo2": "O cálculo de VO₂máx é feito automaticamente pela app — basta introduzir os valores.",
+    "footer": "Apoio à observação de exercício — não é diagnóstico nem aptidão médica.",
+    "footer_page": "Pág. {{page}}/{{total}}"
   }
 }
