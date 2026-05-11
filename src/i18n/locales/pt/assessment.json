@@ -894,5 +894,63 @@
     "legal": "Estas definições alimentam um motor de prescrição; não substituem avaliação clínica.",
     "cancel": "Cancelar",
     "confirm": "Criar briefing inicial"
+  },
+  "summary_pdf": {
+    "cta": "Resumo da avaliação (PDF)",
+    "cta_short": "Exportar resumo (PDF)",
+    "brand": "PROTOCOL",
+    "eyebrow": "Resumo da avaliação · apoio à prescrição",
+    "title": "Resumo da avaliação",
+    "no_name": "Cliente",
+    "phase": {
+      "self_intake_pending": "Auto-avaliação em curso",
+      "session_pending": "Sessão de avaliação pendente",
+      "complete": "Avaliação concluída"
+    },
+    "status": {
+      "self_intake": "Auto-avaliação",
+      "session": "Sessão"
+    },
+    "sections": {
+      "profile": "Perfil",
+      "training": "Configuração de treino",
+      "implications": "Implicações para a prescrição",
+      "session_checklist": "Sessão de avaliação"
+    },
+    "fields": {
+      "goal": "Objectivo",
+      "goal_measure": "Medida",
+      "experience": "Experiência",
+      "years": "Anos a treinar",
+      "frequency": "Frequência",
+      "frequency_value": "{{count}} sessões/semana",
+      "session_minutes": "Duração da sessão",
+      "location": "Local",
+      "equipment": "Equipamento",
+      "equipment_none": "Sem equipamento listado"
+    },
+    "implications_intro": "Lista determinística derivada da avaliação. Cada item é uma orientação para o treinador — não um diagnóstico.",
+    "implications": {
+      "parq": "{{count}} resposta(s) PAR-Q positiva(s). Recomenda-se confirmação clínica antes de progredir intensidade.",
+      "risk_obese": "Iniciar com tier conservador (MEV) e progressão gradual.",
+      "beta_blocker": "FC pode estar atenuada — preferir RPE / talk test sobre zonas de FC.",
+      "anticoagulant": "Cautela com quedas, contacto e impacto. Evitar exercícios de risco.",
+      "hypoglycemia": "Atenção a hipoglicemia em sessões longas; planear alimentação e blocos mais curtos.",
+      "injuries": "Modificar e monitorizar padrões afectados ({{count}}: {{regions}}).",
+      "pain_notes": "Cliente reportou dor activa — rever antes de carregar o padrão afectado.",
+      "low_recovery": "Recuperação reduzida — começar com tecto RPE conservador (≤7.5) e adiar progressões.",
+      "readiness": "Prontidão comportamental baixa — priorizar adesão sobre carga.",
+      "beginner": "RPE inicial 6.5–7.5, ênfase técnica e padrões base.",
+      "no_equipment": "Sem equipamento — selecção restrita a peso corporal.",
+      "low_frequency": "Frequência baixa — preferir corpo inteiro por sessão.",
+      "short_session": "Sessões curtas — limitar acessórios, manter padrões principais.",
+      "none": "Sem cautelas particulares identificadas. Aplicar parâmetros standard de iniciação."
+    },
+    "session_complete": "Sessão de avaliação concluída.",
+    "session_complete_note": "Todos os itens práticos (antropometria, mobilidade, postura, screen, performance) foram registados.",
+    "session_checklist_intro": "Complete estas secções na próxima sessão presencial antes de gerar o plano.",
+    "intake_pending": "Auto-avaliação por concluir",
+    "disclaimer": "Documento de apoio à prescrição de exercício e revisão do treinador. Não constitui diagnóstico nem clearance médico.",
+    "footer_page": "Página {{page}} de {{total}}"
   }
 }

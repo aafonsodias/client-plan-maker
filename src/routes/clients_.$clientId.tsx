@@ -54,6 +54,7 @@ import {
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { PrePlanReviewSheet } from "@/components/plan/PrePlanReviewSheet";
+import { downloadAssessmentSummary } from "@/lib/pdf-assessment-summary";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
@@ -2096,6 +2097,30 @@ function ClientDetail() {
         </aside>
         )}
 
+        {assessment?.id && (
+          <div className="mb-2 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+              onClick={async () => {
+                try {
+                  await downloadAssessmentSummary({
+                    assessment,
+                    client,
+                    locale: i18n.language,
+                    t: t as any,
+                  });
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Falha a gerar PDF.");
+                }
+              }}
+            >
+              <FileText className="h-3.5 w-3.5" />
+              {t("summary_pdf.cta", { defaultValue: "Resumo da avaliação (PDF)" })}
+            </Button>
+          </div>
+        )}
         <AssessmentSection
           clientId={clientId}
           collapsed={effectiveCollapsed}
@@ -4052,6 +4077,7 @@ function ClientDetail() {
         open={prePlanReviewOpen}
         onOpenChange={setPrePlanReviewOpen}
         assessment={assessment}
+        client={client}
         busy={phasedBusy}
         onConfirm={(weeks) => { void runPhasedStart(weeks); }}
       />

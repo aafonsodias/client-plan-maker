@@ -1,103 +1,228 @@
-Hoje, ao concluir uma sessão, o cliente vê só "Sessão registada 💪". Os números/notas são guardados em `workout_sessions` mas só o RPE numérico alimenta `programNextWeek`. Faltam: resumo pós-sessão, leitura das notas, gráficos de progresso e bandeiras estruturadas.
+# Round 3 — Assessment Summary PDF (Deterministic)
 
-As 4 fases abaixo são incrementais — cada uma entrega valor sozinha e a seguinte assenta na anterior. P0 e P3 são deterministas (sem AI). P1 e P2 usam Lovable AI (gemini-flash, escreve em `generation_log`).
-
----
-
-## Fase P0 — Resumo pós-sessão determinista + delta vs. semana anterior
-
-**Objectivo:** substituir o "Sessão registada 💪" por um ecrã rico com números reais. Sem AI, sem dependências novas.
-
-**O que se constrói:**
-- Novo módulo `src/lib/session-summary.ts` que recebe a sessão acabada de logar + a sessão homóloga da semana anterior (mesmo `plan_id`, `day_label`, `week_number - 1`) e devolve, por exercício:
-  - top set (peso × reps melhor) e e1RM Epley (já existe `epley()` em `capacity-gain.ts`)
-  - delta vs. semana anterior: `+2.5 kg @ mesmo RPE`, `mesmo peso, RPE +1`, `primeira vez deste padrão` quando não há comparável
-  - flag visual emerald/amber/danger via `status-tone.ts`
-- Novo server fn `getSessionSummary({ sessionId })` em `src/server/sessions.functions.ts` — lê a sessão actual + a anterior pelo slot e devolve o objecto resumo (sem escrever nada).
-- Novo componente `src/components/log/SessionSummaryCard.tsx`:
-  - hero: "Sessão concluída · Sessão N · Foco" + adesão (X/Y séries)
-  - lista de highlights (top lifts, PRs detectados via `pr_celebrated_at`)
-  - tabela compacta com delta por exercício (esconde "primeira sessão" quando bloco 1 / semana 1, mostra apenas baseline registado)
-  - "Próxima sessão: <weekday> · <foco>" com CTA
-- Substituir o bloco `if (done) return …` em `src/routes/log.$token.tsx` por `<SessionSummaryCard sessionId={…} />`.
-- Mostrar este mesmo card também em `/me` na secção "Sessões recentes" ao clicar numa sessão concluída (read-only, sem CTA de iniciar).
-
-**Critérios de aceitação:** semana 1 mostra baseline ("ponto de partida registado"); semana 2+ mostra deltas reais por exercício; nenhum texto inventado; smoke 375px ok.
+A 2–3 page PDF built client-side from existing `assessment` + `client` data, generated via the same `jsPDF` stack already used for plans and trainer resources. Zero AI, zero server fns, zero schema.
 
 ---
 
-## Fase P1 — Destilação AI das notas em 1 frase
+## A. Current PDF architecture
 
-**Objectivo:** transformar `entries[].notes`, `session_notes`, `entries[].felt` (😌🎯😵‍💫) e `post_feedback.mood` numa frase humana que o cliente lê no resumo e o PT vê na timeline.
+| File | Purpose | Reuse? |
+|---|---|---|
+| `src/lib/pdf.ts` (1.7k LOC) | Workout plan PDF — jsPDF, fonts, headers, FORGE design tokens | **Reuse** colour/typography helpers only; do NOT extend this file |
+| `src/lib/trainer-resource-pdf.ts` | Acquisition/retention info PDF — jsPDF, simple multi-section layout | **Reference** as the layout template (closest in spirit) |
+| `src/lib/pdf-types.ts` | Shared types | Reuse |
+| `src/lib/download-plan.ts` | Loads plan row + calls `pdf.ts` | Mirror its pattern (load → render → save) |
+| `src/lib/compliance.ts` | Disclaimer text helpers | Reuse if a matching string exists; otherwise add new key |
 
-**Schema (migration):**
-- adicionar `workout_sessions.ai_summary text` e `workout_sessions.ai_summary_generated_at timestamptz`.
-
-**O que se constrói:**
-- Server fn `generateSessionSummary({ sessionId })` em `src/server/phased/session-summary.functions.ts`:
-  - lê sessão + sessão anterior do mesmo slot
-  - prompt curto: "Resume em 1 frase (≤140 chars) o que correu nesta sessão para o cliente. Tom do PT (você). Cita 1 highlight e 1 sinal a vigiar se existir. Não inventes."
-  - chama Lovable AI (`google/gemini-3-flash-preview`)
-  - escreve `ai_summary` + log em `generation_log` (stage: `session_summary`)
-  - retry 1× se falhar; em falha persistente, deixa `ai_summary` null e o `SessionSummaryCard` cai para os deltas determinísticos do P0
-- Disparar a server fn dentro do `submit()` de `log.$token.tsx` em background (não bloqueia o ecrã); o resumo aparece com "a escrever resumo…" → fade-in da frase.
-- Card de sessão na timeline do PT (`/dashboard` cliente individual) passa a mostrar a frase AI como subtítulo.
-
-**Critérios de aceitação:** ≥95% das gerações terminam <3s; nenhuma frase com números inventados (validação contra os entries reais); todas registadas em `generation_log`.
+**Do NOT touch** `pdf.ts` (huge, plan-specific) or any server fn.
+**Library**: jsPDF (already a dependency, font-embedded).
+**No new deps**.
 
 ---
 
-## Fase P2 — Bandeiras estruturadas das notas → autoreg
+## B. Data mapping
 
-**Objectivo:** o `programNextWeek` deixa de ler só drift de RPE e passa a ler também sinais explícitos das notas (dor lombar, fadiga alta, ombro a queixar) para ajustar carga/volume cirurgicamente em vez de em bloco.
+| PDF field | Source | Fallback if missing | Safety note |
+|---|---|---|---|
+| Client name | `clients.full_name` | "Cliente" | — |
+| Date | `new Date()` (locale) | — | — |
+| Trainer / business | `profiles.business_name` ?? `profiles.full_name` | — | white-label header |
+| Goal | `assessment.smart_specific` | "—" | — |
+| Goal measure | `assessment.smart_measurable` | omit row | — |
+| Experience | `assessment.experience_level` | "—" | drives implications |
+| Frequency | `assessment.training_days_per_week` | "—" | — |
+| Session length | `assessment.session_duration_minutes` | "—" | — |
+| Location | `assessment.training_location` | "—" | — |
+| Equipment | `assessment.available_equipment[]` (count + first 6) | "Sem equipamento listado" | — |
+| Years training | `assessment.years_training` | omit row | — |
+| Self Intake status | `assessmentGroupCounts(a).selfIntake` | always present | from helper |
+| Session status | `assessmentGroupCounts(a).session` | always present | from helper |
+| Phase | `assessmentPhase(a)` | always present | — |
+| PAR-Q yes-count | count `true` in `assessment.parq` | 0 | drives safety row |
+| Risk category | `assessment.risk?.bmi_category` | omit | informational only |
+| Med flags | `assessment.med_flags[]` | [] | beta_blocker / anticoagulant trigger rules |
+| Medications free text | `assessment.medications` | omit | print verbatim, no interpretation |
+| Injuries | `assessment.injuries[]` (label + side + severity) | "Sem lesões reportadas" | drives pattern caution |
+| Pain notes | `assessment.pain_notes` | omit | — |
+| Sleep | `assessment.sleep_quality` | "—" | poor → conservative |
+| Stress | `assessment.stress_level` | "—" | high → conservative |
+| Readiness stage | `assessment.readiness_stage` | "—" | precontemp/contemp → conservative |
+| Daily steps / seated hrs | `ext_daily_steps` / `ext_hours_seated` | omit | low activity → conservative |
+| Photos | NOT included | n/a | **excluded for privacy** |
+| Missing Session sections | derived from `ASSESSMENT_SESSION_SECTION_IDS` + `isSectionCompleteForPhase` | always derivable | — |
 
-**Schema (migration):**
-- adicionar `workout_sessions.flags jsonb default '[]'` — array de `{ kind: 'pain'|'fatigue'|'technique'|'equipment', body_zone?: string, exercise_name?: string, severity: 1..3, source_text: string }`.
-
-**O que se constrói:**
-- Server fn `extractSessionFlags({ sessionId })` em `src/server/phased/session-flags.functions.ts`:
-  - lê todas as notas + felts da sessão
-  - prompt com schema estruturado (Lovable AI, JSON mode): devolve array de bandeiras tipadas; lista fechada de body_zones (lombar, ombro, joelho, etc.).
-  - escreve em `flags` + `generation_log` (stage: `session_flags`)
-  - corre logo a seguir ao `generateSessionSummary` (P1) no mesmo background.
-- Estender `programNextWeek` em `src/server/phased/program-next-week.functions.ts`:
-  - lê `flags` agregadas da última semana
-  - regras determinísticas (sem AI nesta camada — respeita a regra de ouro):
-    - pain severity ≥2 num exercício específico → swap por padrão alternativo do mesmo movimento (ou cortar para 0 sets se nada disponível) + cue "✋ trocar enquanto X melhora"
-    - fatigue severity ≥2 em ≥50% das sessões → activar deload na próxima semana (override do `deload_every_n`)
-    - technique repeated → reduzir carga 5% mesmo sem drift de RPE + cue "🎯 limpar técnica antes de adicionar carga"
-- UI: chip amber no `PlanHeader` da próxima semana mostrando "Ajuste a partir de X bandeiras" com tooltip listando as bandeiras + acções tomadas. Transparência total, mantém confiança do PT.
-
-**Critérios de aceitação:** auditoria PT: 10 sessões reais → ≥80% das bandeiras extraídas correctas + 0 falsos positivos graves (severity 3 inventado). Toggle no perfil do PT para desactivar leitura de bandeiras (fica só com RPE drift).
-
----
-
-## Fase P3 — Página de progresso do cliente em /me
-
-**Objectivo:** dar ao cliente (e ao PT em modo preview) gráficos visuais que valorizem todo o trabalho de logging. Determinista, sem AI.
-
-**O que se constrói:**
-- Nova rota `src/routes/me.progresso.tsx` (sub-rota de `/me`, layout partilhado).
-- Server fn `getClientProgress({ clientId? })` em `src/server/me.functions.ts`:
-  - séries temporais: e1RM por exercício principal, volume semanal por padrão (squat/hinge/push/pull/lunge/carry), adesão semanal (%), RPE médio por sessão
-  - top 5 lifts com PRs marcados (já há base em `me.functions.ts`)
-  - Δ inter-bloco (já há `computeCapacityGain`)
-- Componentes (`src/components/me/`):
-  - `E1RMTrendChart.tsx` — linha por exercício, recharts, eixo X = semana
-  - `VolumeByPatternChart.tsx` — barras empilhadas por padrão
-  - `AdherenceRing.tsx` — ring 0–100% últimas 4 semanas
-  - `FlagsTimeline.tsx` (depende de P2) — pequena timeline de bandeiras resolvidas vs. activas
-- Respeita modo preview (`?as=clientId`) com banner amber existente; nunca escreve.
-- Link "Ver progresso" no `SessionSummaryCard` (P0) e no hero de `/me`.
-
-**Critérios de aceitação:** carrega <1s para clientes com 12 semanas; gráficos legíveis em 375px (mobile-first, scroll horizontal quando preciso); zero placeholders quando não há dados (estado vazio com copy útil "Faltam X sessões para ver tendência").
+All sources already loaded in `clients_.$clientId.tsx` cockpit — no extra fetch.
 
 ---
 
-## Sequência de execução
+## C. Deterministic implication rules
 
-Executamos uma fase por round, fechamos backlog em `.lovable/backlog.md` no fim de cada uma, smoke 375px obrigatório antes de fechar.
+Single pure function `buildAssessmentImplications(a, client)` returns `Implication[]`. No AI.
 
-P0 → P1 → P2 → P3. Não saltar. P3 depende de P2 para a `FlagsTimeline`; o resto de P3 funciona sem P2.
+| Condition | Copy (PT) | Severity | Source field | Disclaimer phrasing |
+|---|---|---|---|---|
+| any PAR-Q `true` | "Existe ≥1 resposta PAR-Q positiva. Recomenda-se confirmação clínica antes de progredir intensidade." | danger | `parq` | "não constitui diagnóstico" |
+| `bmi_category` = obese / `risk` high | "Iniciar com tier conservador (MEV) e progressão gradual." | warn | `risk` | — |
+| `med_flags` includes `beta_blocker` | "FC pode estar atenuada — preferir RPE/talk test sobre zonas de FC." | warn | `med_flags` | — |
+| `med_flags` includes `anticoagulant` | "Cautela com quedas, contacto e impacto. Evitar exercícios de risco." | warn | `med_flags` | — |
+| `med_flags` includes `insulin`/`hypoglycemic` | "Atenção a hipoglicemia em sessões longas." | warn | `med_flags` | — |
+| `injuries.length > 0` | "Modificar/monitorizar padrões afectados: <patterns list>." | warn | `injuries[*].region` | — |
+| `pain_notes` non-empty | "Cliente reportou dor activa — rever antes de carregar padrão." | warn | `pain_notes` | — |
+| `sleep_quality === "poor"` OR `stress_level === "high"` | "Recuperação reduzida — começar com tecto RPE conservador (≤7.5) e adiar progressões." | neutral | `sleep_quality`/`stress_level` | — |
+| `readiness_stage` ∈ {precontemplation, contemplation} | "Prontidão comportamental baixa — priorizar adesão sobre carga." | neutral | `readiness_stage` | — |
+| `experience_level` ∈ {beginner, novice} | "RPE inicial 6.5–7.5, ênfase técnica e padrões base." | neutral | `experience_level` | — |
+| `available_equipment.length === 0` | "Sem equipamento — selecção restrita a peso corporal." | neutral | `available_equipment` | — |
+| `training_days_per_week ≤ 2` | "Frequência baixa — preferir corpo inteiro por sessão." | neutral | `training_days_per_week` | — |
+| `session_duration_minutes < 40` | "Sessões curtas — limitar acessórios, manter padrões principais." | neutral | `session_duration_minutes` | — |
+| no conditions match | "Sem cautelas particulares identificadas. Aplicar parâmetros standard de iniciação." | success | — | — |
 
-Confirma e arrancamos com P0.
+Severity → colour token (status-tone palette): danger=red, warn=amber, neutral=muted, success=emerald. **Each row prints "Implicação para a prescrição:" — never "diagnóstico" / "tratamento" / "patologia".**
+
+---
+
+## D. UI placement
+
+**Primary (MVP)**: small ghost icon button **"Resumo da avaliação (PDF)"** in the assessment section header on `/clients/$clientId`, next to the existing collapse toggle. Visible whenever `assessment.id` exists, regardless of phase (the PDF itself shows what's missing).
+
+**Secondary**: same action exposed inside the Pre-Plan Review Sheet under "Resumo opcional" — single text link, no big button. Lets the PT export right before generation.
+
+**Excluded for MVP**: `/me` client page (privacy review needed first), no global header menu, no plan-page button. Not added to BMV sheet (would clutter a focused dialog).
+
+Avoid stealing focus from the main "Criar briefing inicial" CTA — both placements use ghost/text styling.
+
+---
+
+## E. Implementation strategy (smallest safe Build)
+
+New files only:
+1. `src/lib/pdf-assessment-summary.ts` — pure renderer:
+   - `export async function downloadAssessmentSummary({ assessment, client, trainer, locale }): Promise<void>`
+   - Internally uses `jsPDF`, mirrors `trainer-resource-pdf.ts` page/section pattern.
+   - Calls a new pure helper `buildAssessmentImplications(a)` → `Implication[]`.
+   - Calls existing `assessmentGroupCounts` / `assessmentPhase` from `assessment-phase.ts`.
+   - Page 1: header + client/goal/training table + status badges.
+   - Page 2: implications list (icons via Unicode bullets, tone-coloured chips).
+   - Page 3 (conditional): missing-Session checklist OR "Sessão completa" panel.
+   - Footer on every page: "Documento de apoio à prescrição. Não constitui diagnóstico nem clearance médico." + page N/M.
+2. `src/lib/assessment-implications.ts` — exports `Implication` type + `buildAssessmentImplications`. Pure, unit-testable.
+
+Edits:
+3. `src/routes/clients_.$clientId.tsx` — wire button in assessment section header (1 import + 1 onClick handler, ~10 LOC).
+4. `src/components/plan/PrePlanReviewSheet.tsx` — optional ghost link "Exportar resumo (PDF)" in footer (passes `assessment` already in scope).
+5. `src/i18n/locales/{pt,en}/assessment.json` — new `summary_pdf.*` namespace (titles, section labels, all implication copy, disclaimer).
+
+Not touched: `pdf.ts`, `download-plan.ts`, server fns, schema, RLS, `me.tsx`, plan flow, BriefEditor.
+
+---
+
+## F. i18n strategy
+
+- New namespace block: `assessment.summary_pdf.*`
+- PT-PT: full coverage, "você" voice (per memory).
+- EN: full coverage, neutral 2nd person.
+- ES/HI: fall back to EN per project convention (`assessment.json` is not in the LLM-translated set). Add stubs only if strings are short labels.
+- Implication copy: each rule key = `summary_pdf.implications.<rule_id>` so future tone tweaks don't touch code.
+- Filename: `Resumo_Avaliacao_<ClientName>_<YYYY-MM-DD>.pdf` (PT) / `Assessment_Summary_...` (EN).
+
+---
+
+## G. Risks
+
+| Risk | Mitigation |
+|---|---|
+| Overclaiming medical meaning | Mandatory footer disclaimer on every page; rule copy banned from "diagnóstico/tratamento/patologia"; review checklist before merge |
+| Too much text | Hard cap: 3 pages; implications max 12 rows; truncate equipment list to 6 + "+N more" |
+| Layout complexity | Mirror `trainer-resource-pdf.ts` (proven simple pattern); no tables-with-borders; bullet rows + section dividers only |
+| Missing data | Every field has a fallback in §B; PDF is always renderable from an empty `assessment` row (will show "Avaliação por concluir" + missing checklist) |
+| Photo privacy | Photos explicitly **excluded** in MVP (documented in code comment) |
+| Duplicate PDF logic | New file is small (<400 LOC), independent; does not import from `pdf.ts`; future shared header helper extraction noted in backlog only |
+| Filename PII in download | Sanitised via existing slug helper if available; otherwise inline `replace(/[^a-z0-9]+/gi,'_')` |
+| jsPDF font glyph gaps for accented PT chars | Use jsPDF's Helvetica (already handles Latin-1); verified working in `trainer-resource-pdf.ts` |
+
+---
+
+## H. Build Mode prompt (next round)
+
+```
+Build Mode.
+
+Implement Round 3 only: a deterministic Assessment Summary PDF.
+
+Do not call AI. Do not change schema. Do not touch backend, RLS,
+billing, quota, plan generation, BriefEditor, logbook, schedule,
+dashboard, /me, or src/lib/pdf.ts.
+
+Create:
+
+1. src/lib/assessment-implications.ts
+   - export type Implication = { id: string; severity: "danger"|"warn"|"neutral"|"success"; copyKey: string; copyVars?: Record<string,string|number> }
+   - export function buildAssessmentImplications(a: any): Implication[]
+   - Rules per Round 3 plan §C, in that exact order.
+   - If no rule matches, return [{id:"none", severity:"success", copyKey:"summary_pdf.implications.none"}].
+   - Pure function, no I/O.
+
+2. src/lib/pdf-assessment-summary.ts
+   - import jsPDF from "jspdf"
+   - export async function downloadAssessmentSummary(args: {
+       assessment: any; client: any; trainer?: any; locale?: "pt"|"en"; t: (k:string,o?:any)=>string
+     }): Promise<void>
+   - 2–3 pages max, layout per Round 3 plan §E.
+   - Use status-tone colours: danger #ef4444, warn #f59e0b, neutral #94a3b8, success #10b981.
+   - Footer on every page with disclaimer + "Página X de Y".
+   - Filename: Resumo_Avaliacao_<sanitised name>_<YYYY-MM-DD>.pdf
+   - Include assessmentGroupCounts + assessmentPhase from src/lib/assessment-phase.ts
+   - Include missing-section checklist using ASSESSMENT_SESSION_SECTION_IDS + isSectionCompleteForPhase.
+   - Photos: NOT included (add code comment).
+
+3. Wire one button in src/routes/clients_.$clientId.tsx
+   - Ghost icon button "Resumo da avaliação (PDF)" in the assessment
+     section header. Show whenever assessment?.id exists.
+   - onClick: downloadAssessmentSummary({assessment, client, trainer:profile, locale, t})
+   - Wrap in try/catch with toast.error fallback.
+
+4. Wire one optional text link in src/components/plan/PrePlanReviewSheet.tsx
+   - Footer left side, ghost variant, "Exportar resumo (PDF)".
+   - Same handler. Must NOT trigger any server call.
+
+5. i18n keys under assessment.summary_pdf.* in pt + en
+   - title, subtitle, sections.{profile,training,status,implications,session_checklist}
+   - phase.{self_intake_pending,session_pending,complete}
+   - implications.* for every rule id in §C
+   - disclaimer, footer_page
+   - Add minimal stubs in es + hi (fallback OK).
+
+Constraints:
+- No new npm deps (jsPDF already installed).
+- Do NOT edit src/lib/pdf.ts.
+- Do NOT add a server fn.
+- Do NOT include client photos.
+- Do NOT add any AI/LLM call.
+- Disclaimer present on every page; copy never uses
+  "diagnóstico", "tratamento", "patologia", "clearance médico" except
+  inside the disclaimer string itself.
+
+Verify:
+- bunx tsc --noEmit passes
+- Manually trigger download from cockpit; open the resulting PDF and
+  inspect 2–3 pages for clipping, overflow, missing glyphs (PT accents).
+- Confirm zero network requests fire when the button is clicked.
+- 390px mobile: button doesn't overflow header; click works.
+
+Report:
+- files created/edited
+- screenshots/QA notes for the rendered PDF (3 pages)
+- typecheck result
+- whether Round 3 can be considered complete
+```
+
+---
+
+## Acceptance criteria (recap)
+
+- Deterministic PDF, no AI.
+- No schema changes, no server fns.
+- 2–3 pages, includes prescription implications + disclaimer.
+- Available from PT cockpit (and optional link in Pre-Plan Review Sheet).
+- `bunx tsc --noEmit` passes.
+- Photos excluded.
+- Every page footer carries the no-diagnosis disclaimer.
