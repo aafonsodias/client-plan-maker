@@ -1752,7 +1752,7 @@ export const getPlanConstraints = createServerFn({ method: "GET" })
     z.object({ plan_id: z.string().uuid() }).parse(data),
   )
   .handler(async ({ data, context }) => {
-    const userId = context.user.id;
+    const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: plan, error: planErr } = await supabaseAdmin
