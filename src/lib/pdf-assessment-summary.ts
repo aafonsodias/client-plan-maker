@@ -76,6 +76,22 @@ function sanitiseFilenamePart(s: string): string {
     .slice(0, 60) || "Cliente";
 }
 
+function pickClientLabel(client: any, fallback: string): string {
+  const candidates: Array<unknown> = [
+    client?.full_name,
+    client?.name,
+    client?.display_name,
+    typeof client?.email === "string" ? client.email.split("@")[0] : null,
+    typeof client?.id === "string" ? client.id.slice(0, 8) : null,
+  ];
+  for (const c of candidates) {
+    if (c == null) continue;
+    const v = String(c).trim();
+    if (v !== "") return v;
+  }
+  return fallback;
+}
+
 export async function downloadAssessmentSummary(args: Args): Promise<void> {
   const { assessment: a, client, trainer, t } = args;
   const locale = args.locale ?? "pt-PT";
@@ -319,7 +335,9 @@ export async function downloadAssessmentSummary(args: Args): Promise<void> {
   }
 
   // ---------- Save ----------
-  const namePart = sanitiseFilenamePart(safe(client?.full_name, isPt ? "Cliente" : "Client"));
+  const namePart = sanitiseFilenamePart(
+    pickClientLabel(client, isPt ? "Cliente" : "Client"),
+  );
   const datePart = new Date().toISOString().slice(0, 10);
   const fileBase = isPt ? "Resumo_Avaliacao" : "Assessment_Summary";
   doc.save(`${fileBase}_${namePart}_${datePart}.pdf`);
