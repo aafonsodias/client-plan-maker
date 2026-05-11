@@ -1,16 +1,24 @@
-// Inline a copy of helper, but call doc.output directly instead of save.
-// Simpler: replicate just enough — actually call the real helper but override
-// by replacing jsPDF default with a Proxy via bun preload.
-// Cleanest: just patch the prototype method `output` to capture before save runs.
-// jsPDF.save calls this.output("save", filename) internally — we wrap output.
-import jsPDF from "jspdf";
 import fs from "node:fs";
+process.chdir("/tmp/r4qa");
 
-let lastBuf = null;
-let lastFilename = null;
-const origOutput = jsPDF.API ? jsPDF.API.output : null;
-console.log("API?", !!jsPDF.API, "API.output?", typeof origOutput);
+const { generateAssessmentSessionHelperPDF } = await import("/dev-server/src/lib/pdf-assessment-session-helper.ts");
+const t = (k, opts) => (opts && typeof opts.defaultValue === "string" ? opts.defaultValue : k);
 
-// Wrap save by patching the constructor via subclass; helper imports default
-// which is the same class, so subclassing won't help unless we replace export.
-// Final path: register a bun-preload that swaps the default export.
+const fixtures = {
+  full: { client: { full_name: "Maria Silva" }, assessment: { id: "x" } },
+  partial: { client: { full_name: "João Costa" }, assessment: { id: "x", waist_cm: 82 } },
+  empty: { client: null, assessment: null },
+};
+const countPages = (path) => {
+  const s = fs.readFileSync(path).toString("latin1");
+  return (s.match(/\/Type\s*\/Page[^s]/g) || []).length;
+};
+
+for (const [name, fx] of Object.entries(fixtures)) {
+  await generateAssessmentSessionHelperPDF({ ...fx, locale: "pt-PT", t });
+}
+await generateAssessmentSessionHelperPDF({ ...fixtures.full, locale: "en", t });
+
+for (const f of fs.readdirSync("/tmp/r4qa")) {
+  if (f.endsWith(".pdf")) console.log(f, "pages=", countPages("/tmp/r4qa/" + f), "bytes=", fs.statSync("/tmp/r4qa/" + f).size);
+}
