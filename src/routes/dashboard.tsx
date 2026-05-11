@@ -299,12 +299,12 @@ function Dashboard() {
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <OnboardingChecklist />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             {(() => {
               const meta = (user?.user_metadata ?? {}) as { full_name?: string; name?: string };
               const raw = meta.full_name || meta.name || user?.email?.split("@")[0] || "";
@@ -314,7 +314,7 @@ function Dashboard() {
                 : t("dashboard.eyebrow");
             })()}
           </p>
-          <h1 className="mt-1 font-display text-3xl font-light tracking-tight sm:text-4xl">
+          <h1 className="mt-0.5 font-display text-2xl font-light tracking-tight sm:text-3xl">
             <span className="break-words">{t("dashboard.title")}</span>
           </h1>
         </div>
