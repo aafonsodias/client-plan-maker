@@ -2097,7 +2097,6 @@ function ClientDetail() {
         </aside>
         )}
 
-        <div className="min-w-0">
         {assessment?.id && (
           <div className="mb-2 flex justify-end">
             <Button
