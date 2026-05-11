@@ -189,7 +189,19 @@ export function ExerciseSetsCard({
   const progressPct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
 
   const updateSet = (si: number, patch: Partial<SetLog>) => {
-    const sets = entry.sets.map((s, i) => (i === si ? { ...s, ...patch } : s));
+    const sets = entry.sets.map((s, i) => {
+      if (i !== si) return s;
+      const merged = { ...s, ...patch } as SetLog;
+      // Auto-mark done when all required cells for the current mode are filled.
+      // Never auto-uncheck — the trainer can still toggle manually.
+      if (!merged.done && isRowComplete(mode, merged)) {
+        merged.done = true;
+        merged.ts = new Date().toISOString();
+        setPoppedSet(si);
+        setTimeout(() => setPoppedSet(null), 260);
+      }
+      return merged;
+    });
     onChange(index, { ...entry, sets });
   };
 
@@ -337,6 +349,23 @@ export function ExerciseSetsCard({
 /* ─────────── SetRow — branches by logger mode ─────────── */
 
 type NumPatch = Partial<SetLog>;
+
+function isRowComplete(mode: LoggerMode, s: SetLog): boolean {
+  const num = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v > 0;
+  const str = (v: unknown) => typeof v === "string" && v.trim().length > 0;
+  switch (mode) {
+    case "cardio":
+      return num(s.duration_s) && num(s.distance_m);
+    case "intervals":
+      return num(s.rounds) && num(s.work_s) && num(s.rest_s);
+    case "mobility":
+    case "skill":
+      return num(s.hold_s);
+    default:
+      // strength / hypertrophy / mixed
+      return str(s.reps) && str(s.weight);
+  }
+}
 
 function parseIntSafe(v: string): number | undefined {
   const n = parseInt(v, 10);
