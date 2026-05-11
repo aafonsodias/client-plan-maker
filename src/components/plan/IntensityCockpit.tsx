@@ -101,7 +101,7 @@ export default function IntensityCockpit({
       className={`rounded-xl border border-border bg-card p-4 ${disabled ? "pointer-events-none opacity-70" : ""}`}
     >
       <header className="mb-3 flex items-center gap-2">
-        <Gauge className="h-4 w-4 text-amber-500" aria-hidden />
+        <Gauge className="h-4 w-4 text-brand" aria-hidden />
         <h3 id="cockpit-title" className="text-sm font-bold uppercase tracking-widest text-foreground">
           {t("cockpit.title")}
         </h3>
@@ -124,7 +124,7 @@ export default function IntensityCockpit({
               disabled={p === "custom"}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                 active
-                  ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                  ? "border-brand-border bg-brand-soft text-brand"
                   : "border-border bg-background text-muted-foreground hover:text-foreground"
               } ${p === "custom" ? "cursor-default" : ""}`}
             >
@@ -143,7 +143,7 @@ export default function IntensityCockpit({
         <button
           type="button"
           onClick={() => setShowKnobsPref((s) => !s)}
-          className="text-[11px] font-medium uppercase tracking-wider text-amber-600 hover:text-amber-700 dark:text-amber-400"
+          className="text-[11px] font-medium uppercase tracking-wider text-brand hover:opacity-80"
         >
           {showKnobs ? t("ux.rationale.labels.hide_manual_control", { ns: "common", defaultValue: "Ocultar controlo manual" }) : t("ux.rationale.labels.manual_control", { ns: "common", defaultValue: "Controlo manual" })}
         </button>
@@ -183,7 +183,7 @@ export default function IntensityCockpit({
             step={0.5}
             value={value.rpe_ceiling}
             onChange={(e) => apply({ rpe_ceiling: Number(e.target.value) })}
-            className="w-full accent-amber-500"
+            className="w-full accent-[color:var(--brand)]"
           />
           <div className="mt-1 flex justify-between text-[10px] uppercase text-muted-foreground">
             <span>{t("cockpit.knobs.rpe.marks.low")}</span>
@@ -261,7 +261,7 @@ function Knob({
   return (
     <div className="rounded-lg border border-border bg-background/50 p-3">
       <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground">
-        <span className="text-amber-500">{icon}</span>
+        <span className="text-brand">{icon}</span>
         <span>{label}</span>
         {chip ? <span className="ml-auto">{chip}</span> : null}
       </div>

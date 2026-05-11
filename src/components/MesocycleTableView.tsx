@@ -264,8 +264,8 @@ export function MesocycleTableView({
 
       {/* Empty-deltas banner */}
       {noDeltas && planId && (
-        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[color:var(--warn)]/30 bg-warn-soft p-3 text-xs">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-foreground" />
           <div className="flex-1">
             <p className="font-semibold text-foreground">No progression was applied to this plan.</p>
             <p className="mt-0.5 text-muted-foreground">
@@ -275,7 +275,7 @@ export function MesocycleTableView({
           <Link
             to="/plans/$planId/progressions"
             params={{ planId }}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[color:var(--warn)]/40 bg-warn-soft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-warn-foreground hover:opacity-90"
           >
             Re-run progressions
           </Link>
@@ -315,7 +315,7 @@ export function MesocycleTableView({
                   <th
                     key={wn}
                     className={`px-2 py-2 text-left font-semibold align-top ${
-                      tag === "deload" || isDeloadWeek(wn) ? "text-amber-300/80" : ""
+                      tag === "deload" || isDeloadWeek(wn) ? "text-warn-foreground" : ""
                     }`}
                   >
                     <div>
@@ -611,7 +611,7 @@ function CellTd({
       title={editable ? "Click to edit" : undefined}
     >
       {dirty && (
-        <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-400" title="Unsaved (or recently saved)" />
+        <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-brand" title="Unsaved (or recently saved)" />
       )}
       {editable && (
         <Pencil className="absolute right-1 bottom-1 h-2.5 w-2.5 text-muted-foreground/0 transition group-hover/cell:text-muted-foreground/60" />
@@ -621,7 +621,7 @@ function CellTd({
           <span className={tone(setsChanged || repsChanged)}>
             {sets && reps ? `${sets}×${reps}` : sets || reps}
             {!isFirst && repsTrend && (
-              <span className="ml-0.5 text-amber-400/80">{repsTrend}</span>
+              <span className="ml-0.5 text-brand/80">{repsTrend}</span>
             )}
           </span>
         ) : (
@@ -647,13 +647,13 @@ function CellTd({
         )}
         {rest && <span className={tone(restChanged)}>{rest}</span>}
         {loadChip && (
-          <span className="rounded bg-emerald-500/10 px-1 py-px text-[10px] font-medium text-emerald-300">
+          <span className="rounded bg-success-soft px-1 py-px text-[10px] font-medium text-success-foreground">
             {loadChip}
           </span>
         )}
       </div>
       {swapped && (
-        <div className="mt-0.5 text-[9px] uppercase tracking-widest text-amber-300/80">
+        <div className="mt-0.5 text-[9px] uppercase tracking-widest text-warn-foreground">
           (swapped → {cell.ex.name})
         </div>
       )}
@@ -705,7 +705,7 @@ function CellEditor({
         <button onClick={onCancel} className="rounded p-0.5 text-muted-foreground hover:text-foreground" aria-label="Cancel">
           <X className="h-3 w-3" />
         </button>
-        <button onClick={commit} className="rounded bg-emerald-500/20 p-0.5 text-emerald-300 hover:bg-emerald-500/30" aria-label="Save">
+        <button onClick={commit} className="rounded bg-success-soft p-0.5 text-success-foreground hover:opacity-90" aria-label="Save">
           <Check className="h-3 w-3" />
         </button>
       </div>

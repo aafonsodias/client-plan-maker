@@ -468,7 +468,7 @@ export default function PlanEditorSurface({
                       <span>Obj.: <b className="text-foreground">{plan.brief.primary_goal}</b></span>
                     )}
                     {Array.isArray(plan.brief?.red_flags) && plan.brief.red_flags.length > 0 && (
-                      <span className="text-amber-300">⚠ {plan.brief.red_flags.slice(0, 3).join(" · ")}</span>
+                      <span className="text-warn-foreground">⚠ {plan.brief.red_flags.slice(0, 3).join(" · ")}</span>
                     )}
                   </div>
                 )}
@@ -551,7 +551,7 @@ export default function PlanEditorSurface({
                 <Button
                   size="sm"
                   onClick={exportPdf}
-                  className="h-8 bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm hover:from-amber-500 hover:to-amber-700"
+                  className="h-8 bg-brand text-brand-foreground shadow-sm hover:opacity-90"
                   title={tCommon("plan.export_pdf_title")}
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" /> PDF plano completo
@@ -592,8 +592,8 @@ export default function PlanEditorSurface({
                 />
                 <ValidationReport generationMeta={plan.generation_meta} />
                 {data.weeks.length > 0 && isLegacyPlan(data) && client && (
-                  <div className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                  <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[color:var(--warn)]/30 bg-warn-soft p-3 text-xs">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn-foreground" />
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">Plano com estrutura antiga.</p>
                       <p className="mt-0.5 text-muted-foreground">
@@ -603,7 +603,7 @@ export default function PlanEditorSurface({
                     <Link
                       to="/clients/$clientId"
                       params={{ clientId: client.id }}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-amber-200 hover:bg-amber-500/20"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[color:var(--warn)]/40 bg-warn-soft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-warn-foreground hover:opacity-90"
                     >
                       <Sparkles className="h-3 w-3" /> Regenerar
                     </Link>
@@ -612,7 +612,7 @@ export default function PlanEditorSurface({
                 {plan?.generation_status === "complete"
                   && /\(demo\)$/i.test(client?.full_name ?? "")
                   && sessions.length === 0 && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--warn)]/30 bg-warn-soft p-3 text-xs">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">Logbook vazio.</p>
                       <p className="mt-0.5 text-muted-foreground">
@@ -757,13 +757,13 @@ export default function PlanEditorSurface({
                 title={title}
                 className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-2 transition ${
                   active
-                    ? "text-foreground after:absolute after:inset-x-2 after:-bottom-px after:h-px after:bg-amber-400"
+                    ? "text-foreground after:absolute after:inset-x-2 after:-bottom-px after:h-px after:bg-brand"
                     : "text-muted-foreground/80 hover:text-foreground"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" /> {label}
                 {badge !== undefined && (
-                  <span className="ml-0.5 rounded-full bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold normal-case tracking-normal text-emerald-300">
+                  <span className="ml-0.5 rounded-full bg-success-soft px-1.5 py-px text-[9px] font-semibold normal-case tracking-normal text-success-foreground">
                     {badge}
                   </span>
                 )}
@@ -800,7 +800,7 @@ export default function PlanEditorSurface({
           <details className="group rounded-2xl border border-border bg-card/40 open:bg-card">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground">
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70" />
+                <span className="h-1.5 w-1.5 rounded-full bg-brand/70" />
                 Around the workout
                 <span className="font-normal normal-case tracking-normal text-[10px] text-muted-foreground/70">— refeições e janelas</span>
               </span>
@@ -830,10 +830,10 @@ export default function PlanEditorSurface({
               CTA Regenerar num único painel dentro do edit. Substitui o botão
               flutuante anterior. R67: Cockpit grava em programming_variables;
               novas microciclos via NextWeekCard apanham logo. */}
-          <section className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] p-4 space-y-4">
+          <section className="rounded-2xl border border-brand-border bg-brand-soft p-4 space-y-4">
             <header className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-500" />
+                <Sparkles className="h-4 w-4 text-brand" />
                 <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">
                   Configurar mesociclo
                 </h2>
@@ -869,9 +869,9 @@ export default function PlanEditorSurface({
                   {injuries.map((inj) => {
                     const tone =
                       inj.severity >= 4
-                        ? "border-red-500/40 bg-red-500/10 text-red-300"
+                        ? "border-[color:var(--danger)]/40 bg-danger-soft text-danger-foreground"
                         : inj.severity >= 3
-                          ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                          ? "border-[color:var(--warn)]/40 bg-warn-soft text-warn-foreground"
                           : "border-border bg-muted/40 text-muted-foreground";
                     return (
                       <li
@@ -1135,9 +1135,9 @@ function DayQuickMark({
 
   return (
     <div className="inline-flex items-center gap-1">
-      {btn("done", Check, "Done", "border-emerald-500/40 bg-emerald-500/15 text-emerald-600")}
-      {btn("partial", MinusCircle, "Partial", "border-amber-500/40 bg-amber-500/15 text-amber-600")}
-      {btn("missed", XCircle, "Missed", "border-rose-500/40 bg-rose-500/15 text-rose-600")}
+      {btn("done", Check, "Done", "border-[color:var(--success)]/40 bg-success-soft text-success-foreground")}
+      {btn("partial", MinusCircle, "Partial", "border-[color:var(--warn)]/40 bg-warn-soft text-warn-foreground")}
+      {btn("missed", XCircle, "Missed", "border-[color:var(--danger)]/40 bg-danger-soft text-danger-foreground")}
     </div>
   );
 }
@@ -1535,11 +1535,11 @@ function LogMode({ plan, planId, sessions, reload, onExportPdf }: { plan: PlanDa
       )}
       <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[10px] uppercase tracking-widest">
         {editingSessionId ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--warn)]/40 bg-warn-soft px-2 py-0.5 font-bold text-warn-foreground">
             Editando sessão de {date}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--success)]/40 bg-success-soft px-2 py-0.5 font-bold text-success-foreground">
             Nova sessão
           </span>
         )}
@@ -1738,10 +1738,10 @@ function RegenerateWithFeedbackDialog({
   });
   const constraints = constraintsQ.data?.ok ? constraintsQ.data : null;
   const tierTone = constraints?.tier === "advanced"
-    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+    ? "border-[color:var(--success)]/40 bg-success-soft text-success-foreground"
     : constraints?.tier === "remedial"
-      ? "border-blue-500/40 bg-blue-500/10 text-blue-200"
-      : "border-amber-500/40 bg-amber-500/10 text-amber-200";
+      ? "border-[color:var(--info)]/40 bg-info-soft text-info-foreground"
+      : "border-[color:var(--warn)]/40 bg-warn-soft text-warn-foreground";
   const tierLabel = constraints?.tier === "advanced"
     ? "🟢 Avançado"
     : constraints?.tier === "remedial"
@@ -1958,7 +1958,7 @@ function RegenerateWithFeedbackDialog({
             </p>
           </div>
           {busy && (
-            <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-200">
+            <div className="flex items-center gap-2 rounded-md border border-[color:var(--warn)]/30 bg-warn-soft p-2 text-[11px] text-warn-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               <span>
                 {progress.phase === "context" && "Reading client + assessment + Cockpit…"}

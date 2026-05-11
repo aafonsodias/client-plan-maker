@@ -140,6 +140,8 @@
   --color-warn-soft: var(--warn-soft);
   --color-danger-foreground: var(--danger-foreground);
   --color-danger-soft: var(--danger-soft);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
   --color-neutral: var(--neutral);
   --color-neutral-soft: var(--neutral-soft);
 
@@ -240,6 +242,8 @@
   --warning: var(--warn);
   --danger-foreground: #FFFBF3;
   --danger-soft: color-mix(in oklab, var(--danger) 14%, transparent);
+  --info-foreground: var(--info);
+  --info-soft: color-mix(in oklab, var(--info) 14%, transparent);
   --neutral: var(--text-3);
   --neutral-soft: var(--surface-warm);
   --table-header: var(--surface-warm);
@@ -339,6 +343,8 @@
   --warning: var(--warn);
   --danger-foreground: #2A2622;
   --danger-soft: color-mix(in oklab, var(--danger) 18%, transparent);
+  --info-foreground: var(--info);
+  --info-soft: color-mix(in oklab, var(--info) 18%, transparent);
   --neutral: var(--text-3);
   --neutral-soft: var(--surface-warm);
   --table-header: var(--surface-warm);
@@ -435,6 +441,8 @@
   --warning: var(--warn);
   --danger-foreground: var(--bg);
   --danger-soft: color-mix(in oklab, var(--danger) 16%, transparent);
+  --info-foreground: var(--info);
+  --info-soft: color-mix(in oklab, var(--info) 18%, transparent);
   --neutral: var(--text-3);
   --neutral-soft: var(--surface-warm);
   --table-header: var(--surface-warm);
