@@ -1451,12 +1451,13 @@ function ClientDetail() {
   // button and by the safety-gate confirmation, so the safety override stays
   // on the new pipeline instead of falling back to the legacy day-by-day
   // generator.
-  const runPhasedStart = useCallback(async () => {
+  const runPhasedStart = useCallback(async (weeksOverride?: number) => {
     if (phasedBusy) return;
     setPhasedBusy(true);
     const tId = toast.loading("Synthesizing brief…");
     try {
-      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: duration } });
+      const weeks = typeof weeksOverride === "number" ? weeksOverride : duration;
+      const res = await startPhasedPlanFn({ data: { clientId, durationWeeks: weeks } });
       if (!res.ok) {
         if (res.error === "quota_exceeded") {
           toast.dismiss(tId);
@@ -1501,12 +1502,17 @@ function ClientDetail() {
         res.reused ? "Brief already ready" : "Brief ready",
         { id: tId, duration: 4000 }
       );
-      // Cut 2 — staged reveal: open synthesis + scroll into view so the
-      // trainer immediately sees what we learned before going to the cockpit.
+      // Round 2 — close the pre-plan review sheet (if open) and let the
+      // existing BriefEditor / protocol stages lane handle review +
+      // approval. We still surface the synthesis section as today.
+      setPrePlanReviewOpen(false);
+      setPhasedEnabled(true);
       setSynthesisOpen(true);
       if (typeof window !== "undefined") {
         requestAnimationFrame(() => {
-          const el = document.getElementById("sintese-da-avaliacao");
+          const el =
+            document.getElementById("protocol-stages-lane") ??
+            document.getElementById("sintese-da-avaliacao");
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       }
@@ -1515,7 +1521,7 @@ function ClientDetail() {
     } finally {
       setPhasedBusy(false);
     }
-  }, [clientId, phasedBusy, startPhasedPlanFn]);
+  }, [clientId, duration, phasedBusy, startPhasedPlanFn]);
 
   // Delete a single plan (with confirm) from the Plans list.
   const deletePlan = async (planId: string) => {
