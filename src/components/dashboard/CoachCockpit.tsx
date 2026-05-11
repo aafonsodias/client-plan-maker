@@ -285,28 +285,28 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             tone={todayRows.some((r) => r.tone === "amber" || r.tone === "rose") ? "amber" : "muted"}
           />
           <Stat
-            label={lang === "pt" ? "Esta semana" : "This week"}
+            label={t("dashboard.this_week")}
             value={fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
             mono={false}
           />
           <Stat
-            label={lang === "pt" ? "Sessões" : "Sessions"}
+            label={t("dashboard.sessions")}
             value={sessionsCount}
           />
           <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5 sm:px-4">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <span>{lang === "pt" ? "Receita" : "Revenue"}</span>
+              <span>{t("dashboard.revenue")}</span>
               <button
                 type="button"
                 onClick={toggleRevenue}
-                aria-label={revealRevenue ? (lang === "pt" ? "Ocultar" : "Hide") : (lang === "pt" ? "Mostrar" : "Show")}
+                aria-label={revealRevenue ? t("dashboard.hide") : t("dashboard.show")}
                 className="rounded p-0.5 text-muted-foreground/70 transition hover:text-foreground"
               >
                 {revealRevenue ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
               </button>
             </div>
             <span className="mt-0.5 inline-flex items-center gap-1 font-mono text-sm tabular-nums">
-              <Coins className="h-3 w-3 text-amber-500/80" />
+              <Coins className="h-3 w-3 text-brand/80" />
               {revealRevenue ? (
                 <PriceTag eur={expectedIncome} interactive={false} />
               ) : (
@@ -315,7 +315,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             </span>
           </div>
           <Stat
-            label={lang === "pt" ? "Lembretes" : "Reminders"}
+            label={t("dashboard.reminders")}
             value={nudges.length}
             tone={nudges.length > 0 ? "amber" : "muted"}
           />
@@ -326,7 +326,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
           type="button"
           onClick={() => navigate({ to: "/schedule" })}
           className="group flex w-full items-stretch gap-1 border-t border-border/50 bg-background/20 px-2 py-2 text-left transition hover:bg-muted/30"
-          aria-label={lang === "pt" ? "Abrir agenda da semana" : "Open this week's schedule"}
+          aria-label={t("dashboard.open_week_schedule_aria")}
         >
           <SlimWeek
             monday={monday}
@@ -343,26 +343,26 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       {(todayRows.length > 0 || nudges.length > 0) && (
         <div className="flex flex-wrap items-center gap-2 px-1 text-[12px]">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {lang === "pt" ? "Prioridades" : "Priorities"}
+            {t("dashboard.priorities")}
           </span>
           <ul className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             {todayRows.slice(0, 3).map((r) => {
               const dot =
-                r.tone === "amber" ? "bg-amber-500"
-                : r.tone === "emerald" ? "bg-emerald-500"
-                : r.tone === "rose" ? "bg-rose-500"
+                r.tone === "amber" ? "bg-brand"
+                : r.tone === "emerald" ? "bg-success"
+                : r.tone === "rose" ? "bg-warn"
                 : "bg-muted-foreground/40";
               const statusText =
-                r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
-                : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
-                : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+                r.tone === "amber" ? "text-brand"
+                : r.tone === "emerald" ? "text-success-foreground"
+                : r.tone === "rose" ? "text-warn-foreground"
                 : "text-muted-foreground";
               return (
                 <li key={r.key} className="inline-flex">
                   <Link
                     to={r.to as any}
                     params={r.params as any}
-                    className="group/pri inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
+                    className="group/pri inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 transition hover:border-border-strong hover:bg-chip-active"
                   >
                     <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
                     {r.name && r.status ? (
@@ -382,17 +382,17 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             {nudges.slice(0, 2).map((n) => {
               const tone =
                 n.tone === "amber"
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-brand"
                   : n.tone === "rose"
-                    ? "text-rose-600 dark:text-rose-400"
+                    ? "text-warn-foreground"
                     : "text-muted-foreground";
               return (
                 <li key={n.key} className="inline-flex">
                   <button
                     type="button"
                     onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
-                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
-                    title={lang === "pt" ? "Compor mensagem" : "Compose message"}
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 transition hover:border-border-strong hover:bg-chip-active"
+                    title={t("dashboard.compose_message")}
                   >
                     <n.icon className={`h-3 w-3 shrink-0 ${tone}`} />
                     <span className="font-medium text-foreground">{n.title}</span>
@@ -433,7 +433,7 @@ function Stat({
       </span>
       <span
         className={`mt-0.5 truncate text-sm tabular-nums ${mono ? "font-mono" : "font-display font-light"} ${
-          tone === "amber" ? "text-amber-500" : "text-foreground"
+          tone === "amber" ? "text-brand" : "text-foreground"
         }`}
       >
         {value}
@@ -469,7 +469,7 @@ function SlimWeek({
             key={dow}
             className={`flex items-center justify-between gap-1.5 rounded-md px-2 py-1 text-[11px] ${
               isToday
-                ? "bg-amber-500/10 text-amber-500"
+                ? "bg-selected text-brand"
                 : "text-muted-foreground/80"
             }`}
           >

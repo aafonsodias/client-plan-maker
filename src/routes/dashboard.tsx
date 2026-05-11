@@ -457,30 +457,30 @@ function Dashboard() {
       {!isEmpty && (
         <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {i18n.language?.startsWith("pt") ? "Ferramentas do PT" : "Trainer tools"}
+            {t("dashboard.trainer_tools_label")}
           </span>
           <button
             type="button"
             onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
-            aria-label={i18n.language?.startsWith("pt") ? "Descarregar PDF Aquisição e Retenção" : "Download Acquisition & Retention PDF"}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
+            aria-label={t("dashboard.trainer_tools_acquisition_pdf_aria")}
           >
             <Download className="h-3 w-3" />
-            <span>{i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Acquisition & Retention PDF"}</span>
+            <span>{t("dashboard.trainer_tools_acquisition_pdf")}</span>
           </button>
           <Link
             to="/manual"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
           >
             <BookOpen className="h-3 w-3" />
-            <span>{i18n.language?.startsWith("pt") ? "Manual" : "Manual"}</span>
+            <span>{t("dashboard.trainer_tools_manual")}</span>
           </Link>
           <Link
             to="/knowledge"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
           >
             <Sparkles className="h-3 w-3" />
-            <span>{i18n.language?.startsWith("pt") ? "Como funciona" : "How it works"}</span>
+            <span>{t("dashboard.trainer_tools_how_it_works")}</span>
           </Link>
         </div>
       )}
@@ -625,11 +625,11 @@ function EvolutionChip({ evo }: { evo?: { hasPrior: boolean; deltaPct: number | 
   const v = evo.verdict;
   const Icon = v === "gain" ? TrendingUp : v === "regression" ? TrendingDown : Minus;
   const cls = v === "gain"
-    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+    ? "bg-success-soft text-success-foreground border-success/40"
     : v === "regression"
-    ? "bg-red-500/15 text-red-300 border-red-500/30"
+    ? "bg-danger-soft text-danger border-danger/40"
     : v === "flat"
-    ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+    ? "bg-warn-soft text-warn-foreground border-warn/40"
     : "bg-muted/30 text-muted-foreground border-border";
   const label = evo.deltaPct == null ? "—" : `${evo.deltaPct > 0 ? "+" : ""}${evo.deltaPct}%`;
   return (
