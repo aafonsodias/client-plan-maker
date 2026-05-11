@@ -458,30 +458,6 @@ function Dashboard() {
         />
       )}
 
-      {!isEmpty && (
-        <div className="flex items-center gap-2 px-1 text-[11px]">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            {t("dashboard.trainer_tools_label")}
-          </span>
-          <div className="scrollbar-hide -mx-1 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-1">
-          <Link
-            to="/manual"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
-          >
-            <BookOpen className="h-3 w-3" />
-            <span>{t("dashboard.trainer_tools_manual")}</span>
-          </Link>
-          <Link
-            to="/knowledge"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 text-muted-foreground transition hover:border-border-strong hover:bg-chip-active hover:text-foreground"
-          >
-            <Sparkles className="h-3 w-3" />
-            <span>{t("dashboard.trainer_tools_how_it_works")}</span>
-          </Link>
-          </div>
-        </div>
-      )}
-
       {attention.length > 0 && (
         <section>
           <h2 className="mb-3 font-display text-lg font-light tracking-tight text-foreground">{t("dashboard.attention")}</h2>
