@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import type { PlanData, Day, Exercise } from "@/lib/pdf";
 import { Link } from "@tanstack/react-router";
-import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X, Trash2, Link2 } from "lucide-react";
+import { Eye, EyeOff, Copy, ClipboardCopy, AlertTriangle, Pencil, Check, X, Trash2, Link2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { updateExerciseInWeek, deleteExerciseAcrossWeeks } from "@/server/phased/microcycle-edit.functions";
 import { rpeTone, parseRpe as parseRpeShared } from "@/lib/rpe-tone";
 import { AddExerciseDialog } from "@/components/AddExerciseDialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * Compact Mesocycle Table View — fits the entire mesocycle on a single
@@ -232,32 +235,29 @@ export function MesocycleTableView({
             redundant pills added noise. Volume totals will return as
             "planned vs logged" comparisons in the Results panel. */}
         <div />
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={copyTSV}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-            title="Copy as TSV (Sheets/Excel)"
-          >
-            <Copy className="h-3 w-3" /> TSV
-          </button>
-          <button
-            type="button"
-            onClick={copyMarkdown}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-            title="Copy as Markdown table"
-          >
-            <ClipboardCopy className="h-3 w-3" /> MD
-          </button>
-          <button
-            type="button"
-            onClick={() => setCompact((c) => !c)}
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
-          >
-            {compact ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            {compact ? "Detailed" : "Compact"}
-          </button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+              aria-label="More table actions"
+            >
+              <MoreHorizontal className="h-3 w-3" /> More
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onSelect={() => void copyTSV()}>
+              <Copy className="mr-2 h-3.5 w-3.5" /> Copy as TSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void copyMarkdown()}>
+              <ClipboardCopy className="mr-2 h-3.5 w-3.5" /> Copy as Markdown
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setCompact((c) => !c)}>
+              {compact ? <Eye className="mr-2 h-3.5 w-3.5" /> : <EyeOff className="mr-2 h-3.5 w-3.5" />}
+              {compact ? "Detailed view" : "Compact view"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Empty-deltas banner */}
