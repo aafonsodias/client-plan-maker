@@ -2,15 +2,10 @@ import { useState } from "react";
 import PlanEditorSurface from "@/components/PlanEditorSurface";
 import { PlanCommandDeck, type DeckMode } from "@/components/PlanCommandDeck";
 
-/**
- * Bridges the new mobile-first PlanCommandDeck with the existing
- * PlanEditorSurface. Owns selectedWeek + mode so both stay in sync.
- */
 export function PlanWithDeck({
   plan,
   currentWeek,
-  onRegister,
-  registerBusy,
+  primaryAction,
   onAssessmentPdf,
 }: {
   plan: {
@@ -20,8 +15,11 @@ export function PlanWithDeck({
     block_number?: number | null;
   };
   currentWeek?: number | null;
-  onRegister?: () => void | Promise<void>;
-  registerBusy?: boolean;
+  primaryAction?: {
+    label: string;
+    onClick?: () => void | Promise<void>;
+    busy?: boolean;
+  };
   onAssessmentPdf?: () => void | Promise<void>;
 }) {
   const totalWeeks = Math.max(1, plan.duration_weeks ?? 1);
@@ -38,9 +36,9 @@ export function PlanWithDeck({
         currentWeek={currentWeek ?? undefined}
         mode={mode}
         onModeChange={setMode}
-        registerLabel="Registar treino"
-        onRegister={onRegister}
-        registerBusy={registerBusy}
+        registerLabel={primaryAction?.label ?? "Registar treino"}
+        onRegister={primaryAction?.onClick}
+        registerBusy={primaryAction?.busy}
         onAssessmentPdf={onAssessmentPdf}
       />
       <PlanEditorSurface
