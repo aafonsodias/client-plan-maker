@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Plus, FileText, Sparkles, BookOpen, Cake, Inbox, Clock, Copy,
+  Plus, FileText, Cake, Inbox, Clock, Copy,
   TrendingUp, TrendingDown, Minus, Loader2, Download, Info,
 } from "lucide-react";
 import { OnboardingChecklist, markOnboardingStep } from "@/components/OnboardingChecklist";
