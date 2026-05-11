@@ -1,5 +1,13 @@
 // Derived client phase logic. NEVER stored — always computed from latest data.
 
+import {
+  SELF_INTAKE_SECTION_IDS,
+  ASSESSMENT_SESSION_SECTION_IDS,
+  isSectionCompleteForPhase,
+  isSelfIntakeComplete,
+  isAssessmentSessionComplete,
+} from "./assessment-phase";
+
 export type ClientPhase =
   | { kind: "onboarding"; label: string }
   | { kind: "intake_sent"; label: string }
@@ -11,7 +19,15 @@ export type ClientPhase =
 
 export type PhaseKind = ClientPhase["kind"];
 
-const REQUIRED_SECTIONS = ["parq", "risk", "smart", "training", "movement"] as const;
+/**
+ * Required sections for "ready for plan" — mirrors the new MVP grouping
+ * (Round 1): Self Intake + Assessment Session must both be complete.
+ * Source of truth lives in `src/lib/assessment-phase.ts`.
+ */
+const REQUIRED_SECTIONS = [
+  ...SELF_INTAKE_SECTION_IDS,
+  ...ASSESSMENT_SESSION_SECTION_IDS,
+] as const;
 
 function hasVal(v: unknown): boolean {
   if (v === null || v === undefined) return false;
@@ -40,25 +56,11 @@ function isAssessmentTouched(a: any | null): boolean {
 
 export function isRequiredComplete(a: any | null): boolean {
   if (!a) return false;
-  return REQUIRED_SECTIONS.every((id) => {
-    switch (id) {
-      case "parq":
-        return a.parq && Object.values(a.parq).every((v) => v === true || v === false)
-          && Object.keys(a.parq).length >= 7;
-      case "risk":
-        // Mirrors assessment page: BMI risk row computed from height/weight
-        return hasVal(a.height_cm) && hasVal(a.weight_kg);
-      case "smart":
-        return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
-      case "training":
-        return hasVal(a.experience_level) && hasVal(a.training_days_per_week)
-          && hasVal(a.session_duration_minutes) && (a.available_equipment?.length ?? 0) > 0;
-      case "movement":
-        return hasVal(a.squat_depth_score) || hasVal(a.overhead_reach_score)
-          || hasVal(a.hip_hinge_score) || hasVal(a.single_leg_balance_score);
-    }
-  });
+  return isSelfIntakeComplete(a) && isAssessmentSessionComplete(a);
 }
+
+/** Re-export so callers can read the canonical id lists from one module. */
+export { SELF_INTAKE_SECTION_IDS, ASSESSMENT_SESSION_SECTION_IDS, isSectionCompleteForPhase };
 
 export type PhaseInputs = {
   assessment: any | null;
