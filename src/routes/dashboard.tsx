@@ -434,17 +434,6 @@ function Dashboard() {
           </DialogContent>
         </Dialog>
         <ViewAsClientPicker variant="ghost" className="w-full text-muted-foreground hover:text-foreground sm:w-auto" />
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-          className="w-full text-muted-foreground hover:text-foreground sm:w-auto"
-          title={i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
-        >
-          <Download className="mr-2 h-3.5 w-3.5" />
-          {i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Client Growth PDF"}
-        </Button>
         </div>
       </div>
 
@@ -463,6 +452,37 @@ function Dashboard() {
             intake_status: c.intake_status,
           }))}
         />
+      )}
+
+      {!isEmpty && (
+        <div className="flex flex-wrap items-center gap-1.5 px-1 text-[11px]">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {i18n.language?.startsWith("pt") ? "Ferramentas do PT" : "Trainer tools"}
+          </span>
+          <button
+            type="button"
+            onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+            aria-label={i18n.language?.startsWith("pt") ? "Descarregar PDF Aquisição e Retenção" : "Download Acquisition & Retention PDF"}
+          >
+            <Download className="h-3 w-3" />
+            <span>{i18n.language?.startsWith("pt") ? "PDF · Aquisição e Retenção" : "Acquisition & Retention PDF"}</span>
+          </button>
+          <Link
+            to="/manual"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+          >
+            <BookOpen className="h-3 w-3" />
+            <span>{i18n.language?.startsWith("pt") ? "Manual" : "Manual"}</span>
+          </Link>
+          <Link
+            to="/knowledge"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>{i18n.language?.startsWith("pt") ? "Como funciona" : "How it works"}</span>
+          </Link>
+        </div>
       )}
 
       {attention.length > 0 && (
