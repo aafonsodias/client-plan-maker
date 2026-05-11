@@ -1902,8 +1902,28 @@ function ClientDetail() {
           primaryAction = { label: "Pedir avaliação", icon: <Send className="h-4 w-4" />, onClick: () => { document.querySelector<HTMLElement>("[data-intake-link-panel]")?.scrollIntoView({ behavior: "smooth", block: "center" }); } };
         } else if (!phasedEnabled || (!inlineBrief && !heroPlan)) {
           const bmvNow = computeBmv({ client, assessment, snapshots: bmvSnapshots });
-          if (!bmvNow.ready) {
+          // Round 1 — assessment phase is the canonical gate. We still keep
+          // the BMV "missing data" CTA as the secondary nudge for partial
+          // Self Intake; once Self Intake is done we then ask for the
+          // Assessment Session before unlocking AI generation.
+          if (!selfIntakeDone || !bmvNow.ready) {
             primaryAction = { label: `Faltam ${bmvNow.missingRequired} dados — ver`, icon: <AlertTriangle className="h-4 w-4" />, onClick: () => setBmvOpen(true) };
+          } else if (!sessionDone) {
+            primaryAction = {
+              label: t("assessment_gate.session_incomplete"),
+              icon: <AlertTriangle className="h-4 w-4" />,
+              onClick: () => {
+                const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
+                if (firstMissing) setActiveSection(firstMissing);
+                document.getElementById("assessment-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              },
+            };
+          } else if (safetyBlocked) {
+            primaryAction = {
+              label: "Revisão de segurança necessária",
+              icon: <AlertTriangle className="h-4 w-4" />,
+              onClick: () => setSafetyDialogOpen(true),
+            };
           } else {
             primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
           }
