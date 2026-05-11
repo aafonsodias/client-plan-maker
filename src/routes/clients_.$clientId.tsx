@@ -4229,6 +4229,26 @@ function AssessmentSynthesisDashboard({
   );
 }
 
+function AssessmentGroupHeader({ id, counts }: { id: "self_intake" | "assessment_session"; counts: { done: number; total: number } }) {
+  const { t } = useTranslation("assessment");
+  const complete = counts.done >= counts.total;
+  return (
+    <div className="mt-4 mb-1 flex items-center gap-3 border-t border-border/60 pt-4 first:mt-0 first:border-t-0 first:pt-0">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-foreground/90">
+          {t(id === "self_intake" ? "self_intake.title" : "assessment_session.title")}
+        </h3>
+        <p className="text-[11px] text-muted-foreground">
+          {t(id === "self_intake" ? "self_intake.subtitle" : "assessment_session.subtitle")}
+        </p>
+      </div>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] tabular-nums ${complete ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30" : "bg-muted/60 text-muted-foreground"}`}>
+        {counts.done}/{counts.total}{complete ? " ✓" : ""}
+      </span>
+    </div>
+  );
+}
+
 function AssessmentSection({
   clientId,
   headerProgress,
