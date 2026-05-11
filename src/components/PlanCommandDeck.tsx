@@ -122,7 +122,7 @@ export function PlanCommandDeck({
   return (
     <section
       aria-label="Comandos do plano"
-      className="border-b border-border/60 bg-card/60 p-2.5 sm:p-3"
+      className="bg-card/60 p-2.5 sm:p-3"
     >
       {/* Row 1 — identity */}
       <div className="flex items-start gap-2">
@@ -202,7 +202,33 @@ export function PlanCommandDeck({
         </DropdownMenu>
       </div>
 
-      {/* Row 2 — primary action + weekly PDF */}
+      {/* Row 2 — week selector (drives table + weekly PDF) */}
+      <div className="mt-2 flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5">
+        {weekChips.map((c) => {
+          const active = selectedWeek === c.value;
+          const isCurrent = c.value !== null && c.value === currentWeek;
+          return (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => onSelectWeek(c.value)}
+              className={`relative flex-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition ${
+                active
+                  ? "bg-amber-500/15 text-amber-200"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              aria-pressed={active}
+            >
+              {c.label}
+              {isCurrent && !active && (
+                <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-amber-400" aria-hidden />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Row 3 — primary action + weekly PDF for the selected week */}
       <div className="mt-2 flex items-center gap-2">
         {onRegister && (
           <Button
@@ -222,40 +248,16 @@ export function PlanCommandDeck({
           type="button"
           onClick={handleWeeklyPdf}
           disabled={downloading}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary/40 px-3 text-[11px] font-semibold uppercase tracking-wider text-foreground/80 hover:bg-secondary disabled:opacity-60"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary/40 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/80 hover:bg-secondary disabled:opacity-60"
           title={selectedWeek == null
             ? "Descarregar PDF do mesociclo"
             : `Descarregar PDF da Semana ${selectedWeek}`}
+          aria-label={selectedWeek == null ? "PDF do mesociclo" : `PDF da Semana ${selectedWeek}`}
         >
           {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          <span>{selectedWeek == null ? "PDF · MESO" : `PDF S${selectedWeek}`}</span>
+          <span className="hidden sm:inline">{selectedWeek == null ? "PDF · Plano" : `PDF Semana ${selectedWeek}`}</span>
+          <span className="sm:hidden">{selectedWeek == null ? "PDF" : `PDF S${selectedWeek}`}</span>
         </button>
-      </div>
-
-      {/* Row 3 — week selector */}
-      <div className="mt-2 flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5">
-        {weekChips.map((c) => {
-          const active = selectedWeek === c.value;
-          const isCurrent = c.value !== null && c.value === currentWeek;
-          return (
-            <button
-              key={c.label}
-              type="button"
-              onClick={() => onSelectWeek(c.value)}
-              className={`relative flex-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition ${
-                active
-                  ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-pressed={active}
-            >
-              {c.label}
-              {isCurrent && !active && (
-                <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-amber-400" aria-hidden />
-              )}
-            </button>
-          );
-        })}
       </div>
 
       {/* Row 4 — mode segmented */}
@@ -265,20 +267,24 @@ export function PlanCommandDeck({
       >
         {modes.map(({ key, label, Icon }) => {
           const active = mode === key;
+          const shortLabel = key === "results" ? "Res." : label;
           return (
             <button
               key={key}
               role="tab"
               aria-selected={active}
+              aria-label={label}
+              title={label}
               onClick={() => onModeChange(key)}
               className={`inline-flex min-w-0 items-center justify-center gap-1 rounded-full px-2 py-1 transition ${
                 active
-                  ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
+                  ? "bg-amber-500/15 text-amber-200"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Icon className="h-3 w-3 shrink-0" />
-              <span className="truncate">{label}</span>
+              <span className="truncate sm:hidden">{shortLabel}</span>
+              <span className="hidden truncate sm:inline">{label}</span>
             </button>
           );
         })}
