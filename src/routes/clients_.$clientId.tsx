@@ -1937,7 +1937,14 @@ function ClientDetail() {
               onClick: () => setSafetyDialogOpen(true),
             };
           } else {
-            primaryAction = { label: "Iniciar briefing IA", icon: <Sparkles className="h-4 w-4" />, busy: phasedBusy, onClick: async () => { try { setPhasedBusy(true); const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } }); if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); scrollToStages(); } else toast.error(res?.error ?? "Não foi possível iniciar o briefing."); } finally { setPhasedBusy(false); } } };
+            // Round 2 — open the zero-AI Pre-Plan Review sheet instead of
+            // calling startPhasedPlanDraft directly. The sheet's primary
+            // button is the only path that spends AI credits.
+            primaryAction = {
+              label: t("pre_plan_review.cta"),
+              icon: <Sparkles className="h-4 w-4" />,
+              onClick: () => setPrePlanReviewOpen(true),
+            };
           }
         } else if (briefReadyLocal) {
           primaryAction = { label: "Rever briefing", icon: <ArrowRight className="h-4 w-4" />, onClick: scrollToStages };
