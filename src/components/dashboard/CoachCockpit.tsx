@@ -306,7 +306,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
               </button>
             </div>
             <span className="mt-0.5 inline-flex items-center gap-1 font-mono text-sm tabular-nums">
-              <Coins className="h-3 w-3 text-amber-500/80" />
+              <Coins className="h-3 w-3 text-brand/80" />
               {revealRevenue ? (
                 <PriceTag eur={expectedIncome} interactive={false} />
               ) : (
