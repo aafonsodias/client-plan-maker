@@ -633,7 +633,9 @@ export async function generateAssessmentSessionHelperPDF(args: Args): Promise<vo
     );
   }
 
-  const namePart = sanitiseFilenamePart(safe(client?.full_name, isPt ? "Cliente" : "Client"));
+  const namePart = sanitiseFilenamePart(
+    pickClientLabel(client, isPt ? "Cliente" : "Client"),
+  );
   const datePart = new Date().toISOString().slice(0, 10);
   const fileBase = isPt ? "Guia_Sessao_Avaliacao" : "Assessment_Session_Helper";
   doc.save(`${fileBase}_${namePart}_${datePart}.pdf`);
