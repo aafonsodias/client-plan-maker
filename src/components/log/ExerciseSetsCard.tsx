@@ -350,6 +350,23 @@ export function ExerciseSetsCard({
 
 type NumPatch = Partial<SetLog>;
 
+function isRowComplete(mode: LoggerMode, s: SetLog): boolean {
+  const num = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v > 0;
+  const str = (v: unknown) => typeof v === "string" && v.trim().length > 0;
+  switch (mode) {
+    case "cardio":
+      return num(s.duration_s) && num(s.distance_m);
+    case "intervals":
+      return num(s.rounds) && num(s.work_s) && num(s.rest_s);
+    case "mobility":
+    case "skill":
+      return num(s.hold_s);
+    default:
+      // strength / hypertrophy / mixed
+      return str(s.reps) && str(s.weight);
+  }
+}
+
 function parseIntSafe(v: string): number | undefined {
   const n = parseInt(v, 10);
   return Number.isFinite(n) && n >= 0 ? n : undefined;
