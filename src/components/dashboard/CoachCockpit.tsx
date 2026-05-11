@@ -274,16 +274,16 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
   }, [clients, latestPlanByClient, bookings, packs, clientById, t]);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3">
       {/* Today + This week — golden-ratio split on desktop, stacked on mobile.
           grid-cols-1 + min-w-0 on the items prevents long content from blowing
           out the row width on mobile (was pushing both panels past px-4). */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.618fr)]">
       {/* Today / Needs attention */}
-      <div className="min-w-0 rounded-2xl bg-muted/40 p-3">
+      <div className="min-w-0 rounded-2xl border border-border/50 bg-card/40 p-3">
         <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           <span>{t("dashboard.today.title")}</span>
-          <Sparkles className="h-3 w-3 text-amber-500" />
+          <Sparkles className="h-3 w-3 text-muted-foreground/60" />
         </div>
         {todayRows.length === 0 ? (
           <p className="px-1 py-3 text-xs text-muted-foreground">
@@ -331,14 +331,14 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
 
       {/* Hero strip — tonal separation, content left-anchored to match Today panel */}
-      <div className="min-w-0 rounded-2xl bg-muted/40 p-3">
+      <div className="min-w-0 rounded-2xl border border-border/50 bg-card/40 p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
           {/* Left · week */}
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {lang === "pt" ? "Esta semana" : "This week"}
             </p>
-            <p className="mt-0.5 font-display text-xl font-light tracking-tight text-foreground">
+            <p className="mt-0.5 font-display text-lg font-light tracking-tight text-foreground">
               {fmtWeekRange(monday, lang === "pt" ? "pt-PT" : "en-GB")}
               <span className="ml-2 font-sans text-sm font-normal text-muted-foreground">
                 · {sessionsCount} {lang === "pt" ? "sessões" : "sessions"}
@@ -383,12 +383,12 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
       </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.4fr_1fr]">
         {/* Mini timetable */}
         <button
           type="button"
           onClick={() => navigate({ to: "/schedule" })}
-          className="group relative rounded-2xl bg-muted/40 p-3 text-left transition hover:bg-muted/60"
+          className="group relative rounded-2xl border border-border/50 bg-card/40 p-3 text-left transition hover:bg-muted/40"
           aria-label={lang === "pt" ? "Abrir agenda da semana" : "Open this week's schedule"}
         >
           <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -405,7 +405,7 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         </button>
 
         {/* Nudges */}
-        <div className="rounded-2xl bg-muted/40 p-3">
+        <div className="rounded-2xl border border-border/50 bg-card/40 p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             <span>{lang === "pt" ? "Lembretes para clientes" : "Client reminders"}</span>
             <span className="text-muted-foreground/60">·</span>
@@ -485,19 +485,21 @@ function MiniWeek({
         return (
           <div
             key={dow}
-            className={`flex min-h-[96px] flex-col rounded-lg border bg-background/40 p-1.5 ${
-              isToday ? "border-amber-500/50 ring-1 ring-amber-500/20" : "border-border"
+            className={`flex min-h-[56px] flex-col rounded-md border p-1.5 ${
+              isToday
+                ? "border-amber-500/40 bg-amber-500/[0.04]"
+                : "border-border/50 bg-background/30"
             }`}
           >
-            <div className="mb-1 flex flex-col items-start leading-tight">
-              <span className={`text-[9px] font-bold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground"}`}>
+            <div className="flex items-baseline justify-between leading-none">
+              <span className={`text-[9px] font-semibold uppercase tracking-widest ${isToday ? "text-amber-500" : "text-muted-foreground/70"}`}>
                 {dayLabels[dow]}
               </span>
-              <span className={`font-mono text-[11px] ${isToday ? "text-foreground" : "text-muted-foreground"}`}>
+              <span className={`font-mono text-[10px] ${isToday ? "text-foreground" : "text-muted-foreground/70"}`}>
                 {String(date.getDate()).padStart(2, "0")}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1">
+            <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {dayBookings.slice(0, 4).map((b) => {
                 const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
                 const cls = packBlockClasses(color);
