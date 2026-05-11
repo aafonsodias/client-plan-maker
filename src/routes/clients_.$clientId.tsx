@@ -692,10 +692,8 @@ function ClientDetail() {
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
-  // Round D · Bug 1 — Concluir always enabled, with confirmation when
-  // the assessment is incomplete. The pending action is run on confirm.
-  const [incompleteWarnOpen, setIncompleteWarnOpen] = useState(false);
-  const pendingGenerateRef = useRef<null | (() => void)>(null);
+  // Round 1 — Generate Plan is now hard-gated; no incomplete shortcut.
+  // The previous `incompleteWarnOpen` AlertDialog has been removed.
 
   /**
    * Latest plan that was already finalized for the *current* assessment.
