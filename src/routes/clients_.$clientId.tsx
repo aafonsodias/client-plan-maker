@@ -4041,13 +4041,11 @@ function ClientDetail() {
             window.dispatchEvent(new CustomEvent("assessment:jump", { detail: { sectionId: sid } }));
           }
         }}
-        onStartBrief={async () => {
-          try {
-            setPhasedBusy(true);
-            const res: any = await startPhasedPlanFn({ data: { clientId, durationWeeks: 4 } });
-            if (res?.ok) { setPhasedEnabled(true); void refreshPlans(); }
-            else toast.error(res?.error ?? "Não foi possível iniciar o briefing.");
-          } finally { setPhasedBusy(false); }
+        onStartBrief={() => {
+          // Round 2 — route through the Pre-Plan Review sheet so opening
+          // never spends AI credits. The sheet's primary action calls
+          // startPhasedPlanDraft via runPhasedStart().
+          setPrePlanReviewOpen(true);
         }}
       />
     </div>
