@@ -338,89 +338,69 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
         </button>
       </div>
 
-      {/* Today + Reminders — only render when there is something to show. Two
-          tight columns on desktop, stacked on mobile. */}
+      {/* Priorities — compact single-line action feed. Today + reminders merged
+          into one horizontal list, max 4 items. No second large card. */}
       {(todayRows.length > 0 || nudges.length > 0) && (
-        <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          {todayRows.length > 0 && (
-            <div className="min-w-0 rounded-xl border border-border/50 bg-card/40 px-3 py-2">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {t("dashboard.today.title")}
-              </div>
-              <ul className="divide-y divide-border/50">
-                {todayRows.slice(0, 4).map((r) => {
-                  const dot =
-                    r.tone === "amber" ? "bg-amber-500"
-                    : r.tone === "emerald" ? "bg-emerald-500"
-                    : r.tone === "rose" ? "bg-rose-500"
-                    : "bg-muted-foreground/40";
-                  const statusText =
-                    r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
-                    : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
-                    : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+        <div className="flex items-center gap-2 overflow-x-auto px-1 text-[12px]">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {lang === "pt" ? "Prioridades" : "Priorities"}
+          </span>
+          <ul className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            {todayRows.slice(0, 3).map((r) => {
+              const dot =
+                r.tone === "amber" ? "bg-amber-500"
+                : r.tone === "emerald" ? "bg-emerald-500"
+                : r.tone === "rose" ? "bg-rose-500"
+                : "bg-muted-foreground/40";
+              const statusText =
+                r.tone === "amber" ? "text-amber-600 dark:text-amber-400"
+                : r.tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
+                : r.tone === "rose" ? "text-rose-600 dark:text-rose-400"
+                : "text-muted-foreground";
+              return (
+                <li key={r.key} className="inline-flex">
+                  <Link
+                    to={r.to as any}
+                    params={r.params as any}
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
+                  >
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                    {r.name && r.status ? (
+                      <>
+                        <span className="font-medium text-foreground">{r.name}</span>
+                        <span className="text-muted-foreground/60">·</span>
+                        <span className={statusText}>{r.status}</span>
+                      </>
+                    ) : (
+                      <span className={statusText}>{r.text}</span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+            {nudges.slice(0, 2).map((n) => {
+              const tone =
+                n.tone === "amber"
+                  ? "text-amber-600 dark:text-amber-400"
+                  : n.tone === "rose"
+                    ? "text-rose-600 dark:text-rose-400"
                     : "text-muted-foreground";
-                  return (
-                    <li key={r.key}>
-                      <Link
-                        to={r.to as any}
-                        params={r.params as any}
-                        className="group flex items-center gap-2 py-1.5 transition hover:text-foreground"
-                      >
-                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-                        <span className="min-w-0 flex-1 truncate text-[13px]">
-                          {r.name && r.status ? (
-                            <>
-                              <span className="font-medium text-foreground">{r.name}</span>
-                              <span className="text-muted-foreground/60"> · </span>
-                              <span className={statusText}>{r.status}</span>
-                            </>
-                          ) : (
-                            <span className={statusText}>{r.text}</span>
-                          )}
-                        </span>
-                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition group-hover:opacity-100" />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-          {nudges.length > 0 && (
-            <div className="min-w-0 rounded-xl border border-border/50 bg-card/40 px-3 py-2">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {lang === "pt" ? "Lembretes" : "Reminders"}
-              </div>
-              <ul className="divide-y divide-border/50">
-                {nudges.slice(0, 4).map((n) => {
-                  const tone =
-                    n.tone === "amber"
-                      ? "text-amber-600 dark:text-amber-400"
-                      : n.tone === "rose"
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-muted-foreground";
-                  return (
-                    <li key={n.key} className="flex items-center gap-2 py-1.5">
-                      <n.icon className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium">{n.title}</p>
-                        {n.sub && <p className="truncate text-[11px] text-muted-foreground">{n.sub}</p>}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
-                        className="inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-                        title={lang === "pt" ? "Compor mensagem" : "Compose message"}
-                      >
-                        <MessageCircle className="h-3 w-3" />
-                        {lang === "pt" ? "Mensagem" : "Message"}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+              return (
+                <li key={n.key} className="inline-flex">
+                  <button
+                    type="button"
+                    onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
+                    title={lang === "pt" ? "Compor mensagem" : "Compose message"}
+                  >
+                    <n.icon className={`h-3 w-3 shrink-0 ${tone}`} />
+                    <span className="font-medium text-foreground">{n.title}</span>
+                    <MessageCircle className="h-3 w-3 text-muted-foreground/60" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
