@@ -878,7 +878,7 @@ export default function PlanEditorSurface({
             <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
           </div>
           <ViewMode
-            plan={data}
+            plan={filteredData}
             planId={planId}
             sessions={sessions}
             reload={reloadSessions}
@@ -1004,7 +1004,7 @@ export default function PlanEditorSurface({
             )}
           </section>
           <MesocycleTableView
-            plan={data}
+            plan={filteredData}
             planId={planId}
             editable={true}
             onUpdated={reloadSessions}
@@ -1014,7 +1014,7 @@ export default function PlanEditorSurface({
       ) : mode === "results" ? (
         <>
           <CapacityGainBlock plan={plan} sessions={sessions} planId={planId} />
-          <ResultsPanel plan={data} sessions={sessions as any} />
+          <ResultsPanel plan={filteredData} sessions={sessions as any} />
           <LogbookTimeline
             sessions={sessions.filter((s) => (s as any).plan_id === planId) as any}
             currentPlanVersion={(plan as any)?.plan_data_version ?? 1}
@@ -1026,7 +1026,7 @@ export default function PlanEditorSurface({
           blockNumber={(plan as any).block_number ?? 1}
         />
       ) : (
-        <LogMode plan={data} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
+        <LogMode plan={filteredData} planId={planId} sessions={sessions} reload={reloadSessions} onExportPdf={exportPdf} />
       )}
     </div>
   );
