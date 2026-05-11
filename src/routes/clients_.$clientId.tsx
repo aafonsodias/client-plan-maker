@@ -4048,6 +4048,13 @@ function ClientDetail() {
           setPrePlanReviewOpen(true);
         }}
       />
+      <PrePlanReviewSheet
+        open={prePlanReviewOpen}
+        onOpenChange={setPrePlanReviewOpen}
+        assessment={assessment}
+        busy={phasedBusy}
+        onConfirm={(weeks) => { void runPhasedStart(weeks); }}
+      />
     </div>
     </TooltipProvider>
   );
