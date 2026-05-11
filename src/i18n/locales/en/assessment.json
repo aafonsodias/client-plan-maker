@@ -932,5 +932,40 @@
     "intake_pending": "Self intake pending",
     "disclaimer": "Document supports exercise prescription and trainer review. It is not a diagnosis or medical clearance.",
     "footer_page": "Page {{page}} of {{total}}"
+  },
+  "session_helper": {
+    "cta": "Session helper (PDF)",
+    "brand": "PROTOCOL",
+    "eyebrow": "Assessment session helper · observation support",
+    "title": "Assessment Session Helper",
+    "no_name": "Client",
+    "purpose": "Supports practical observation during the in-person session. Use as a quick offline guide; enter values back into the app afterwards.",
+    "app_primary": "Use the app as the primary source. Use this PDF only as support and enter results back into the app afterwards.",
+    "equipment_title": "What you may need",
+    "equipment": {
+      "mirror": "Mirror",
+      "tape": "Tape measure (if anthropometry is included)",
+      "space": "Chair / wall / ~2 m of free floor",
+      "timer": "Stopwatch or phone",
+      "camera": "Camera (optional, for video review)"
+    },
+    "safety_title": "Safety — stop immediately if:",
+    "safety": {
+      "pain": "Sharp or worsening pain (especially in joints).",
+      "dizzy": "Dizziness or near-syncope.",
+      "chest": "Chest pain or chest pressure.",
+      "breath": "Shortness of breath disproportionate to the effort.",
+      "neuro": "Neurological symptoms (numbness, weakness, vision changes).",
+      "swelling": "Sudden or acute swelling.",
+      "trauma": "Symptoms following recent trauma.",
+      "refer": "Seek qualified clinical assessment if symptoms persist or are unfamiliar.",
+      "not_diagnosis": "Not a diagnosis or medical clearance."
+    },
+    "checklist_title": "Practical checklist by section",
+    "checklist_note": "The cards on the next pages detail each test supported by the app.",
+    "screen_intro": "Tick the criteria met. Note observed capacity in the spaces. Stop if there is pain.",
+    "no_vo2": "VO₂max is computed automatically by the app — just enter the raw values.",
+    "footer": "Exercise observation support — not a diagnosis or medical clearance.",
+    "footer_page": "p. {{page}}/{{total}}"
   }
 }
