@@ -266,7 +266,7 @@ export function downloadTrainerAcquisitionRetentionPdf(language?: string) {
   setFont("normal", 9, GOLD);
   doc.text(c.badge, M + 12, y + 17);
 
-  drawFooter(1, 1);
+  // (Footer drawn after all pages exist, with the correct total.)
 
   // -------- BODY PAGE 2+ --------
   doc.addPage();
