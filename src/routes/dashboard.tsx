@@ -27,6 +27,7 @@ import { planStatusInfo } from "@/lib/plan-status";
 import { toast } from "sonner";
 import { daysUntilBirthday, turningAge } from "@/lib/birthdays";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
 import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
@@ -527,15 +528,41 @@ function Dashboard() {
                   {t("dashboard.title")}
                 </h2>
                 <span className="text-[11px] tabular-nums text-muted-foreground">{counts.all}</span>
-                <button
-                  type="button"
-                  onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
-                  title={t("dashboard.trainer_tools_acquisition_pdf")}
-                  aria-label={t("dashboard.trainer_tools_acquisition_pdf_aria")}
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-chip-active hover:text-foreground"
-                >
-                  <Info className="h-3.5 w-3.5" />
-                </button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      title={t("dashboard.trainer_tools_acquisition_pdf")}
+                      aria-label={t("dashboard.trainer_tools_acquisition_pdf")}
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground/70 transition hover:bg-chip-active hover:text-foreground"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-72 space-y-3 p-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {t("dashboard.trainer_tools_acquisition_pdf")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboard.trainer_tools_acquisition_pdf_hint", {
+                          defaultValue:
+                            "Guia prático para captar e reter clientes. Descarrega em PDF para ler offline ou partilhar com a equipa.",
+                        })}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => downloadTrainerAcquisitionRetentionPdf(i18n.language)}
+                    >
+                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                      {t("dashboard.trainer_tools_acquisition_pdf_download", {
+                        defaultValue: "Descarregar PDF",
+                      })}
+                    </Button>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="scrollbar-hide flex w-full max-w-full shrink-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border/50 bg-chip p-0.5 text-[11px] font-medium tracking-tight sm:w-auto">
                 {[
