@@ -9,7 +9,6 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { AtlasDock } from "@/components/AtlasDock";
-import { AtlasGenie } from "@/components/AtlasGenie";
 import { AtlasOrb } from "@/components/AtlasOrb";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -425,7 +424,6 @@ export function AppShell({ children, back }: { children: ReactNode; back?: { to:
               <Sparkles className="h-3 w-3" />
               {t("dashboard.trainer_tools_how_it_works")}
             </Link>
-            <AtlasGenie trigger="icon" />
             <Link to="/privacy" className="transition hover:text-foreground">
               Privacidade
             </Link>
