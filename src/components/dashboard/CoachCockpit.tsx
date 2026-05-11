@@ -427,8 +427,8 @@ function Stat({
   mono?: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5 sm:px-4">
+      <span className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </span>
       <span
