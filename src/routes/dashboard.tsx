@@ -432,7 +432,7 @@ function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
-        <ViewAsClientPicker className="w-full sm:w-auto" />
+        <ViewAsClientPicker variant="ghost" className="w-full text-muted-foreground hover:text-foreground sm:w-auto" />
         </div>
       </div>
 
