@@ -335,7 +335,9 @@ export async function downloadAssessmentSummary(args: Args): Promise<void> {
   }
 
   // ---------- Save ----------
-  const namePart = sanitiseFilenamePart(safe(client?.full_name, isPt ? "Cliente" : "Client"));
+  const namePart = sanitiseFilenamePart(
+    pickClientLabel(client, isPt ? "Cliente" : "Client"),
+  );
   const datePart = new Date().toISOString().slice(0, 10);
   const fileBase = isPt ? "Resumo_Avaliacao" : "Assessment_Summary";
   doc.save(`${fileBase}_${namePart}_${datePart}.pdf`);
