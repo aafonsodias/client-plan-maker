@@ -54,6 +54,7 @@ import {
 import { DeviceCaptureSheet } from "@/components/assessment/DeviceCaptureSheet";
 import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { PrePlanReviewSheet } from "@/components/plan/PrePlanReviewSheet";
+import { downloadAssessmentSummary } from "@/lib/pdf-assessment-summary";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
