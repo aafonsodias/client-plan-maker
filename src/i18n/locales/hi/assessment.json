@@ -584,5 +584,59 @@
     "helper_self_intake": "The client still needs to finish the self intake before the plan can be generated.",
     "helper_assessment_session": "Complete the assessment session items (anthropometry, mobility, posture, movement screen, cardio)."
   },
-  "assessment_complete_chip": "Assessment complete"
+  "assessment_complete_chip": "Assessment complete",
+  "pre_plan_review": {
+    "cta": "Review plan settings",
+    "title": "Pre-plan review",
+    "subtitle": "Settings preview. Final variables are confirmed in the brief editor.",
+    "section": {
+      "safety": "Safety",
+      "summary": "Assessment summary",
+      "starting_floor": "Estimated starting floor",
+      "duration": "Block duration",
+      "advanced": "Advanced variables"
+    },
+    "fields": {
+      "goal": "Goal",
+      "experience": "Experience",
+      "frequency": "Frequency",
+      "frequency_value_one": "{{count}} session/wk",
+      "frequency_value_other": "{{count}} sessions/wk",
+      "session_minutes": "Session length",
+      "location": "Location",
+      "equipment": "Equipment",
+      "equipment_value_one": "{{count}} item",
+      "equipment_value_other": "{{count}} items"
+    },
+    "starting_floor_estimated": "Preflight estimate · not final prescription",
+    "starting_floor_note": "Final values (RPE, volume, deload) are confirmed in the brief editor after the AI proposes the plan.",
+    "weeks_to_progress_one": "Progress in {{count}} week",
+    "weeks_to_progress_other": "Progress in {{count}} weeks",
+    "duration_value_one": "{{count}} week",
+    "duration_value_other": "{{count}} weeks",
+    "duration_hint": "Default 4 weeks. AI generates Week 1; the rest is deterministic.",
+    "future": {
+      "intensity_volume_tradeoff": "Intensity ↔ volume tradeoff",
+      "deload_frequency": "Deload frequency",
+      "autoreg_strictness": "Autoregulation",
+      "wave_model": "Wave model",
+      "exercise_bias": "Exercise bias",
+      "cardio_emphasis": "Cardio emphasis",
+      "mobility_emphasis": "Mobility emphasis"
+    },
+    "future_hint": "Set later, in the brief editor.",
+    "coming_soon": "Coming soon",
+    "warnings": {
+      "parq_one": "{{count}} PAR-Q flag reported. Review before generating.",
+      "parq_other": "{{count}} PAR-Q flags reported. Review before generating.",
+      "beta_blocker": "Beta-blocker detected — heart rate isn't reliable. Use RPE/talk-test.",
+      "anticoagulant": "Anticoagulant detected — bruise/fall risk. Avoid contact and impact plyo.",
+      "low_recovery": "Low recovery signals (sleep/stress/readiness). Consider the conservative preset in the Cockpit.",
+      "injury_one": "{{count}} injury reported — specific strategies are set in the brief.",
+      "injury_other": "{{count}} injuries reported — specific strategies are set in the brief."
+    },
+    "legal": "These settings feed a prescription engine; they don't replace clinical assessment.",
+    "cancel": "Cancel",
+    "confirm": "Create initial brief"
+  }
 }
