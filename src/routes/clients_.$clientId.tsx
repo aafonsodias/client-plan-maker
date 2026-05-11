@@ -56,6 +56,15 @@ import { BriefMinimumSheet } from "@/components/assessment/BriefMinimumSheet";
 import { TANITA, JAMAR } from "@/lib/devices";
 import { computeBmv, type BmvSnapshot } from "@/lib/brief-minimum";
 import { listClientCapacitySnapshots } from "@/server/capacity.functions";
+import {
+  SELF_INTAKE_SECTION_IDS,
+  ASSESSMENT_SESSION_SECTION_IDS,
+  isSectionCompleteForPhase,
+  isSelfIntakeComplete,
+  isAssessmentSessionComplete,
+  assessmentPhase,
+  assessmentGroupCounts,
+} from "@/lib/assessment-phase";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
