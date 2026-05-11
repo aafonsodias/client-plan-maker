@@ -24,6 +24,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet";
 import type { PlanData, Week, Day, Exercise } from "@/lib/pdf";
 import { isLegacyPlan } from "@/lib/pdf-types";
 import { planStatusInfo } from "@/lib/plan-status";
@@ -109,7 +112,8 @@ export default function PlanEditorSurface({
     else setModeState(m);
   };
   const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [mgmtOpen, setMgmtOpen] = useState(false);
   const seedFn = useServerFn(seedDemoSessions);
   const [seeding, setSeeding] = useState(false);
   const markFinishedFn = useServerFn(markPlanFinished);
@@ -285,6 +289,13 @@ export default function PlanEditorSurface({
     window.sessionStorage.setItem(flag, "1");
     setMode("results");
   }, [sessions.length, planId]);
+
+  // Open the "Gestão do Plano" sheet from the PlanCommandDeck More menu.
+  useEffect(() => {
+    const handler = () => setMgmtOpen(true);
+    window.addEventListener("plan:open-management", handler);
+    return () => window.removeEventListener("plan:open-management", handler);
+  }, []);
 
   const save = async (extra: Partial<{ status: string }> = {}) => {
     setSaving(true);
