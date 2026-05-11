@@ -467,7 +467,7 @@ function SlimWeek({
         return (
           <div
             key={dow}
-            className={`flex items-center justify-between gap-1.5 rounded-md px-2 py-1 text-[11px] ${
+            className={`flex flex-col items-center gap-1 rounded-md px-1.5 py-1.5 text-[11px] ${
               isToday
                 ? "bg-selected text-brand"
                 : "text-muted-foreground/80"
@@ -477,14 +477,14 @@ function SlimWeek({
               <span className="font-semibold uppercase tracking-widest">{dayLabels[dow]}</span>
               <span className="font-mono">{String(date.getDate()).padStart(2, "0")}</span>
             </span>
-            <span className="flex items-center gap-0.5">
-              {dayBookings.slice(0, 3).map((b) => {
+            <span className="flex flex-col items-center gap-0.5">
+              {dayBookings.slice(0, 4).map((b) => {
                 const color = packColorById.get(b.pack_id ?? "") ?? "emerald";
                 const cls = packBlockClasses(color);
                 return <span key={b.id} className={`inline-block h-1.5 w-1.5 rounded-full ${cls.dot}`} />;
               })}
-              {dayBookings.length > 3 && (
-                <span className="text-[9px] text-muted-foreground">+{dayBookings.length - 3}</span>
+              {dayBookings.length > 4 && (
+                <span className="text-[9px] leading-none text-muted-foreground">+{dayBookings.length - 4}</span>
               )}
             </span>
           </div>
