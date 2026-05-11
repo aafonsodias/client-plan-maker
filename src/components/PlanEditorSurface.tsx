@@ -821,7 +821,9 @@ export default function PlanEditorSurface({
         </div>
       </details>
 
-      {/* Mode tabs — editorial underline row, tonal hover, no card-soup */}
+      {/* Mode tabs — editorial underline row, tonal hover, no card-soup.
+          Hidden when a parent deck owns `mode`. */}
+      {!hideOwnChrome && (
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border/60">
         <div role="tablist" className="-mb-px flex w-full max-w-full items-center gap-0.5 overflow-x-auto text-[11px] font-semibold uppercase tracking-widest sm:w-auto sm:gap-1">
           {(
@@ -868,6 +870,7 @@ export default function PlanEditorSurface({
           </button>
         )}
       </div>
+      )}
 
       {mode === "view" ? (
         <>
