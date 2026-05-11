@@ -382,17 +382,17 @@ export function CoachCockpit({ clients }: { clients: ClientLite[] }) {
             {nudges.slice(0, 2).map((n) => {
               const tone =
                 n.tone === "amber"
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-brand"
                   : n.tone === "rose"
-                    ? "text-rose-600 dark:text-rose-400"
+                    ? "text-warn-foreground"
                     : "text-muted-foreground";
               return (
                 <li key={n.key} className="inline-flex">
                   <button
                     type="button"
                     onClick={() => setComposer({ kind: n.composeKind, ctx: n.composeCtx })}
-                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-card/40 px-2.5 py-1 transition hover:border-border hover:bg-card"
-                    title={lang === "pt" ? "Compor mensagem" : "Compose message"}
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-chip px-2.5 py-1 transition hover:border-border-strong hover:bg-chip-active"
+                    title={t("dashboard.compose_message")}
                   >
                     <n.icon className={`h-3 w-3 shrink-0 ${tone}`} />
                     <span className="font-medium text-foreground">{n.title}</span>
