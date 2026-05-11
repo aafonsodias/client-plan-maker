@@ -13,6 +13,13 @@ import { downloadPlanById } from "@/lib/download-plan";
 import { weekTagFor } from "@/lib/macro-index";
 import { toast } from "sonner";
 
+const TAG_LABELS: Record<string, string> = {
+  base: "BASE",
+  "+load": "+LOAD",
+  "+reps": "+REPS",
+  deload: "DELOAD",
+};
+
 export type DeckMode = "view" | "edit" | "log" | "results" | "progress";
 
 export type DeckMenuItem = {
@@ -115,9 +122,9 @@ export function PlanCommandDeck({
     { key: "results", label: "Resultados", Icon: BarChart3 },
   ];
 
-  const pdfChipLabel = selectedWeek == null
-    ? "PDF · MESOCICLO"
-    : `PDF · SEM. ${selectedWeek}`;
+  const contextLabel = selectedWeek == null
+    ? "Todas as semanas"
+    : `Sem. ${selectedWeek} · ${TAG_LABELS[tag] ?? String(tag).toUpperCase()}`;
 
   return (
     <section
@@ -203,38 +210,54 @@ export function PlanCommandDeck({
       </div>
 
       {/* Row 2 — week selector (drives table + weekly PDF) */}
-      <div className="mt-2 flex items-center gap-1 rounded-full border border-border/60 bg-muted/30 p-0.5">
-        {weekChips.map((c) => {
-          const active = selectedWeek === c.value;
-          const isCurrent = c.value !== null && c.value === currentWeek;
-          return (
-            <button
-              key={c.label}
-              type="button"
-              onClick={() => onSelectWeek(c.value)}
-              className={`relative flex-1 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition ${
-                active
-                  ? "bg-amber-500/15 text-amber-200"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-pressed={active}
-            >
-              {c.label}
-              {isCurrent && !active && (
-                <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-amber-400" aria-hidden />
-              )}
-            </button>
-          );
-        })}
+      {/* Row 2 — week selector (left) + weekly PDF (right, same row) */}
+      <div className="mt-2 flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-full border border-border/60 bg-muted/30 p-0.5">
+          {weekChips.map((c) => {
+            const active = selectedWeek === c.value;
+            const isCurrent = c.value !== null && c.value === currentWeek;
+            return (
+              <button
+                key={c.label}
+                type="button"
+                onClick={() => onSelectWeek(c.value)}
+                className={`relative flex-1 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider transition ${
+                  active
+                    ? "bg-amber-500/15 text-amber-200"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-pressed={active}
+              >
+                {c.label}
+                {isCurrent && !active && (
+                  <span className="absolute right-1 top-1 h-1 w-1 rounded-full bg-amber-400" aria-hidden />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={handleWeeklyPdf}
+          disabled={downloading}
+          className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-secondary/40 px-2.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/80 hover:bg-secondary disabled:opacity-60"
+          title={selectedWeek == null
+            ? "Descarregar PDF do mesociclo"
+            : `Descarregar PDF da Semana ${selectedWeek}`}
+          aria-label={selectedWeek == null ? "PDF do mesociclo" : `PDF da Semana ${selectedWeek}`}
+        >
+          {downloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+          <span>{selectedWeek == null ? "PDF Plano" : `PDF S${selectedWeek}`}</span>
+        </button>
       </div>
 
-      {/* Row 3 — primary action + weekly PDF for the selected week */}
-      <div className="mt-2 flex items-center gap-2">
-        {onRegister && (
+      {/* Row 3 — primary action */}
+      {onRegister && (
+        <div className="mt-2">
           <Button
             onClick={() => void onRegister()}
             disabled={registerBusy}
-            className="h-9 flex-1 text-sm font-semibold"
+            className="h-9 w-full text-sm font-semibold"
           >
             {registerBusy ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -243,22 +266,8 @@ export function PlanCommandDeck({
             )}
             {registerLabel}
           </Button>
-        )}
-        <button
-          type="button"
-          onClick={handleWeeklyPdf}
-          disabled={downloading}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-border bg-secondary/40 px-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/80 hover:bg-secondary disabled:opacity-60"
-          title={selectedWeek == null
-            ? "Descarregar PDF do mesociclo"
-            : `Descarregar PDF da Semana ${selectedWeek}`}
-          aria-label={selectedWeek == null ? "PDF do mesociclo" : `PDF da Semana ${selectedWeek}`}
-        >
-          {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">{selectedWeek == null ? "PDF · Plano" : `PDF Semana ${selectedWeek}`}</span>
-          <span className="sm:hidden">{selectedWeek == null ? "PDF" : `PDF S${selectedWeek}`}</span>
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Row 4 — mode segmented */}
       <div
@@ -288,6 +297,11 @@ export function PlanCommandDeck({
             </button>
           );
         })}
+      </div>
+
+      {/* Row 5 — table toolbar context label (sits right above the table) */}
+      <div className="-mb-1 mt-2 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="truncate text-foreground/80">{contextLabel}</span>
       </div>
     </section>
   );
