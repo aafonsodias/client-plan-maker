@@ -120,6 +120,8 @@ import { PlanWithDeck } from "@/components/PlanWithDeck";
 import { ensureShareToken } from "@/server/sessions.functions";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Menu as MenuIcon } from "lucide-react";
+import { EquipmentPicker, EQUIPMENT_CAT_TONE } from "@/components/EquipmentPicker";
+import { EQUIPMENT_CATALOG } from "@/lib/equipment-catalog";
 
 // R3.2 — Legacy ReassessmentSheet (chest/arm/thigh/calf girths) is hidden by
 // default. Trainers who still need it can flip
