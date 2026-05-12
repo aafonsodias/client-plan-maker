@@ -141,6 +141,8 @@
   "anthro_block": {
     "title": "Antropometria",
     "hint": "Linha de base de composição corporal. O rácio cintura-anca é calculado automaticamente.",
+    "bia_cta": "Adicionar bioimpedância",
+    "bia_helper": "Opcional - melhora a interpretação da composição corporal.",
     "complete": "✓ Antropometria · {{summary}}",
     "complete_meaning": "WHR e categoria de IMC alimentam regras de carga axial, escolha de cardio e alvos realistas de composição corporal.",
     "waist": "Cintura (cm)",
