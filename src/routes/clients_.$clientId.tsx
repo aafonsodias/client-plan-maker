@@ -2665,12 +2665,12 @@ function ClientDetail() {
               </label>
               {!assessment.no_injuries && (
                 <>
+                  <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
                   <TextField
-                    label={t("training_block.injuries")}
+                    label={t("injuries_block.other_label", { defaultValue: "Outras lesões" })}
                     value={assessment.injuries}
                     onChange={(v) => setAssessment({ ...assessment, injuries: v, no_injuries: v ? false : assessment.no_injuries })}
                   />
-                  <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
                 </>
               )}
             </div>
