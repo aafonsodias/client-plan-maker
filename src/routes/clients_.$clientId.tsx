@@ -1692,7 +1692,7 @@ function ClientDetail() {
                                   ? `Inativo · ${(phase as any).daysSince ?? 0}d`
                                   : phase.kind === "ended"
                                     ? "Plano terminado"
-                                    : phase.label;
+                                    : (phase as any).label;
                     return (
                       <span className="inline-flex min-w-0 items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 rounded-full ${phaseToneCls}`} aria-hidden="true" />
