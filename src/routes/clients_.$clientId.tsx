@@ -154,18 +154,8 @@ function ClientDetailRoute() {
   );
 }
 
-// Stable IDs — labels resolved via i18n at render time. The DB stores
-// the canonical EN label for `available_equipment` for backward compatibility.
-const EQUIPMENT_OPTIONS: Array<{ id: string; canonical: string }> = [
-  { id: "barbell", canonical: "Barbell" },
-  { id: "dumbbells", canonical: "Dumbbells" },
-  { id: "kettlebells", canonical: "Kettlebells" },
-  { id: "cable_machine", canonical: "Cable machine" },
-  { id: "bench", canonical: "Bench" },
-  { id: "pull_up_bar", canonical: "Pull-up bar" },
-  { id: "bands", canonical: "Bands" },
-  { id: "bodyweight", canonical: "Bodyweight only" },
-];
+// Equipment selection now uses the shared catalogue + EquipmentPicker (same
+// surface as the intake slides). DB still stores canonical EN labels.
 
 const PARQ_KEYS = ["q1", "q2", "q3", "q4", "q5", "q6", "q7"] as const;
 
