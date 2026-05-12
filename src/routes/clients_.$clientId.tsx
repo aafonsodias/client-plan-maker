@@ -1767,37 +1767,33 @@ function ClientDetail() {
                 <Eraser className="mr-2 h-3.5 w-3.5" />
                 {t("discard.button")}
               </DropdownMenuItem>
-              {(client.intake_status === "submitted" ||
-                client.intake_status === "reviewed" ||
-                lastSavedAt) && (
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Send className="mr-2 h-3.5 w-3.5" />
-                      Pedir nova avaliação
-                    </DropdownMenuItem>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-full sm:max-w-md">
-                    <SheetHeader>
-                      <SheetTitle>Pedir nova avaliação</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-4">
-                      <IntakeLinkPanel
-                        clientId={client.id}
-                        clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-                        clientPhone={client.phone}
-                        intake={{
-                          intake_token: client.intake_token ?? null,
-                          intake_token_expires_at: client.intake_token_expires_at ?? null,
-                          intake_status: client.intake_status ?? "not_sent",
-                          intake_submitted_at: client.intake_submitted_at ?? null,
-                        }}
-                        onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-                      />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Send className="mr-2 h-3.5 w-3.5" />
+                    Detalhes do envio
+                  </DropdownMenuItem>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md">
+                  <SheetHeader>
+                    <SheetTitle>Detalhes do envio do questionário</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4">
+                    <IntakeLinkPanel
+                      clientId={client.id}
+                      clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                      clientPhone={client.phone}
+                      intake={{
+                        intake_token: client.intake_token ?? null,
+                        intake_token_expires_at: client.intake_token_expires_at ?? null,
+                        intake_status: client.intake_status ?? "not_sent",
+                        intake_submitted_at: client.intake_submitted_at ?? null,
+                      }}
+                      onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
             </DropdownMenuContent>
           </DropdownMenu>
           <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
