@@ -2184,25 +2184,26 @@ function ClientDetail() {
               });
             }
           } : () => {
-            // Round 1 — hard gate. PAR-Q / high-risk safety preserved; if
-            // either group is incomplete, scroll the user to the first
-            // missing section instead of silently generating.
+            // Round B — hard gate. PAR-Q / high-risk safety preserved; if
+            // anything is missing, render the canonical report inline near
+            // the CTA so the user does not have to open the sidebar.
             if (safetyBlocked) {
               setSafetyDialogOpen(true);
               return;
             }
-            if (!selfIntakeDone) {
-              const firstMissing = SELF_INTAKE_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
-              if (firstMissing) setActiveSection(firstMissing);
-              toast.error(t("assessment_gate.self_intake_incomplete"));
+            const report = buildCompletionReport(assessment, completionCtx);
+            if (report.missingAll.length > 0) {
+              setMissingItems(report.missingAll);
+              const first = report.missingAll[0];
+              if (first) setActiveSection(first.sectionId);
+              toast.error(
+                report.selfIntakeMissing.length > 0
+                  ? t("assessment_gate.self_intake_incomplete")
+                  : t("assessment_gate.session_incomplete"),
+              );
               return;
             }
-            if (!sessionDone) {
-              const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
-              if (firstMissing) setActiveSection(firstMissing);
-              toast.error(t("assessment_gate.session_incomplete"));
-              return;
-            }
+            setMissingItems([]);
             // Round 2 — never call generation directly from the conclude CTA.
             // Open the Pre-Plan Review sheet (zero AI). Generation only fires
             // when the trainer clicks "Criar briefing inicial" inside it.
