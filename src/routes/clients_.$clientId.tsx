@@ -2097,7 +2097,7 @@ function ClientDetail() {
         </aside>
         )}
 
-        {assessment?.id && (
+        {assessment?.id && completedCount >= Math.ceil(sectionStatus.length / 2) && (
           <div className="mb-2 flex flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
             <button
               type="button"
