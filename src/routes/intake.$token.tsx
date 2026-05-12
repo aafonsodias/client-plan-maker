@@ -331,7 +331,16 @@ function IntakePage() {
             const saved = localStorage.getItem(`protocol_intake_draft_${token}`);
             if (saved) {
               const parsed = JSON.parse(saved);
-              setForm((cur) => ({ ...cur, ...parsed }));
+              // R-intake-rich: per-field merge. Trainer-edited fields are
+              // protected — we never let a stale localStorage draft
+              // overwrite something the PT touched after the client started.
+              const fieldProv = (c.assessment?.extended?.field_provenance ?? {}) as Record<string, "client" | "trainer-edited">;
+              const safe: Record<string, any> = {};
+              for (const k of Object.keys(parsed)) {
+                if (fieldProv[k] === "trainer-edited") continue;
+                safe[k] = parsed[k];
+              }
+              setForm((cur) => ({ ...cur, ...safe }));
             }
           } catch {}
           hydrated.current = true;
