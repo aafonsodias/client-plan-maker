@@ -1674,6 +1674,7 @@ function ClientDetail() {
                 phase?.kind === "intake_sent" ? "bg-sky-500" :
                 "bg-muted-foreground/50";
               return (
+                <>
                 <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-3)]">
                   {client.email && (
                     <>
@@ -1731,6 +1732,7 @@ function ClientDetail() {
                     </p>
                   );
                 })()}
+                </>
               );
             })()}
           </div>
