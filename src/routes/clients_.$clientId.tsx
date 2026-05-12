@@ -1711,6 +1711,27 @@ function ClientDetail() {
                       </span>
                     );
                   })()}
+                  {(() => {
+                    const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
+                    const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
+                    const expired = exp != null && exp < Date.now();
+                    const st = client.intake_status ?? "not_sent";
+                    const linkPart =
+                      expired ? "caducado" :
+                      st === "sent" ? "ainda não aberto" :
+                      st === "opened" ? "aberto" :
+                      null;
+                    if (!linkPart) return null;
+                    return (
+                      <>
+                        <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+                        <span className="eyebrow text-[10px] text-muted-foreground truncate">
+                          {linkPart}
+                          {!expired && daysLeft != null ? ` · expira em ${daysLeft}d` : ""}
+                        </span>
+                      </>
+                    );
+                  })()}
                   {/* {stepN}/5 chip removed — duplicate of section progress */}
                 </p>
               );
