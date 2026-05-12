@@ -3379,6 +3379,7 @@ function ClientDetail() {
               ))}
             </div>
             <TextField label={t("mobility_block.notes")} value={assessment.mobility_limitations} onChange={(v) => setAssessment({ ...assessment, mobility_limitations: v })} className="mt-2" />
+            <RxImplications sectionId="mobility" assessment={assessment} riskCategory={riskCategory} collapsible />
           </SectionBlock>
           {/* Posture */}
           <SectionBlock id="posture" analysing={analysingSections["posture"]} analysis={sectionAnalyses["posture"]} title={t("posture_block.title")} hint={t("posture_block.hint")} defaultCollapsed complete={isSectionComplete("posture", assessment)}>
@@ -3409,6 +3410,7 @@ function ClientDetail() {
                 />
               </div>
             </div>
+            <RxImplications sectionId="posture" assessment={assessment} riskCategory={riskCategory} collapsible />
           </SectionBlock>
           {/* Movement screen */}
           <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)} footer={isSectionComplete("screen", assessment) ? <CompletionStrip text={t("screen_block.complete", { cleared: PATTERN_IDS.filter((p) => isPatternHandled(p, assessment)).length, total: PATTERN_IDS.length })} description={`${PATTERN_IDS.filter((p) => isPatternHandled(p, assessment)).length}/${PATTERN_IDS.length} padrões avaliados ou marcados “não avaliado”. Scores baixos viram implicações de prescrição, não bloqueiam o plano.`} /> : null}>
