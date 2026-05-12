@@ -6591,6 +6591,283 @@ function buildRxItems_performance(a: any): RxItem[] {
   return items;
 }
 
+function buildRxItems_injuries(a: any, injuriesCount: number): RxItem[] {
+  const items: RxItem[] = [];
+  const total = injuriesCount
+    + (Array.isArray(a?.pain_areas) ? a.pain_areas.length : 0);
+  const otherText = String(a?.injuries ?? "").trim();
+  const painNotes = String(a?.pain_notes ?? "").trim();
+  if (a?.no_injuries === true && total === 0 && !otherText) {
+    return [{
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem lesões nem dor relevante",
+      body: "Pool de exercícios livre. Progressão padrão sem restrições de ROM ou contraindicações.",
+    }];
+  }
+  if (total === 0 && !otherText && a?.no_injuries !== true) {
+    return [{
+      key: "missing",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Lesões por confirmar",
+      body: "Marcar zonas com dor no boneco ou ativar “Sem lesões” antes de finalizar a prescrição.",
+    }];
+  }
+  if (total > 0) {
+    items.push({
+      key: "regions",
+      tone: "warn",
+      icon: <Shield className="h-3.5 w-3.5" />,
+      title: `${total} região${total === 1 ? "" : "s"} sinalizada${total === 1 ? "" : "s"}`,
+      body: "Aplicar substituições e limites de ROM nas zonas afetadas. Verificar incompatibilidades no pool antes de gerar o plano.",
+    });
+  }
+  if (otherText) {
+    items.push({
+      key: "other",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Outras lesões anotadas",
+      body: "Confirmar se exigem variantes específicas ou reduções de carga antes de incluir o exercício no plano.",
+    });
+  }
+  if (painNotes) {
+    items.push({
+      key: "pain",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: "Dor activa registada",
+      body: "Capar RPE em 7 nas regiões dolorosas e priorizar amplitude indolor durante a primeira fase.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_history(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const years = Number(a?.years_training);
+  const style = String(a?.previous_program_style ?? "").trim();
+  const lifts = String(a?.max_lifts ?? "").trim();
+  if (Number.isFinite(years) && years >= 0) {
+    let title: string;
+    let body: string;
+    let tone: RxItem["tone"] = "info";
+    if (years < 1) {
+      title = "Tier iniciante (<1 ano)";
+      body = "Linear progression em compostos. Foco em técnica antes de carga, sem RPE nas primeiras semanas.";
+    } else if (years < 3) {
+      title = `Tier intermédio (~${years} ano${years === 1 ? "" : "s"})`;
+      body = "Já tolera ondulação ligeira. Introduzir RPE 6–8 e variar acessórios entre blocos.";
+    } else {
+      title = `Tier avançado (${years}+ anos)`;
+      tone = "neutral";
+      body = "Suporta blocos ondulados completos e especialização. Deload obrigatório a cada 4 semanas.";
+    }
+    items.push({ key: "tier", tone, icon: <Sparkles className="h-3.5 w-3.5" />, title, body });
+  }
+  if (lifts) {
+    items.push({
+      key: "anchor",
+      tone: "info",
+      icon: <Gauge className="h-3.5 w-3.5" />,
+      title: "Âncora de carga disponível",
+      body: "1RMs registados — usar como referência directa em vez de estimar por RPE nas primeiras semanas.",
+    });
+  } else {
+    items.push({
+      key: "no-anchor",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Sem 1RMs registados",
+      body: "Estimar cargas por RPE nas primeiras 2 semanas e ajustar pela adesão. Marcar testes leves após bloco 1.",
+    });
+  }
+  if (style) {
+    items.push({
+      key: "style",
+      tone: "neutral",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Estilo prévio anotado",
+      body: "Considerar transferência (ou contraste deliberado) ao escolher o preset do próximo bloco.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "missing",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Histórico em falta",
+      body: "Sem anos de treino, estilo ou 1RMs o tier inicial é estimado pelo PAR-Q+ e idade — menos preciso.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_meds(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const flags: string[] = Array.isArray(a?.med_flags) ? a.med_flags.map((s: string) => String(s).toLowerCase()) : [];
+  if (a?.no_meds === true && flags.length === 0) {
+    return [{
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem medicação relevante",
+      body: "Zonas de FC e RPE assumem resposta fisiológica padrão. Sem restrições farmacológicas.",
+    }];
+  }
+  if (flags.some((f) => f.includes("beta"))) {
+    items.push({
+      key: "beta",
+      tone: "warn",
+      icon: <HeartPulse className="h-3.5 w-3.5" />,
+      title: "Beta-bloqueador — FC não fiável",
+      body: "Zonas por FC ficam comprimidas. Prescrever por RPE (4–6 moderado, 7–8 vigoroso) e não pelo HRR.",
+    });
+  }
+  if (flags.some((f) => f.includes("anticoag"))) {
+    items.push({
+      key: "anticoag",
+      tone: "warn",
+      icon: <Droplet className="h-3.5 w-3.5" />,
+      title: "Anticoagulante — sem contacto/impacto",
+      body: "Excluir saltos pesados, kettlebell balístico, desportos de contacto. Risco aumentado de hematoma com cargas máximas.",
+    });
+  }
+  if (flags.some((f) => f.includes("insulin") || f.includes("hypoglyc") || f.includes("antidiabetic"))) {
+    items.push({
+      key: "glyc",
+      tone: "warn",
+      icon: <Droplets className="h-3.5 w-3.5" />,
+      title: "Risco hipoglicémico",
+      body: "Treinar 1–2h após refeição, ter HC rápido disponível. Evitar sessões longas em jejum até estabilizar.",
+    });
+  }
+  if (flags.some((f) => f.includes("antihtn") || f.includes("diuretic"))) {
+    items.push({
+      key: "htn",
+      tone: "info",
+      icon: <Activity className="h-3.5 w-3.5" />,
+      title: "Hipotensão pós-esforço",
+      body: "Cool-down activo (3–5 min) obrigatório. Evitar levantar peso da posição deitada para de pé sem transição.",
+    });
+  }
+  if (flags.some((f) => f.includes("nsaid") || f.includes("corticosteroid"))) {
+    items.push({
+      key: "antiinf",
+      tone: "info",
+      icon: <Pill className="h-3.5 w-3.5" />,
+      title: "Anti-inflamatórios crónicos",
+      body: "Podem mascarar dor e atrasar adaptação tendinosa. Progressões mais conservadoras e atenção a sinais subtis.",
+    });
+  }
+  if (items.length === 0 && flags.length === 0 && a?.no_meds !== true) {
+    items.push({
+      key: "missing",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Medicação por confirmar",
+      body: "Sem confirmação as zonas de intensidade e pressupostos de recuperação são menos fiáveis.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem implicações farmacológicas",
+      body: "Medicação registada não altera prescrição padrão.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_mobility(a: any): RxItem[] {
+  const regions: { k: string; label: string; impl: string }[] = [
+    { k: "ext_mob_shoulder", label: "Ombro", impl: "Capar overhead — preferir landmine, push-press parcial ou inclinado até ≥3." },
+    { k: "ext_mob_hip", label: "Anca", impl: "Squat e hinge com amplitude reduzida; priorizar mobilidade activa de anca no aquecimento." },
+    { k: "ext_mob_ankle", label: "Tornozelo", impl: "Squat com elevação de calcanhares ou box squat; trabalhar dorsiflexão diariamente." },
+    { k: "ext_mob_thoracic", label: "Torácica", impl: "Front squat e overhead bloqueados — preferir back squat e remadas; mobilidade torácica no aquecimento." },
+    { k: "ext_mob_wrist", label: "Punho", impl: "Front rack alternativo (cross-arm ou alças); evitar push-up no chão directo." },
+    { k: "ext_mob_knee", label: "Joelho", impl: "Sem amplitude profunda nem step-down agressivo; preferir leg press parcial e isométricos." },
+  ];
+  const items: RxItem[] = [];
+  const limits = regions.filter((r) => Number(a?.[r.k]) > 0 && Number(a?.[r.k]) <= 2);
+  for (const r of limits.slice(0, 3)) {
+    items.push({
+      key: r.k,
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: `${r.label} limitado (${a[r.k]}/5)`,
+      body: r.impl,
+    });
+  }
+  if (limits.length > 3) {
+    items.push({
+      key: "more",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: `+${limits.length - 3} regiões com restrição`,
+      body: "Bloco de mobility-first nas primeiras 2–4 semanas antes de subir carga.",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Mobilidade dentro da régua",
+      body: "Sem restrições impostas. Pode usar amplitude completa nos compostos.",
+    });
+  }
+  return items;
+}
+
+function buildRxItems_posture(a: any): RxItem[] {
+  const items: RxItem[] = [];
+  const imb = String(a?.known_imbalances ?? "").trim();
+  const dom = String(a?.dominant_side ?? "").trim();
+  const notes = String(a?.standing_posture_notes ?? "").trim();
+  if (imb) {
+    items.push({
+      key: "imb",
+      tone: "warn",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: "Assimetria conhecida",
+      body: "Adicionar 1 acessório unilateral por sessão a corrigir o lado fraco. Reavaliar a cada bloco.",
+    });
+  }
+  if (dom && dom !== "ambidextrous") {
+    items.push({
+      key: "dom",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: `Lado dominante: ${dom === "right" ? "direito" : "esquerdo"}`,
+      body: "Iniciar séries unilaterais pelo lado não-dominante para evitar transferência de erro técnico.",
+    });
+  }
+  if (notes) {
+    items.push({
+      key: "notes",
+      tone: "neutral",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: "Notas posturais registadas",
+      body: "Considerar no aquecimento (ex.: torácica, glúteo médio, isolamentos correctivos).",
+    });
+  }
+  if (items.length === 0) {
+    items.push({
+      key: "clear",
+      tone: "neutral",
+      icon: <Check className="h-3.5 w-3.5" />,
+      title: "Sem assimetrias relevantes",
+      body: "Programação bilateral padrão sem necessidade de correctivos específicos.",
+    });
+  }
+  return items;
+}
+
 function RxImplications({
   sectionId,
   assessment,
