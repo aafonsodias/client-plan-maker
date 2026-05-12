@@ -998,7 +998,11 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
   const { t } = useTranslation("intake");
   const [step, setStep] = useState(0);
   const { token } = Route.useParams();
-  const steps = useMemo(() => buildSlides(t, form, setForm, token), [t, form, setForm, token]);
+  const goTo = useCallback((idx: number) => {
+    setStep((s) => Math.max(0, Math.min(idx, s)));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  const steps = useMemo(() => buildSlides(t, form, setForm, token, goTo), [t, form, setForm, token, goTo]);
   const total = steps.length;
   const current = steps[step];
   const isLast = step === total - 1;
@@ -1060,6 +1064,12 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
             <p className="mt-3 text-sm text-muted-foreground">{current.subtitle}</p>
           )}
           <div className="mt-8 space-y-5">{current.body}</div>
+          {!canAdvance && current.missingHint && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-200 animate-pulse">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {current.missingHint}
+            </div>
+          )}
         </div>
       </main>
 
