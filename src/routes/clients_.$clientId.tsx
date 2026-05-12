@@ -3772,6 +3772,11 @@ function ClientDetail() {
                           toast.success(`${prefix} pronto`);
                         }
                         void refreshPlans();
+                        // Refresh inlineBrief so hasBlueprintDraft / approvedStages
+                        // reflect the freshly-generated stage — otherwise the
+                        // StageCard keeps showing "Generate master plan" until
+                        // the user navigates away.
+                        await openPhasedDraft(planId, stage);
                         if (opts?.skipNavigate) return;
                         navigate({
                           to:
