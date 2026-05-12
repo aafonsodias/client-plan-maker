@@ -63,7 +63,8 @@
     "empty_title": "No injuries registered",
     "empty_hint": "Tap a body area to register pain or injury.",
     "save_changes_cta": "Save changes",
-    "notes_placeholder": "E.g. pain when raising the arm, started 2 weeks ago, worse during bench press."
+    "notes_placeholder": "E.g. pain when raising the arm, started 2 weeks ago, worse during bench press.",
+    "other_label": "Other injuries"
   },
   "mobile_step_header": {
     "prefix": "Step {{current}} of {{total}} · {{title}}"
