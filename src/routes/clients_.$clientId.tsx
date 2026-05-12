@@ -6602,8 +6602,12 @@ function RxImplications({
   summaryDescription,
   insight,
   insightLoading = false,
+  injuriesCount,
 }: {
-  sectionId: "risk" | "parq" | "training" | "goal" | "anthro" | "readiness" | "lifestyle" | "nutrition" | "screen" | "performance";
+  sectionId:
+    | "risk" | "parq" | "training" | "goal" | "anthro" | "readiness"
+    | "lifestyle" | "nutrition" | "screen" | "performance"
+    | "injuries" | "history" | "meds" | "mobility" | "posture";
   assessment: any;
   riskCategory: string;
   collapsible?: boolean;
@@ -6615,6 +6619,8 @@ function RxImplications({
   /** Per-section AI insight (was rendered separately as SectionAnalysisCard). */
   insight?: string | null;
   insightLoading?: boolean;
+  /** Cross-table count for the injuries builder (assessment_injuries rows). */
+  injuriesCount?: number;
 }) {
   const items: RxItem[] = (() => {
     switch (sectionId) {
@@ -6628,6 +6634,11 @@ function RxImplications({
       case "nutrition": return buildRxItems_nutrition(assessment);
       case "screen": return buildRxItems_screen(assessment);
       case "performance": return buildRxItems_performance(assessment);
+      case "injuries": return buildRxItems_injuries(assessment, injuriesCount ?? 0);
+      case "history": return buildRxItems_history(assessment);
+      case "meds": return buildRxItems_meds(assessment);
+      case "mobility": return buildRxItems_mobility(assessment);
+      case "posture": return buildRxItems_posture(assessment);
       default: return [];
     }
   })();
