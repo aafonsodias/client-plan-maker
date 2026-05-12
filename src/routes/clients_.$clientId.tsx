@@ -2484,15 +2484,57 @@ function ClientDetail() {
               <Field label={t("training_block.plan_length")} type="number" value={String(duration)} onChange={(v) => setDuration(Math.max(1, Math.min(16, Number(v) || 4)))} />
             </div>
             <div className="mt-3">
-              <Label className="text-xs">{t("training_block.available_equipment")}</Label>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {EQUIPMENT_OPTIONS.map(({ id, canonical }) => {
-                  const on = assessment.available_equipment.includes(canonical);
-                  return (
-                    <button key={id} type="button" onClick={() => toggleEq(canonical)} className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>{t(`equipment.${id}` as const)}</button>
-                  );
-                })}
-              </div>
+              {(() => {
+                const selected: string[] = assessment.available_equipment ?? [];
+                const lang = (i18n.language || "pt").startsWith("en") ? "en" : "pt";
+                const items = selected
+                  .map((en) => EQUIPMENT_CATALOG.find((x) => x.en === en))
+                  .filter((x): x is (typeof EQUIPMENT_CATALOG)[number] => !!x);
+                const previewCount = 3;
+                const preview = items.slice(0, previewCount);
+                const extra = items.length - preview.length;
+                return (
+                  <details className="group rounded-md border border-border bg-background/40 open:bg-background/60">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2">
+                      <Label className="text-xs cursor-pointer">{t("training_block.available_equipment")}</Label>
+                      <span
+                        className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          selected.length > 0
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : "bg-secondary text-muted-foreground"
+                        }`}
+                      >
+                        {selected.length > 0
+                          ? t("training_block.equipment_count_n", { n: selected.length, defaultValue: `${selected.length} seleccionados` })
+                          : t("training_block.equipment_count_zero", { defaultValue: "Nenhum seleccionado" })}
+                      </span>
+                      <div className="ml-1 flex min-w-0 flex-1 flex-wrap items-center gap-1 overflow-hidden">
+                        {preview.map((it) => {
+                          const tone = EQUIPMENT_CAT_TONE[it.category];
+                          return (
+                            <span
+                              key={it.id}
+                              className={`truncate rounded-full border px-2 py-0.5 text-[10px] ${tone.on}`}
+                            >
+                              {lang === "en" ? it.en : it.pt}
+                            </span>
+                          );
+                        })}
+                        {extra > 0 && (
+                          <span className="text-[10px] text-muted-foreground">+{extra}</span>
+                        )}
+                      </div>
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="border-t border-border/60 px-3 py-3">
+                      <EquipmentPicker
+                        value={selected}
+                        onChange={(v) => setAssessment({ ...assessment, available_equipment: v })}
+                      />
+                    </div>
+                  </details>
+                );
+              })()}
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               {SHOW_DEPRECATED_ASSESSMENT_FIELDS && (
