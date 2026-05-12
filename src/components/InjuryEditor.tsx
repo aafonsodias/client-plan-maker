@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -37,6 +37,19 @@ export function InjuryEditor({
   const [note, setNote] = useState<string>(row?.note ?? "");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onCancel]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -49,13 +62,30 @@ export function InjuryEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 p-4 backdrop-blur sm:items-center">
-      <div className="w-full max-w-md space-y-4 rounded-t-2xl bg-card p-5 shadow-xl sm:rounded-2xl">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-background/70 px-4 backdrop-blur-sm sm:flex sm:items-center sm:justify-center"
+      style={{
+        paddingTop: "max(env(safe-area-inset-top), 1rem)",
+        paddingBottom: "max(env(safe-area-inset-bottom), 1rem)",
+      }}
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="injury-editor-title"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="mx-auto flex w-full max-w-md flex-col rounded-2xl border border-border/60 bg-card shadow-xl"
+        style={{ maxHeight: "calc(100dvh - 2rem)" }}
+      >
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
         <header className="space-y-1">
           <p className="eyebrow text-[10px] uppercase tracking-widest text-muted-foreground">
             {t("injuries.page_title")}
           </p>
-          <h2 className="t-3">{zone ? t(zone.label_key) : zoneId}</h2>
+          <h2 id="injury-editor-title" className="t-3">
+            {zone ? t(zone.label_key) : zoneId}
+          </h2>
         </header>
 
         <div>
@@ -117,10 +147,17 @@ export function InjuryEditor({
             onChange={(e) => setNote(e.target.value)}
           />
         </div>
+        </div>
 
-        <div className="flex gap-2 pt-2">
+        <div className="sticky bottom-0 flex gap-2 border-t border-border/60 bg-card/95 p-3 backdrop-blur">
           <Button type="button" onClick={handleSave} disabled={saving} className="flex-1">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("injuries.save_cta")}
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : row ? (
+              t("injuries.save_changes_cta", { defaultValue: t("injuries.save_cta") })
+            ) : (
+              t("injuries.save_cta")
+            )}
           </Button>
           <Button type="button" variant="ghost" onClick={onCancel}>
             {t("injuries.cancel_cta")}
