@@ -110,6 +110,8 @@
     "bmi_missing_hw": "Add the client's height and weight to compute BMI.",
     "bmi_mark_muscular": "Mark as muscular",
     "bmi_use_auto": "Use automatic value",
+    "bmi_auto_label": "Auto",
+    "bmi_athletic_label": "Athletic",
     "bmi_underweight": "Underweight",
     "bmi_normal": "Normal",
     "bmi_overweight": "Overweight",
@@ -136,6 +138,8 @@
   },
   "anthro_block": {
     "title": "Anthropometry",
+    "bia_cta": "Add bioimpedance",
+    "bia_helper": "Optional - improves body-composition interpretation.",
     "hint": "Body composition baseline. Waist-to-hip ratio is computed automatically.",
     "waist": "Waist (cm)",
     "waist_hint": "Measure at narrowest point above the hip bone, exhale.",
@@ -535,6 +539,7 @@
   "mobility_block": {
     "title": "Mobility — anatomical (1–5)",
     "hint": "Score each region: 1 = severely restricted, 5 = full pain-free range.",
+    "rubric": "1 = severe limitation/pain; 2 = clear limitation; 3 = acceptable but limited; 4 = good with minor limitation; 5 = full, controlled, symmetrical and pain-free.",
     "shoulder": "Shoulder",
     "hip": "Hip",
     "ankle": "Ankle",

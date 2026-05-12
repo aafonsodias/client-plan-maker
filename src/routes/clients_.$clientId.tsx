@@ -68,6 +68,9 @@ import {
   assessmentPhase,
   assessmentGroupCounts,
 } from "@/lib/assessment-phase";
+import { buildCompletionReport, type MissingItem } from "@/lib/assessment-completion";
+import { MissingItemsPanel } from "@/components/assessment/MissingItemsPanel";
+import { listInjuries } from "@/server/injuries.functions";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
@@ -387,6 +390,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
       parq: assessment.parq,
       risk: assessment.risk,
       no_injuries: assessment.no_injuries === true,
+      no_meds: assessment.no_meds === true,
       hours_seated: assessment.ext_hours_seated,
       daily_steps: assessment.ext_daily_steps,
       job_type: assessment.ext_job_type,
@@ -579,6 +583,7 @@ function ClientDetail() {
     medical_conditions: "",
     preferences: "",
     no_injuries: false,
+    no_meds: false,
     sleep_quality: "",
     stress_level: "",
     nutrition_habits: "",
@@ -693,8 +698,31 @@ function ClientDetail() {
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
+  // Round B — lift `assessment_injuries` count so the body-map selector
+  // reflects in completion state. Loaded once per assessment id; updated
+  // optimistically by InjuriesBodyMapBlock via `onCountChange`.
+  const listInjuriesFn = useServerFn(listInjuries);
+  const [injuriesCount, setInjuriesCount] = useState(0);
+  // Conclude-time missing items list (replaces the bare toast-only feedback).
+  const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
+
+  // Load injury row count whenever the underlying assessment changes.
+  useEffect(() => {
+    const aid = (assessment as any)?.id as string | undefined;
+    if (!aid) {
+      setInjuriesCount(0);
+      return;
+    }
+    let on = true;
+    listInjuriesFn({ data: { assessmentId: aid } })
+      .then((rows) => {
+        if (on) setInjuriesCount(Array.isArray(rows) ? rows.length : 0);
+      })
+      .catch(() => { /* non-fatal; section can still be completed via no_injuries */ });
+    return () => { on = false; };
+  }, [listInjuriesFn, (assessment as any)?.id]);
 
   // Round 1 — Generate Plan is now hard-gated; no incomplete shortcut.
   // The previous `incompleteWarnOpen` AlertDialog has been removed.
@@ -744,6 +772,7 @@ function ClientDetail() {
           parq: ext.parq ?? prev.parq,
           risk: ext.risk ?? prev.risk,
           no_injuries: ext.no_injuries === true,
+          no_meds: ext.no_meds === true,
           ext_hours_seated: ext.hours_seated ?? "",
           ext_daily_steps: ext.daily_steps ?? "",
           ext_job_type: ext.job_type ?? "",
@@ -1548,7 +1577,7 @@ function ClientDetail() {
       ext_mob_shoulder: "", ext_mob_hip: "", ext_mob_ankle: "", ext_mob_thoracic: "", ext_mob_wrist: "", ext_mob_knee: "",
       ext_cardio_test: "untested", ext_cardio_value: "",
       primary_goal: "", experience_level: "", training_location: "",
-      available_equipment: [], injuries: "", medical_conditions: "", preferences: "", no_injuries: false,
+      available_equipment: [], injuries: "", medical_conditions: "", preferences: "", no_injuries: false, no_meds: false,
       sleep_quality: "", stress_level: "", nutrition_habits: "", hydration_glasses_per_day: "",
       mobility_limitations: "", energy_levels: "", recovery_capacity: "", lifestyle: "",
       standing_posture_notes: "", known_imbalances: "", dominant_side: "",
@@ -1589,6 +1618,13 @@ function ClientDetail() {
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
 
+  // Round B — single completion context shared by sidebar + Concluir.
+  const completionCtx = { injuriesCount };
+  // Local shadow that funnels every section-completeness check through the
+  // shared context (so injuries added via the body-map count, etc.).
+  const isSectionComplete = (id: string, a: any) =>
+    isSectionCompleteForPhase(id, a, completionCtx);
+
   // Section completion + progress
   const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
   const completedCount = sectionStatus.filter((s) => s.complete).length;
@@ -1600,10 +1636,10 @@ function ClientDetail() {
 
   // Round 1 — derived assessment phase + group counts. No schema changes;
   // everything is computed from the existing assessment payload.
-  const phase = assessmentPhase(assessment);
-  const groupCounts = assessmentGroupCounts(assessment);
-  const selfIntakeDone = isSelfIntakeComplete(assessment);
-  const sessionDone = isAssessmentSessionComplete(assessment);
+  const phase = assessmentPhase(assessment, completionCtx);
+  const groupCounts = assessmentGroupCounts(assessment, completionCtx);
+  const selfIntakeDone = isSelfIntakeComplete(assessment, completionCtx);
+  const sessionDone = isAssessmentSessionComplete(assessment, completionCtx);
   const safetyBlocked = parqYes || riskCategory === "high";
   /** Hard gate for any "Generate plan" path. */
   const canGeneratePlan = phase === "complete" && !safetyBlocked;
@@ -2136,7 +2172,31 @@ function ClientDetail() {
           onCollapsedChange={setAssessmentCollapsedPersist}
           hideCollapsedStrip={stripHidden}
           sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
-          onActiveChange={setActiveSection}
+          onActiveChange={(id) => {
+            setActiveSection(id);
+            // Once the user navigates into a section, dismiss the missing-items
+            // panel — they're acting on it. It will be re-built on the next
+            // failed Conclude.
+            if (missingItems.length > 0) setMissingItems([]);
+          }}
+          missingPanel={
+            missingItems.length > 0 ? (
+              <MissingItemsPanel
+                items={missingItems}
+                onGoTo={(sectionId) => {
+                  setActiveSection(sectionId);
+                  setMissingItems([]);
+                  if (typeof window !== "undefined") {
+                    requestAnimationFrame(() => {
+                      document
+                        .getElementById(`sec-${sectionId}`)
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                  }
+                }}
+              />
+            ) : null
+          }
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
           concludeBusy={busy || phasedBusy}
@@ -2151,25 +2211,26 @@ function ClientDetail() {
               });
             }
           } : () => {
-            // Round 1 — hard gate. PAR-Q / high-risk safety preserved; if
-            // either group is incomplete, scroll the user to the first
-            // missing section instead of silently generating.
+            // Round B — hard gate. PAR-Q / high-risk safety preserved; if
+            // anything is missing, render the canonical report inline near
+            // the CTA so the user does not have to open the sidebar.
             if (safetyBlocked) {
               setSafetyDialogOpen(true);
               return;
             }
-            if (!selfIntakeDone) {
-              const firstMissing = SELF_INTAKE_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
-              if (firstMissing) setActiveSection(firstMissing);
-              toast.error(t("assessment_gate.self_intake_incomplete"));
+            const report = buildCompletionReport(assessment, completionCtx);
+            if (report.missingAll.length > 0) {
+              setMissingItems(report.missingAll);
+              const first = report.missingAll[0];
+              if (first) setActiveSection(first.sectionId);
+              toast.error(
+                report.selfIntakeMissing.length > 0
+                  ? t("assessment_gate.self_intake_incomplete")
+                  : t("assessment_gate.session_incomplete"),
+              );
               return;
             }
-            if (!sessionDone) {
-              const firstMissing = ASSESSMENT_SESSION_SECTION_IDS.find((id) => !isSectionCompleteForPhase(id, assessment));
-              if (firstMissing) setActiveSection(firstMissing);
-              toast.error(t("assessment_gate.session_incomplete"));
-              return;
-            }
+            setMissingItems([]);
             // Round 2 — never call generation directly from the conclude CTA.
             // Open the Pre-Plan Review sheet (zero AI). Generation only fires
             // when the trainer clicks "Criar briefing inicial" inside it.
@@ -2630,7 +2691,29 @@ function ClientDetail() {
           </SectionBlock>
           {/* Medications */}
           <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <label className="mb-3 flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-border accent-amber-500"
+                checked={assessment.no_meds === true}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setAssessment({
+                    ...assessment,
+                    no_meds: next,
+                    ...(next ? { med_flags: [], medications: "" } : {}),
+                  });
+                  if (next) setMedsLocal({ doses: {}, others: [] });
+                }}
+              />
+              <span className="leading-snug">
+                <span className="font-medium">{t("no_meds_toggle.label")}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {t("no_meds_toggle.help", { defaultValue: "" })}
+                </span>
+              </span>
+            </label>
+            <div className={cn("grid grid-cols-1 gap-2 sm:grid-cols-2", assessment.no_meds === true && "opacity-50 pointer-events-none")}>
               {[
                 { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
                 { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
@@ -2653,6 +2736,7 @@ function ClientDetail() {
                     ...assessment,
                     med_flags: nextFlags,
                     medications: serializeMeds(nextFlags, nextDoses, medsLocal.others, otherLabel),
+                    no_meds: nextFlags.length > 0 ? false : assessment.no_meds,
                   });
                 };
                 return (
@@ -2706,6 +2790,7 @@ function ClientDetail() {
                 setAssessment({
                   ...assessment,
                   medications: serializeMeds(assessment.med_flags ?? [], medsLocal.doses, next, otherLabel),
+                  no_meds: next.length > 0 ? false : assessment.no_meds,
                 });
               };
               return (
@@ -3100,27 +3185,46 @@ function ClientDetail() {
                             {t(`risk_block.bmi_${cat}` as const)}
                           </span>
                         </div>
-                        {assessment.risk.bmi_category !== "muscular" ? (
-                          <button
-                            type="button"
-                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-                            onClick={() =>
-                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: "muscular" } })
-                            }
-                          >
-                            {t("risk_block.bmi_mark_muscular")}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-                            onClick={() =>
-                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: bmiAuto.category } })
-                            }
-                          >
-                            {t("risk_block.bmi_use_auto")}
-                          </button>
-                        )}
+                        <div
+                          role="group"
+                          aria-label={t("risk_block.bmi_label")}
+                          className="inline-flex shrink-0 rounded-full border border-border/70 bg-background/60 p-0.5 text-[11px] font-medium"
+                        >
+                          {([
+                            { id: "auto", label: t("risk_block.bmi_auto_label") },
+                            { id: "athletic", label: t("risk_block.bmi_athletic_label") },
+                          ] as const).map((opt) => {
+                            const active =
+                              opt.id === "athletic"
+                                ? assessment.risk.bmi_category === "muscular"
+                                : assessment.risk.bmi_category !== "muscular";
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() =>
+                                  setAssessment({
+                                    ...assessment,
+                                    risk: {
+                                      ...assessment.risk,
+                                      bmi_category:
+                                        opt.id === "athletic" ? "muscular" : bmiAuto.category,
+                                    },
+                                  })
+                                }
+                                className={cn(
+                                  "rounded-full px-2.5 py-0.5 transition",
+                                  active
+                                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                    : "text-muted-foreground hover:text-foreground",
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                       <div className="mt-2 relative h-1 rounded-full bg-secondary/60 overflow-visible">
                         {[18.5, 25, 30].map((th) => {
@@ -3159,9 +3263,13 @@ function ClientDetail() {
                 </p>
               )}
             </div>
-            <div className="mb-2 flex justify-end">
+            <div className="mb-2 flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end">
+              <p className="text-[10.5px] text-muted-foreground sm:mr-2">
+                {t("anthro_block.bia_helper")}
+              </p>
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                {t("anthro_block.bia_cta")}
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
@@ -3243,7 +3351,10 @@ function ClientDetail() {
           </SectionBlock>
           {/* Mobility checklist */}
           <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
+            <p className="mb-1 text-[10px] font-medium text-muted-foreground">{t("score_legend")}</p>
+            <p className="mb-2 text-[10.5px] leading-snug text-muted-foreground">
+              {t("mobility_block.rubric")}
+            </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {([
                 ["ext_mob_shoulder", "shoulder"],
@@ -4389,6 +4500,7 @@ function AssessmentSection({
   onActiveChange,
   onConclude,
   concludeBusy = false,
+  missingPanel = null,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -4412,6 +4524,8 @@ function AssessmentSection({
   /** Triggered when the user taps "Concluir" on the last section. */
   onConclude?: () => void;
   concludeBusy?: boolean;
+  /** Inline list of missing items rendered above the sticky/desktop footer. */
+  missingPanel?: React.ReactNode;
 }) {
   const { t } = useTranslation("assessment");
   const isMobile = useIsMobile(1024);
@@ -4805,6 +4919,8 @@ function AssessmentSection({
                   )}
                 </div>
               </div>
+              {/* Missing-items panel (shown when Concluir was blocked). */}
+              {missingPanel ? <div className="px-3 pb-2">{missingPanel}</div> : null}
               {/* Sticky footer */}
               <div
                 className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
@@ -4854,6 +4970,7 @@ function AssessmentSection({
                 </div>
               )}
             </div>
+            {missingPanel}
             <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
               <Button
                 variant="outline"
