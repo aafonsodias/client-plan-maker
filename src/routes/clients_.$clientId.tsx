@@ -390,6 +390,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
       parq: assessment.parq,
       risk: assessment.risk,
       no_injuries: assessment.no_injuries === true,
+      no_meds: assessment.no_meds === true,
       hours_seated: assessment.ext_hours_seated,
       daily_steps: assessment.ext_daily_steps,
       job_type: assessment.ext_job_type,
