@@ -1727,8 +1727,11 @@ function ClientDetail() {
                   if (!linkPart) return null;
                   return (
                     <p className="mt-0.5 eyebrow text-[10px] text-muted-foreground">
-                      {linkPart}
-                      {!expired && daysLeft != null ? ` · expira em ${daysLeft}d` : ""}
+                      {expired
+                        ? "Link caducado"
+                        : st === "opened"
+                          ? `Aberto${daysLeft != null ? ` · ${daysLeft}d` : ""}`
+                          : `Não aberto${daysLeft != null ? ` · ${daysLeft}d` : ""}`}
                     </p>
                   );
                 })()}
