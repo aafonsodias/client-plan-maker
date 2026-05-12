@@ -238,21 +238,22 @@ function sectionSignature(assessment: any, section: string): string {
 // focused flow + prev/next + tab order. Ids are unchanged.
 const SECTIONS = [
   // Self Intake / Auto-Avaliação
-  { id: "parq", label: "PAR-Q+", group: "self_intake" as const },
-  { id: "risk", label: "Risk strat.", group: "self_intake" as const },
-  { id: "training", label: "Training setup", group: "self_intake" as const },
-  { id: "history", label: "Training history", group: "self_intake" as const },
-  { id: "goal", label: "SMART goal", group: "self_intake" as const },
-  { id: "meds", label: "Medications", group: "self_intake" as const },
-  { id: "readiness", label: "Readiness", group: "self_intake" as const },
-  { id: "lifestyle", label: "Lifestyle", group: "self_intake" as const },
-  { id: "nutrition", label: "Nutrition", group: "self_intake" as const },
+  { id: "parq", label: "PAR-Q+", labelKey: "sections.parq", group: "self_intake" as const },
+  { id: "risk", label: "Risk strat.", labelKey: "sections.risk", group: "self_intake" as const },
+  { id: "training", label: "Training setup", labelKey: "sections.training", group: "self_intake" as const },
+  { id: "injuries", label: "Lesões e dor", labelKey: "sections.injuries", group: "self_intake" as const },
+  { id: "history", label: "Training history", labelKey: "sections.history", group: "self_intake" as const },
+  { id: "goal", label: "SMART goal", labelKey: "sections.goal", group: "self_intake" as const },
+  { id: "meds", label: "Medications", labelKey: "sections.meds", group: "self_intake" as const },
+  { id: "readiness", label: "Readiness", labelKey: "sections.readiness", group: "self_intake" as const },
+  { id: "lifestyle", label: "Lifestyle", labelKey: "sections.lifestyle", group: "self_intake" as const },
+  { id: "nutrition", label: "Nutrition", labelKey: "sections.nutrition", group: "self_intake" as const },
   // Assessment Session / Sessão de Avaliação
-  { id: "anthro", label: "Anthropometry", group: "assessment_session" as const },
-  { id: "mobility", label: "Mobility", group: "assessment_session" as const },
-  { id: "posture", label: "Posture", group: "assessment_session" as const },
-  { id: "screen", label: "Movement screen", group: "assessment_session" as const },
-  { id: "performance", label: "Cardio health", group: "assessment_session" as const },
+  { id: "anthro", label: "Anthropometry", labelKey: "sections.anthro", group: "assessment_session" as const },
+  { id: "mobility", label: "Mobility", labelKey: "sections.mobility", group: "assessment_session" as const },
+  { id: "posture", label: "Posture", labelKey: "sections.posture", group: "assessment_session" as const },
+  { id: "screen", label: "Movement screen", labelKey: "sections.screen", group: "assessment_session" as const },
+  { id: "performance", label: "Cardio health", labelKey: "sections.performance", group: "assessment_session" as const },
 ];
 
 // Optional sections render collapsed by default and count as complete
