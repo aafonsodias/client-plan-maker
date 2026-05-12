@@ -2733,6 +2733,7 @@ function ClientDetail() {
                     ...assessment,
                     med_flags: nextFlags,
                     medications: serializeMeds(nextFlags, nextDoses, medsLocal.others, otherLabel),
+                    no_meds: nextFlags.length > 0 ? false : assessment.no_meds,
                   });
                 };
                 return (
@@ -2786,6 +2787,7 @@ function ClientDetail() {
                 setAssessment({
                   ...assessment,
                   medications: serializeMeds(assessment.med_flags ?? [], medsLocal.doses, next, otherLabel),
+                  no_meds: next.length > 0 ? false : assessment.no_meds,
                 });
               };
               return (
