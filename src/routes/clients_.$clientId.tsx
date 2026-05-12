@@ -1599,6 +1599,13 @@ function ClientDetail() {
     ? (Number(assessment.waist_cm) / Number(assessment.hip_cm)).toFixed(2)
     : "—";
 
+  // Round B — single completion context shared by sidebar + Concluir.
+  const completionCtx = { injuriesCount };
+  // Local shadow that funnels every section-completeness check through the
+  // shared context (so injuries added via the body-map count, etc.).
+  const isSectionComplete = (id: string, a: any) =>
+    isSectionCompleteForPhase(id, a, completionCtx);
+
   // Section completion + progress
   const sectionStatus = SECTIONS.map((s) => ({ ...s, complete: isSectionComplete(s.id, assessment) }));
   const completedCount = sectionStatus.filter((s) => s.complete).length;
@@ -1610,10 +1617,10 @@ function ClientDetail() {
 
   // Round 1 — derived assessment phase + group counts. No schema changes;
   // everything is computed from the existing assessment payload.
-  const phase = assessmentPhase(assessment);
-  const groupCounts = assessmentGroupCounts(assessment);
-  const selfIntakeDone = isSelfIntakeComplete(assessment);
-  const sessionDone = isAssessmentSessionComplete(assessment);
+  const phase = assessmentPhase(assessment, completionCtx);
+  const groupCounts = assessmentGroupCounts(assessment, completionCtx);
+  const selfIntakeDone = isSelfIntakeComplete(assessment, completionCtx);
+  const sessionDone = isAssessmentSessionComplete(assessment, completionCtx);
   const safetyBlocked = parqYes || riskCategory === "high";
   /** Hard gate for any "Generate plan" path. */
   const canGeneratePlan = phase === "complete" && !safetyBlocked;
