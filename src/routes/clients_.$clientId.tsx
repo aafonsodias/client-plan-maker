@@ -67,6 +67,8 @@ import {
   isAssessmentSessionComplete,
   assessmentPhase,
   assessmentGroupCounts,
+  isPatternHandled,
+  unhandledScreenPatterns,
 } from "@/lib/assessment-phase";
 import { buildCompletionReport, type MissingItem } from "@/lib/assessment-completion";
 import { MissingItemsPanel } from "@/components/assessment/MissingItemsPanel";
