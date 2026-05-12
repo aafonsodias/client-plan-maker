@@ -1193,7 +1193,29 @@
       "achilles_left": "Tendão de Aquiles esquerdo",
       "achilles_right": "Tendão de Aquiles direito",
       "foot_back_left": "Pé esquerdo (atrás)",
-      "foot_back_right": "Pé direito (atrás)"
+      "foot_back_right": "Pé direito (atrás)",
+      "clavicle_left": "Clavícula esquerda",
+      "clavicle_right": "Clavícula direita",
+      "shoulder_anterior_left": "Ombro esquerdo (anterior)",
+      "shoulder_anterior_right": "Ombro direito (anterior)",
+      "shoulder_lateral_left": "Ombro esquerdo (lateral)",
+      "shoulder_lateral_right": "Ombro direito (lateral)",
+      "sternum": "Esterno",
+      "pec_left": "Peitoral esquerdo",
+      "pec_right": "Peitoral direito",
+      "elbow_left": "Cotovelo esquerdo",
+      "elbow_right": "Cotovelo direito",
+      "elbow_back_left": "Cotovelo esquerdo (atrás)",
+      "elbow_back_right": "Cotovelo direito (atrás)",
+      "knee_anterior_left": "Joelho esquerdo (anterior)",
+      "knee_anterior_right": "Joelho direito (anterior)",
+      "knee_medial_left": "Joelho esquerdo (medial)",
+      "knee_medial_right": "Joelho direito (medial)",
+      "knee_lateral_left": "Joelho esquerdo (lateral)",
+      "knee_lateral_right": "Joelho direito (lateral)",
+      "scapula_left": "Omoplata esquerda",
+      "scapula_right": "Omoplata direita",
+      "sacrum": "Sacro"
     },
     "lbl": {
       "rotator_cuff": "Coifa dos rotadores",
@@ -1216,7 +1238,15 @@
       "plantar_fasciitis": "Fascite plantar",
       "muscle_strain": "Distensão muscular",
       "tendinopathy_generic": "Tendinopatia",
-      "unknown": "Não sei"
+      "unknown": "Não sei",
+      "ac_joint_sprain": "Entorse acrómio-clavicular",
+      "costochondritis": "Costocondrite",
+      "pec_strain": "Distensão do peitoral",
+      "patellofemoral_pain": "Dor patelofemoral",
+      "mcl_sprain": "Entorse do ligamento colateral medial",
+      "lcl_sprain": "Entorse do ligamento colateral lateral",
+      "biceps_tendinopathy": "Tendinopatia do bícipite (cabeça longa)",
+      "subacromial_impingement": "Conflito subacromial"
     },
     "note": {
       "rotator_cuff": "Comum em movimentos repetitivos overhead. Evitar press vertical com dor; modificar amplitude.",
@@ -1239,7 +1269,15 @@
       "plantar_fasciitis": "Dor plantar matinal. Mobilidade do pé e gémeo; suporte calçado.",
       "muscle_strain": "Distensão muscular. Repouso ativo e progressão gradual de carga.",
       "tendinopathy_generic": "Tendinopatia geral. Excêntricos lentos e progressão de carga.",
-      "unknown": "Sem diagnóstico. Modificar exercícios que provocam dor; encaminhar se persistir."
+      "unknown": "Sem diagnóstico. Modificar exercícios que provocam dor; encaminhar se persistir.",
+      "ac_joint_sprain": "Dor sobre a clavícula. Evitar adução cruzada carregada e supino com barra; preferir halteres em ângulo neutro.",
+      "costochondritis": "Dor torácica anterior reproduzível à palpação. Evitar voador e amplitudes extremas no supino.",
+      "pec_strain": "Distensão peitoral. Evitar supino pesado e amplitudes finais; reintroduzir com push-up progressivo.",
+      "patellofemoral_pain": "Dor anterior do joelho. Reduzir profundidade até indolor; trabalhar quadricípite e glúteo médio.",
+      "mcl_sprain": "Dor na face interna do joelho. Evitar valgo (joelho para dentro) e exercícios unilaterais instáveis.",
+      "lcl_sprain": "Dor na face externa do joelho. Evitar varo carregado e movimentos com rotação rápida.",
+      "biceps_tendinopathy": "Dor na face anterior do ombro. Reduzir supino com barra e remadas com pegada supinada.",
+      "subacromial_impingement": "Dor lateral do ombro ao elevar o braço. Reduzir volume overhead; preferir plano escapular."
     }
   }
 }

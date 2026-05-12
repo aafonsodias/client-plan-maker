@@ -1193,7 +1193,29 @@
       "achilles_left": "Left Achilles",
       "achilles_right": "Right Achilles",
       "foot_back_left": "Left foot (back)",
-      "foot_back_right": "Right foot (back)"
+      "foot_back_right": "Right foot (back)",
+      "clavicle_left": "Left clavicle",
+      "clavicle_right": "Right clavicle",
+      "shoulder_anterior_left": "Left shoulder (anterior)",
+      "shoulder_anterior_right": "Right shoulder (anterior)",
+      "shoulder_lateral_left": "Left shoulder (lateral)",
+      "shoulder_lateral_right": "Right shoulder (lateral)",
+      "sternum": "Sternum",
+      "pec_left": "Left pectoral",
+      "pec_right": "Right pectoral",
+      "elbow_left": "Left elbow",
+      "elbow_right": "Right elbow",
+      "elbow_back_left": "Left elbow (back)",
+      "elbow_back_right": "Right elbow (back)",
+      "knee_anterior_left": "Left knee (anterior)",
+      "knee_anterior_right": "Right knee (anterior)",
+      "knee_medial_left": "Left knee (medial)",
+      "knee_medial_right": "Right knee (medial)",
+      "knee_lateral_left": "Left knee (lateral)",
+      "knee_lateral_right": "Right knee (lateral)",
+      "scapula_left": "Left scapula",
+      "scapula_right": "Right scapula",
+      "sacrum": "Sacrum"
     },
     "lbl": {
       "rotator_cuff": "Rotator cuff",
@@ -1216,7 +1238,15 @@
       "plantar_fasciitis": "Plantar fasciitis",
       "muscle_strain": "Muscle strain",
       "tendinopathy_generic": "Tendinopathy",
-      "unknown": "I don't know"
+      "unknown": "I don't know",
+      "ac_joint_sprain": "AC joint sprain",
+      "costochondritis": "Costochondritis",
+      "pec_strain": "Pec strain",
+      "patellofemoral_pain": "Patellofemoral pain",
+      "mcl_sprain": "MCL sprain",
+      "lcl_sprain": "LCL sprain",
+      "biceps_tendinopathy": "Biceps tendinopathy (long head)",
+      "subacromial_impingement": "Subacromial impingement"
     },
     "note": {
       "rotator_cuff": "Common with repetitive overhead motion. Avoid painful vertical press; modify range.",
@@ -1239,7 +1269,15 @@
       "plantar_fasciitis": "Morning plantar pain. Foot and calf mobility; supportive footwear.",
       "muscle_strain": "Muscle strain. Active rest and gradual load progression.",
       "tendinopathy_generic": "Generic tendinopathy. Slow eccentrics and load progression.",
-      "unknown": "No diagnosis. Modify pain-provoking exercises; refer if persistent."
+      "unknown": "No diagnosis. Modify pain-provoking exercises; refer if persistent.",
+      "ac_joint_sprain": "Pain over the clavicle. Avoid loaded cross-body adduction and barbell bench; prefer neutral DB angles.",
+      "costochondritis": "Anterior chest-wall pain reproducible on palpation. Avoid pec deck and end-range bench.",
+      "pec_strain": "Pec strain. Avoid heavy bench and end-ranges; reintroduce via progressive push-ups.",
+      "patellofemoral_pain": "Anterior knee pain. Reduce squat depth to pain-free; train quad and gluteus medius.",
+      "mcl_sprain": "Inner-knee pain. Avoid valgus (knee caving in) and unstable single-leg work.",
+      "lcl_sprain": "Outer-knee pain. Avoid loaded varus and fast rotational movements.",
+      "biceps_tendinopathy": "Anterior shoulder pain. Reduce barbell bench and supinated-grip rows.",
+      "subacromial_impingement": "Lateral shoulder pain on elevation. Reduce overhead volume; prefer scapular plane."
     }
   }
 }

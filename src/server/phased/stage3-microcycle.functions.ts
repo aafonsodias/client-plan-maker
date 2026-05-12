@@ -30,6 +30,7 @@ import {
 import {
   deriveInjuryBans,
   injuryBansPromptBlock,
+  injuryNotesPromptBlock,
   findBannedExercisesInDay,
   type InjuryBan,
   type InjuryRow,
@@ -435,6 +436,7 @@ ${guidelines.requiredAlternatives}`
   // Rendered separately from tier bans so audit logs can attribute correctly.
   const injuryBans: InjuryBan[] = guidelines?.injuryBans ?? [];
   const injuryBlock = injuryBansPromptBlock(injuryBans);
+  const injuryNotesBlock = (guidelines as any)?.injuryNotesBlock ?? "";
 
   const rpeFloorBlock = `
 
@@ -509,7 +511,7 @@ RULES:
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
 Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
-  const systemWithInjuries = `${system}${injuryBlock}`;
+  const systemWithInjuries = `${system}${injuryBlock}${injuryNotesBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
 Archetype: ${arch.id} — ${arch.focus}
@@ -765,14 +767,15 @@ async function resolveTierGuidelines(
   const meta = loadedPlan.generation_meta as any;
   // Always recompute injury bans (cheap; assessment_injuries is small per
   // client and may have been edited since the meta was first written).
-  const injuryBans = await fetchInjuryBansForPlan(supabase, loadedPlan, brief);
+  const { bans: injuryBans, notesBlock: injuryNotesBlock } =
+    await fetchInjuryBansForPlan(supabase, loadedPlan, brief);
 
   if (meta?.tier_guidelines) {
-    return { ...(meta.tier_guidelines as TierGuidelines), injuryBans };
+    return { ...(meta.tier_guidelines as TierGuidelines), injuryBans, injuryNotesBlock } as TierGuidelines;
   }
   if (meta?.tier && brief) {
     const g = tierGuidelines(meta.tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
-    return { ...g, injuryBans };
+    return { ...g, injuryBans, injuryNotesBlock } as TierGuidelines;
   }
   // Fallback: classify from assessment now.
   let assessment: Record<string, any> | null = null;
@@ -803,7 +806,7 @@ async function resolveTierGuidelines(
   }
   const tier = classifyTier(brief, assessment ?? {});
   const g = tierGuidelines(tier, brief.sessions_per_week?.recommended ?? 3, brief.primary_goal);
-  return { ...g, injuryBans };
+  return { ...g, injuryBans, injuryNotesBlock } as TierGuidelines;
 }
 
 /**
@@ -815,27 +818,29 @@ async function fetchInjuryBansForPlan(
   supabase: any,
   loadedPlan: LoadedPlan,
   brief: any,
-): Promise<InjuryBan[]> {
+): Promise<{ bans: InjuryBan[]; notesBlock: string }> {
   let injuryRows: InjuryRow[] = [];
   try {
     if (loadedPlan.assessment_id) {
       const { data } = await supabase
         .from("assessment_injuries")
-        .select("body_zone, severity, injury_label")
+        .select("body_zone, severity, injury_label, note")
         .eq("assessment_id", loadedPlan.assessment_id);
       injuryRows = ((data ?? []) as any[]) as InjuryRow[];
     }
     if (injuryRows.length === 0 && loadedPlan.client_id) {
       const { data } = await supabase
         .from("assessment_injuries")
-        .select("body_zone, severity, injury_label")
+        .select("body_zone, severity, injury_label, note")
         .eq("client_id", loadedPlan.client_id);
       injuryRows = ((data ?? []) as any[]) as InjuryRow[];
     }
   } catch {
     injuryRows = [];
   }
-  return deriveInjuryBans(injuryRows, (brief?.red_flags ?? []) as string[]);
+  const bans = deriveInjuryBans(injuryRows, (brief?.red_flags ?? []) as string[]);
+  const notesBlock = injuryNotesPromptBlock(injuryRows);
+  return { bans, notesBlock };
 }
 
 /**
