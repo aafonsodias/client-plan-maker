@@ -7,6 +7,7 @@ import { CapacityMap } from "@/components/CapacityMap";
 import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
 import { InjuriesBodyMapBlock } from "@/components/InjuriesBodyMapBlock";
+import { ScrollCue } from "@/components/ScrollCue";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
