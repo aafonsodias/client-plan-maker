@@ -1683,6 +1683,8 @@ function ClientDetail() {
                     </>
                   )}
                   {phase && (() => {
+                    // Hide redundant "Convite pendente" — same info shown coloured in the status strip below.
+                    if ((phase.kind as string) === "intake_sent") return null;
                     const ptLabel =
                       phase.kind === "intake_sent"
                         ? "Convite pendente"
@@ -1867,13 +1869,25 @@ function ClientDetail() {
                 {!intakeDoneTop && (
                   <>
                     <span className="opacity-40">·</span>
-                    <span className="inline-flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center gap-1.5 font-medium ${
+                        expired
+                          ? "text-amber-500"
+                          : status === "submitted" || status === "reviewed"
+                            ? "text-emerald-500"
+                            : status === "opened"
+                              ? "text-sky-400"
+                              : status === "sent"
+                                ? "text-amber-400"
+                                : "text-muted-foreground"
+                      }`}
+                    >
                       <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} aria-hidden />
                       {linkLabel}
+                      {!expired && daysLeft != null && status !== "not_sent" && (
+                        <span className="font-normal opacity-80"> · expira em {daysLeft}d</span>
+                      )}
                     </span>
-                    {!expired && daysLeft != null && status !== "not_sent" && (
-                      <span className="opacity-70">· expira em {daysLeft}d</span>
-                    )}
                   </>
                 )}
               </div>
