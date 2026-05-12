@@ -547,6 +547,7 @@
   "mobility_block": {
     "title": "Mobilidade — anatómica (1–5)",
     "hint": "Pontua cada região: 1 = severamente limitada, 5 = amplitude completa sem dor.",
+    "rubric": "1 = limitação severa/dor; 2 = limitação clara; 3 = aceitável mas limitado; 4 = bom com pequena limitação; 5 = completo, controlado, simétrico e sem dor.",
     "shoulder": "Ombro",
     "hip": "Anca",
     "ankle": "Tornozelo",
