@@ -4447,6 +4447,7 @@ function AssessmentSection({
   onActiveChange,
   onConclude,
   concludeBusy = false,
+  missingPanel = null,
 }: {
   clientId: string;
   headerProgress: React.ReactNode;
@@ -4470,6 +4471,8 @@ function AssessmentSection({
   /** Triggered when the user taps "Concluir" on the last section. */
   onConclude?: () => void;
   concludeBusy?: boolean;
+  /** Inline list of missing items rendered above the sticky/desktop footer. */
+  missingPanel?: React.ReactNode;
 }) {
   const { t } = useTranslation("assessment");
   const isMobile = useIsMobile(1024);
