@@ -472,6 +472,7 @@ function ClientDetail() {
   const [synthesisOpen, setSynthesisOpen] = useState(false);
   const [reassessOpen, setReassessOpen] = useState(false);
   const [cadenceOpen, setCadenceOpen] = useState(false);
+  const [intakeLinkOpen, setIntakeLinkOpen] = useState(false);
   // BMV gate + device capture sheets.
   const [bmvOpen, setBmvOpen] = useState(false);
   const [tanitaOpen, setTanitaOpen] = useState(false);
@@ -1710,6 +1711,27 @@ function ClientDetail() {
                       </span>
                     );
                   })()}
+                  {(() => {
+                    const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
+                    const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
+                    const expired = exp != null && exp < Date.now();
+                    const st = client.intake_status ?? "not_sent";
+                    const linkPart =
+                      expired ? "caducado" :
+                      st === "sent" ? "ainda não aberto" :
+                      st === "opened" ? "aberto" :
+                      null;
+                    if (!linkPart) return null;
+                    return (
+                      <>
+                        <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+                        <span className="eyebrow text-[10px] text-muted-foreground truncate">
+                          {linkPart}
+                          {!expired && daysLeft != null ? ` · expira em ${daysLeft}d` : ""}
+                        </span>
+                      </>
+                    );
+                  })()}
                   {/* {stepN}/5 chip removed — duplicate of section progress */}
                 </p>
               );
@@ -1717,13 +1739,24 @@ function ClientDetail() {
           </div>
           {/* Single icon-only overflow menu for every secondary action.
               R68 — header trim for mobile. */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="ml-auto h-8 w-8 shrink-0"
+            aria-label="Gerar link de avaliação"
+            title="Gerar link de avaliação"
+            onClick={() => setIntakeLinkOpen(true)}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 ml-auto shrink-0"
+                className="h-8 w-8 shrink-0"
                 aria-label="Mais ações"
                 title="Mais ações"
               >
@@ -1775,35 +1808,33 @@ function ClientDetail() {
                 <Eraser className="mr-2 h-3.5 w-3.5" />
                 {t("discard.button")}
               </DropdownMenuItem>
-              <Sheet>
-                <SheetTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Send className="mr-2 h-3.5 w-3.5" />
-                    Detalhes do envio
-                  </DropdownMenuItem>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-full sm:max-w-md">
-                  <SheetHeader>
-                    <SheetTitle>Detalhes do envio do questionário</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-4">
-                    <IntakeLinkPanel
-                      clientId={client.id}
-                      clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-                      clientPhone={client.phone}
-                      intake={{
-                        intake_token: client.intake_token ?? null,
-                        intake_token_expires_at: client.intake_token_expires_at ?? null,
-                        intake_status: client.intake_status ?? "not_sent",
-                        intake_submitted_at: client.intake_submitted_at ?? null,
-                      }}
-                      onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIntakeLinkOpen(true); }}>
+                <Send className="mr-2 h-3.5 w-3.5" />
+                Detalhes do envio
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Sheet open={intakeLinkOpen} onOpenChange={setIntakeLinkOpen}>
+            <SheetContent side="right" className="w-full sm:max-w-md">
+              <SheetHeader>
+                <SheetTitle>Detalhes do envio do questionário</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <IntakeLinkPanel
+                  clientId={client.id}
+                  clientFirstName={(client.full_name ?? "there").split(" ")[0]}
+                  clientPhone={client.phone}
+                  intake={{
+                    intake_token: client.intake_token ?? null,
+                    intake_token_expires_at: client.intake_token_expires_at ?? null,
+                    intake_status: client.intake_status ?? "not_sent",
+                    intake_submitted_at: client.intake_submitted_at ?? null,
+                  }}
+                  onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
           <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -1823,84 +1854,6 @@ function ClientDetail() {
               and no PAR-Q / high-risk block). No more "gerar mesmo assim". */}
         </div>
       </div>
-
-      {(() => {
-        const intakeDoneTop =
-          client.intake_status === "submitted" ||
-          client.intake_status === "reviewed";
-        const noPlanYet = plans.length === 0 && !readyPlanForAssessment;
-        const showStageOne = noPlanYet && !inlineBrief?.approved;
-        if (!showStageOne) return null;
-        // Compact status strip — replaces the large hero + details accordion.
-        // Surfaces: current section label, "X/total", expiry days, link state.
-        const activeIdx = sectionStatus.findIndex((s) => s.id === activeSection);
-        const activeLabel = sectionStatus[activeIdx >= 0 ? activeIdx : 0]?.label ?? "";
-        const sectionN = (activeIdx >= 0 ? activeIdx + 1 : 1).toString().padStart(2, "0");
-        const totalN = sectionStatus.length.toString().padStart(2, "0");
-        const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
-        const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
-        const expired = exp != null && exp < Date.now();
-        const status = client.intake_status ?? "not_sent";
-        const linkLabel =
-          expired ? "caducado" :
-          status === "reviewed" ? "revisto" :
-          status === "submitted" ? "devolvido" :
-          status === "opened" ? "aberto" :
-          status === "sent" ? "ainda não aberto" :
-          "ainda não enviado";
-        const dotCls =
-          expired ? "bg-amber-400" :
-          status === "submitted" || status === "reviewed" ? "bg-emerald-400" :
-          status === "opened" ? "bg-sky-400" :
-          status === "sent" ? "bg-amber-300" :
-          "bg-muted-foreground/40";
-        const pctBar = sectionStatus.length > 0
-          ? Math.round((completedCount / sectionStatus.length) * 100)
-          : 0;
-        return (
-          <>
-            <section
-              aria-label="Estado da avaliação"
-              className="mb-3 rounded-xl border border-border/60 bg-[var(--surface)] px-3 py-2 sm:px-4"
-            >
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                <span className="text-xs font-semibold text-foreground">{activeLabel}</span>
-                <span className="font-mono tabular-nums opacity-70">· {sectionN}/{totalN}</span>
-                {!intakeDoneTop && (
-                  <>
-                    <span className="opacity-40">·</span>
-                    <span
-                      className={`inline-flex items-center gap-1.5 font-medium ${
-                        expired
-                          ? "text-amber-500"
-                          : status === "submitted" || status === "reviewed"
-                            ? "text-emerald-500"
-                            : status === "opened"
-                              ? "text-sky-400"
-                              : status === "sent"
-                                ? "text-amber-400"
-                                : "text-muted-foreground"
-                      }`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} aria-hidden />
-                      {linkLabel}
-                      {!expired && daysLeft != null && status !== "not_sent" && (
-                        <span className="font-normal opacity-80"> · expira em {daysLeft}d</span>
-                      )}
-                    </span>
-                  </>
-                )}
-              </div>
-              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary/60">
-                <div
-                  className="h-full bg-accent/70 transition-all duration-500"
-                  style={{ width: `${pctBar}%` }}
-                />
-              </div>
-            </section>
-          </>
-        );
-      })()}
 
       {/* R68 — Readiness strip removed: ACSM + Recovery already render inside
           ClientCockpit/ProtocolRail below. Single source of truth. */}
