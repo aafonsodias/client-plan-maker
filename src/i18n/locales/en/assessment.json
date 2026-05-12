@@ -59,7 +59,11 @@
   "injuries_block": {
     "title": "Injuries & pain",
     "hint": "Mark zones with pain or injury. If none, toggle “No injuries”.",
-    "no_injuries_toggle": "No injuries or relevant pain"
+    "no_injuries_toggle": "No injuries or relevant pain",
+    "empty_title": "No injuries registered",
+    "empty_hint": "Tap a body area to register pain or injury.",
+    "save_changes_cta": "Save changes",
+    "notes_placeholder": "E.g. pain when raising the arm, started 2 weeks ago, worse during bench press."
   },
   "mobile_step_header": {
     "prefix": "Step {{current}} of {{total}} · {{title}}"
