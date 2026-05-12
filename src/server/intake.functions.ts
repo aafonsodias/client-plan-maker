@@ -326,21 +326,46 @@ export const saveIntake = createServerFn({ method: "POST" })
     // Load existing assessment to merge extended.provenance
     const { data: existing } = await supabaseAdmin
       .from("assessments")
-      .select("id, extended")
+      .select("id, extended, " + (ALLOWED_FIELDS as readonly string[]).filter((k) => k !== "extended").join(", "))
       .eq("client_id", client.id)
       .maybeSingle();
 
     const prevExtended = (existing?.extended as Record<string, any>) ?? {};
     const prevProv = (prevExtended.provenance as Record<string, "client" | "trainer-edited">) ?? {};
+    const prevFieldProv = (prevExtended.field_provenance as Record<string, "client" | "trainer-edited">) ?? {};
     const nextProv = { ...prevProv };
     for (const section of data.sections) {
       // Only mark sections as 'client' if not already trainer-edited
       if (nextProv[section] !== "trainer-edited") nextProv[section] = "client";
     }
 
+    // Per-field provenance guard: any top-level column that the trainer
+    // touched after the client's last save is preserved (client write
+    // is dropped for that single field). Other fields still go through.
+    const nextFieldProv = { ...prevFieldProv };
+    const droppedFields: string[] = [];
+    for (const k of Object.keys(cleaned)) {
+      if (k === "extended") continue;
+      if (prevFieldProv[k] === "trainer-edited") {
+        droppedFields.push(k);
+        delete cleaned[k];
+        continue;
+      }
+      // Mark this field as client-owned for next time.
+      nextFieldProv[k] = "client";
+    }
+    if (droppedFields.length > 0) {
+      console.warn("[intake] preserved trainer-edited fields:", droppedFields);
+    }
+
     // Merge any incoming extended (e.g. ext_hours_seated, ext_water_l_per_day, ext_meals_per_day)
     const incomingExtended = (cleaned.extended as Record<string, any>) ?? {};
-    const mergedExtended = { ...prevExtended, ...incomingExtended, provenance: nextProv };
+    const mergedExtended = {
+      ...prevExtended,
+      ...incomingExtended,
+      provenance: nextProv,
+      field_provenance: nextFieldProv,
+    };
     cleaned.extended = mergedExtended;
 
     if (existing) {
