@@ -1827,47 +1827,61 @@ function ClientDetail() {
         const noPlanYet = plans.length === 0 && !readyPlanForAssessment;
         const showStageOne = noPlanYet && !inlineBrief?.approved;
         if (!showStageOne) return null;
+        // Compact status strip — replaces the large hero + details accordion.
+        // Surfaces: current section label, "X/total", expiry days, link state.
+        const activeIdx = sectionStatus.findIndex((s) => s.id === activeSection);
+        const activeLabel = sectionStatus[activeIdx >= 0 ? activeIdx : 0]?.label ?? "";
+        const sectionN = (activeIdx >= 0 ? activeIdx + 1 : 1).toString().padStart(2, "0");
+        const totalN = sectionStatus.length.toString().padStart(2, "0");
+        const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
+        const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
+        const expired = exp != null && exp < Date.now();
+        const status = client.intake_status ?? "not_sent";
+        const linkLabel =
+          expired ? "caducado" :
+          status === "reviewed" ? "revisto" :
+          status === "submitted" ? "devolvido" :
+          status === "opened" ? "aberto" :
+          status === "sent" ? "ainda não aberto" :
+          "ainda não enviado";
+        const dotCls =
+          expired ? "bg-amber-400" :
+          status === "submitted" || status === "reviewed" ? "bg-emerald-400" :
+          status === "opened" ? "bg-sky-400" :
+          status === "sent" ? "bg-amber-300" :
+          "bg-muted-foreground/40";
+        const pctBar = sectionStatus.length > 0
+          ? Math.round((completedCount / sectionStatus.length) * 100)
+          : 0;
         return (
           <>
-            <ClientStageOneHero
-              clientId={client.id}
-              intakeStatus={(client.intake_status ?? "not_sent") as any}
-              intakeExpiresAt={client.intake_token_expires_at ?? null}
-              hasDraft={!!lastSavedAt || intakeDoneTop}
-              draftDoneSections={completedCount}
-              draftTotalSections={totalSections}
-              onPrimary={() => {
-                document
-                  .getElementById("assessment-section")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-              onResend={() => {
-                document
-                  .querySelector<HTMLElement>("[data-intake-link-panel]")
-                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
-              }}
-            />
-            {!intakeDoneTop && (
-              <details className="mb-3 rounded-xl border border-border/60 bg-[var(--surface)]/60">
-                <summary className="cursor-pointer list-none px-4 py-2.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition hover:text-foreground">
-                  Detalhes do envio do questionário
-                </summary>
-                <div className="px-4 pb-4" data-intake-link-panel>
-                  <IntakeLinkPanel
-                    clientId={client.id}
-                    clientFirstName={(client.full_name ?? "there").split(" ")[0]}
-                    clientPhone={client.phone}
-                    intake={{
-                      intake_token: client.intake_token ?? null,
-                      intake_token_expires_at: client.intake_token_expires_at ?? null,
-                      intake_status: client.intake_status ?? "not_sent",
-                      intake_submitted_at: client.intake_submitted_at ?? null,
-                    }}
-                    onChange={(patch) => setClient((prev: any) => ({ ...prev, ...patch }))}
-                  />
-                </div>
-              </details>
-            )}
+            <section
+              aria-label="Estado da avaliação"
+              className="mb-3 rounded-xl border border-border/60 bg-[var(--surface)] px-3 py-2 sm:px-4"
+            >
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <span className="text-xs font-semibold text-foreground">{activeLabel}</span>
+                <span className="font-mono tabular-nums opacity-70">· {sectionN}/{totalN}</span>
+                {!intakeDoneTop && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} aria-hidden />
+                      {linkLabel}
+                    </span>
+                    {!expired && daysLeft != null && status !== "not_sent" && (
+                      <span className="opacity-70">· expira em {daysLeft}d</span>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary/60">
+                <div
+                  className="h-full bg-accent/70 transition-all duration-500"
+                  style={{ width: `${pctBar}%` }}
+                />
+              </div>
+            </section>
           </>
         );
       })()}
