@@ -4554,7 +4554,7 @@ function AssessmentSection({
     if (!isMobile) return;
     const node = stepperBodyRef.current;
     if (!node) return;
-    node.scrollTo({ top: 0, behavior: "auto" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
     requestAnimationFrame(() => {
       const first = node.querySelector<HTMLElement>(
         "input:not([type=hidden]), textarea, select, [role=tab], button:not([aria-hidden=true])"
