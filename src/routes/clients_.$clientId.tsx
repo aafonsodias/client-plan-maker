@@ -3236,9 +3236,13 @@ function ClientDetail() {
                 </p>
               )}
             </div>
-            <div className="mb-2 flex justify-end">
+            <div className="mb-2 flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:justify-end">
+              <p className="text-[10.5px] text-muted-foreground sm:mr-2">
+                {t("anthro_block.bia_helper")}
+              </p>
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                {t("anthro_block.bia_cta")}
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
