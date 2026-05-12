@@ -199,6 +199,34 @@
     "effect_nsaid": "Uso crónico atenua hipertrofia",
     "effect_corticosteroid": "Reduz síntese proteica — modera volume"
   },
+  "no_meds_toggle": {
+    "label": "Não tomo medicamentos nem suplementos",
+    "help": "Marca esta opção se o cliente não usa nada de forma regular — incluindo multivitamínicos. Marcar desativa a lista abaixo."
+  },
+  "completion": {
+    "missing_title_one": "Falta {{count}} ponto antes de concluir",
+    "missing_title_other": "Faltam {{count}} pontos antes de concluir",
+    "missing_title": "Faltam {{count}} pontos antes de concluir",
+    "missing_intro": "Estes pontos bloqueiam a geração do plano. Toca em \"Ir para secção\" para os completar.",
+    "go_to_section": "Ir para secção",
+    "reasons": {
+      "parq": "Responde às 7 perguntas PAR-Q+ (Sim ou Não).",
+      "risk": "Confirma a categoria de IMC e estratificação de risco.",
+      "training": "Indica experiência, dias por semana, duração e equipamento disponível.",
+      "injuries": "Marca \"Sem lesões\" ou regista pelo menos uma lesão no mapa corporal.",
+      "history": "Adiciona anos de treino, programa anterior ou cargas máximas conhecidas.",
+      "goal": "Escreve o foco do trabalho e como vai medir o progresso.",
+      "meds": "Indica medicação/suplementos ou marca \"Não tomo nada\".",
+      "readiness": "Escolhe o estágio de prontidão para mudança.",
+      "lifestyle": "Indica sono, stress ou rotina sedentária.",
+      "nutrition": "Indica refeições por dia, água ou álcool semanal.",
+      "anthro": "Adiciona cintura, anca ou % gordura.",
+      "mobility": "Pontua os 6 testes de mobilidade (1–5).",
+      "posture": "Indica postura, assimetrias ou lado dominante.",
+      "screen": "Marca pelo menos 3 critérios de forma cumpridos em cada padrão (ou marca \"Não avaliado\").",
+      "performance": "Adiciona FC repouso ou um teste cardio."
+    }
+  },
   "goal_block": {
     "title": "Objetivo principal (SMART)",
     "hint": "Compromisso de trabalho mensurável durante uma janela de tempo.",
