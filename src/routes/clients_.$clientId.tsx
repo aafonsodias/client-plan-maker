@@ -3158,27 +3158,46 @@ function ClientDetail() {
                             {t(`risk_block.bmi_${cat}` as const)}
                           </span>
                         </div>
-                        {assessment.risk.bmi_category !== "muscular" ? (
-                          <button
-                            type="button"
-                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-                            onClick={() =>
-                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: "muscular" } })
-                            }
-                          >
-                            {t("risk_block.bmi_mark_muscular")}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-                            onClick={() =>
-                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: bmiAuto.category } })
-                            }
-                          >
-                            {t("risk_block.bmi_use_auto")}
-                          </button>
-                        )}
+                        <div
+                          role="group"
+                          aria-label={t("risk_block.bmi_label")}
+                          className="inline-flex shrink-0 rounded-full border border-border/70 bg-background/60 p-0.5 text-[11px] font-medium"
+                        >
+                          {([
+                            { id: "auto", label: t("risk_block.bmi_auto_label") },
+                            { id: "athletic", label: t("risk_block.bmi_athletic_label") },
+                          ] as const).map((opt) => {
+                            const active =
+                              opt.id === "athletic"
+                                ? assessment.risk.bmi_category === "muscular"
+                                : assessment.risk.bmi_category !== "muscular";
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                aria-pressed={active}
+                                onClick={() =>
+                                  setAssessment({
+                                    ...assessment,
+                                    risk: {
+                                      ...assessment.risk,
+                                      bmi_category:
+                                        opt.id === "athletic" ? "muscular" : bmiAuto.category,
+                                    },
+                                  })
+                                }
+                                className={cn(
+                                  "rounded-full px-2.5 py-0.5 transition",
+                                  active
+                                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                                    : "text-muted-foreground hover:text-foreground",
+                                )}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                       <div className="mt-2 relative h-1 rounded-full bg-secondary/60 overflow-visible">
                         {[18.5, 25, 30].map((th) => {
