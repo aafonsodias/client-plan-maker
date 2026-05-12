@@ -297,6 +297,20 @@ function IntakePage() {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const debounceRef = useRef<number | null>(null);
   const hydrated = useRef(false);
+  const localeLocked = useRef(false);
+
+  // R-intake-rich: lock the intake locale to the visitor's system language.
+  // PT/PT-BR/PT-PT → "pt", anything else → "en". This intentionally ignores
+  // any stale `protocol.locale` in localStorage from a previous Protocol
+  // visit on the same device — the intake page is a per-visitor surface.
+  useEffect(() => {
+    if (localeLocked.current) return;
+    if (typeof navigator === "undefined") return;
+    const sys = (navigator.language || "en").toLowerCase();
+    const target = sys.startsWith("pt") ? "pt" : "en";
+    if (i18n.language !== target) void i18n.changeLanguage(target);
+    localeLocked.current = true;
+  }, []);
 
   useEffect(() => {
     void (async () => {
