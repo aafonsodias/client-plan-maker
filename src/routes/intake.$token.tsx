@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { useServerFn } from "@tanstack/react-start";
 import { loadIntake, saveIntake, type IntakeContext } from "@/server/intake.functions";
 import { linkClientAccount } from "@/server/intake.functions";
@@ -94,6 +95,22 @@ type FormState = {
   parq: Record<"q1"|"q2"|"q3"|"q4"|"q5"|"q6"|"q7", boolean | null>;
   medications: string;
   med_flags: string[];
+  // R-intake-rich extras (mirror PT-side assessment)
+  years_training: string;
+  previous_program_style: string;
+  waist_cm: string;
+  hip_cm: string;
+  body_fat_pct: string;
+  ext_mob_squat: number;
+  ext_mob_overhead: number;
+  ext_mob_hip_hinge: number;
+  ext_mob_hamstring: number;
+  ext_mob_ankle: number;
+  standing_posture_notes: string;
+  known_imbalances: string;
+  dominant_side: "" | "L" | "R" | "Both";
+  current_capacity_vs_pb: number;
+  max_lifts: string;
 };
 
 const EMPTY: FormState = {
@@ -113,6 +130,11 @@ const EMPTY: FormState = {
   parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
   medications: "",
   med_flags: [],
+  years_training: "", previous_program_style: "",
+  waist_cm: "", hip_cm: "", body_fat_pct: "",
+  ext_mob_squat: 0, ext_mob_overhead: 0, ext_mob_hip_hinge: 0, ext_mob_hamstring: 0, ext_mob_ankle: 0,
+  standing_posture_notes: "", known_imbalances: "", dominant_side: "",
+  current_capacity_vs_pb: 0, max_lifts: "",
 };
 
 function fromAssessment(a: any | null): FormState {
@@ -157,6 +179,21 @@ function fromAssessment(a: any | null): FormState {
     parq: ext.parq ?? EMPTY.parq,
     medications: a.medications ?? "",
     med_flags: a.med_flags ?? [],
+    years_training: a.years_training?.toString() ?? "",
+    previous_program_style: ext.previous_program_style ?? "",
+    waist_cm: a.waist_cm?.toString() ?? "",
+    hip_cm: a.hip_cm?.toString() ?? "",
+    body_fat_pct: a.body_fat_pct?.toString() ?? "",
+    ext_mob_squat: ext.ext_mob_squat ?? 0,
+    ext_mob_overhead: ext.ext_mob_overhead ?? 0,
+    ext_mob_hip_hinge: ext.ext_mob_hip_hinge ?? 0,
+    ext_mob_hamstring: ext.ext_mob_hamstring ?? 0,
+    ext_mob_ankle: ext.ext_mob_ankle ?? 0,
+    standing_posture_notes: ext.standing_posture_notes ?? "",
+    known_imbalances: ext.known_imbalances ?? "",
+    dominant_side: (ext.dominant_side as any) ?? "",
+    current_capacity_vs_pb: a.current_capacity_vs_pb ?? 0,
+    max_lifts: ext.max_lifts ?? "",
   };
 }
 
@@ -202,6 +239,11 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       parq_passed: parqAnswered ? !parqHasYes : null,
       medications: f.medications || null,
       med_flags: f.med_flags,
+      years_training: f.years_training ? Number(f.years_training) : null,
+      waist_cm: f.waist_cm ? Number(f.waist_cm) : null,
+      hip_cm: f.hip_cm ? Number(f.hip_cm) : null,
+      body_fat_pct: f.body_fat_pct ? Number(f.body_fat_pct) : null,
+      current_capacity_vs_pb: f.current_capacity_vs_pb > 0 ? f.current_capacity_vs_pb : null,
       extended: {
         smart_extra: f.smart_extra || null,
         ext_hours_seated: parseLooseNumber(f.ext_hours_seated),
@@ -218,6 +260,16 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
         lifestyle_gate: f.lifestyle_gate || null,
         ai_goal_confirmed: f.ai_goal_confirmed || null,
         skipped: f.skipped,
+        previous_program_style: f.previous_program_style || null,
+        ext_mob_squat: f.ext_mob_squat || null,
+        ext_mob_overhead: f.ext_mob_overhead || null,
+        ext_mob_hip_hinge: f.ext_mob_hip_hinge || null,
+        ext_mob_hamstring: f.ext_mob_hamstring || null,
+        ext_mob_ankle: f.ext_mob_ankle || null,
+        standing_posture_notes: f.standing_posture_notes || null,
+        known_imbalances: f.known_imbalances || null,
+        dominant_side: f.dominant_side || null,
+        max_lifts: f.max_lifts || null,
       },
     },
     sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
@@ -245,6 +297,20 @@ function IntakePage() {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const debounceRef = useRef<number | null>(null);
   const hydrated = useRef(false);
+  const localeLocked = useRef(false);
+
+  // R-intake-rich: lock the intake locale to the visitor's system language.
+  // PT/PT-BR/PT-PT → "pt", anything else → "en". This intentionally ignores
+  // any stale `protocol.locale` in localStorage from a previous Protocol
+  // visit on the same device — the intake page is a per-visitor surface.
+  useEffect(() => {
+    if (localeLocked.current) return;
+    if (typeof navigator === "undefined") return;
+    const sys = (navigator.language || "en").toLowerCase();
+    const target = sys.startsWith("pt") ? "pt" : "en";
+    if (i18n.language !== target) void i18n.changeLanguage(target);
+    localeLocked.current = true;
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -265,7 +331,16 @@ function IntakePage() {
             const saved = localStorage.getItem(`protocol_intake_draft_${token}`);
             if (saved) {
               const parsed = JSON.parse(saved);
-              setForm((cur) => ({ ...cur, ...parsed }));
+              // R-intake-rich: per-field merge. Trainer-edited fields are
+              // protected — we never let a stale localStorage draft
+              // overwrite something the PT touched after the client started.
+              const fieldProv = (c.assessment?.extended?.field_provenance ?? {}) as Record<string, "client" | "trainer-edited">;
+              const safe: Record<string, any> = {};
+              for (const k of Object.keys(parsed)) {
+                if (fieldProv[k] === "trainer-edited") continue;
+                safe[k] = parsed[k];
+              }
+              setForm((cur) => ({ ...cur, ...safe }));
             }
           } catch {}
           hydrated.current = true;
@@ -923,7 +998,11 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
   const { t } = useTranslation("intake");
   const [step, setStep] = useState(0);
   const { token } = Route.useParams();
-  const steps = useMemo(() => buildSlides(t, form, setForm, token), [t, form, setForm, token]);
+  const goTo = useCallback((idx: number) => {
+    setStep((s) => Math.max(0, Math.min(idx, s)));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+  const steps = useMemo(() => buildSlides(t, form, setForm, token, goTo), [t, form, setForm, token, goTo]);
   const total = steps.length;
   const current = steps[step];
   const isLast = step === total - 1;
@@ -985,6 +1064,12 @@ function SlideshowIntake({ ctx, form, setForm, trainerName, submitting, onSubmit
             <p className="mt-3 text-sm text-muted-foreground">{current.subtitle}</p>
           )}
           <div className="mt-8 space-y-5">{current.body}</div>
+          {!canAdvance && current.missingHint && (
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-200 animate-pulse">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {current.missingHint}
+            </div>
+          )}
         </div>
       </main>
 
@@ -1033,6 +1118,8 @@ type Slide = {
   isValid?: () => boolean;
   canSkip?: boolean;
   skipKeys?: string[];
+  /** Optional human hint shown in an amber chip when isValid() is false. */
+  missingHint?: string;
 };
 
 function buildSlides(
@@ -1040,6 +1127,7 @@ function buildSlides(
   form: FormState,
   setForm: React.Dispatch<React.SetStateAction<FormState>>,
   token?: string,
+  goTo?: (idx: number) => void,
 ): Slide[] {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -1087,6 +1175,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => !!form.intake_path,
+      missingHint: t("validation.required_one_of"),
     },
     // 1b. Identity — quem és tu
     {
@@ -1121,6 +1210,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
+      missingHint: t("validation.required_inline"),
     },
     // 1c. Profile photo — own slide, not part of reference grid
     {
@@ -1177,6 +1267,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => form.smart_specific.trim().length > 2,
+      missingHint: t("validation.required_inline"),
     },
     // 3. SMART measure + deadline
     {
@@ -1243,6 +1334,7 @@ function buildSlides(
         />
       ),
       isValid: () => !!form.readiness_stage,
+      missingHint: t("validation.required_one_of"),
     },
     // 5. Experience
     {
@@ -1259,6 +1351,7 @@ function buildSlides(
         />
       ),
       isValid: () => !!form.experience_level,
+      missingHint: t("validation.required_one_of"),
     },
     // 6. Days + duration
     {
@@ -1279,6 +1372,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => !!form.training_days_per_week && !!form.session_duration_minutes,
+      missingHint: t("validation.required_one_of"),
     },
     // 7. Location
     {
@@ -1296,6 +1390,7 @@ function buildSlides(
         />
       ),
       isValid: () => form.training_location.length > 0,
+      missingHint: t("validation.required_one_of"),
     },
     // 8. Equipment
     {
@@ -1357,6 +1452,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => Object.values(form.parq).every((v) => v === true || v === false),
+      missingHint: t("validation.required_inline"),
     },
     // 11. Medications + flags (optional)
     {
@@ -1467,27 +1563,145 @@ function buildSlides(
       canSkip: true,
       skipKeys: ["photos"],
     },
+    // R-intake-rich: PT-aligned optional slides (history, metrics, mobility, posture, performance)
+    {
+      title: t("extra.history_title"),
+      subtitle: t("extra.history_subtitle"),
+      body: (
+        <div className="space-y-4">
+          <SliderField
+            label={t("extra.history_years_label")}
+            value={form.years_training ? Number(form.years_training) : 0}
+            min={0} max={20}
+            onChange={(v) => set("years_training", String(v))}
+            legend={t("extra.history_years_legend")}
+          />
+          <Field label={t("extra.history_style_label")} optional optionalLabel={t("optional")}>
+            <Textarea rows={2} value={form.previous_program_style} placeholder={t("extra.history_style_placeholder")} onChange={(e) => set("previous_program_style", e.target.value)} />
+          </Field>
+        </div>
+      ),
+      canSkip: true, skipKeys: ["history"],
+    },
+    {
+      title: t("extra.metrics_title"),
+      subtitle: t("extra.metrics_subtitle"),
+      body: (
+        <div className="space-y-4">
+          <Field label={t("extra.metrics_waist_label")} optional optionalLabel={t("optional")}>
+            <Input inputMode="decimal" value={form.waist_cm} onChange={(e) => set("waist_cm", e.target.value)} />
+          </Field>
+          <Field label={t("extra.metrics_hip_label")} optional optionalLabel={t("optional")}>
+            <Input inputMode="decimal" value={form.hip_cm} onChange={(e) => set("hip_cm", e.target.value)} />
+          </Field>
+          <Field label={t("extra.metrics_bf_label")} optional optionalLabel={t("optional")}>
+            <Input inputMode="decimal" value={form.body_fat_pct} onChange={(e) => set("body_fat_pct", e.target.value)} />
+            <p className="text-[11px] text-muted-foreground/70">{t("extra.metrics_bf_hint")}</p>
+          </Field>
+        </div>
+      ),
+      canSkip: true, skipKeys: ["metrics"],
+    },
+    {
+      title: t("extra.mobility_title"),
+      subtitle: t("extra.mobility_subtitle"),
+      body: (
+        <div className="space-y-4">
+          {([
+            ["ext_mob_squat", t("extra.mobility_squat")],
+            ["ext_mob_overhead", t("extra.mobility_overhead")],
+            ["ext_mob_hip_hinge", t("extra.mobility_hip_hinge")],
+            ["ext_mob_hamstring", t("extra.mobility_hamstring")],
+            ["ext_mob_ankle", t("extra.mobility_ankle")],
+          ] as const).map(([key, label]) => (
+            <SliderField
+              key={key}
+              label={label}
+              value={(form as any)[key] || 3}
+              min={1} max={5}
+              onChange={(v) => set(key as any, v as any)}
+              legend={t("extra.mobility_legend")}
+            />
+          ))}
+        </div>
+      ),
+      canSkip: true, skipKeys: ["mobility"],
+    },
+    {
+      title: t("extra.posture_title"),
+      subtitle: t("extra.posture_subtitle"),
+      body: (
+        <div className="space-y-4">
+          <Field label={t("extra.posture_notes_label")} optional optionalLabel={t("optional")}>
+            <Textarea rows={2} value={form.standing_posture_notes} placeholder={t("extra.posture_notes_placeholder")} onChange={(e) => set("standing_posture_notes", e.target.value)} />
+          </Field>
+          <Field label={t("extra.posture_imbalances_label")} optional optionalLabel={t("optional")}>
+            <Textarea rows={2} value={form.known_imbalances} placeholder={t("extra.posture_imbalances_placeholder")} onChange={(e) => set("known_imbalances", e.target.value)} />
+          </Field>
+          <Field label={t("extra.posture_dominant_label")} optional optionalLabel={t("optional")}>
+            <Pills
+              options={[
+                { id: "L", label: t("extra.posture_dominant_left") },
+                { id: "R", label: t("extra.posture_dominant_right") },
+                { id: "Both", label: t("extra.posture_dominant_both") },
+              ]}
+              value={form.dominant_side}
+              onChange={(v) => set("dominant_side", v as any)}
+            />
+          </Field>
+        </div>
+      ),
+      canSkip: true, skipKeys: ["posture"],
+    },
+    {
+      title: t("extra.performance_title"),
+      subtitle: t("extra.performance_subtitle"),
+      body: (
+        <div className="space-y-4">
+          <SliderField
+            label={t("extra.performance_capacity_label")}
+            value={form.current_capacity_vs_pb || 5}
+            min={1} max={10}
+            onChange={(v) => set("current_capacity_vs_pb", v)}
+            legend={t("extra.performance_capacity_legend")}
+          />
+          <Field label={t("extra.performance_max_lifts_label")} optional optionalLabel={t("optional")}>
+            <Textarea rows={2} value={form.max_lifts} placeholder={t("extra.performance_max_lifts_placeholder")} onChange={(e) => set("max_lifts", e.target.value)} />
+          </Field>
+        </div>
+      ),
+      canSkip: true, skipKeys: ["performance"],
+    },
     // 16. Review
     {
       title: t("review_title"),
       subtitle: t("review_desc"),
       body: (
         <div className="space-y-2 rounded-lg border border-border bg-card/60 p-4 text-sm">
-          <ReviewRow label={t("sections.goal_what")} value={form.smart_specific} />
-          <ReviewRow label={t("sections.goal_measure")} value={form.smart_measurable} />
-          <ReviewRow label={t("sections.goal_when")} value={formatEuroDate(form.smart_deadline)} />
-          <ReviewRow label={t("sections.training_experience")} value={form.experience_level} />
-          <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} />
-          <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} />
-          <ReviewRow label={t("sections.training_location")} value={form.training_location.join(", ")} />
-          <ReviewRow label={t("sections.training_equipment")} value={form.available_equipment.join(", ")} />
+          <ReviewRow label={t("sections.goal_what")} value={form.smart_specific} required tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(4)} />
+          <ReviewRow label={t("sections.goal_measure")} value={form.smart_measurable} tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(5)} />
+          <ReviewRow label={t("sections.goal_when")} value={formatEuroDate(form.smart_deadline)} tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(5)} />
+          <ReviewRow label={t("sections.training_experience")} value={form.experience_level} required tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(7)} />
+          <ReviewRow label={t("sections.training_days")} value={form.training_days_per_week} required tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(8)} />
+          <ReviewRow label={t("sections.training_duration")} value={form.session_duration_minutes ? `${form.session_duration_minutes} min` : ""} required tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(8)} />
+          <ReviewRow label={t("sections.training_location")} value={form.training_location.join(", ")} required tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(9)} />
+          <ReviewRow label={t("sections.training_equipment")} value={form.available_equipment.join(", ")} tapLabel={t("review.tap_to_fill")} onTap={() => goTo?.(10)} />
         </div>
       ),
     },
   ];
 }
 
-function ReviewRow({ label, value }: { label: string; value: string }) {
+function ReviewRow({ label, value, required, tapLabel, onTap }: { label: string; value: string; required?: boolean; tapLabel?: string; onTap?: () => void }) {
+  const empty = !value || !value.trim();
+  if (empty && required && onTap) {
+    return (
+      <button type="button" onClick={onTap} className="flex w-full items-center justify-between gap-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-left transition hover:bg-amber-500/20">
+        <span className="text-amber-700 dark:text-amber-200">{label}</span>
+        <span className="text-right text-xs font-medium text-amber-700 dark:text-amber-200">{tapLabel ?? "Fill"} →</span>
+      </button>
+    );
+  }
   return (
     <div className="flex justify-between gap-4 border-b border-border/40 py-1.5 last:border-0">
       <span className="text-muted-foreground">{label}</span>

@@ -196,6 +196,8 @@ const ALLOWED_FIELDS = [
   "energy_levels", "recovery_capacity",
   // Clinical safety
   "parq_passed", "acsm_risk_category", "medications", "med_flags",
+  // Round R-intake-rich: extra PT-aligned columns the client may self-report.
+  "years_training", "waist_cm", "hip_cm", "body_fat_pct", "current_capacity_vs_pb",
   "extended",
 ] as const;
 
@@ -257,6 +259,12 @@ const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   acsm_risk_category: z.enum(["low", "moderate", "high"]),
   medications: longText,
   med_flags: stringArray,
+  // Numeric self-report columns. All optional; client may send null to clear.
+  years_training: z.number().int().min(0).max(80),
+  waist_cm: z.number().min(30).max(250),
+  hip_cm: z.number().min(30).max(250),
+  body_fat_pct: z.number().min(2).max(70),
+  current_capacity_vs_pb: intRange(1, 10),
   extended: extendedSchema,
 };
 
@@ -324,15 +332,40 @@ export const saveIntake = createServerFn({ method: "POST" })
 
     const prevExtended = (existing?.extended as Record<string, any>) ?? {};
     const prevProv = (prevExtended.provenance as Record<string, "client" | "trainer-edited">) ?? {};
+    const prevFieldProv = (prevExtended.field_provenance as Record<string, "client" | "trainer-edited">) ?? {};
     const nextProv = { ...prevProv };
     for (const section of data.sections) {
       // Only mark sections as 'client' if not already trainer-edited
       if (nextProv[section] !== "trainer-edited") nextProv[section] = "client";
     }
 
+    // Per-field provenance guard: any top-level column that the trainer
+    // touched after the client's last save is preserved (client write
+    // is dropped for that single field). Other fields still go through.
+    const nextFieldProv = { ...prevFieldProv };
+    const droppedFields: string[] = [];
+    for (const k of Object.keys(cleaned)) {
+      if (k === "extended") continue;
+      if (prevFieldProv[k] === "trainer-edited") {
+        droppedFields.push(k);
+        delete cleaned[k];
+        continue;
+      }
+      // Mark this field as client-owned for next time.
+      nextFieldProv[k] = "client";
+    }
+    if (droppedFields.length > 0) {
+      console.warn("[intake] preserved trainer-edited fields:", droppedFields);
+    }
+
     // Merge any incoming extended (e.g. ext_hours_seated, ext_water_l_per_day, ext_meals_per_day)
     const incomingExtended = (cleaned.extended as Record<string, any>) ?? {};
-    const mergedExtended = { ...prevExtended, ...incomingExtended, provenance: nextProv };
+    const mergedExtended = {
+      ...prevExtended,
+      ...incomingExtended,
+      provenance: nextProv,
+      field_provenance: nextFieldProv,
+    };
     cleaned.extended = mergedExtended;
 
     if (existing) {
