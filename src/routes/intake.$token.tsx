@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-react";
 import { BrandMark } from "@/components/BrandMark";
-import { EQUIPMENT_CATALOG, CATEGORY_LABEL_PT, CATEGORY_LABEL_EN, type EquipmentCategory, searchEquipment } from "@/lib/equipment-catalog";
+import { EquipmentPicker } from "@/components/EquipmentPicker";
 import { InjuriesSlide } from "@/components/intake/InjuriesSlide";
 
 const SHOW_DEPRECATED_FIELDS = import.meta.env.VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS === "1";
