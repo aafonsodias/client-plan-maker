@@ -326,7 +326,7 @@ export const saveIntake = createServerFn({ method: "POST" })
     // Load existing assessment to merge extended.provenance
     const { data: existing } = await supabaseAdmin
       .from("assessments")
-      .select("id, extended, " + (ALLOWED_FIELDS as readonly string[]).filter((k) => k !== "extended").join(", "))
+      .select("id, extended")
       .eq("client_id", client.id)
       .maybeSingle();
 
