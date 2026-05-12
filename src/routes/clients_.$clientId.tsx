@@ -2254,7 +2254,8 @@ function ClientDetail() {
           }
         >
 
-          <AssessmentGroupHeader id="self_intake" counts={groupCounts.selfIntake} />
+          {/* "Auto-Avaliação do Cliente" header removed — redundant with the
+              section title (PAR-Q+ etc.) shown immediately below. */}
           {/* PAR-Q+ */}
           <SectionBlock id="parq" analysing={analysingSections["parq"]} analysis={sectionAnalyses["parq"]} title={t("parq_block.title")} hint={t("parq_block.hint")} complete={isSectionComplete("parq", assessment)} footer={isSectionComplete("parq", assessment) ? <CompletionStrip text={parqFlagCount(assessment.parq) === 0 ? t("parq_block.complete_clear") : t("parq_block.complete_flagged", { count: parqFlagCount(assessment.parq) })} description={t(parqFlagCount(assessment.parq) === 0 ? "parq_block.complete_meaning_clear" : "parq_block.complete_meaning_flagged")} /> : null}>
             <ul className="space-y-1.5">
