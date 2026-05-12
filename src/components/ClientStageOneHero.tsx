@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { ArrowRight, ExternalLink, Send } from "lucide-react";
+import { ExternalLink, Send } from "lucide-react";
 
 /**
  * Stage-1 landing hero for the client detail page.
@@ -55,10 +55,6 @@ export function ClientStageOneHero({
     ? t("stage_one_hero.link_sent")
     : t("stage_one_hero.link_not_sent");
 
-  const primaryLabel = hasDraft
-    ? t("stage_one_hero.cta_continue")
-    : t("stage_one_hero.cta_request");
-
   return (
     <section
       aria-label="Stage 1"
@@ -83,14 +79,6 @@ export function ClientStageOneHero({
         <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
           {t("stage_one_hero.steps_assessment")}
         </span>
-        <button
-          type="button"
-          onClick={onPrimary}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold text-background transition hover:opacity-90"
-        >
-          {primaryLabel}
-          <ArrowRight className="h-3 w-3" />
-        </button>
       </div>
 
       {/* Row 2: subtitle + secondary actions + status — single wrapping line */}
