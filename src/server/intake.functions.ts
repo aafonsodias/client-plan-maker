@@ -196,6 +196,8 @@ const ALLOWED_FIELDS = [
   "energy_levels", "recovery_capacity",
   // Clinical safety
   "parq_passed", "acsm_risk_category", "medications", "med_flags",
+  // Round R-intake-rich: extra PT-aligned columns the client may self-report.
+  "years_training", "waist_cm", "hip_cm", "body_fat_pct", "current_capacity_vs_pb",
   "extended",
 ] as const;
 
@@ -257,6 +259,12 @@ const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   acsm_risk_category: z.enum(["low", "moderate", "high"]),
   medications: longText,
   med_flags: stringArray,
+  // Numeric self-report columns. All optional; client may send null to clear.
+  years_training: z.number().int().min(0).max(80),
+  waist_cm: z.number().min(30).max(250),
+  hip_cm: z.number().min(30).max(250),
+  body_fat_pct: z.number().min(2).max(70),
+  current_capacity_vs_pb: intRange(1, 10),
   extended: extendedSchema,
 };
 
