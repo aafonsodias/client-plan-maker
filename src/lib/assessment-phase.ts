@@ -1,4 +1,4 @@
-import { PATTERN_IDS, formScore } from "@/lib/movement-criteria";
+import { PATTERN_IDS } from "@/lib/movement-criteria";
 
 /**
  * Assessment phase helper — Round 1 of the MVP assessment-to-plan redesign.
@@ -111,11 +111,7 @@ export function isSectionCompleteForPhase(
     case "posture":
       return hasVal(a.standing_posture_notes) || hasVal(a.known_imbalances) || hasVal(a.dominant_side);
     case "screen":
-      return PATTERN_IDS.every((p) => {
-        if (a.screen_not_assessed?.[p] === true) return true;
-        const fc = a[`${p}_form_criteria`];
-        return fc && formScore(fc) >= 3;
-      });
+      return PATTERN_IDS.every((p) => isPatternHandled(p, a));
     case "performance":
       return hasVal(a.resting_heart_rate) || (a.ext_cardio_test && a.ext_cardio_test !== "untested");
     default:
