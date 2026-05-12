@@ -583,6 +583,7 @@ function ClientDetail() {
     medical_conditions: "",
     preferences: "",
     no_injuries: false,
+    no_meds: false,
     sleep_quality: "",
     stress_level: "",
     nutrition_habits: "",
