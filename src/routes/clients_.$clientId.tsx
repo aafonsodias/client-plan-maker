@@ -273,7 +273,7 @@ function hasVal(v: any): boolean {
  * Plan gate never drift apart.
  */
 function isSectionComplete(id: string, a: any): boolean {
-  return isSectionCompleteForPhase(id, a, (isSectionComplete as any)._ctx ?? {});
+  return isSectionCompleteForPhase(id, a);
 }
 
 function parqHasYes(parq: Record<string, boolean | null>): boolean {
