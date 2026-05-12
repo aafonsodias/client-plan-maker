@@ -3042,6 +3042,90 @@ function ClientDetail() {
                 </label>
               </div>
             </div>
+            {/* Categoria IMC — movida do Risco; usa altura/peso de Dados base. */}
+            <div className="mb-3 space-y-1">
+              <LabelWithHelp label={t("risk_block.bmi_label")} hint={t("risk_block.bmi_hint")} />
+              {bmiAuto.value !== null ? (
+                (() => {
+                  const cat = assessment.risk.bmi_category === "muscular" ? "muscular" : bmiAuto.category;
+                  const TONE: Record<string, { dot: string; text: string; bar: string }> = {
+                    underweight: { dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-400", bar: "bg-blue-500/70" },
+                    normal:      { dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500/70" },
+                    overweight:  { dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", bar: "bg-amber-500/70" },
+                    obese:       { dot: "bg-red-500", text: "text-red-600 dark:text-red-400", bar: "bg-red-500/70" },
+                    muscular:    { dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500/70" },
+                  };
+                  const tone = TONE[cat] ?? TONE.normal;
+                  const pct = Math.max(0, Math.min(100, ((bmiAuto.value - 16) / (40 - 16)) * 100));
+                  return (
+                    <div className="rounded-md border border-border bg-background/50 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${tone.dot}`} aria-hidden />
+                          <span className="font-medium text-sm tabular-nums">{bmiAuto.value.toFixed(1)}</span>
+                          <span className={`text-sm ${tone.text} truncate`}>
+                            {t(`risk_block.bmi_${cat}` as const)}
+                          </span>
+                        </div>
+                        {assessment.risk.bmi_category !== "muscular" ? (
+                          <button
+                            type="button"
+                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                            onClick={() =>
+                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: "muscular" } })
+                            }
+                          >
+                            {t("risk_block.bmi_mark_muscular")}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                            onClick={() =>
+                              setAssessment({ ...assessment, risk: { ...assessment.risk, bmi_category: bmiAuto.category } })
+                            }
+                          >
+                            {t("risk_block.bmi_use_auto")}
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-2 relative h-1 rounded-full bg-secondary/60 overflow-visible">
+                        {[18.5, 25, 30].map((th) => {
+                          const left = ((th - 16) / (40 - 16)) * 100;
+                          return (
+                            <span
+                              key={th}
+                              className="absolute top-1/2 h-2 w-px -translate-y-1/2 bg-border"
+                              style={{ left: `${left}%` }}
+                              aria-hidden
+                            />
+                          );
+                        })}
+                        <span
+                          className={`absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-background ${tone.bar}`}
+                          style={{ left: `${pct}%` }}
+                          aria-hidden
+                        />
+                      </div>
+                      <div className="mt-1 flex justify-between text-[9.5px] text-muted-foreground tabular-nums">
+                        <span>16</span>
+                        <span>18,5</span>
+                        <span>25</span>
+                        <span>30</span>
+                        <span>40</span>
+                      </div>
+                      <p className="mt-1.5 text-[10.5px] leading-snug text-muted-foreground">
+                        {t(`risk_block.bmi_${cat}_meaning` as const)}
+                      </p>
+                    </div>
+                  );
+                })()
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {t("risk_block.bmi_missing_hw", { defaultValue: "Adicione altura e peso do cliente para calcular o IMC." })}
+                </p>
+              )}
+            </div>
             <div className="mb-2 flex justify-end">
               <Button type="button" size="sm" variant="outline" onClick={() => setTanitaOpen(true)}>
                 <Plus className="mr-1.5 h-3.5 w-3.5" /> Importar bioimpedância
