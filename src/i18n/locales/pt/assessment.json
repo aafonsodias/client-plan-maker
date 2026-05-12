@@ -112,6 +112,8 @@
     "bmi_missing_hw": "Adicione altura e peso do cliente para calcular o IMC.",
     "bmi_mark_muscular": "Marcar como musculado",
     "bmi_use_auto": "Usar valor automático",
+    "bmi_auto_label": "Auto",
+    "bmi_athletic_label": "Atlético",
     "bmi_underweight": "Magreza",
     "bmi_normal": "Normal",
     "bmi_overweight": "Excesso",
