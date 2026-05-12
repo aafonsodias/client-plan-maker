@@ -78,12 +78,7 @@ export function InjuriesBodyMapBlock({
 
   return (
     <div className="mt-4 space-y-4 rounded-xl border border-border/60 bg-card/30 p-4">
-      <header className="space-y-1">
-        <p className="eyebrow text-[10px] uppercase tracking-widest text-muted-foreground">
-          {t("injuries.page_title")}
-        </p>
-        <p className="text-xs text-muted-foreground">{t("injuries.page_subtitle")}</p>
-      </header>
+      <p className="text-xs text-muted-foreground">{t("injuries.page_subtitle")}</p>
 
       {!assessmentId ? (
         <p className="text-xs text-muted-foreground">
