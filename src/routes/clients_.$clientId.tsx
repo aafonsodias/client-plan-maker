@@ -2688,7 +2688,29 @@ function ClientDetail() {
           </SectionBlock>
           {/* Medications */}
           <SectionBlock id="meds" analysing={analysingSections["meds"]} analysis={sectionAnalyses["meds"]} title={t("meds_block.title")} hint={t("meds_block.hint")} defaultCollapsed complete={isSectionComplete("meds", assessment)}>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <label className="mb-3 flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-border accent-amber-500"
+                checked={assessment.no_meds === true}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  setAssessment({
+                    ...assessment,
+                    no_meds: next,
+                    ...(next ? { med_flags: [], medications: "" } : {}),
+                  });
+                  if (next) setMedsLocal({ doses: {}, others: [] });
+                }}
+              />
+              <span className="leading-snug">
+                <span className="font-medium">{t("no_meds_toggle.label")}</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {t("no_meds_toggle.help", { defaultValue: "" })}
+                </span>
+              </span>
+            </label>
+            <div className={cn("grid grid-cols-1 gap-2 sm:grid-cols-2", assessment.no_meds === true && "opacity-50 pointer-events-none")}>
               {[
                 { id: "beta", canonical: "Beta-blocker", label: t("meds_block.flag_beta"), effect: t("meds_block.effect_beta"), Icon: HeartPulse },
                 { id: "statin", canonical: "Statin", label: t("meds_block.flag_statin"), effect: t("meds_block.effect_statin"), Icon: Pill },
