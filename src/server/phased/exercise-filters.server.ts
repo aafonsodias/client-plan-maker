@@ -19,6 +19,8 @@ export interface InjuryRow {
   body_zone: string | null;
   severity: number | null;
   injury_label?: string | null;
+  /** Free-text note written by client/trainer in InjuryEditor — propagated to the prompt as context. */
+  note?: string | null;
 }
 
 export interface InjuryBan {
@@ -39,11 +41,12 @@ export interface InjuryBan {
 function zoneFamily(raw: string | null | undefined): string {
   const z = String(raw ?? "").toLowerCase();
   if (!z) return "";
-  if (/lumbar|low_?back|lower_?back/.test(z)) return "low_back";
+  if (/lumbar|low_?back|lower_?back|sacrum/.test(z)) return "low_back";
   if (/cervical|neck/.test(z)) return "neck";
-  if (/thoracic|upper_?back/.test(z)) return "upper_back";
-  if (/shoulder/.test(z)) return "shoulder";
+  if (/thoracic|upper_?back|scapula/.test(z)) return "upper_back";
+  if (/shoulder|clavicle|ac_joint/.test(z)) return "shoulder";
   if (/knee/.test(z)) return "knee";
+  if (/sternum|costo|^chest$|^pec/.test(z)) return "chest_wall";
   if (/hip|glute/.test(z)) return "hip";
   if (/wrist|hand/.test(z)) return "wrist";
   if (/elbow|forearm/.test(z)) return "elbow";
@@ -139,6 +142,26 @@ function bansForZone(zone: string, severity: number): InjuryBan[] {
             ]
           : []),
       ];
+    case "elbow":
+      return [
+        ...(severity >= 2
+          ? [
+              { exercise: "barbell curl heavy", alternative: "neutral-grip DB hammer curl, cable rope curl", reason: "Supinated grip under load aggravates lateral/medial epicondylitis.", citation: "NASM Essentials Ch.13" },
+              { exercise: "skullcrusher", alternative: "rope tricep pushdown, cable kickback", reason: "EZ-bar elbow flexion under load irritates inflamed tendons.", citation: "NASM Essentials Ch.13" },
+              { exercise: "chin-up", alternative: "lat pulldown neutral grip, ring row", reason: "Bodyweight on supinated grip loads medial epicondyle.", citation: "ACSM 12e Ch.7" },
+            ]
+          : []),
+      ];
+    case "chest_wall":
+      return [
+        ...(severity >= 2
+          ? [
+              { exercise: "pec deck", alternative: "DB chest press neutral, cable press at chest height", reason: "End-range horizontal abduction stresses costo-chondral junctions.", citation: "NASM Essentials Ch.13" },
+              { exercise: "wide-grip bench press", alternative: "neutral-grip DB press, push-up", reason: "Wide grip extends humerus past plane of scapula and loads sternum.", citation: "ACSM 12e Ch.7" },
+              { exercise: "deep dip", alternative: "bench dip with feet on floor, machine dip with limited ROM", reason: "End-range shoulder extension provokes anterior chest-wall pain.", citation: "NASM Essentials Ch.13" },
+            ]
+          : []),
+      ];
     default:
       return [];
   }
@@ -213,6 +236,26 @@ export function injuryBansPromptBlock(bans: InjuryBan[]): string {
     .map((b) => `- DO NOT program "${b.exercise}" — ${b.reason} Use instead: ${b.alternative ?? "an equivalent same-pattern variant"}. [${b.citation}]`)
     .join("\n");
   return `\n\nINJURY-DRIVEN EXERCISE BANS (HARD — derived from this client's assessment):\n${lines}\n\nIf you are tempted to pick a banned exercise because it best fits the archetype, ALWAYS substitute with the alternative shown. The ban is non-negotiable.`;
+}
+
+/**
+ * Render free-text injury notes (the "other injuries" field that the client
+ * wrote in InjuryEditor) as a soft-context block. Unlike `injuryBansPromptBlock`,
+ * notes do NOT trigger automatic substitutions — they are extra context for the
+ * AI to read literally and adapt around when planning.
+ */
+export function injuryNotesPromptBlock(rows: InjuryRow[] | null | undefined): string {
+  const items: string[] = [];
+  for (const r of rows ?? []) {
+    const note = (r?.note ?? "").trim();
+    if (!note) continue;
+    const zone = (r?.body_zone ?? "unknown").trim();
+    const sev = typeof r?.severity === "number" ? r.severity : "?";
+    const label = r?.injury_label ? ` (${r.injury_label})` : "";
+    items.push(`- ${zone}${label} severity ${sev}/5: "${note.replace(/"/g, "'")}"`);
+  }
+  if (!items.length) return "";
+  return `\n\nCLIENT-REPORTED INJURY CONTEXT (free-text — read literally, adapt programming to avoid aggravating these specific complaints):\n${items.join("\n")}`;
 }
 
 /**
