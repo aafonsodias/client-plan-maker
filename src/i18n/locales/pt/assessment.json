@@ -59,7 +59,11 @@
   "injuries_block": {
     "title": "Lesões e dor",
     "hint": "Marque zonas com dor ou lesão. Se não tiver nenhuma, ative “Sem lesões”.",
-    "no_injuries_toggle": "Sem lesões nem dor relevante"
+    "no_injuries_toggle": "Sem lesões nem dor relevante",
+    "empty_title": "Sem lesões registadas",
+    "empty_hint": "Toque numa zona do corpo para registar dor ou lesão.",
+    "save_changes_cta": "Guardar alterações",
+    "notes_placeholder": "Ex.: dor ao levantar o braço, começou há 2 semanas, piora no supino."
   },
   "mobile_step_header": {
     "prefix": "Passo {{current}} de {{total}} · {{title}}"
