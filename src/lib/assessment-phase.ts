@@ -19,6 +19,7 @@ export const SELF_INTAKE_SECTION_IDS = [
   "parq",
   "risk",
   "training",
+  "injuries",
   "history",
   "goal",
   "meds",
@@ -69,6 +70,10 @@ export function isSectionCompleteForPhase(
         && hasVal(a.training_days_per_week)
         && hasVal(a.session_duration_minutes)
         && (a.available_equipment?.length ?? 0) > 0;
+    case "injuries":
+      return hasVal(a.injuries)
+        || (a.pain_areas?.length ?? 0) > 0
+        || a.no_injuries === true;
     case "history":
       return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
     case "goal":
