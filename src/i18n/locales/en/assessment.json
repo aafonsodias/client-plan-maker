@@ -110,6 +110,8 @@
     "bmi_missing_hw": "Add the client's height and weight to compute BMI.",
     "bmi_mark_muscular": "Mark as muscular",
     "bmi_use_auto": "Use automatic value",
+    "bmi_auto_label": "Auto",
+    "bmi_athletic_label": "Athletic",
     "bmi_underweight": "Underweight",
     "bmi_normal": "Normal",
     "bmi_overweight": "Overweight",
