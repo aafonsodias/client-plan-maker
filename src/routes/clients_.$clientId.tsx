@@ -771,6 +771,7 @@ function ClientDetail() {
           parq: ext.parq ?? prev.parq,
           risk: ext.risk ?? prev.risk,
           no_injuries: ext.no_injuries === true,
+          no_meds: ext.no_meds === true,
           ext_hours_seated: ext.hours_seated ?? "",
           ext_daily_steps: ext.daily_steps ?? "",
           ext_job_type: ext.job_type ?? "",
