@@ -57,6 +57,29 @@ function hasVal(v: unknown): boolean {
 }
 
 /**
+ * Movement-screen pattern is "handled" (counts toward completion) when ANY of:
+ * 1) explicitly marked Not assessed,
+ * 2) at least one form criterion was toggled (true OR false — assessed even if poor),
+ * 3) any capacity field was populated.
+ * Form score is NOT used for completion — low scores are valid assessment data.
+ */
+export function isPatternHandled(p: string, a: any): boolean {
+  if (!a) return false;
+  if (a.screen_not_assessed?.[p] === true) return true;
+  const fc = a[`${p}_form_criteria`];
+  if (fc && typeof fc === "object" && Object.keys(fc).length > 0) return true;
+  const cap = a[`${p}_capacity`];
+  if (cap && typeof cap === "object" && Object.values(cap).some(hasVal)) return true;
+  if (hasVal(cap) && typeof cap !== "object") return true;
+  return false;
+}
+
+/** Returns the patterns that are still unhandled (for missing-items messaging). */
+export function unhandledScreenPatterns(a: any): string[] {
+  return PATTERN_IDS.filter((p) => !isPatternHandled(p, a));
+}
+
+/**
  * Per-section completeness — mirrors the cockpit logic exactly. Kept here
  * so derived helpers (`isSelfIntakeComplete`, `isAssessmentSessionComplete`,
  * `assessmentPhase`) and `client-phase.ts` can share one source of truth.
