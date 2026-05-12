@@ -3324,7 +3324,10 @@ function ClientDetail() {
           </SectionBlock>
           {/* Mobility checklist */}
           <SectionBlock id="mobility" analysing={analysingSections["mobility"]} analysis={sectionAnalyses["mobility"]} title={t("mobility_block.title")} hint={t("mobility_block.hint")}>
-            <p className="mb-1.5 text-[10px] text-muted-foreground">{t("score_legend")}</p>
+            <p className="mb-1 text-[10px] font-medium text-muted-foreground">{t("score_legend")}</p>
+            <p className="mb-2 text-[10.5px] leading-snug text-muted-foreground">
+              {t("mobility_block.rubric")}
+            </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {([
                 ["ext_mob_shoulder", "shoulder"],
