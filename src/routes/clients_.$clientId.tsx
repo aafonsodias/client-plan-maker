@@ -3408,7 +3408,7 @@ function ClientDetail() {
             </div>
           </SectionBlock>
           {/* Movement screen */}
-          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)} footer={isSectionComplete("screen", assessment) ? <CompletionStrip text={t("screen_block.complete", { cleared: PATTERN_IDS.filter((p) => { if (assessment.screen_not_assessed?.[p]) return false; const fc = assessment[`${p}_form_criteria`]; return fc && formScore(fc) >= 3; }).length, total: PATTERN_IDS.length })} description={t("screen_block.complete_meaning")} /> : null}>
+          <SectionBlock id="screen" analysing={analysingSections["screen"]} analysis={sectionAnalyses["screen"]} title={t("screen_block.title")} hint={t("screen_block.hint")} defaultCollapsed complete={isSectionComplete("screen", assessment)} footer={isSectionComplete("screen", assessment) ? <CompletionStrip text={t("screen_block.complete", { cleared: PATTERN_IDS.filter((p) => isPatternHandled(p, assessment)).length, total: PATTERN_IDS.length })} description={`${PATTERN_IDS.filter((p) => isPatternHandled(p, assessment)).length}/${PATTERN_IDS.length} padrões avaliados ou marcados “não avaliado”. Scores baixos viram implicações de prescrição, não bloqueiam o plano.`} /> : null}>
             <p className="mb-1.5 text-[10px] text-muted-foreground">
               Marca cada critério observado · adiciona dados de capacidade quando disponíveis.
             </p>
