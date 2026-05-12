@@ -95,6 +95,22 @@ type FormState = {
   parq: Record<"q1"|"q2"|"q3"|"q4"|"q5"|"q6"|"q7", boolean | null>;
   medications: string;
   med_flags: string[];
+  // R-intake-rich extras (mirror PT-side assessment)
+  years_training: string;
+  previous_program_style: string;
+  waist_cm: string;
+  hip_cm: string;
+  body_fat_pct: string;
+  ext_mob_squat: number;
+  ext_mob_overhead: number;
+  ext_mob_hip_hinge: number;
+  ext_mob_hamstring: number;
+  ext_mob_ankle: number;
+  standing_posture_notes: string;
+  known_imbalances: string;
+  dominant_side: "" | "L" | "R" | "Both";
+  current_capacity_vs_pb: number;
+  max_lifts: string;
 };
 
 const EMPTY: FormState = {
@@ -114,6 +130,11 @@ const EMPTY: FormState = {
   parq: { q1: null, q2: null, q3: null, q4: null, q5: null, q6: null, q7: null },
   medications: "",
   med_flags: [],
+  years_training: "", previous_program_style: "",
+  waist_cm: "", hip_cm: "", body_fat_pct: "",
+  ext_mob_squat: 0, ext_mob_overhead: 0, ext_mob_hip_hinge: 0, ext_mob_hamstring: 0, ext_mob_ankle: 0,
+  standing_posture_notes: "", known_imbalances: "", dominant_side: "",
+  current_capacity_vs_pb: 0, max_lifts: "",
 };
 
 function fromAssessment(a: any | null): FormState {
