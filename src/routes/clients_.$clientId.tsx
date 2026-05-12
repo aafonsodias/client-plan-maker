@@ -1741,11 +1741,12 @@ function ClientDetail() {
           </div>
           {/* Single icon-only overflow menu for every secondary action.
               R68 — header trim for mobile. */}
+          <div className="flex items-center gap-2 shrink-0">
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="ml-auto h-8 w-8 shrink-0"
+            className="h-8 w-8 shrink-0"
             aria-label="Gerar link de avaliação"
             title="Gerar link de avaliação"
             onClick={() => setIntakeLinkOpen(true)}
@@ -1816,6 +1817,7 @@ function ClientDetail() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
           <Sheet open={intakeLinkOpen} onOpenChange={setIntakeLinkOpen}>
             <SheetContent side="right" className="w-full sm:max-w-md">
               <SheetHeader>
