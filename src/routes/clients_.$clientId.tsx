@@ -1554,7 +1554,7 @@ function ClientDetail() {
       ext_mob_shoulder: "", ext_mob_hip: "", ext_mob_ankle: "", ext_mob_thoracic: "", ext_mob_wrist: "", ext_mob_knee: "",
       ext_cardio_test: "untested", ext_cardio_value: "",
       primary_goal: "", experience_level: "", training_location: "",
-      available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
+      available_equipment: [], injuries: "", medical_conditions: "", preferences: "", no_injuries: false,
       sleep_quality: "", stress_level: "", nutrition_habits: "", hydration_glasses_per_day: "",
       mobility_limitations: "", energy_levels: "", recovery_capacity: "", lifestyle: "",
       standing_posture_notes: "", known_imbalances: "", dominant_side: "",
