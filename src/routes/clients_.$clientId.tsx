@@ -2262,7 +2262,6 @@ function ClientDetail() {
           </SectionBlock>
           {/* Risk stratification */}
           <SectionBlock id="risk" analysing={analysingSections["risk"]} analysis={sectionAnalyses["risk"]} title={t("risk_block.title")} hint={t("risk_block.hint")} complete={isSectionComplete("risk", assessment)}>
-            <ParqFlagSummary count={parqFlagCount(assessment.parq)} />
             <div className="grid gap-2 sm:grid-cols-2">
               <Toggle
                 label={t("risk_block.family_cvd_label", { defaultValue: "História familiar precoce" })}
