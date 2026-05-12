@@ -2638,10 +2638,40 @@ function ClientDetail() {
               )}
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
-            <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
             {isSectionComplete("training", assessment) && (
               <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
+          </SectionBlock>
+          {/* Injuries & pain — own section (4/15) */}
+          <SectionBlock
+            id="injuries"
+            analysing={analysingSections["injuries"]}
+            analysis={sectionAnalyses["injuries"]}
+            title={t("injuries_block.title", { defaultValue: "Lesões e dor" })}
+            hint={t("injuries_block.hint", { defaultValue: "Marque zonas com dor ou lesão. Se não tiver nenhuma, ative “Sem lesões”." })}
+            complete={isSectionComplete("injuries", assessment)}
+          >
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border accent-amber-500"
+                  checked={assessment.no_injuries === true}
+                  onChange={(e) => setAssessment({ ...assessment, no_injuries: e.target.checked })}
+                />
+                <span>{t("injuries_block.no_injuries_toggle", { defaultValue: "Sem lesões nem dor relevante" })}</span>
+              </label>
+              {!assessment.no_injuries && (
+                <>
+                  <TextField
+                    label={t("training_block.injuries")}
+                    value={assessment.injuries}
+                    onChange={(v) => setAssessment({ ...assessment, injuries: v, no_injuries: v ? false : assessment.no_injuries })}
+                  />
+                  <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
+                </>
+              )}
+            </div>
           </SectionBlock>
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
