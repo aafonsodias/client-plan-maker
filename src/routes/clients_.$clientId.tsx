@@ -2098,11 +2098,10 @@ function ClientDetail() {
         )}
 
         {assessment?.id && (
-          <div className="mb-2 flex flex-wrap justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+          <div className="mb-2 flex flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
+            <button
+              type="button"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-foreground/80 transition hover:border-border hover:bg-secondary hover:text-foreground"
               onClick={async () => {
                 try {
                   await downloadAssessmentSummary({
@@ -2116,13 +2115,13 @@ function ClientDetail() {
                 }
               }}
             >
-              <FileText className="h-3.5 w-3.5" />
-              {t("summary_pdf.cta", { defaultValue: "Resumo da avaliação (PDF)" })}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+              <FileText className="h-3 w-3 text-muted-foreground" />
+              {t("summary_pdf.cta_short", { defaultValue: "Resumo (PDF)" })}
+            </button>
+            <span className="h-3 w-px shrink-0 bg-border/60" aria-hidden />
+            <button
+              type="button"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-border/70 bg-background/60 px-2.5 py-1 text-[11px] font-medium text-foreground/80 transition hover:border-border hover:bg-secondary hover:text-foreground"
               onClick={async () => {
                 try {
                   const mod = await import("@/lib/pdf-assessment-session-helper");
@@ -2137,9 +2136,9 @@ function ClientDetail() {
                 }
               }}
             >
-              <FileText className="h-3.5 w-3.5" />
-              {t("session_helper.cta", { defaultValue: "Guia da sessão (PDF)" })}
-            </Button>
+              <FileText className="h-3 w-3 text-muted-foreground" />
+              {t("session_helper.cta_short", { defaultValue: "Guia da sessão (PDF)" })}
+            </button>
           </div>
         )}
         <AssessmentSection
