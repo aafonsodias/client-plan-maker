@@ -4686,7 +4686,7 @@ function AssessmentSection({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveId(s.id)}
-                title={s.label}
+                title={t((s as any).labelKey ?? s.label, { defaultValue: s.label }) as string}
                 className={[
                   "group inline-flex items-center gap-1.5 rounded-full transition",
                   isActive
@@ -4711,7 +4711,7 @@ function AssessmentSection({
                 <span
                   className={`hidden text-[11px] tracking-tight sm:inline ${isActive ? "font-medium" : ""}`}
                 >
-                  {s.label}
+                  {t((s as any).labelKey ?? s.label, { defaultValue: s.label })}
                 </span>
               </button>
             );
@@ -4787,7 +4787,7 @@ function AssessmentSection({
                               <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/50 font-mono text-[10px] tabular-nums">
                                 {i + 1}
                               </span>
-                              <span className="flex-1 truncate">{s.label}</span>
+                              <span className="flex-1 truncate">{t((s as any).labelKey ?? s.label, { defaultValue: s.label })}</span>
                               {complete ? (
                                 <>
                                   <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
