@@ -179,6 +179,21 @@ function fromAssessment(a: any | null): FormState {
     parq: ext.parq ?? EMPTY.parq,
     medications: a.medications ?? "",
     med_flags: a.med_flags ?? [],
+    years_training: a.years_training?.toString() ?? "",
+    previous_program_style: ext.previous_program_style ?? "",
+    waist_cm: a.waist_cm?.toString() ?? "",
+    hip_cm: a.hip_cm?.toString() ?? "",
+    body_fat_pct: a.body_fat_pct?.toString() ?? "",
+    ext_mob_squat: ext.ext_mob_squat ?? 0,
+    ext_mob_overhead: ext.ext_mob_overhead ?? 0,
+    ext_mob_hip_hinge: ext.ext_mob_hip_hinge ?? 0,
+    ext_mob_hamstring: ext.ext_mob_hamstring ?? 0,
+    ext_mob_ankle: ext.ext_mob_ankle ?? 0,
+    standing_posture_notes: ext.standing_posture_notes ?? "",
+    known_imbalances: ext.known_imbalances ?? "",
+    dominant_side: (ext.dominant_side as any) ?? "",
+    current_capacity_vs_pb: a.current_capacity_vs_pb ?? 0,
+    max_lifts: ext.max_lifts ?? "",
   };
 }
 
