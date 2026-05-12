@@ -1676,23 +1676,33 @@ function ClientDetail() {
                       <span className="hidden sm:inline text-muted-foreground/40" aria-hidden="true">·</span>
                     </>
                   )}
-                  {phase && (
-                    <>
+                  {phase && (() => {
+                    const ptLabel =
+                      phase.kind === "intake_sent"
+                        ? "Convite pendente"
+                        : phase.kind === "onboarding"
+                          ? "Onboarding"
+                          : phase.kind === "assessment"
+                            ? "Avaliação a decorrer"
+                            : phase.kind === "ready"
+                              ? "Pronto para plano"
+                              : phase.kind === "active"
+                                ? `Ativo · Bloco ${(phase as any).block ?? 1}`
+                                : phase.kind === "idle"
+                                  ? `Inativo · ${(phase as any).daysSince ?? 0}d`
+                                  : phase.kind === "ended"
+                                    ? "Plano terminado"
+                                    : phase.label;
+                    return (
                       <span className="inline-flex min-w-0 items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 rounded-full ${phaseToneCls}`} aria-hidden="true" />
-                        <span className="eyebrow text-[10px] text-muted-foreground truncate" title={phase.label}>
-                          {phase.label}
+                        <span className="eyebrow text-[10px] text-muted-foreground truncate" title={ptLabel}>
+                          {ptLabel}
                         </span>
                       </span>
-                      <span className="text-muted-foreground/40 shrink-0" aria-hidden="true">·</span>
-                    </>
-                  )}
-                  <span
-                    className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground/70"
-                    title={`Protocolo · etapa ${stepN} de 5`}
-                  >
-                    {stepN}/5
-                  </span>
+                    );
+                  })()}
+                  {/* {stepN}/5 chip removed — duplicate of section progress */}
                 </p>
               );
             })()}
