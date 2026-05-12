@@ -4804,8 +4804,8 @@ function AssessmentSection({
                   </Sheet>
                 </div>
               </div>
-              {/* Body */}
-              <div ref={stepperBodyRef} className="min-h-[60vh] overflow-y-auto px-3 py-4">
+              {/* Body — uses document scroll on mobile (single vertical scrollbar) */}
+              <div ref={stepperBodyRef} className="min-h-[60vh] px-3 py-4">
                 <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
                   {sectionChildren.get(activeId) ?? (
                     <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
