@@ -1634,6 +1634,7 @@ function ClientDetail() {
   return (
     <TooltipProvider delayDuration={200}>
     <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
+      <ScrollCue key={clientId} bottomOffset={72} />
       <div>
         <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 min-w-0">
           {user?.id ? (
