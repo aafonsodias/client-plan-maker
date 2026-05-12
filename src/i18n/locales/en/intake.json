@@ -85,7 +85,13 @@
   "goal_ai_confirm_yes": "Yes, that's it",
   "goal_ai_confirm_no": "No, it's something else",
   "days": {
-    "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun"
   },
   "review_title": "All good?",
   "review_desc": "Review what you're sending. You can go back to fix anything.",
@@ -209,5 +215,54 @@
     "manual": "Manual",
     "mixed": "Mixed",
     "other": "Other"
+  },
+  "extra": {
+    "history_title": "A bit about your training history",
+    "history_subtitle": "Helps us know where to start.",
+    "history_years_label": "Years of consistent training (any sport with progression)",
+    "history_years_legend": "0 = none · 20+ = a long time",
+    "history_style_label": "What programs or styles have you done? (optional)",
+    "history_style_placeholder": "e.g. 5/3/1, CrossFit, group classes, calisthenics, none…",
+    "metrics_title": "Body measurements",
+    "metrics_subtitle": "Skip any you don't have. A soft tape measure is enough.",
+    "metrics_waist_label": "Waist (cm) — narrowest point above the navel",
+    "metrics_hip_label": "Hip (cm) — widest point at the glutes",
+    "metrics_bf_label": "Body fat % (if you know it)",
+    "metrics_bf_hint": "From a scale, caliper or a recent test. Otherwise leave blank.",
+    "mobility_title": "Mobility — quick self-rating",
+    "mobility_subtitle": "1 = very limited · 5 = full, easy range. No need to test now — answer how it usually feels.",
+    "mobility_squat": "Deep squat (heels down, knees track over toes)",
+    "mobility_overhead": "Arms straight overhead without arching the back",
+    "mobility_hip_hinge": "Hip hinge (touch shins with flat back)",
+    "mobility_hamstring": "Hamstring length (lift one leg lying down)",
+    "mobility_ankle": "Ankle dorsiflexion (knee past toes in a lunge)",
+    "mobility_legend": "1 very limited · 2 limited · 3 ok · 4 good · 5 full range",
+    "posture_title": "Posture and asymmetries",
+    "posture_subtitle": "Optional. Helps us avoid loading something that already bothers you.",
+    "posture_notes_label": "Standing posture — anything you notice?",
+    "posture_notes_placeholder": "e.g. rounded shoulders, head forward, one shoulder higher…",
+    "posture_imbalances_label": "Known imbalances or weaker side",
+    "posture_imbalances_placeholder": "e.g. weaker right hip, tight left hamstring…",
+    "posture_dominant_label": "Dominant side",
+    "posture_dominant_left": "Left",
+    "posture_dominant_right": "Right",
+    "posture_dominant_both": "Both / mixed",
+    "performance_title": "How are you feeling lately?",
+    "performance_subtitle": "Compared to your best self.",
+    "performance_capacity_label": "Right now I feel like…",
+    "performance_capacity_legend": "1 = the worst I've ever felt · 10 = the best I've ever felt",
+    "performance_max_lifts_label": "Recent best lifts (optional)",
+    "performance_max_lifts_placeholder": "e.g. squat 100kg, bench 70kg, deadlift 140kg…"
+  },
+  "validation": {
+    "required_inline": "Fill this in to continue",
+    "required_one_of": "Pick one to continue",
+    "go_fix": "Go fix"
+  },
+  "review": {
+    "tap_to_fill": "Tap to fill",
+    "missing_count_one": "{{count}} required field still empty",
+    "missing_count_other": "{{count}} required fields still empty",
+    "all_good": "Everything looks complete."
   }
 }
