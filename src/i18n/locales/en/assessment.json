@@ -138,6 +138,8 @@
   },
   "anthro_block": {
     "title": "Anthropometry",
+    "bia_cta": "Add bioimpedance",
+    "bia_helper": "Optional - improves body-composition interpretation.",
     "hint": "Body composition baseline. Waist-to-hip ratio is computed automatically.",
     "waist": "Waist (cm)",
     "waist_hint": "Measure at narrowest point above the hip bone, exhale.",
