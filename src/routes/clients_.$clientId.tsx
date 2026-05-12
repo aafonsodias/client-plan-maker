@@ -1855,7 +1855,6 @@ function ClientDetail() {
         </div>
       </div>
 
-      {(() => {
       {/* R68 — Readiness strip removed: ACSM + Recovery already render inside
           ClientCockpit/ProtocolRail below. Single source of truth. */}
 
