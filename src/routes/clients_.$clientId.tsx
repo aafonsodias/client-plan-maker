@@ -2169,7 +2169,31 @@ function ClientDetail() {
           onCollapsedChange={setAssessmentCollapsedPersist}
           hideCollapsedStrip={stripHidden}
           sectionStatus={sectionStatus.map((s) => ({ id: s.id, label: s.label, complete: s.complete }))}
-          onActiveChange={setActiveSection}
+          onActiveChange={(id) => {
+            setActiveSection(id);
+            // Once the user navigates into a section, dismiss the missing-items
+            // panel — they're acting on it. It will be re-built on the next
+            // failed Conclude.
+            if (missingItems.length > 0) setMissingItems([]);
+          }}
+          missingPanel={
+            missingItems.length > 0 ? (
+              <MissingItemsPanel
+                items={missingItems}
+                onGoTo={(sectionId) => {
+                  setActiveSection(sectionId);
+                  setMissingItems([]);
+                  if (typeof window !== "undefined") {
+                    requestAnimationFrame(() => {
+                      document
+                        .getElementById(`sec-${sectionId}`)
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                  }
+                }}
+              />
+            ) : null
+          }
           saveStatus={saveStatus}
           lastSavedAt={lastSavedAt}
           concludeBusy={busy || phasedBusy}
