@@ -68,6 +68,9 @@ import {
   assessmentPhase,
   assessmentGroupCounts,
 } from "@/lib/assessment-phase";
+import { buildCompletionReport, type MissingItem } from "@/lib/assessment-completion";
+import { MissingItemsPanel } from "@/components/assessment/MissingItemsPanel";
+import { listInjuries } from "@/server/injuries.functions";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { friendlyError } from "@/lib/friendly-error";
