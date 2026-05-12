@@ -1175,6 +1175,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => !!form.intake_path,
+      missingHint: t("validation.required_one_of"),
     },
     // 1b. Identity — quem és tu
     {
@@ -1209,6 +1210,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
+      missingHint: t("validation.required_inline"),
     },
     // 1c. Profile photo — own slide, not part of reference grid
     {
@@ -1265,6 +1267,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => form.smart_specific.trim().length > 2,
+      missingHint: t("validation.required_inline"),
     },
     // 3. SMART measure + deadline
     {
@@ -1331,6 +1334,7 @@ function buildSlides(
         />
       ),
       isValid: () => !!form.readiness_stage,
+      missingHint: t("validation.required_one_of"),
     },
     // 5. Experience
     {
@@ -1347,6 +1351,7 @@ function buildSlides(
         />
       ),
       isValid: () => !!form.experience_level,
+      missingHint: t("validation.required_one_of"),
     },
     // 6. Days + duration
     {
@@ -1367,6 +1372,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => !!form.training_days_per_week && !!form.session_duration_minutes,
+      missingHint: t("validation.required_one_of"),
     },
     // 7. Location
     {
@@ -1384,6 +1390,7 @@ function buildSlides(
         />
       ),
       isValid: () => form.training_location.length > 0,
+      missingHint: t("validation.required_one_of"),
     },
     // 8. Equipment
     {
@@ -1445,6 +1452,7 @@ function buildSlides(
         </div>
       ),
       isValid: () => Object.values(form.parq).every((v) => v === true || v === false),
+      missingHint: t("validation.required_inline"),
     },
     // 11. Medications + flags (optional)
     {
