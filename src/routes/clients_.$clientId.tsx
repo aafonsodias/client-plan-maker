@@ -2642,6 +2642,7 @@ function ClientDetail() {
                 </>
               )}
             </div>
+            <RxImplications sectionId="injuries" assessment={assessment} riskCategory={riskCategory} injuriesCount={injuriesCount} collapsible />
           </SectionBlock>
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
@@ -2669,6 +2670,7 @@ function ClientDetail() {
                 />
               </div>
             </div>
+            <RxImplications sectionId="history" assessment={assessment} riskCategory={riskCategory} collapsible />
           </SectionBlock>
           {/* SMART goal */}
           <SectionBlock id="goal" analysing={analysingSections["goal"]} analysis={sectionAnalyses["goal"]} title={t("goal_block.title")} hint={t("goal_block.hint")} complete={isSectionComplete("goal", assessment)} provenance={assessment.provenance?.smart_goal} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("goal", assessment) ? <CompletionStrip text={t("goal_block.complete", { text: String(assessment.smart_specific ?? "").slice(0, 40) })} description={t("goal_block.complete_meaning")} /> : null}>
