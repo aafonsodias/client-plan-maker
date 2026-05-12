@@ -63,7 +63,8 @@
     "empty_title": "Sem lesões registadas",
     "empty_hint": "Toque numa zona do corpo para registar dor ou lesão.",
     "save_changes_cta": "Guardar alterações",
-    "notes_placeholder": "Ex.: dor ao levantar o braço, começou há 2 semanas, piora no supino."
+    "notes_placeholder": "Ex.: dor ao levantar o braço, começou há 2 semanas, piora no supino.",
+    "other_label": "Outras lesões"
   },
   "mobile_step_header": {
     "prefix": "Passo {{current}} de {{total}} · {{title}}"
