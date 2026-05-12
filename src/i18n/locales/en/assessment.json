@@ -445,6 +445,8 @@
     "training_location": "Training location",
     "plan_length": "Plan length (weeks)",
     "available_equipment": "Available equipment",
+    "equipment_count_zero": "None selected",
+    "equipment_count_n": "{{n}} selected",
     "injuries": "Injuries",
     "medical_conditions": "Medical conditions",
     "preferences": "Preferences / dislikes",
