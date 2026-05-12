@@ -42,6 +42,7 @@
   "sections": {
     "parq": "PAR-Q+",
     "risk": "Risk",
+    "injuries": "Injuries & pain",
     "anthro": "Anthropometry",
     "meds": "Medications",
     "goal": "SMART goal",
@@ -54,6 +55,14 @@
     "screen": "Movement screen",
     "history": "Training history",
     "performance": "Performance"
+  },
+  "injuries_block": {
+    "title": "Injuries & pain",
+    "hint": "Mark zones with pain or injury. If none, toggle “No injuries”.",
+    "no_injuries_toggle": "No injuries or relevant pain"
+  },
+  "mobile_step_header": {
+    "prefix": "Step {{current}} of {{total}} · {{title}}"
   },
   "parq_block": {
     "title": "PAR-Q+ pre-screening",

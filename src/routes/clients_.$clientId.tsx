@@ -7,6 +7,7 @@ import { CapacityMap } from "@/components/CapacityMap";
 import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
 import { InjuriesBodyMapBlock } from "@/components/InjuriesBodyMapBlock";
+import { ScrollCue } from "@/components/ScrollCue";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -238,21 +239,22 @@ function sectionSignature(assessment: any, section: string): string {
 // focused flow + prev/next + tab order. Ids are unchanged.
 const SECTIONS = [
   // Self Intake / Auto-Avaliação
-  { id: "parq", label: "PAR-Q+", group: "self_intake" as const },
-  { id: "risk", label: "Risk strat.", group: "self_intake" as const },
-  { id: "training", label: "Training setup", group: "self_intake" as const },
-  { id: "history", label: "Training history", group: "self_intake" as const },
-  { id: "goal", label: "SMART goal", group: "self_intake" as const },
-  { id: "meds", label: "Medications", group: "self_intake" as const },
-  { id: "readiness", label: "Readiness", group: "self_intake" as const },
-  { id: "lifestyle", label: "Lifestyle", group: "self_intake" as const },
-  { id: "nutrition", label: "Nutrition", group: "self_intake" as const },
+  { id: "parq", label: "PAR-Q+", labelKey: "sections.parq", group: "self_intake" as const },
+  { id: "risk", label: "Risk strat.", labelKey: "sections.risk", group: "self_intake" as const },
+  { id: "training", label: "Training setup", labelKey: "sections.training", group: "self_intake" as const },
+  { id: "injuries", label: "Lesões e dor", labelKey: "sections.injuries", group: "self_intake" as const },
+  { id: "history", label: "Training history", labelKey: "sections.history", group: "self_intake" as const },
+  { id: "goal", label: "SMART goal", labelKey: "sections.goal", group: "self_intake" as const },
+  { id: "meds", label: "Medications", labelKey: "sections.meds", group: "self_intake" as const },
+  { id: "readiness", label: "Readiness", labelKey: "sections.readiness", group: "self_intake" as const },
+  { id: "lifestyle", label: "Lifestyle", labelKey: "sections.lifestyle", group: "self_intake" as const },
+  { id: "nutrition", label: "Nutrition", labelKey: "sections.nutrition", group: "self_intake" as const },
   // Assessment Session / Sessão de Avaliação
-  { id: "anthro", label: "Anthropometry", group: "assessment_session" as const },
-  { id: "mobility", label: "Mobility", group: "assessment_session" as const },
-  { id: "posture", label: "Posture", group: "assessment_session" as const },
-  { id: "screen", label: "Movement screen", group: "assessment_session" as const },
-  { id: "performance", label: "Cardio health", group: "assessment_session" as const },
+  { id: "anthro", label: "Anthropometry", labelKey: "sections.anthro", group: "assessment_session" as const },
+  { id: "mobility", label: "Mobility", labelKey: "sections.mobility", group: "assessment_session" as const },
+  { id: "posture", label: "Posture", labelKey: "sections.posture", group: "assessment_session" as const },
+  { id: "screen", label: "Movement screen", labelKey: "sections.screen", group: "assessment_session" as const },
+  { id: "performance", label: "Cardio health", labelKey: "sections.performance", group: "assessment_session" as const },
 ];
 
 // Optional sections render collapsed by default and count as complete
@@ -392,6 +394,7 @@ function buildAssessmentPayload(assessment: any, userId: string, clientId: strin
     extended: {
       parq: assessment.parq,
       risk: assessment.risk,
+      no_injuries: assessment.no_injuries === true,
       hours_seated: assessment.ext_hours_seated,
       daily_steps: assessment.ext_daily_steps,
       job_type: assessment.ext_job_type,
@@ -582,6 +585,7 @@ function ClientDetail() {
     injuries: "",
     medical_conditions: "",
     preferences: "",
+    no_injuries: false,
     sleep_quality: "",
     stress_level: "",
     nutrition_habits: "",
@@ -746,6 +750,7 @@ function ClientDetail() {
           available_equipment: a.available_equipment ?? [],
           parq: ext.parq ?? prev.parq,
           risk: ext.risk ?? prev.risk,
+          no_injuries: ext.no_injuries === true,
           ext_hours_seated: ext.hours_seated ?? "",
           ext_daily_steps: ext.daily_steps ?? "",
           ext_job_type: ext.job_type ?? "",
@@ -1550,7 +1555,7 @@ function ClientDetail() {
       ext_mob_shoulder: "", ext_mob_hip: "", ext_mob_ankle: "", ext_mob_thoracic: "", ext_mob_wrist: "", ext_mob_knee: "",
       ext_cardio_test: "untested", ext_cardio_value: "",
       primary_goal: "", experience_level: "", training_location: "",
-      available_equipment: [], injuries: "", medical_conditions: "", preferences: "",
+      available_equipment: [], injuries: "", medical_conditions: "", preferences: "", no_injuries: false,
       sleep_quality: "", stress_level: "", nutrition_habits: "", hydration_glasses_per_day: "",
       mobility_limitations: "", energy_levels: "", recovery_capacity: "", lifestyle: "",
       standing_posture_notes: "", known_imbalances: "", dominant_side: "",
@@ -1629,6 +1634,7 @@ function ClientDetail() {
   return (
     <TooltipProvider delayDuration={200}>
     <div data-tour="client-overview" className="w-full max-w-full space-y-6 overflow-x-hidden">
+      <ScrollCue key={clientId} bottomOffset={72} />
       <div>
         <div className="grid grid-cols-[auto_1fr_auto] items-start gap-3 min-w-0">
           {user?.id ? (
@@ -2634,10 +2640,40 @@ function ClientDetail() {
               )}
               <TextField label={t("training_block.preferences")} value={assessment.preferences} onChange={(v) => setAssessment({ ...assessment, preferences: v })} className={SHOW_DEPRECATED_ASSESSMENT_FIELDS ? "sm:col-span-2" : "sm:col-span-2"} />
             </div>
-            <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
             {isSectionComplete("training", assessment) && (
               <RxImplications sectionId="training" assessment={assessment} riskCategory={riskCategory} collapsible />
             )}
+          </SectionBlock>
+          {/* Injuries & pain — own section (4/15) */}
+          <SectionBlock
+            id="injuries"
+            analysing={analysingSections["injuries"]}
+            analysis={sectionAnalyses["injuries"]}
+            title={t("injuries_block.title", { defaultValue: "Lesões e dor" })}
+            hint={t("injuries_block.hint", { defaultValue: "Marque zonas com dor ou lesão. Se não tiver nenhuma, ative “Sem lesões”." })}
+            complete={isSectionComplete("injuries", assessment)}
+          >
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-border accent-amber-500"
+                  checked={assessment.no_injuries === true}
+                  onChange={(e) => setAssessment({ ...assessment, no_injuries: e.target.checked })}
+                />
+                <span>{t("injuries_block.no_injuries_toggle", { defaultValue: "Sem lesões nem dor relevante" })}</span>
+              </label>
+              {!assessment.no_injuries && (
+                <>
+                  <TextField
+                    label={t("training_block.injuries")}
+                    value={assessment.injuries}
+                    onChange={(v) => setAssessment({ ...assessment, injuries: v, no_injuries: v ? false : assessment.no_injuries })}
+                  />
+                  <InjuriesBodyMapBlock clientId={client!.id} assessmentId={assessment.id ?? null} />
+                </>
+              )}
+            </div>
           </SectionBlock>
           {/* Training history */}
           <SectionBlock id="history" analysing={analysingSections["history"]} analysis={sectionAnalyses["history"]} title={t("history_block.title")} hint={t("history_block.hint")} defaultCollapsed complete={isSectionComplete("history", assessment)}>
@@ -4520,7 +4556,7 @@ function AssessmentSection({
     if (!isMobile) return;
     const node = stepperBodyRef.current;
     if (!node) return;
-    node.scrollTo({ top: 0, behavior: "auto" });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "auto" });
     requestAnimationFrame(() => {
       const first = node.querySelector<HTMLElement>(
         "input:not([type=hidden]), textarea, select, [role=tab], button:not([aria-hidden=true])"
@@ -4652,7 +4688,7 @@ function AssessmentSection({
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActiveId(s.id)}
-                title={s.label}
+                title={t((s as any).labelKey ?? s.label, { defaultValue: s.label }) as string}
                 className={[
                   "group inline-flex items-center gap-1.5 rounded-full transition",
                   isActive
@@ -4677,7 +4713,7 @@ function AssessmentSection({
                 <span
                   className={`hidden text-[11px] tracking-tight sm:inline ${isActive ? "font-medium" : ""}`}
                 >
-                  {s.label}
+                  {t((s as any).labelKey ?? s.label, { defaultValue: s.label })}
                 </span>
               </button>
             );
@@ -4753,7 +4789,7 @@ function AssessmentSection({
                               <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/50 font-mono text-[10px] tabular-nums">
                                 {i + 1}
                               </span>
-                              <span className="flex-1 truncate">{s.label}</span>
+                              <span className="flex-1 truncate">{t((s as any).labelKey ?? s.label, { defaultValue: s.label })}</span>
                               {complete ? (
                                 <>
                                   <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
@@ -4770,8 +4806,8 @@ function AssessmentSection({
                   </Sheet>
                 </div>
               </div>
-              {/* Body */}
-              <div ref={stepperBodyRef} className="min-h-[60vh] overflow-y-auto px-3 py-4">
+              {/* Body — uses document scroll on mobile (single vertical scrollbar) */}
+              <div ref={stepperBodyRef} className="min-h-[60vh] px-3 py-4">
                 <div key={activeId} className="animate-in fade-in slide-in-from-right-2 duration-300">
                   {sectionChildren.get(activeId) ?? (
                     <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">

@@ -42,6 +42,7 @@
   "sections": {
     "parq": "PAR-Q+",
     "risk": "Risco",
+    "injuries": "Lesões e dor",
     "anthro": "Antropometria",
     "meds": "Medicação",
     "goal": "Objetivo SMART",
@@ -54,6 +55,14 @@
     "screen": "Movimento",
     "history": "Histórico",
     "performance": "Performance"
+  },
+  "injuries_block": {
+    "title": "Lesões e dor",
+    "hint": "Marque zonas com dor ou lesão. Se não tiver nenhuma, ative “Sem lesões”.",
+    "no_injuries_toggle": "Sem lesões nem dor relevante"
+  },
+  "mobile_step_header": {
+    "prefix": "Passo {{current}} de {{total}} · {{title}}"
   },
   "parq_block": {
     "title": "Antes de começar — segurança",
