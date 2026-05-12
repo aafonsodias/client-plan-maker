@@ -1674,6 +1674,7 @@ function ClientDetail() {
                 phase?.kind === "intake_sent" ? "bg-sky-500" :
                 "bg-muted-foreground/50";
               return (
+                <>
                 <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-3)]">
                   {client.email && (
                     <>
@@ -1711,29 +1712,27 @@ function ClientDetail() {
                       </span>
                     );
                   })()}
-                  {(() => {
-                    const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
-                    const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
-                    const expired = exp != null && exp < Date.now();
-                    const st = client.intake_status ?? "not_sent";
-                    const linkPart =
-                      expired ? "caducado" :
-                      st === "sent" ? "ainda não aberto" :
-                      st === "opened" ? "aberto" :
-                      null;
-                    if (!linkPart) return null;
-                    return (
-                      <>
-                        <span className="text-muted-foreground/40" aria-hidden="true">·</span>
-                        <span className="eyebrow text-[10px] text-muted-foreground truncate">
-                          {linkPart}
-                          {!expired && daysLeft != null ? ` · expira em ${daysLeft}d` : ""}
-                        </span>
-                      </>
-                    );
-                  })()}
                   {/* {stepN}/5 chip removed — duplicate of section progress */}
                 </p>
+                {(() => {
+                  const exp = client.intake_token_expires_at ? new Date(client.intake_token_expires_at).getTime() : null;
+                  const daysLeft = exp != null ? Math.max(0, Math.round((exp - Date.now()) / 86_400_000)) : null;
+                  const expired = exp != null && exp < Date.now();
+                  const st = client.intake_status ?? "not_sent";
+                  const linkPart =
+                    expired ? "caducado" :
+                    st === "sent" ? "ainda não aberto" :
+                    st === "opened" ? "aberto" :
+                    null;
+                  if (!linkPart) return null;
+                  return (
+                    <p className="mt-0.5 eyebrow text-[10px] text-muted-foreground">
+                      {linkPart}
+                      {!expired && daysLeft != null ? ` · expira em ${daysLeft}d` : ""}
+                    </p>
+                  );
+                })()}
+                </>
               );
             })()}
           </div>
