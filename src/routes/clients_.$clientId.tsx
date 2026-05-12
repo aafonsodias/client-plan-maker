@@ -1684,7 +1684,7 @@ function ClientDetail() {
                   )}
                   {phase && (() => {
                     // Hide redundant "Convite pendente" — same info shown coloured in the status strip below.
-                    if (phase.kind === "intake_sent") return null;
+                    if ((phase.kind as string) === "intake_sent") return null;
                     const ptLabel =
                       phase.kind === "intake_sent"
                         ? "Convite pendente"
