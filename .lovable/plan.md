@@ -1,228 +1,421 @@
-# Round 3 — Assessment Summary PDF (Deterministic)
+Assessment screen refactor - mobile-first, low-credit pass
 
-A 2–3 page PDF built client-side from existing `assessment` + `client` data, generated via the same `jsPDF` stack already used for plans and trainer resources. Zero AI, zero server fns, zero schema.
+Narrow, surgical pass. No new design system, no route rewrite, no schema changes, no renaming of existing section ids.
 
----
+Goal:
 
-## A. Current PDF architecture
+Refactor the assessment screen to be more efficient on mobile, remove redundant UI/status copy, add “Lesões e dor” as step 1/15, guarantee one vertical page scroll, and lightly improve dark theme hierarchy.
 
-| File | Purpose | Reuse? |
-|---|---|---|
-| `src/lib/pdf.ts` (1.7k LOC) | Workout plan PDF — jsPDF, fonts, headers, FORGE design tokens | **Reuse** colour/typography helpers only; do NOT extend this file |
-| `src/lib/trainer-resource-pdf.ts` | Acquisition/retention info PDF — jsPDF, simple multi-section layout | **Reference** as the layout template (closest in spirit) |
-| `src/lib/pdf-types.ts` | Shared types | Reuse |
-| `src/lib/download-plan.ts` | Loads plan row + calls `pdf.ts` | Mirror its pattern (load → render → save) |
-| `src/lib/compliance.ts` | Disclaimer text helpers | Reuse if a matching string exists; otherwise add new key |
+1. Step model - add “Lesões e dor” as 1/15
 
-**Do NOT touch** `pdf.ts` (huge, plan-specific) or any server fn.
-**Library**: jsPDF (already a dependency, font-embedded).
-**No new deps**.
+SECTIONS is module-level in src/routes/clients_.$clientId.tsx, so t() is not available there.
 
----
+Use stable ids + labelKey at module level:
 
-## B. Data mapping
+const SECTIONS = [
 
-| PDF field | Source | Fallback if missing | Safety note |
-|---|---|---|---|
-| Client name | `clients.full_name` | "Cliente" | — |
-| Date | `new Date()` (locale) | — | — |
-| Trainer / business | `profiles.business_name` ?? `profiles.full_name` | — | white-label header |
-| Goal | `assessment.smart_specific` | "—" | — |
-| Goal measure | `assessment.smart_measurable` | omit row | — |
-| Experience | `assessment.experience_level` | "—" | drives implications |
-| Frequency | `assessment.training_days_per_week` | "—" | — |
-| Session length | `assessment.session_duration_minutes` | "—" | — |
-| Location | `assessment.training_location` | "—" | — |
-| Equipment | `assessment.available_equipment[]` (count + first 6) | "Sem equipamento listado" | — |
-| Years training | `assessment.years_training` | omit row | — |
-| Self Intake status | `assessmentGroupCounts(a).selfIntake` | always present | from helper |
-| Session status | `assessmentGroupCounts(a).session` | always present | from helper |
-| Phase | `assessmentPhase(a)` | always present | — |
-| PAR-Q yes-count | count `true` in `assessment.parq` | 0 | drives safety row |
-| Risk category | `assessment.risk?.bmi_category` | omit | informational only |
-| Med flags | `assessment.med_flags[]` | [] | beta_blocker / anticoagulant trigger rules |
-| Medications free text | `assessment.medications` | omit | print verbatim, no interpretation |
-| Injuries | `assessment.injuries[]` (label + side + severity) | "Sem lesões reportadas" | drives pattern caution |
-| Pain notes | `assessment.pain_notes` | omit | — |
-| Sleep | `assessment.sleep_quality` | "—" | poor → conservative |
-| Stress | `assessment.stress_level` | "—" | high → conservative |
-| Readiness stage | `assessment.readiness_stage` | "—" | precontemp/contemp → conservative |
-| Daily steps / seated hrs | `ext_daily_steps` / `ext_hours_seated` | omit | low activity → conservative |
-| Photos | NOT included | n/a | **excluded for privacy** |
-| Missing Session sections | derived from `ASSESSMENT_SESSION_SECTION_IDS` + `isSectionCompleteForPhase` | always derivable | — |
+  { id: "injuries", labelKey: "sections.injuries", group: "self_intake" },
 
-All sources already loaded in `clients_.$clientId.tsx` cockpit — no extra fetch.
+  { id: "parq", labelKey: "sections.parq", group: "self_intake" },
 
----
+  ...
 
-## C. Deterministic implication rules
+];
 
-Single pure function `buildAssessmentImplications(a, client)` returns `Implication[]`. No AI.
+Resolve labels at render sites:
 
-| Condition | Copy (PT) | Severity | Source field | Disclaimer phrasing |
-|---|---|---|---|---|
-| any PAR-Q `true` | "Existe ≥1 resposta PAR-Q positiva. Recomenda-se confirmação clínica antes de progredir intensidade." | danger | `parq` | "não constitui diagnóstico" |
-| `bmi_category` = obese / `risk` high | "Iniciar com tier conservador (MEV) e progressão gradual." | warn | `risk` | — |
-| `med_flags` includes `beta_blocker` | "FC pode estar atenuada — preferir RPE/talk test sobre zonas de FC." | warn | `med_flags` | — |
-| `med_flags` includes `anticoagulant` | "Cautela com quedas, contacto e impacto. Evitar exercícios de risco." | warn | `med_flags` | — |
-| `med_flags` includes `insulin`/`hypoglycemic` | "Atenção a hipoglicemia em sessões longas." | warn | `med_flags` | — |
-| `injuries.length > 0` | "Modificar/monitorizar padrões afectados: <patterns list>." | warn | `injuries[*].region` | — |
-| `pain_notes` non-empty | "Cliente reportou dor activa — rever antes de carregar padrão." | warn | `pain_notes` | — |
-| `sleep_quality === "poor"` OR `stress_level === "high"` | "Recuperação reduzida — começar com tecto RPE conservador (≤7.5) e adiar progressões." | neutral | `sleep_quality`/`stress_level` | — |
-| `readiness_stage` ∈ {precontemplation, contemplation} | "Prontidão comportamental baixa — priorizar adesão sobre carga." | neutral | `readiness_stage` | — |
-| `experience_level` ∈ {beginner, novice} | "RPE inicial 6.5–7.5, ênfase técnica e padrões base." | neutral | `experience_level` | — |
-| `available_equipment.length === 0` | "Sem equipamento — selecção restrita a peso corporal." | neutral | `available_equipment` | — |
-| `training_days_per_week ≤ 2` | "Frequência baixa — preferir corpo inteiro por sessão." | neutral | `training_days_per_week` | — |
-| `session_duration_minutes < 40` | "Sessões curtas — limitar acessórios, manter padrões principais." | neutral | `session_duration_minutes` | — |
-| no conditions match | "Sem cautelas particulares identificadas. Aplicar parâmetros standard de iniciação." | success | — | — |
+Use labelKey when present, otherwise fall back to the existing label string:
 
-Severity → colour token (status-tone palette): danger=red, warn=amber, neutral=muted, success=emerald. **Each row prints "Implicação para a prescrição:" — never "diagnóstico" / "tratamento" / "patologia".**
+t(section.labelKey ?? section.label)
 
----
+Apply this wherever section labels render: stepper, header, mini-card, mobile header.
 
-## D. UI placement
+Final order:
 
-**Primary (MVP)**: small ghost icon button **"Resumo da avaliação (PDF)"** in the assessment section header on `/clients/$clientId`, next to the existing collapse toggle. Visible whenever `assessment.id` exists, regardless of phase (the PDF itself shows what's missing).
+injuries → parq → risk → training → history → goal → meds → readiness → lifestyle → nutrition → anthro → mobility → posture → screen → performance
 
-**Secondary**: same action exposed inside the Pre-Plan Review Sheet under "Resumo opcional" — single text link, no big button. Lets the PT export right before generation.
+15 total.
 
-**Excluded for MVP**: `/me` client page (privacy review needed first), no global header menu, no plan-page button. Not added to BMV sheet (would clutter a focused dialog).
+Rules:
 
-Avoid stealing focus from the main "Criar briefing inicial" CTA — both placements use ghost/text styling.
+- Keep all existing ids stable.
 
----
+- Do not rename existing section ids.
 
-## E. Implementation strategy (smallest safe Build)
+- Use id: "injuries" only for the new section.
 
-New files only:
-1. `src/lib/pdf-assessment-summary.ts` — pure renderer:
-   - `export async function downloadAssessmentSummary({ assessment, client, trainer, locale }): Promise<void>`
-   - Internally uses `jsPDF`, mirrors `trainer-resource-pdf.ts` page/section pattern.
-   - Calls a new pure helper `buildAssessmentImplications(a)` → `Implication[]`.
-   - Calls existing `assessmentGroupCounts` / `assessmentPhase` from `assessment-phase.ts`.
-   - Page 1: header + client/goal/training table + status badges.
-   - Page 2: implications list (icons via Unicode bullets, tone-coloured chips).
-   - Page 3 (conditional): missing-Session checklist OR "Sessão completa" panel.
-   - Footer on every page: "Documento de apoio à prescrição. Não constitui diagnóstico nem clearance médico." + page N/M.
-2. `src/lib/assessment-implications.ts` — exports `Implication` type + `buildAssessmentImplications`. Pure, unit-testable.
+- Deep-links and stored progress must survive.
 
-Edits:
-3. `src/routes/clients_.$clientId.tsx` — wire button in assessment section header (1 import + 1 onClick handler, ~10 LOC).
-4. `src/components/plan/PrePlanReviewSheet.tsx` — optional ghost link "Exportar resumo (PDF)" in footer (passes `assessment` already in scope).
-5. `src/i18n/locales/{pt,en}/assessment.json` — new `summary_pdf.*` namespace (titles, section labels, all implication copy, disclaimer).
+- Move existing injuries/pain UI from the training block into a new InjuriesSection rendered before PAR-Q+.
 
-Not touched: `pdf.ts`, `download-plan.ts`, server fns, schema, RLS, `me.tsx`, plan flow, BriefEditor.
+- Remove the old injuries/pain rendering from the training/setup block completely.
 
----
+- There must be exactly one visible injuries/pain section.
 
-## F. i18n strategy
+- Injuries is required. Do not add it to OPTIONAL_SECTIONS.
 
-- New namespace block: `assessment.summary_pdf.*`
-- PT-PT: full coverage, "você" voice (per memory).
-- EN: full coverage, neutral 2nd person.
-- ES/HI: fall back to EN per project convention (`assessment.json` is not in the LLM-translated set). Add stubs only if strings are short labels.
-- Implication copy: each rule key = `summary_pdf.implications.<rule_id>` so future tone tweaks don't touch code.
-- Filename: `Resumo_Avaliacao_<ClientName>_<YYYY-MM-DD>.pdf` (PT) / `Assessment_Summary_...` (EN).
+no_injuries persistence:
 
----
+Persist no_injuries inside an existing flexible JSON assessment/intake payload.
 
-## G. Risks
+Preferred:
 
-| Risk | Mitigation |
-|---|---|
-| Overclaiming medical meaning | Mandatory footer disclaimer on every page; rule copy banned from "diagnóstico/tratamento/patologia"; review checklist before merge |
-| Too much text | Hard cap: 3 pages; implications max 12 rows; truncate equipment list to 6 + "+N more" |
-| Layout complexity | Mirror `trainer-resource-pdf.ts` (proven simple pattern); no tables-with-borders; bullet rows + section dividers only |
-| Missing data | Every field has a fallback in §B; PDF is always renderable from an empty `assessment` row (will show "Avaliação por concluir" + missing checklist) |
-| Photo privacy | Photos explicitly **excluded** in MVP (documented in code comment) |
-| Duplicate PDF logic | New file is small (<400 LOC), independent; does not import from `pdf.ts`; future shared header helper extraction noted in backlog only |
-| Filename PII in download | Sanitised via existing slug helper if available; otherwise inline `replace(/[^a-z0-9]+/gi,'_')` |
-| jsPDF font glyph gaps for accented PT chars | Use jsPDF's Helvetica (already handles Latin-1); verified working in `trainer-resource-pdf.ts` |
+Use [assessment.no](http://assessment.no)_injuries if the current assessment object is already flexible JSON.
 
----
+If generated DB table types are fixed:
 
-## H. Build Mode prompt (next round)
+Do not edit generated Supabase/DB types directly.
 
-```
-Build Mode.
+Do not add schema changes.
 
-Implement Round 3 only: a deterministic Assessment Summary PDF.
+Do not add a DB column.
 
-Do not call AI. Do not change schema. Do not touch backend, RLS,
-billing, quota, plan generation, BriefEditor, logbook, schedule,
-dashboard, /me, or src/lib/pdf.ts.
+Update only app-level types/parsers/helpers around the flexible JSON payload.
+
+If the patch path rejects unknown fields:
+
+Look for an existing flexible assessment/intake JSON object, e.g. extended, meta, intake, where no_injuries can be stored without schema changes.
+
+Last resort only:
+
+Use an internal sentinel inside the injuries field, kept hidden.
+
+Never surface that sentinel as client-written clinical text in any UI, PDF, or AI prompt.
+
+Update only app-level TypeScript types, form state types, Zod/validation helpers, default assessment object, dirty-state logic, and patch payload builders needed for no_injuries to typecheck.
+
+Completion rule:
+
+The injuries section is complete if:
+
+injuries text is non-empty OR pain_areas?.length > 0 OR no_injuries === true
+
+Use optional-safe checks such as pain_areas?.length > 0 so missing legacy fields do not crash older assessments.
+
+i18n:
+
+Add labels in:
+
+src/i18n/locales/pt/assessment.json
+
+src/i18n/locales/en/assessment.json
+
+ES/HI should fall back per existing project policy.
+
+2. Mobile shell - reclaim vertical space
+
+On < 768px, above the first input, render only:
+
+1. Back link
+
+2. Minimum client identity strip - name + single invite/status chip
+
+3. Sticky MobileStepHeader
+
+4. Content
+
+The mobile identity strip replaces the identity/status part that the hero used to provide.
+
+Render it explicitly in the route.
+
+Do not extract it from ClientStageOneHero.
+
+Do not modify ClientStageOneHero.tsx.
+
+Important:
+
+On mobile, the minimum client identity strip may include the single invite/status strip.
+
+Do not render a second separate invite/status strip below it.
+
+Status must appear once only.
+
+Hide on mobile via route call-site responsive classes:
+
+- ClientStageOneHero
+
+- AUTO-AVALIAÇÃO DO CLIENTE group header
+
+- horizontal step-chip strip
+
+- duplicate step/progress badge in upper mini-card
+
+- repeated section title on mobile only when the sticky header already shows it
+
+Do not remove useful desktop section titles.
 
 Create:
 
-1. src/lib/assessment-implications.ts
-   - export type Implication = { id: string; severity: "danger"|"warn"|"neutral"|"success"; copyKey: string; copyVars?: Record<string,string|number> }
-   - export function buildAssessmentImplications(a: any): Implication[]
-   - Rules per Round 3 plan §C, in that exact order.
-   - If no rule matches, return [{id:"none", severity:"success", copyKey:"summary_pdf.implications.none"}].
-   - Pure function, no I/O.
+src/components/MobileStepHeader.tsx
 
-2. src/lib/pdf-assessment-summary.ts
-   - import jsPDF from "jspdf"
-   - export async function downloadAssessmentSummary(args: {
-       assessment: any; client: any; trainer?: any; locale?: "pt"|"en"; t: (k:string,o?:any)=>string
-     }): Promise<void>
-   - 2–3 pages max, layout per Round 3 plan §E.
-   - Use status-tone colours: danger #ef4444, warn #f59e0b, neutral #94a3b8, success #10b981.
-   - Footer on every page with disclaimer + "Página X de Y".
-   - Filename: Resumo_Avaliacao_<sanitised name>_<YYYY-MM-DD>.pdf
-   - Include assessmentGroupCounts + assessmentPhase from src/lib/assessment-phase.ts
-   - Include missing-section checklist using ASSESSMENT_SESSION_SECTION_IDS + isSectionCompleteForPhase.
-   - Photos: NOT included (add code comment).
+MobileStepHeader requirements:
 
-3. Wire one button in src/routes/clients_.$clientId.tsx
-   - Ghost icon button "Resumo da avaliação (PDF)" in the assessment
-     section header. Show whenever assessment?.id exists.
-   - onClick: downloadAssessmentSummary({assessment, client, trainer:profile, locale, t})
-   - Wrap in try/catch with toast.error fallback.
+- mobile only
 
-4. Wire one optional text link in src/components/plan/PrePlanReviewSheet.tsx
-   - Footer left side, ghost variant, "Exportar resumo (PDF)".
-   - Same handler. Must NOT trigger any server call.
+- sticky
 
-5. i18n keys under assessment.summary_pdf.* in pt + en
-   - title, subtitle, sections.{profile,training,status,implications,session_checklist}
-   - phase.{self_intake_pending,session_pending,complete}
-   - implications.* for every rule id in §C
-   - disclaimer, footer_page
-   - Add minimal stubs in es + hi (fallback OK).
+- h-11
 
-Constraints:
-- No new npm deps (jsPDF already installed).
-- Do NOT edit src/lib/pdf.ts.
-- Do NOT add a server fn.
-- Do NOT include client photos.
-- Do NOT add any AI/LLM call.
-- Disclaimer present on every page; copy never uses
-  "diagnóstico", "tratamento", "patologia", "clearance médico" except
-  inside the disclaimer string itself.
+- blurred/surface background
 
-Verify:
-- bunx tsc --noEmit passes
-- Manually trigger download from cockpit; open the resulting PDF and
-  inspect 2–3 pages for clipping, overflow, missing glyphs (PT accents).
-- Confirm zero network requests fire when the button is clicked.
-- 390px mobile: button doesn't overflow header; click works.
+- shows translated step label + title
 
-Report:
-- files created/edited
-- screenshots/QA notes for the rendered PDF (3 pages)
-- typecheck result
-- whether Round 3 can be considered complete
-```
+- kebab/menu button opens the existing step Sheet
 
----
+- no desktop navigation changes
 
-## Acceptance criteria (recap)
+- use i18n for the step prefix, not hardcoded PT copy
 
-- Deterministic PDF, no AI.
-- No schema changes, no server fns.
-- 2–3 pages, includes prescription implications + disclaimer.
-- Available from PT cockpit (and optional link in Pre-Plan Review Sheet).
-- `bunx tsc --noEmit` passes.
-- Photos excluded.
-- Every page footer carries the no-diagnosis disclaimer.
+PT:
+
+Passo X de 15 · Título
+
+EN:
+
+Step X of 15 · Title
+
+3. Status redundancy - single source of truth
+
+When invite is unopened, show once:
+
+Convite pendente · Ainda não aberto · expira em 14d
+
+Rules:
+
+- Drop “Avaliação a decorrer” while unopened.
+
+- Section title appears once: section header on desktop, sticky mobile header on mobile.
+
+- Global progress belongs to the stepper only.
+
+- Current section progress belongs to the section header only.
+
+- Remove the third duplicate progress copy from the mini-card.
+
+- PAR-Q alert chip renders only when count > 0.
+
+- Never render “ALERTAS PAR-Q+: 0”.
+
+4. Single vertical scroll
+
+Audit the assessment subtree for:
+
+overflow-y-auto
+
+overflow-auto
+
+h-screen
+
+max-h-screen
+
+ScrollArea
+
+Line numbers are orientation hints only.
+
+Search by component/class/pattern rather than relying on exact line numbers.
+
+Rules:
+
+- On mobile, only the document/page scrolls.
+
+- No inner scrollbar in the assessment content.
+
+- No horizontal overflow.
+
+- Add overflow-x-hidden at the page root if not already present.
+
+- Replace h-screen cascades with min-h-dvh where they affect the assessment page.
+
+- Cards and form sections must use natural document flow, never internal scroll.
+
+- Modal/Sheet overflow-y-auto is allowed as the only exception.
+
+Known Sheet/modal scroll containers may remain if they are only inside the stepper Sheet.
+
+5. Scroll cue - mobile only
+
+Create:
+
+src/components/ScrollCue.tsx
+
+Requirements:
+
+- fixed bottom-center
+
+- bottom-6
+
+- double chevron or elegant pill
+
+- soft bounce/fade loop
+
+- aria-hidden
+
+- no text
+
+- md:hidden
+
+- hides when window.scrollY > 8
+
+- local state per mount
+
+- no sessionStorage
+
+- cue returns on every fresh open, route mount, or reload
+
+- within the same mount, it stays hidden after the first scroll
+
+- respect prefers-reduced-motion: if enabled, render it static with no bounce/fade animation
+
+- must not overlap sticky bottom navigation
+
+- if bottom navigation is present, position the cue above it or hide it once the bottom navigation is visible
+
+- ScrollCue should reset predictably on route/client change; key the component by clientId or current route section if needed
+
+6. Theme polish - dark only
+
+In src/styles.css, adjust dark tokens only.
+
+Goal:
+
+Dark theme should feel premium, readable, and clinical, not muddy.
+
+Adjust:
+
+- --background: slightly cooler charcoal
+
+- --surface / --card: visibly lighter than background
+
+- --border: lower opacity
+
+- --foreground: higher contrast
+
+- amber remains primary
+
+- success/warning/danger remain restrained
+
+Do not redesign light or medium themes.
+
+Visual cleanup in the assessment route:
+
+- remove redundant outlined chips inside already-bordered cards
+
+- use space-y-3 for section bodies
+
+- use mb-3 or gap-3 between sections
+
+- reduce stacked labels before the first input
+
+7. Files expected to change
+
+Expected:
+
+- src/routes/clients_.$clientId.tsx
+
+- src/components/MobileStepHeader.tsx
+
+- src/components/ScrollCue.tsx
+
+- src/styles.css
+
+- src/i18n/locales/pt/assessment.json
+
+- src/i18n/locales/en/assessment.json
+
+- app-level TS/Zod/form/patch helpers needed for no_injuries to typecheck
+
+Do not modify ClientStageOneHero.tsx unless absolutely necessary.
+
+Preferred approach: hide it at the route call-site and re-render identity explicitly in the mobile shell.
+
+8. Out of scope
+
+Do not do:
+
+- light/medium theme redesign
+
+- backend/schema changes
+
+- DB migrations
+
+- generated Supabase/DB type edits
+
+- renaming existing section ids
+
+- full route rewrite
+
+- desktop redesign
+
+- new clinical logic beyond moving injuries/pain into its own step
+
+9. Acceptance checklist
+
+Verify before stopping:
+
+- 390px: first “Lesões e dor” input visible within one short thumb scroll.
+
+- 768px: layout still behaves correctly.
+
+- Desktop width: desktop navigation remains intact.
+
+- “Lesões e dor” = 1/15 in stepper, header, and progress count.
+
+- PAR-Q+ = 2/15.
+
+- Existing section ids remain stable.
+
+- no_injuries toggle survives reload.
+
+- no_injuries is included in relevant app-level TS/form/patch types without schema migration.
+
+- Optional-safe checks prevent crashes on legacy assessments with missing fields.
+
+- Mobile retains client identity + status chip even with hero hidden.
+
+- Invite status appears once: “Convite pendente · Ainda não aberto · expira em Nd”.
+
+- “Avaliação a decorrer” is gone when invite is unopened.
+
+- PAR-Q chip hidden when count = 0.
+
+- Mobile step chips hidden.
+
+- Desktop nav intact.
+
+- One vertical scrollbar only.
+
+- No horizontal overflow.
+
+- Scroll cue appears on every fresh open and hides after first scroll within that mount.
+
+- Scroll cue resets predictably on route/client change.
+
+- Scroll cue does not overlap sticky bottom navigation.
+
+- prefers-reduced-motion is respected for ScrollCue.
+
+- Dark theme has clear background/surface/border/text separation.
+
+- bunx tsc --noEmit passes.
+
+- No unrelated rewrites.
+
+Final hardening:
+
+- Ensure all markdown/code fences in reports or notes are properly closed.
+
+- Keep generated implementation code in files, not in long nested markdown blocks.
+
+- Do not fake persistence through local state.
+
+- After moving injuries/pain UI into InjuriesSection, confirm the old training/setup rendering is fully removed.
+
+- Add a quick manual smoke check at 390px, 768px, and desktop width.
+
+When done, return:
+
+1. Files changed
+
+2. Acceptance checklist confirmation
+
+3. Remaining risks/TODOs
