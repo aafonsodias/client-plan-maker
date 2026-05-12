@@ -80,7 +80,10 @@ export function InjuriesSlide({ token }: { token: string }) {
           {t("injuries.registered_title")}
         </p>
         {(rows?.length ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("injuries.empty_state")}</p>
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium">{t("injuries.empty_state")}</p>
+            <p className="text-xs text-muted-foreground">{t("injuries.empty_hint")}</p>
+          </div>
         ) : (
           <ul className="space-y-1.5">
             {rows!.map((r) => {
@@ -95,7 +98,7 @@ export function InjuriesSlide({ token }: { token: string }) {
                     <p className="text-sm font-medium">
                       {zone ? t(zone.label_key) : r.body_zone}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
-                        · {t("injuries.severity_label").toLowerCase()} {r.severity}
+                      · {t("injuries.severity_label").toLowerCase()} {r.severity}/5
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground">
