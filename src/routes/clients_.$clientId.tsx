@@ -696,6 +696,13 @@ function ClientDetail() {
   const analyzeSectionFn = useServerFn(analyzeAssessmentSection);
   const getCoverageFn = useServerFn(getSectionAnalysisCoverage);
   const updateTrainerSummaryFn = useServerFn(updateTrainerSummary);
+  // Round B — lift `assessment_injuries` count so the body-map selector
+  // reflects in completion state. Loaded once per assessment id; updated
+  // optimistically by InjuriesBodyMapBlock via `onCountChange`.
+  const listInjuriesFn = useServerFn(listInjuries);
+  const [injuriesCount, setInjuriesCount] = useState(0);
+  // Conclude-time missing items list (replaces the bare toast-only feedback).
+  const [missingItems, setMissingItems] = useState<MissingItem[]>([]);
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
