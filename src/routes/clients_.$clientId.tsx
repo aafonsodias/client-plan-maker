@@ -6480,13 +6480,36 @@ function buildRxItems_nutrition(a: any): RxItem[] {
 function buildRxItems_screen(a: any): RxItem[] {
   const items: RxItem[] = [];
   const weak: string[] = [];
+  const veryWeak: string[] = [];
   const skipped: string[] = [];
+  const missing: string[] = [];
   PATTERN_IDS.forEach((p) => {
     if (a?.screen_not_assessed?.[p]) { skipped.push(p); return; }
     const fc = a?.[`${p}_form_criteria`];
     const score = fc ? formScore(fc) : 0;
-    if (score > 0 && score < 3) weak.push(p);
+    const handled = isPatternHandled(p, a);
+    if (!handled) { missing.push(p); return; }
+    if (score === 0 || score === 1) veryWeak.push(p);
+    else if (score === 2) weak.push(p);
   });
+  if (missing.length > 0) {
+    items.push({
+      key: "missing",
+      tone: "info",
+      icon: <Info className="h-3.5 w-3.5" />,
+      title: `${missing.length} padr${missing.length === 1 ? "ão" : "ões"} por avaliar`,
+      body: `${missing.join(", ").toUpperCase()}: registar avaliação ou marcar “Não avaliado” antes de finalizar a prescrição.`,
+    });
+  }
+  if (veryWeak.length > 0) {
+    items.push({
+      key: "very-weak",
+      tone: "danger",
+      icon: <AlertTriangle className="h-3.5 w-3.5" />,
+      title: `${veryWeak.length} padr${veryWeak.length === 1 ? "ão crítico" : "ões críticos"}`,
+      body: `${veryWeak.join(", ").toUpperCase()}: regredir para variantes apoiadas/parciais e drills de competência. Sem progressão de carga até pontuar ≥3.`,
+    });
+  }
   if (weak.length > 0) {
     items.push({
       key: "weak",
