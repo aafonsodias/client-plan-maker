@@ -1108,6 +1108,8 @@ type Slide = {
   isValid?: () => boolean;
   canSkip?: boolean;
   skipKeys?: string[];
+  /** Optional human hint shown in an amber chip when isValid() is false. */
+  missingHint?: string;
 };
 
 function buildSlides(
@@ -1115,6 +1117,7 @@ function buildSlides(
   form: FormState,
   setForm: React.Dispatch<React.SetStateAction<FormState>>,
   token?: string,
+  goTo?: (idx: number) => void,
 ): Slide[] {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
