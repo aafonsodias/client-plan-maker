@@ -584,6 +584,7 @@ function ClientDetail() {
     injuries: "",
     medical_conditions: "",
     preferences: "",
+    no_injuries: false,
     sleep_quality: "",
     stress_level: "",
     nutrition_habits: "",
