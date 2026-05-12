@@ -1,421 +1,153 @@
-Assessment screen refactor - mobile-first, low-credit pass
 
-Narrow, surgical pass. No new design system, no route rewrite, no schema changes, no renaming of existing section ids.
+# Assessment screen refactor — mobile-first, low-credit pass
 
-Goal:
+Narrow, surgical pass. No new design system, no route rewrite, no schema changes, no renaming of existing section ids. Minimal diffs, refactor existing components/tokens only.
 
-Refactor the assessment screen to be more efficient on mobile, remove redundant UI/status copy, add “Lesões e dor” as step 1/15, guarantee one vertical page scroll, and lightly improve dark theme hierarchy.
+**Critical correction vs previous plan:** "Lesões e dor" is **4/15**, immediately after Training/setup — NOT 1/15.
 
-1. Step model - add “Lesões e dor” as 1/15
+## 1. Step model — inject "injuries" at position 4
 
-SECTIONS is module-level in src/routes/clients_.$clientId.tsx, so t() is not available there.
+`SECTIONS` is module-level in `src/routes/clients_.$clientId.tsx`, so `t()` is unavailable. Use stable ids + `labelKey` at module level; resolve via `t(s.labelKey ?? s.label)` at render sites (stepper, desktop section header, mini-card, mobile header, Sheet step list).
 
-Use stable ids + labelKey at module level:
+Existing entries may either migrate mechanically to `labelKey`, or keep `label` plus `labelKey` and prefer `labelKey` when present.
 
-const SECTIONS = [
+**Final order (15 total):**
+parq → risk → training → **injuries** → history → goal → meds → readiness → lifestyle → nutrition → anthro → mobility → posture → screen → performance
 
-  { id: "injuries", labelKey: "sections.injuries", group: "self_intake" },
-
-  { id: "parq", labelKey: "sections.parq", group: "self_intake" },
-
-  ...
-
-];
-
-Resolve labels at render sites:
-
-Use labelKey when present, otherwise fall back to the existing label string:
-
-t(section.labelKey ?? section.label)
-
-Apply this wherever section labels render: stepper, header, mini-card, mobile header.
-
-Final order:
-
-injuries → parq → risk → training → history → goal → meds → readiness → lifestyle → nutrition → anthro → mobility → posture → screen → performance
-
-15 total.
+**Numbering:** PAR-Q+ = 1/15, Risco = 2/15, Treino = 3/15, **Lesões e dor = 4/15**.
 
 Rules:
-
-- Keep all existing ids stable.
-
-- Do not rename existing section ids.
-
-- Use id: "injuries" only for the new section.
-
+- Keep all existing ids stable. Do not rename.
+- Add only `id: "injuries"` as the new fourth section.
+- Move existing injuries/pain UI from the training block into a new `InjuriesSection` rendered immediately after Training/setup. Remove old rendering completely — exactly one visible injuries/pain section.
+- Required (not in `OPTIONAL_SECTIONS`).
 - Deep-links and stored progress must survive.
 
-- Move existing injuries/pain UI from the training block into a new InjuriesSection rendered before PAR-Q+.
+### `no_injuries` persistence (no schema changes)
 
-- Remove the old injuries/pain rendering from the training/setup block completely.
+Order of preference:
+1. `assessment.no_injuries` if the assessment object is already flexible JSON.
+2. Existing flexible JSON sub-object (`extended` / `meta` / `intake`) if patch path rejects unknown top-level keys.
+3. Last resort: internal sentinel inside `injuries` field, never surfaced in any UI/PDF/AI prompt.
 
-- There must be exactly one visible injuries/pain section.
+Update only app-level TypeScript types, form-state types, Zod/validation helpers, default assessment object, dirty-state logic, patch payload builders — enough to pass `bunx tsc --noEmit`. Never edit generated Supabase types.
 
-- Injuries is required. Do not add it to OPTIONAL_SECTIONS.
+**Completion rule:**
+`injuries` text non-empty OR `pain_areas?.length > 0` OR `no_injuries === true` (optional-safe checks for legacy assessments).
 
-no_injuries persistence:
+### i18n
 
-Persist no_injuries inside an existing flexible JSON assessment/intake payload.
+Add to `src/i18n/locales/pt/assessment.json` and `en/assessment.json`:
+- `sections.injuries` label
+- MobileStepHeader prefix:
+  - PT: `Passo {{current}} de {{total}} · {{title}}`
+  - EN: `Step {{current}} of {{total}} · {{title}}`
 
-Preferred:
+ES/HI fall back per existing policy.
 
-Use [assessment.no](http://assessment.no)_injuries if the current assessment object is already flexible JSON.
+## 2. Mobile shell (< 768px)
 
-If generated DB table types are fixed:
-
-Do not edit generated Supabase/DB types directly.
-
-Do not add schema changes.
-
-Do not add a DB column.
-
-Update only app-level types/parsers/helpers around the flexible JSON payload.
-
-If the patch path rejects unknown fields:
-
-Look for an existing flexible assessment/intake JSON object, e.g. extended, meta, intake, where no_injuries can be stored without schema changes.
-
-Last resort only:
-
-Use an internal sentinel inside the injuries field, kept hidden.
-
-Never surface that sentinel as client-written clinical text in any UI, PDF, or AI prompt.
-
-Update only app-level TypeScript types, form state types, Zod/validation helpers, default assessment object, dirty-state logic, and patch payload builders needed for no_injuries to typecheck.
-
-Completion rule:
-
-The injuries section is complete if:
-
-injuries text is non-empty OR pain_areas?.length > 0 OR no_injuries === true
-
-Use optional-safe checks such as pain_areas?.length > 0 so missing legacy fields do not crash older assessments.
-
-i18n:
-
-Add labels in:
-
-src/i18n/locales/pt/assessment.json
-
-src/i18n/locales/en/assessment.json
-
-ES/HI should fall back per existing project policy.
-
-2. Mobile shell - reclaim vertical space
-
-On < 768px, above the first input, render only:
-
+Above the first input, render only:
 1. Back link
-
-2. Minimum client identity strip - name + single invite/status chip
-
-3. Sticky MobileStepHeader
-
+2. Minimum client identity strip — name + single invite/status chip (rendered explicitly in route, not extracted from hero)
+3. Sticky `MobileStepHeader`
 4. Content
 
-The mobile identity strip replaces the identity/status part that the hero used to provide.
+Hide on mobile via route call-site responsive classes (`hidden md:block`):
+- `ClientStageOneHero`
+- "AUTO-AVALIAÇÃO DO CLIENTE" group header
+- Horizontal step-chip strip
+- Duplicate step/progress badge in upper mini-card
+- Repeated section title on mobile only when sticky header already shows it
 
-Render it explicitly in the route.
+Desktop section titles and navigation untouched. Status appears **once** on mobile (in identity strip; nothing duplicated below).
 
-Do not extract it from ClientStageOneHero.
+**New file `src/components/MobileStepHeader.tsx`:** mobile-only, sticky, `h-11`, blurred surface, shows translated step prefix + title, kebab opens existing step Sheet, no desktop changes, i18n only.
 
-Do not modify ClientStageOneHero.tsx.
+`ClientStageOneHero.tsx` not modified unless absolutely necessary.
 
-Important:
+## 3. Status redundancy — single source of truth
 
-On mobile, the minimum client identity strip may include the single invite/status strip.
+When invite is unopened, show once: `Convite pendente · Ainda não aberto · expira em 14d`.
 
-Do not render a second separate invite/status strip below it.
+- Drop "Avaliação a decorrer" while unopened.
+- Section title once: desktop section header on desktop, sticky mobile header on mobile.
+- Global progress = stepper only.
+- Current section progress = section header only.
+- Remove third duplicate progress copy from mini-card.
+- PAR-Q alert chip only when count > 0; never render "ALERTAS PAR-Q+: 0".
+- Mobile: status not duplicated below identity strip.
 
-Status must appear once only.
+## 4. Single vertical scroll
 
-Hide on mobile via route call-site responsive classes:
+Audit assessment subtree by pattern (not line numbers): `overflow-y-auto`, `overflow-auto`, `h-screen`, `max-h-screen`, `ScrollArea`.
 
-- ClientStageOneHero
+- Mobile: only document scrolls. No inner scrollbar in assessment content. No horizontal overflow.
+- Add `overflow-x-hidden` at page root if missing.
+- Replace `h-screen` cascades with `min-h-dvh` where they affect this page.
+- Cards/forms use natural document flow, never internal scroll.
+- Modal/Sheet `overflow-y-auto` allowed (only exception). Stepper Sheet scroll containers may remain.
 
-- AUTO-AVALIAÇÃO DO CLIENTE group header
+## 5. ScrollCue — mobile only
 
-- horizontal step-chip strip
+**New file `src/components/ScrollCue.tsx`:**
+- `fixed bottom-6` center, double chevron / elegant pill, soft bounce/fade loop
+- `aria-hidden`, no text, `md:hidden`
+- Hides when `window.scrollY > 8`
+- Local state per mount (no sessionStorage); returns on every mount/reload, hides after first scroll within that mount
+- `prefers-reduced-motion`: render static, no animation
+- Must not overlap sticky bottom nav — position above it or hide once visible
+- Reset predictably on route/client change; key by `clientId` or current section if needed
 
-- duplicate step/progress badge in upper mini-card
+## 6. Theme polish — dark only
 
-- repeated section title on mobile only when the sticky header already shows it
+In `src/styles.css`, dark tokens only:
+- `--background`: cooler charcoal
+- `--surface` / `--card`: visibly lighter than background
+- `--border`: lower opacity
+- `--foreground`: higher contrast
+- amber primary kept; success/warning/danger restrained
 
-Do not remove useful desktop section titles.
+Light/medium themes untouched.
 
-Create:
+Visual cleanup in assessment route: remove redundant outlined chips inside already-bordered cards; `space-y-3` for section bodies; `mb-3` / `gap-3` between sections; reduce stacked labels before the first input.
 
-src/components/MobileStepHeader.tsx
+## 7. Files expected to change
 
-MobileStepHeader requirements:
+- `src/routes/clients_.$clientId.tsx`
+- `src/components/MobileStepHeader.tsx` (new)
+- `src/components/ScrollCue.tsx` (new)
+- `src/styles.css`
+- `src/i18n/locales/pt/assessment.json`
+- `src/i18n/locales/en/assessment.json`
+- App-level TS/Zod/form/patch helpers needed for `no_injuries` to typecheck
 
-- mobile only
+## 8. Out of scope
 
-- sticky
+Light/medium theme redesign · backend/schema changes · migrations · generated DB type edits · renaming section ids · full route rewrite · desktop redesign · clinical logic beyond moving injuries/pain.
 
-- h-11
+## 9. Acceptance checklist
 
-- blurred/surface background
-
-- shows translated step label + title
-
-- kebab/menu button opens the existing step Sheet
-
-- no desktop navigation changes
-
-- use i18n for the step prefix, not hardcoded PT copy
-
-PT:
-
-Passo X de 15 · Título
-
-EN:
-
-Step X of 15 · Title
-
-3. Status redundancy - single source of truth
-
-When invite is unopened, show once:
-
-Convite pendente · Ainda não aberto · expira em 14d
-
-Rules:
-
-- Drop “Avaliação a decorrer” while unopened.
-
-- Section title appears once: section header on desktop, sticky mobile header on mobile.
-
-- Global progress belongs to the stepper only.
-
-- Current section progress belongs to the section header only.
-
-- Remove the third duplicate progress copy from the mini-card.
-
-- PAR-Q alert chip renders only when count > 0.
-
-- Never render “ALERTAS PAR-Q+: 0”.
-
-4. Single vertical scroll
-
-Audit the assessment subtree for:
-
-overflow-y-auto
-
-overflow-auto
-
-h-screen
-
-max-h-screen
-
-ScrollArea
-
-Line numbers are orientation hints only.
-
-Search by component/class/pattern rather than relying on exact line numbers.
-
-Rules:
-
-- On mobile, only the document/page scrolls.
-
-- No inner scrollbar in the assessment content.
-
-- No horizontal overflow.
-
-- Add overflow-x-hidden at the page root if not already present.
-
-- Replace h-screen cascades with min-h-dvh where they affect the assessment page.
-
-- Cards and form sections must use natural document flow, never internal scroll.
-
-- Modal/Sheet overflow-y-auto is allowed as the only exception.
-
-Known Sheet/modal scroll containers may remain if they are only inside the stepper Sheet.
-
-5. Scroll cue - mobile only
-
-Create:
-
-src/components/ScrollCue.tsx
-
-Requirements:
-
-- fixed bottom-center
-
-- bottom-6
-
-- double chevron or elegant pill
-
-- soft bounce/fade loop
-
-- aria-hidden
-
-- no text
-
-- md:hidden
-
-- hides when window.scrollY > 8
-
-- local state per mount
-
-- no sessionStorage
-
-- cue returns on every fresh open, route mount, or reload
-
-- within the same mount, it stays hidden after the first scroll
-
-- respect prefers-reduced-motion: if enabled, render it static with no bounce/fade animation
-
-- must not overlap sticky bottom navigation
-
-- if bottom navigation is present, position the cue above it or hide it once the bottom navigation is visible
-
-- ScrollCue should reset predictably on route/client change; key the component by clientId or current route section if needed
-
-6. Theme polish - dark only
-
-In src/styles.css, adjust dark tokens only.
-
-Goal:
-
-Dark theme should feel premium, readable, and clinical, not muddy.
-
-Adjust:
-
-- --background: slightly cooler charcoal
-
-- --surface / --card: visibly lighter than background
-
-- --border: lower opacity
-
-- --foreground: higher contrast
-
-- amber remains primary
-
-- success/warning/danger remain restrained
-
-Do not redesign light or medium themes.
-
-Visual cleanup in the assessment route:
-
-- remove redundant outlined chips inside already-bordered cards
-
-- use space-y-3 for section bodies
-
-- use mb-3 or gap-3 between sections
-
-- reduce stacked labels before the first input
-
-7. Files expected to change
-
-Expected:
-
-- src/routes/clients_.$clientId.tsx
-
-- src/components/MobileStepHeader.tsx
-
-- src/components/ScrollCue.tsx
-
-- src/styles.css
-
-- src/i18n/locales/pt/assessment.json
-
-- src/i18n/locales/en/assessment.json
-
-- app-level TS/Zod/form/patch helpers needed for no_injuries to typecheck
-
-Do not modify ClientStageOneHero.tsx unless absolutely necessary.
-
-Preferred approach: hide it at the route call-site and re-render identity explicitly in the mobile shell.
-
-8. Out of scope
-
-Do not do:
-
-- light/medium theme redesign
-
-- backend/schema changes
-
-- DB migrations
-
-- generated Supabase/DB type edits
-
-- renaming existing section ids
-
-- full route rewrite
-
-- desktop redesign
-
-- new clinical logic beyond moving injuries/pain into its own step
-
-9. Acceptance checklist
-
-Verify before stopping:
-
-- 390px: first “Lesões e dor” input visible within one short thumb scroll.
-
-- 768px: layout still behaves correctly.
-
-- Desktop width: desktop navigation remains intact.
-
-- “Lesões e dor” = 1/15 in stepper, header, and progress count.
-
-- PAR-Q+ = 2/15.
-
-- Existing section ids remain stable.
-
-- no_injuries toggle survives reload.
-
-- no_injuries is included in relevant app-level TS/form/patch types without schema migration.
-
-- Optional-safe checks prevent crashes on legacy assessments with missing fields.
-
-- Mobile retains client identity + status chip even with hero hidden.
-
-- Invite status appears once: “Convite pendente · Ainda não aberto · expira em Nd”.
-
-- “Avaliação a decorrer” is gone when invite is unopened.
-
-- PAR-Q chip hidden when count = 0.
-
-- Mobile step chips hidden.
-
+- 390px: first input of active section visible within one short thumb scroll.
+- 390px: same when active section is "Lesões e dor".
+- 768px: layout still correct.
 - Desktop nav intact.
-
-- One vertical scrollbar only.
-
-- No horizontal overflow.
-
-- Scroll cue appears on every fresh open and hides after first scroll within that mount.
-
-- Scroll cue resets predictably on route/client change.
-
-- Scroll cue does not overlap sticky bottom navigation.
-
-- prefers-reduced-motion is respected for ScrollCue.
-
+- PAR-Q+ = 1/15, Risco = 2/15, Treino = 3/15, **Lesões e dor = 4/15** in stepper, header, progress count.
+- Existing section ids stable.
+- `no_injuries` toggle survives reload.
+- `no_injuries` in relevant app-level TS/form/patch types without schema migration.
+- Optional-safe checks prevent crashes on legacy assessments.
+- Mobile keeps client identity + status chip even with hero hidden.
+- Invite status appears once.
+- "Avaliação a decorrer" gone when invite unopened.
+- PAR-Q chip hidden when count = 0.
+- Mobile step chips hidden.
+- One vertical scrollbar; no horizontal overflow.
+- ScrollCue: appears on fresh open, hides after first scroll, resets on route/client change, doesn't overlap bottom nav, respects `prefers-reduced-motion`.
 - Dark theme has clear background/surface/border/text separation.
-
-- bunx tsc --noEmit passes.
-
+- `bunx tsc --noEmit` passes.
 - No unrelated rewrites.
 
-Final hardening:
+Final hardening: close all markdown fences, keep code in files (not nested markdown blocks), no fake local-state persistence, confirm old training/setup injuries rendering fully removed, manual smoke at 390px / 768px / desktop.
 
-- Ensure all markdown/code fences in reports or notes are properly closed.
-
-- Keep generated implementation code in files, not in long nested markdown blocks.
-
-- Do not fake persistence through local state.
-
-- After moving injuries/pain UI into InjuriesSection, confirm the old training/setup rendering is fully removed.
-
-- Add a quick manual smoke check at 390px, 768px, and desktop width.
-
-When done, return:
-
-1. Files changed
-
-2. Acceptance checklist confirmation
-
-3. Remaining risks/TODOs
+**Return:** files changed · acceptance checklist confirmation · remaining risks/TODOs.
