@@ -222,10 +222,15 @@ export default function StageCard({
                 type="button"
                 onClick={() => void onApprove()}
                 disabled={busy}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-500 transition hover:bg-amber-500/15 disabled:opacity-50"
+                className="group inline-flex items-center gap-2 rounded-lg bg-gradient-to-b from-amber-400 to-amber-500 px-4 py-2 text-xs font-semibold text-amber-950 shadow-[0_1px_0_rgba(255,255,255,0.25)_inset,0_6px_18px_-8px_rgba(245,158,11,0.55)] ring-1 ring-amber-500/40 transition hover:from-amber-300 hover:to-amber-400 active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <ArrowRight className="h-3 w-3" />}
-                {approveLabel}
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                <span className="whitespace-nowrap">{approveLabel.replace(/\s*→\s*$/, "")}</span>
+                {!busy && (
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                )}
               </button>
           )}
         </div>
