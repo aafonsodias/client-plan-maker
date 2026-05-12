@@ -2849,6 +2849,7 @@ function ClientDetail() {
                 </div>
               );
             })()}
+            <RxImplications sectionId="meds" assessment={assessment} riskCategory={riskCategory} collapsible />
           </SectionBlock>
           {/* Readiness */}
           <SectionBlock id="readiness" analysing={analysingSections["readiness"]} analysis={sectionAnalyses["readiness"]} title={t("readiness_block.title")} hint={t("readiness_block.hint")} defaultCollapsed complete={isSectionComplete("readiness", assessment)} provenance={assessment.provenance?.readiness} reviewed={client.intake_status === "reviewed"} footer={isSectionComplete("readiness", assessment) ? <CompletionStrip text={t("readiness_block.complete", { stage: t(`readiness_block.${assessment.readiness_stage}` as const, { defaultValue: assessment.readiness_stage }) })} description={t("readiness_block.complete_meaning")} /> : null}>
