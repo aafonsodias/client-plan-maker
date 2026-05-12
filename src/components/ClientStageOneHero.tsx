@@ -60,8 +60,8 @@ export function ClientStageOneHero({
       aria-label="Stage 1"
       className="mb-3 overflow-hidden rounded-xl border border-border/60 bg-[var(--surface)] px-3 py-2.5 sm:px-4 sm:py-3"
     >
-      {/* Row 1: stage chip + progress dots + current step name + primary CTA */}
-      <div className="flex items-center gap-2">
+      {/* Single dense row — left: stage identity + status; right: secondary actions */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-muted-foreground">
         <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-500">
           1/5
         </span>
@@ -76,13 +76,10 @@ export function ClientStageOneHero({
             />
           ))}
         </span>
-        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
+        <span className="shrink-0 text-xs font-semibold text-foreground">
           {t("stage_one_hero.steps_assessment")}
         </span>
-      </div>
-
-      {/* Row 2: subtitle + secondary actions + status — single wrapping line */}
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <span className="hidden h-3 w-px shrink-0 bg-border sm:inline-block" aria-hidden />
         <span className="inline-flex items-center gap-1.5">
           <span
             className={[
@@ -111,7 +108,7 @@ export function ClientStageOneHero({
             })}
           </span>
         )}
-        <span className="ml-auto inline-flex items-center gap-2">
+        <span className="ml-auto inline-flex items-center gap-3">
           <a
             href={`/me?as=${clientId}`}
             target="_blank"
