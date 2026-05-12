@@ -4866,6 +4866,8 @@ function AssessmentSection({
                   )}
                 </div>
               </div>
+              {/* Missing-items panel (shown when Concluir was blocked). */}
+              {missingPanel ? <div className="px-3 pb-2">{missingPanel}</div> : null}
               {/* Sticky footer */}
               <div
                 className="sticky bottom-0 z-30 flex items-center justify-between gap-2 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
@@ -4915,6 +4917,7 @@ function AssessmentSection({
                 </div>
               )}
             </div>
+            {missingPanel}
             <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-3">
               <Button
                 variant="outline"
