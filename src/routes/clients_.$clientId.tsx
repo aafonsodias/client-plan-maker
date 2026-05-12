@@ -706,6 +706,22 @@ function ClientDetail() {
   const [trainerSummaryDraft, setTrainerSummaryDraft] = useState<string>("");
   const [trainerSummarySaving, setTrainerSummarySaving] = useState(false);
 
+  // Load injury row count whenever the underlying assessment changes.
+  useEffect(() => {
+    const aid = (assessment as any)?.id as string | undefined;
+    if (!aid) {
+      setInjuriesCount(0);
+      return;
+    }
+    let on = true;
+    listInjuriesFn({ data: { assessmentId: aid } })
+      .then((rows) => {
+        if (on) setInjuriesCount(Array.isArray(rows) ? rows.length : 0);
+      })
+      .catch(() => { /* non-fatal; section can still be completed via no_injuries */ });
+    return () => { on = false; };
+  }, [listInjuriesFn, (assessment as any)?.id]);
+
   // Round 1 — Generate Plan is now hard-gated; no incomplete shortcut.
   // The previous `incompleteWarnOpen` AlertDialog has been removed.
 
