@@ -1,102 +1,113 @@
-## Problema
+## Round A — Self-Intake / Assessment stabilisation
 
-1. **Zonas invisíveis** — no SVG actual, `fillOpacity={0}` quando não selecionadas e o desenho de fundo é só uma silhueta contínua. Visualmente, joelho/ombro/peito não se distinguem do braço ou abdómen — o cliente não percebe que são áreas tappable.
-2. **Faltam zonas** anatomicamente importantes:
-   - **Cotovelo** (epicondilites — actualmente só existe "antebraço")
-   - **Clavícula / AC joint** (lesões anteriores acima da clavícula, mediais — distintas do peitoral)
-   - **Esterno / linha média torácica** (referidas costo-condrais)
-3. **Sub-resolução** dentro de zonas grandes:
-   - **Joelho**: anterior (patelofemoral) vs medial vs lateral (LCM/LCL) — hoje é uma caixa só
-   - **Ombro**: anterior (deltóide ant./bicípite longo) vs lateral (subacromial) — hoje é uma caixa só
-   - **Peito**: peitoral major vs esterno vs sub-clavicular
-4. **"Outras lesões" perdidas** — o campo `note` (texto livre que o cliente escreve no `InjuryEditor`) **existe na DB** mas **NÃO é puxado** em `fetchInjuryBansForPlan` (`stage3-microcycle.functions.ts:823`). O `select` só lê `body_zone, severity, injury_label`. Se o cliente escrever "tendinite no manguito rotador, faz semanas que dói no movimento de alcançar para trás", essa nota **nunca chega ao prompt** do AI.
+Goal: one canonical data flow `assessment → completion → implications → summary → PDF`, no duplicated truths, no broken keys, no silent "incomplete" toasts. Smallest safe patches only — no design overhaul, no AI calls, no migrations.
 
-## Plano
+### What is broken today (verified)
 
-### A. Refinar visualmente o boneco (`src/components/BodyMap.tsx`)
+1. **Two competing implication engines**: `RxImplications` (rich, in UI, only PT, hard-coded copy) lives at the bottom of `src/routes/clients_.$clientId.tsx`. The PDF uses a *separate* `buildAssessmentImplications` in `src/lib/assessment-implications.ts` (leaner, EN/PT). They drift.
+2. **Injuries completion bug**: `isSectionCompleteForPhase("injuries", a)` checks `a.injuries`, `a.pain_areas`, `a.no_injuries`. The body map writes to a separate table (`assessment_injuries` via `InjuriesBodyMapBlock`). Adding 2 injuries on the map does **not** flip the section to complete.
+3. **Meds completion bug**: requires `hasVal(a.medications) || a.med_flags.length > 0`. A client who takes nothing has no toggle to declare it → can't complete.
+4. **Movement Screen bug**: requires `formScore(fc) >= 3` for every pattern unless `screen_not_assessed[p] === true`. Trainers fill `*_capacity` thinking that's enough; it isn't. Also no per-pattern explanation of what is missing.
+5. **Conclude UX**: only a `toast.error("Self intake incomplete")`. No structured list. Sidebar checkmarks rely on the same validator but feedback is invisible.
+6. **`risk_block.bmi_use_auto`**: key exists in PT only; EN/ES/HI fall back to the raw key on screen. Visual styling is also a bare `<button class="underline">`.
+7. **Bioimpedance button**: hard-coded PT string `"Importar bioimpedância"`, outline button, no helper text, looks unfinished.
+8. **Mobility 1–5**: `ScoreRow` shows a number scale with no per-test rubric.
 
-- **Tornar zonas sempre ligeiramente visíveis**: `stroke="currentColor"` com `strokeOpacity={0.18}` permanente + tracejado leve (`strokeDasharray="2 3"`) para sinalizar interactividade sem poluir. Hover sobe para 0.4. Selecionado mantém o preenchimento atual.
-- **Anatomia outline mais densa**: adicionar contornos de joelhos (rótula), ombros (deltóide), cotovelos, clavícula, esterno e gémeos para o utilizador *ver* a anatomia.
+### Files to touch (scoped)
 
-### B. Adicionar zonas novas (front + back)
+- New: `src/lib/assessment-completion.ts` — canonical validator (extends `assessment-phase.ts`, returns missing items).
+- New: `src/components/assessment/MissingItemsPanel.tsx` — Conclude-failure panel.
+- Edit: `src/lib/assessment-phase.ts` — fix `injuries`, `meds`, `screen` rules; accept extra `injuriesCount` arg.
+- Edit: `src/routes/clients_.$clientId.tsx` — wire injuries count into validator, add "no medications" toggle, render MissingItemsPanel on Conclude, fix BMI override, polish BIA button, mobility rubric, replace inline `RxImplications` builders with shared module (Round A scope: keep PT cards in UI but source from new module).
+- New: `src/lib/assessment-implications.ts` — extend with the rich PT/EN rules currently in `RxImplications`. Single source for UI + PDF.
+- Edit: `src/lib/pdf-assessment-summary.ts` — already consumes `buildAssessmentImplications`; verify all sections appear, add BMI-muscular note, meds-none line, injuries summary from `assessment_injuries`.
+- Edit: `src/i18n/locales/{en,pt,es,hi}/assessment.json` + `common.json` — add missing keys (`bmi_use_auto`, `bmi_athletic_*`, `meds_block.none_toggle`, `mobility.rubric_*`, `bia_*`, `assessment_gate.missing_*`).
+- Edit: `src/server/injuries.functions.ts` — expose lightweight `countInjuries({ assessmentId })` already covered by `listInjuries`; pass count up via `useQuery` in client page.
 
-Front:
-- `clavicle_left`, `clavicle_right` — pequena faixa horizontal acima do peito, junto à base do pescoço
-- `sternum` — faixa central entre os dois peitorais
-- `pec_left`, `pec_right` — substituem o `chest` único (mantém-se `chest` como alias para retrocompatibilidade dos dados existentes)
-- `elbow_left`, `elbow_right` — entre bícep e antebraço
-- `knee_anterior_left/right`, `knee_medial_left/right`, `knee_lateral_left/right` — substituem `knee_left/right` (alias mantido)
-- `shoulder_anterior_left/right`, `shoulder_lateral_left/right` — substituem `shoulder_left/right` (alias mantido)
+### Implementation outline
 
-Back:
-- `elbow_back_left/right`, `scapula_left/right` (entre `traps` e `upper_back`), `sacrum` (entre `lumbar` e os glúteos)
+**A. Unified validator** (`src/lib/assessment-completion.ts`)
+```ts
+type MissingItem = {
+  sectionId: AssessmentSectionId;
+  sectionLabelKey: string;     // "sections.injuries.title"
+  reason: string;              // human PT/EN
+  required: boolean;
+  scrollAnchor: string;        // section DOM id
+};
+type CompletionReport = {
+  overall: AssessmentPhase;
+  perSection: Record<AssessmentSectionId, { complete: boolean; missing: MissingItem[] }>;
+  missingRequired: MissingItem[];
+  recommended: MissingItem[];
+};
+buildCompletionReport(a, ctx: { injuriesCount: number }): CompletionReport
+```
+Sidebar reads `perSection[id].complete`; Conclude reads `missingRequired`. Same source.
 
-Todas com `label_key` em `common.json` (PT/EN). Manter PT-PT formal ("você").
+**B. Bug fixes inside `isSectionCompleteForPhase`**
+- `injuries`: complete if `a.no_injuries === true` **or** `injuriesCount > 0` (passed via ctx) **or** legacy `a.injuries` text. Severity validation (each row has `severity` + `body_zone`) already enforced server-side.
+- `meds`: complete if `a.no_meds === true` **or** `med_flags.length > 0` **or** `hasVal(a.medications)`.
+- `screen`: keep `formScore(fc) >= 3` rule but, if a pattern has *partial* form data, surface it in `missing` with the specific pattern name; do not auto-pass on capacity alone.
 
-### C. Backwards compatibility
+**C. Medications "none" toggle**
+Add a checkbox at the top of `meds` block: PT *"Não tomo medicamentos nem suplementos"* / EN equivalent. Toggling clears `med_flags`/`medications`/`others`; adding any med auto-unsets it. Persisted on `assessment.no_meds` (jsonb-stored under `extended.no_meds` to avoid migration — or new boolean if a column already exists; checked: not present, will use `extended.no_meds`).
 
-- `getZone(legacyId)` continua a devolver a zona "pai" para `chest`, `knee_left`, `shoulder_left` etc., para que registos antigos em `assessment_injuries.body_zone = 'chest'` continuem a renderizar (mostrados como peito inteiro selecionado).
-- `zoneFamily()` em `exercise-filters.server.ts` ganha mapeamentos para os novos ids:
-  - `clavicle|ac_joint|sternum|pec` → `shoulder` (para AC) + nova família `chest_wall`
-  - `elbow_*` → `elbow` (já existe a família, mas não havia zona)
-  - `knee_anterior|medial|lateral` → `knee`
-  - `shoulder_anterior|lateral` → `shoulder`
-  - `scapula` → `upper_back`
-  - `sacrum` → `low_back`
+**D. Conclude UX** (`MissingItemsPanel`)
+Replaces the current `toast.error` path. Inline expandable card under the Conclude CTA listing each missing item with a "Ir para secção" button (calls `setActiveSection(id)` + scroll). Keep the toast for screen-reader announce.
 
-### D. Catálogo de labels (`src/lib/injury-labels.ts`)
+**E. Standardised implication cards**
+Promote the 10 `buildRxItems_*` functions from the route file into `src/lib/assessment-implications.ts` with a shared `RxItem` type:
+```ts
+type RxItem = { key, severity, titleKey, whyKey, prescriptionKey, nextActionKey, sourceSection, includeInPdf }
+```
+Render in UI via a single `<RxImplicationsCard items={...}>` component (extracted to `src/components/assessment/RxImplicationsCard.tsx`). PDF iterates the same list.
 
-Adicionar:
-- `tennis_elbow` / `golfer_elbow` — `affects_zones` passa a incluir os novos `elbow_*` (hoje só estão em `forearm_*`)
-- `ac_joint_sprain` — sobre `clavicle_*`
-- `costochondritis` — sobre `sternum`
-- `pec_strain` — sobre `pec_left/right`
-- `patellofemoral_pain` — sobre `knee_anterior_*`
-- `mcl_sprain` / `lcl_sprain` — `knee_medial_*` / `knee_lateral_*`
-- `biceps_tendinopathy` — sobre `shoulder_anterior_*`
-- `subacromial_impingement` — sobre `shoulder_lateral_*`
+**F. PDF integration**
+`pdf-assessment-summary.ts` already calls `buildAssessmentImplications`. After E, that function returns the unified set (with `includeInPdf` filter). Add:
+- Meds line: "Medicação/suplementos: nenhum declarado." when `no_meds`.
+- BMI line: append "(interpretação atlética/muscular aplicada)" when `risk.bmi_category === "muscular"`.
+- Injuries summary: query `assessment_injuries` by `assessmentId` in the existing PDF data fetch path.
+- Draft watermark: when `overall !== "complete"`, header reads "RASCUNHO".
 
-i18n keys correspondentes em `injuries.lbl.*` + `injuries.note.*` (PT/EN).
+**G. Mobility rubric**
+Extend `ScoreRow` (already accepts `hint`) to optionally render a 1-line-per-score rubric below the slider. Per-test rubric strings added to i18n: shoulder/hip/ankle/thoracic/wrist/knee. No layout change beyond a `<details>` "Critérios".
 
-### E. Capturar "outras lesões" no plano (gap real)
+**H. BMI muscular override**
+- Add missing keys to `en/es/hi`. Rename PT `bmi_use_auto` → keep key, add `bmi_athletic_label`, `bmi_athletic_help`.
+- Replace text-link toggle with a small segmented chip (Auto / Atlético) styled like the rest of the assessment chips. State drives `risk.bmi_category`.
 
-`src/server/phased/stage3-microcycle.functions.ts:823, 831`:
-- Mudar o `select` para `body_zone, severity, injury_label, note`
-- Passar `note` para `InjuryRow` (extender o tipo em `exercise-filters.server.ts` com `note?: string | null`)
-- Em `injuryBansPromptBlock()`, se houver pelo menos uma `note` não vazia, adicionar um bloco extra:
-  ```
-  CLIENT-REPORTED INJURY CONTEXT (free-text, take literally):
-  - [zone] severity X/5: "<note>"
-  ```
-  Antes do bloco "INJURY-DRIVEN BANS". Isto dá ao AI o contexto que o trainer/cliente escreveu mesmo quando não há um label catalogado.
-- Não alterar `bansForZone` — notas são *contexto*, não regras automáticas (evita que o AI invente bans em cima de texto livre sem citação).
+**I. Bioimpedance button**
+- Move "Importar bioimpedância" button into the existing "Avançado · requer equipamento" `<details>` block (it already houses BF method).
+- Style as a card-style action with subtitle "Opcional — melhora a interpretação da composição corporal" / EN equivalent. i18n keys added.
 
-### F. Migration
+**J. Slides parity audit**
+- One read-pass diff `src/i18n/locales/{en,pt}/intake.json` and `assessment.json`. Output a short `mem://audits/slides-parity-2026-05.md` listing keys where one locale is materially shorter/weaker. **No copy is overwritten in this round** — audit deliverable only, plus a follow-up backlog entry.
 
-Não é precisa migration — o campo `note` já existe na tabela.
+**K. No regressions**
+- Keep all existing keys; only add. Keep `isSectionCompleteForPhase` signature backward-compatible (extra arg optional, defaults to no injuries count → falls back to legacy fields).
+- No migrations. New `no_meds` lives in `assessment.extended` jsonb; new `bmi_athletic_explicit` likewise.
 
-### G. QA
+### Non-goals (explicit)
 
-1. Smoke 375px Mobile Safari: tocar nas novas zonas, verificar que os labels aparecem em PT.
-2. Verificar que um plano regenerado com uma `note` "dor a alcançar para trás" inclui essa frase no prompt (log em `generation_log.injury_filters_applied`).
-3. Confirmar que `body_zone='chest'` antigo continua a renderizar como peito inteiro.
-4. `bunx tsc --noEmit`.
+- No new AI calls.
+- No new DB migrations.
+- No redesign of the assessment page chrome.
+- No changes to plan generation pipeline.
+- No replacement of stronger PT slide copy (audit only).
 
-## Detalhes técnicos
+### Manual QA checklist (post-implementation)
 
-### Resumo dos ficheiros tocados
+1. Client adds 2 injuries via body map → Injuries flips to complete; Conclude proceeds.
+2. Client toggles "Não tomo medicamentos" → Meds complete; PDF prints "nenhum declarado".
+3. Movement Screen with all 6 patterns at form-score ≥3 → complete; with one missing → MissingItemsPanel names that pattern.
+4. Conclude on incomplete intake → structured panel with "Ir para secção" buttons (375px viewport).
+5. Sidebar checkmark count == validator's `done` count, always.
+6. BMI muscular toggle is a labelled chip, no raw `risk_block.bmi_use_auto` visible in any locale.
+7. BIA button has subtitle, sits inside Avançado, doesn't look orphaned.
+8. Mobility rubric expandable per test.
+9. PDF includes: implications, BMI w/ override note, meds-none line, injuries summary; if intake incomplete, header shows RASCUNHO.
 
-| Ficheiro | Mudança |
-|---|---|
-| `src/components/BodyMap.tsx` | Novas zonas, contornos densos, stroke permanente |
-| `src/lib/injury-labels.ts` | Novos labels + zonas mapeadas |
-| `src/i18n/locales/{en,pt}/common.json` | `injuries.zone.*` + `injuries.lbl.*` + `injuries.note.*` novos |
-| `src/server/phased/exercise-filters.server.ts` | `zoneFamily()` mapeia novos ids; `InjuryRow` ganha `note?` |
-| `src/server/phased/stage3-microcycle.functions.ts` | `select` puxa `note`; novo bloco "CLIENT-REPORTED INJURY CONTEXT" no prompt |
+### Final report (after implementation)
 
-### Não tocado (decisão deliberada)
-
-- `assessment_injuries` schema — sem migration
-- `InjuryEditor.tsx` — já permite escrever `note`
-- PDFs — fora de scope desta ronda
-- Outras superfícies que mostram lesões (continuam a chamar `getZone(id)` que devolve a zona pai por alias)
+Will list: files changed, bugs fixed, validator behaviour, missing-field UX, implication standardisation, PDF wiring, mobility rubric, BMI/BIA polish, slides audit deliverable, remaining manual-QA items.

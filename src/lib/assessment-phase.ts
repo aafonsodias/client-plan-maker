@@ -42,6 +42,13 @@ export type AssessmentSectionId = SelfIntakeSectionId | AssessmentSessionSection
 
 export type AssessmentPhase = "self_intake_pending" | "session_pending" | "complete";
 
+/** Optional context the validator can accept to count cross-table data
+ *  (e.g. injuries stored in `assessment_injuries`). Backwards-compatible:
+ *  callers that don't pass it fall back to legacy in-row fields. */
+export type CompletionContext = {
+  injuriesCount?: number;
+};
+
 function hasVal(v: unknown): boolean {
   if (v == null) return false;
   if (typeof v === "string") return v.trim() !== "";
@@ -57,6 +64,7 @@ function hasVal(v: unknown): boolean {
 export function isSectionCompleteForPhase(
   id: AssessmentSectionId | string,
   a: any,
+  ctx: CompletionContext = {},
 ): boolean {
   if (!a) return false;
   switch (id) {
@@ -71,15 +79,22 @@ export function isSectionCompleteForPhase(
         && hasVal(a.session_duration_minutes)
         && (a.available_equipment?.length ?? 0) > 0;
     case "injuries":
-      return hasVal(a.injuries)
-        || (a.pain_areas?.length ?? 0) > 0
-        || a.no_injuries === true;
+      // Counts the body-map rows (assessment_injuries) too, so adding
+      // injuries via the visual selector flips the section to complete.
+      return a.no_injuries === true
+        || (ctx.injuriesCount ?? 0) > 0
+        || hasVal(a.injuries)
+        || (a.pain_areas?.length ?? 0) > 0;
     case "history":
       return hasVal(a.years_training) || hasVal(a.previous_program_style) || hasVal(a.max_lifts);
     case "goal":
       return hasVal(a.smart_specific) && hasVal(a.smart_measurable);
     case "meds":
-      return hasVal(a.medications) || (a.med_flags?.length ?? 0) > 0;
+      // Explicit "I take nothing" toggle persisted on `no_meds` lets a
+      // healthy client complete the section without inventing a flag.
+      return a.no_meds === true
+        || hasVal(a.medications)
+        || (a.med_flags?.length ?? 0) > 0;
     case "readiness":
       return hasVal(a.readiness_stage);
     case "lifestyle":
@@ -114,9 +129,9 @@ export function isSectionCompleteForPhase(
  * risk strat, training setup, history, SMART goal, medications, readiness,
  * lifestyle and nutrition.
  */
-export function isSelfIntakeComplete(a: any): boolean {
+export function isSelfIntakeComplete(a: any, ctx: CompletionContext = {}): boolean {
   if (!a) return false;
-  return SELF_INTAKE_SECTION_IDS.every((id) => isSectionCompleteForPhase(id, a));
+  return SELF_INTAKE_SECTION_IDS.every((id) => isSectionCompleteForPhase(id, a, ctx));
 }
 
 /**
@@ -124,24 +139,24 @@ export function isSelfIntakeComplete(a: any): boolean {
  * a tape, or guided instruction: anthropometry, mobility, posture, movement
  * screen and cardio/performance.
  */
-export function isAssessmentSessionComplete(a: any): boolean {
+export function isAssessmentSessionComplete(a: any, ctx: CompletionContext = {}): boolean {
   if (!a) return false;
-  return ASSESSMENT_SESSION_SECTION_IDS.every((id) => isSectionCompleteForPhase(id, a));
+  return ASSESSMENT_SESSION_SECTION_IDS.every((id) => isSectionCompleteForPhase(id, a, ctx));
 }
 
-export function assessmentPhase(a: any): AssessmentPhase {
-  if (!isSelfIntakeComplete(a)) return "self_intake_pending";
-  if (!isAssessmentSessionComplete(a)) return "session_pending";
+export function assessmentPhase(a: any, ctx: CompletionContext = {}): AssessmentPhase {
+  if (!isSelfIntakeComplete(a, ctx)) return "self_intake_pending";
+  if (!isAssessmentSessionComplete(a, ctx)) return "session_pending";
   return "complete";
 }
 
 /** Convenience: counts of completed sections per group. */
-export function assessmentGroupCounts(a: any): {
+export function assessmentGroupCounts(a: any, ctx: CompletionContext = {}): {
   selfIntake: { done: number; total: number };
   session: { done: number; total: number };
 } {
-  const si = SELF_INTAKE_SECTION_IDS.filter((id) => isSectionCompleteForPhase(id, a)).length;
-  const ss = ASSESSMENT_SESSION_SECTION_IDS.filter((id) => isSectionCompleteForPhase(id, a)).length;
+  const si = SELF_INTAKE_SECTION_IDS.filter((id) => isSectionCompleteForPhase(id, a, ctx)).length;
+  const ss = ASSESSMENT_SESSION_SECTION_IDS.filter((id) => isSectionCompleteForPhase(id, a, ctx)).length;
   return {
     selfIntake: { done: si, total: SELF_INTAKE_SECTION_IDS.length },
     session: { done: ss, total: ASSESSMENT_SESSION_SECTION_IDS.length },

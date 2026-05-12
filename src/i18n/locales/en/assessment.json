@@ -107,6 +107,9 @@
     "sedentary": "Sedentary (<150 min/week MVPA)",
     "bmi_label": "BMI category",
     "bmi_hint": "Underweight <18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30. Use 'Muscular' when BMI ≥25 but body-fat % is within athletic range (♂ ≤17%, ♀ ≤24%) — BMI overestimates adiposity in resistance-trained individuals.",
+    "bmi_missing_hw": "Add the client's height and weight to compute BMI.",
+    "bmi_mark_muscular": "Mark as muscular",
+    "bmi_use_auto": "Use automatic value",
     "bmi_underweight": "Underweight",
     "bmi_normal": "Normal",
     "bmi_overweight": "Overweight",
@@ -191,6 +194,34 @@
     "effect_thyroid": "Usually neutral — watch HR if dose changed",
     "effect_nsaid": "Chronic use blunts hypertrophy",
     "effect_corticosteroid": "Lowers protein synthesis — moderate volume"
+  },
+  "no_meds_toggle": {
+    "label": "I do not take any medications or supplements",
+    "help": "Tick this if the client uses nothing on a regular basis — including multivitamins. Selecting this disables the list below."
+  },
+  "completion": {
+    "missing_title_one": "{{count}} item is missing before completion",
+    "missing_title_other": "{{count}} items are missing before completion",
+    "missing_title": "{{count}} items are missing before completion",
+    "missing_intro": "These items block plan generation. Tap \"Go to section\" to fix each one.",
+    "go_to_section": "Go to section",
+    "reasons": {
+      "parq": "Answer all 7 PAR-Q+ questions (Yes or No).",
+      "risk": "Confirm BMI category and risk stratification.",
+      "training": "Set experience, days per week, session duration and available equipment.",
+      "injuries": "Either tick \"No injuries\" or add at least one injury on the body map.",
+      "history": "Add training years, previous program style or known max lifts.",
+      "goal": "Write the work focus and how progress will be measured.",
+      "meds": "Declare medications/supplements or tick \"I take none\".",
+      "readiness": "Pick the readiness-to-change stage.",
+      "lifestyle": "Add sleep, stress or sedentary routine info.",
+      "nutrition": "Add meals per day, water or weekly alcohol intake.",
+      "anthro": "Add waist, hip or body-fat %.",
+      "mobility": "Score all 6 mobility tests (1–5).",
+      "posture": "Note posture, asymmetries or dominant side.",
+      "screen": "Tick at least 3 form criteria per pattern (or mark \"Not assessed\").",
+      "performance": "Add resting HR or a cardio test result."
+    }
   },
   "goal_block": {
     "title": "Primary goal (SMART)",
