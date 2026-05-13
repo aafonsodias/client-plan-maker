@@ -39,14 +39,16 @@ type: feature
 
 ## What's still TODO before this becomes the closed loop
 
-1. `session_set_logs` table for per-set load/RPE/pain. Today the engine
-   reads aggregate `workout_sessions.entries` jsonb; pain flag count is
-   stubbed to 0.
-2. Wire `archivePlanAndStartNextBlock` to call `proposeNextBlock` and pipe
-   the proposal into Stage 3 of the new block as input — instead of
-   regenerating from scratch.
+1. ✅ `session_set_logs` table created (RLS: trainer manage, client read).
+   Engine prefers set logs when present, falls back to `entries` jsonb.
+   **Pendente:** writer at `/log/$token` (per-set ingest + recompute hooks).
+2. ✅ `archivePlanAndStartNextBlock` calls `proposeNextBlock` and stamps
+   the proposal onto `workout_plans.generation_meta.next_block_proposal` +
+   `adaptation_engine_version`. **Pendente:** Stage 3 do bloco N+1 ler a
+   proposta como hard input.
 3. Movement-pattern field on each exercise (today inferred from name
-   regex). Replace `inferPattern` once exercises carry canonical patterns.
+   regex or read from set log column). Replace `inferPattern` once
+   exercises carry canonical patterns.
 4. Volume vs MEV/MAV/MRV per muscle group, integrated into the diff.
 5. Trainer UI: review-and-approve the proposal before committing.
 

@@ -1678,6 +1678,90 @@ export type Database = {
         }
         Relationships: []
       }
+      session_set_logs: {
+        Row: {
+          actual_load_kg: number | null
+          actual_reps: number | null
+          actual_rpe: number | null
+          client_id: string
+          created_at: string
+          exercise_name: string
+          exercise_slug: string
+          id: string
+          movement_pattern: string | null
+          notes: string | null
+          pain_flag: boolean
+          plan_id: string
+          prescribed_load_kg: number | null
+          prescribed_reps: number | null
+          prescribed_rpe: number | null
+          session_id: string
+          set_index: number
+          trainer_id: string
+          updated_at: string
+          week_number: number
+        }
+        Insert: {
+          actual_load_kg?: number | null
+          actual_reps?: number | null
+          actual_rpe?: number | null
+          client_id: string
+          created_at?: string
+          exercise_name: string
+          exercise_slug: string
+          id?: string
+          movement_pattern?: string | null
+          notes?: string | null
+          pain_flag?: boolean
+          plan_id: string
+          prescribed_load_kg?: number | null
+          prescribed_reps?: number | null
+          prescribed_rpe?: number | null
+          session_id: string
+          set_index: number
+          trainer_id: string
+          updated_at?: string
+          week_number: number
+        }
+        Update: {
+          actual_load_kg?: number | null
+          actual_reps?: number | null
+          actual_rpe?: number | null
+          client_id?: string
+          created_at?: string
+          exercise_name?: string
+          exercise_slug?: string
+          id?: string
+          movement_pattern?: string | null
+          notes?: string | null
+          pain_flag?: boolean
+          plan_id?: string
+          prescribed_load_kg?: number | null
+          prescribed_reps?: number | null
+          prescribed_rpe?: number | null
+          session_id?: string
+          set_index?: number
+          trainer_id?: string
+          updated_at?: string
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_set_logs_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "workout_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_set_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "workout_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscribers: {
         Row: {
           created_at: string
