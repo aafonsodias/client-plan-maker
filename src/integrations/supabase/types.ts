@@ -624,6 +624,45 @@ export type Database = {
           },
         ]
       }
+      audit_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          engine_versions: Json
+          entity_id: string | null
+          entity_type: string
+          event_type: string
+          id: string
+          payload: Json
+          trainer_id: string
+          upstream_hash: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          engine_versions?: Json
+          entity_id?: string | null
+          entity_type: string
+          event_type: string
+          id?: string
+          payload?: Json
+          trainer_id: string
+          upstream_hash?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          engine_versions?: Json
+          entity_id?: string | null
+          entity_type?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          trainer_id?: string
+          upstream_hash?: string | null
+        }
+        Relationships: []
+      }
       capacity_domains: {
         Row: {
           created_at: string
@@ -1582,6 +1621,60 @@ export type Database = {
           tagline?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      screening_evaluations: {
+        Row: {
+          answers: Json
+          assessment_id: string | null
+          clearance_reason: string | null
+          clearance_required: boolean
+          client_id: string
+          created_at: string
+          evaluator_id: string | null
+          id: string
+          intensity_ceiling: string
+          protocol: string
+          protocol_version: string
+          raw_detail: Json
+          risk_band: string
+          structured_reasons: Json
+          trainer_id: string
+        }
+        Insert: {
+          answers?: Json
+          assessment_id?: string | null
+          clearance_reason?: string | null
+          clearance_required?: boolean
+          client_id: string
+          created_at?: string
+          evaluator_id?: string | null
+          id?: string
+          intensity_ceiling: string
+          protocol: string
+          protocol_version: string
+          raw_detail?: Json
+          risk_band: string
+          structured_reasons?: Json
+          trainer_id: string
+        }
+        Update: {
+          answers?: Json
+          assessment_id?: string | null
+          clearance_reason?: string | null
+          clearance_required?: boolean
+          client_id?: string
+          created_at?: string
+          evaluator_id?: string | null
+          id?: string
+          intensity_ceiling?: string
+          protocol?: string
+          protocol_version?: string
+          raw_detail?: Json
+          risk_band?: string
+          structured_reasons?: Json
+          trainer_id?: string
         }
         Relationships: []
       }
