@@ -3,6 +3,27 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildSessionSummary, type SessionSummary } from "@/lib/session-summary";
+import { inferPattern } from "@/server/adaptation/propose-next-block.server";
+
+/** Parse first numeric token from a planned/actual text field ("8-10" → 8). */
+function firstNum(s: unknown): number | null {
+  const m = String(s ?? "").match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+/**
+ * Slugify exercise name for stable cross-block joins. "Barbell Back Squat (close)"
+ * → "barbell-back-squat". Strips parenthesised variant suffixes so the same
+ * lift across blocks aggregates cleanly in the adaptation engine.
+ */
+function slugifyExercise(n: string): string {
+  return String(n ?? "")
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
 
 /* ─── Generic error helper — never leak DB internals to clients ─── */
 function fail(internal: unknown, userMessage: string): never {
@@ -324,6 +345,63 @@ export const saveClientSession = createServerFn({ method: "POST" })
       .select("id, status")
       .single();
     if (error) fail(error, "Could not save session.");
+
+    // Per-set log mirror — only on finalize, only for v2 entries with sets[].
+    // Powers the deterministic adaptation engine (e1RM, RPE drift, pain flags)
+    // without touching the legacy entries jsonb.
+    if (plan.client_id) {
+      try {
+        const setRows: Array<Record<string, unknown>> = [];
+        for (const entry of data.entries) {
+          if (!Array.isArray(entry.sets) || entry.sets.length === 0) continue;
+          const exerciseName = entry.exercise_name;
+          const slug = slugifyExercise(exerciseName);
+          const pattern = inferPattern(exerciseName);
+          const prescribedReps = firstNum(entry.planned?.reps);
+          const prescribedRpe = firstNum(entry.planned?.rpe);
+          entry.sets.forEach((s, idx) => {
+            const actualLoad = firstNum(s.weight);
+            const actualReps = firstNum(s.reps);
+            const actualRpe = firstNum(s.rpe);
+            // Only persist sets the user actually engaged with — keeps the
+            // adaptation engine's denominators honest.
+            if (!s.done && actualLoad === null && actualReps === null) return;
+            setRows.push({
+              trainer_id: plan.trainer_id,
+              client_id: plan.client_id,
+              plan_id: plan.id,
+              session_id: row.id,
+              week_number: data.week_number,
+              exercise_slug: slug,
+              exercise_name: exerciseName,
+              movement_pattern: pattern,
+              set_index: idx + 1,
+              prescribed_load_kg: null,
+              prescribed_reps: prescribedReps,
+              prescribed_rpe: prescribedRpe,
+              actual_load_kg: actualLoad,
+              actual_reps: actualReps,
+              actual_rpe: actualRpe,
+              pain_flag: entry.felt === "hard" && (actualRpe ?? 0) >= 9.5,
+              notes: typeof entry.notes === "string" && entry.notes.length > 0 ? entry.notes : null,
+            });
+          });
+        }
+        if (setRows.length > 0) {
+          // Wipe any prior rows for this session (idempotent re-finalize) and
+          // re-insert. Cheaper than diffing and keeps the table consistent.
+          await supabaseAdmin.from("session_set_logs").delete().eq("session_id", row.id);
+          const { error: setErr } = await supabaseAdmin
+            .from("session_set_logs")
+            .insert(setRows as never);
+          if (setErr) {
+            console.warn("[sessions] session_set_logs insert failed (non-fatal)", setErr.message);
+          }
+        }
+      } catch (e) {
+        console.warn("[sessions] session_set_logs mirror threw (non-fatal)", e);
+      }
+    }
 
     // Best-effort mirror of pre-readiness into client_checkins so autoreg
     // (programNextWeek) can read sleep/soreness without another UI.
