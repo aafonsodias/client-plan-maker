@@ -390,6 +390,7 @@ async function runDay(
   swapMainLift: boolean = false,
   prescriptionParameters: PrescriptionParameters | null = null,
   pklLandmarks: Record<MuscleGroup, VolumeLandmark> | null = null,
+  nextBlockProposal: any = null,
 ): Promise<{ ok: true; day: any } | { ok: false; error: string }> {
   const arch = archetypeForDay(blueprint, dayIndex);
   if (!arch) return { ok: false, error: `No archetype for day ${dayIndex}` };
@@ -468,6 +469,24 @@ INTRA-WEEK EXERCISE UNIQUENESS (HARD):
     ? `\n\nEXERCISE ROTATION (block N>1) — SAID variation rule:\nThe prior block already exhausted these exercises: ${priorExercisePool.slice(0, 40).join(", ")}.\nAt least 60% of the accessories you pick for THIS day must NOT be in that list (substitute with same movement pattern + same intent — e.g. replace 'leg press' with 'hack squat' or 'belt squat'). The 1–2 main lifts may repeat if they are the driver of progression. Isolators MUST rotate. Variation is what creates new adaptation; clones stall.`
     : "";
 
+  // ── Adaptation-engine hard input (block N>1) ─────────────────────────────
+  // The deterministic adaptation engine ran on the prior block's per-set logs
+  // and produced load/sets nudges per movement pattern + a deload flag. Surface
+  // it as a hard prompt block so Stage 3's main + accessory choices respect
+  // the closed-loop signal, not just the rotation rule.
+  const adaptationBlock = nextBlockProposal && Array.isArray(nextBlockProposal?.prescriptionDiff) && nextBlockProposal.prescriptionDiff.length > 0
+    ? (() => {
+        const lines = (nextBlockProposal.prescriptionDiff as any[])
+          .filter((d) => d && d.exerciseSlug)
+          .slice(0, 12)
+          .map((d) => `- ${d.exerciseSlug}: load ${d.loadDeltaPct >= 0 ? "+" : ""}${d.loadDeltaPct}%, sets ${d.setsDelta >= 0 ? "+" : ""}${d.setsDelta}, RPE target ${d.rpeTarget} — ${d.reasonChip}`)
+          .join("\n");
+        const adherence = typeof nextBlockProposal.adherencePct === "number" ? `${nextBlockProposal.adherencePct}% adherence in prior block.` : "";
+        const deload = nextBlockProposal.recommendDeload ? `\nDELOAD RECOMMENDED — bias the entire microcycle toward MEV (–1 set per accessory vs prior block) and cap main-lift RPE at ${nextBlockProposal.prescriptionDiff?.[0]?.rpeTarget ?? 7.5}.` : "";
+        return `\n\nADAPTATION ENGINE (block N>1, deterministic from per-set logs) — TREAT AS HARD INPUT:\n${adherence}\nApply these per-pattern nudges when picking THIS day's exercises:\n${lines}${deload}\nDo not invent contradictory progressions. The engine is the truth; you orchestrate around it.`;
+      })()
+    : "";
+
   const hardBanBlock = hardBan.length > 0
     ? `\n\nRETRY — STRICT BAN LIST:\nThe previous attempt repeated too many accessories. DO NOT use any of these accessories (any close variant): ${hardBan.slice(0, 14).join(", ")}.\nReplace each with the closest substitute that trains the same primary muscle / pattern (e.g. swap incline DB press → low-incline machine press; swap leg press → belt squat or hack squat). Main lift may stay.`
     : "";
@@ -510,7 +529,7 @@ RULES:
 - rationale (per day AND per exercise): 1–2 sentences referencing concrete client constraints (red flags, training age, movement competency). No generic phrases like "build strength" or "compound movement".
 - All required fields must be filled — use empty arrays/strings where genuinely empty.
 
-Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
+Call record_day exactly once.${tierBlock}${rpeFloorBlock}${setCapBlock}${intraWeekBlock}${fittVpBlock}${volumeBlock}${rotationBlock}${adaptationBlock}${hardBanBlock}${mainLiftSwapBlock}${modalityBlock}`;
   const systemWithInjuries = `${system}${injuryBlock}${injuryNotesBlock}`;
 
   const user = `Day ${dayIndex} of Week 1.
