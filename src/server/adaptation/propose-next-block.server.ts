@@ -195,7 +195,7 @@ export const adaptationEngine: AdaptationEngine = {
   async proposeNextBlock(input: AdaptationInput): Promise<NextBlockProposal> {
     const { trainerId, clientId, priorPlanId } = input;
 
-    const [{ data: plan }, { data: sessions }, { data: days }] = await Promise.all([
+    const [{ data: plan }, { data: sessions }, { data: days }, { data: setLogs }] = await Promise.all([
       supabaseAdmin
         .from("workout_plans")
         .select("id, trainer_id, client_id, generation_meta")
@@ -211,6 +211,11 @@ export const adaptationEngine: AdaptationEngine = {
         .select("week_number, day_number, status")
         .eq("plan_id", priorPlanId)
         .eq("status", "done"),
+      supabaseAdmin
+        .from("session_set_logs")
+        .select("week_number, exercise_name, movement_pattern, actual_load_kg, actual_reps, actual_rpe, prescribed_rpe, pain_flag, created_at")
+        .eq("plan_id", priorPlanId)
+        .order("created_at", { ascending: true }),
     ]);
 
     if (!plan || (plan as any).trainer_id !== trainerId) {
@@ -224,13 +229,14 @@ export const adaptationEngine: AdaptationEngine = {
       ? Math.round((loggedSessions / prescribedSessions) * 100)
       : 0;
 
-    const readings = flattenEntries(sessionRows);
+    // Prefer per-set logs when present (Phase 3.1), fall back to entries jsonb.
+    const setLogRows = (setLogs ?? []) as Array<Record<string, any>>;
+    const readings: SetReading[] =
+      setLogRows.length > 0 ? flattenSetLogs(setLogRows) : flattenEntries(sessionRows);
     const metrics = computeMetrics(readings);
     const prescriptionDiff = buildDiff(metrics);
 
-    // Pain flags — wired here but until per-set pain flags exist in
-    // session_set_logs (Phase 3.1) this stays at 0.
-    const painFlagsCount = 0;
+    const painFlagsCount = setLogRows.filter((r) => r.pain_flag === true).length;
 
     const recommendDeload =
       adherencePct < 60 ||
