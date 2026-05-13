@@ -101,7 +101,7 @@ export async function resolveProgrammingContext(
 ): Promise<ProgrammingContext> {
   const { data: plan, error } = await supabaseAdmin
     .from("workout_plans")
-    .select("id, brief, programming_variables, assessment_id")
+    .select("id, brief, programming_variables, assessment_id, client_id")
     .eq("id", planId)
     .maybeSingle();
 
@@ -118,15 +118,32 @@ export async function resolveProgrammingContext(
   // 2. Tier engine — only when we have a real assessment to classify against.
   let tierFromEngine: Tier | null = null;
   let assessmentPresent = false;
-  if (plan.assessment_id && brief) {
-    const { data: assessment } = await supabaseAdmin
-      .from("assessments")
-      .select("*")
-      .eq("id", plan.assessment_id)
-      .maybeSingle();
+  if (brief) {
+    let assessment: Record<string, any> | null = null;
+    if (plan.assessment_id) {
+      const { data: a } = await supabaseAdmin
+        .from("assessments")
+        .select("*")
+        .eq("id", plan.assessment_id)
+        .maybeSingle();
+      assessment = (a ?? null) as Record<string, any> | null;
+    }
+    // Fallback: latest assessment for the same client (mirrors the legacy
+    // behaviour in getPlanConstraints — plans created before assessment_id
+    // wiring can still be classified).
+    if (!assessment && (plan as any).client_id) {
+      const { data: a } = await supabaseAdmin
+        .from("assessments")
+        .select("*")
+        .eq("client_id", (plan as any).client_id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      assessment = (a ?? null) as Record<string, any> | null;
+    }
     if (assessment) {
       assessmentPresent = true;
-      tierFromEngine = classifyTier(brief, assessment as Record<string, any>);
+      tierFromEngine = classifyTier(brief, assessment);
     }
   }
 
