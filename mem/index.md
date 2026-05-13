@@ -59,3 +59,6 @@ Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp 
 - [Exercise media implementation plan](mem://audits/exercise-media-implementation-plan.md) — R75 phased rollout; Now = docs+file discipline, Next = Slice 2 identity wiring
 - [NextAction priority](mem://principles/next-action-priority.md) — dashboard card never suggests plan-gen below 100% assessment
 - [Programming context resolver](mem://architecture/programming-context.md) — single source of truth for tier/RPE/wave; new code reads from resolveProgrammingContext
+- [FORGE gap roadmap May 2026](.lovable/forge-gap-may-2026.md) — canonical 90-day path: foundations → safety/audit → closed loop → revenue. No work outside this list until phase 4 ships.
+- [Engine ports](src/domain/ports/index.ts) — stable TS contracts (PlanGenerator, ProgressionEngine, ScreeningEvaluator, AdaptationEngine, AiProvider, PdfExporter, MediaProvider, PaymentProvider). Feature modules name the port; reverse import (port → adapter) is a compile error.
+- Engine versioning: every deterministic engine exports `ENGINE_VERSION` (`name@semver`). Today: programming-tier@1.0.0, programming-defaults@1.0.0, parq-plus-acsm@2023.1.0, fitt-vp-derive@1.0.0, program-next-week@1.0.0, programming-context@1.0.0. Stamp into generation_log.engine_versions + future audit_events.

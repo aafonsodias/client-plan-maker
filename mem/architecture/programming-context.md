@@ -15,4 +15,7 @@ type: feature
 
 **Migration log:**
 - `getPlanConstraints` (`src/server/plan.functions.ts`) — migrated. Now returns `source`, `rpeCeiling`, `weeksToProgress` in addition to legacy `tier`/`rpeFloors` (additive, no breaking change). Resolver also gained a fallback to the latest assessment by `client_id` when `plan.assessment_id` is null, mirroring the legacy lookup behaviour.
-- Pending: Stage 2/3/4, BriefEditor (Cockpit), PDF re-derivation, TierChip callers.
+- Stage 2/3/4 — **NOT migrated by design**. They run BEFORE a plan exists (no `planId` to resolve from), and are the canonical writers of tier into `workout_plans`. Once the plan is persisted, all downstream READ-side consumers go through `resolveProgrammingContext`. Direct `classifyTier`/`rpeFloors` calls inside the generation pipeline are correct usage.
+- Pending (read-side, low priority): BriefEditor Cockpit tooltip (could surface `source.tier`), PDF tier chip, `PlanEditorSurface` constraints display. None are bugs today — just nice-to-have provenance.
+
+**Closure criterion:** R-A is functionally complete. The "tier divergent in 3 places" bug class is closed because every read-side consumer (chips, PDF, constraints API) now derives from the same persisted plan + the same reconciler.

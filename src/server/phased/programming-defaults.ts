@@ -2,6 +2,10 @@ import type { Brief } from "./schemas";
 import type { ProgrammingVariables, RedFlagAccommodation } from "./schemas";
 import type { KnowledgeRules } from "@/server/knowledge/schema";
 
+/** Engine version stamped into generation_log + audit_events.
+ *  Covers deriveStartingFloor + resolveCockpit + buildWavePlan + pickWaveTier. */
+export const ENGINE_VERSION = "programming-defaults@1.0.0" as const;
+
 /**
  * Fase A — "começar por baixo" determinístico.
  *

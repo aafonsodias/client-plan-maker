@@ -16,6 +16,10 @@
 
 export type Sex = "male" | "female" | string | null | undefined;
 
+/** Engine version stamped into screening_evaluations + audit_events.
+ *  Bump on any change to the algorithm decision tree or risk thresholds. */
+export const ENGINE_VERSION = "parq-plus-acsm@2023.1.0" as const;
+
 export interface SignsSymptoms {
   chest_discomfort?: boolean;
   unreasonable_dyspnea?: boolean;

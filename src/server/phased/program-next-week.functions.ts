@@ -5,6 +5,10 @@ import { logGeneration } from "./ai.server";
 import { resolveCockpit } from "./programming-defaults";
 import { resolveRules } from "@/server/knowledge/resolve.server";
 
+/** Engine version stamped into generation_log + audit_events.
+ *  Bump on adherence floor, drift threshold, or cut-percentage changes. */
+export const ENGINE_VERSION = "program-next-week@1.0.0" as const;
+
 /**
  * R65 — Deterministic next-week generator.
  *

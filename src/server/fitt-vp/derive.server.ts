@@ -17,6 +17,10 @@ import type { PreparticipationResult } from "@/server/screening/preparticipation
 
 export type CitationSource = "acsm_12e" | "bompa_6e" | "nsca_3e";
 
+/** Engine version stamped into generation_log + audit_events.
+ *  Bump on threshold catalogue changes or FITT-VP derivation logic. */
+export const ENGINE_VERSION = "fitt-vp-derive@1.0.0" as const;
+
 export interface Citation {
   source: CitationSource;
   ref: string;
