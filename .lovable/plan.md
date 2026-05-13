@@ -1,114 +1,85 @@
+## Diagnóstico
 
-# Fundação do Protocol e gate de MVP
+A landing actual está bonita mas fala em princípios ("Triagem clínica. Protocolo defensável. Adaptação semanal.") sem dizer **o que é** o Protocol nem **o que cada lado recebe**. Falta:
 
-Documento único que fixa: (1) o que o produto **é**, (2) a arquitectura mínima que o sustenta, (3) o que tem de estar a funcionar para sair de beta privado. Tudo o resto é gordura adiável.
+- Uma frase que defina o produto numa linha (PT lê e sabe se serve).
+- O que o **PT** ganha em termos concretos (avaliação guiada, plano gerado em ~90s, PDF com a marca dele, portal do cliente, adaptação automática semana a semana).
+- O que o **cliente** ganha (página própria com próxima sessão, plano em PDF, histórico, sem app a instalar).
 
-## 1. Identidade do produto (uma frase)
+Mantemos o tom editorial-clínico, sem comparações com terceiros (memória `non-adversarial`), sem "vs", sem matriz competitiva.
 
-> Software para personal trainers gerarem, em 90 segundos, planos de treino cientificamente defensáveis a partir de uma avaliação real do cliente — com a marca do treinador no PDF.
+## Mudança proposta
 
-Três coisas, e só estas, justificam o preço:
-1. **Avaliação ACSM-grade adaptada ao equipamento disponível** (não "quick plan").
-2. **Prescrição com base em evidência** (Bompa wave, NSCA increments, RPE auto-regulado).
-3. **PDF white-label** que o treinador entrega com o nome dele.
+Manter o design e a estrutura de secções a ecrã cheio. Reescrever copy + **inserir uma secção nova "O que recebe"** entre Princípios e o Ciclo. Total passa de 5 para 6 secções — actualizar numeração `01/06 … 06/06`.
 
-Tudo o que não serve um destes três pilares é distracção até haver 50 PTs a pagar.
+### Secção 1 — Hero (reescrita)
 
-## 2. As 5 fronteiras do sistema (não negociáveis)
+- **eyebrow**: "Para personal trainers" → manter.
+- **line1 / line2 / line3** (display, com line3 em âmbar):
+  - "Avaliação estruturada."
+  - "Plano em 90 segundos."
+  - "Adaptação semana a semana."
+- **subhead** (frase-definição, nova): "Protocol é o sistema que liga avaliação, plano e execução num só fluxo — para o treinador trabalhar com método, e o cliente saber sempre o próximo passo."
+- **body**: "Você conduz a avaliação. O Protocol monta o programa em fases editáveis, gera o PDF com a sua marca e entrega ao cliente uma página própria. Cada série registada informa a semana seguinte."
+- **CTA**: "Pedir acesso" → manter.
 
-```text
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│  Assessment  │──▶│    Brief     │──▶│ Programming  │
-│   (input)    │   │  (AI síntese)│   │ (determ. ctx)│
-└──────────────┘   └──────────────┘   └──────────────┘
-                                              │
-                                              ▼
-┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-│     PDF      │◀──│  ViewModel   │◀──│ Microcycle + │
-│   + /me      │   │   (puro)     │   │ Progressions │
-└──────────────┘   └──────────────┘   └──────────────┘
-```
+### Secção 2 — NOVA: "O que recebe"
 
-Regra: **cada caixa lê apenas da caixa anterior, através de um tipo Zod versionado.** Se a Stage 3 precisa de algo da Assessment, passa pela Brief. Sem atalhos, sem `generation_meta` como saco de gatos.
+Layout: duas colunas no desktop (`md:grid-cols-12`, col 2-6 / col 7-11), uma coluna no mobile. Mesma tipografia das outras secções (eyebrow + sub-display + lista de 3-4 bullets compactos `editorial-body`).
 
-## 3. Arquitectura mínima (o que tem de existir)
+- **eyebrow**: "O que recebe"
+- **Coluna esquerda — "O treinador"**
+  - Avaliação guiada: PAR-Q+, ACSM, antropometria, mapa de 11 capacidades.
+  - Plano em fases editáveis: Brief, Blueprint, Microciclo, Progressões — aprova cada uma.
+  - PDF com a sua marca, logo e cor — pronto a enviar.
+  - Painel de clientes, sessões e blocos sem dispersão entre ferramentas.
+- **Coluna direita — "O cliente"**
+  - Página própria com a próxima sessão e o plano da semana.
+  - Histórico de sessões, sensações e progresso visíveis.
+  - Plano em PDF, sempre actualizado, sem app a instalar.
+  - Continuidade entre blocos: cada novo programa nasce do anterior.
 
-| Camada | Ficheiro único | Responsabilidade |
-|---|---|---|
-| Tipos | `src/server/contract.ts` | Zod schemas v1 para Assessment, Brief, ProgrammingCtx, Blueprint, Microcycle, Progressions, ViewModel |
-| Resolução | `src/server/programming-context.server.ts` | `resolveProgrammingContext(planId)` → `{tier, rpeFloor, rpeCeiling, weeksToProgress, source}` |
-| Matriz de campos | `src/lib/assessment-matrix.ts` | Tabela declarativa: `field → required_for → derives_to → blocks_finish_when` |
-| View-model | `src/lib/plan-view-model.ts` | `buildPlanViewModel(planId)` puro, sem AI, sem fetches extra |
-| Renderers | `src/lib/pdf.ts` + `src/components/PlanCard.tsx` | Só desenham. Zero lógica derivada |
-| Criação de planos | `src/server/create-plan.functions.ts` | `createPlan({kind: "first"|"block_n+1"|"clone", parentId?})` — único caminho |
-| Telemetria | `generation_log` | Toda a chamada AI escreve: stage, model, tokens, ms, retries |
+Indicador inferior: `02 / 06`.
 
-Estes 7 pontos resolvem 80% dos bugs estruturais que apareceram nos últimos rounds (label "Day N", tier divergente, PDF re-derivar, lineage partido).
+### Secção 3 — Princípios (era 02)
 
-## 4. AI vs determinístico (linha vermelha)
+Manter cards 01/02/03 mas afinar copy para descrever **prática**, não slogan:
 
-| Etapa | Quem decide | Porquê |
-|---|---|---|
-| Brief (síntese) | AI | Subjectivo, linguagem |
-| Programming context (tier, floors, deload) | Determinístico | Prescritível, auditável |
-| Blueprint (arquétipos, mapa semana) | AI | Combinatória |
-| Microcycle Semana 1 | AI | Selecção de exercícios |
-| Semanas 2–N | Determinístico (Bompa wave + NSCA) | Não há razão para LLM aqui |
-| Auto-regulação semana seguinte | Determinístico (RPE drift) | Já está em `programNextWeek` |
-| ViewModel + PDF | Puro | Render é sagrado |
+- 01 "Triagem antes de prescrição." → manter; body: "PAR-Q+ e estratificação ACSM antes de gerar qualquer plano. Vermelhas, amarelas e verdes ficam visíveis no plano."
+- 02 "Fases editáveis, não caixa-preta." → body: "Brief, Blueprint, Microciclo, Progressões e Bulkfill. Vê, ajusta e aprova cada fase antes de a próxima começar."
+- 03 "Adaptação por regras, não por palpite." → body: "Onda de Bompa, incrementos NSCA por categoria e leitura do logbook real. A IA não decide cargas sozinha."
 
-**AI nunca gera mais que 1 microciclo.** Já está na memória core; aqui fica como contrato arquitectural.
+Indicador: `03 / 06`.
 
-## 5. Gate de MVP (o que tem de fechar para abrir beta paga)
+### Secção 4 — Ciclo (era 03)
 
-Critério: um PT estranho cria conta, paga, e em 30 minutos entrega um PDF com o nome dele a um cliente real, **sem ajuda humana**.
+Manter figura. Headline: "Cada semana é informada pela anterior." → manter. Quote: trocar por algo mais concreto: "Adesão, RPE e carga real do logbook entram como input duro na semana seguinte." Indicador: `04 / 06`.
 
-### P0 — bloqueia lançamento
-1. **Onboarding do PT em < 5 min**: sign-up → upload de logo + nome do estúdio → primeiro cliente.
-2. **Avaliação no-equipment baseline** funciona end-to-end (chair stand, sit-and-reach, 6MWT, RPE-anchored capacity). Sem isto, não há "ACSM-grade".
-3. **Pipeline AI completo num plano** sem retries manuais (Brief→Blueprint→Microcycle Sem.1→Progressions determinísticas).
-4. **PDF white-label** com logo, nome, cor primária, tagline do PT — labels PT-PT corretas ("Sessão N · Foco", nunca "Day N").
-5. **`/me` (casa do cliente)** funcional em modo self: hero do plano + próxima sessão + esta semana.
-6. **Quota + billing**: free = 1 plano, Starter/Pro/Studio com Stripe a cobrar e a desbloquear.
-7. **Reset de estado fiável**: aprovar etapa 2 invalida etapas 3-5 (já parcialmente feito; auditar).
-8. **Smoke 375px Mobile Safari**: criar plano completo no telemóvel sem partir layout.
+### Secção 5 — Capacity Map (era 04)
 
-### P1 — pode esperar 2-4 semanas pós-lançamento
-- Bloco N+1 com adaptação (já existe; refinar UX da transição).
-- Intensity Cockpit visível (já existe; só falta tour).
-- Multi-modalidade gym + running.
-- Reavaliação a 14 dias com chip "due".
+Manter visual. Sub-copy mais direta no `body`:
+"O Capacity Map situa o cliente em 11 domínios com normas etárias e de género. Cada avaliação preenche mais do mapa, e o plano segue o que está medido — não o que se assume." Indicador: `05 / 06`.
 
-### P2 — explicitamente fora do MVP
-- Conjugate periodisation.
-- DXA / force plate / dynamometer (gated por equipment).
-- Education layer no PDF do cliente.
-- Schedule + revenue (já mock; manter mock até haver pedido real).
-- Exercise media library (vídeos próprios).
-- ES/HI nativos (LLM-translated chega).
+### Secção 6 — Fecho (era 05)
 
-## 6. Princípios operacionais (já core, recordar)
+- Headline: "Um sistema, do primeiro contacto à semana 12."
+- Subhead: "Beta privada por convite. Vagas limitadas esta semana."
+- CTA: "Pedir acesso".
+- Indicador: `06 / 06`.
 
-- **Decision order**: looks → function → ease.
-- **1 concern por round.** Não misturar refactor com feature.
-- **Backup antes de qualquer SQL prod.**
-- **Tudo via `t()` desde o primeiro caractere.**
-- **Toda a chamada AI escreve `generation_log`.**
-- **No "quick plan".** O produto é avaliação → prescrição. Sempre.
+## Detalhes técnicos
 
-## 7. Caminho de execução sugerido (4 rounds)
+- Ficheiros tocados:
+  - `src/i18n/locales/pt/plan.json` → bloco `landing_v2` reescrito + nova chave `value` (PT/cliente).
+  - `src/i18n/locales/en/plan.json` → espelho EN (PT-PT é fonte para landing, mas EN tem de bater certo).
+  - `src/i18n/locales/es/plan.json` e `hi/plan.json` → traduzir as novas chaves para não cair em fallback EN no meio da página.
+  - `src/routes/index.tsx` → adicionar nova `<section>` "O que recebe" depois dos Princípios; renumerar todos os indicadores `0X / 06`.
+- Sem tokens novos, sem componentes novos, sem mudanças de design system — só copy + 1 secção a usar grelha já existente.
+- Memórias respeitadas: non-adversarial (zero menção a Excel/ChatGPT/apps), one-loud-moment (continua um único acento âmbar por secção), landing PT-only headline mas i18n completa para as outras locales.
+- Não toca em qualquer lógica de servidor, auth, ou plano.
 
-| Round | Foco | Saída |
-|---|---|---|
-| R-A | Tipos + `resolveProgrammingContext` + matriz declarativa | Refactor invisível, zero feature nova; base para o resto |
-| R-B | `buildPlanViewModel` + PDF/UI a consumir só dele | Bug "Day N" e similares desaparecem estruturalmente |
-| R-C | `createPlan` único + auditoria do reset de estado downstream | Lineage estável, aprovações comportam-se sempre igual |
-| R-D | MVP gate P0 (onboarding sub-5min + smoke Mobile Safari + Stripe end-to-end) | Pronto para abrir beta paga |
+## Fora do âmbito
 
-Cada round tem critério de "feito" objectivo (tipo OK, smoke 375px OK, generation_log a escrever, PDF visualmente conferido). Sem isto, não fechamos.
-
----
-
-## Pergunta para o utilizador antes de começar
-
-Concorda em começar pelo **R-A (refactor de tipos + programming context + matriz)**? É invisível para o utilizador final mas é a única via de não voltarmos a corrigir o mesmo bug em 3 sítios. Se preferir começar pelo gate de MVP (R-D), dizemos isso explicitamente e adiamos o refactor — sabendo que cada feature nova adiciona dívida.
+- Não adiciono testimonials, logos ou números (memória: sem fake social proof).
+- Não mexo em fontes, paleta, animações ou na figura do loop / radar.
+- Não toco no header/footer além do que já existe.

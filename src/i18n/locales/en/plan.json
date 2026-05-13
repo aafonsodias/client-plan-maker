@@ -737,12 +737,33 @@
   "landing_v2": {
     "hero": {
       "eyebrow": "For personal trainers",
-      "line1": "Clinical screening.",
-      "line2": "Defensible protocol.",
-      "line3": "Weekly adaptation.",
-      "subhead": "From assessment to plan, with visible logic.",
-      "body": "You run the assessment. Protocol builds the program. Every set logged feeds the next week.",
+      "line1": "Structured assessment.",
+      "line2": "Plan in 90 seconds.",
+      "line3": "Week-by-week adaptation.",
+      "subhead": "Protocol is the system that connects assessment, plan, and execution in a single flow — so the coach works with method, and the client always knows the next step.",
+      "body": "You run the assessment. Protocol builds the program in editable stages, generates the PDF with your brand, and gives the client a page of their own. Every logged set informs the next week.",
       "cta": "Request access"
+    },
+    "value": {
+      "eyebrow": "What you get",
+      "trainer": {
+        "title": "The coach",
+        "items": [
+          "Guided assessment: PAR-Q+, ACSM stratification, anthropometrics, and an 11-capacity map.",
+          "Plan in editable stages — Brief, Blueprint, Microcycle, Progressions — you approve each one.",
+          "PDF with your brand, logo, and color, ready to send.",
+          "One panel for clients, sessions, and blocks — no fragmentation between tools."
+        ]
+      },
+      "client": {
+        "title": "The client",
+        "items": [
+          "A page of their own with the next session and this week's plan.",
+          "Session history, sensations, and progress always visible.",
+          "PDF plan refreshed every week — no app to install.",
+          "Continuity between blocks — each new program is born from the previous one."
+        ]
+      }
     },
     "principles": {
       "eyebrow": "Principles",
@@ -750,17 +771,17 @@
         {
           "n": "01",
           "title": "Screening before prescription.",
-          "body": "PAR-Q+ and ACSM 12e before any plan. No clinical shortcut."
+          "body": "PAR-Q+ and ACSM stratification before any plan is generated. Red, yellow, and green flags stay visible inside the plan."
         },
         {
           "n": "02",
-          "title": "Five editable stages.",
-          "body": "Brief, Blueprint, Microcycle, Progressions, Bulkfill. You approve each one."
+          "title": "Editable stages, not a black box.",
+          "body": "Brief, Blueprint, Microcycle, Progressions, and Bulkfill. See, adjust, and approve each stage before the next one starts."
         },
         {
           "n": "03",
-          "title": "Deterministic adaptation.",
-          "body": "Bompa wave and NSCA increments per category. No AI improvisation."
+          "title": "Adaptation by rules, not guesswork.",
+          "body": "Bompa wave, NSCA increments per category, and real logbook readings. The AI does not decide loads on its own."
         }
       ]
     },
@@ -774,17 +795,17 @@
         "Logbook",
         "Next week"
       ],
-      "quote": "The trainer approves every stage. The AI does not write the plan alone."
+      "quote": "Adherence, RPE, and actual load from the logbook flow in as hard input to the following week."
     },
     "capacity": {
       "eyebrow": "Assessment",
       "headline": "11 capacities. A map that evolves.",
-      "body": "The Capacity Map locates each client across 11 domains, with age- and sex-specific norms. Every assessment fills in more of the map. The plan follows what is measured — not what is assumed.",
+      "body": "The Capacity Map places each client across 11 domains with age- and sex-specific norms. Every assessment fills in more of the map, and the plan follows what is measured — not what is assumed.",
       "caption": "Trainer dashboard view."
     },
     "close": {
-      "headline": "Honest. Defensible. Reproducible.",
-      "subhead": "Private beta. No public domain. Invite only.",
+      "headline": "One system, from first contact to week 12.",
+      "subhead": "Private beta, by invitation. Limited slots this week.",
       "cta": "Request access"
     },
     "footer": {

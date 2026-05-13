@@ -737,12 +737,33 @@
   "landing_v2": {
     "hero": {
       "eyebrow": "Para personal trainers",
-      "line1": "Triagem clínica.",
-      "line2": "Protocolo defensável.",
-      "line3": "Adaptação semanal.",
-      "subhead": "Da avaliação ao plano, com lógica visível.",
-      "body": "Você executa a avaliação. O Protocol constrói o programa. Cada série registada alimenta a semana seguinte.",
+      "line1": "Avaliação estruturada.",
+      "line2": "Plano em 90 segundos.",
+      "line3": "Adaptação semana a semana.",
+      "subhead": "Protocol é o sistema que liga avaliação, plano e execução num só fluxo — para o treinador trabalhar com método, e o cliente saber sempre o próximo passo.",
+      "body": "Você conduz a avaliação. O Protocol monta o programa em fases editáveis, gera o PDF com a sua marca e entrega ao cliente uma página própria. Cada série registada informa a semana seguinte.",
       "cta": "Pedir acesso"
+    },
+    "value": {
+      "eyebrow": "O que recebe",
+      "trainer": {
+        "title": "O treinador",
+        "items": [
+          "Avaliação guiada: PAR-Q+, estratificação ACSM, antropometria e mapa de 11 capacidades.",
+          "Plano em fases editáveis — Brief, Blueprint, Microciclo, Progressões — você aprova cada uma.",
+          "PDF com a sua marca, logo e cor, pronto a enviar ao cliente.",
+          "Painel único de clientes, sessões e blocos, sem dispersão entre ferramentas."
+        ]
+      },
+      "client": {
+        "title": "O cliente",
+        "items": [
+          "Página própria com a próxima sessão e o plano da semana.",
+          "Histórico de sessões, sensações e progresso sempre visíveis.",
+          "Plano em PDF actualizado a cada semana, sem app a instalar.",
+          "Continuidade entre blocos — cada novo programa nasce do anterior."
+        ]
+      }
     },
     "principles": {
       "eyebrow": "Princípios",
@@ -750,17 +771,17 @@
         {
           "n": "01",
           "title": "Triagem antes de prescrição.",
-          "body": "PAR-Q+ e ACSM 12e antes de qualquer plano. Sem atalho clínico."
+          "body": "PAR-Q+ e estratificação ACSM antes de gerar qualquer plano. Bandeiras vermelhas, amarelas e verdes ficam visíveis no plano."
         },
         {
           "n": "02",
-          "title": "Cinco fases editáveis.",
-          "body": "Brief, Blueprint, Microciclo, Progressões, Bulkfill. Aprova cada uma."
+          "title": "Fases editáveis, não caixa-preta.",
+          "body": "Brief, Blueprint, Microciclo, Progressões e Bulkfill. Vê, ajusta e aprova cada fase antes da próxima começar."
         },
         {
           "n": "03",
-          "title": "Adaptação determinística.",
-          "body": "Onda Bompa e incrementos NSCA por categoria. Não improviso de IA."
+          "title": "Adaptação por regras, não por palpite.",
+          "body": "Onda de Bompa, incrementos NSCA por categoria e leitura do logbook real. A IA não decide cargas sozinha."
         }
       ]
     },
@@ -774,17 +795,17 @@
         "Logbook",
         "Próxima semana"
       ],
-      "quote": "O treinador aprova cada fase. A IA não escreve o plano sozinha."
+      "quote": "Adesão, RPE e carga real do logbook entram como input duro na semana seguinte."
     },
     "capacity": {
       "eyebrow": "Avaliação",
       "headline": "11 capacidades. Mapa que evolui.",
-      "body": "O Capacity Map localiza o cliente em 11 domínios, com normas etárias e de género. Cada avaliação preenche mais do mapa. O plano segue o que está medido — não o que se assume.",
+      "body": "O Capacity Map situa o cliente em 11 domínios, com normas etárias e de género. Cada avaliação preenche mais do mapa, e o plano segue o que está medido — não o que se assume.",
       "caption": "Visualização do dashboard do treinador."
     },
     "close": {
-      "headline": "Honesto. Defensável. Reproduzível.",
-      "subhead": "Beta privada. Sem domínio público. Acesso por convite.",
+      "headline": "Um sistema, do primeiro contacto à semana 12.",
+      "subhead": "Beta privada por convite. Vagas limitadas esta semana.",
       "cta": "Pedir acesso"
     },
     "footer": {
