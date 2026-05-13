@@ -41,11 +41,18 @@ type: feature
 
 1. ✅ `session_set_logs` table created (RLS: trainer manage, client read).
    Engine prefers set logs when present, falls back to `entries` jsonb.
-   **Pendente:** writer at `/log/$token` (per-set ingest + recompute hooks).
+   ✅ Writer wired in `saveClientSession` (finalize path): mirrors v2 `sets[]`
+   into `session_set_logs` (slug + inferred pattern + prescribed/actual
+   load/reps/RPE + pain_flag derived from `felt==='hard' && rpe>=9.5`).
+   Idempotent on re-finalize via DELETE-by-session_id.
 2. ✅ `archivePlanAndStartNextBlock` calls `proposeNextBlock` and stamps
    the proposal onto `workout_plans.generation_meta.next_block_proposal` +
-   `adaptation_engine_version`. **Pendente:** Stage 3 do bloco N+1 ler a
-   proposta como hard input.
+   `adaptation_engine_version`. ✅ Stage 3 do bloco N+1 lê
+   `generation_meta.next_block_proposal` e injecta um bloco "ADAPTATION
+   ENGINE — TREAT AS HARD INPUT" no system prompt (per-pattern load/sets/RPE
+   nudges + flag de deload). Threaded em `runDay()` e propagado em ambas as
+   call sites (`generateMicrocycleDay` + `generateMicrocycleDays` incl. retry
+   anti-stale).
 3. Movement-pattern field on each exercise (today inferred from name
    regex or read from set log column). Replace `inferPattern` once
    exercises carry canonical patterns.
