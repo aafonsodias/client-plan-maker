@@ -6,6 +6,7 @@ import { runDemoPlay } from "@/server/demo-play.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { summarizePriorBlock, verdictLabelPt } from "@/lib/block-feedback";
 import { MUSCLE_GROUP_LABELS_PT } from "@/lib/volume-landmarks";
+import { adaptationEngine } from "@/server/adaptation/propose-next-block.server";
 
 /**
  * archivePlanAndStartNextBlock — closes the current plan as "archived" and
@@ -105,6 +106,20 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
 
     const nextBlock = ((prior as any).block_number ?? 1) + 1;
 
+    // Deterministic adaptation proposal — read prior block's logged data and
+    // produce a structured prescriptionDiff + transitionPrompt. Stage 3 of
+    // the next block consumes this via generation_meta.next_block_proposal.
+    let proposal: Awaited<ReturnType<typeof adaptationEngine.proposeNextBlock>> | null = null;
+    try {
+      proposal = await adaptationEngine.proposeNextBlock({
+        trainerId: userId,
+        clientId: (prior as any).client_id,
+        priorPlanId: data.priorPlanId,
+      });
+    } catch (e) {
+      console.error("[archivePlanAndStartNextBlock] adaptation engine failed", e);
+    }
+
     // Run the phased pipeline against the existing client. Pass priorPlanId
     // so runDemoPlay stamps the per-muscle verdict map onto generation_meta;
     // Stage 2/3 prompts read it to adapt the volume prescription.
@@ -131,6 +146,10 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .maybeSingle();
     const curMeta = ((curPlanRow as any)?.generation_meta ?? {}) as Record<string, any>;
     if (nextBlock >= 4) curMeta.suggest_main_lift_swap = true;
+    if (proposal) {
+      curMeta.next_block_proposal = proposal;
+      curMeta.adaptation_engine_version = adaptationEngine.version;
+    }
     await supabaseAdmin
       .from("workout_plans")
       .update({
