@@ -349,7 +349,7 @@ export const saveClientSession = createServerFn({ method: "POST" })
     // Per-set log mirror — only on finalize, only for v2 entries with sets[].
     // Powers the deterministic adaptation engine (e1RM, RPE drift, pain flags)
     // without touching the legacy entries jsonb.
-    if (data.status !== "in_progress" && plan.client_id) {
+    if (plan.client_id) {
       try {
         const setRows: Array<Record<string, unknown>> = [];
         for (const entry of data.entries) {
