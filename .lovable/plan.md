@@ -1,92 +1,114 @@
-## Goal
 
-Bring the client-link intake (`/intake/$token`) closer to the PT's richer in-app assessment, keep both sides bidirectionally in sync without losing the other's edits, force the slides into the visitor's language (PT/PT-BR → pt, anything else → en), and make missing required fields visually impossible to miss with a clear "go here" pointer.
+# Fundação do Protocol e gate de MVP
 
-## Current state (from the audit)
+Documento único que fixa: (1) o que o produto **é**, (2) a arquitectura mínima que o sustenta, (3) o que tem de estar a funcionar para sair de beta privado. Tudo o resto é gordura adiável.
 
-- `src/routes/intake.$token.tsx` runs a 17-slide flow covering: identity, mode, photo, SMART, readiness, training setup, equipment, injuries (already uses `InjuriesSlide` with the body map), PAR-Q, meds, sleep, stress, lifestyle, nutrition, reference photos, review.
-- The PT-side assessment (`src/routes/clients_.$clientId.tsx`) has 15 sections; client-link is missing: training history (years_training / previous_program_style / max_lifts), anthropometry (height / weight / waist / hip), self-rated mobility (the 5 ext_mob_* scores), perceived posture / known imbalances, performance self-report.
-- `src/server/intake.functions.ts` whitelists writeable fields and already has a `provenance` map ('client' vs 'trainer-edited') in `assessment.extended`. So merge logic is partially built.
-- Conflict bug: on reopen, `setForm((cur) => ({ ...cur, ...localStorageDraft }))` blindly overrides the server-fresh form, so any PT edit made after the client started is silently overwritten on the next debounced save.
-- i18n: locale is auto-applied from `navigator.language` slice(0,2), so `pt-BR` already maps to `pt`. But a stale `protocol.locale=en` in localStorage from a previous visit pins the client to EN.
-- Missing-field UX on the intake side: nothing today. The Review slide just shows "—". The Next button greys out without saying which field is wrong.
+## 1. Identidade do produto (uma frase)
 
-## Scope (this round only)
+> Software para personal trainers gerarem, em 90 segundos, planos de treino cientificamente defensáveis a partir de uma avaliação real do cliente — com a marca do treinador no PDF.
 
-Frontend + intake server-fn whitelist. No DB schema changes. No PT-side rewrites. No PDF changes.
+Três coisas, e só estas, justificam o preço:
+1. **Avaliação ACSM-grade adaptada ao equipamento disponível** (não "quick plan").
+2. **Prescrição com base em evidência** (Bompa wave, NSCA increments, RPE auto-regulado).
+3. **PDF white-label** que o treinador entrega com o nome dele.
 
-## Plan
+Tudo o que não serve um destes três pilares é distracção até haver 50 PTs a pagar.
 
-### 1. Lock intake locale to client's system language
+## 2. As 5 fronteiras do sistema (não negociáveis)
 
-In the intake page only (`src/routes/intake.$token.tsx`), before the first paint of slides:
-- Read `navigator.language`. If it starts with `pt` (covers `pt`, `pt-PT`, `pt-BR`) → call `i18n.changeLanguage("pt")`. Else → `"en"`.
-- Do NOT persist this choice to `localStorage` for the intake route — it's a per-visitor decision, not a global preference. We add an `intakeLocaleApplied` ref so we don't re-trigger on every render.
-- This overrides any stale `protocol.locale` value from a previous Protocol visit on the same browser.
+```text
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│  Assessment  │──▶│    Brief     │──▶│ Programming  │
+│   (input)    │   │  (AI síntese)│   │ (determ. ctx)│
+└──────────────┘   └──────────────┘   └──────────────┘
+                                              │
+                                              ▼
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│     PDF      │◀──│  ViewModel   │◀──│ Microcycle + │
+│   + /me      │   │   (puro)     │   │ Progressions │
+└──────────────┘   └──────────────┘   └──────────────┘
+```
 
-### 2. Bring richer PT sections into the intake slideshow
+Regra: **cada caixa lê apenas da caixa anterior, através de um tipo Zod versionado.** Se a Stage 3 precisa de algo da Assessment, passa pela Brief. Sem atalhos, sem `generation_meta` como saco de gatos.
 
-Add 5 new slides between current slide 15 (Nutrition) and the existing reference-photos slide. Each slide reuses i18n keys from `src/i18n/locales/{en,pt}/intake.json` (we'll add the missing ones; PT mirrors EN structure).
+## 3. Arquitectura mínima (o que tem de existir)
 
-| New slide | Fields written | Notes |
+| Camada | Ficheiro único | Responsabilidade |
 |---|---|---|
-| Training history | `years_training` (int 0–80), `previous_program_style` (free text, optional) | Both sliders + free text |
-| Body metrics | `waist_cm`, `hip_cm`, `body_fat_pct` (all optional, all `extended.*` so no schema change risk) | Light explanation + tape-measure illustration (CSS only) |
-| Mobility self-rating | 5 × 1–5 sliders for `ext_mob_squat`, `ext_mob_overhead`, `ext_mob_hip_hinge`, `ext_mob_hamstring`, `ext_mob_ankle` (stored in `extended`) | Inline rubric copied from PT side (`mobility_block.rubric`) so client and PT see the same wording |
-| Perceived posture | `standing_posture_notes` + `known_imbalances` + `dominant_side` (`L/R/Both`), all to `extended` | Optional, with a 3-line explanation of why it matters |
-| Performance self-report | `current_capacity_vs_pb` (1–10 slider, already validated server-side) + `max_lifts` free text (optional, to `extended`) | Slider explanation: "10 = best ever; 1 = the worst I've felt" |
+| Tipos | `src/server/contract.ts` | Zod schemas v1 para Assessment, Brief, ProgrammingCtx, Blueprint, Microcycle, Progressions, ViewModel |
+| Resolução | `src/server/programming-context.server.ts` | `resolveProgrammingContext(planId)` → `{tier, rpeFloor, rpeCeiling, weeksToProgress, source}` |
+| Matriz de campos | `src/lib/assessment-matrix.ts` | Tabela declarativa: `field → required_for → derives_to → blocks_finish_when` |
+| View-model | `src/lib/plan-view-model.ts` | `buildPlanViewModel(planId)` puro, sem AI, sem fetches extra |
+| Renderers | `src/lib/pdf.ts` + `src/components/PlanCard.tsx` | Só desenham. Zero lógica derivada |
+| Criação de planos | `src/server/create-plan.functions.ts` | `createPlan({kind: "first"|"block_n+1"|"clone", parentId?})` — único caminho |
+| Telemetria | `generation_log` | Toda a chamada AI escreve: stage, model, tokens, ms, retries |
 
-Drawings = lightweight inline SVG/CSS (tape-measure for anthro, body silhouette for posture). No new image assets.
+Estes 7 pontos resolvem 80% dos bugs estruturais que apareceram nos últimos rounds (label "Day N", tier divergente, PDF re-derivar, lineage partido).
 
-Server-fn whitelist (`ALLOWED_FIELDS` in `intake.functions.ts`) gets these new top-level columns: `years_training`, `waist_cm`, `hip_cm`, `body_fat_pct`, `current_capacity_vs_pb`. Everything else stays inside `extended` (already permitted). Add matching `FIELD_SCHEMAS` entries.
+## 4. AI vs determinístico (linha vermelha)
 
-### 3. Fix bidirectional sync (no PT/client write-overs)
+| Etapa | Quem decide | Porquê |
+|---|---|---|
+| Brief (síntese) | AI | Subjectivo, linguagem |
+| Programming context (tier, floors, deload) | Determinístico | Prescritível, auditável |
+| Blueprint (arquétipos, mapa semana) | AI | Combinatória |
+| Microcycle Semana 1 | AI | Selecção de exercícios |
+| Semanas 2–N | Determinístico (Bompa wave + NSCA) | Não há razão para LLM aqui |
+| Auto-regulação semana seguinte | Determinístico (RPE drift) | Já está em `programNextWeek` |
+| ViewModel + PDF | Puro | Render é sagrado |
 
-Server side (`saveIntake`):
-- Already loads `existing.extended.provenance`. Extend the merge: build a per-field `provenance` for top-level columns too, not just sections. A column whose provenance is `trainer-edited` and whose value differs from `cleaned[k]` is **rejected for that field** (the trainer's value is preserved; we still save the rest). Logged but silent to the client.
+**AI nunca gera mais que 1 microciclo.** Já está na memória core; aqui fica como contrato arquitectural.
 
-Client side (`fromAssessment` / hydration):
-- After `loadIntake`, also fetch `provenance` from `extended`. When merging localStorage draft over the server form, do NOT clobber any field whose provenance says `trainer-edited`. That is, draft is only allowed to set fields the server form has empty OR fields the client previously owned.
-- Remove blind localStorage spread; replace with a per-field merge helper.
+## 5. Gate de MVP (o que tem de fechar para abrir beta paga)
 
-Result: PT can edit while the client has a draft open; on next client save, the trainer's edits survive, and the client only writes back fields they actually changed.
+Critério: um PT estranho cria conta, paga, e em 30 minutos entrega um PDF com o nome dele a um cliente real, **sem ajuda humana**.
 
-### 4. Missing-field high-attention guidance
+### P0 — bloqueia lançamento
+1. **Onboarding do PT em < 5 min**: sign-up → upload de logo + nome do estúdio → primeiro cliente.
+2. **Avaliação no-equipment baseline** funciona end-to-end (chair stand, sit-and-reach, 6MWT, RPE-anchored capacity). Sem isto, não há "ACSM-grade".
+3. **Pipeline AI completo num plano** sem retries manuais (Brief→Blueprint→Microcycle Sem.1→Progressions determinísticas).
+4. **PDF white-label** com logo, nome, cor primária, tagline do PT — labels PT-PT corretas ("Sessão N · Foco", nunca "Day N").
+5. **`/me` (casa do cliente)** funcional em modo self: hero do plano + próxima sessão + esta semana.
+6. **Quota + billing**: free = 1 plano, Starter/Pro/Studio com Stripe a cobrar e a desbloquear.
+7. **Reset de estado fiável**: aprovar etapa 2 invalida etapas 3-5 (já parcialmente feito; auditar).
+8. **Smoke 375px Mobile Safari**: criar plano completo no telemóvel sem partir layout.
 
-Two layers:
+### P1 — pode esperar 2-4 semanas pós-lançamento
+- Bloco N+1 com adaptação (já existe; refinar UX da transição).
+- Intensity Cockpit visível (já existe; só falta tour).
+- Multi-modalidade gym + running.
+- Reavaliação a 14 dias com chip "due".
 
-**A. Per-slide inline:** when `Next` is disabled because `isValid()` fails, render below the body a one-line amber chip ("Falta preencher: <field name>") with a pulse animation. Re-uses the amber 500/30 border + 500/10 fill convention already in this file (PAR-Q warning, line 419/1353), so visual language stays consistent.
+### P2 — explicitamente fora do MVP
+- Conjugate periodisation.
+- DXA / force plate / dynamometer (gated por equipment).
+- Education layer no PDF do cliente.
+- Schedule + revenue (já mock; manter mock até haver pedido real).
+- Exercise media library (vídeos próprios).
+- ES/HI nativos (LLM-translated chega).
 
-**B. Review slide:** turn each "—" row into an interactive button — when clicked, jumps the slideshow back to the originating step. Style empty rows with the amber palette + "Toca para preencher" CTA. Required-but-blank rows are amber; optional-but-blank stay muted grey. Reuse the `MissingItem` shape from `src/lib/assessment-completion.ts` for symmetry with the PT side (no import — just same naming so future merge is easy).
+## 6. Princípios operacionais (já core, recordar)
 
-The Submit button on the last slide stays disabled until all *required* slides validate; tooltip on hover (and inline text on tap) lists the missing items by name.
+- **Decision order**: looks → function → ease.
+- **1 concern por round.** Não misturar refactor com feature.
+- **Backup antes de qualquer SQL prod.**
+- **Tudo via `t()` desde o primeiro caractere.**
+- **Toda a chamada AI escreve `generation_log`.**
+- **No "quick plan".** O produto é avaliação → prescrição. Sempre.
 
-### 5. i18n keys
+## 7. Caminho de execução sugerido (4 rounds)
 
-Add to `src/i18n/locales/en/intake.json` and `src/i18n/locales/pt/intake.json`:
-- `sections.history_*`, `sections.metrics_*`, `sections.mobility_*` (mirror PT `mobility_block.rubric`), `sections.posture_*`, `sections.performance_*`
-- `validation.required`, `validation.go_fix`, `review.tap_to_fill`, `review.missing_count`
+| Round | Foco | Saída |
+|---|---|---|
+| R-A | Tipos + `resolveProgrammingContext` + matriz declarativa | Refactor invisível, zero feature nova; base para o resto |
+| R-B | `buildPlanViewModel` + PDF/UI a consumir só dele | Bug "Day N" e similares desaparecem estruturalmente |
+| R-C | `createPlan` único + auditoria do reset de estado downstream | Lineage estável, aprovações comportam-se sempre igual |
+| R-D | MVP gate P0 (onboarding sub-5min + smoke Mobile Safari + Stripe end-to-end) | Pronto para abrir beta paga |
 
-ES/HI fall back to EN per project policy (only `plan.json` and `common.json` are translated for those locales).
+Cada round tem critério de "feito" objectivo (tipo OK, smoke 375px OK, generation_log a escrever, PDF visualmente conferido). Sem isto, não fechamos.
 
-## Out of scope (call out, don't build)
+---
 
-- DB migration (no new columns; everything reuses existing `assessments` columns or `extended` JSON).
-- PDF inclusion of the new fields (separate round).
-- The PT-side route file (`clients_.$clientId.tsx`) — read-only reference for copy + rubric.
-- Movement-screen self-test (5-criteria grids) — too high-friction for a self-serve form; PT does that in person.
-- Auto-conflict resolution UI for the PT (today they just see the latest values; that's fine).
+## Pergunta para o utilizador antes de começar
 
-## Files touched
-
-- `src/routes/intake.$token.tsx` — add 5 slides, locale-lock effect, missing-field UX, per-field merge.
-- `src/server/intake.functions.ts` — extend `ALLOWED_FIELDS`, `FIELD_SCHEMAS`, and add per-field provenance logic.
-- `src/i18n/locales/en/intake.json` and `src/i18n/locales/pt/intake.json` — new keys.
-
-## Verification
-
-- Build + typecheck.
-- Manual smoke at 375px mobile: open intake link with `navigator.language=pt-BR` → slides render in PT.
-- Simulate PT-edit-then-client-resume: PT updates `years_training`; client has stale draft; client saves; verify PT value survived.
-- Try to advance with required field empty → amber inline message appears, Next stays disabled.
-- Review slide: blank required row is amber + tappable, jumps back to that step.
+Concorda em começar pelo **R-A (refactor de tipos + programming context + matriz)**? É invisível para o utilizador final mas é a única via de não voltarmos a corrigir o mesmo bug em 3 sítios. Se preferir começar pelo gate de MVP (R-D), dizemos isso explicitamente e adiamos o refactor — sabendo que cada feature nova adiciona dívida.
