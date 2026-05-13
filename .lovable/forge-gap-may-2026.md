@@ -18,12 +18,16 @@ estar fechado._
   ligar aos eventos de domínio reais (Stage 5 complete →
   `plan_generated`, archivePlanAndStartNextBlock → `block_advanced`,
   etc.).
-- Fase 3.2 — ⚠️ scaffold de `adaptationEngine` em
-  `src/server/adaptation/propose-next-block.server.ts` +
-  `proposeNextBlock` server fn. Computa adherence + Δe1RM (Epley) + RPE
-  drift e devolve `NextBlockProposal` com diff e rationale chips.
-  **Pendente:** `session_set_logs` para per-set pain/RPE, integração
-  em `archivePlanAndStartNextBlock`, UI de revisão pelo trainer.
+- Fase 3.1 — ⚠️ tabela `session_set_logs` criada (RLS: trainer manage,
+  client read). Engine prefere set logs quando existem; cai para
+  `entries` jsonb caso contrário. **Pendente:** writer no `/log/$token`
+  (per-set ingest) + recompute hooks.
+- Fase 3.2 — ⚠️ `adaptationEngine` deterministic, integrado em
+  `archivePlanAndStartNextBlock`: a proposta (diff + transitionPrompt +
+  metrics) é stamped em `workout_plans.generation_meta.next_block_proposal`
+  e `adaptation_engine_version`. Audit event `next_block_proposed`
+  emitido. **Pendente:** Stage 3 do bloco N+1 ler a proposta como hard
+  input + UI de revisão pelo trainer antes de aprovar.
 
 ## Contexto
 
