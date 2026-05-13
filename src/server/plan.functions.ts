@@ -1844,5 +1844,8 @@ export const getPlanConstraints = createServerFn({ method: "GET" })
       tier,
       reasons,
       rpeFloors: floors,
+      source: ctx.source,
+      rpeCeiling: ctx.rpeCeiling,
+      weeksToProgress: ctx.weeksToProgress,
     };
   });
