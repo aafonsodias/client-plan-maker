@@ -56,7 +56,7 @@ const PATTERN_RULES: Array<{ pattern: MovementPattern; needles: RegExp }> = [
   { pattern: "carry", needles: /\b(carry|farmer|suitcase)\b/i },
 ];
 
-function inferPattern(exerciseName: string): MovementPattern | null {
+export function inferPattern(exerciseName: string): MovementPattern | null {
   for (const rule of PATTERN_RULES) {
     if (rule.needles.test(exerciseName)) return rule.pattern;
   }
