@@ -50,16 +50,17 @@ export interface AuditEventInput {
  */
 export async function logAuditEvent(input: AuditEventInput): Promise<void> {
   try {
-    const { error } = await supabaseAdmin.from("audit_events").insert({
+    const row = {
       trainer_id: input.trainerId,
       actor_id: input.actorId ?? null,
       event_type: input.eventType,
       entity_type: input.entityType,
       entity_id: input.entityId ?? null,
-      payload: input.payload ?? {},
-      engine_versions: input.engineVersions ?? {},
+      payload: (input.payload ?? {}) as Record<string, unknown>,
+      engine_versions: (input.engineVersions ?? {}) as Record<string, unknown>,
       upstream_hash: input.upstreamHash ?? null,
-    });
+    };
+    const { error } = await supabaseAdmin.from("audit_events").insert(row as never);
     if (error) {
       console.error("[audit] insert failed", {
         eventType: input.eventType,
