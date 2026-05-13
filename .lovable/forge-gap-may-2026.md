@@ -1,8 +1,29 @@
 # Gap a 90 dias entre o produto actual e a visão "MVP forte"
 
-_Última actualização: 2026-05-13. Documento canónico — fonte única para
+_Última actualização: 2026-05-13 (R-A2). Documento canónico — fonte única para
 priorização. Nenhum trabalho fora desta lista até o último item da fase 1
 estar fechado._
+
+## Estado actual (2026-05-13)
+
+- Fase 1 (1.1, 1.2, 1.3) — ✅ fechada. `resolveProgrammingContext` é a única
+  fonte para read-side; engines determinísticos exportam `ENGINE_VERSION`;
+  `src/domain/ports/index.ts` define os 8 contratos.
+- Fase 2.1 — ✅ tabela `screening_evaluations` criada (imutável, RLS
+  trainer + cliente). Falta migrar `runPreparticipationAlgorithm` para
+  escrever lá e o Plan generator passar a chamar `getActiveScreening`
+  como hard-gate.
+- Fase 2.2 — ✅ `audit_events` criada (append-only via trigger),
+  `logAuditEvent` helper em `src/server/audit/log-event.server.ts`. Falta
+  ligar aos eventos de domínio reais (Stage 5 complete →
+  `plan_generated`, archivePlanAndStartNextBlock → `block_advanced`,
+  etc.).
+- Fase 3.2 — ⚠️ scaffold de `adaptationEngine` em
+  `src/server/adaptation/propose-next-block.server.ts` +
+  `proposeNextBlock` server fn. Computa adherence + Δe1RM (Epley) + RPE
+  drift e devolve `NextBlockProposal` com diff e rationale chips.
+  **Pendente:** `session_set_logs` para per-set pain/RPE, integração
+  em `archivePlanAndStartNextBlock`, UI de revisão pelo trainer.
 
 ## Contexto
 
