@@ -58,3 +58,4 @@ Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp 
 - [Exercise AI visual pipeline](mem://specs/exercise-ai-visual-pipeline.md) — R75 AI/avatar/stickfigure are visual layers, never source of truth
 - [Exercise media implementation plan](mem://audits/exercise-media-implementation-plan.md) — R75 phased rollout; Now = docs+file discipline, Next = Slice 2 identity wiring
 - [NextAction priority](mem://principles/next-action-priority.md) — dashboard card never suggests plan-gen below 100% assessment
+- [Programming context resolver](mem://architecture/programming-context.md) — single source of truth for tier/RPE/wave; new code reads from resolveProgrammingContext
