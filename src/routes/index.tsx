@@ -154,7 +154,62 @@ function Landing() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────
-          Section 2 — Three principles. Surface shift creates the break.
+          Section 2 — What you get. PT and client side-by-side.
+          ───────────────────────────────────────────────────────────────── */}
+      <section className="flex min-h-[100svh] flex-col justify-center md:min-h-[88svh]">
+        <div
+          className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-y-12 px-6 py-20 md:grid-cols-12 md:gap-x-6 md:px-[8%]"
+          data-reveal
+        >
+          <div className="md:col-span-10 md:col-start-2">
+            <p className="editorial-eyebrow">{t("landing_v2.value.eyebrow")}</p>
+          </div>
+
+          {(["trainer", "client"] as const).map((side, idx) => {
+            const title = t(`landing_v2.value.${side}.title`);
+            const items = t(`landing_v2.value.${side}.items`, {
+              returnObjects: true,
+            }) as string[];
+            const colStart = idx === 0 ? "md:col-start-2" : "md:col-start-7";
+            return (
+              <div
+                key={side}
+                className={`md:col-span-5 ${colStart} md:mt-2`}
+              >
+                <h3
+                  className="editorial-subdisplay"
+                  style={{ fontSize: T.sub, color: "var(--text-1)" }}
+                >
+                  {title}
+                </h3>
+                <ul className="mt-6 space-y-4">
+                  {items.map((item, i) => (
+                    <li
+                      key={i}
+                      className="editorial-body flex gap-3 max-w-[44ch]"
+                      style={{ fontSize: T.body, color: "var(--text-2)" }}
+                    >
+                      <span
+                        aria-hidden
+                        className="mt-[0.55em] h-px w-3 shrink-0"
+                        style={{ backgroundColor: "var(--text-3)" }}
+                      />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="pointer-events-none mb-6 mr-6 self-end md:mr-[8%]">
+          <span className="editorial-eyebrow">02 / 06</span>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────────
+          Section 3 — Three principles. Surface shift creates the break.
           ───────────────────────────────────────────────────────────────── */}
       <section
         className="flex min-h-[100svh] flex-col justify-center md:min-h-[88svh]"
