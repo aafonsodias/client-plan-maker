@@ -16,6 +16,10 @@ import type { InjuryBan } from "./exercise-filters.server";
 
 export type Tier = "remedial" | "conservative" | "advanced";
 
+/** Engine version stamped into generation_log + audit_events.
+ *  Bump on any change to tier triggers, RPE floor matrix, or sets-per-week defaults. */
+export const ENGINE_VERSION = "programming-tier@1.0.0" as const;
+
 const PATTERNS = ["squat", "hinge", "push", "pull", "carry", "lunge"] as const;
 
 export interface TierGuidelines {
