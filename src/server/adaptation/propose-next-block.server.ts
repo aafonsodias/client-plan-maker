@@ -116,6 +116,28 @@ function flattenEntries(rows: Array<Record<string, any>>): SetReading[] {
   return out;
 }
 
+function flattenSetLogs(rows: Array<Record<string, any>>): SetReading[] {
+  const out: SetReading[] = [];
+  for (const r of rows) {
+    const load = num(r.actual_load_kg) ?? 0;
+    const reps = num(r.actual_reps) ?? 0;
+    if (load <= 0 || reps <= 0) continue;
+    const exerciseName = String(r.exercise_name ?? "").trim();
+    const pattern = (r.movement_pattern as MovementPattern | null) ?? inferPattern(exerciseName);
+    out.push({
+      exerciseName,
+      pattern,
+      load,
+      reps,
+      rpe: num(r.actual_rpe),
+      prescribedRpe: num(r.prescribed_rpe),
+      weekNumber: r.week_number ?? null,
+      sessionDate: String(r.created_at ?? ""),
+    });
+  }
+  return out;
+}
+
 function computeMetrics(readings: SetReading[]): MovementMetric[] {
   const byPattern = new Map<MovementPattern, SetReading[]>();
   for (const r of readings) {
