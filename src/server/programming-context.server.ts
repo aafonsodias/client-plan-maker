@@ -36,6 +36,17 @@ import {
 import { BriefSchema, type Brief, type ProgrammingVariables } from "@/server/phased/schemas";
 import type { KnowledgeRules } from "@/server/knowledge/schema";
 
+import { ENGINE_VERSION as TIER_VERSION } from "@/server/phased/programming-tier.server";
+import { ENGINE_VERSION as DEFAULTS_VERSION } from "@/server/phased/programming-defaults";
+
+/** Engine versions consumed by this resolver. Surfaced on every
+ *  ProgrammingContext so callers can stamp them into audit_events. */
+export const RESOLVER_ENGINE_VERSIONS = {
+  resolver: "programming-context@1.0.0" as const,
+  tier: TIER_VERSION,
+  defaults: DEFAULTS_VERSION,
+};
+
 /** Why a particular value won — used in audit + UI tooltips. */
 export type ProgrammingSource =
   | "user_override" // coach moved a Cockpit knob by hand
