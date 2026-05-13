@@ -16,6 +16,7 @@ import { buildDeterministicSummary, summaryLooksLeaked } from "./phased/summary.
 import { pickWaveTier, buildWavePlan } from "./phased/programming-defaults";
 import { classifyTier, tierGuidelines, rpeFloors, tierPromptBlock } from "./phased/programming-tier.server";
 import { deriveInjuryBans, injuryBansPromptBlock } from "./phased/exercise-filters.server";
+import { resolveProgrammingContext } from "./programming-context.server";
 
 // ============================================================================
 // Output validation — Zod + structural rules.
