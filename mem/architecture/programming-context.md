@@ -12,3 +12,7 @@ type: feature
 - Never re-call `deriveStartingFloor` or `classifyTier` directly in new code — they are now implementation details of the resolver.
 - Legacy call-sites (Stage 3/4, BriefEditor, TierChip, PDF) will be migrated incrementally; do not rip them out in unrelated rounds.
 - The `source` field is the canonical input for "why is this number here?" tooltips and for the future R-A audit panel.
+
+**Migration log:**
+- `getPlanConstraints` (`src/server/plan.functions.ts`) — migrated. Now returns `source`, `rpeCeiling`, `weeksToProgress` in addition to legacy `tier`/`rpeFloors` (additive, no breaking change). Resolver also gained a fallback to the latest assessment by `client_id` when `plan.assessment_id` is null, mirroring the legacy lookup behaviour.
+- Pending: Stage 2/3/4, BriefEditor (Cockpit), PDF re-derivation, TierChip callers.
