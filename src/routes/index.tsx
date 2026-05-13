@@ -148,7 +148,7 @@ function Landing() {
         {/* Section index hint, lower-right. Numeric, restrained. */}
         <div className="pointer-events-none absolute bottom-6 right-6 md:right-[8%]">
           <span className="editorial-eyebrow" style={{ fontSize: "var(--text-xs-r)" }}>
-            01 / 05
+            01 / 06
           </span>
         </div>
       </section>
@@ -199,7 +199,7 @@ function Landing() {
         </div>
 
         <div className="pointer-events-none mb-6 ml-6 md:ml-[8%]">
-          <span className="editorial-eyebrow">02 / 05</span>
+          <span className="editorial-eyebrow">03 / 06</span>
         </div>
       </section>
 
@@ -238,7 +238,7 @@ function Landing() {
         </div>
 
         <div className="pointer-events-none mb-6 mr-6 self-end md:mr-[8%]">
-          <span className="editorial-eyebrow">03 / 05</span>
+          <span className="editorial-eyebrow">04 / 06</span>
         </div>
       </section>
 
@@ -284,7 +284,7 @@ function Landing() {
         </div>
 
         <div className="pointer-events-none mb-6 ml-6 md:ml-[8%]">
-          <span className="editorial-eyebrow">04 / 05</span>
+          <span className="editorial-eyebrow">05 / 06</span>
         </div>
       </section>
 
@@ -323,7 +323,7 @@ function Landing() {
         </div>
 
         <div className="pointer-events-none mb-6 self-center">
-          <span className="editorial-eyebrow">05 / 05</span>
+          <span className="editorial-eyebrow">06 / 06</span>
         </div>
       </section>
 
