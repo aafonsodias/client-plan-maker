@@ -1796,11 +1796,21 @@ export const getPlanConstraints = createServerFn({ method: "GET" })
         tier: "conservative" as const,
         reasons: ["Sem assessment — defaults conservadores"],
         rpeFloors: rpeFloors("conservative", brief.intensity_appetite),
+        source: {
+          tier: "system_default" as const,
+          rpeFloor: "system_default" as const,
+          rpeCeiling: "system_default" as const,
+          weeksToProgress: "system_default" as const,
+        },
       };
     }
 
-    const tier = classifyTier(brief, assessment);
-    const floors = rpeFloors(tier, brief.intensity_appetite);
+    // R-A · single source of truth. resolveProgrammingContext reconciles
+    // starting_floor + tier_engine + Cockpit overrides and reports per-field
+    // provenance so the UI can render "why is this number here?" tooltips.
+    const ctx = await resolveProgrammingContext(data.plan_id);
+    const tier = ctx.tier;
+    const floors = ctx.rpeFloor;
 
     // Re-derive lightweight reason chips. Mirrors classifyTier signals
     // without exposing the full preparticipation result.
