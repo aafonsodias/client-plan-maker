@@ -3,6 +3,27 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildSessionSummary, type SessionSummary } from "@/lib/session-summary";
+import { inferPattern } from "@/server/adaptation/propose-next-block.server";
+
+/** Parse first numeric token from a planned/actual text field ("8-10" → 8). */
+function firstNum(s: unknown): number | null {
+  const m = String(s ?? "").match(/-?\d+(\.\d+)?/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+/**
+ * Slugify exercise name for stable cross-block joins. "Barbell Back Squat (close)"
+ * → "barbell-back-squat". Strips parenthesised variant suffixes so the same
+ * lift across blocks aggregates cleanly in the adaptation engine.
+ */
+function slugifyExercise(n: string): string {
+  return String(n ?? "")
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80);
+}
 
 /* ─── Generic error helper — never leak DB internals to clients ─── */
 function fail(internal: unknown, userMessage: string): never {
