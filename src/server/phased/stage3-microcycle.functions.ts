@@ -911,6 +911,7 @@ export const generateDay = createServerFn({ method: "POST" })
     await markPending(supabase, userId, data.planId, data.dayIndex);
     const { rules: pklRules } = await resolveRules(supabase, userId);
     const pklLandmarks = resolveLandmarks(pklRules);
+    const nextBlockProposal = (loaded.plan.generation_meta as any)?.next_block_proposal ?? null;
     const r = await runDay(
       supabase,
       userId,
@@ -925,6 +926,7 @@ export const generateDay = createServerFn({ method: "POST" })
       swapMainLift,
       pp,
       pklLandmarks,
+      nextBlockProposal,
     );
     if (!r.ok) {
       await upsertDayRow(supabase, userId, data.planId, 1, data.dayIndex, "error", null, r.error);
@@ -963,6 +965,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const pp = (loaded.plan.prescription_parameters ?? null) as PrescriptionParameters | null;
     const { rules: pklRules } = await resolveRules(supabase, userId);
     const pklLandmarks = resolveLandmarks(pklRules);
+    const nextBlockProposal = (loaded.plan.generation_meta as any)?.next_block_proposal ?? null;
 
     // Mark all pending immediately so UI sees them.
     await Promise.all(dayIndices.map((d) => markPending(supabase, userId, data.planId, d)));
@@ -997,6 +1000,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             swapMainLift,
             pp,
             pklLandmarks,
+            nextBlockProposal,
           );
           if (r.ok) {
             await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
@@ -1061,6 +1065,7 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
             false,
             pp,
             pklLandmarks,
+            nextBlockProposal,
           );
           if (r.ok) await upsertDayRow(supabase, userId, data.planId, 1, idx, "done", r.day);
         }
