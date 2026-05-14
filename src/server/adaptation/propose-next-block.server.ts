@@ -38,6 +38,7 @@ import type {
   NextBlockProposal,
 } from "@/domain/ports";
 import { logAuditEvent } from "@/server/audit/log-event.server";
+import { createHash } from "crypto";
 
 export const ENGINE_VERSION: EngineVersion = "adaptation-next-block@0.1.0";
 
@@ -324,4 +325,24 @@ function buildTransitionPrompt(args: {
   if (flags.length) parts.push(`A vigiar: ${flags.join(", ")}.`);
   if (args.recommendDeload) parts.push("Recomendação: descarga antes do próximo bloco.");
   return parts.join(" ");
+}
+
+/**
+ * Deterministic hash of the inputs that produced a NextBlockProposal.
+ * Same inputs + same engine version → same hash, which is what makes the
+ * proposal reproducible (doc §3 ProgressMarker.inputsHash invariant).
+ */
+export function hashAdaptationInputs(args: {
+  priorPlanId: string;
+  setLogIds: string[];
+  sessionDates: string[];
+  engineVersion: string;
+}): string {
+  const payload = JSON.stringify({
+    p: args.priorPlanId,
+    s: [...args.setLogIds].sort(),
+    d: [...args.sessionDates].sort(),
+    v: args.engineVersion,
+  });
+  return createHash("sha256").update(payload).digest("hex");
 }
