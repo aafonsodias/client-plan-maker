@@ -38,6 +38,7 @@ import type {
   NextBlockProposal,
 } from "@/domain/ports";
 import { logAuditEvent } from "@/server/audit/log-event.server";
+import { createHash } from "crypto";
 
 export const ENGINE_VERSION: EngineVersion = "adaptation-next-block@0.1.0";
 
@@ -235,7 +236,7 @@ export const adaptationEngine: AdaptationEngine = {
         .eq("status", "done"),
       supabaseAdmin
         .from("session_set_logs")
-        .select("week_number, exercise_name, movement_pattern, actual_load_kg, actual_reps, actual_rpe, prescribed_rpe, pain_flag, created_at")
+        .select("id, week_number, exercise_name, movement_pattern, actual_load_kg, actual_reps, actual_rpe, prescribed_rpe, pain_flag, created_at")
         .eq("plan_id", priorPlanId)
         .order("created_at", { ascending: true }),
     ]);
@@ -324,4 +325,155 @@ function buildTransitionPrompt(args: {
   if (flags.length) parts.push(`A vigiar: ${flags.join(", ")}.`);
   if (args.recommendDeload) parts.push("Recomendação: descarga antes do próximo bloco.");
   return parts.join(" ");
+}
+
+/**
+ * Deterministic hash of the inputs that produced a NextBlockProposal.
+ * Same inputs + same engine version → same hash, which is what makes the
+ * proposal reproducible (doc §3 ProgressMarker.inputsHash invariant).
+ */
+export function hashAdaptationInputs(args: {
+  priorPlanId: string;
+  setLogIds: string[];
+  sessionDates: string[];
+  engineVersion: string;
+}): string {
+  const payload = JSON.stringify({
+    p: args.priorPlanId,
+    s: [...args.setLogIds].sort(),
+    d: [...args.sessionDates].sort(),
+    v: args.engineVersion,
+  });
+  return createHash("sha256").update(payload).digest("hex");
+}
+
+/**
+ * proposeAndPersist — compute the next-block proposal, persist it as a
+ * pending row in `adaptation_proposals`, and write per-metric reproducible
+ * `progress_markers`. Returns the proposalId so the caller can route the
+ * trainer to the review screen.
+ *
+ * This is the **single entry point** that `archivePlanAndStartNextBlock`
+ * (and any future "request adaptation" UI) calls. Plan generation does NOT
+ * happen here — it only happens after `decideAdaptation` records an
+ * accept/adjust decision.
+ */
+export async function proposeAndPersist(input: AdaptationInput): Promise<{
+  proposalId: string;
+  proposal: NextBlockProposal;
+  inputsHash: string;
+}> {
+  const { trainerId, clientId, priorPlanId } = input;
+
+  // Re-fetch what we need to also produce inputsHash + persist markers.
+  const [{ data: sessions }, { data: setLogs }] = await Promise.all([
+    supabaseAdmin
+      .from("workout_sessions")
+      .select("session_date")
+      .eq("plan_id", priorPlanId),
+    supabaseAdmin
+      .from("session_set_logs")
+      .select("id")
+      .eq("plan_id", priorPlanId),
+  ]);
+
+  const proposal = await adaptationEngine.proposeNextBlock(input);
+
+  const inputsHash = hashAdaptationInputs({
+    priorPlanId,
+    setLogIds: ((setLogs ?? []) as Array<{ id: string }>).map((r) => r.id),
+    sessionDates: ((sessions ?? []) as Array<{ session_date: string }>).map((r) => r.session_date),
+    engineVersion: ENGINE_VERSION,
+  });
+
+  // Persist the proposal as pending. Trainer must decide before any plan
+  // is generated — see decideAdaptation.functions.ts.
+  const { data: proposalRow, error: insertErr } = await supabaseAdmin
+    .from("adaptation_proposals")
+    .insert({
+      trainer_id: trainerId,
+      client_id: clientId,
+      prior_plan_id: priorPlanId,
+      proposal: proposal as unknown as Record<string, unknown>,
+      evidence: {
+        adherencePct: proposal.adherencePct,
+        painFlagsCount: proposal.painFlagsCount,
+        recommendDeload: proposal.recommendDeload,
+        deloadReason: proposal.deloadReason ?? null,
+      },
+      engine_versions: { adaptation: ENGINE_VERSION },
+      inputs_hash: inputsHash,
+      status: "pending",
+    } as never)
+    .select("id")
+    .single();
+
+  if (insertErr || !proposalRow) {
+    throw new Error(`Failed to persist adaptation proposal: ${insertErr?.message ?? "unknown"}`);
+  }
+
+  // Persist per-pattern markers so the cycle-evidence panel can read them
+  // without recomputing.
+  if (proposal.metrics.length > 0) {
+    type MarkerRow = {
+      trainer_id: string;
+      client_id: string;
+      plan_id: string;
+      metric: string;
+      scope: string;
+      value: number;
+      inputs_hash: string;
+      engine_version: string;
+    };
+    const markerRows: MarkerRow[] = proposal.metrics.flatMap((m) => [
+      {
+        trainer_id: trainerId,
+        client_id: clientId,
+        plan_id: priorPlanId,
+        metric: "e1RMDeltaPct",
+        scope: m.pattern,
+        value: m.e1rmDeltaPct,
+        inputs_hash: inputsHash,
+        engine_version: ENGINE_VERSION,
+      },
+      {
+        trainer_id: trainerId,
+        client_id: clientId,
+        plan_id: priorPlanId,
+        metric: "rpeDriftPoints",
+        scope: m.pattern,
+        value: m.rpeDriftPoints,
+        inputs_hash: inputsHash,
+        engine_version: ENGINE_VERSION,
+      },
+    ]);
+    markerRows.push({
+      trainer_id: trainerId,
+      client_id: clientId,
+      plan_id: priorPlanId,
+      metric: "adherencePct",
+      scope: "block",
+      value: proposal.adherencePct,
+      inputs_hash: inputsHash,
+      engine_version: ENGINE_VERSION,
+    });
+    markerRows.push({
+      trainer_id: trainerId,
+      client_id: clientId,
+      plan_id: priorPlanId,
+      metric: "painFlagCount",
+      scope: "block",
+      value: proposal.painFlagsCount,
+      inputs_hash: inputsHash,
+      engine_version: ENGINE_VERSION,
+    });
+    const { error: markerErr } = await supabaseAdmin
+      .from("progress_markers")
+      .insert(markerRows as never);
+    if (markerErr) {
+      console.error("[proposeAndPersist] marker insert failed", markerErr.message);
+    }
+  }
+
+  return { proposalId: (proposalRow as { id: string }).id, proposal, inputsHash };
 }

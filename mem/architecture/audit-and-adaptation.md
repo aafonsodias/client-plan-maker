@@ -59,6 +59,35 @@ type: feature
 4. Volume vs MEV/MAV/MRV per muscle group, integrated into the diff.
 5. Trainer UI: review-and-approve the proposal before committing.
 
+## R-D restraint refactor (2026-05-14) — implemented
+
+- New tables: `adaptation_proposals` (status pending/decided/expired),
+  `adaptation_decisions` (append-only, `rationale` required at DB level),
+  `progress_markers` (with `inputs_hash` for reproducibility).
+- `archivePlanAndStartNextBlock` no longer generates the next block. It
+  archives the prior plan, calls `proposeAndPersist()`, and returns
+  `{ proposalId }`. The trainer must call `decideAdaptation` to advance.
+- `proposeAndPersist()` in `propose-next-block.server.ts` is the single
+  entry point: computes proposal, hashes inputs (sha256 over set-log IDs +
+  session dates + engine version), writes the pending proposal row, writes
+  per-pattern markers (e1RMDeltaPct, rpeDriftPoints, adherencePct,
+  painFlagCount).
+- `decideAdaptation` server fn (in `blocks.functions.ts`) accepts kinds:
+  `continueAsIs | adjustCurrentSession | adjustUpcoming | defer | accept`.
+  Only `accept` and `adjustUpcoming` trigger Block N+1 generation
+  (`runDemoPlay` + lineage stamping). All decisions write `block_advanced`
+  audit event.
+
+## Still TODO from R-D (queued for next round)
+
+- Trainer review screen at `/clients/$clientId/adaptation/$proposalId`
+  rendering evidence panel + engine proposal panel + decision form.
+- Copy contract memory file at `mem://principles/restraint-copy.md` with
+  required + forbidden phrases, plus i18n lint sweep.
+- Landing edit: PT/EN `landing_v2.value.client.items` last bullet to add
+  "com a sua aprovação".
+- Reshape Phase 4.1 PDF as `ReportSnapshot` consumer (5 separated buckets).
+
 ## Why the table is append-only at trigger level
 
 `audit_events_immutable()` raises on UPDATE/DELETE so even a future
