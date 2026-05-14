@@ -6,18 +6,21 @@ import { runDemoPlay } from "@/server/demo-play.functions";
 import { seedDemoSessions } from "@/server/demo-sessions.functions";
 import { summarizePriorBlock, verdictLabelPt } from "@/lib/block-feedback";
 import { MUSCLE_GROUP_LABELS_PT } from "@/lib/volume-landmarks";
-import { adaptationEngine } from "@/server/adaptation/propose-next-block.server";
+import { adaptationEngine, proposeAndPersist } from "@/server/adaptation/propose-next-block.server";
+import { logAuditEvent } from "@/server/audit/log-event.server";
 
 /**
- * archivePlanAndStartNextBlock — closes the current plan as "archived" and
- * spawns Block N+1 for the same client. Block N+1 reuses the same assessment
- * but tags `prior_plan_id`, increments `block_number`, and stamps a brief
- * `block_transition_summary` derived from the prior plan's adherence + RPE
- * drift. The new plan goes through the standard phased pipeline so the AI
- * proposes a coherent next block (deload-then-progress).
+ * archivePlanAndStartNextBlock — RESTRAINT REFACTOR (R-D.1).
  *
- * Demo-only flow: we trust the founder gate at the UI layer; the function
- * itself enforces row ownership via RLS-backed admin queries.
+ * Closes the current plan as "archived" and produces a *pending*
+ * `adaptation_proposals` row for the trainer to review. **Does NOT** create
+ * the next block automatically. The trainer reviews evidence + proposal at
+ * `/clients/$clientId/adaptation/$proposalId` and submits a decision via
+ * `decideAdaptation`. Only `accept` / `adjustUpcoming` decisions trigger
+ * Block N+1 generation.
+ *
+ * This honours the doc's restraint principle: nothing changes without
+ * explicit trainer action.
  */
 export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -95,50 +98,156 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .update({ status: "archived", block_transition_summary: summary })
       .eq("id", data.priorPlanId);
 
-    // Find the latest assessment for the client (re-used by next block).
-    const { data: assessment } = await supabaseAdmin
-      .from("assessments")
-      .select("id")
-      .eq("client_id", (prior as any).client_id)
-      .order("performed_on", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const nextBlock = ((prior as any).block_number ?? 1) + 1;
-
-    // Deterministic adaptation proposal — read prior block's logged data and
-    // produce a structured prescriptionDiff + transitionPrompt. Stage 3 of
-    // the next block consumes this via generation_meta.next_block_proposal.
-    let proposal: Awaited<ReturnType<typeof adaptationEngine.proposeNextBlock>> | null = null;
+    // Compute + persist the proposal as PENDING. No plan is generated here.
+    let proposalId: string;
     try {
-      proposal = await adaptationEngine.proposeNextBlock({
+      const out = await proposeAndPersist({
         trainerId: userId,
         clientId: (prior as any).client_id,
         priorPlanId: data.priorPlanId,
       });
+      proposalId = out.proposalId;
     } catch (e) {
-      console.error("[archivePlanAndStartNextBlock] adaptation engine failed", e);
+      console.error("[archivePlanAndStartNextBlock] proposeAndPersist failed", e);
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "Failed to compute next-block proposal.",
+      };
     }
 
-    // Run the phased pipeline against the existing client. Pass priorPlanId
-    // so runDemoPlay stamps the per-muscle verdict map onto generation_meta;
-    // Stage 2/3 prompts read it to adapt the volume prescription.
+    return {
+      ok: true as const,
+      proposalId,
+      blockNumber: ((prior as any).block_number ?? 1) + 1,
+      summary,
+      // No planId — the new plan only exists after decideAdaptation accepts
+      // or adjusts the proposal.
+    };
+  });
+
+/**
+ * decideAdaptation — required gate (R-D.2). The trainer reviews a pending
+ * proposal and picks one of: continueAsIs / adjustCurrentSession /
+ * adjustUpcoming / defer / accept. Only `accept` and `adjustUpcoming`
+ * trigger Block N+1 generation. `defer` and `continueAsIs` mark the
+ * proposal decided without spawning a new plan.
+ *
+ * The `rationale` field is required at the type and DB level — there is
+ * no path that records a decision without one.
+ */
+const DecisionKind = z.enum([
+  "continueAsIs",
+  "adjustCurrentSession",
+  "adjustUpcoming",
+  "defer",
+  "accept",
+]);
+
+export const decideAdaptation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        proposalId: z.string().uuid(),
+        kind: DecisionKind,
+        rationale: z.string().min(1, "Rationale is required").max(2000),
+        // Only used when kind ∈ {accept, adjustUpcoming}; the trainer-edited
+        // diff that overrides the engine proposal for next-block generation.
+        changes: z.record(z.string(), z.unknown()).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    // Load + verify ownership.
+    const { data: proposal, error: pErr } = await supabaseAdmin
+      .from("adaptation_proposals")
+      .select("id, trainer_id, client_id, prior_plan_id, proposal, status")
+      .eq("id", data.proposalId)
+      .maybeSingle();
+    if (pErr || !proposal) return { ok: false as const, error: "Proposal not found." };
+    if ((proposal as any).trainer_id !== userId) return { ok: false as const, error: "forbidden" };
+    if ((proposal as any).status !== "pending") {
+      return { ok: false as const, error: "Proposal already decided." };
+    }
+
+    // Append-only decision row.
+    const { error: dErr } = await supabaseAdmin
+      .from("adaptation_decisions")
+      .insert({
+        proposal_id: data.proposalId,
+        trainer_id: userId,
+        kind: data.kind,
+        rationale: data.rationale,
+        changes: (data.changes ?? {}) as Record<string, unknown>,
+        decided_by: userId,
+      } as never);
+    if (dErr) return { ok: false as const, error: dErr.message };
+
+    // Mark proposal as decided so it cannot be decided twice.
+    await supabaseAdmin
+      .from("adaptation_proposals")
+      .update({ status: "decided" })
+      .eq("id", data.proposalId);
+
+    await logAuditEvent({
+      trainerId: userId,
+      eventType: "block_advanced",
+      entityType: "block",
+      entityId: (proposal as any).prior_plan_id,
+      payload: {
+        proposalId: data.proposalId,
+        kind: data.kind,
+        rationale: data.rationale,
+        hasChanges: !!data.changes,
+      },
+      engineVersions: { adaptation: adaptationEngine.version },
+    });
+
+    // Defer / continueAsIs / adjustCurrentSession do NOT spawn a new plan.
+    if (data.kind === "defer" || data.kind === "continueAsIs" || data.kind === "adjustCurrentSession") {
+      return { ok: true as const, decided: true, planId: null as string | null };
+    }
+
+    // Accept / adjustUpcoming → generate the next block, with the
+    // (possibly trainer-edited) proposal as Stage 3 hard input.
+    const priorPlanId = (proposal as any).prior_plan_id as string;
+    const clientId = (proposal as any).client_id as string;
+    const engineProposal = (proposal as any).proposal as Record<string, unknown>;
+    const effectiveProposal =
+      data.changes && Object.keys(data.changes).length > 0
+        ? { ...engineProposal, ...data.changes }
+        : engineProposal;
+
+    // Find the prior plan to compute next block number + assessment ref.
+    const { data: prior } = await supabaseAdmin
+      .from("workout_plans")
+      .select("block_number, block_transition_summary")
+      .eq("id", priorPlanId)
+      .maybeSingle();
+    const nextBlock = ((prior as any)?.block_number ?? 1) + 1;
+    const summary = (prior as any)?.block_transition_summary ?? "";
+
+    const { data: assessment } = await supabaseAdmin
+      .from("assessments")
+      .select("id")
+      .eq("client_id", clientId)
+      .order("performed_on", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const ran: any = await runDemoPlay({
-      data: { clientId: (prior as any).client_id, priorPlanId: data.priorPlanId },
+      data: { clientId, priorPlanId },
     });
     if (!ran?.ok || !ran?.planId) {
       return {
         ok: false as const,
-        error: ran?.error ?? "Block 2 generation failed.",
+        error: ran?.error ?? "Block N+1 generation failed.",
         failedStep: ran?.failedStep ?? null,
       };
     }
 
-    // Tag the freshly-generated plan as Block N+1 of the lineage.
-    // Bonus: from Block 4 onwards, ask Stage 3 to refresh the main lift of
-    // at least one pattern (anti-stale). We surface a flag in
-    // `generation_meta.suggest_main_lift_swap` so the prompt picks it up
-    // and the UI can show a "Main lift refrescado" chip.
     const { data: curPlanRow } = await supabaseAdmin
       .from("workout_plans")
       .select("generation_meta")
@@ -146,15 +255,16 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       .maybeSingle();
     const curMeta = ((curPlanRow as any)?.generation_meta ?? {}) as Record<string, any>;
     if (nextBlock >= 4) curMeta.suggest_main_lift_swap = true;
-    if (proposal) {
-      curMeta.next_block_proposal = proposal;
-      curMeta.adaptation_engine_version = adaptationEngine.version;
-    }
+    curMeta.next_block_proposal = effectiveProposal;
+    curMeta.adaptation_engine_version = adaptationEngine.version;
+    curMeta.adaptation_proposal_id = data.proposalId;
+    curMeta.adaptation_decision_kind = data.kind;
+
     await supabaseAdmin
       .from("workout_plans")
       .update({
         block_number: nextBlock,
-        prior_plan_id: data.priorPlanId,
+        prior_plan_id: priorPlanId,
         block_transition_summary: summary,
         title: `Bloco ${nextBlock}`,
         assessment_id: (assessment as any)?.id ?? null,
@@ -162,20 +272,12 @@ export const archivePlanAndStartNextBlock = createServerFn({ method: "POST" })
       })
       .eq("id", ran.planId);
 
-    // Seed 2 weeks of sessions so Resultados has data immediately.
-    // Apply a gentle inter-block load curve (+4% per block, capped at 1.4×)
-    // so the "Top 5 lifts" chart shows real progression across blocks.
     const loadMultiplier = Math.min(1.4, 1 + 0.04 * (nextBlock - 1));
     try {
       await seedDemoSessions({ data: { planId: ran.planId, weeksToSeed: 2, loadMultiplier } });
     } catch (e) {
-      console.error("[archivePlanAndStartNextBlock] seed sessions failed", e);
+      console.error("[decideAdaptation] seed sessions failed", e);
     }
 
-    return {
-      ok: true as const,
-      planId: ran.planId as string,
-      blockNumber: nextBlock,
-      summary,
-    };
+    return { ok: true as const, decided: true, planId: ran.planId as string, blockNumber: nextBlock };
   });
