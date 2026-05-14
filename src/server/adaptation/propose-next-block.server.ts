@@ -415,7 +415,17 @@ export async function proposeAndPersist(input: AdaptationInput): Promise<{
   // Persist per-pattern markers so the cycle-evidence panel can read them
   // without recomputing.
   if (proposal.metrics.length > 0) {
-    const markerRows = proposal.metrics.flatMap((m) => [
+    type MarkerRow = {
+      trainer_id: string;
+      client_id: string;
+      plan_id: string;
+      metric: string;
+      scope: string;
+      value: number;
+      inputs_hash: string;
+      engine_version: string;
+    };
+    const markerRows: MarkerRow[] = proposal.metrics.flatMap((m) => [
       {
         trainer_id: trainerId,
         client_id: clientId,
