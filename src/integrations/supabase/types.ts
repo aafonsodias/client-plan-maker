@@ -280,6 +280,89 @@ export type Database = {
         }
         Relationships: []
       }
+      adaptation_decisions: {
+        Row: {
+          changes: Json
+          decided_at: string
+          decided_by: string
+          id: string
+          kind: string
+          proposal_id: string
+          rationale: string
+          trainer_id: string
+        }
+        Insert: {
+          changes?: Json
+          decided_at?: string
+          decided_by: string
+          id?: string
+          kind: string
+          proposal_id: string
+          rationale: string
+          trainer_id: string
+        }
+        Update: {
+          changes?: Json
+          decided_at?: string
+          decided_by?: string
+          id?: string
+          kind?: string
+          proposal_id?: string
+          rationale?: string
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adaptation_decisions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "adaptation_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      adaptation_proposals: {
+        Row: {
+          client_id: string
+          created_at: string
+          engine_versions: Json
+          evidence: Json
+          id: string
+          inputs_hash: string | null
+          prior_plan_id: string
+          proposal: Json
+          status: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          engine_versions?: Json
+          evidence?: Json
+          id?: string
+          inputs_hash?: string | null
+          prior_plan_id: string
+          proposal?: Json
+          status?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          engine_versions?: Json
+          evidence?: Json
+          id?: string
+          inputs_hash?: string | null
+          prior_plan_id?: string
+          proposal?: Json
+          status?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assessment_injuries: {
         Row: {
           assessment_id: string
@@ -1621,6 +1704,48 @@ export type Database = {
           tagline?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      progress_markers: {
+        Row: {
+          client_id: string
+          computed_at: string
+          engine_version: string
+          id: string
+          inputs_hash: string
+          metric: string
+          plan_id: string
+          scope: string | null
+          trainer_id: string
+          value: number
+          week_index: number | null
+        }
+        Insert: {
+          client_id: string
+          computed_at?: string
+          engine_version: string
+          id?: string
+          inputs_hash: string
+          metric: string
+          plan_id: string
+          scope?: string | null
+          trainer_id: string
+          value: number
+          week_index?: number | null
+        }
+        Update: {
+          client_id?: string
+          computed_at?: string
+          engine_version?: string
+          id?: string
+          inputs_hash?: string
+          metric?: string
+          plan_id?: string
+          scope?: string | null
+          trainer_id?: string
+          value?: number
+          week_index?: number | null
         }
         Relationships: []
       }
