@@ -97,6 +97,7 @@ export default function PlanEditorSurface({
   hideOwnChrome = false,
 }: Props) {
   const { user } = useAuth();
+  const isFounder = (user?.email ?? "").toLowerCase() === "aafonsodias@gmail.com";
   const navigate = useNavigate();
   const { t: tCommon, i18n } = useTranslation("common");
   const [plan, setPlan] = useState<any>(null);
@@ -610,13 +611,16 @@ export default function PlanEditorSurface({
                   </div>
                 )}
                 {plan?.generation_status === "complete"
-                  && /\(demo\)$/i.test(client?.full_name ?? "")
-                  && sessions.length === 0 && (
+                  && (isFounder || (/\(demo\)$/i.test(client?.full_name ?? "") && sessions.length === 0)) && (
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--warn)]/30 bg-warn-soft p-3 text-xs">
                     <div className="flex-1">
-                      <p className="font-semibold text-foreground">Logbook vazio.</p>
+                      <p className="font-semibold text-foreground">
+                        {sessions.length === 0 ? "Logbook vazio." : `Logbook com ${sessions.length} sessões.`}
+                      </p>
                       <p className="mt-0.5 text-muted-foreground">
-                        Cliente demo sem sessões. Gerar 2 semanas realistas.
+                        {isFounder
+                          ? "Auto-fill (founder): gerar mais 2 semanas realistas neste plano."
+                          : "Cliente demo sem sessões. Gerar 2 semanas realistas."}
                       </p>
                     </div>
                     <Button
@@ -638,7 +642,7 @@ export default function PlanEditorSurface({
                       }}
                     >
                       {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                      Preencher logbook
+                      {isFounder ? "Auto-fill 2 semanas" : "Preencher logbook"}
                     </Button>
                   </div>
                 )}
