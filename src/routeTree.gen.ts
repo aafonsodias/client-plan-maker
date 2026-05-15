@@ -38,6 +38,7 @@ import { Route as PlansPlanIdMicrocycleRouteImport } from './routes/plans.$planI
 import { Route as PlansPlanIdBriefRouteImport } from './routes/plans.$planId.brief'
 import { Route as PlansPlanIdBlueprintRouteImport } from './routes/plans.$planId.blueprint'
 import { Route as ClientsClientIdYearRouteImport } from './routes/clients_.$clientId.year'
+import { Route as ClientsClientIdAdaptationProposalIdRouteImport } from './routes/clients_.$clientId.adaptation.$proposalId'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -185,6 +186,12 @@ const ClientsClientIdYearRoute = ClientsClientIdYearRouteImport.update({
   path: '/year',
   getParentRoute: () => ClientsClientIdRoute,
 } as any)
+const ClientsClientIdAdaptationProposalIdRoute =
+  ClientsClientIdAdaptationProposalIdRouteImport.update({
+    id: '/adaptation/$proposalId',
+    path: '/adaptation/$proposalId',
+    getParentRoute: () => ClientsClientIdRoute,
+  } as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
     id: '/api/public/hooks/weekly-digest',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/clients/$clientId/adaptation/$proposalId': typeof ClientsClientIdAdaptationProposalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/clients/$clientId/adaptation/$proposalId': typeof ClientsClientIdAdaptationProposalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/plans/$planId/progressions': typeof PlansPlanIdProgressionsRoute
   '/plans/$planId/sessions': typeof PlansPlanIdSessionsRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/clients_/$clientId/adaptation/$proposalId': typeof ClientsClientIdAdaptationProposalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
+    | '/clients/$clientId/adaptation/$proposalId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
+    | '/clients/$clientId/adaptation/$proposalId'
   id:
     | '__root__'
     | '/'
@@ -386,6 +398,7 @@ export interface FileRouteTypes {
     | '/plans/$planId/progressions'
     | '/plans/$planId/sessions'
     | '/api/public/hooks/weekly-digest'
+    | '/clients_/$clientId/adaptation/$proposalId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -617,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientsClientIdYearRouteImport
       parentRoute: typeof ClientsClientIdRoute
     }
+    '/clients_/$clientId/adaptation/$proposalId': {
+      id: '/clients_/$clientId/adaptation/$proposalId'
+      path: '/adaptation/$proposalId'
+      fullPath: '/clients/$clientId/adaptation/$proposalId'
+      preLoaderRoute: typeof ClientsClientIdAdaptationProposalIdRouteImport
+      parentRoute: typeof ClientsClientIdRoute
+    }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
       path: '/api/public/hooks/weekly-digest'
@@ -653,10 +673,13 @@ const ScheduleRouteWithChildren = ScheduleRoute._addFileChildren(
 
 interface ClientsClientIdRouteChildren {
   ClientsClientIdYearRoute: typeof ClientsClientIdYearRoute
+  ClientsClientIdAdaptationProposalIdRoute: typeof ClientsClientIdAdaptationProposalIdRoute
 }
 
 const ClientsClientIdRouteChildren: ClientsClientIdRouteChildren = {
   ClientsClientIdYearRoute: ClientsClientIdYearRoute,
+  ClientsClientIdAdaptationProposalIdRoute:
+    ClientsClientIdAdaptationProposalIdRoute,
 }
 
 const ClientsClientIdRouteWithChildren = ClientsClientIdRoute._addFileChildren(

@@ -80,13 +80,25 @@ type: feature
 
 ## Still TODO from R-D (queued for next round)
 
+- Reshape Phase 4.1 PDF as `ReportSnapshot` consumer (5 separated buckets:
+  facts / client-reported / trainer decisions / engine evidence / uncertainty).
+- i18n lint sweep against `mem://principles/restraint-copy.md` forbidden
+  phrases ("recomendamos", "carga sugerida", "score de risco", etc.).
+- Surface a "Decisões pendentes" list on the trainer dashboard so pending
+  `adaptation_proposals` don't get orphaned.
+
+## R-D round-2 (2026-05-15) — landed
+
+- Loader server fn `loadProposal` (`src/server/adaptation/proposal.functions.ts`)
+  returns proposal + client + prior plan + per-pattern markers + last decision.
 - Trainer review screen at `/clients/$clientId/adaptation/$proposalId`
-  rendering evidence panel + engine proposal panel + decision form.
-- Copy contract memory file at `mem://principles/restraint-copy.md` with
-  required + forbidden phrases, plus i18n lint sweep.
-- Landing edit: PT/EN `landing_v2.value.client.items` last bullet to add
-  "com a sua aprovação".
-- Reshape Phase 4.1 PDF as `ReportSnapshot` consumer (5 separated buckets).
+  (`src/routes/clients_.$clientId.adaptation.$proposalId.tsx`):
+  three panels (evidence neutral / engine proposal amber / decision white),
+  required rationale, redirects to `/plans/$planId` when accept/adjustUpcoming
+  triggers Block N+1 generation.
+- Copy contract locked at `mem://principles/restraint-copy.md`.
+- Landing PT/EN `landing_v2.value.client.items` last bullet now ends with
+  "com a sua aprovação" / "with your approval".
 
 ## Why the table is append-only at trigger level
 

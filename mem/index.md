@@ -48,6 +48,7 @@ Invite flow = pre-fill name/email/phone BEFORE generating the link, so WhatsApp 
 - [Founder demo limitations](mem://features/founder-demo-limitations.md) — R73 what Demo Lab + R71 simulator do NOT prove
 - [Client education PDF appendix](mem://features/client-education-pdf.md) — R73 required glossary page for client-facing PDF
 - [Evidence source ethics](mem://principles/evidence-source-ethics.md) — R73 required fields + forbidden patterns for citing studies
+- [Restraint copy contract](mem://principles/restraint-copy.md) — R-D required + forbidden phrases for adaptation/decision surfaces (engine = evidence, trainer = decider)
 - [Session structure principles](mem://specs/session-structure-principles.md) — R74 complete-session block list + "guidelines inform, coach simplifies"
 - [Exercise media hosting architecture](mem://specs/exercise-media-hosting-architecture.md) — R75 raw → master → streaming → app metadata; provider-agnostic; YouTube as reference only
 - [Exercise media data model](mem://specs/exercise-media-data-model.md) — R75 future `exercise_media` shape keyed by `ExerciseKey`; reuses R74 `MediaQualityStatus`
