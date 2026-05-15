@@ -133,7 +133,7 @@ function AdaptationReview() {
             {data?.error ?? "Não foi possível carregar a proposta."}
           </p>
           <Button asChild variant="outline" className="mt-6">
-            <Link to="/clients_/$clientId" params={{ clientId }}>
+            <Link to="/clients/$clientId" params={{ clientId }}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao cliente
             </Link>
           </Button>
