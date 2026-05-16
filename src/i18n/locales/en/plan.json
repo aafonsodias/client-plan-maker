@@ -109,12 +109,12 @@
           "goblet_squat": {
             "name": "Goblet Squat",
             "target": "4×8 @ RPE 7",
-            "tip": "Suggested load: 22kg"
+            "tip": "Load: 22kg"
           },
           "db_bench": {
             "name": "DB Bench Press",
             "target": "4×8 @ RPE 7",
-            "tip": "Suggestion: +2kg vs last"
+            "tip": "+2kg vs last session"
           },
           "sl_rdl": {
             "name": "Single-Leg RDL",

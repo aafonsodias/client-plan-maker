@@ -106,3 +106,15 @@ type: feature
 server-fn bug or a stray admin client cannot rewrite history. The table
 is the legal record of "what the system decided and when" — ALWAYS treat
 it as such.
+## R-D round-3 (2026-05-16) — landed
+
+- i18n sweep: demo plan tips in `plan.json` (PT/EN) no longer say
+  "Peso sugerido / Suggested load / Sugestão". Now neutral
+  "Carga: 22kg / Load: 22kg" and "+2kg vs sessão anterior".
+- Dashboard pending decisions: `listPendingProposals` server fn +
+  `<PendingDecisionsPanel/>` render orphan-proof list of
+  `adaptation_proposals.status='pending'` above DropoffAlerts.
+- `ReportSnapshot` contract typed at `src/domain/report-snapshot.ts` with
+  5 separated buckets (facts / clientReported / trainerDecisions /
+  engineEvidence / uncertainty). PDF generator (Phase 4.1, not yet built)
+  must consume this snapshot — never call engines/DB directly.

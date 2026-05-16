@@ -66,3 +66,45 @@ export const loadProposal = createServerFn({ method: "POST" })
       decision: (decision ?? null) as Record<string, any> | null,
     };
   });
+
+// ---------------------------------------------------------------------------
+// listPendingProposals — dashboard surface. Returns trainer's `pending`
+// adaptation proposals so the trainer can decide before any new block is
+// generated. Decision gate lives at /clients/$clientId/adaptation/$proposalId.
+// ---------------------------------------------------------------------------
+export const listPendingProposals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const { data, error } = await supabaseAdmin
+      .from("adaptation_proposals")
+      .select("id, client_id, prior_plan_id, created_at, status")
+      .eq("trainer_id", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error || !data || data.length === 0) {
+      return { ok: true as const, items: [] as Array<{ id: string; clientId: string; clientName: string | null; priorPlanTitle: string | null; createdAt: string }> };
+    }
+    const clientIds = Array.from(new Set(data.map((d: any) => d.client_id)));
+    const planIds = Array.from(new Set(data.map((d: any) => d.prior_plan_id).filter(Boolean)));
+    const [{ data: clients }, { data: plans }] = await Promise.all([
+      supabaseAdmin.from("clients").select("id, full_name").in("id", clientIds),
+      planIds.length
+        ? supabaseAdmin.from("workout_plans").select("id, title, block_number").in("id", planIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const cmap = new Map((clients ?? []).map((c: any) => [c.id, c.full_name]));
+    const pmap = new Map((plans ?? []).map((p: any) => [p.id, p]));
+    return {
+      ok: true as const,
+      items: data.map((d: any) => ({
+        id: d.id,
+        clientId: d.client_id,
+        clientName: cmap.get(d.client_id) ?? null,
+        priorPlanTitle: (pmap.get(d.prior_plan_id) as any)?.title ?? null,
+        priorBlock: (pmap.get(d.prior_plan_id) as any)?.block_number ?? null,
+        createdAt: d.created_at,
+      })),
+    };
+  });
