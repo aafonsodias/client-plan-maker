@@ -109,12 +109,12 @@
           "goblet_squat": {
             "name": "Agachamento Goblet",
             "target": "4×8 @ RPE 7",
-            "tip": "Peso sugerido: 22kg"
+            "tip": "Carga: 22kg"
           },
           "db_bench": {
             "name": "Supino com Halteres",
             "target": "4×8 @ RPE 7",
-            "tip": "Sugestão: +2kg vs última"
+            "tip": "+2kg vs sessão anterior"
           },
           "sl_rdl": {
             "name": "RDL unilateral",
