@@ -31,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
 import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
+import { PendingDecisionsPanel } from "@/components/PendingDecisionsPanel";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -525,6 +526,8 @@ function Dashboard() {
       )}
 
       <DropoffAlerts />
+
+      <PendingDecisionsPanel />
 
       {/* Clients section — single source of truth */}
       <section>
