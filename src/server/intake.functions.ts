@@ -198,6 +198,10 @@ const ALLOWED_FIELDS = [
   "parq_passed", "acsm_risk_category", "medications", "med_flags",
   // Round R-intake-rich: extra PT-aligned columns the client may self-report.
   "years_training", "waist_cm", "hip_cm", "body_fat_pct", "current_capacity_vs_pb",
+  // PT-side reads these as top-level columns; the intake form now writes
+  // them here (was previously stuffed only inside extended.* and lost).
+  "previous_program_style", "max_lifts",
+  "standing_posture_notes", "known_imbalances", "dominant_side",
   "extended",
 ] as const;
 
@@ -265,6 +269,11 @@ const FIELD_SCHEMAS: Record<string, z.ZodTypeAny> = {
   hip_cm: z.number().min(30).max(250),
   body_fat_pct: z.number().min(2).max(70),
   current_capacity_vs_pb: intRange(1, 10),
+  previous_program_style: shortText,
+  max_lifts: longText,
+  standing_posture_notes: longText,
+  known_imbalances: longText,
+  dominant_side: z.enum(["L", "R", "Both"]),
   extended: extendedSchema,
 };
 
