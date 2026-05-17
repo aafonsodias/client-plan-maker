@@ -245,8 +245,19 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
       hip_cm: f.hip_cm ? Number(f.hip_cm) : null,
       body_fat_pct: f.body_fat_pct ? Number(f.body_fat_pct) : null,
       current_capacity_vs_pb: f.current_capacity_vs_pb > 0 ? f.current_capacity_vs_pb : null,
+      // Top-level assessment columns the PT-side reads directly. Previously
+      // these were nested under `extended.*` only — the trainer opened the
+      // assessment and saw blanks because nothing was bound to the column.
+      previous_program_style: f.previous_program_style || null,
+      max_lifts: f.max_lifts || null,
+      standing_posture_notes: f.standing_posture_notes || null,
+      known_imbalances: f.known_imbalances || null,
+      dominant_side: f.dominant_side || null,
       extended: {
         smart_extra: f.smart_extra || null,
+        // PT-aligned keys (what clients_.$clientId.tsx hydrates from). Keep
+        // BOTH the `ext_*` and the bare keys so older drafts and the intake
+        // form's own re-hydration still work end-to-end.
         ext_hours_seated: parseLooseNumber(f.ext_hours_seated),
         ext_daily_steps: parseLooseNumber(f.ext_daily_steps),
         ext_job_type: f.ext_job_type || null,
@@ -254,6 +265,13 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
         ext_water_l_per_day: f.ext_water_l_per_day ? Number(f.ext_water_l_per_day) : null,
         ext_processed_food: f.ext_processed_food,
         ext_alcohol_units_week: f.ext_alcohol_units_week ? Number(f.ext_alcohol_units_week) : null,
+        hours_seated: parseLooseNumber(f.ext_hours_seated),
+        daily_steps: parseLooseNumber(f.ext_daily_steps),
+        job_type: f.ext_job_type || null,
+        meals_per_day: f.ext_meals_per_day ? Number(f.ext_meals_per_day) : null,
+        water_l_per_day: f.ext_water_l_per_day ? Number(f.ext_water_l_per_day) : null,
+        processed_food_freq: f.ext_processed_food,
+        alcohol_units_week: f.ext_alcohol_units_week ? Number(f.ext_alcohol_units_week) : null,
         parq: f.parq,
         intake_path: f.intake_path || null,
         sched_days: f.sched_days,
@@ -261,16 +279,14 @@ function toPayload(f: FormState): { fields: Record<string, any>; sections: strin
         lifestyle_gate: f.lifestyle_gate || null,
         ai_goal_confirmed: f.ai_goal_confirmed || null,
         skipped: f.skipped,
-        previous_program_style: f.previous_program_style || null,
+        // Mobility — write under both legacy intake naming and the joint-
+        // keyed names PT hydrates from. Ankle is the only direct overlap.
         ext_mob_squat: f.ext_mob_squat || null,
         ext_mob_overhead: f.ext_mob_overhead || null,
         ext_mob_hip_hinge: f.ext_mob_hip_hinge || null,
         ext_mob_hamstring: f.ext_mob_hamstring || null,
         ext_mob_ankle: f.ext_mob_ankle || null,
-        standing_posture_notes: f.standing_posture_notes || null,
-        known_imbalances: f.known_imbalances || null,
-        dominant_side: f.dominant_side || null,
-        max_lifts: f.max_lifts || null,
+        mob_ankle: f.ext_mob_ankle || null,
       },
     },
     sections: ["safety", "smart_goal", "readiness", "training", "lifestyle", "nutrition"],
