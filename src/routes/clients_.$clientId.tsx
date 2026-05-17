@@ -8,6 +8,7 @@ import { ReassessmentReminders } from "@/components/ReassessmentReminders";
 import { CadenceSheet } from "@/components/CadenceSheet";
 import { InjuriesBodyMapBlock } from "@/components/InjuriesBodyMapBlock";
 import { ScrollCue } from "@/components/ScrollCue";
+import { DOBField } from "@/components/DOBField";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
 import { Children, cloneElement, createContext, isValidElement, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -3111,16 +3112,14 @@ function ClientDetail() {
                 </label>
                 <label className="space-y-1">
                   <span className="text-[11px] text-muted-foreground">Data de nascimento</span>
-                  <input
-                    type="date"
-                    defaultValue={client?.date_of_birth ?? ""}
-                    onBlur={async (e) => {
-                      const v = e.target.value || null;
+                  <DOBField
+                    value={client?.date_of_birth ?? ""}
+                    onChange={async (iso) => {
+                      const v = iso || null;
                       if (v === (client?.date_of_birth ?? null)) return;
                       setClient((prev: any) => ({ ...prev, date_of_birth: v }));
                       await supabase.from("clients").update({ date_of_birth: v }).eq("id", clientId);
                     }}
-                    className="h-8 w-full rounded-md border border-border bg-background/60 px-2 text-sm outline-none focus:border-primary"
                   />
                 </label>
                 <label className="space-y-1">
