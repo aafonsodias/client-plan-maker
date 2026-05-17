@@ -19,6 +19,7 @@ import { Loader2, Check, ChevronLeft, ChevronRight, SkipForward } from "lucide-r
 import { BrandMark } from "@/components/BrandMark";
 import { EquipmentPicker } from "@/components/EquipmentPicker";
 import { InjuriesSlide } from "@/components/intake/InjuriesSlide";
+import { DOBField } from "@/components/DOBField";
 
 const SHOW_DEPRECATED_FIELDS = import.meta.env.VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS === "1";
 
@@ -1201,12 +1202,12 @@ function buildSlides(
             value={form.client_phone}
             onChange={(e) => set("client_phone", e.target.value)}
           />
-          <Input
-            type="date"
-            placeholder={t("identity_dob", { defaultValue: "Data de nascimento (opcional)" })}
-            value={form.client_dob}
-            onChange={(e) => set("client_dob", e.target.value)}
-          />
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground/70">
+              {t("identity_dob", { defaultValue: "Data de nascimento (opcional)" })}
+            </p>
+            <DOBField value={form.client_dob} onChange={(iso) => set("client_dob", iso)} />
+          </div>
         </div>
       ),
       isValid: () => form.client_full_name.trim().length > 1 && /\S+@\S+\.\S+/.test(form.client_email.trim()),
