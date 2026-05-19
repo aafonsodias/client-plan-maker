@@ -1,139 +1,56 @@
+## Goal
 
-## Why this plan
+Make the focused assessment have **a single navigation bar** at the top — always visible, easy to click — that combines:
 
-The uploaded `PROTOCOL_MVP_DESIGN.md` is mostly compatible with where we already are — ports exist (`src/domain/ports/index.ts`), `audit_events` and `screening_evaluations` are append-only, `Stage 4` is deterministic, the AI is capped to ≤1 microcycle, and `programNextWeek` already gates on adherence. We don't need to rewrite the architecture. We do need to **flip a few defaults** to honour the doc's central restraint principle: *Protocol augments, never automates. Nothing changes without explicit trainer action.*
+`← Anterior   ·   [GROUP] / Section title   ·   01/15   ·   ⋯ menu   ·   Próxima →`
 
-Right now we violate that principle in one specific spot: `archivePlanAndStartNextBlock` calls `proposeNextBlock` and **auto-stamps** the proposal onto `generation_meta.next_block_proposal`, which Stage 3 then consumes as hard input. There is no `Accept / Modify / Reject / Defer` gate. That's the single biggest behavioural gap and it's the lever with the most leverage — it forces us to grow the surfaces (ProgressMarker, AdaptationDecision, ReportSnapshot, copy) the doc demands.
+Today (`src/routes/clients_.$clientId.tsx`, around lines 4838–5013, inside the focused `<SectionBlock>` renderer) there are two separate strips:
 
-## Verdict on each section of the doc vs our code
+- **Top sticky header** with `01/15` + group eyebrow + section title + jump-to menu.
+- **Bottom sticky strip** with `← Anterior`, `1/15`, `Próxima →`.
 
-| Doc concept | Current state | Action |
-|---|---|---|
-| Bounded-context folders (`domain / application / infrastructure / presentation`) | `src/domain/ports/` exists, but `src/server/*` is flat | **Keep current layout.** Add lint rule: only `src/server/<engine>/` may import port adapters. Don't restructure folders — that's a months-long refactor with no user value. |
-| Branded ID types (`ClientId`, `CycleId`, etc.) | Raw `string`/`uuid` everywhere | **Defer.** High refactor cost, low MVP value. Revisit post-MVP. |
-| `ProgressMarker` with `inputsHash` for reproducibility | We compute metrics inside `propose-next-block.server.ts` but don't persist them and don't hash inputs | **Adopt.** Persist a thin `progress_markers` table; hash = sha256 of input log IDs + engine version. |
-| `AdaptationDecision` as **required** discriminated union | Proposal is auto-applied — no trainer gate | **Refactor (top priority).** See Phase R-D below. |
-| `ReportSnapshot` with 5 separated buckets (facts / client-reported / trainer decisions / engine evidence / uncertainty), immutable on commit | Planned as Phase 4.1 PDF, not modeled this way | **Adopt the shape now**, before writing the PDF generator. The 5 buckets become the view-model contract. |
-| Trainer-editable per-cycle thresholds (mean RPE ≥9 × 3, pain ≥4, missed-session count, ACWR 0.8–1.5 as marker not gate) | Thresholds hardcoded in engine | **Adopt.** Add `cycle_thresholds` jsonb on `workout_plans`. |
-| Copy guidelines ("Protocol surfaces evidence. You decide.", "Computed from your logs. Not a recommendation.", forbidden: "we recommend / suggested load / risk score") | Landing copy already non-adversarial, but adaptation surfaces would say "Recomendado" / "Sugerido" if/when they ship | **Lock in copy contract before building the review UI.** |
-| `PerformedWorkRow.substituted` (preserves original on swap) | `session_set_logs` has no substitution column | **Add column.** One migration. |
-| Pain logged per set + surfaced (not auto-stop) | `pain_flag boolean` exists; no audit event on flag | **Wire trigger:** pain_flag=true → `audit_events.event_type='pain_flagged'` + cycle marker. No engine action. |
-| sRPE × duration = session load (Foster) | We track per-set RPE; no session-level sRPE captured | **Add field** on `workout_sessions`: `session_rpe`, `duration_min`. Compute load AU read-only. |
-| Rolling 7v28 ACWR as marker only | Not computed | **Compute and show as evidence chip.** Never gate. |
-| e1RM trend (Epley default, formula in `inputsHash`) | Already Epley in adaptation engine | ✅ no change |
-| FITT-VP scaffolding | `derive.server.ts` already does this | ✅ no change |
-| Restraint properties (a–d in §7.10): no recommendation copy / no engine output mutates plan / no client-facing PDF in this slice / no AI calls in engine | (a) ⚠ mixed (b) ❌ violated by auto-apply (c) ✅ no client PDF yet (d) ✅ engine is pure | **(b) is the lever.** |
+Result: the user sees `1/15` twice and has to scroll the section to reach Anterior/Próxima.
 
-## What this means for `forge-gap-may-2026.md`
+## Changes
 
-Insert a new phase **R-D ("Restraint")** between current Phase 3.2 and Phase 4. R-D blocks Phase 4. Phases 3.1 (per-set ingest from `/log/$token` writer) and 4.1 (end-of-block PDF) keep their slots but get reshaped by R-D's outputs.
+### 1. Unify the top bar (mobile branch, ~lines 4842–4922)
 
-## Phase R-D — Restraint refactor (the actual work, in order)
-
-### R-D.1 — Stop auto-applying the next-block proposal
-
-In `src/server/blocks.functions.ts` (`archivePlanAndStartNextBlock`):
-- Continue computing the proposal via `proposeNextBlock`.
-- **Stop** writing it into `generation_meta.next_block_proposal` of the new plan.
-- **Stop** creating the new plan automatically.
-- Instead: persist the proposal into a new `adaptation_proposals` table (status = `pending`) and emit `next_block_proposed` audit event.
-- The trainer must visit a new screen, pick a decision, **then** the new plan is generated using the (possibly edited) proposal.
-
-### R-D.2 — `adaptation_decisions` table + required-decision use case
-
-New tables (one migration):
+Replace the current top sticky header layout with a single horizontal row:
 
 ```text
-adaptation_proposals
-  id uuid pk
-  trainer_id uuid
-  client_id uuid
-  prior_plan_id uuid
-  proposal jsonb            -- NextBlockProposal as-is
-  evidence jsonb            -- triggers + marker IDs + relatedLogIds
-  engine_versions jsonb
-  inputs_hash text
-  status text check in ('pending','decided','expired')
-  created_at timestamptz
-
-adaptation_decisions
-  id uuid pk
-  proposal_id uuid fk
-  kind text check in ('continueAsIs','adjustCurrentSession','adjustUpcoming','defer','accept')
-  rationale text not null   -- required
-  changes jsonb             -- diff vs proposal when kind = adjust* / accept
-  decided_by uuid
-  decided_at timestamptz
-
-progress_markers
-  id uuid pk
-  trainer_id uuid
-  client_id uuid
-  plan_id uuid
-  week_index int
-  metric text               -- enum from doc §3
-  scope text                -- e.g. muscle group
-  value numeric
-  inputs_hash text
-  engine_version text
-  computed_at timestamptz
+[← Anterior]   [GROUP eyebrow / Section title]   [01/15]   [⋯ jump]   [Próxima →]
 ```
 
-All three: RLS = trainer reads/writes own; clients read their own where applicable. `adaptation_decisions` immutable via trigger (same pattern as `audit_events`).
+- `← Anterior`: ghost icon button. `disabled` when `activeIdx === 0` (goes grey with `opacity-40 pointer-events-none`). Calls `goPrev`.
+- Middle title column: keeps the existing group eyebrow + `t("sections.${activeId}")` title (truncate, `min-w-0 flex-1`).
+- `01/15`: same pill used today (`String(activeIdx + 1).padStart(2, "0")/…`).
+- `⋯ jump`: existing `<Sheet>` trigger, unchanged.
+- `Próxima →`: small button. On last step becomes the amber "Concluir" CTA (reuses the same `isLast ? onConclude : goNext` logic, `concludeBusy` spinner, amber styling, `pulseKey` pulse). Hidden/disabled cleanly when there's no `onConclude` on the last step.
 
-Server function `decideAdaptation({ proposalId, kind, rationale, changes? })`:
-- Validates `kind` + `rationale.length >= 1`.
-- Writes the decision row.
-- Writes `audit_events` (`event_type='block_decided'`, payload = full decision).
-- If `kind ∈ {accept, adjustUpcoming}`: triggers the existing block-N+1 generation pipeline with the (possibly modified) proposal as Stage 3 input. Otherwise no plan is generated.
-- Marks proposal `decided`.
+Keep the thin progress bar (`h-0.5` gradient) above the row.
 
-Type-level invariant: the use case **rejects** at compile time any call missing `rationale`. (Discriminated union from doc §3 verbatim.)
+### 2. Remove the bottom sticky footer (mobile branch, ~lines 4936–4972)
 
-### R-D.3 — Trainer review screen
+Delete the whole `<div className="sticky bottom-0 …">` block. The body keeps document scroll; `missingPanel` and `extras` remain where they are. `paddingBottom: env(safe-area-inset-bottom)` is no longer needed since there's no bottom bar.
 
-New route `src/routes/clients_.$clientId.adaptation.$proposalId.tsx`:
-- Banner: *"Protocol surfaces evidence. You decide."*
-- Three sections, visually distinct:
-  1. **Evidence (read-only, grey panel)** — markers (Δe1RM, RPE drift, adherence%, pain flag count, ACWR 7v28) with inline links to underlying sessions. Each marker chip has *"Computed from your logs. Not a recommendation."*
-  2. **Engine proposal (read-only, amber panel)** — the diff per exercise, presented as evidence to react to, never as instruction.
-  3. **Your decision (editable, white panel)** — radio: Accept / Adjust / Defer / Continue as-is. Free-text rationale (required). When `Adjust`, an inline editor for the diff.
-- No "Accept all" default highlighted. No traffic-light coloring used as a directive.
-- Submit calls `decideAdaptation`.
+### 3. Apply the same unification to the desktop branch (~lines 4976–5013)
 
-### R-D.4 — Copy contract (locked before UI lands)
+Today desktop has no top step header — only the bottom prev/next strip at lines 4985–5013. Make it match: render the same unified top bar (above the section body) and remove the bottom strip. This way both viewports behave identically and the "Anterior/Próxima" controls are always reachable without scrolling. The existing focused-mode tab strip (lines 4789–4836) stays — it's a different surface (chapter tabs).
 
-Add `mem://principles/restraint-copy.md` listing:
-- **Required phrases** (verbatim, in PT-PT and EN): *"O Protocol mostra evidência. Você decide."* / *"Calculado a partir dos logs. Não é uma recomendação."* / *"Cargas e progressões são suas para definir."*
-- **Forbidden phrases**: "recomendamos", "carga sugerida", "ideal", "score de risco", "o seu cliente deve", "próxima sessão óptima".
-- Apply lint sweep across i18n files; flag forbidden tokens in CI.
+### 4. i18n
 
-### R-D.5 — Mark current landing as needing a copy review
+Reuse existing keys: `assessment:previous`, `assessment:next`, `assessment:finish`, `assessment:jump_to`. No new strings.
 
-The landing line *"Adaptação semana a semana"* and the "Adaptação por regras, não por palpite" principle are still safe (rules ≠ recommendation), but `value.client.items` includes "Continuidade entre blocos: cada novo programa nasce do anterior." That's true today only because of auto-apply. After R-D.1, edit to *"Continuidade entre blocos: cada novo programa parte do que ficou registado, com a sua aprovação."*
+### 5. Out of scope
 
-## What stays in Phase 4 but gets reshaped
+- No changes to `SECTIONS`, completeness logic, `goPrev/goNext`, `pulseKey`, `onConclude`.
+- No changes to the assessment progress strip on the StageCard header (the "Auto-Avaliação · X%" eyebrow above the focused area).
+- No changes to `MobileStepHeader.tsx` (it's a separate component used elsewhere — leaving it untouched).
 
-- **4.1 End-of-block PDF** → becomes `ReportSnapshot` first (typed, immutable on commit, 5 separated buckets including `uncertainty: string[]`), and the PDF is a pure consumer of that snapshot. Never reads engine output directly.
-- **4.2 Stripe** — no change. Independent of R-D.
+## Acceptance
 
-## What we explicitly do **not** adopt from the doc
-
-- Folder restructuring to `domain/application/infrastructure/presentation`. Our flat `src/server/*` already isolates side-effects; the cost-benefit is wrong for now.
-- Branded ID types. Defer until first real cross-context bug.
-- ESLint import boundaries between `domain/application/infrastructure`. Add only the **port-adapter** rule (no module outside `src/server/<engine>/` may import an adapter file directly), which protects the substitution-by-port property the doc cares about.
-- The doc's "no client-facing output in this MVP slice" — we already ship the plan PDF and `/me`. Keep those, but ensure `ReportSnapshot` shape doesn't allow recommendation fields.
-
-## Order of execution after approval
-
-1. R-D.1 + R-D.2 migration (one MR — non-trivial, single concern).
-2. R-D.4 copy contract memory file + lint sweep (parallel, low risk).
-3. R-D.3 review screen.
-4. R-D.5 landing edit.
-5. Phase 3.1 per-set writer at `/log/$token` (already on roadmap; unblocked but not blocked).
-6. Reshape 4.1 PDF as `ReportSnapshot` consumer.
-
-## Risk
-
-The biggest risk is silent retention loss from making the loop manual. We mitigate by making the trainer-review surface **fast** (one screen, default focus on rationale field, sensible pre-filled diff suggestion that the trainer can accept-as-is in two clicks) — restraint, not friction.
-
+- Only one `1/15` is visible in the focused assessment.
+- `← Anterior` and `Próxima →` are always reachable at the top, no scrolling needed.
+- `← Anterior` is greyed out on step 1; `Próxima →` becomes the amber "Concluir" CTA on the last step with the existing pulse animation.
+- Jump-to (`⋯`) sheet still opens the same section picker.
+- Behaviour identical on viewport widths above and below 1024 px.
