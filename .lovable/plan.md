@@ -1,56 +1,42 @@
-## Goal
+## Applying Lean Startup to Protocol — rough plan (no code yet)
 
-Make the focused assessment have **a single navigation bar** at the top — always visible, easy to click — that combines:
+Read the summary you sent. Below is the honest mapping to where we are today, what's already aligned, and a small set of moves that would actually move the needle when you have credits again.
 
-`← Anterior   ·   [GROUP] / Section title   ·   01/15   ·   ⋯ menu   ·   Próxima →`
+### Where Protocol already matches the playbook
 
-Today (`src/routes/clients_.$clientId.tsx`, around lines 4838–5013, inside the focused `<SectionBlock>` renderer) there are two separate strips:
+- **Build-Measure-Learn** is literally the R-D loop: `audit_events` + `adaptation_proposals` + `progress_markers` are the "measure" layer; `decideAdaptation` is the "learn → decide" gate. Trainer is the steering wheel.
+- **Restraint copy contract** ("Protocol surfaces evidence. You decide.") is the anti-vanity-metric stance — engine output is evidence, not directive.
+- **Innovation accounting**: `generation_log` per AI call, `inputs_hash` on markers, append-only audit. We already refuse to fake progress.
+- **Small batches**: the 5-stage pipeline (Brief → Blueprint → Microcycle → Progressions → Bulk-fill) is single-piece flow for plan generation. Stage isolation = andon chord.
 
-- **Top sticky header** with `01/15` + group eyebrow + section title + jump-to menu.
-- **Bottom sticky strip** with `← Anterior`, `1/15`, `Próxima →`.
+### Where the book exposes gaps worth fixing
 
-Result: the user sees `1/15` twice and has to scroll the section to reach Anterior/Próxima.
+1. **Leap-of-faith assumptions aren't written down.** We have a backlog but no living doc of the 3–5 bets that, if false, kill the product. Candidates: (a) PTs will trust an AI-drafted plan if they keep final say, (b) PTs will pay €X/mo at the Starter cap of 8 clients, (c) clients will log sessions often enough to feed the adaptation engine, (d) block-to-block evolution is a felt differentiator vs. Trainerize. → Lightweight: `mem://strategy/leap-of-faith.md` listing each bet + the metric that would falsify it.
 
-## Changes
+2. **No value vs growth hypothesis split.** Today the landing pitches both at once. The book is blunt: pick one engine. For us realistically = **sticky engine** (churn-driven SaaS), not viral. → Means we should be tracking *plan-finalize → next-block-decide* conversion and *trainer monthly active* as the two numbers that matter, and stop optimizing anything else until those move.
 
-### 1. Unify the top bar (mobile branch, ~lines 4842–4922)
+3. **MVP discipline on new features.** We've shipped a lot (Intensity Cockpit, Capacity-Gain, Casa do cliente, multi-block lineage, Tour, Demo Lab…). Each is genuinely good, but the book would call several "high-quality answers to unvalidated questions". Concrete proposal: before the next big surface, write a 1-pager: *which leap-of-faith does this test, what's the falsifiable metric, what's the smallest version that produces that signal.* Pin it in `mem://principles/`.
 
-Replace the current top sticky header layout with a single horizontal row:
+4. **Concierge MVP for the adaptation review screen.** `/clients/$clientId/adaptation/$proposalId` exists but we don't know if PTs actually decide there vs ignore it. A concierge move: for the first 5 paying PTs, you (or a founder-only Slack/email) deliver the proposal manually, watch what they change, then bake that into the UI. Cheaper than guessing.
 
-```text
-[← Anterior]   [GROUP eyebrow / Section title]   [01/15]   [⋯ jump]   [Próxima →]
-```
+5. **Vanity metrics audit.** Dashboard today shows several counts (clients, plans, pending decisions). The book asks: which of these would a trainer change behaviour over? → Probably only "pending decisions" and "intake-submitted-needs-review". The rest can move to a secondary tab. (UI only, low risk.)
 
-- `← Anterior`: ghost icon button. `disabled` when `activeIdx === 0` (goes grey with `opacity-40 pointer-events-none`). Calls `goPrev`.
-- Middle title column: keeps the existing group eyebrow + `t("sections.${activeId}")` title (truncate, `min-w-0 flex-1`).
-- `01/15`: same pill used today (`String(activeIdx + 1).padStart(2, "0")/…`).
-- `⋯ jump`: existing `<Sheet>` trigger, unchanged.
-- `Próxima →`: small button. On last step becomes the amber "Concluir" CTA (reuses the same `isLast ? onConclude : goNext` logic, `concludeBusy` spinner, amber styling, `pulseKey` pulse). Hidden/disabled cleanly when there's no `onConclude` on the last step.
+6. **Five Whys when things break.** We have generation_log + audit but no ritual. Proposal: when a Stage 3 retry fires or a proposal is `defer`-ed twice, auto-open a `.lovable/post-mortems/{date}.md` template. Forces the systemic fix instead of patching the symptom.
 
-Keep the thin progress bar (`h-0.5` gradient) above the row.
+7. **Pivot-or-persevere checkpoint.** Suggest a fixed monthly self-review (15 min) using the 3 metrics from #2. If two consecutive months are flat → pivot a knob (pricing tier, target persona, primary surface). Document at `mem://strategy/pivot-log.md`.
 
-### 2. Remove the bottom sticky footer (mobile branch, ~lines 4936–4972)
+### What I'd actually do, in order, when credits come back
 
-Delete the whole `<div className="sticky bottom-0 …">` block. The body keeps document scroll; `missingPanel` and `extras` remain where they are. `paddingBottom: env(safe-area-inset-bottom)` is no longer needed since there's no bottom bar.
+1. Write `mem://strategy/leap-of-faith.md` (30 min, no code).
+2. Strip the dashboard down to the 2–3 metrics that map to the sticky engine; demote the rest. (UI-only.)
+3. Add a one-pager template at `mem://principles/feature-mvp-template.md` and require it for any new surface > 1 day of work.
+4. Wire a tiny `pivot_review` reminder (could just be a calendar event, doesn't need to be in-app).
+5. After 4 weeks of data, decide which engine is actually turning (sticky vs paid vs word-of-mouth) and concentrate the next quarter's work there.
 
-### 3. Apply the same unification to the desktop branch (~lines 4976–5013)
+### What I would NOT do based on this book
 
-Today desktop has no top step header — only the bottom prev/next strip at lines 4985–5013. Make it match: render the same unified top bar (above the section body) and remove the bottom strip. This way both viewports behave identically and the "Anterior/Próxima" controls are always reachable without scrolling. The existing focused-mode tab strip (lines 4789–4836) stays — it's a different surface (chapter tabs).
+- Don't viral-loop the product (clients invite friends → trainers). Wrong audience; would dilute the PT-only positioning we just locked.
+- Don't gut the Intensity Cockpit / Capacity-Gain / multi-block work to "ship MVP" — that craft *is* the differentiator and the early-adopter PT is exactly the persona who notices.
+- Don't add growth experiments before we know retention. Per the book, growing a leaky bucket is the classic mistake.
 
-### 4. i18n
-
-Reuse existing keys: `assessment:previous`, `assessment:next`, `assessment:finish`, `assessment:jump_to`. No new strings.
-
-### 5. Out of scope
-
-- No changes to `SECTIONS`, completeness logic, `goPrev/goNext`, `pulseKey`, `onConclude`.
-- No changes to the assessment progress strip on the StageCard header (the "Auto-Avaliação · X%" eyebrow above the focused area).
-- No changes to `MobileStepHeader.tsx` (it's a separate component used elsewhere — leaving it untouched).
-
-## Acceptance
-
-- Only one `1/15` is visible in the focused assessment.
-- `← Anterior` and `Próxima →` are always reachable at the top, no scrolling needed.
-- `← Anterior` is greyed out on step 1; `Próxima →` becomes the amber "Concluir" CTA on the last step with the existing pulse animation.
-- Jump-to (`⋯`) sheet still opens the same section picker.
-- Behaviour identical on viewport widths above and below 1024 px.
+No files touched. Approve and I'll execute (or any subset) next time you have credits.
