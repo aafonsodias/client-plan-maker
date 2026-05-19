@@ -4950,6 +4950,193 @@ function useSectionCollapseProvider(clientId: string, sectionIds: string[]): Col
   return { isOpen, setOpen, setAll, allOpen, allClosed };
 }
 
+/**
+ * Unified step nav for the focused assessment. Replaces both the old sticky
+ * top header and the bottom prev/next strip — single bar at the top with
+ * ← Anterior · GROUP/Section · 01/15 · ⋯ jump · Próxima → (or Concluir).
+ */
+function UnifiedStepNav({
+  sticky = false,
+  t,
+  activeId,
+  activeIdx,
+  totalCount,
+  progressPct,
+  sectionStatus,
+  statusById,
+  setActiveId,
+  goPrev,
+  goNext,
+  isLast,
+  onConclude,
+  concludeBusy,
+  currentComplete,
+  pulseKey,
+  jumpOpen,
+  setJumpOpen,
+  saveLabel,
+}: {
+  sticky?: boolean;
+  t: ReturnType<typeof useTranslation>["t"];
+  activeId: string;
+  activeIdx: number;
+  totalCount: number;
+  progressPct: number;
+  sectionStatus?: Array<{ id: string; label: string; complete: boolean }>;
+  statusById: Map<string, boolean>;
+  setActiveId: (id: string) => void;
+  goPrev: () => void;
+  goNext: () => void;
+  isLast: boolean;
+  onConclude?: () => void;
+  concludeBusy?: boolean;
+  currentComplete: boolean;
+  pulseKey: number;
+  jumpOpen: boolean;
+  setJumpOpen: (open: boolean) => void;
+  saveLabel: string | null;
+}) {
+  const grp = SECTIONS.find((s) => s.id === activeId)?.group;
+  const sectionTitle = t(`sections.${activeId}` as const, {
+    defaultValue:
+      (sectionStatus ?? SECTIONS).find((s) => s.id === activeId)?.label ?? activeId,
+  });
+  const prevDisabled = activeIdx === 0;
+  const nextDisabled = concludeBusy || (isLast && !onConclude);
+  const amber =
+    (currentComplete && !isLast) || (isLast && !!onConclude)
+      ? "bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+      : "";
+  return (
+    <div
+      className={cn(
+        "z-30 -mx-px border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        sticky ? "sticky top-0" : "rounded-t-2xl",
+      )}
+    >
+      <div className="h-0.5 w-full bg-muted/30">
+        <div
+          className="h-full bg-gradient-to-r from-amber-500/70 via-primary to-primary transition-all duration-500"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+      <div className="flex items-center gap-1.5 px-2 py-2 sm:gap-2.5 sm:px-3">
+        {/* ← Anterior */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={goPrev}
+          disabled={prevDisabled}
+          aria-label={t("previous") as string}
+          className={cn(
+            "h-9 shrink-0 px-2 sm:px-3",
+            prevDisabled ? "opacity-40" : "",
+          )}
+        >
+          <ArrowLeft className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">{t("previous")}</span>
+        </Button>
+
+        {/* Group eyebrow + section title */}
+        <div className="flex min-w-0 flex-1 flex-col leading-tight">
+          {grp ? (
+            <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+              {t(grp === "self_intake" ? "self_intake.title" : "assessment_session.title")}
+            </span>
+          ) : null}
+          <h2 className="t-3 min-w-0 truncate leading-tight">{sectionTitle}</h2>
+        </div>
+
+        {saveLabel && (
+          <span className="hidden shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70 lg:inline">
+            {saveLabel}
+          </span>
+        )}
+
+        {/* 01/15 pill */}
+        <span className="inline-flex shrink-0 items-center rounded-full bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-medium tabular-nums tracking-tight text-muted-foreground">
+          {String(activeIdx + 1).padStart(2, "0")}/{String(totalCount).padStart(2, "0")}
+        </span>
+
+        {/* ⋯ jump-to */}
+        <Sheet open={jumpOpen} onOpenChange={setJumpOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label={t("jump_to") as string}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted/40 text-muted-foreground transition hover:bg-muted/70 hover:text-foreground"
+            >
+              <MenuIcon className="h-4 w-4" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[85vw] max-w-sm">
+            <SheetHeader>
+              <SheetTitle>{t("jump_to")}</SheetTitle>
+            </SheetHeader>
+            <div className="mt-3 flex flex-col gap-1 overflow-y-auto pb-6">
+              {SECTIONS.map((s, i) => {
+                const complete = statusById.get(s.id) ?? false;
+                const isActive = s.id === activeId;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveId(s.id);
+                      setJumpOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition",
+                      isActive
+                        ? "bg-muted/60 text-foreground"
+                        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                    )}
+                  >
+                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/50 font-mono text-[10px] tabular-nums">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 truncate">
+                      {t((s as any).labelKey ?? s.label, { defaultValue: s.label })}
+                    </span>
+                    {complete ? (
+                      <>
+                        <Check className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                        <span className="sr-only">{t("section_complete_indicator")}</span>
+                      </>
+                    ) : (
+                      <Circle className="h-3 w-3 text-muted-foreground/40" aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Próxima → / Concluir */}
+        <Button
+          key={pulseKey}
+          size="sm"
+          onClick={isLast ? (onConclude ?? (() => {})) : goNext}
+          disabled={nextDisabled}
+          aria-label={(isLast ? t("finish") : t("next")) as string}
+          className={cn(
+            "h-9 shrink-0 px-2 transition sm:px-3",
+            amber,
+            currentComplete ? "animate-pulse-once" : "",
+          )}
+        >
+          {concludeBusy ? (
+            <Loader2 className="h-4 w-4 animate-spin sm:mr-1" />
+          ) : null}
+          <span className="hidden sm:inline">{isLast ? t("finish") : t("next")}</span>
+          <ArrowRight className="h-4 w-4 sm:ml-1" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function SectionBlock({
   id,
   title,
