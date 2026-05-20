@@ -10,7 +10,7 @@ import {
   type GenerationStage,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
-import { checkPlanQuota } from "@/server/quota.server";
+import { checkPlanQuota, reservePlanQuota, acquireGenerationLock } from "@/server/quota.server";
 import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
 import type { TrainingModality } from "./schemas";
 import { resolveRules } from "@/server/knowledge/resolve.server";
@@ -376,6 +376,16 @@ export const synthesizeBrief = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !plan) return { ok: false as const, error: error?.message ?? "plan not found" };
     if ((plan as any).trainer_id !== userId) return { ok: false as const, error: "forbidden" };
+
+    // R78 cost guard — reserve quota + lock plan before any AI spend.
+    const reserved = await reservePlanQuota(supabase as any, data.planId, userId);
+    if (!reserved.ok) {
+      return { ok: false as const, error: "quota_exceeded", used: reserved.used, limit: reserved.limit };
+    }
+    const lock = await acquireGenerationLock(supabase as any, data.planId, userId);
+    if (!lock.ok) {
+      return { ok: false as const, error: "generation_locked" };
+    }
 
     let sectionAnalyses: Record<string, unknown> = {};
     if ((plan as any).assessment_id) {
