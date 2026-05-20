@@ -24,7 +24,7 @@ export function EngineMetricsPanel() {
   const [metrics, setMetrics] = useState<EngineMetric[] | null>(null);
 
   useEffect(() => {
-    void load({ data: undefined as never }).then((r) => {
+    void load({ data: {} as never }).then((r) => {
       if (r?.ok) setMetrics(r.metrics);
     }).catch(() => setMetrics([]));
   }, [load]);
