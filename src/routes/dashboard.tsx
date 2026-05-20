@@ -32,6 +32,7 @@ import { CoachCockpit } from "@/components/dashboard/CoachCockpit";
 import { ViewAsClientPicker } from "@/components/ViewAsClientPicker";
 import { downloadTrainerAcquisitionRetentionPdf } from "@/lib/trainer-resource-pdf";
 import { PendingDecisionsPanel } from "@/components/PendingDecisionsPanel";
+import { EngineMetricsPanel } from "@/components/EngineMetricsPanel";
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { filter?: string } => ({
@@ -498,6 +499,8 @@ function Dashboard() {
           }))}
         />
       )}
+
+      {!isEmpty && <EngineMetricsPanel />}
 
       {attention.length > 0 && (
         <section>
