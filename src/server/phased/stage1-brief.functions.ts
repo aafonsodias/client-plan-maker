@@ -14,6 +14,7 @@ import { checkPlanQuota, reservePlanQuota, acquireGenerationLock } from "@/serve
 import { PATTERN_IDS, buildPatternSentence, type PatternId } from "@/lib/movement-criteria";
 import type { TrainingModality } from "./schemas";
 import { resolveRules } from "@/server/knowledge/resolve.server";
+import { logAuditEvent } from "@/server/audit/log-event.server";
 
 // R2 — Capacity context shape passed to the Stage-1 LLM prompt. Built from
 // the latest snapshot per capacity domain at synth time. Names resolve in
@@ -549,7 +550,7 @@ export const approveBrief = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabase
       .from("workout_plans")
-      .select("trainer_id, generation_state")
+      .select("trainer_id, client_id, status, generation_status, generation_state")
       .eq("id", data.planId)
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
@@ -560,10 +561,11 @@ export const approveBrief = createServerFn({ method: "POST" })
     const approved = new Set(prevState.success ? prevState.data.approved_stages : []);
     approved.add("brief");
 
+    const approvedAt = new Date().toISOString();
     const newState = GenerationStateSchema.parse({
       stage: "blueprint",
       approved_stages: Array.from(approved),
-      last_updated_at: new Date().toISOString(),
+      last_updated_at: approvedAt,
     });
 
     const update: Record<string, unknown> = {
@@ -585,6 +587,38 @@ export const approveBrief = createServerFn({ method: "POST" })
       .update(update as any)
       .eq("id", data.planId);
     if (updErr) return { ok: false as const, error: updErr.message };
+
+    // Existing audit behavior is non-fatal: logAuditEvent logs and swallows
+    // insert failures, so brief approval remains consistent with current paths.
+    await logAuditEvent({
+      trainerId: userId,
+      actorId: userId,
+      eventType: "plan_approved",
+      entityType: "plan",
+      entityId: data.planId,
+      payload: {
+        planId: data.planId,
+        clientId: (plan as any).client_id ?? null,
+        trainerId: userId,
+        actorId: userId,
+        approvedStage: "brief",
+        source: "server:approveBrief",
+        timestamp: approvedAt,
+        previous: {
+          stage: prevState.success ? prevState.data.stage : null,
+          approvedStages: prevState.success ? prevState.data.approved_stages : [],
+          status: (plan as any).status ?? null,
+          generationStatus: (plan as any).generation_status ?? null,
+        },
+        next: {
+          stage: newState.stage,
+          approvedStages: newState.approved_stages,
+          status: (plan as any).status ?? null,
+          generationStatus: (plan as any).generation_status ?? null,
+        },
+      },
+    });
+
     return { ok: true as const };
   });
 
