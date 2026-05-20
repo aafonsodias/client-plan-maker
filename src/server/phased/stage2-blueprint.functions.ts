@@ -9,6 +9,7 @@ import {
   DOWNSTREAM_OF,
 } from "./schemas";
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
+import { reservePlanQuota, acquireGenerationLock } from "@/server/quota.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
 import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 import { resolveRules } from "@/server/knowledge/resolve.server";
@@ -89,6 +90,15 @@ export const generateBlueprint = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!plan || (plan as any).trainer_id !== userId) {
       return { ok: false as const, error: "forbidden" };
+    }
+    // R78 cost guard.
+    const reserved = await reservePlanQuota(supabase as any, data.planId, userId);
+    if (!reserved.ok) {
+      return { ok: false as const, error: "quota_exceeded", used: reserved.used, limit: reserved.limit };
+    }
+    const lock = await acquireGenerationLock(supabase as any, data.planId, userId);
+    if (!lock.ok) {
+      return { ok: false as const, error: "generation_locked" };
     }
     const briefParsed = BriefSchema.safeParse((plan as any).brief);
     if (!briefParsed.success) {

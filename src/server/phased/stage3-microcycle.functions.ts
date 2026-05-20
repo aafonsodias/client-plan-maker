@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { reservePlanQuota, acquireGenerationLock } from "@/server/quota.server";
 import {
   BlueprintSchema,
   BriefSchema,
@@ -898,6 +899,12 @@ export const generateDay = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const loaded = await loadPlan(supabase, data.planId, userId);
     if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const reservedDay = await reservePlanQuota(supabase as any, data.planId, userId);
+    if (!reservedDay.ok) {
+      return { ok: false as const, error: "quota_exceeded", used: reservedDay.used, limit: reservedDay.limit };
+    }
+    const lockDay = await acquireGenerationLock(supabase as any, data.planId, userId);
+    if (!lockDay.ok) return { ok: false as const, error: "generation_locked" };
     const briefP = BriefSchema.safeParse(loaded.plan.brief);
     const bpP = BlueprintSchema.safeParse(loaded.plan.blueprint);
     if (!briefP.success || !bpP.success) {
@@ -951,6 +958,12 @@ export const generateMicrocycleDays = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const loaded = await loadPlan(supabase, data.planId, userId);
     if (!loaded.ok) return { ok: false as const, error: loaded.error };
+    const reservedMc = await reservePlanQuota(supabase as any, data.planId, userId);
+    if (!reservedMc.ok) {
+      return { ok: false as const, error: "quota_exceeded", used: reservedMc.used, limit: reservedMc.limit };
+    }
+    const lockMc = await acquireGenerationLock(supabase as any, data.planId, userId);
+    if (!lockMc.ok) return { ok: false as const, error: "generation_locked" };
     const briefP = BriefSchema.safeParse(loaded.plan.brief);
     const bpP = BlueprintSchema.safeParse(loaded.plan.blueprint);
     if (!briefP.success || !bpP.success) {

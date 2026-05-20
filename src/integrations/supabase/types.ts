@@ -2055,6 +2055,8 @@ export type Database = {
           created_at: string
           demo_critique: Json | null
           duration_weeks: number | null
+          generation_lock_acquired_at: string | null
+          generation_lock_owner: string | null
           generation_meta: Json
           generation_state: Json
           generation_status: string
@@ -2068,6 +2070,7 @@ export type Database = {
           prior_plan_id: string | null
           programming_variables: Json | null
           progression_plan: Json | null
+          quota_reserved: boolean
           red_flag_accommodations: Json | null
           share_token: string | null
           share_token_expires_at: string | null
@@ -2089,6 +2092,8 @@ export type Database = {
           created_at?: string
           demo_critique?: Json | null
           duration_weeks?: number | null
+          generation_lock_acquired_at?: string | null
+          generation_lock_owner?: string | null
           generation_meta?: Json
           generation_state?: Json
           generation_status?: string
@@ -2102,6 +2107,7 @@ export type Database = {
           prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
+          quota_reserved?: boolean
           red_flag_accommodations?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
@@ -2123,6 +2129,8 @@ export type Database = {
           created_at?: string
           demo_critique?: Json | null
           duration_weeks?: number | null
+          generation_lock_acquired_at?: string | null
+          generation_lock_owner?: string | null
           generation_meta?: Json
           generation_state?: Json
           generation_status?: string
@@ -2136,6 +2144,7 @@ export type Database = {
           prior_plan_id?: string | null
           programming_variables?: Json | null
           progression_plan?: Json | null
+          quota_reserved?: boolean
           red_flag_accommodations?: Json | null
           share_token?: string | null
           share_token_expires_at?: string | null
