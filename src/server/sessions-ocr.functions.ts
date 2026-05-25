@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
  * Extract a session log from a photo of a printed plan sheet.
@@ -104,8 +105,8 @@ export const extractSessionFromImage = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) {
+    const aiProvider = getDefaultAiProvider();
+    if (!aiProvider.isConfigured()) {
       throw new Error("OCR indisponível: AI gateway não configurado.");
     }
 
@@ -157,28 +158,25 @@ export const extractSessionFromImage = createServerFn({ method: "POST" })
       },
     ];
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages,
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "submit_log",
-              description: "Return the extracted handwritten log values.",
-              parameters: TOOL_SCHEMA,
-            },
+    const aiResult = await aiProvider.createChatCompletion({
+      model: "google/gemini-2.5-pro",
+      messages,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_log",
+            description: "Return the extracted handwritten log values.",
+            parameters: TOOL_SCHEMA,
           },
-        ],
-        tool_choice: { type: "function", function: { name: "submit_log" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "submit_log" } },
     });
+    if (!aiResult.ok) {
+      throw new Error("OCR indisponível: AI gateway não configurado.");
+    }
+    const aiRes = aiResult.response;
 
     if (!aiRes.ok) {
       const text = await aiRes.text().catch(() => "");

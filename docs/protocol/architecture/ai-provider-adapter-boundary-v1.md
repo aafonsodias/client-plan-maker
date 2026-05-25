@@ -26,7 +26,7 @@ The default provider still:
 - returns the raw `Response` to preserve existing status handling and parsing
 - never prints secret values
 
-`AiChatCompletionRequest` supports the existing plain chat request shape and the OpenAI-compatible `tools` / `tool_choice` fields needed by Concierge. The adapter does not parse tool calls yet; callers still own response parsing so behavior remains unchanged.
+`AiChatCompletionRequest` supports the existing plain chat request shape, OpenAI-compatible `tools` / `tool_choice` fields, and multimodal message content arrays needed by OCR image inputs. The adapter does not parse tool calls yet; callers still own response parsing so behavior remains unchanged.
 
 ## Migrated callers
 
@@ -57,13 +57,30 @@ The request payload remains `{ model, messages }`. Existing handling for missing
 
 The request payload remains `{ model, messages, tools, tool_choice }`. The adapter only carries that payload to the current Lovable Gateway implementation.
 
+`src/server/sessions-ocr.functions.ts` now routes `extractSessionFromImage` through the same adapter.
+
+`extractSessionFromImage` was migrated in this PR because it is isolated from billing/quota/generation logs and the current gateway request can be preserved exactly:
+
+- hardcoded model remains `google/gemini-2.5-pro`
+- OCR prompt text remains unchanged
+- image payload remains in the existing OpenAI-compatible content array
+- `submit_log` tool schema and forced `tool_choice` remain unchanged
+- status handling, tool-call parsing, normalization, and user-facing errors stay at the caller
+
+`src/server/demo-judge.functions.ts` now routes `judgeDemoRun` through the same adapter.
+
+`judgeDemoRun` was migrated because it is a single tool-call request with no retry loop and no provider-specific response wrapping:
+
+- hardcoded model remains `google/gemini-3-flash-preview`
+- prompt text and input JSON construction remain unchanged
+- `submit_critique` tool schema and forced `tool_choice` remain unchanged
+- cached critique behavior, schema validation, persistence, and error handling stay at the caller
+
 ## Remaining Lovable AI call sites
 
 These still call Lovable Gateway directly or through existing Lovable-specific compatibility helpers:
 
 - `src/server/intake-ai.functions.ts`
-- `src/server/sessions-ocr.functions.ts`
-- `src/server/demo-judge.functions.ts`
 - `src/server/anthropic-compat.server.ts`
 - `src/server/phased/ai.server.ts`
 - `src/server/phased/stage2-blueprint.functions.ts`
@@ -74,6 +91,14 @@ Related model/cost routing surfaces remain unchanged:
 - `src/lib/ai-models.ts`
 - `src/server/phased/model-routing.server.ts`
 - `src/server/plan-cost.server.ts`
+
+## Intentionally skipped in the next-callers PR
+
+- `src/server/intake-ai.functions.ts`: safe-looking tool-call chat, but this PR already migrated two callers and should stay small.
+- `src/server/anthropic-compat.server.ts`: Anthropic compatibility shim that transforms request and response envelopes; it needs a dedicated preservation pass.
+- `src/server/phased/ai.server.ts`: phased generation helper with retry, Zod repair, token accounting, cost calculation, and generation logging coupling.
+- `src/server/phased/stage2-blueprint.functions.ts`: phased generation surface with cost/logging behavior nearby and an additional direct discussion request.
+- `scripts/r2.2-smoke2.ts`: non-runtime smoke script that writes a report and uses script-specific model/cost assumptions.
 
 ## Before replacing Lovable Gateway
 
@@ -103,11 +128,13 @@ Before changing the active provider implementation, these must be true:
 - `npm.cmd run check:env`
 - Confirm `askAtlas` still sends the same model and messages payload shape.
 - Confirm `askConcierge` still sends the same model, messages, tools, and tool_choice payload shape.
+- Confirm `extractSessionFromImage` still sends the same model, messages with image content, tools, and tool_choice payload shape.
+- Confirm `judgeDemoRun` still sends the same model, messages, tools, and tool_choice payload shape.
 - Confirm no prompt text, model allow-list, error copy, billing behavior, or auth behavior changed.
-- In staging, manually verify Atlas and Concierge response behavior after provider secrets are available.
+- In staging, manually verify Atlas, Concierge, OCR extraction, and demo critique response behavior after provider secrets are available.
 
 ## Next safe migration PRs
 
-1. Add adapter support for image/chat payloads, then migrate `extractSessionFromImage`.
+1. Migrate `interpretGoal` after focused validation of its tool-call schema and assessment persistence behavior.
 2. Move `anthropic-compat.server.ts` transport through the adapter while preserving its Anthropic-shaped response envelope.
-3. Migrate `interpretGoal` or `judgeDemoRun` after adding focused validation for their tool-call schemas.
+3. Evaluate phased generation separately because retry, repair, token accounting, cost calculation, and logging are coupled there.

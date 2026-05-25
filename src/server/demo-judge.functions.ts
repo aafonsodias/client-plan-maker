@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
  * judgeDemoRun — uses Lovable AI Gateway to grade a finalized demo plan
@@ -150,8 +151,8 @@ export const judgeDemoRun = createServerFn({ method: "POST" })
       .order("week_number", { ascending: true })
       .order("day_number", { ascending: true });
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "LOVABLE_API_KEY not configured" };
+    const aiProvider = getDefaultAiProvider();
+    if (!aiProvider.isConfigured()) return { ok: false as const, error: "LOVABLE_API_KEY not configured" };
 
     const systemPrompt = `You are an expert strength & conditioning coach reviewing an AI-generated training plan for a known persona. Be direct, evidence-based, and specific.
 
@@ -199,31 +200,26 @@ Write a 2-sentence client_summary in plain language a non-technical client could
       })),
     });
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "submit_critique",
-              description: "Return the structured critique of the training plan.",
-              parameters: TOOL_SCHEMA,
-            },
+    const aiResult = await aiProvider.createChatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_critique",
+            description: "Return the structured critique of the training plan.",
+            parameters: TOOL_SCHEMA,
           },
-        ],
-        tool_choice: { type: "function", function: { name: "submit_critique" } },
-      }),
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "submit_critique" } },
     });
+    if (!aiResult.ok) return { ok: false as const, error: "LOVABLE_API_KEY not configured" };
+    const aiRes = aiResult.response;
 
     if (!aiRes.ok) {
       const text = await aiRes.text().catch(() => "");
