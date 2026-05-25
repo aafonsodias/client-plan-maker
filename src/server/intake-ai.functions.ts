@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
  * Public (token-gated) goal interpretation.
@@ -31,8 +32,8 @@ export const interpretGoal = createServerFn({ method: "POST" })
     const expired = !client.intake_token_expires_at || new Date(client.intake_token_expires_at) < new Date();
     if (expired) throw new Error("Expired.");
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("AI not configured.");
+    const aiProvider = getDefaultAiProvider();
+    if (!aiProvider.isConfigured()) throw new Error("AI not configured.");
 
     const sys = data.locale === "pt"
       ? "És um treinador. Recebes objetivos vagos de clientes e devolves uma interpretação estruturada e curta. Nunca julgues o cliente. Usa português europeu."
@@ -59,19 +60,17 @@ export const interpretGoal = createServerFn({ method: "POST" })
       },
     }];
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: sys },
-          { role: "user", content: data.text },
-        ],
-        tools,
-        tool_choice: { type: "function", function: { name: "interpret" } },
-      }),
+    const aiResult = await aiProvider.createChatCompletion({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: data.text },
+      ],
+      tools,
+      tool_choice: { type: "function", function: { name: "interpret" } },
     });
+    if (!aiResult.ok) throw new Error("AI not configured.");
+    const resp = aiResult.response;
 
     if (!resp.ok) {
       if (resp.status === 429) throw new Error("AI rate-limited. Try again in a minute.");

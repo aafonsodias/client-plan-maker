@@ -76,11 +76,20 @@ The request payload remains `{ model, messages, tools, tool_choice }`. The adapt
 - `submit_critique` tool schema and forced `tool_choice` remain unchanged
 - cached critique behavior, schema validation, persistence, and error handling stay at the caller
 
+`src/server/intake-ai.functions.ts` now routes `interpretGoal` through the same adapter.
+
+`interpretGoal` was migrated because it uses the same OpenAI-compatible tool-call shape as other low-risk callers:
+
+- hardcoded model remains `google/gemini-3-flash-preview`
+- locale-specific prompt text remains unchanged
+- `interpret` tool schema and forced `tool_choice` remain unchanged
+- token validation, response parsing, assessment persistence, and user-facing errors stay at the caller
+- no billing, quota, or generation log behavior is introduced or changed
+
 ## Remaining Lovable AI call sites
 
 These still call Lovable Gateway directly or through existing Lovable-specific compatibility helpers:
 
-- `src/server/intake-ai.functions.ts`
 - `src/server/anthropic-compat.server.ts`
 - `src/server/phased/ai.server.ts`
 - `src/server/phased/stage2-blueprint.functions.ts`
@@ -92,13 +101,14 @@ Related model/cost routing surfaces remain unchanged:
 - `src/server/phased/model-routing.server.ts`
 - `src/server/plan-cost.server.ts`
 
-## Intentionally skipped in the next-callers PR
+## Remaining high-risk AI paths
 
-- `src/server/intake-ai.functions.ts`: safe-looking tool-call chat, but this PR already migrated two callers and should stay small.
-- `src/server/anthropic-compat.server.ts`: Anthropic compatibility shim that transforms request and response envelopes; it needs a dedicated preservation pass.
-- `src/server/phased/ai.server.ts`: phased generation helper with retry, Zod repair, token accounting, cost calculation, and generation logging coupling.
-- `src/server/phased/stage2-blueprint.functions.ts`: phased generation surface with cost/logging behavior nearby and an additional direct discussion request.
-- `scripts/r2.2-smoke2.ts`: non-runtime smoke script that writes a report and uses script-specific model/cost assumptions.
+| Path | Risk level | Why it is high-risk | Recommended handling |
+|---|---:|---|---|
+| `src/server/anthropic-compat.server.ts` | High | Translates Anthropic-style requests into Lovable Gateway requests, then maps OpenAI-compatible responses back into an Anthropic-shaped envelope. | Move only the transport behind the adapter in a dedicated PR; preserve request/response envelope tests or add focused fixtures first. |
+| `src/server/phased/ai.server.ts` | High | Central phased generation helper with schema validation, retry/repair behavior, token accounting, cost calculation, and generation logging coupling. | Do not wrap casually; first document current request/response/error contracts and add focused regression coverage around `callAnthropicWithSchema`. |
+| `src/server/phased/stage2-blueprint.functions.ts` | High | Mixes normal phased generation with a direct blueprint discussion call, generation state updates, and generation logging. | Split the discussion call into its own adapter PR only after preserving the no-`tool_choice` request shape and logging behavior. |
+| `scripts/r2.2-smoke2.ts` | Medium | Non-runtime smoke script with script-specific model, cost, and report-writing assumptions. | Migrate last or leave as a Lovable Gateway compatibility smoke until runtime paths are provider-neutral. |
 
 ## Before replacing Lovable Gateway
 
@@ -130,11 +140,12 @@ Before changing the active provider implementation, these must be true:
 - Confirm `askConcierge` still sends the same model, messages, tools, and tool_choice payload shape.
 - Confirm `extractSessionFromImage` still sends the same model, messages with image content, tools, and tool_choice payload shape.
 - Confirm `judgeDemoRun` still sends the same model, messages, tools, and tool_choice payload shape.
+- Confirm `interpretGoal` still sends the same model, locale-specific messages, tools, and tool_choice payload shape.
 - Confirm no prompt text, model allow-list, error copy, billing behavior, or auth behavior changed.
-- In staging, manually verify Atlas, Concierge, OCR extraction, and demo critique response behavior after provider secrets are available.
+- In staging, manually verify Atlas, Concierge, OCR extraction, demo critique, and intake goal interpretation response behavior after provider secrets are available.
 
 ## Next safe migration PRs
 
-1. Migrate `interpretGoal` after focused validation of its tool-call schema and assessment persistence behavior.
-2. Move `anthropic-compat.server.ts` transport through the adapter while preserving its Anthropic-shaped response envelope.
-3. Evaluate phased generation separately because retry, repair, token accounting, cost calculation, and logging are coupled there.
+1. Move `anthropic-compat.server.ts` transport through the adapter while preserving its Anthropic-shaped request and response envelopes.
+2. Add focused regression coverage for `callAnthropicWithSchema` before touching phased generation transport.
+3. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
