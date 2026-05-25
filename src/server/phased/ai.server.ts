@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 import { computeCallCostUsd, type AiModelId } from "../plan-cost.server";
 
-// Map any legacy Anthropic fallback id → equivalent Lovable Gateway model.
+// Map any legacy Anthropic fallback id to equivalent provider model.
 // Keeps existing stage files compiling without per-file edits while we
 // migrate to model-routing.server.ts.
 const LEGACY_TO_GATEWAY: Record<string, string> = {
@@ -17,7 +17,7 @@ function normalizeModel(id: string): string {
 /**
  * Resolve a model id from an env var with a safe default. Both env values
  * and fallbacks are normalized: legacy Anthropic ids are mapped to their
- * Lovable Gateway equivalents so stage files don't need to change.
+ * configured provider equivalents so stage files don't need to change.
  */
 export function resolveModel(envVar: string, fallback: string): string {
   const v = process.env[envVar];
@@ -49,13 +49,13 @@ export type AiCallFailure = {
 };
 
 /**
- * Call the Lovable AI Gateway with a tool-call schema and validate the
+ * Call the configured AI provider with a tool-call schema and validate the
  * result with Zod. Retries ONCE on Zod failure, feeding the validation
  * error back to the model. Pure function — caller persists telemetry.
  *
  * Name kept as `callAnthropicWithSchema` for back-compat with existing
- * stage files. Under the hood now talks to Lovable Gateway (OpenAI-
- * compatible Chat Completions API).
+ * stage files. Under the hood now talks to the OpenAI-compatible provider
+ * adapter.
  */
 export async function callAnthropicWithSchema<T>(opts: {
   model: string;
@@ -73,8 +73,7 @@ export async function callAnthropicWithSchema<T>(opts: {
   if (!aiProvider.isConfigured()) {
     return {
       ok: false,
-      error:
-        "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+      error: "AI provider is not configured.",
       model,
       inputTokens: 0,
       outputTokens: 0,
@@ -124,8 +123,7 @@ export async function callAnthropicWithSchema<T>(opts: {
       if (!aiResult.ok) {
         return {
           ok: false,
-          error:
-            "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+          error: "AI provider is not configured.",
           model,
           inputTokens: totalInputTokens,
           outputTokens: totalOutputTokens,
@@ -143,7 +141,7 @@ export async function callAnthropicWithSchema<T>(opts: {
       totalDurationMs += dur;
       return {
         ok: false,
-        error: `Network error calling Lovable AI Gateway: ${e instanceof Error ? e.message : String(e)}`,
+        error: `Network error calling AI provider: ${e instanceof Error ? e.message : String(e)}`,
         model,
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
@@ -160,7 +158,7 @@ export async function callAnthropicWithSchema<T>(opts: {
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
-      let friendly = `Lovable AI ${resp.status}: ${body.slice(0, 400)}`;
+      let friendly = `AI provider ${resp.status}: ${body.slice(0, 400)}`;
       if (resp.status === 402) {
         friendly =
           "Sem créditos AI. Adiciona em Settings → Workspace → Usage e tenta de novo.";

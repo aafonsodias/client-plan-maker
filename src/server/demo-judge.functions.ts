@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
- * judgeDemoRun — uses Lovable AI Gateway to grade a finalized demo plan
+ * judgeDemoRun — uses the configured AI provider to grade a finalized demo plan
  * against the persona's expected_red_flags rubric. Persists the verdict on
  * workout_plans.demo_critique so reopening the dialog is free.
  */
@@ -152,7 +152,7 @@ export const judgeDemoRun = createServerFn({ method: "POST" })
       .order("day_number", { ascending: true });
 
     const aiProvider = getDefaultAiProvider();
-    if (!aiProvider.isConfigured()) return { ok: false as const, error: "LOVABLE_API_KEY not configured" };
+    if (!aiProvider.isConfigured()) return { ok: false as const, error: "AI provider not configured" };
 
     const systemPrompt = `You are an expert strength & conditioning coach reviewing an AI-generated training plan for a known persona. Be direct, evidence-based, and specific.
 
@@ -218,7 +218,7 @@ Write a 2-sentence client_summary in plain language a non-technical client could
       ],
       tool_choice: { type: "function", function: { name: "submit_critique" } },
     });
-    if (!aiResult.ok) return { ok: false as const, error: "LOVABLE_API_KEY not configured" };
+    if (!aiResult.ok) return { ok: false as const, error: "AI provider not configured" };
     const aiRes = aiResult.response;
 
     if (!aiRes.ok) {

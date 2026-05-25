@@ -87,7 +87,9 @@ function getStripe() {
 function getOrigin(): string {
   const origin = getRequestHeader("origin") ?? getRequestHeader("referer");
   if (origin) return origin.replace(/\/$/, "").split("/").slice(0, 3).join("/");
-  return "https://forge.lovable.app";
+  const configuredOrigin = process.env.APP_ORIGIN;
+  if (configuredOrigin) return configuredOrigin.replace(/\/$/, "");
+  return "http://localhost:3000";
 }
 
 /* ------------------------------------------------------------------ */

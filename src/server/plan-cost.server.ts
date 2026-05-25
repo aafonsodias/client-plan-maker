@@ -1,13 +1,13 @@
 // Cost tracking helpers (server-only).
 // Prices in USD per 1M tokens. Values are approximate — used purely for
-// generation_log.cost_usd display. True billing happens at the Lovable AI
+// generation_log.cost_usd display. True billing happens at the configured AI
 // Gateway (workspace credits).
 
 export type AnthropicModelId =
   | "claude-haiku-4-5-20251001"
   | "claude-sonnet-4-5-20250929";
 
-// Any string is accepted (Lovable Gateway model ids), but we keep a typed
+// Any string is accepted (provider model ids), but we keep a typed
 // alias so callsites that already imported AnthropicModelId keep compiling.
 export type AiModelId = AnthropicModelId | string;
 
@@ -15,7 +15,7 @@ const PRICING: Record<string, { in: number; out: number }> = {
   // Anthropic (legacy direct calls — kept for back-compat)
   "claude-haiku-4-5-20251001": { in: 1.0, out: 5.0 },
   "claude-sonnet-4-5-20250929": { in: 3.0, out: 15.0 },
-  // Lovable AI Gateway (approximate pricing per Lovable docs)
+  // Current AI provider estimate (USD per 1M tokens)
   "google/gemini-3-flash-preview": { in: 0.1, out: 0.4 },
   "google/gemini-2.5-flash": { in: 0.1, out: 0.4 },
   "google/gemini-2.5-flash-lite": { in: 0.05, out: 0.2 },

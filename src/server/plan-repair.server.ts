@@ -28,8 +28,8 @@ export type RepairResult =
   | { ok: false; error: string; telemetry: CallTelemetry };
 
 export async function repairDay(args: {
-  /** Deprecated — kept for callsite compatibility. The Lovable Gateway shim
-   *  reads LOVABLE_API_KEY directly. */
+  /** Deprecated — kept for callsite compatibility. Provider auth is handled
+   *  by the AI adapter. */
   apiKey?: string;
   model: AnthropicModelId;
   client: PlanClient;

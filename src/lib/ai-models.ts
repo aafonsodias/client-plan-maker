@@ -1,5 +1,5 @@
 /**
- * Allow-listed Lovable AI models the coach can pick when invoking AI features.
+ * Allow-listed AI model ids the coach can pick when invoking AI features.
  * Credits are advisory display values that mirror relative cost/latency tiers.
  */
 export type AiModelTier = "fast" | "balanced" | "deep";

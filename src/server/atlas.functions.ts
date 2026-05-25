@@ -68,7 +68,7 @@ ${ctxLines.length ? `Context the trainer has open right now:\n${ctxLines.join("\
 
     if (!aiRes.ok) {
       if (aiRes.status === 429) return { ok: false as const, error: "Limite de pedidos atingido. Tenta de novo em ~1 minuto." };
-      if (aiRes.status === 402) return { ok: false as const, error: "Créditos de IA esgotados. Adiciona crédito em Lovable Cloud." };
+      if (aiRes.status === 402) return { ok: false as const, error: "Créditos de IA esgotados. Adiciona crédito no fornecedor de IA configurado." };
       const text = await aiRes.text().catch(() => "");
       console.error("[atlas] gateway", aiRes.status, text.slice(0, 300));
       return { ok: false as const, error: `AI gateway error ${aiRes.status}` };

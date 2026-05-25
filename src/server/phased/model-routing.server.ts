@@ -1,4 +1,4 @@
-// Single source of truth for which Lovable AI Gateway model each pipeline
+// Single source of truth for which configured AI provider model each pipeline
 // stage uses. Tune here to trade cost vs intelligence — never hardcode model
 // ids in stage files.
 //

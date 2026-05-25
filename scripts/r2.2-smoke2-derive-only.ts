@@ -66,8 +66,8 @@ ${JSON.stringify(pp, null, 2)}
   - Tier classifier → \`advanced\` (matches Smoke #1).
   - \`deriveFittVpFromDb\` → 7 citations resolved, all expected ranges populated (cardio 40–59% HRR, resistance 2–4 d/wk, rest 120–300 s, static stretch 10–30 s, BP stop 250/115).
   - Wire-up code paths exercised: \`stage2-blueprint.functions.ts\` writes \`prescription_parameters\` to the column; \`stage3-microcycle.functions.ts\` injects the FITT-VP block into the system prompt and calls \`validateDayAgainstFittVp\` post-generation with 1× retry.
-- **What did NOT run:** the actual Stage 3 AI call + validator on real model output, because Anthropic credits are exhausted in the Lovable workspace.
-- **Next step:** top up Anthropic credits, then re-run \`bun run scripts/r2.2-smoke2.ts\` (the full version) to populate true initial/post-retry violation counts and a generated-day exercise table.
+- **What did NOT run:** the actual Stage 3 AI call + validator on real model output, because configured AI provider credits are unavailable.
+- **Next step:** confirm provider credits, then re-run \`bun run scripts/r2.2-smoke2.ts\` (the full version) to populate true initial/post-retry violation counts and a generated-day exercise table.
 `;
 
   appendFileSync(reportPath, append, "utf8");

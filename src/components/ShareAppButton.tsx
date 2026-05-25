@@ -12,7 +12,7 @@ export function ShareAppButton() {
   const { t } = useTranslation("common");
   const onShare = async () => {
     const url =
-      typeof window !== "undefined" ? `${window.location.origin}/` : "https://forge.lovable.app/";
+      typeof window !== "undefined" ? `${window.location.origin}/` : "/";
     const shareData = {
       title: t("share_app.share_title"),
       text: t("share_app.share_text"),

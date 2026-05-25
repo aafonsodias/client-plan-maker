@@ -3,18 +3,18 @@
  *
  * Drop-in replacement for direct Anthropic /v1/messages calls. Speaks the
  * Anthropic request/response shape callers expect, but under the hood routes
- * to the Lovable AI Gateway (OpenAI-compatible Chat Completions).
+ * to the configured OpenAI-compatible chat provider.
  *
  * Why this exists:
  * - The legacy plan generator (src/server/plan.functions.ts) and its
  *   critic/repair helpers were written against api.anthropic.com directly.
- * - In production we only have LOVABLE_API_KEY; ANTHROPIC_API_KEY is gone,
+ * - The configured provider key replaces direct ANTHROPIC_API_KEY usage,
  *   which is why "Regenerate with feedback" was returning 401.
  * - Rewriting all six call sites to OpenAI shape is risky; this shim keeps
  *   them on the same surface (`tools[].input_schema`, response.content[]
  *   `tool_use` blocks) while migrating the transport.
  *
- * Model mapping: Anthropic ids → equivalent Lovable Gateway models.
+ * Model mapping: Anthropic ids -> equivalent configured provider models.
  */
 
 import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
@@ -53,7 +53,7 @@ export async function anthropicCompatFetch(body: AnthropicRequest): Promise<Resp
   const aiProvider = getDefaultAiProvider();
   if (!aiProvider.isConfigured()) {
     return jsonResponse(500, {
-      error: "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+      error: "AI provider is not configured.",
     });
   }
 
@@ -90,13 +90,13 @@ export async function anthropicCompatFetch(body: AnthropicRequest): Promise<Resp
     const aiResult = await aiProvider.createChatCompletion(upstreamBody);
     if (!aiResult.ok) {
       return jsonResponse(500, {
-        error: "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+        error: "AI provider is not configured.",
       });
     }
     upstream = aiResult.response;
   } catch (e) {
     return jsonResponse(502, {
-      error: `Network error calling Lovable AI Gateway: ${e instanceof Error ? e.message : String(e)}`,
+      error: `Network error calling AI provider: ${e instanceof Error ? e.message : String(e)}`,
     });
   }
 

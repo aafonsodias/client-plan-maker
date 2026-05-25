@@ -196,7 +196,7 @@ The week_to_session_map and session_archetypes you propose MUST make it feasible
 
     const user = `Brief:\n${JSON.stringify(brief, null, 2)}\n\nMesocycle length: ${weeks} weeks.`;
 
-    // Default to the same Lovable Gateway model that Stage 1 uses reliably.
+    // Default to the same provider model that Stage 1 uses reliably.
     // gpt-5-mini was failing the tool-call contract here, leaving trainers
     // stuck on Blueprint; gemini-3-flash-preview consistently emits the tool.
     const model = resolveModel("FORGE_MODEL_STAGE_2", "google/gemini-3-flash-preview");
@@ -537,7 +537,7 @@ export const discussBlueprint = createServerFn({ method: "POST" })
     }
 
     const aiProvider = getDefaultAiProvider();
-    if (!aiProvider.isConfigured()) return { ok: false as const, error: "Lovable AI not configured." };
+    if (!aiProvider.isConfigured()) return { ok: false as const, error: "AI provider not configured." };
 
     const model = resolveModel("FORGE_MODEL_DISCUSS", "google/gemini-3-flash-preview");
 
@@ -610,7 +610,7 @@ Rules for patches:
           ],
           // No tool_choice — let model reply in text OR call the tool.
       });
-      if (!aiResult.ok) return { ok: false as const, error: "Lovable AI not configured." };
+      if (!aiResult.ok) return { ok: false as const, error: "AI provider not configured." };
       resp = aiResult.response;
     } catch (e) {
       return {
@@ -622,7 +622,7 @@ Rules for patches:
 
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
-      let friendly = `Lovable AI ${resp.status}: ${body.slice(0, 300)}`;
+      let friendly = `AI provider ${resp.status}: ${body.slice(0, 300)}`;
       if (resp.status === 402) friendly = "Sem créditos AI. Adiciona em Settings → Workspace → Usage.";
       else if (resp.status === 429) friendly = "Demasiados pedidos AI. Aguarda alguns segundos.";
       return { ok: false as const, error: friendly };

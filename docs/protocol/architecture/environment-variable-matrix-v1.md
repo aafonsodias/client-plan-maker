@@ -88,8 +88,8 @@ Before production cutover:
 - `AI_PROVIDER=openai-compatible` exists for staged replacement, but it must not be enabled in production until model, response, error, and cost behavior are validated.
 - `@lovable.dev/cloud-auth-js` remains in the repo and intake auth still references Lovable OAuth behavior in `src/routes/intake.$token.tsx`.
 - `@lovable.dev/vite-tanstack-config` remains part of the build configuration through `vite.config.ts`.
-- CSP and metadata still allow Lovable domains in `src/routes/__root.tsx`.
-- Fallback public URLs such as `https://forge.lovable.app` appear in sharing and billing-related code paths.
+- CSP still allows Lovable domains in `src/routes/__root.tsx` until public-intake OAuth is migrated off the Lovable auth wrapper.
+- Former `https://forge.lovable.app` sharing and billing fallbacks have been replaced; keep validating with search before final removal work.
 - `.lovable` historical archive handling still needs an explicit keep/archive/delete decision, but it should not be removed as part of an env-only PR.
 
 ## Validation commands/checks

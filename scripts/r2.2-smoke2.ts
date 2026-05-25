@@ -36,7 +36,7 @@ const aiProvider = getDefaultAiProvider();
 const MODEL = process.env.FORGE_MODEL_STAGE_3 || "openai/gpt-5";
 
 if (!SUPABASE_URL || !SERVICE_ROLE || !aiProvider.isConfigured()) {
-  console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / LOVABLE_API_KEY env vars.");
+  console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / configured AI provider env vars.");
   process.exit(1);
 }
 
@@ -131,8 +131,8 @@ const DAY_TOOL_SCHEMA = {
   },
 };
 
-// Approximate Lovable Gateway pricing (USD per 1M tokens). Used only for the
-// smoke report — true billing is via workspace credits.
+// Approximate provider pricing (USD per 1M tokens). Used only for the
+// smoke report; true billing is via the configured provider.
 const PRICING: Record<string, { in: number; out: number }> = {
   "openai/gpt-5": { in: 1.25, out: 10.0 },
   "openai/gpt-5-mini": { in: 0.25, out: 2.0 },
@@ -140,7 +140,7 @@ const PRICING: Record<string, { in: number; out: number }> = {
   "google/gemini-2.5-pro": { in: 1.25, out: 10.0 },
 };
 
-async function callGateway(system: string, userMessage: string) {
+async function callProvider(system: string, userMessage: string) {
   const t0 = Date.now();
   const aiResult = await aiProvider.createChatCompletion({
     model: MODEL,
@@ -159,13 +159,13 @@ async function callGateway(system: string, userMessage: string) {
     tool_choice: { type: "function", function: { name: "record_day" } },
   });
   if (!aiResult.ok) {
-    throw new Error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / LOVABLE_API_KEY env vars.");
+    throw new Error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / configured AI provider env vars.");
   }
   const resp = aiResult.response;
   const dur = Date.now() - t0;
   if (!resp.ok) {
     const body = await resp.text().catch(() => "");
-    throw new Error(`Lovable AI ${resp.status}: ${body.slice(0, 500)}`);
+    throw new Error(`AI provider ${resp.status}: ${body.slice(0, 500)}`);
   }
   const json: any = await resp.json();
   const inTok = Number(json?.usage?.prompt_tokens ?? json?.usage?.input_tokens ?? 0);
@@ -223,8 +223,8 @@ Brief context:
 
 Generate ONLY this single day's session.`;
 
-  console.log(`→ Calling Lovable Gateway (model=${MODEL}, initial)…`);
-  const initial = await callGateway(system, userMsg);
+  console.log(`Calling AI provider (model=${MODEL}, initial)...`);
+  const initial = await callProvider(system, userMsg);
   let violationsInitial = validateDayAgainstFittVp(initial.day as any, pp);
   console.log(`  initial violations=${violationsInitial.length} cost=$${initial.cost.toFixed(4)}`);
 
@@ -236,8 +236,8 @@ Generate ONLY this single day's session.`;
     retried = true;
     const lines = violationsInitial.map((v) => `- ${v.exercise}: ${v.field}=${v.observed}, threshold ${JSON.stringify(v.threshold)}`).join("\n");
     const retrySys = `${system}\n\nPREVIOUS OUTPUT VIOLATED FITT-VP CONSTRAINTS:\n${lines}\n\nRegenerate ensuring ALL exercises fit the ranges above. Non-negotiable.`;
-    console.log("→ Calling Lovable Gateway (retry)…");
-    const retry = await callGateway(retrySys, userMsg);
+    console.log("Calling AI provider (retry)...");
+    const retry = await callProvider(retrySys, userMsg);
     totalCost += retry.cost;
     const retryViolations = validateDayAgainstFittVp(retry.day as any, pp);
     if (retryViolations.length < violationsInitial.length) {

@@ -54,7 +54,7 @@ export const Route = createRootRoute({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       // Defense-in-depth: CSP via meta tag.
-      // Allows Supabase REST/Realtime, OpenAI/Anthropic/Lovable AI gateway, Google OAuth,
+      // Allows Supabase REST/Realtime, external AI/provider APIs, Google OAuth,
       // and inline styles needed by Tailwind. frame-ancestors must be set as HTTP header
       // (not effective via meta) — handled separately at the edge.
       {
@@ -75,8 +75,8 @@ export const Route = createRootRoute({
       { name: "referrer", content: "strict-origin-when-cross-origin" },
       { name: "twitter:title", content: "Protocol — Workout plans for personal trainers" },
       { name: "twitter:description", content: "Assess clients, generate AI workout plan drafts, and export branded PDFs in minutes." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6df4e8b2-d6b8-4868-831c-e134accfdc27" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6df4e8b2-d6b8-4868-831c-e134accfdc27" },
+      { property: "og:image", content: "/icon-512.png" },
+      { name: "twitter:image", content: "/icon-512.png" },
       { name: "theme-color", content: "#0d1117" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },

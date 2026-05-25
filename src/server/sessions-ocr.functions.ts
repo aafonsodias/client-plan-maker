@@ -9,7 +9,7 @@ import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
  * Flow:
  *   1. Validate the share token + plan/week/day exist.
  *   2. Send the image + the *expected* exercise list to Gemini 2.5 Pro
- *      via the Lovable AI Gateway with a strict tool-call schema.
+ *      via the configured AI provider with a strict tool-call schema.
  *   3. Return a list of extracted entries the client can review and
  *      either merge or discard. We DO NOT auto-write to the DB — OCR
  *      is fallible and the trainer/client must confirm.
