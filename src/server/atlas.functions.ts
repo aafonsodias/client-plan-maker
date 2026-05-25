@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isAllowedModel, DEFAULT_MODEL_ID } from "@/lib/ai-models";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
  * askAtlas — open-ended coaching/programming Q&A used by the in-app
@@ -35,9 +36,6 @@ export const askAtlas = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI not configured." };
-
     const model = isAllowedModel(data.model) ? data.model : DEFAULT_MODEL_ID;
     const ctxLines: string[] = [];
     if (data.currentPath) ctxLines.push(`Current route: ${data.currentPath}`);
@@ -60,17 +58,13 @@ If the question is outside coaching/training, say so in one sentence.
 
 ${ctxLines.length ? `Context the trainer has open right now:\n${ctxLines.join("\n")}` : ""}`.trim();
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const aiProvider = getDefaultAiProvider();
+    const aiResult = await aiProvider.createChatCompletion({
         model,
         messages: [{ role: "system", content: systemPrompt }, ...data.messages],
-      }),
     });
+    if (!aiResult.ok) return { ok: false as const, error: "AI not configured." };
+    const aiRes = aiResult.response;
 
     if (!aiRes.ok) {
       if (aiRes.status === 429) return { ok: false as const, error: "Limite de pedidos atingido. Tenta de novo em ~1 minuto." };
