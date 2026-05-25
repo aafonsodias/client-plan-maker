@@ -2,45 +2,46 @@
 
 ## A. Executive Summary
 
-Most runtime AI surfaces now reach Lovable Gateway through `src/server/ai/provider-adapter.server.ts`. The final direct Lovable AI paths are:
+All known runtime AI surfaces now reach Lovable Gateway through `src/server/ai/provider-adapter.server.ts`. The final direct Lovable AI path is non-runtime:
 
-- `src/server/phased/stage2-blueprint.functions.ts`: runtime-critical Stage 2 blueprint discussion endpoint.
 - `scripts/r2.2-smoke2.ts`: non-runtime smoke script that still calls Lovable Gateway directly and writes a historical `.lovable` report.
 
-The safest next migration is the Stage 2 blueprint discussion path, but it should be handled in a dedicated PR because it intentionally allows either a plain-text answer or an optional `propose_blueprint_patch` tool call. The smoke script should be migrated last, archived, or deleted after runtime paths are provider-neutral.
+`src/server/phased/stage2-blueprint.functions.ts` now routes the runtime Stage 2 blueprint discussion transport through the provider adapter while preserving its plain-text or optional `propose_blueprint_patch` behavior.
+
+The remaining decision is whether the R2.2 smoke script is still an active workflow. It can be migrated through the adapter if the team still uses it, or archived/deleted later if the `.lovable` report is historical only.
 
 Recommended order:
 
-1. Migrate `discussBlueprint` transport in `src/server/phased/stage2-blueprint.functions.ts` behind the adapter with fixtures that preserve text-only and optional-tool-call behavior.
-2. Decide whether `scripts/r2.2-smoke2.ts` remains useful; migrate it only if it still provides value after runtime phased generation is provider-neutral.
-3. Replace the active adapter implementation only after all runtime callers no longer depend on direct Lovable Gateway code.
+1. Decide whether `scripts/r2.2-smoke2.ts` remains useful; migrate it only if it still provides value after runtime phased generation is provider-neutral.
+2. Replace the active adapter implementation only after all runtime callers have provider-neutral staging coverage.
+3. Remove `LOVABLE_API_KEY` only after the smoke script is migrated, archived, or deleted from active workflows.
 
 ## B. Path Inventory
 
 | Path | Runtime or script | Current purpose | Request shape | Prompt/schema/parsing behavior | Logging/billing/quota coupling | Migration risk | Recommended next action | Validation required |
 |---|---|---|---|---|---|---|---|---|
-| `src/server/phased/stage2-blueprint.functions.ts` (`discussBlueprint`) | Runtime | Lets an authenticated trainer discuss the current Stage 2 blueprint and optionally receive a partial patch proposal. | OpenAI-compatible chat completion with `model`, `max_tokens: 1500`, two messages, one `tools` entry, and no `tool_choice`. | System prompt and user content are built from brief, current blueprint, and conversation. Parser accepts plain text and optionally parses `propose_blueprint_patch` tool arguments with Zod. | Calls `logGeneration` with stage `stage2:blueprint:chat`, token usage, cost, duration, reply, and patch. No quota logic found in this path. | High | Migrate transport only through `getDefaultAiProvider().createChatCompletion(...)`; preserve no-`tool_choice` behavior and caller-owned parsing/logging. | Unit or fixture coverage for text-only response, tool-call patch response, non-OK response, missing key behavior, token/cost logging fields, and no DB write except existing generation log. |
+| `src/server/phased/stage2-blueprint.functions.ts` (`discussBlueprint`) | Runtime | Lets an authenticated trainer discuss the current Stage 2 blueprint and optionally receive a partial patch proposal. | Adapter-routed OpenAI-compatible chat completion with `model`, `max_tokens: 1500`, two messages, one `tools` entry, and no `tool_choice`. | System prompt and user content are built from brief, current blueprint, and conversation. Parser accepts plain text and optionally parses `propose_blueprint_patch` tool arguments with Zod. | Calls `logGeneration` with stage `stage2:blueprint:chat`, token usage, cost, duration, reply, and patch. No quota logic found in this path. | Medium for future provider replacement | Add fixtures before replacing the active adapter provider. | Unit or fixture coverage for text-only response, tool-call patch response, non-OK response, missing key behavior, token/cost logging fields, and no DB write except existing generation log. |
 | `scripts/r2.2-smoke2.ts` | Script | End-to-end Sofia smoke that calls the gateway for a single Stage 3 day, validates FITT-VP, retries once on violations, and appends a `.lovable/r2.2-smoke-report.md` section. | OpenAI-compatible chat completion with `model`, `max_completion_tokens: 16000`, `reasoning_effort: "low"`, two messages, one `tools` entry, and forced `tool_choice`. | Uses an inline Stage 3 prompt, inline `DAY_TOOL_SCHEMA`, parses required `record_day` tool call, validates with `PhasedDaySchema`, and retries once by changing the system prompt when FITT-VP violations exist. | Uses service-role Supabase to load ACSM thresholds, local pricing table for report cost, console logs, and `.lovable` report writing. No production billing/quota path. | Medium | Decide whether to archive/delete or convert to adapter after runtime Lovable exit. It is not required for user-facing migration. | If retained, run only in an explicit smoke environment with service-role credentials and fake-safe output review. Validate that no report writes leak secrets. |
 
 ## C. `stage2-blueprint.functions.ts` Migration Notes
 
-`discussBlueprint` is a runtime Stage 2 discussion surface, not the same path as the main phased schema helper.
+`discussBlueprint` is a runtime Stage 2 discussion surface, not the same path as the main phased schema helper. Its Lovable Gateway transport is now routed through `getDefaultAiProvider().createChatCompletion(...)`.
 
 Classification:
 
 - Tool-call chat with optional plain-text response.
 - Uses an OpenAI-compatible `tools` array.
 - Intentionally omits `tool_choice` so the model may either answer in text or call `propose_blueprint_patch`.
-- Uses `max_tokens`, not `max_completion_tokens`.
+- Uses `max_tokens`, not `max_completion_tokens`; the adapter type now passes this field through unchanged.
 - Parses raw OpenAI-compatible response directly.
 - Logs generation metadata after successful response handling.
 
-Adapter fit:
+Adapter status:
 
 - The existing adapter supports the main `messages` and `tools` shape.
-- The adapter type may need a minimal optional `max_tokens` field before this path can preserve the exact request body.
-- The migration should not normalize `max_tokens` into `max_completion_tokens` unless a separate evidence-backed compatibility decision is made.
-- The migration should not force a tool call.
+- The adapter type includes an optional `max_tokens` field to preserve the exact request body.
+- The migration does not normalize `max_tokens` into `max_completion_tokens`.
+- The migration does not force a tool call.
 
 Discussion behavior to preserve:
 

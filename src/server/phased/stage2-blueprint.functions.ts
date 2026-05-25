@@ -11,6 +11,7 @@ import {
 import { callAnthropicWithSchema, logGeneration, resolveModel } from "./ai.server";
 import { reservePlanQuota, acquireGenerationLock } from "@/server/quota.server";
 import { computeCallCostUsd } from "@/server/plan-cost.server";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 import { prescriptionPromptBlock } from "@/lib/prescribe-volume";
 import { resolveRules } from "@/server/knowledge/resolve.server";
 import { resolveLandmarks } from "@/server/knowledge/schema";
@@ -535,8 +536,8 @@ export const discussBlueprint = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Brief is missing or invalid." };
     }
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "Lovable AI not configured." };
+    const aiProvider = getDefaultAiProvider();
+    if (!aiProvider.isConfigured()) return { ok: false as const, error: "Lovable AI not configured." };
 
     const model = resolveModel("FORGE_MODEL_DISCUSS", "google/gemini-3-flash-preview");
 
@@ -590,13 +591,7 @@ Rules for patches:
     const t0 = Date.now();
     let resp: Response;
     try {
-      resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const aiResult = await aiProvider.createChatCompletion({
           model,
           max_tokens: 1500,
           messages: [
@@ -614,8 +609,9 @@ Rules for patches:
             },
           ],
           // No tool_choice — let model reply in text OR call the tool.
-        }),
       });
+      if (!aiResult.ok) return { ok: false as const, error: "Lovable AI not configured." };
+      resp = aiResult.response;
     } catch (e) {
       return {
         ok: false as const,

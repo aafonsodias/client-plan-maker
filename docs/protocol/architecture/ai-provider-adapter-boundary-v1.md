@@ -112,11 +112,23 @@ The phased helper still owns the high-risk contract:
 
 The adapter only owns the Lovable Gateway transport and raw `Response` return. Lovable Gateway remains the only active implementation.
 
+`src/server/phased/stage2-blueprint.functions.ts` now routes the `discussBlueprint` transport through the same adapter.
+
+The Stage 2 discussion caller still owns:
+
+- brief, current blueprint, and conversation prompt construction
+- optional `propose_blueprint_patch` tool schema
+- intentional absence of `tool_choice`
+- text-or-tool-call response handling
+- patch argument parsing and validation
+- token, cost, duration, and `stage2:blueprint:chat` generation logging
+
+The adapter capability added for this path is `max_tokens` pass-through on `AiChatCompletionRequest`, preserving the existing request body field.
+
 ## Remaining Lovable AI call sites
 
 These still call Lovable Gateway directly or through existing Lovable-specific compatibility helpers:
 
-- `src/server/phased/stage2-blueprint.functions.ts`
 - `scripts/r2.2-smoke2.ts`
 
 `docs/protocol/architecture/final-lovable-ai-paths-audit-v1.md` now maps these final direct paths, their migration risk, and the recommended exit order.
@@ -131,7 +143,6 @@ Related model/cost routing surfaces remain unchanged:
 
 | Path | Risk level | Why it is high-risk | Recommended handling |
 |---|---:|---|---|
-| `src/server/phased/stage2-blueprint.functions.ts` | High | Mixes normal phased generation with a direct blueprint discussion call, generation state updates, and generation logging. | Split the discussion call into its own adapter PR only after preserving the no-`tool_choice` request shape and logging behavior. |
 | `scripts/r2.2-smoke2.ts` | Medium | Non-runtime smoke script with script-specific model, cost, and report-writing assumptions. | Migrate last or leave as a Lovable Gateway compatibility smoke until runtime paths are provider-neutral. |
 
 ## Phased AI contract coverage status
@@ -181,11 +192,12 @@ Before changing the active provider implementation, these must be true:
 - Confirm `judgeDemoRun` still sends the same model, messages, tools, and tool_choice payload shape.
 - Confirm `interpretGoal` still sends the same model, locale-specific messages, tools, and tool_choice payload shape.
 - Confirm `anthropicCompatFetch` still preserves its Anthropic-shaped request and response envelopes while sending the same OpenAI-compatible gateway payload.
+- Confirm `discussBlueprint` still sends the same model, messages, tools, and no tool_choice payload shape.
 - Confirm no prompt text, model allow-list, error copy, billing behavior, or auth behavior changed.
-- In staging, manually verify Atlas, Concierge, OCR extraction, demo critique, intake goal interpretation, and Anthropic compatibility callers after provider secrets are available.
+- In staging, manually verify Atlas, Concierge, OCR extraction, demo critique, intake goal interpretation, Anthropic compatibility callers, and Stage 2 blueprint discussion after provider secrets are available.
 
 ## Next safe migration PRs
 
-1. Audit the final direct Lovable paths: `stage2-blueprint.functions.ts` discussion transport and `scripts/r2.2-smoke2.ts`.
-2. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
-3. Decide whether `scripts/r2.2-smoke2.ts` should remain a Lovable compatibility smoke or move to the adapter after runtime paths are provider-neutral.
+1. Decide whether `scripts/r2.2-smoke2.ts` should remain a Lovable compatibility smoke or move to the adapter after runtime paths are provider-neutral.
+2. Replace the active adapter implementation only after all runtime surfaces have staging coverage against the chosen provider.
+3. Remove `LOVABLE_API_KEY` only after the smoke script is migrated, archived, or deleted from active workflows.
