@@ -31,6 +31,7 @@ import { Route as MeHistoricoRouteImport } from './routes/me.historico'
 import { Route as LogTokenRouteImport } from './routes/log.$token'
 import { Route as IntakeTokenRouteImport } from './routes/intake.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients_.$clientId'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AdminSystemRouteImport } from './routes/admin.system'
 import { Route as PlansPlanIdSessionsRouteImport } from './routes/plans.$planId.sessions'
 import { Route as PlansPlanIdProgressionsRouteImport } from './routes/plans.$planId.progressions'
@@ -151,6 +152,11 @@ const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   path: '/clients/$clientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSystemRoute = AdminSystemRouteImport.update({
   id: '/admin/system',
   path: '/admin/system',
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/admin/system': typeof AdminSystemRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/admin/system': typeof AdminSystemRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/clients/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -281,6 +289,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/welcome': typeof WelcomeRoute
   '/admin/system': typeof AdminSystemRoute
+  '/auth_/callback': typeof AuthCallbackRoute
   '/clients_/$clientId': typeof ClientsClientIdRouteWithChildren
   '/intake/$token': typeof IntakeTokenRoute
   '/log/$token': typeof LogTokenRoute
@@ -316,6 +325,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/admin/system'
+    | '/auth/callback'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/admin/system'
+    | '/auth/callback'
     | '/clients/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/welcome'
     | '/admin/system'
+    | '/auth_/callback'
     | '/clients_/$clientId'
     | '/intake/$token'
     | '/log/$token'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WelcomeRoute: typeof WelcomeRoute
   AdminSystemRoute: typeof AdminSystemRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   ClientsClientIdRoute: typeof ClientsClientIdRouteWithChildren
   IntakeTokenRoute: typeof IntakeTokenRoute
   LogTokenRoute: typeof LogTokenRoute
@@ -581,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientsClientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/system': {
       id: '/admin/system'
       path: '/admin/system'
@@ -721,6 +741,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WelcomeRoute: WelcomeRoute,
   AdminSystemRoute: AdminSystemRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   ClientsClientIdRoute: ClientsClientIdRouteWithChildren,
   IntakeTokenRoute: IntakeTokenRoute,
   LogTokenRoute: LogTokenRoute,
@@ -732,3 +753,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
