@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 import { computeCallCostUsd, type AiModelId } from "../plan-cost.server";
 
 // Map any legacy Anthropic fallback id → equivalent Lovable Gateway model.
@@ -47,8 +48,6 @@ export type AiCallFailure = {
   retryCount: number;
 };
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
 /**
  * Call the Lovable AI Gateway with a tool-call schema and validate the
  * result with Zod. Retries ONCE on Zod failure, feeding the validation
@@ -68,10 +67,10 @@ export async function callAnthropicWithSchema<T>(opts: {
   schema: z.ZodType<T>;
   maxTokens?: number;
 }): Promise<AiCallResult<T> | AiCallFailure> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const aiProvider = getDefaultAiProvider();
   const model = normalizeModel(opts.model);
 
-  if (!apiKey) {
+  if (!aiProvider.isConfigured()) {
     return {
       ok: false,
       error:
@@ -109,26 +108,36 @@ export async function callAnthropicWithSchema<T>(opts: {
     const t0 = Date.now();
     let resp: Response;
     try {
-      resp = await fetch(GATEWAY_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
+      const aiResult = await aiProvider.createChatCompletion({
+        model,
+        max_completion_tokens: opts.maxTokens ?? 1500,
+        messages: [
+          { role: "system", content: opts.system },
+          { role: "user", content: userContent },
+        ],
+        tools: [tool],
+        tool_choice: {
+          type: "function",
+          function: { name: opts.toolName },
         },
-        body: JSON.stringify({
-          model,
-          max_completion_tokens: opts.maxTokens ?? 1500,
-          messages: [
-            { role: "system", content: opts.system },
-            { role: "user", content: userContent },
-          ],
-          tools: [tool],
-          tool_choice: {
-            type: "function",
-            function: { name: opts.toolName },
-          },
-        }),
       });
+      if (!aiResult.ok) {
+        return {
+          ok: false,
+          error:
+            "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+          model,
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          costUsd: computeCallCostUsd(model, {
+            input_tokens: totalInputTokens,
+            output_tokens: totalOutputTokens,
+          }),
+          durationMs: totalDurationMs,
+          retryCount: attempt,
+        };
+      }
+      resp = aiResult.response;
     } catch (e) {
       const dur = Date.now() - t0;
       totalDurationMs += dur;

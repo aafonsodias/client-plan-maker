@@ -98,11 +98,24 @@ The compatibility shim still owns the Anthropic-shaped API surface:
 
 The adapter capability added for this path is `max_completion_tokens` pass-through on `AiChatCompletionRequest`.
 
+`src/server/phased/ai.server.ts` now routes `callAnthropicWithSchema` transport through the same adapter.
+
+The phased helper still owns the high-risk contract:
+
+- legacy model normalization
+- exact OpenAI-compatible request body construction
+- forced tool-call schema behavior
+- one-attempt Zod repair retry
+- response parsing and Zod validation
+- token aggregation and cost calculation
+- return telemetry consumed by generation logging callers
+
+The adapter only owns the Lovable Gateway transport and raw `Response` return. Lovable Gateway remains the only active implementation.
+
 ## Remaining Lovable AI call sites
 
 These still call Lovable Gateway directly or through existing Lovable-specific compatibility helpers:
 
-- `src/server/phased/ai.server.ts`
 - `src/server/phased/stage2-blueprint.functions.ts`
 - `scripts/r2.2-smoke2.ts`
 
@@ -116,15 +129,14 @@ Related model/cost routing surfaces remain unchanged:
 
 | Path | Risk level | Why it is high-risk | Recommended handling |
 |---|---:|---|---|
-| `src/server/phased/ai.server.ts` | High | Central phased generation helper with schema validation, retry/repair behavior, token accounting, cost calculation, and generation logging coupling. | Do not wrap casually; first document current request/response/error contracts and add focused regression coverage around `callAnthropicWithSchema`. |
 | `src/server/phased/stage2-blueprint.functions.ts` | High | Mixes normal phased generation with a direct blueprint discussion call, generation state updates, and generation logging. | Split the discussion call into its own adapter PR only after preserving the no-`tool_choice` request shape and logging behavior. |
 | `scripts/r2.2-smoke2.ts` | Medium | Non-runtime smoke script with script-specific model, cost, and report-writing assumptions. | Migrate last or leave as a Lovable Gateway compatibility smoke until runtime paths are provider-neutral. |
 
 ## Phased AI contract coverage status
 
-`src/server/phased/ai.server.ts` still owns direct Lovable Gateway transport for `callAnthropicWithSchema`.
+`src/server/phased/ai.server.ts` now routes `callAnthropicWithSchema` transport through the provider adapter.
 
-Before migrating that transport, `docs/protocol/architecture/phased-ai-generation-contract-v1.md` now documents the current contract and `test/phased-ai-contract.test.ts` covers the highest-risk helper behavior without real API calls:
+`docs/protocol/architecture/phased-ai-generation-contract-v1.md` documents the current contract and `test/phased-ai-contract.test.ts` covers the highest-risk helper behavior without real API calls:
 
 - gateway request body shape
 - legacy model normalization
@@ -133,7 +145,7 @@ Before migrating that transport, `docs/protocol/architecture/phased-ai-generatio
 - accumulated token and cost metadata
 - upstream rate-limit failure behavior
 
-This coverage does not migrate phased generation. It exists to make the next adapter PR safer and smaller.
+This coverage protects the adapter-routed phased helper before any future active provider replacement.
 
 ## Before replacing Lovable Gateway
 
@@ -172,6 +184,6 @@ Before changing the active provider implementation, these must be true:
 
 ## Next safe migration PRs
 
-1. Route only the `callAnthropicWithSchema` Lovable transport through the adapter while preserving the documented phased AI contract.
+1. Audit the final direct Lovable paths: `stage2-blueprint.functions.ts` discussion transport and `scripts/r2.2-smoke2.ts`.
 2. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
 3. Decide whether `scripts/r2.2-smoke2.ts` should remain a Lovable compatibility smoke or move to the adapter after runtime paths are provider-neutral.

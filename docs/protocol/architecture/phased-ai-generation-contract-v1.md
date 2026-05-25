@@ -2,15 +2,15 @@
 
 ## Purpose
 
-This document captures the current contract for the phased AI generation helper before moving its transport behind the provider adapter.
+This document captures the current contract for the phased AI generation helper after moving its Lovable transport behind the provider adapter.
 
-The current implementation still calls Lovable Gateway directly from `src/server/phased/ai.server.ts`. This document and the focused test coverage protect behavior before any transport migration.
+The current implementation still uses Lovable Gateway as the active provider through `src/server/ai/provider-adapter.server.ts`. This document and the focused test coverage protect behavior before any future provider replacement.
 
 ## Current helper
 
 `callAnthropicWithSchema` is exported from `src/server/phased/ai.server.ts`.
 
-Despite its historical name, it now calls the Lovable AI Gateway OpenAI-compatible chat completions endpoint. Stage files keep the older function name for compatibility.
+Despite its historical name, it now builds an OpenAI-compatible chat completions request and sends it through the provider adapter. Stage files keep the older function name for compatibility.
 
 ## Inputs
 
@@ -27,7 +27,7 @@ The helper receives:
 
 ## Gateway request contract
 
-The helper currently sends:
+The helper currently sends this request body through `getDefaultAiProvider().createChatCompletion(...)`:
 
 - `model`: normalized model id.
 - `max_completion_tokens`: `opts.maxTokens ?? 1500`.
@@ -120,7 +120,7 @@ Phased generation is higher risk than Atlas, Concierge, OCR, Demo Judge, Intake,
 - downstream fallback behavior in stage files
 - model normalization for legacy ids
 
-Changing the transport without preserving these contracts could alter plan generation, quota-adjacent reporting, cost displays, and debugging telemetry.
+Changing the active provider implementation without preserving these contracts could alter plan generation, quota-adjacent reporting, cost displays, and debugging telemetry.
 
 ## Coverage added
 
@@ -134,9 +134,30 @@ Changing the transport without preserving these contracts could alter plan gener
 
 The tests stub `globalThis.fetch`, set a fake local `LOVABLE_API_KEY`, and do not call real APIs or require secrets.
 
-## Before transport migration
+## Adapter-routed transport status
 
-Before routing `callAnthropicWithSchema` through `src/server/ai/provider-adapter.server.ts`, the next PR must preserve:
+`callAnthropicWithSchema` now routes its Lovable Gateway transport through `src/server/ai/provider-adapter.server.ts`.
+
+The helper still owns:
+
+- model normalization
+- request body construction
+- retry and repair behavior
+- response parsing
+- token aggregation
+- cost calculation
+- return telemetry
+
+The adapter still owns:
+
+- `LOVABLE_API_KEY` lookup
+- Lovable Gateway URL
+- request execution
+- raw `Response` return
+
+## Before provider replacement
+
+Before replacing Lovable Gateway as the active adapter implementation, the next PR must preserve:
 
 - exact gateway request body fields
 - exact forced tool-call behavior
@@ -149,4 +170,4 @@ Before routing `callAnthropicWithSchema` through `src/server/ai/provider-adapter
 
 ## Recommended next PR
 
-Route only the Lovable Gateway transport inside `callAnthropicWithSchema` through the provider adapter. Do not change stage prompts, schemas, model routing, retry behavior, logging, cost calculation, or fallback behavior in that PR.
+Audit and migrate the remaining direct Lovable paths separately: the Stage 2 blueprint discussion call and the R2.2 smoke script. Do not change stage prompts, schemas, model routing, retry behavior, logging, cost calculation, or fallback behavior in those PRs.
