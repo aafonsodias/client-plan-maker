@@ -4,7 +4,7 @@
 
 Protocol still depends on Lovable for AI calls through `LOVABLE_API_KEY` and `https://ai.gateway.lovable.dev/v1/chat/completions`. Replacing that dependency safely requires a provider-neutral boundary first, so future provider migration can happen behind a small interface instead of changing prompts, models, schemas, parsing, and UI behavior in the same PR.
 
-This PR does not replace Lovable AI. It introduces the first adapter boundary and keeps Lovable Gateway as the only active implementation.
+This PR does not replace Lovable AI. The adapter boundary exists so provider replacement can happen behind one implementation switch instead of by rewriting each caller.
 
 ## Current implementation
 
@@ -15,10 +15,21 @@ It defines:
 - `AiChatMessage`
 - `AiChatCompletionRequest`
 - `AiProvider`
+- `AiProviderName`
 - `lovableGatewayProvider`
+- `openAiCompatibleProvider`
+- `getSelectedAiProviderName()`
 - `getDefaultAiProvider()`
 
-The default provider still:
+Provider selection is controlled by `AI_PROVIDER`:
+
+- unset: defaults to `lovable`
+- `lovable`: uses Lovable Gateway
+- `openai-compatible`: uses the disabled-by-default OpenAI-compatible implementation
+
+The default remains Lovable, so production behavior is unchanged unless `AI_PROVIDER=openai-compatible` is explicitly set.
+
+The Lovable provider still:
 
 - reads `LOVABLE_API_KEY` server-side
 - posts to `https://ai.gateway.lovable.dev/v1/chat/completions`
@@ -26,7 +37,27 @@ The default provider still:
 - returns the raw `Response` to preserve existing status handling and parsing
 - never prints secret values
 
+The OpenAI-compatible provider is inactive unless selected. When selected, it:
+
+- reads `AI_OPENAI_COMPATIBLE_BASE_URL` server-side
+- reads `AI_OPENAI_COMPATIBLE_API_KEY` server-side
+- posts to `${AI_OPENAI_COMPATIBLE_BASE_URL}/chat/completions`, unless the configured URL already ends in `/chat/completions`
+- sends the caller-provided request body unchanged
+- returns the raw `Response`
+- does not remap model IDs
+- returns missing configuration without printing values when selected without required env
+
 `AiChatCompletionRequest` supports the existing plain chat request shape, OpenAI-compatible `tools` / `tool_choice` fields, and multimodal message content arrays needed by OCR image inputs. The adapter does not parse tool calls yet; callers still own response parsing so behavior remains unchanged.
+
+## Provider Selection Tests
+
+`test/ai-provider-adapter.test.ts` covers provider selection and request forwarding with a mocked `fetch`. The tests verify:
+
+- unset `AI_PROVIDER` uses Lovable Gateway
+- `AI_PROVIDER=lovable` uses Lovable Gateway
+- `AI_PROVIDER=openai-compatible` uses the configured OpenAI-compatible base URL and API key
+- missing OpenAI-compatible configuration returns a missing configuration result without a network call
+- request fields are forwarded unchanged, including `model`, `messages`, `tools`, `tool_choice`, `max_tokens`, `max_completion_tokens`, and `reasoning_effort`
 
 ## Migrated callers
 
@@ -174,7 +205,7 @@ This coverage protects the adapter-routed phased helper before any future active
 
 ## Before replacing Lovable Gateway
 
-Before changing the active provider implementation, these must be true:
+Before setting `AI_PROVIDER=openai-compatible` in staging or production, these must be true:
 
 - Target AI provider and model IDs are chosen.
 - Equivalent request and response behavior is mapped for plain chat, tool calls, image inputs, and Anthropic-compatible tool envelopes.
@@ -182,6 +213,14 @@ Before changing the active provider implementation, these must be true:
 - Cost tracking semantics are updated or intentionally preserved.
 - Staging has provider secrets configured without exposing values.
 - Existing prompts, schemas, and model routing are covered by build/test plus manual AI smoke checks.
+
+Staging validation plan:
+
+1. Configure `AI_PROVIDER=openai-compatible` only in staging.
+2. Configure `AI_OPENAI_COMPATIBLE_BASE_URL` and `AI_OPENAI_COMPATIBLE_API_KEY` in server-side secret storage.
+3. Run `npm.cmd test`, `npm.cmd run build`, and `npm.cmd run check:env`.
+4. Manually exercise Atlas, Concierge, OCR extraction, demo critique, intake interpretation, Anthropic compatibility, phased generation, Stage 2 discussion, and the R2.2 smoke script if retained.
+5. Compare status/error behavior, token usage fields, generated tool calls, and cost reporting before any production switch.
 
 ## Risks
 
@@ -192,12 +231,16 @@ Before changing the active provider implementation, these must be true:
 | Model ID mismatch | Current model names are Lovable Gateway model IDs. | Preserve model routing until the provider decision is made. |
 | Cost display mismatch | `plan-cost.server.ts` estimates current gateway costs. | Update cost mapping only when provider routing changes. |
 | Hidden runtime secret gaps | New provider secrets will need owned deployment configuration. | Use env validation and staging checks before changing the default provider. |
+| Accidental provider switch | Production would change AI transport if `AI_PROVIDER` is set incorrectly. | Leave `AI_PROVIDER` unset or `lovable` in production until staging validates the OpenAI-compatible provider. |
 
 ## Validation checklist
 
 - `npm.cmd test`
 - `npm.cmd run build`
 - `npm.cmd run check:env`
+- Confirm unset `AI_PROVIDER` still selects Lovable.
+- Confirm `AI_PROVIDER=lovable` still selects Lovable.
+- Confirm `AI_PROVIDER=openai-compatible` is the only way to select the alternate provider.
 - Confirm `askAtlas` still sends the same model and messages payload shape.
 - Confirm `askConcierge` still sends the same model, messages, tools, and tool_choice payload shape.
 - Confirm `extractSessionFromImage` still sends the same model, messages with image content, tools, and tool_choice payload shape.
@@ -211,6 +254,6 @@ Before changing the active provider implementation, these must be true:
 
 ## Next safe migration PRs
 
-1. Decide whether `scripts/r2.2-smoke2.ts` should remain as a historical smoke, be archived, or be deleted after replacement-provider validation exists.
-2. Replace the active adapter implementation only after all runtime surfaces have staging coverage against the chosen provider.
-3. Remove `LOVABLE_API_KEY` only after the active adapter implementation no longer needs Lovable Gateway.
+1. Configure `AI_PROVIDER=openai-compatible` in staging only and validate every AI surface against the chosen provider.
+2. Add provider-specific model/cost mapping only after the provider decision is confirmed.
+3. Remove `LOVABLE_API_KEY` only after the active production adapter implementation no longer needs Lovable Gateway.

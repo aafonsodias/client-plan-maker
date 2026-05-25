@@ -74,6 +74,30 @@ const variables = [
     production: "required",
   },
   {
+    name: "AI_PROVIDER",
+    category: "AI/model routing",
+    visibility: "server-only",
+    local: "optional",
+    staging: "optional",
+    production: "optional",
+  },
+  {
+    name: "AI_OPENAI_COMPATIBLE_BASE_URL",
+    category: "AI/model routing",
+    visibility: "server-only",
+    local: "optional",
+    staging: "optional",
+    production: "optional",
+  },
+  {
+    name: "AI_OPENAI_COMPATIBLE_API_KEY",
+    category: "AI/model routing",
+    visibility: "server-only",
+    local: "optional",
+    staging: "optional",
+    production: "optional",
+  },
+  {
     name: "FORGE_MODEL_PRE_STAGE",
     category: "AI/model routing",
     visibility: "server-only",
@@ -184,8 +208,26 @@ const isPresent = (name) => {
   return typeof value === "string" && value.trim().length > 0;
 };
 
+const selectedAiProvider = process.env.AI_PROVIDER === "openai-compatible"
+  ? "openai-compatible"
+  : "lovable";
+
+const requirementFor = (variable) => {
+  if (mode !== "local" && selectedAiProvider === "openai-compatible") {
+    if (variable.name === "LOVABLE_API_KEY") return "optional";
+    if (
+      variable.name === "AI_OPENAI_COMPATIBLE_BASE_URL" ||
+      variable.name === "AI_OPENAI_COMPATIBLE_API_KEY"
+    ) {
+      return "required";
+    }
+  }
+
+  return variable[mode];
+};
+
 const rows = variables.map((variable) => {
-  const requirement = variable[mode];
+  const requirement = requirementFor(variable);
   const present = isPresent(variable.name);
   let status = requirement;
 

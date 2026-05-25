@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "test": "node --experimental-strip-types --loader ./test/ts-loader.mjs --test test/domain-contracts.test.ts test/phased-ai-contract.test.ts",
+    "test": "node --experimental-strip-types --loader ./test/ts-loader.mjs --test test/domain-contracts.test.ts test/phased-ai-contract.test.ts test/ai-provider-adapter.test.ts",
     "check:env": "node scripts/validate-env.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."

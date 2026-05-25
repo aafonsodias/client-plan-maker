@@ -24,7 +24,10 @@ The main blockers are:
 | `SUPABASE_PUBLISHABLE_KEY` | Supabase client/public | Publishable key; used by server middleware | Yes for server-rendered/auth middleware paths | Yes | Yes | Supabase | Auth middleware and server/client fallback | `src/integrations/supabase/auth-middleware.ts`, `src/integrations/supabase/client.ts`, `.env.example` | `rg "SUPABASE_PUBLISHABLE_KEY" src .env.example` | Pair with owned project URL; safe to expose as publishable key but still avoid logging values. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase server/private | Server-only | Yes when running server/admin scripts or server functions that need elevated access | Yes before staging replay and validation | Yes for production server/admin paths | Supabase | Server Supabase admin client and smoke/verification scripts | `src/integrations/supabase/client.server.ts`, `scripts/r2.2-smoke2.ts`, `scripts/r2.2-smoke2-derive-only.ts`, `scripts/verify-consolidation-phase-a.ts`, `.env.example` | `rg "SUPABASE_SERVICE_ROLE_KEY" src scripts .env.example` | Must be owned, rotated, and stored only in server secret stores. |
 | `SUPABASE_KEY` | Unknown/needs confirmation | Server-only if used | Optional script fallback only | Unknown | Unknown | Supabase | Verification script fallback | `scripts/verify-consolidation-phase-a.ts` | `rg "SUPABASE_KEY" scripts .env.example src` | Confirm whether this is legacy naming; prefer explicit publishable or service role names. |
-| `LOVABLE_API_KEY` | Lovable-specific | Server-only | Required for current AI paths unless mocked/disabled | Required for current AI paths until replaced | Required for current AI paths until replaced | Lovable | AI gateway calls across server functions | `src/server/anthropic-compat.server.ts`, `src/server/atlas.functions.ts`, `src/server/concierge.functions.ts`, `src/server/demo-judge.functions.ts`, `src/server/intake-ai.functions.ts`, `src/server/sessions-ocr.functions.ts`, `src/server/phased/ai.server.ts`, `src/server/phased/stage2-blueprint.functions.ts`, `scripts/r2.2-smoke2.ts`, `.env.example` | `rg "LOVABLE_API_KEY|ai.gateway.lovable.dev" src scripts .env.example` | Primary Lovable independence blocker for AI; replace through an adapter rather than one-off endpoint swaps. |
+| `LOVABLE_API_KEY` | Lovable-specific | Server-only | Required when `AI_PROVIDER` is unset or `lovable` unless mocked/disabled | Required while staging uses Lovable; optional only when `AI_PROVIDER=openai-compatible` | Required while production uses Lovable; optional only after provider cutover | Lovable | Default AI provider implementation | `src/server/ai/provider-adapter.server.ts`, `.env.example` | `rg "LOVABLE_API_KEY|ai.gateway.lovable.dev" src scripts .env.example` | Current default AI provider secret; remove only after production no longer uses Lovable Gateway. |
+| `AI_PROVIDER` | AI/model routing | Server-only | Optional; defaults to `lovable` | Optional; set to `openai-compatible` only in staging tests | Optional; leave unset or `lovable` until production cutover | Protocol deployment config | AI provider selection | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_PROVIDER" src scripts docs/protocol` | Controls provider selection; default is intentionally Lovable for no production behavior change. |
+| `AI_OPENAI_COMPATIBLE_BASE_URL` | AI/model routing | Server-only | Optional unless testing alternate provider | Required only when `AI_PROVIDER=openai-compatible` | Required only when `AI_PROVIDER=openai-compatible` | Replacement AI provider | Disabled OpenAI-compatible provider | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_OPENAI_COMPATIBLE_BASE_URL" src scripts docs/protocol` | Store as server config; base URL is used to call `/chat/completions`. |
+| `AI_OPENAI_COMPATIBLE_API_KEY` | AI/model routing | Server-only | Optional unless testing alternate provider | Required only when `AI_PROVIDER=openai-compatible` | Required only when `AI_PROVIDER=openai-compatible` | Replacement AI provider | Disabled OpenAI-compatible provider | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_OPENAI_COMPATIBLE_API_KEY" src scripts docs/protocol` | Server secret for the replacement provider; never print or expose. |
 | `FORGE_MODEL_STAGE_3` | AI/model routing | Server-only | Optional script override | Unknown | Unknown | AI provider decision pending | Smoke script model selection | `scripts/r2.2-smoke2.ts` | `rg "FORGE_MODEL_STAGE_3" scripts src .env.example` | Confirm target model routing names after AI provider decision. |
 | `STRIPE_SECRET_KEY` | Stripe | Server-only | Optional unless billing is exercised | Yes for billing validation with test mode | Yes for production billing | Stripe | Billing server functions | `src/server/billing.functions.ts`, `.env.example` | `rg "STRIPE_SECRET_KEY" src .env.example` | Confirm account ownership and test/live separation before production cutover. |
 | `RESEND_API_KEY` | Email/Resend | Server-only | Optional unless digest email is exercised | Yes if digest/email is tested | Yes if digest/email is enabled | Resend | Weekly digest hook email delivery | `src/routes/api/public/hooks/weekly-digest.ts`, `.env.example` | `rg "RESEND_API_KEY" src .env.example` | Confirm Resend account ownership, sending domain, and environment-specific keys. |
@@ -41,9 +44,9 @@ The main blockers are:
 |---|---|---|
 | Public identifier | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_URL`, `APP_ORIGIN` | Safe to reference by name in docs; do not paste live values in issues or chat. |
 | Publishable key | `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PUBLISHABLE_KEY` | Expected to be client-usable, but still avoid printing values outside approved config locations. |
-| Server secret | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_KEY`, `LOVABLE_API_KEY`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY` | Store only in server/runtime secret stores; never expose to browser, logs, docs, or screenshots. |
+| Server secret | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_KEY`, `LOVABLE_API_KEY`, `AI_OPENAI_COMPATIBLE_API_KEY`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY` | Store only in server/runtime secret stores; never expose to browser, logs, docs, or screenshots. |
 | Webhook secret | `DIGEST_SECRET` | Store in both caller scheduler and receiving runtime secret store; rotate during cutover. |
-| Model routing config | `FORGE_MODEL_STAGE_3` | Not necessarily secret, but keep server-side until provider routing is finalized. |
+| Model routing config | `AI_PROVIDER`, `AI_OPENAI_COMPATIBLE_BASE_URL`, `FORGE_MODEL_STAGE_3` | Not necessarily secret, but keep server-side until provider routing is finalized. |
 | Feature flag | `VITE_SHOW_DEPRECATED_ASSESSMENT_FIELDS`, `VITE_MEASUREMENT_LEGACY_REASSESSMENT_SHEET`, `import.meta.env.DEV` | Client-visible behavior controls; validate defaults per environment. |
 | Unknown | `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_KEY`, `APP_ORIGIN`, `ANTHROPIC_API_KEY` | Confirm active use and intended owner before relying on them. |
 
@@ -52,7 +55,7 @@ The main blockers are:
 - App shell: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are needed for browser Supabase initialization; `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` may also be needed by server-rendered/auth middleware paths.
 - Email/password auth: owned Supabase URL and publishable key variables must point to the same local/staging Supabase project used for auth testing.
 - Google OAuth code path: owned Supabase client variables are required, and the Supabase project must have Google OAuth configured manually; the code path now routes through `/auth/callback`, but provider setup is external.
-- AI generation: current AI features require `LOVABLE_API_KEY` until the AI gateway is replaced or mocked.
+- AI generation: current AI features require `LOVABLE_API_KEY` by default. `AI_PROVIDER=openai-compatible` is available for local/staging tests only when `AI_OPENAI_COMPATIBLE_BASE_URL` and `AI_OPENAI_COMPATIBLE_API_KEY` are present.
 - Billing: `STRIPE_SECRET_KEY` is only required locally when exercising billing functions.
 - Digest jobs: `DIGEST_SECRET` and `RESEND_API_KEY` are only required locally when testing the weekly digest hook.
 
@@ -66,7 +69,7 @@ Before replaying migrations or testing auth in staging:
 - Storage buckets, RLS policies, auth triggers, `pg_cron`, and `pg_net` must be validated against the staging project before production.
 - Stripe and Resend must use staging/test credentials and owned accounts.
 - Digest hook caller must store the matching `DIGEST_SECRET` without exposing it in logs.
-- AI behavior must be either wired to the current Lovable gateway knowingly or routed through a staging-safe replacement plan.
+- AI behavior must be either wired to the current Lovable gateway knowingly or routed through `AI_PROVIDER=openai-compatible` with `AI_OPENAI_COMPATIBLE_BASE_URL` and `AI_OPENAI_COMPATIBLE_API_KEY`.
 
 ## Production requirements
 
@@ -77,11 +80,12 @@ Before production cutover:
 - Production origin/domain must be confirmed and reflected in Supabase Auth redirect URLs, Google OAuth client settings, deployment configuration, and any future canonical origin variable.
 - Stripe live account ownership, webhook configuration, and billing paths must be confirmed before billing cutover.
 - Resend sending domain ownership and weekly digest scheduling must be confirmed before digest cutover.
-- `LOVABLE_API_KEY` must either be removed after AI replacement or explicitly treated as a temporary production dependency with an exit gate.
+- `LOVABLE_API_KEY` must either be removed after AI replacement or explicitly treated as a temporary production dependency with an exit gate. `AI_PROVIDER` should remain unset or `lovable` until staging validates `openai-compatible`.
 
 ## Lovable independence blockers
 
-- `LOVABLE_API_KEY` keeps AI generation tied to Lovable because multiple server functions call `https://ai.gateway.lovable.dev/v1/chat/completions`.
+- `LOVABLE_API_KEY` keeps AI generation tied to Lovable while the default adapter provider remains `lovable`.
+- `AI_PROVIDER=openai-compatible` exists for staged replacement, but it must not be enabled in production until model, response, error, and cost behavior are validated.
 - `@lovable.dev/cloud-auth-js` remains in the repo and intake auth still references Lovable OAuth behavior in `src/routes/intake.$token.tsx`.
 - `@lovable.dev/vite-tanstack-config` remains part of the build configuration through `vite.config.ts`.
 - CSP and metadata still allow Lovable domains in `src/routes/__root.tsx`.
@@ -101,7 +105,7 @@ node scripts/validate-env.mjs production
 npm.cmd run check:env
 rg "process\.env|import\.meta\.env" src scripts supabase .env.example
 rg "SUPABASE_|VITE_SUPABASE_|LOVABLE_API_KEY|STRIPE_SECRET_KEY|RESEND_API_KEY|DIGEST_SECRET" src scripts .env.example docs/protocol
-rg "ai.gateway.lovable.dev|lovable|forge.lovable.app" src package.json vite.config.ts docs/protocol
+rg "AI_PROVIDER|AI_OPENAI_COMPATIBLE|ai.gateway.lovable.dev|lovable|forge.lovable.app" src package.json vite.config.ts docs/protocol
 ```
 
 The validation script reads only the current shell environment. It prints variable names, categories, and status labels (`present`, `missing`, `optional`, `unknown`), never values. Local mode is advisory so developers can see what is missing without needing production-only secrets. Staging and production modes fail when required variables are missing.
@@ -125,6 +129,7 @@ Safe manual checks without exposing secrets:
 - Resend account owner, sending domain owner, and digest email sender identity.
 - Production domain and staging domain.
 - AI provider decision after Lovable gateway removal.
+- Whether the first replacement provider should use `AI_PROVIDER=openai-compatible`, and what staging-only base URL and secret store will own it.
 - Digest secret location in both the scheduler/caller and deployed receiving runtime.
 - Whether `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_KEY`, `APP_ORIGIN`, and `FORGE_MODEL_STAGE_3` are active requirements or legacy placeholders.
 
