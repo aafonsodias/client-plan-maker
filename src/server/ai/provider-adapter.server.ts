@@ -8,6 +8,8 @@ export type AiChatMessage = {
 export type AiChatCompletionRequest = {
   model: string;
   messages: AiChatMessage[];
+  tools?: unknown[];
+  tool_choice?: unknown;
 };
 
 export type AiProviderResult =

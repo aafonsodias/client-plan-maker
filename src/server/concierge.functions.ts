@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CONCIERGE_ROUTES, buildRouteContext } from "@/lib/concierge-routes";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 /**
  * Concierge AI — answers user questions about how the app works and points
@@ -27,9 +28,6 @@ export const askConcierge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     void context.userId; // founder gating happens client-side; this is best-effort
 
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return { ok: false as const, error: "AI not configured." };
-
     const validPaths = CONCIERGE_ROUTES.map((r) => r.path).join(", ");
     const systemPrompt = `You are the in-app Guide for "Atlhan Plan", a fitness coaching tool for personal trainers.
 
@@ -49,13 +47,8 @@ Style:
 
 If the question isn't about this app, say so in one line.`;
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const aiProvider = getDefaultAiProvider();
+    const aiResult = await aiProvider.createChatCompletion({
         model: "google/gemini-3-flash-preview",
         messages: [{ role: "system", content: systemPrompt }, ...data.messages],
         tools: [
@@ -88,8 +81,9 @@ If the question isn't about this app, say so in one line.`;
           },
         ],
         tool_choice: { type: "function", function: { name: "submit_answer" } },
-      }),
     });
+    if (!aiResult.ok) return { ok: false as const, error: "AI not configured." };
+    const aiRes = aiResult.response;
 
     if (!aiRes.ok) {
       if (aiRes.status === 429) return { ok: false as const, error: "AI rate-limited; try again in a minute." };
