@@ -17,7 +17,7 @@
  * Model mapping: Anthropic ids → equivalent Lovable Gateway models.
  */
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+import { getDefaultAiProvider } from "@/server/ai/provider-adapter.server";
 
 const MODEL_MAP: Record<string, string> = {
   "claude-haiku-4-5-20251001": "google/gemini-3-flash-preview",
@@ -50,8 +50,8 @@ type AnthropicRequest = {
  *   - .text() for error logging
  */
 export async function anthropicCompatFetch(body: AnthropicRequest): Promise<Response> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) {
+  const aiProvider = getDefaultAiProvider();
+  if (!aiProvider.isConfigured()) {
     return jsonResponse(500, {
       error: "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
     });
@@ -87,14 +87,13 @@ export async function anthropicCompatFetch(body: AnthropicRequest): Promise<Resp
 
   let upstream: Response;
   try {
-    upstream = await fetch(GATEWAY_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(upstreamBody),
-    });
+    const aiResult = await aiProvider.createChatCompletion(upstreamBody);
+    if (!aiResult.ok) {
+      return jsonResponse(500, {
+        error: "LOVABLE_API_KEY is not configured. Lovable Cloud must be enabled.",
+      });
+    }
+    upstream = aiResult.response;
   } catch (e) {
     return jsonResponse(502, {
       error: `Network error calling Lovable AI Gateway: ${e instanceof Error ? e.message : String(e)}`,

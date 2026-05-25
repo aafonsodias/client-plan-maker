@@ -86,11 +86,22 @@ The request payload remains `{ model, messages, tools, tool_choice }`. The adapt
 - token validation, response parsing, assessment persistence, and user-facing errors stay at the caller
 - no billing, quota, or generation log behavior is introduced or changed
 
+`src/server/anthropic-compat.server.ts` now routes its Lovable Gateway transport through the same adapter.
+
+The compatibility shim still owns the Anthropic-shaped API surface:
+
+- callers still invoke `anthropicCompatFetch(body)`
+- Anthropic model IDs are still mapped inside the shim
+- Anthropic `tools[].input_schema` is still converted to OpenAI-compatible `tools`
+- the raw OpenAI-compatible response is still converted back to `{ content: [{ type: "tool_use", ... }], usage }`
+- existing missing-key, network error, upstream status, JSON parsing, and tool-call handling remain in the shim
+
+The adapter capability added for this path is `max_completion_tokens` pass-through on `AiChatCompletionRequest`.
+
 ## Remaining Lovable AI call sites
 
 These still call Lovable Gateway directly or through existing Lovable-specific compatibility helpers:
 
-- `src/server/anthropic-compat.server.ts`
 - `src/server/phased/ai.server.ts`
 - `src/server/phased/stage2-blueprint.functions.ts`
 - `scripts/r2.2-smoke2.ts`
@@ -105,7 +116,6 @@ Related model/cost routing surfaces remain unchanged:
 
 | Path | Risk level | Why it is high-risk | Recommended handling |
 |---|---:|---|---|
-| `src/server/anthropic-compat.server.ts` | High | Translates Anthropic-style requests into Lovable Gateway requests, then maps OpenAI-compatible responses back into an Anthropic-shaped envelope. | Move only the transport behind the adapter in a dedicated PR; preserve request/response envelope tests or add focused fixtures first. |
 | `src/server/phased/ai.server.ts` | High | Central phased generation helper with schema validation, retry/repair behavior, token accounting, cost calculation, and generation logging coupling. | Do not wrap casually; first document current request/response/error contracts and add focused regression coverage around `callAnthropicWithSchema`. |
 | `src/server/phased/stage2-blueprint.functions.ts` | High | Mixes normal phased generation with a direct blueprint discussion call, generation state updates, and generation logging. | Split the discussion call into its own adapter PR only after preserving the no-`tool_choice` request shape and logging behavior. |
 | `scripts/r2.2-smoke2.ts` | Medium | Non-runtime smoke script with script-specific model, cost, and report-writing assumptions. | Migrate last or leave as a Lovable Gateway compatibility smoke until runtime paths are provider-neutral. |
@@ -141,11 +151,12 @@ Before changing the active provider implementation, these must be true:
 - Confirm `extractSessionFromImage` still sends the same model, messages with image content, tools, and tool_choice payload shape.
 - Confirm `judgeDemoRun` still sends the same model, messages, tools, and tool_choice payload shape.
 - Confirm `interpretGoal` still sends the same model, locale-specific messages, tools, and tool_choice payload shape.
+- Confirm `anthropicCompatFetch` still preserves its Anthropic-shaped request and response envelopes while sending the same OpenAI-compatible gateway payload.
 - Confirm no prompt text, model allow-list, error copy, billing behavior, or auth behavior changed.
-- In staging, manually verify Atlas, Concierge, OCR extraction, demo critique, and intake goal interpretation response behavior after provider secrets are available.
+- In staging, manually verify Atlas, Concierge, OCR extraction, demo critique, intake goal interpretation, and Anthropic compatibility callers after provider secrets are available.
 
 ## Next safe migration PRs
 
-1. Move `anthropic-compat.server.ts` transport through the adapter while preserving its Anthropic-shaped request and response envelopes.
-2. Add focused regression coverage for `callAnthropicWithSchema` before touching phased generation transport.
-3. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
+1. Add focused regression coverage for `callAnthropicWithSchema` before touching phased generation transport.
+2. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
+3. Decide whether `scripts/r2.2-smoke2.ts` should remain a Lovable compatibility smoke or move to the adapter after runtime paths are provider-neutral.

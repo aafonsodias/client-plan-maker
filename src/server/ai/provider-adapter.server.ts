@@ -9,6 +9,7 @@ export type AiChatMessage = {
 
 export type AiChatCompletionRequest = {
   model: string;
+  max_completion_tokens?: number;
   messages: AiChatMessage[];
   tools?: unknown[];
   tool_choice?: unknown;
