@@ -2,26 +2,26 @@
 
 ## A. Executive Summary
 
-All known runtime AI surfaces now reach Lovable Gateway through `src/server/ai/provider-adapter.server.ts`. The final direct Lovable AI path is non-runtime:
+All known runtime and non-runtime AI surfaces now reach Lovable Gateway through `src/server/ai/provider-adapter.server.ts`.
 
-- `scripts/r2.2-smoke2.ts`: non-runtime smoke script that still calls Lovable Gateway directly and writes a historical `.lovable` report.
+`scripts/r2.2-smoke2.ts` is now adapter-routed but remains a non-runtime smoke script that writes a historical `.lovable` report.
 
 `src/server/phased/stage2-blueprint.functions.ts` now routes the runtime Stage 2 blueprint discussion transport through the provider adapter while preserving its plain-text or optional `propose_blueprint_patch` behavior.
 
-The remaining decision is whether the R2.2 smoke script is still an active workflow. It can be migrated through the adapter if the team still uses it, or archived/deleted later if the `.lovable` report is historical only.
+The remaining decision is whether the R2.2 smoke script is still an active workflow. It can now be kept behind the adapter, archived, or deleted later if the `.lovable` report is historical only.
 
 Recommended order:
 
-1. Decide whether `scripts/r2.2-smoke2.ts` remains useful; migrate it only if it still provides value after runtime phased generation is provider-neutral.
+1. Decide whether `scripts/r2.2-smoke2.ts` remains useful; keep it only if it still provides value after runtime phased generation is provider-neutral.
 2. Replace the active adapter implementation only after all runtime callers have provider-neutral staging coverage.
-3. Remove `LOVABLE_API_KEY` only after the smoke script is migrated, archived, or deleted from active workflows.
+3. Remove `LOVABLE_API_KEY` only after the active adapter implementation no longer needs Lovable Gateway.
 
 ## B. Path Inventory
 
 | Path | Runtime or script | Current purpose | Request shape | Prompt/schema/parsing behavior | Logging/billing/quota coupling | Migration risk | Recommended next action | Validation required |
 |---|---|---|---|---|---|---|---|---|
 | `src/server/phased/stage2-blueprint.functions.ts` (`discussBlueprint`) | Runtime | Lets an authenticated trainer discuss the current Stage 2 blueprint and optionally receive a partial patch proposal. | Adapter-routed OpenAI-compatible chat completion with `model`, `max_tokens: 1500`, two messages, one `tools` entry, and no `tool_choice`. | System prompt and user content are built from brief, current blueprint, and conversation. Parser accepts plain text and optionally parses `propose_blueprint_patch` tool arguments with Zod. | Calls `logGeneration` with stage `stage2:blueprint:chat`, token usage, cost, duration, reply, and patch. No quota logic found in this path. | Medium for future provider replacement | Add fixtures before replacing the active adapter provider. | Unit or fixture coverage for text-only response, tool-call patch response, non-OK response, missing key behavior, token/cost logging fields, and no DB write except existing generation log. |
-| `scripts/r2.2-smoke2.ts` | Script | End-to-end Sofia smoke that calls the gateway for a single Stage 3 day, validates FITT-VP, retries once on violations, and appends a `.lovable/r2.2-smoke-report.md` section. | OpenAI-compatible chat completion with `model`, `max_completion_tokens: 16000`, `reasoning_effort: "low"`, two messages, one `tools` entry, and forced `tool_choice`. | Uses an inline Stage 3 prompt, inline `DAY_TOOL_SCHEMA`, parses required `record_day` tool call, validates with `PhasedDaySchema`, and retries once by changing the system prompt when FITT-VP violations exist. | Uses service-role Supabase to load ACSM thresholds, local pricing table for report cost, console logs, and `.lovable` report writing. No production billing/quota path. | Medium | Decide whether to archive/delete or convert to adapter after runtime Lovable exit. It is not required for user-facing migration. | If retained, run only in an explicit smoke environment with service-role credentials and fake-safe output review. Validate that no report writes leak secrets. |
+| `scripts/r2.2-smoke2.ts` | Script | End-to-end Sofia smoke that calls the adapter for a single Stage 3 day, validates FITT-VP, retries once on violations, and appends a `.lovable/r2.2-smoke-report.md` section. | Adapter-routed OpenAI-compatible chat completion with `model`, `max_completion_tokens: 16000`, `reasoning_effort: "low"`, two messages, one `tools` entry, and forced `tool_choice`. | Uses an inline Stage 3 prompt, inline `DAY_TOOL_SCHEMA`, parses required `record_day` tool call, validates with `PhasedDaySchema`, and retries once by changing the system prompt when FITT-VP violations exist. | Uses service-role Supabase to load ACSM thresholds, local pricing table for report cost, console logs, and `.lovable` report writing. No production billing/quota path. | Medium operational risk | Decide whether to keep, archive, or delete after replacement-provider validation. | If retained, run only in an explicit smoke environment with service-role credentials and fake-safe output review. Validate that no report writes leak secrets. |
 
 ## C. `stage2-blueprint.functions.ts` Migration Notes
 
@@ -62,11 +62,11 @@ Tests or fixtures needed before migration:
 
 ## D. `scripts/r2.2-smoke2.ts` Migration Notes
 
-This script is not runtime-critical. It is a local or maintenance smoke that still needs `LOVABLE_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` to run.
+This script is not runtime-critical. It is a local or maintenance smoke that still needs `LOVABLE_API_KEY`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` while Lovable Gateway remains the active adapter provider.
 
 Disposition options:
 
-- Migrate: useful if the team wants a provider-neutral smoke after runtime migration.
+- Keep: useful if the team wants a provider-neutral smoke after runtime migration.
 - Archive: appropriate if the `.lovable` report is only historical evidence.
 - Delete later: reasonable if replaced by tests or a safer smoke that does not depend on service-role local execution.
 

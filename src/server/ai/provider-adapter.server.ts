@@ -11,6 +11,7 @@ export type AiChatCompletionRequest = {
   model: string;
   max_tokens?: number;
   max_completion_tokens?: number;
+  reasoning_effort?: string;
   messages: AiChatMessage[];
   tools?: unknown[];
   tool_choice?: unknown;

@@ -17,6 +17,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
+import { getDefaultAiProvider } from "../src/server/ai/provider-adapter.server";
 import {
   runPreparticipationAlgorithm,
   type DesiredIntensity,
@@ -31,10 +32,10 @@ import { PhasedDaySchema, type Brief } from "../src/server/phased/schemas";
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY!;
+const aiProvider = getDefaultAiProvider();
 const MODEL = process.env.FORGE_MODEL_STAGE_3 || "openai/gpt-5";
 
-if (!SUPABASE_URL || !SERVICE_ROLE || !LOVABLE_API_KEY) {
+if (!SUPABASE_URL || !SERVICE_ROLE || !aiProvider.isConfigured()) {
   console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / LOVABLE_API_KEY env vars.");
   process.exit(1);
 }
@@ -141,29 +142,26 @@ const PRICING: Record<string, { in: number; out: number }> = {
 
 async function callGateway(system: string, userMessage: string) {
   const t0 = Date.now();
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_completion_tokens: 16000,
-      reasoning_effort: "low",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: userMessage },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: { name: "record_day", description: "Record one training session.", parameters: DAY_TOOL_SCHEMA },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: "record_day" } },
-    }),
+  const aiResult = await aiProvider.createChatCompletion({
+    model: MODEL,
+    max_completion_tokens: 16000,
+    reasoning_effort: "low",
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: userMessage },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: { name: "record_day", description: "Record one training session.", parameters: DAY_TOOL_SCHEMA },
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "record_day" } },
   });
+  if (!aiResult.ok) {
+    throw new Error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / LOVABLE_API_KEY env vars.");
+  }
+  const resp = aiResult.response;
   const dur = Date.now() - t0;
   if (!resp.ok) {
     const body = await resp.text().catch(() => "");
