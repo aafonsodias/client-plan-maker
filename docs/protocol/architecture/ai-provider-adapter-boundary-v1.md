@@ -119,6 +119,8 @@ These still call Lovable Gateway directly or through existing Lovable-specific c
 - `src/server/phased/stage2-blueprint.functions.ts`
 - `scripts/r2.2-smoke2.ts`
 
+`docs/protocol/architecture/final-lovable-ai-paths-audit-v1.md` now maps these final direct paths, their migration risk, and the recommended exit order.
+
 Related model/cost routing surfaces remain unchanged:
 
 - `src/lib/ai-models.ts`
