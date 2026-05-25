@@ -95,10 +95,18 @@ Safe local commands:
 ```powershell
 npm.cmd test
 npm.cmd run build
+node scripts/validate-env.mjs local
+node scripts/validate-env.mjs staging
+node scripts/validate-env.mjs production
+npm.cmd run check:env
 rg "process\.env|import\.meta\.env" src scripts supabase .env.example
 rg "SUPABASE_|VITE_SUPABASE_|LOVABLE_API_KEY|STRIPE_SECRET_KEY|RESEND_API_KEY|DIGEST_SECRET" src scripts .env.example docs/protocol
 rg "ai.gateway.lovable.dev|lovable|forge.lovable.app" src package.json vite.config.ts docs/protocol
 ```
+
+The validation script reads only the current shell environment. It prints variable names, categories, and status labels (`present`, `missing`, `optional`, `unknown`), never values. Local mode is advisory so developers can see what is missing without needing production-only secrets. Staging and production modes fail when required variables are missing.
+
+Known limitation: this validates local presence/classification only. It does not confirm Supabase project ownership, Google OAuth dashboard settings, Stripe/Resend account ownership, deployed secret placement, redirect URL correctness, scheduled job configuration, or whether a value belongs to the intended environment.
 
 Safe manual checks without exposing secrets:
 

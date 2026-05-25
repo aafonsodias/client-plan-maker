@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "test": "node --experimental-strip-types --loader ./test/ts-loader.mjs --test test/domain-contracts.test.ts",
+    "check:env": "node scripts/validate-env.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
