@@ -120,6 +120,21 @@ Related model/cost routing surfaces remain unchanged:
 | `src/server/phased/stage2-blueprint.functions.ts` | High | Mixes normal phased generation with a direct blueprint discussion call, generation state updates, and generation logging. | Split the discussion call into its own adapter PR only after preserving the no-`tool_choice` request shape and logging behavior. |
 | `scripts/r2.2-smoke2.ts` | Medium | Non-runtime smoke script with script-specific model, cost, and report-writing assumptions. | Migrate last or leave as a Lovable Gateway compatibility smoke until runtime paths are provider-neutral. |
 
+## Phased AI contract coverage status
+
+`src/server/phased/ai.server.ts` still owns direct Lovable Gateway transport for `callAnthropicWithSchema`.
+
+Before migrating that transport, `docs/protocol/architecture/phased-ai-generation-contract-v1.md` now documents the current contract and `test/phased-ai-contract.test.ts` covers the highest-risk helper behavior without real API calls:
+
+- gateway request body shape
+- legacy model normalization
+- successful tool-call parsing
+- one-attempt schema repair retry
+- accumulated token and cost metadata
+- upstream rate-limit failure behavior
+
+This coverage does not migrate phased generation. It exists to make the next adapter PR safer and smaller.
+
 ## Before replacing Lovable Gateway
 
 Before changing the active provider implementation, these must be true:
@@ -157,6 +172,6 @@ Before changing the active provider implementation, these must be true:
 
 ## Next safe migration PRs
 
-1. Add focused regression coverage for `callAnthropicWithSchema` before touching phased generation transport.
+1. Route only the `callAnthropicWithSchema` Lovable transport through the adapter while preserving the documented phased AI contract.
 2. Evaluate the `stage2-blueprint.functions.ts` direct discussion call as a separate, scoped adapter migration.
 3. Decide whether `scripts/r2.2-smoke2.ts` should remain a Lovable compatibility smoke or move to the adapter after runtime paths are provider-neutral.

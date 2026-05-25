@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function hasExtension(specifier) {
-  return path.extname(specifier) !== "";
+  return /\.(?:mjs|cjs|js|jsx|ts|tsx|json|node)$/.test(specifier);
 }
 
 function candidateUrls(specifier, parentURL) {
