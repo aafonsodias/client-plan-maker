@@ -1,13 +1,13 @@
 const args = new Set(process.argv.slice(2));
 const live = args.has("--live");
 
-const provider = process.env.AI_PROVIDER || "";
-const compatibleBaseUrl = process.env.AI_OPENAI_COMPATIBLE_BASE_URL || "";
-const compatibleApiKey = process.env.AI_OPENAI_COMPATIBLE_API_KEY || "";
-const lovableApiKey = process.env.LOVABLE_API_KEY || "";
+const provider = (process.env.AI_PROVIDER || "").trim();
+const compatibleBaseUrl = (process.env.AI_OPENAI_COMPATIBLE_BASE_URL || "").trim();
+const compatibleApiKey = (process.env.AI_OPENAI_COMPATIBLE_API_KEY || "").trim();
 
-const selectedProvider = provider || "<unset>";
-const wouldUseOpenAiCompatible = provider === "openai-compatible";
+const selectedProvider = provider || "openai-compatible";
+const unsupportedProvider = provider && provider !== "openai-compatible";
+const wouldUseOpenAiCompatible = !unsupportedProvider;
 
 function present(value) {
   return value ? "yes" : "no";
@@ -34,18 +34,20 @@ console.log(
 console.log(
   `AI_OPENAI_COMPATIBLE_API_KEY present: ${present(compatibleApiKey)}`,
 );
-console.log(`LOVABLE_API_KEY present: ${present(lovableApiKey)}`);
 console.log(
   `would use openai-compatible: ${wouldUseOpenAiCompatible ? "yes" : "no"}`,
 );
 
 if (!live) {
+  if (unsupportedProvider) {
+    console.log("provider warning: unsupported AI_PROVIDER value");
+  }
   console.log("live request: skipped (pass --live to enable)");
   process.exit(0);
 }
 
-if (!wouldUseOpenAiCompatible) {
-  console.error("live request: refused because AI_PROVIDER is not openai-compatible");
+if (unsupportedProvider) {
+  console.error("live request: refused because AI_PROVIDER is unsupported");
   process.exit(2);
 }
 

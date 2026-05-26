@@ -9,7 +9,7 @@
 //   4. Call Anthropic ONCE with the same Stage 3 system prompt + FITT-VP
 //      injection, schema = PhasedDay.
 //   5. Run validateDayAgainstFittVp; on violations, do a 1× retry.
-//   6. Append Sections 4 + 5 to .lovable/r2.2-smoke-report.md.
+//   6. Append Sections 4 + 5 to docs/protocol/architecture/r2.2-smoke-report.md.
 //
 // Run: bun run scripts/r2.2-smoke2.ts
 
@@ -248,7 +248,7 @@ Generate ONLY this single day's session.`;
   }
 
   // ---- Append sections 4 + 5 to the smoke report --------------------------
-  const reportPath = resolve(".lovable/r2.2-smoke-report.md");
+  const reportPath = resolve("docs/protocol/architecture/r2.2-smoke-report.md");
   mkdirSync(dirname(reportPath), { recursive: true });
   const append = `
 

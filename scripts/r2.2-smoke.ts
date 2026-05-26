@@ -2,7 +2,7 @@
 // R2.2 Smoke #1 — algorithm-only.
 // Pure offline run (no DB, no AI). Builds 10 synthetic personas covering
 // the false-positive watchlist + BP gate + clearance edge cases, runs the
-// dual classifier, and writes .lovable/r2.2-smoke-report.md.
+// dual classifier, and writes docs/protocol/architecture/r2.2-smoke-report.md.
 //
 // Run: bun run scripts/r2.2-smoke.ts
 
@@ -241,7 +241,7 @@ function main() {
 
   const body = [header, sec1, sec2, sec3, watch, cvdTable].join("\n");
 
-  const outPath = resolve(process.cwd(), ".lovable/r2.2-smoke-report.md");
+  const outPath = resolve(process.cwd(), "docs/protocol/architecture/r2.2-smoke-report.md");
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, body, "utf8");
   console.log(`Wrote ${outPath}`);

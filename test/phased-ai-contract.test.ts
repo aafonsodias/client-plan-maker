@@ -11,7 +11,13 @@ type CapturedFetch = {
 };
 
 const originalFetch = globalThis.fetch;
-const originalLovableApiKey = process.env.LOVABLE_API_KEY;
+const originalEnv = {
+  AI_PROVIDER: process.env.AI_PROVIDER,
+  AI_OPENAI_COMPATIBLE_BASE_URL: process.env.AI_OPENAI_COMPATIBLE_BASE_URL,
+  AI_OPENAI_COMPATIBLE_API_KEY: process.env.AI_OPENAI_COMPATIBLE_API_KEY,
+  FORGE_MODEL_STAGE_1: process.env.FORGE_MODEL_STAGE_1,
+};
+const testProviderUrl = "https://provider.example.test/v1/chat/completions";
 
 function toolCallResponse(toolName: string, args: unknown, usage = { prompt_tokens: 10, completion_tokens: 5 }) {
   return new Response(
@@ -55,12 +61,20 @@ function installFetch(responses: Array<Response | Error>) {
 
 function restoreFetchAndEnv() {
   globalThis.fetch = originalFetch;
-  if (originalLovableApiKey === undefined) {
-    delete process.env.LOVABLE_API_KEY;
-  } else {
-    process.env.LOVABLE_API_KEY = originalLovableApiKey;
+
+  for (const [name, value] of Object.entries(originalEnv)) {
+    if (value === undefined) {
+      delete process.env[name];
+    } else {
+      process.env[name] = value;
+    }
   }
-  delete process.env.FORGE_MODEL_STAGE_1;
+}
+
+function configureAiProvider() {
+  delete process.env.AI_PROVIDER;
+  process.env.AI_OPENAI_COMPATIBLE_BASE_URL = "https://provider.example.test/v1";
+  process.env.AI_OPENAI_COMPATIBLE_API_KEY = "test-key";
 }
 
 const schema = z.object({
@@ -86,8 +100,8 @@ const baseOpts = {
   maxTokens: 777,
 };
 
-test("callAnthropicWithSchema sends the expected gateway payload and parses tool-use data", async () => {
-  process.env.LOVABLE_API_KEY = "test-key";
+test("callAnthropicWithSchema sends the expected provider payload and parses tool-use data", async () => {
+  configureAiProvider();
   const calls = installFetch([toolCallResponse("record_contract", { summary: "ok", count: 2 })]);
 
   try {
@@ -100,7 +114,7 @@ test("callAnthropicWithSchema sends the expected gateway payload and parses tool
     assert.equal(result.outputTokens, 5);
     assert.equal(result.retryCount, 0);
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].url, "https://ai.gateway.lovable.dev/v1/chat/completions");
+    assert.equal(calls[0].url, testProviderUrl);
     assert.equal(calls[0].body.model, "google/gemini-3-flash-preview");
     assert.equal(calls[0].body.max_completion_tokens, 777);
     assert.deepEqual(calls[0].body.messages, [
@@ -120,7 +134,7 @@ test("callAnthropicWithSchema sends the expected gateway payload and parses tool
 });
 
 test("callAnthropicWithSchema retries once after schema failure and preserves accumulated usage", async () => {
-  process.env.LOVABLE_API_KEY = "test-key";
+  configureAiProvider();
   const calls = installFetch([
     toolCallResponse("record_contract", { summary: "missing count" }, { prompt_tokens: 3, completion_tokens: 4 }),
     toolCallResponse("record_contract", { summary: "fixed", count: 9 }, { prompt_tokens: 5, completion_tokens: 6 }),
@@ -144,7 +158,7 @@ test("callAnthropicWithSchema retries once after schema failure and preserves ac
 });
 
 test("callAnthropicWithSchema surfaces upstream failure without retrying", async () => {
-  process.env.LOVABLE_API_KEY = "test-key";
+  configureAiProvider();
   const calls = installFetch([new Response("too many", { status: 429 })]);
 
   try {

@@ -2,15 +2,15 @@
 
 ## Purpose
 
-This document captures the current contract for the phased AI generation helper after moving its Lovable transport behind the provider adapter.
+This document captures the current contract for the phased AI generation helper after the active AI transport moved to the OpenAI-compatible provider adapter.
 
-The current implementation still uses Lovable Gateway as the active provider through `src/server/ai/provider-adapter.server.ts`. This document and the focused test coverage protect behavior before any future provider replacement.
+The former Lovable Gateway transport has been removed from active runtime code. This document and the focused tests protect phased generation behavior without changing prompts, schemas, model routing, parsing, retry behavior, logging, or cost calculation.
 
-## Current helper
+## Current Helper
 
 `callAnthropicWithSchema` is exported from `src/server/phased/ai.server.ts`.
 
-Despite its historical name, it now builds an OpenAI-compatible chat completions request and sends it through the provider adapter. Stage files keep the older function name for compatibility.
+Despite its historical name, it builds an OpenAI-compatible chat completions request and sends it through `getDefaultAiProvider().createChatCompletion(...)`.
 
 ## Inputs
 
@@ -21,13 +21,13 @@ The helper receives:
 - `userMessage`: user prompt.
 - `toolName`: required tool/function name.
 - `toolDescription`: tool/function description.
-- `toolJsonSchema`: JSON schema passed to the gateway tool definition.
-- `schema`: Zod schema used to validate the tool arguments returned by the model.
+- `toolJsonSchema`: JSON schema passed to the provider tool definition.
+- `schema`: Zod schema used to validate tool arguments returned by the model.
 - `maxTokens`: optional token limit, sent as `max_completion_tokens`.
 
-## Gateway request contract
+## Provider Request Contract
 
-The helper currently sends this request body through `getDefaultAiProvider().createChatCompletion(...)`:
+The helper sends this request body through the provider adapter:
 
 - `model`: normalized model id.
 - `max_completion_tokens`: `opts.maxTokens ?? 1500`.
@@ -40,7 +40,7 @@ Legacy model ids are normalized:
 - `claude-haiku-4-5-20251001` -> `google/gemini-3-flash-preview`
 - `claude-sonnet-4-5-20250929` -> `openai/gpt-5`
 
-## Response contract
+## Response Contract
 
 On success, the helper returns:
 
@@ -59,9 +59,9 @@ Token usage accepts both OpenAI-compatible and alternate names:
 - input: `usage.prompt_tokens` or `usage.input_tokens`
 - output: `usage.completion_tokens` or `usage.output_tokens`
 
-## Retry and repair contract
+## Retry And Repair Contract
 
-The helper attempts at most two gateway calls.
+The helper attempts at most two provider calls.
 
 The first attempt sends the original `userMessage`.
 
@@ -74,20 +74,20 @@ If the retry still fails schema validation, the helper returns:
 - `zodError` containing the last validation or parsing failure summary
 - accumulated token, cost, duration, and retry metadata
 
-## Failure contract
+## Failure Contract
 
-Missing `LOVABLE_API_KEY` returns `ok: false` with zero token, cost, duration, and retry metadata.
+Missing OpenAI-compatible provider configuration returns `ok: false` with zero token, cost, duration, and retry metadata.
 
 Network failure returns `ok: false` with a network error message, accumulated duration, and no real response parsing.
 
-Non-OK gateway responses return `ok: false` immediately without schema retry. Status handling currently preserves special user-facing messages for:
+Non-OK provider responses return `ok: false` immediately without schema retry. Status handling preserves special user-facing messages for:
 
 - `402`: AI credits exhausted.
 - `429`: rate limited.
 
-Other statuses include the Lovable status and a truncated response body.
+Other statuses include the provider status and a truncated response body.
 
-## Logging and cost contract
+## Logging And Cost Contract
 
 `callAnthropicWithSchema` does not write to `generation_log` directly. It returns telemetry fields that callers pass to `logGeneration`.
 
@@ -106,39 +106,39 @@ Known runtime callers include:
 
 Related phased files use `logGeneration` without calling `callAnthropicWithSchema` directly.
 
-## Why this path is high-risk
+## Why This Path Is High-Risk
 
 Phased generation is higher risk than Atlas, Concierge, OCR, Demo Judge, Intake, and the Anthropic compatibility shim because it combines:
 
 - forced tool calls
 - Zod schema validation
 - one-attempt repair behavior
-- user-facing gateway error mapping
+- user-facing provider error mapping
 - token aggregation
 - cost calculation
 - generation logging by callers
 - downstream fallback behavior in stage files
 - model normalization for legacy ids
 
-Changing the active provider implementation without preserving these contracts could alter plan generation, quota-adjacent reporting, cost displays, and debugging telemetry.
+Changing the active provider behavior without preserving these contracts could alter plan generation, quota-adjacent reporting, cost displays, and debugging telemetry.
 
-## Coverage added
+## Coverage
 
 `test/phased-ai-contract.test.ts` covers:
 
-- successful tool-call parsing and gateway request shape
+- successful tool-call parsing and provider request shape
 - one retry after schema validation failure
 - accumulated token and cost metadata across retry
 - upstream rate-limit failure behavior
 - legacy model normalization
 
-The tests stub `globalThis.fetch`, set a fake local `LOVABLE_API_KEY`, and do not call real APIs or require secrets.
+The tests stub `globalThis.fetch`, set fake local OpenAI-compatible provider variables, and do not call real APIs or require secrets.
 
-## Adapter-routed transport status
+## Adapter-Routed Transport Status
 
-`callAnthropicWithSchema` now routes its Lovable Gateway transport through `src/server/ai/provider-adapter.server.ts`.
+`callAnthropicWithSchema` routes transport through `src/server/ai/provider-adapter.server.ts`.
 
-The helper still owns:
+The helper owns:
 
 - model normalization
 - request body construction
@@ -148,26 +148,22 @@ The helper still owns:
 - cost calculation
 - return telemetry
 
-The adapter still owns:
+The adapter owns:
 
-- `LOVABLE_API_KEY` lookup
-- Lovable Gateway URL
+- OpenAI-compatible provider configuration lookup
+- chat completions URL normalization
 - request execution
 - raw `Response` return
 
-## Before provider replacement
+## Change Rules
 
-Before replacing Lovable Gateway as the active adapter implementation, the next PR must preserve:
+Future provider changes must preserve:
 
-- exact gateway request body fields
+- exact provider request body fields
 - exact forced tool-call behavior
 - exact retry and repair message behavior
 - exact token aggregation and cost calculation
 - exact non-OK status behavior
-- exact missing-key behavior
+- exact missing-configuration behavior
 - exact return shape consumed by stage callers
 - no changes to `logGeneration`
-
-## Recommended next PR
-
-Audit and migrate the remaining direct Lovable paths separately: the Stage 2 blueprint discussion call and the R2.2 smoke script. Do not change stage prompts, schemas, model routing, retry behavior, logging, cost calculation, or fallback behavior in those PRs.

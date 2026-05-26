@@ -1,5 +1,7 @@
 # Backend Ownership Inventory and Migration Plan v1
 
+Historical note: this inventory is a pre-eradication planning artifact. Several Lovable references below describe the repo state at the time this inventory was written and are retained as migration history, not as current runtime/build/browser/package/env requirements. See `docs/protocol/architecture/lovable-eradication-status-v1.md` for current status.
+
 Date: 2026-05-25
 
 Scope: documentation only. No app code, migrations, package files, environment files, remote services, or secrets were changed or accessed.

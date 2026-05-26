@@ -66,14 +66,6 @@ const variables = [
     production: "unknown",
   },
   {
-    name: "LOVABLE_API_KEY",
-    category: "Lovable-specific",
-    visibility: "server-only",
-    local: "optional",
-    staging: "required",
-    production: "required",
-  },
-  {
     name: "AI_PROVIDER",
     category: "AI/model routing",
     visibility: "server-only",
@@ -86,16 +78,16 @@ const variables = [
     category: "AI/model routing",
     visibility: "server-only",
     local: "optional",
-    staging: "optional",
-    production: "optional",
+    staging: "required",
+    production: "required",
   },
   {
     name: "AI_OPENAI_COMPATIBLE_API_KEY",
     category: "AI/model routing",
     visibility: "server-only",
     local: "optional",
-    staging: "optional",
-    production: "optional",
+    staging: "required",
+    production: "required",
   },
   {
     name: "FORGE_MODEL_PRE_STAGE",
@@ -208,30 +200,22 @@ const isPresent = (name) => {
   return typeof value === "string" && value.trim().length > 0;
 };
 
-const selectedAiProvider = process.env.AI_PROVIDER === "openai-compatible"
-  ? "openai-compatible"
-  : "lovable";
-
 const requirementFor = (variable) => {
-  if (mode !== "local" && selectedAiProvider === "openai-compatible") {
-    if (variable.name === "LOVABLE_API_KEY") return "optional";
-    if (
-      variable.name === "AI_OPENAI_COMPATIBLE_BASE_URL" ||
-      variable.name === "AI_OPENAI_COMPATIBLE_API_KEY"
-    ) {
-      return "required";
-    }
-  }
-
   return variable[mode];
 };
 
 const rows = variables.map((variable) => {
   const requirement = requirementFor(variable);
   const present = isPresent(variable.name);
+  const isUnsupportedAiProvider =
+    variable.name === "AI_PROVIDER" &&
+    present &&
+    process.env.AI_PROVIDER.trim() !== "openai-compatible";
   let status = requirement;
 
-  if (present) {
+  if (isUnsupportedAiProvider) {
+    status = "invalid";
+  } else if (present) {
     status = "present";
   } else if (requirement === "required") {
     status = "missing";
@@ -244,7 +228,7 @@ const rows = variables.map((variable) => {
   };
 });
 
-const statusOrder = { missing: 0, present: 1, optional: 2, unknown: 3 };
+const statusOrder = { invalid: 0, missing: 1, present: 2, optional: 3, unknown: 4 };
 rows.sort((a, b) => {
   const byStatus = statusOrder[a.status] - statusOrder[b.status];
   return byStatus || a.name.localeCompare(b.name);
@@ -265,16 +249,24 @@ for (const row of rows) {
 const missingRequired = rows
   .filter((row) => row.status === "missing" && row.requirement === "required")
   .map((row) => row.name);
+const invalidVariables = rows
+  .filter((row) => row.status === "invalid")
+  .map((row) => row.name);
 
 if (missingRequired.length > 0) {
   console.log("");
   console.log(`Missing required for ${mode}: ${missingRequired.join(", ")}`);
 }
+if (invalidVariables.length > 0) {
+  console.log("");
+  console.log(`Invalid for ${mode}: ${invalidVariables.join(", ")}`);
+  console.log("AI_PROVIDER may be unset or set to openai-compatible.");
+}
 
 if (mode === "local") {
   console.log("");
-  console.log("Local mode is advisory and exits 0. Staging and production modes fail when required variables are missing.");
+  console.log("Local mode is advisory and exits 0. Staging and production modes fail when required variables are missing or invalid.");
   process.exit(0);
 }
 
-process.exit(missingRequired.length > 0 ? 1 : 0);
+process.exit(missingRequired.length > 0 || invalidVariables.length > 0 ? 1 : 0);

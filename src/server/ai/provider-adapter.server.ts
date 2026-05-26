@@ -19,22 +19,14 @@ export type AiChatCompletionRequest = {
 
 export type AiProviderResult =
   | { ok: true; response: Response }
-  | { ok: false; error: "missing_api_key" | "missing_configuration" };
+  | { ok: false; error: "missing_configuration" };
 
 export type AiProvider = {
   isConfigured(): boolean;
   createChatCompletion(request: AiChatCompletionRequest): Promise<AiProviderResult>;
 };
 
-const LOVABLE_GATEWAY_CHAT_COMPLETIONS_URL =
-  "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-export type AiProviderName = "lovable" | "openai-compatible";
-
-function getLovableGatewayApiKey(): string | null {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  return typeof apiKey === "string" && apiKey.trim().length > 0 ? apiKey : null;
-}
+export type AiProviderName = "openai-compatible";
 
 function getOpenAiCompatibleConfig(): { url: string; apiKey: string } | null {
   const baseUrl = process.env.AI_OPENAI_COMPATIBLE_BASE_URL;
@@ -56,28 +48,6 @@ function getOpenAiCompatibleConfig(): { url: string; apiKey: string } | null {
 
   return { url, apiKey: apiKey.trim() };
 }
-
-export const lovableGatewayProvider: AiProvider = {
-  isConfigured() {
-    return getLovableGatewayApiKey() !== null;
-  },
-
-  async createChatCompletion(request) {
-    const apiKey = getLovableGatewayApiKey();
-    if (!apiKey) return { ok: false, error: "missing_api_key" };
-
-    const response = await fetch(LOVABLE_GATEWAY_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
-    });
-
-    return { ok: true, response };
-  },
-};
 
 export const openAiCompatibleProvider: AiProvider = {
   isConfigured() {
@@ -102,13 +72,9 @@ export const openAiCompatibleProvider: AiProvider = {
 };
 
 export function getSelectedAiProviderName(): AiProviderName {
-  return process.env.AI_PROVIDER === "openai-compatible"
-    ? "openai-compatible"
-    : "lovable";
+  return "openai-compatible";
 }
 
 export function getDefaultAiProvider(): AiProvider {
-  return getSelectedAiProviderName() === "openai-compatible"
-    ? openAiCompatibleProvider
-    : lovableGatewayProvider;
+  return openAiCompatibleProvider;
 }

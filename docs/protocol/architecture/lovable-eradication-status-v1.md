@@ -2,152 +2,80 @@
 
 ## Executive Summary
 
-This pass adds the staging validation package required before removing the Lovable AI runtime provider.
+Protocol no longer has an active Lovable runtime, browser, build, package, script-output, or current env dependency.
 
-The remaining Lovable references are intentional blockers. They are AI-provider environment gates, historical documentation, smoke-report archive paths, an existing historical migration URL, or Git history artifacts. Git history was not rewritten.
+This pass removed the final active AI dependency by deleting the Lovable Gateway provider implementation from `src/server/ai/provider-adapter.server.ts` and making the OpenAI-compatible provider the only supported adapter provider.
 
-Protocol is closer to Lovable independence, but not at zero references yet. Lovable remains the default AI provider until `AI_PROVIDER=openai-compatible` is proven in staging across every AI surface.
+Remaining Lovable references are historical or archival only. Git history and existing migration history were not rewritten.
 
 ## What Was Removed Or Replaced
 
-| Surface | Change | Runtime impact |
+| Surface | Current status | Runtime impact |
 | --- | --- | --- |
-| Supabase env errors | Replaced "Connect Supabase in Lovable Cloud" with neutral Protocol Supabase environment copy. | No behavior change. |
-| Public share fallback | Replaced `https://forge.lovable.app/` fallback with `/`. | Avoids public Lovable URL fallback. |
-| Billing origin fallback | Replaced `https://forge.lovable.app` fallback with request origin, `APP_ORIGIN`, then localhost fallback. | Keeps billing redirect origin deterministic without Lovable fallback. |
-| Root metadata image | Replaced `gpt-engineer` uploaded image URL with local `/icon-512.png`. | Removes third-party Lovable-era metadata asset. |
-| AI comments and local errors | Reworded safe runtime-adjacent comments/errors to refer to the configured AI provider. | No prompt, schema, model, parsing, retry, cost, logging, billing, or persistence change. |
-| Env matrix blocker text | Updated stale `forge.lovable.app` blocker status. | Documentation only. |
-| Public-intake Google OAuth | Replaced the Lovable auth wrapper call with `supabase.auth.signInWithOAuth({ provider: "google" })` and a safe `/auth/callback?next=/intake/:token` return. | Preserves the public intake token flow. |
-| Lovable auth wrapper | Deleted `src/integrations/lovable/index.ts` after no imports remained. | Removes browser runtime dependency on Lovable cloud auth. |
-| Lovable cloud-auth package | Removed `@lovable.dev/cloud-auth-js` from `package.json` and `package-lock.json`. | No runtime imports remain. |
-| Lovable CSP domains | Removed `https://api.lovable.app` and `https://*.lovable.app` from browser `connect-src`. | Browser runtime no longer needs these domains for intake OAuth. |
-| Vite/TanStack config | Replaced `@lovable.dev/vite-tanstack-config` with explicit owned Vite config. | Preserves TanStack Start, React, Tailwind, tsconfig paths, Cloudflare build integration, aliases, dedupe, VITE env define behavior, and server defaults. |
-| Lovable build package | Removed `@lovable.dev/vite-tanstack-config` and its Lovable transitive build packages from `package.json` and `package-lock.json`. | Build/dev no longer depends on Lovable tooling. |
-| AI provider staging package | Added an OpenAI-compatible staging validation runbook and safe dry-run smoke command. | No production AI behavior change; Lovable remains default until staging passes. |
+| Public-intake Google OAuth | Uses Supabase OAuth directly and returns through `/auth/callback?next=/intake/:token`. | No Lovable auth runtime dependency. |
+| Lovable auth wrapper | Deleted previously after no imports remained. | No browser runtime dependency on Lovable cloud auth. |
+| Lovable cloud-auth package | Removed previously from package files. | No runtime imports remain. |
+| Lovable CSP domains | Removed previously from browser `connect-src`. | Browser runtime no longer allows Lovable domains. |
+| Vite/TanStack config | Uses owned explicit Vite config. | Build/dev no longer depends on Lovable tooling. |
+| Lovable build package | Removed previously from package files. | No Lovable build dependency remains. |
+| Lovable AI provider | Removed from `src/server/ai/provider-adapter.server.ts`. | AI runtime now uses OpenAI-compatible provider only. |
+| Lovable AI env key | Removed from `.env.example` and `scripts/validate-env.mjs`. | `LOVABLE_API_KEY` is no longer required by the current app. |
+| R2.2 smoke output path | Moved from `.lovable/r2.2-smoke-report.md` to `docs/protocol/architecture/r2.2-smoke-report.md`. | Active scripts write to a Protocol-owned path. |
 
 ## Current Inventory By Category
 
 | Category | Current status | Evidence |
 | --- | --- | --- |
-| User-facing UI/metadata | Safe obvious Lovable fallbacks were removed. CSP no longer includes Lovable browser domains. | `src/routes/__root.tsx`, `src/components/ShareAppButton.tsx` |
-| Runtime code | Public-intake Google OAuth now uses Supabase OAuth directly and returns through `/auth/callback?next=/intake/:token`. | `src/routes/intake.$token.tsx`, `src/routes/auth_.callback.tsx` |
-| Server-only provider implementation | Lovable Gateway remains the default active AI provider behind the adapter. | `src/server/ai/provider-adapter.server.ts` |
-| Build/dev tooling | Vite now uses an owned explicit config. | `vite.config.ts` |
-| Environment variables | `LOVABLE_API_KEY` remains required while `AI_PROVIDER` is unset or `lovable`. | `.env.example`, `scripts/validate-env.mjs` |
-| Package dependencies | Lovable auth and build packages were removed. | `package.json`, `package-lock.json` |
-| CSP/security headers | Lovable browser domains were removed from the root CSP. | `src/routes/__root.tsx` |
-| Docs/process archive | Historical docs intentionally retain prior findings and migration evidence. | `docs/protocol/**`, `.lovable/**` |
-| Scripts | Smoke scripts still write historical `.lovable` reports; AI calls route through the adapter. | `scripts/r2.2-smoke*.ts` |
-| Staging validation | OpenAI-compatible provider validation is now documented before final AI removal. | `docs/protocol/architecture/ai-provider-staging-validation-runbook-v1.md`, `scripts/ai-provider-smoke.mjs` |
-| Generated files | No generated route changes were needed in this pass. | `src/routeTree.gen.ts` unchanged |
-| Historical-only or Git-history-only | Some references only exist in history or historical docs. | Git history was not rewritten. |
+| Runtime AI code | OpenAI-compatible provider only. | `src/server/ai/provider-adapter.server.ts` |
+| AI callers | All known AI callers route through the adapter. | `src/server/**`, `scripts/r2.2-smoke2.ts` |
+| Environment variables | OpenAI-compatible provider variables are the current AI env surface. | `.env.example`, `scripts/validate-env.mjs` |
+| Tests | Mocked tests cover provider selection, missing config, request forwarding, and phased contract behavior without network calls. | `test/ai-provider-adapter.test.ts`, `test/phased-ai-contract.test.ts` |
+| Scripts | Current smoke/config scripts no longer require Lovable. | `scripts/ai-provider-smoke.mjs`, `scripts/r2.2-smoke*.ts` |
+| Package dependencies | No Lovable package dependency remains. | `package.json`, `package-lock.json` |
+| Browser/CSP | No Lovable browser domain is required. | `src/routes/__root.tsx` |
+| Archive/history | Historical references remain intentionally. | `.lovable/**`, historical docs, existing migrations, Git history |
 
-## What Remains And Why
+## Current AI Provider
 
-### Public-Intake OAuth
+The active provider is OpenAI-compatible.
 
-`src/routes/intake.$token.tsx` now calls Supabase OAuth directly:
+Required for staging and production AI runtime:
 
-- provider: `google`
-- redirect: `/auth/callback?next=/intake/:token`
-- callback behavior: exchange the Supabase OAuth code, validate that `next` is a same-origin `/intake/...` path, then return to that intake link
+- `AI_OPENAI_COMPATIBLE_BASE_URL`
+- `AI_OPENAI_COMPATIBLE_API_KEY`
 
-On return to `/intake/:token`, the existing intake thank-you effect calls `supabase.auth.getUser()`, rejects trainer self-linking, and links the authenticated client account with the unchanged `linkClientAccount` server function.
+Optional:
 
-If Supabase/Google OAuth is not configured remotely, the flow surfaces the Supabase error and does not fall back to Lovable.
+- `AI_PROVIDER=openai-compatible`
 
-### Lovable CSP Domains
+No `AI_PROVIDER` value besides `openai-compatible` is supported. If `AI_PROVIDER` is unset, the adapter still selects OpenAI-compatible.
 
-`src/routes/__root.tsx` no longer allows:
+## `.lovable` Archive
 
-- `https://api.lovable.app`
-- `https://*.lovable.app`
+`.lovable/**` was kept as historical archive material.
 
-These domains were removed because no browser runtime path needs the Lovable cloud-auth wrapper after the intake OAuth migration.
+Active scripts no longer write there. The current R2.2 smoke report output path is:
 
-### Owned Vite/TanStack Config
+```text
+docs/protocol/architecture/r2.2-smoke-report.md
+```
 
-`vite.config.ts` no longer imports `defineConfig` from `@lovable.dev/vite-tanstack-config`.
+Deleting or relocating the historical `.lovable/**` archive is now a separate archive-policy decision, not an active runtime removal blocker.
 
-The owned config preserves the production-relevant wrapper behavior that can be validated locally:
-
-- `@tailwindcss/vite`
-- `vite-tsconfig-paths` with `./tsconfig.json`
-- TanStack Start Vite plugin
-- React Vite plugin
-- Cloudflare Vite plugin during `vite build` with `viteEnvironment.name = "ssr"`
-- `@` alias to `src`
-- React and TanStack Query dedupe entries
-- explicit `VITE_*` `import.meta.env.*` define entries
-- host/port defaults of `::` and `8080`
-- sandbox `strictPort` behavior for `DEV_SERVER__PROJECT_PATH`
-- non-sandbox watch debounce defaults
-- TanStack server-function dev error logger behavior
-
-The Lovable-only dev instrumentation (`lovable-tagger` and `@lovable.dev/vite-plugin-hmr-gate`) was not retained because it is specific to Lovable editor/runtime integration rather than app build behavior.
-
-Local validation passed:
-
-- `npm.cmd test`
-- `npm.cmd run build`
-- `npm.cmd run check:env`
-- controlled `npm.cmd run dev -- --host 127.0.0.1` startup smoke; Vite reported ready on `http://127.0.0.1:8080/` and the process was stopped.
-
-### Lovable AI Provider
-
-`src/server/ai/provider-adapter.server.ts` still contains the Lovable Gateway implementation and defaults to `lovable` when `AI_PROVIDER` is unset.
-
-This is intentional. All known runtime AI callers route through the adapter, but production behavior must not silently switch providers. `LOVABLE_API_KEY` can be removed only after `AI_PROVIDER=openai-compatible` is validated in staging and production cutover is approved.
-
-The staging validation package now exists:
-
-- `docs/protocol/architecture/ai-provider-staging-validation-runbook-v1.md`
-- `scripts/ai-provider-smoke.mjs`
-- `npm.cmd run smoke:ai-provider`
-
-The smoke command is dry-run/config-only by default. It prints provider selection and variable-name presence, never values, and skips network calls unless `--live` is passed explicitly in staging.
-
-### Environment References
-
-`LOVABLE_API_KEY` remains in `.env.example`, `scripts/validate-env.mjs`, and architecture docs.
-
-This is required while Lovable remains the default active provider. The validation script must keep checking the key for default Lovable mode so missing configuration fails clearly without printing values.
-
-### `.lovable` Archive
-
-`.lovable/**` was kept.
-
-The directory appears to contain historical prompts, feedback, planning evidence, and smoke-report output. It is also referenced by smoke scripts and docs. Deleting it in this pass would hide migration evidence and could break existing maintenance scripts that append historical reports.
-
-### Existing Migrations
+## Existing Migrations
 
 Historical Supabase migrations were not edited. Any Lovable-linked scheduled-job URL in an existing migration must be handled by a new migration or operational change after ownership is confirmed, not by rewriting migration history.
 
-## Runtime Blockers
+## Remaining References
 
-| Blocker | Why it blocks zero Lovable references | Smallest safe next move |
-| --- | --- | --- |
-| Lovable remains default AI provider. | Removing `LOVABLE_API_KEY` would break AI in default production config. | Validate `AI_PROVIDER=openai-compatible` in staging, then switch production deliberately. |
-| Current model IDs are not yet proven against the replacement provider. | Provider-prefixed model IDs may be rejected by the selected OpenAI-compatible provider. | Use the staging runbook model checklist; if any model is rejected, stop and create a separate model mapping PR. |
+Remaining Lovable references are classified as:
 
-## Package And Build Blockers
+- historical architecture docs describing earlier migration state
+- `.lovable/**` archive content
+- existing migration history
+- Git history
 
-No Lovable package or build-config blocker remains after this pass. Build/dev parity was validated locally as far as possible without remote deployment access.
-
-## Env Blockers
-
-| Variable | Why it remains | Removal gate |
-| --- | --- | --- |
-| `LOVABLE_API_KEY` | Required by the default AI provider implementation. | Production no longer uses `AI_PROVIDER=lovable` or unset provider mode. |
-| `AI_PROVIDER` default of `lovable` | Preserves production behavior. | Staging validates `openai-compatible` across AI surfaces. |
-
-## Exact Next PRs To Reach Zero Lovable References
-
-1. Run the staging validation package for `AI_PROVIDER=openai-compatible` with the OpenRouter candidate profile, then record pass/fail results by AI surface.
-2. If staging passes, switch production intentionally, then remove the Lovable provider implementation and `LOVABLE_API_KEY`.
-3. Decide `.lovable/**` archive policy: keep as legacy evidence, move useful pieces to `docs/protocol/legacy/`, or delete once smoke scripts and docs no longer reference it.
-4. Add any required new migration or operational update for scheduled-job URLs instead of editing historical migration files.
+No remaining reference is an active AI provider, required env variable, package dependency, build dependency, browser runtime dependency, or active script output path.
 
 ## Validation Checklist
 
@@ -157,3 +85,12 @@ No Lovable package or build-config blocker remains after this pass. Build/dev pa
 - `npm.cmd run smoke:ai-provider`
 - `rg -n -i "lovable|forge\\.lovable\\.app|gpt-engineer|@lovable|~oauth" . -g "!node_modules" -g "!dist" -g "!.git"`
 
+## Next Exact PR To Reach Absolute Zero References
+
+Decide archive/history policy:
+
+1. Move useful `.lovable/**` archive material into a neutral historical docs location or delete it if no longer needed.
+2. Rewrite or supersede stale historical architecture docs that describe earlier migration states.
+3. Add a new migration or operational update for any historical scheduled-job URL instead of editing existing migration files.
+
+Do not rewrite Git history.

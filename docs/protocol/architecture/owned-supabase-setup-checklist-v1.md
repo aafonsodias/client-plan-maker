@@ -1,5 +1,7 @@
 # Owned Supabase Setup Checklist v1
 
+Historical note: this checklist is a pre-eradication planning artifact. Several Lovable references below describe the repo state at the time this checklist was written and are retained as migration history, not as current runtime/build/browser/package/env requirements. See `docs/protocol/architecture/lovable-eradication-status-v1.md` for current status.
+
 Date: 2026-05-25
 
 Scope: planning and documentation only. No app code, database schema, migrations, environment files, package files, or remote services were changed.

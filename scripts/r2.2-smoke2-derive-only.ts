@@ -44,7 +44,7 @@ const sofiaAssessment: Record<string, any> = {
   const pp = await deriveFittVpFromDb(supabase, sofiaBrief, tier, prepart, "general");
   if (!pp) throw new Error("FITT-VP derive returned null");
 
-  const reportPath = resolve(".lovable/r2.2-smoke-report.md");
+  const reportPath = resolve("docs/protocol/architecture/r2.2-smoke-report.md");
   mkdirSync(dirname(reportPath), { recursive: true });
   const append = `
 
