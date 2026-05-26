@@ -39,3 +39,6 @@ dist-ssr
 /mnt/documents/acsm-12e.pdf
 /mnt/documents/bompa-buzzichelli-6e.pdf
 /mnt/documents/nsca-essentials-3e.pdf
+
+# Private local references (never committed)
+private-reference/
