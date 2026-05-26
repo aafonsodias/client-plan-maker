@@ -2,11 +2,11 @@
 
 ## Executive Summary
 
-This pass migrated public-intake Google OAuth from the Lovable cloud-auth wrapper to the existing Supabase OAuth flow without changing intake token validation, assessment submission, email/password auth, or normal `/auth` Google OAuth.
+This pass replaced the Lovable Vite/TanStack config wrapper with an owned Vite config while preserving the local build/dev behavior that can be validated in this repo.
 
-The remaining Lovable references are intentional blockers. They are either build dependencies, AI-provider environment gates, historical documentation, smoke-report archive paths, an existing historical migration URL, or Git history artifacts. Git history was not rewritten.
+The remaining Lovable references are intentional blockers. They are AI-provider environment gates, historical documentation, smoke-report archive paths, an existing historical migration URL, or Git history artifacts. Git history was not rewritten.
 
-Protocol is closer to Lovable independence, but not at zero references yet. The next removals must be done as small PRs because the remaining surfaces include build configuration, historical process/archive references, an existing migration URL, and the default AI provider.
+Protocol is closer to Lovable independence, but not at zero references yet. The next removals must be done as small PRs because the remaining surfaces include historical process/archive references, an existing migration URL, and the default AI provider.
 
 ## What Was Removed Or Replaced
 
@@ -22,6 +22,8 @@ Protocol is closer to Lovable independence, but not at zero references yet. The 
 | Lovable auth wrapper | Deleted `src/integrations/lovable/index.ts` after no imports remained. | Removes browser runtime dependency on Lovable cloud auth. |
 | Lovable cloud-auth package | Removed `@lovable.dev/cloud-auth-js` from `package.json` and `package-lock.json`. | No runtime imports remain. |
 | Lovable CSP domains | Removed `https://api.lovable.app` and `https://*.lovable.app` from browser `connect-src`. | Browser runtime no longer needs these domains for intake OAuth. |
+| Vite/TanStack config | Replaced `@lovable.dev/vite-tanstack-config` with explicit owned Vite config. | Preserves TanStack Start, React, Tailwind, tsconfig paths, Cloudflare build integration, aliases, dedupe, VITE env define behavior, and server defaults. |
+| Lovable build package | Removed `@lovable.dev/vite-tanstack-config` and its Lovable transitive build packages from `package.json` and `package-lock.json`. | Build/dev no longer depends on Lovable tooling. |
 
 ## Current Inventory By Category
 
@@ -30,9 +32,9 @@ Protocol is closer to Lovable independence, but not at zero references yet. The 
 | User-facing UI/metadata | Safe obvious Lovable fallbacks were removed. CSP no longer includes Lovable browser domains. | `src/routes/__root.tsx`, `src/components/ShareAppButton.tsx` |
 | Runtime code | Public-intake Google OAuth now uses Supabase OAuth directly and returns through `/auth/callback?next=/intake/:token`. | `src/routes/intake.$token.tsx`, `src/routes/auth_.callback.tsx` |
 | Server-only provider implementation | Lovable Gateway remains the default active AI provider behind the adapter. | `src/server/ai/provider-adapter.server.ts` |
-| Build/dev tooling | Vite still uses the Lovable TanStack config package. | `vite.config.ts`, `package.json` |
+| Build/dev tooling | Vite now uses an owned explicit config. | `vite.config.ts` |
 | Environment variables | `LOVABLE_API_KEY` remains required while `AI_PROVIDER` is unset or `lovable`. | `.env.example`, `scripts/validate-env.mjs` |
-| Package dependencies | The Lovable auth package was removed. The Lovable Vite/TanStack build package remains because `vite.config.ts` still imports it. | `package.json`, `package-lock.json`, `vite.config.ts` |
+| Package dependencies | Lovable auth and build packages were removed. | `package.json`, `package-lock.json` |
 | CSP/security headers | Lovable browser domains were removed from the root CSP. | `src/routes/__root.tsx` |
 | Docs/process archive | Historical docs intentionally retain prior findings and migration evidence. | `docs/protocol/**`, `.lovable/**` |
 | Scripts | Smoke scripts still write historical `.lovable` reports; AI calls route through the adapter. | `scripts/r2.2-smoke*.ts` |
@@ -62,11 +64,33 @@ If Supabase/Google OAuth is not configured remotely, the flow surfaces the Supab
 
 These domains were removed because no browser runtime path needs the Lovable cloud-auth wrapper after the intake OAuth migration.
 
-### Lovable Vite/TanStack Config
+### Owned Vite/TanStack Config
 
-`vite.config.ts` still imports `defineConfig` from `@lovable.dev/vite-tanstack-config`.
+`vite.config.ts` no longer imports `defineConfig` from `@lovable.dev/vite-tanstack-config`.
 
-This was not removed because the package controls build-time behavior. Replacing it requires a parity PR that documents the current plugin behavior, creates owned Vite/TanStack config, and proves build/dev parity.
+The owned config preserves the production-relevant wrapper behavior that can be validated locally:
+
+- `@tailwindcss/vite`
+- `vite-tsconfig-paths` with `./tsconfig.json`
+- TanStack Start Vite plugin
+- React Vite plugin
+- Cloudflare Vite plugin during `vite build` with `viteEnvironment.name = "ssr"`
+- `@` alias to `src`
+- React and TanStack Query dedupe entries
+- explicit `VITE_*` `import.meta.env.*` define entries
+- host/port defaults of `::` and `8080`
+- sandbox `strictPort` behavior for `DEV_SERVER__PROJECT_PATH`
+- non-sandbox watch debounce defaults
+- TanStack server-function dev error logger behavior
+
+The Lovable-only dev instrumentation (`lovable-tagger` and `@lovable.dev/vite-plugin-hmr-gate`) was not retained because it is specific to Lovable editor/runtime integration rather than app build behavior.
+
+Local validation passed:
+
+- `npm.cmd test`
+- `npm.cmd run build`
+- `npm.cmd run check:env`
+- controlled `npm.cmd run dev -- --host 127.0.0.1` startup smoke; Vite reported ready on `http://127.0.0.1:8080/` and the process was stopped.
 
 ### Lovable AI Provider
 
@@ -98,10 +122,7 @@ Historical Supabase migrations were not edited. Any Lovable-linked scheduled-job
 
 ## Package And Build Blockers
 
-| Package/config | Why it remains | Removal gate |
-| --- | --- | --- |
-| `@lovable.dev/vite-tanstack-config` | Required by `vite.config.ts`. | Owned Vite/TanStack config passes build/dev parity. |
-| Transitive Lovable build packages | Pulled by the Vite/TanStack config package. | Remove parent package first. |
+No Lovable package or build-config blocker remains after this pass. Build/dev parity was validated locally as far as possible without remote deployment access.
 
 ## Env Blockers
 
@@ -112,10 +133,9 @@ Historical Supabase migrations were not edited. Any Lovable-linked scheduled-job
 
 ## Exact Next PRs To Reach Zero Lovable References
 
-1. Replace `@lovable.dev/vite-tanstack-config` with owned Vite/TanStack config and remove the package plus lockfile entries after build/dev parity is documented.
-2. Validate `AI_PROVIDER=openai-compatible` in staging, switch production intentionally, then remove the Lovable provider implementation and `LOVABLE_API_KEY`.
-3. Decide `.lovable/**` archive policy: keep as legacy evidence, move useful pieces to `docs/protocol/legacy/`, or delete once smoke scripts and docs no longer reference it.
-4. Add any required new migration or operational update for scheduled-job URLs instead of editing historical migration files.
+1. Validate `AI_PROVIDER=openai-compatible` in staging, switch production intentionally, then remove the Lovable provider implementation and `LOVABLE_API_KEY`.
+2. Decide `.lovable/**` archive policy: keep as legacy evidence, move useful pieces to `docs/protocol/legacy/`, or delete once smoke scripts and docs no longer reference it.
+3. Add any required new migration or operational update for scheduled-job URLs instead of editing historical migration files.
 
 ## Validation Checklist
 
