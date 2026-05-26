@@ -214,13 +214,26 @@ Before setting `AI_PROVIDER=openai-compatible` in staging or production, these m
 - Staging has provider secrets configured without exposing values.
 - Existing prompts, schemas, and model routing are covered by build/test plus manual AI smoke checks.
 
+Use `docs/protocol/architecture/ai-provider-staging-validation-runbook-v1.md` as the staging checklist before any final Lovable AI removal PR. OpenRouter is the first documented candidate profile, configured only by environment variables:
+
+- `AI_PROVIDER=openai-compatible`
+- `AI_OPENAI_COMPATIBLE_BASE_URL`
+- `AI_OPENAI_COMPATIBLE_API_KEY`
+
+The suggested OpenRouter chat completions endpoint is documented in the runbook for staging configuration only; it is not hardcoded in app code.
+
+`npm.cmd run smoke:ai-provider` provides a safe dry-run config check. It prints selected provider and variable-name presence only, never values, and makes no network call unless `--live` is passed explicitly. `--live` is for staging only after provider secrets are configured.
+
 Staging validation plan:
 
 1. Configure `AI_PROVIDER=openai-compatible` only in staging.
 2. Configure `AI_OPENAI_COMPATIBLE_BASE_URL` and `AI_OPENAI_COMPATIBLE_API_KEY` in server-side secret storage.
-3. Run `npm.cmd test`, `npm.cmd run build`, and `npm.cmd run check:env`.
-4. Manually exercise Atlas, Concierge, OCR extraction, demo critique, intake interpretation, Anthropic compatibility, phased generation, Stage 2 discussion, and the R2.2 smoke script if retained.
-5. Compare status/error behavior, token usage fields, generated tool calls, and cost reporting before any production switch.
+3. Keep `LOVABLE_API_KEY` available for rollback.
+4. Run `npm.cmd test`, `npm.cmd run build`, `npm.cmd run check:env`, and `npm.cmd run smoke:ai-provider`.
+5. Optionally run `node scripts/ai-provider-smoke.mjs --live` only in staging.
+6. Manually exercise Atlas, Concierge, OCR extraction, demo critique, intake interpretation, Anthropic compatibility, phased generation, Stage 2 discussion, and the R2.2 smoke script if retained.
+7. Compare status/error behavior, token usage fields, generated tool calls, and cost reporting before any production switch.
+8. Roll back by unsetting `AI_PROVIDER` or setting `AI_PROVIDER=lovable`.
 
 ## Risks
 
@@ -238,6 +251,7 @@ Staging validation plan:
 - `npm.cmd test`
 - `npm.cmd run build`
 - `npm.cmd run check:env`
+- `npm.cmd run smoke:ai-provider`
 - Confirm unset `AI_PROVIDER` still selects Lovable.
 - Confirm `AI_PROVIDER=lovable` still selects Lovable.
 - Confirm `AI_PROVIDER=openai-compatible` is the only way to select the alternate provider.

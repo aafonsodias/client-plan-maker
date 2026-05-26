@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "node --experimental-strip-types --loader ./test/ts-loader.mjs --test test/domain-contracts.test.ts test/phased-ai-contract.test.ts test/ai-provider-adapter.test.ts",
     "check:env": "node scripts/validate-env.mjs",
+    "smoke:ai-provider": "node scripts/ai-provider-smoke.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

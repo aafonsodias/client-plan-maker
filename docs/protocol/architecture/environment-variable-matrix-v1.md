@@ -11,7 +11,7 @@ The main blockers are:
 - Local dev: owned Supabase client variables, server Supabase variables for server functions, and feature flags when testing legacy assessment views.
 - Staging: owned Supabase project variables, service role key, auth redirect/origin settings, AI routing credentials, Stripe test secret, Resend test key, and digest secret if scheduled jobs are tested.
 - Production: production-owned Supabase, service role key, production origin, Stripe/Resend production ownership, digest secret placement, and replacement for the Lovable AI gateway.
-- Lovable independence: `LOVABLE_API_KEY`, Lovable build/auth package assumptions, Lovable AI gateway calls, and any environment-linked deployment/origin assumptions must be removed or replaced deliberately.
+- Lovable independence: `LOVABLE_API_KEY`, Lovable AI gateway calls, historical archive paths, and any environment-linked deployment/origin assumptions must be removed or replaced deliberately. Lovable auth, CSP, and build package dependencies have already been removed.
 
 ## Environment variable matrix
 
@@ -25,8 +25,8 @@ The main blockers are:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase server/private | Server-only | Yes when running server/admin scripts or server functions that need elevated access | Yes before staging replay and validation | Yes for production server/admin paths | Supabase | Server Supabase admin client and smoke/verification scripts | `src/integrations/supabase/client.server.ts`, `scripts/r2.2-smoke2.ts`, `scripts/r2.2-smoke2-derive-only.ts`, `scripts/verify-consolidation-phase-a.ts`, `.env.example` | `rg "SUPABASE_SERVICE_ROLE_KEY" src scripts .env.example` | Must be owned, rotated, and stored only in server secret stores. |
 | `SUPABASE_KEY` | Unknown/needs confirmation | Server-only if used | Optional script fallback only | Unknown | Unknown | Supabase | Verification script fallback | `scripts/verify-consolidation-phase-a.ts` | `rg "SUPABASE_KEY" scripts .env.example src` | Confirm whether this is legacy naming; prefer explicit publishable or service role names. |
 | `LOVABLE_API_KEY` | Lovable-specific | Server-only | Required when `AI_PROVIDER` is unset or `lovable` unless mocked/disabled | Required while staging uses Lovable; optional only when `AI_PROVIDER=openai-compatible` | Required while production uses Lovable; optional only after provider cutover | Lovable | Default AI provider implementation | `src/server/ai/provider-adapter.server.ts`, `.env.example` | `rg "LOVABLE_API_KEY|ai.gateway.lovable.dev" src scripts .env.example` | Current default AI provider secret; remove only after production no longer uses Lovable Gateway. |
-| `AI_PROVIDER` | AI/model routing | Server-only | Optional; defaults to `lovable` | Optional; set to `openai-compatible` only in staging tests | Optional; leave unset or `lovable` until production cutover | Protocol deployment config | AI provider selection | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_PROVIDER" src scripts docs/protocol` | Controls provider selection; default is intentionally Lovable for no production behavior change. |
-| `AI_OPENAI_COMPATIBLE_BASE_URL` | AI/model routing | Server-only | Optional unless testing alternate provider | Required only when `AI_PROVIDER=openai-compatible` | Required only when `AI_PROVIDER=openai-compatible` | Replacement AI provider | Disabled OpenAI-compatible provider | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_OPENAI_COMPATIBLE_BASE_URL" src scripts docs/protocol` | Store as server config; base URL is used to call `/chat/completions`. |
+| `AI_PROVIDER` | AI/model routing | Server-only | Optional; defaults to `lovable` | Optional; set to `openai-compatible` only in staging tests | Optional; leave unset or `lovable` until production cutover | Protocol deployment config | AI provider selection | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_PROVIDER" src scripts docs/protocol` | Controls provider selection; default is intentionally Lovable for no production behavior change. Validate with `npm.cmd run smoke:ai-provider` before any live staging request. |
+| `AI_OPENAI_COMPATIBLE_BASE_URL` | AI/model routing | Server-only | Optional unless testing alternate provider | Required only when `AI_PROVIDER=openai-compatible` | Required only when `AI_PROVIDER=openai-compatible` | Replacement AI provider | Disabled OpenAI-compatible provider | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_OPENAI_COMPATIBLE_BASE_URL" src scripts docs/protocol` | Store as server config; OpenRouter is the first candidate profile and the staging runbook documents its chat completions endpoint. |
 | `AI_OPENAI_COMPATIBLE_API_KEY` | AI/model routing | Server-only | Optional unless testing alternate provider | Required only when `AI_PROVIDER=openai-compatible` | Required only when `AI_PROVIDER=openai-compatible` | Replacement AI provider | Disabled OpenAI-compatible provider | `src/server/ai/provider-adapter.server.ts`, `scripts/validate-env.mjs` | `rg "AI_OPENAI_COMPATIBLE_API_KEY" src scripts docs/protocol` | Server secret for the replacement provider; never print or expose. |
 | `FORGE_MODEL_STAGE_3` | AI/model routing | Server-only | Optional script override | Unknown | Unknown | AI provider decision pending | Smoke script model selection | `scripts/r2.2-smoke2.ts` | `rg "FORGE_MODEL_STAGE_3" scripts src .env.example` | Confirm target model routing names after AI provider decision. |
 | `STRIPE_SECRET_KEY` | Stripe | Server-only | Optional unless billing is exercised | Yes for billing validation with test mode | Yes for production billing | Stripe | Billing server functions | `src/server/billing.functions.ts`, `.env.example` | `rg "STRIPE_SECRET_KEY" src .env.example` | Confirm account ownership and test/live separation before production cutover. |
@@ -70,6 +70,7 @@ Before replaying migrations or testing auth in staging:
 - Stripe and Resend must use staging/test credentials and owned accounts.
 - Digest hook caller must store the matching `DIGEST_SECRET` without exposing it in logs.
 - AI behavior must be either wired to the current Lovable gateway knowingly or routed through `AI_PROVIDER=openai-compatible` with `AI_OPENAI_COMPATIBLE_BASE_URL` and `AI_OPENAI_COMPATIBLE_API_KEY`.
+- For the OpenAI-compatible staging path, follow `docs/protocol/architecture/ai-provider-staging-validation-runbook-v1.md`, run `npm.cmd run smoke:ai-provider` in dry-run mode first, and keep `LOVABLE_API_KEY` available for rollback.
 
 ## Production requirements
 
@@ -86,9 +87,7 @@ Before production cutover:
 
 - `LOVABLE_API_KEY` keeps AI generation tied to Lovable while the default adapter provider remains `lovable`.
 - `AI_PROVIDER=openai-compatible` exists for staged replacement, but it must not be enabled in production until model, response, error, and cost behavior are validated.
-- `@lovable.dev/cloud-auth-js` remains in the repo and intake auth still references Lovable OAuth behavior in `src/routes/intake.$token.tsx`.
-- `@lovable.dev/vite-tanstack-config` remains part of the build configuration through `vite.config.ts`.
-- CSP still allows Lovable domains in `src/routes/__root.tsx` until public-intake OAuth is migrated off the Lovable auth wrapper.
+- Public-intake OAuth, Lovable browser CSP domains, and Lovable build packages have been removed.
 - Former `https://forge.lovable.app` sharing and billing fallbacks have been replaced; keep validating with search before final removal work.
 - `.lovable` historical archive handling still needs an explicit keep/archive/delete decision, but it should not be removed as part of an env-only PR.
 
@@ -103,6 +102,7 @@ node scripts/validate-env.mjs local
 node scripts/validate-env.mjs staging
 node scripts/validate-env.mjs production
 npm.cmd run check:env
+npm.cmd run smoke:ai-provider
 rg "process\.env|import\.meta\.env" src scripts supabase .env.example
 rg "SUPABASE_|VITE_SUPABASE_|LOVABLE_API_KEY|STRIPE_SECRET_KEY|RESEND_API_KEY|DIGEST_SECRET" src scripts .env.example docs/protocol
 rg "AI_PROVIDER|AI_OPENAI_COMPATIBLE|ai.gateway.lovable.dev|lovable|forge.lovable.app" src package.json vite.config.ts docs/protocol
@@ -128,13 +128,13 @@ Safe manual checks without exposing secrets:
 - Stripe account owner, test/live separation, and production billing cutover criteria.
 - Resend account owner, sending domain owner, and digest email sender identity.
 - Production domain and staging domain.
-- AI provider decision after Lovable gateway removal.
-- Whether the first replacement provider should use `AI_PROVIDER=openai-compatible`, and what staging-only base URL and secret store will own it.
+- AI provider decision after OpenAI-compatible staging validation.
+- Whether OpenRouter passes as the first `AI_PROVIDER=openai-compatible` candidate profile, and what staging-only secret store will own the replacement provider variables.
 - Digest secret location in both the scheduler/caller and deployed receiving runtime.
 - Whether `VITE_SUPABASE_PROJECT_ID`, `SUPABASE_KEY`, `APP_ORIGIN`, and `FORGE_MODEL_STAGE_3` are active requirements or legacy placeholders.
 
 ## Recommended next PRs
 
-1. Add a small env validation document or script that checks required variable names by environment without printing values.
-2. Introduce an AI provider adapter boundary while keeping the existing Lovable gateway implementation behind it.
-3. Audit and remove or replace Lovable-specific build/auth/CSP assumptions one surface at a time after ownership gates are confirmed.
+1. Run the staging validation package for `AI_PROVIDER=openai-compatible` using the documented OpenRouter candidate profile.
+2. If staging passes, switch production deliberately and remove the Lovable AI provider implementation plus `LOVABLE_API_KEY`.
+3. Decide whether to keep, move, or delete `.lovable/**` after smoke scripts and docs no longer reference it.
