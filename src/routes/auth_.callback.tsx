@@ -8,17 +8,32 @@ export const Route = createFileRoute("/auth_/callback")({
   component: AuthCallbackPage,
 });
 
+function getSafeNext(raw: string | null): string | null {
+  if (!raw || typeof window === "undefined") return null;
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin !== window.location.origin) return null;
+    if (!url.pathname.startsWith("/intake/")) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 function AuthCallbackPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [returnPath, setReturnPath] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
       const params = new URLSearchParams(window.location.search);
+      const safeNext = getSafeNext(params.get("next"));
       const oauthError = params.get("error_description") ?? params.get("error");
       const code = params.get("code");
+      if (!cancelled) setReturnPath(safeNext);
 
       if (oauthError) {
         if (!cancelled) setError(oauthError);
@@ -38,6 +53,11 @@ function AuthCallbackPage() {
         return;
       }
 
+      if (safeNext) {
+        window.location.replace(safeNext);
+        return;
+      }
+
       navigate({ to: "/welcome", replace: true });
     })();
 
@@ -53,7 +73,7 @@ function AuthCallbackPage() {
           <h1 className="text-2xl font-semibold text-foreground">Google sign-in failed</h1>
           <p className="mt-3 text-sm text-muted-foreground">{error}</p>
           <Button asChild className="mt-6">
-            <Link to="/auth">Back to sign in</Link>
+            {returnPath ? <a href={returnPath}>Back to intake</a> : <Link to="/auth">Back to sign in</Link>}
           </Button>
         </div>
       </div>

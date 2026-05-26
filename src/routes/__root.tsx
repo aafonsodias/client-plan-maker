@@ -65,7 +65,7 @@ export const Route = createRootRoute({
           "font-src 'self' data: https://fonts.gstatic.com",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "script-src 'self' 'unsafe-inline'",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.lovable.app https://*.lovable.app https://api.openai.com https://api.anthropic.com https://api.frankfurter.app https://api.coingecko.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://api.frankfurter.app https://api.coingecko.com",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

@@ -8,7 +8,6 @@ import { linkClientAccount } from "@/server/intake.functions";
 import { interpretGoal } from "@/server/intake-ai.functions";
 import { uploadIntakePhoto, getIntakePhotoUrls } from "@/server/intake-photos.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -732,10 +731,14 @@ function ThankYou({ ctx, token }: { ctx: IntakeContext; token: string }) {
   const google = async () => {
     setBusy(true);
     try {
-      const res: any = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/intake/${token}`,
+      const intakePath = `/intake/${encodeURIComponent(token)}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(intakePath)}`,
+        },
       });
-      if (res?.error) throw res.error;
+      if (error) throw error;
     } catch (e: any) {
       toast.error(e?.message ?? "Não foi possível iniciar com Google");
       setBusy(false);
